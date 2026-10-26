@@ -198,6 +198,8 @@ internal sealed class AbilityEventPayment
         return true;
     }
 
+    internal string PreviewPaid => paid;
+
     internal string Paid => completed ? paid
         : throw new InvalidOperationException("the event payment has not completed");
 

@@ -30,12 +30,14 @@ public sealed class RuntimeProductAdmission
         // rows cannot extend this closed boundary; a product requires explicit review.
         bool captainAmerica = StandaloneProductAdmission.CaptainAmerica(setup, cards, authored);
         bool wreckingCrew = StandaloneProductAdmission.WreckingCrew(setup, cards, authored);
+        bool greenGoblin = StandaloneProductAdmission.GreenGoblin(setup, cards, authored);
         bool Accepted(string pack) => pack switch
         {
             "core" => true,
             "trors" => campaign is not null,
             "cap" => captainAmerica,
             "twc" => wreckingCrew,
+            "gob" => greenGoblin,
             _ => false,
         };
         var playable = authored.Where(face => Accepted(cards.Pack(face)))

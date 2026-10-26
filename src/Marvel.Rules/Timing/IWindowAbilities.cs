@@ -18,6 +18,12 @@ public interface IWindowAbilities : IAbilityDescriptions
     /// <summary>The abilities currently eligible in this window.</summary>
     IReadOnlyList<PendingAbility> Waiting(World world, Occurrence occurrence, WindowKind window);
 
+    /// <summary>Validates an answer without mutation and binds its payment before trigger commitment.</summary>
+    /// <remarks>Cost-bearing resolvers must prepare their complete answer here; decorators forward preparation.
+    /// The returned invocation body is consumed immediately by the engine.</remarks>
+    Func<AbilityExecution, AbilityExecutionResult> PrepareWindow(
+        World world, Occurrence occurrence, PendingAbility ability, Decision answer);
+
     /// <summary>Resolves an invocation admitted before its costs are paid.</summary>
     AbilityExecutionResult Resolve(World world, AbilityExecution invocation, Decision answer);
 }

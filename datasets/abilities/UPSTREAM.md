@@ -4,7 +4,7 @@
 |---|---|
 | Kind | authored |
 | Product boundary | Core Set, Rise of Red Skull, Captain America and Wrecking Crew; Green Goblin and Ms. Marvel research rows remain publicly excluded |
-| Records | 549 printed card faces, including explicit empty rows |
+| Records | 567 printed card faces, including explicit empty rows |
 | Authorities | Generated `datasets/cards/`, vendored Rules Reference, expansion rulebooks and published rulings |
 | Gated by | Ability admission/lowering tests, complete-product admission, actual-card tests, campaign acceptance and executable Core behavioral transcripts |
 
@@ -124,3 +124,46 @@ instance (`rr:event.5`, `faq:05010`, `faq:05011`) and preserve printed caps
 (`ruling:88369b11361157e4`). `MsMarvelEventCardTests`,
 `MsMarvelIdentityEventTests` and `MsMarvelTeenSpiritTests` exercise these actual
 rows. This partial authoring keeps Ms. Marvel outside public admission.
+
+The persona/resource packet adds actual rows 05008 Nakia Bahadir and 05009
+Biokinetic Polymer Suit, from the joined printed text in `datasets/cards/cards.json`.
+Nakia uses the controlled player's one-use player-phase reduction, preserving it
+across form changes and rejected payments. Suit uses the event resource restriction
+and explicit hero form; ruling:5b44b2adcc60d4b7 distinguishes an event ability's
+own cost from a selected ally's cost. `MsMarvelPersonaTests` and
+`MsMarvelSuitCardTests` exercise these rows. Bruno (05007) uses reviewed optional bounded stored-card selection. See `docs/content/ms-marvel-persona-evidence.md`.
+
+
+Aamir/resource reprint packet adds seven actual Ms. Marvel research faces:
+05006, 05016, 05019–05022 and 05024 (16 of 34 Ms. Marvel faces; 558 total).
+Printed authority is joined `datasets/cards/cards.json`; the vendored MarvelCDB
+FAQ has no entries for these seven faces, and the Hall of Heroes search yielded
+no card-specific clarification. Aamir uses reviewed bottom placement followed by
+dependent draw. Resource cards read printed icons; Protection doubling qualifies
+the card being paid. Mansion chooses a player; Reflexes uses three energy
+counters, Hero Resource, exhaustion and discard at the last counter.
+`MsMarvelAamirCardTests`, `MsMarvelResourceReprintTests` and
+`MsMarvelReflexesCardTests` exercise their actual rows. See
+`docs/content/ms-marvel-aamir-resource-evidence.md`. Public admission stays closed.
+
+The ally/condition packet adds actual rows 05002 Red Dagger, 05023 Endurance,
+05032 Morale Boost and 05033 Down Time (20 of 34 Ms. Marvel faces; 562 total).
+Printed authority is joined `datasets/cards/cards.json`. Defeat payment uses two
+different resource types; the controller pays and the owner receives the ally
+(rulings 10293662ffefd5b2 and 2368dda1610740b3). The upgrades use any-player
+control and the printed one-per-player limit. Morale Boost expires at round end.
+`MsMarvelRedDaggerTests`, `MsMarvelConditionUpgradeTests` and
+`MsMarvelAdditionalEventTests` exercise the unmodified full book. Melee, Tackle
+and Concussive Blow remain unauthored pending the engine gaps recorded in
+`docs/content/ms-marvel-ally-condition-evidence.md`. Public admission stays closed.
+
+Bruno Carrelli (05007), Tackle (05015) and Concussive Blow (05031) add three
+research faces (23 of 34 Ms. Marvel faces; 565 total). Bruno stores one own-hand
+card facedown with his alter-ego action and retrieves zero through three stored
+cards with his separate Action in either form; both abilities pay exhaustion.
+The events use committed physical-resource payment and RR1.8 `rr:target.3.4`.
+Bruno ruling `ruling:6768213a7e0f4606` confirms stored cards are out of play.
+The queried FAQ has no entry for these three faces. Actual full-book tests are
+`MsMarvelBrunoCardTests` and `MsMarvelStatusCardTests`. Public admission stays closed.
+
+Home by Dawn and Thomas Edison add two whole Ms. Marvel research faces (25 of 34; 567 total). Printed authority is `datasets/cards/cards.json`. Thomas follows the engaged player per vendored `ruling:3aba0c6abbd5c2ad`; tests cover foreign damage sources and live engagement. No public admission changes.

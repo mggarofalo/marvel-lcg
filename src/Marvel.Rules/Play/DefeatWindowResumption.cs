@@ -43,9 +43,11 @@ internal static class DefeatWindowResumption
         Occurrence origin = operation.Window.Origin!;
         Occurrence containing = world.Agenda.Occurrence
             ?? throw new InvalidOperationException("a defeat resume has no containing occurrence");
-        origin.Trigger(WindowKind.Interrupt, next);
-        if (!ReferenceEquals(containing, origin)) containing.Trigger(WindowKind.Interrupt, next);
-        ActivityBatches.Append(events, abilities.ResolveWindow(world, origin, next, new Decision(next.Card, [], [])).Events);
+        ActivityBatches.Append(events, abilities.ResolveWindow(world, origin, next, new Decision(next.Card, [], []), () =>
+        {
+            origin.Trigger(WindowKind.Interrupt, next);
+            if (!ReferenceEquals(containing, origin)) containing.Trigger(WindowKind.Interrupt, next);
+        }).Events);
         world.Agenda.ContinueBeforeOwner(containing, step, step with
         {
             Operation = operation with

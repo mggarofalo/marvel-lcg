@@ -32,7 +32,7 @@ internal static class AbilityProjectedDefeatWindows
     internal static bool CanProjectEncounterDeal(AbilityPowerState state, Card subject, AbilityAdmissionScope cast)
     {
         if (MissingAuthoredDefeat(subject, cast)) return false;
-        var candidates = OwnDefeatCandidates(state, subject, cast);
+        var candidates = DefeatCandidates(state, subject, cast);
         // Facedown encounter dealing cannot alter the character/status projection. Its pile changes remain unknown.
         return candidates.Length > 0 && candidates.All(candidate => candidate.Card == subject
             && candidate.Ability.Trigger.Timing == AbilityType.WhenDefeated
@@ -40,16 +40,21 @@ internal static class AbilityProjectedDefeatWindows
             && candidate.Ability.Effect is AbilityEffect.DealEncounterCards);
     }
 
-    internal static bool CanDeferOwnDefeat(AbilityPowerState state, Card subject, AbilityAdmissionScope cast)
+    internal static bool CanDeferDefeat(AbilityPowerState state, Card subject, AbilityAdmissionScope cast)
     {
         if (MissingAuthoredDefeat(subject, cast)) return false;
-        var candidates = OwnDefeatCandidates(state, subject, cast);
-        return candidates.Length > 0 && candidates.All(candidate => candidate.Card == subject
-            && candidate.Ability.Trigger.Timing == AbilityType.WhenDefeated
-            && candidate.Ability.When is null && candidate.Ability.Cost is null);
+        var candidates = DefeatCandidates(state, subject, cast);
+        // The live defeat procedure owns both the dying card and its attached
+        // forced interrupts. Their unknown board changes stay behind the same
+        // continuation and damage-batch read guards.
+        return candidates.Length > 0 && candidates.All(candidate =>
+            candidate.Ability.When is null && candidate.Ability.Cost is null
+            && (candidate.Card == subject && candidate.Ability.Trigger.Timing == AbilityType.WhenDefeated
+                || candidate.Card.Area.Host == subject.ObjectId
+                && candidate.Ability.Trigger.Timing == AbilityType.ForcedInterrupt));
     }
 
-    private static AbilityWindowAdmission.Candidate[] OwnDefeatCandidates(
+    private static AbilityWindowAdmission.Candidate[] DefeatCandidates(
         AbilityPowerState state, Card subject, AbilityAdmissionScope cast)
     {
         var occurrence = new Occurrence(0, [Steps.CardDefeated], Subject: subject.ObjectId, Player: subject.Owner);

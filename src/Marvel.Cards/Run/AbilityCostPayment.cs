@@ -98,7 +98,8 @@ internal sealed class AbilityCostPayment
                 return true;
             case Spend spend:
                 resourcePayment = AbilityResourcePayment.Spend(world, resourceAbilities,
-                    new(source, player, paying, spend.Required.Length + spend.Generic, spend.Required), events);
+                    new(source, player, paying, spend.Required.Length + spend.Generic, spend.Required)
+                    { Price = spend.Price, Allocations = spend.Allocations }, events);
                 outcome.Suspended = !resourcePayment.IsComplete;
                 if (spend.Energy is { } x) outcome.Energy = x;
                 return true;

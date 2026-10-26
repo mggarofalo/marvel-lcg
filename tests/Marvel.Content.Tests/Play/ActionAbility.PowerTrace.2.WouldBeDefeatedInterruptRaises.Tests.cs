@@ -74,11 +74,11 @@ public sealed class ActionAbilityPowerTraceWouldBeDefeatedInterruptRaisesTests
     [Rule("rr:damage.step.7")]
     [Rule("rr:labeled-ability.4")]
     [Fact]
-    public void UnauthoredPrintedDefeatAbilityRaisesBeforeLabelledCost()
+    public void BoardReadAfterOwnDefeatAbilityRaisesBeforeLabelledCost()
     {
-        // Goblin Soldier prints a When Defeated ability that has no authored
-        // behavior. The engine raises rather than guessing, and eligibility
-        // must do so before either the cost or lethal damage mutates the board.
+        // Goblin Soldier's When Defeated damage can change the board. The engine
+        // refuses a later board-dependent damage effect before paying the cost
+        // rather than projecting that interrupt's unknown outcome.
         var runner = Runner(AuthoredCards.AuntMay, "Action", """
             { "attack": {
               "target": { "query": "villain" },
@@ -99,7 +99,7 @@ public sealed class ActionAbilityPowerTraceWouldBeDefeatedInterruptRaisesTests
             source = InPlay(board, AuthoredCards.AuntMay);
             soldier = board.CreateCard("02023", board.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
         }, hero: true, abilities: runner));
-        Assert.Contains("defeat-triggered ability", refused.Message);
+        Assert.Contains("unprojected defeat window", refused.Message);
         Assert.True(source!.Ready);
         Assert.Equal(0, soldier!.Damage);
         Assert.Equal(DeckType.EngagedEnemiesArea, soldier.Area.Type);

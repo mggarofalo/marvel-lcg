@@ -56,6 +56,12 @@ internal sealed class NativeWindowAbilities(IWindowAbilities authored) : IWindow
         { Timing = AbilityType.ForcedResponse, DisplayLabel = label, CommitLabel = $"Resolve retaliate against {target}" };
     }
 
+    public Func<AbilityExecution, AbilityExecutionResult> PrepareWindow(
+        World world, Occurrence occurrence, PendingAbility ability, Decision answer) =>
+        ability.Native == NativeAbilityKind.Authored
+            ? authored.PrepareWindow(world, occurrence, ability, answer)
+            : invocation => Resolve(world, invocation, answer);
+
     public AbilityExecutionResult Resolve(World world, AbilityExecution invocation, Decision answer)
     {
         if (invocation.Ability.Native == NativeAbilityKind.Authored)

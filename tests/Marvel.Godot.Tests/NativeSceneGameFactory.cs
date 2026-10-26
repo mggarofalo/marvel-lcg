@@ -78,6 +78,7 @@ internal sealed class NativeSceneGameFactory(string contract) : IGameFactory, IS
         else if (contract == "variable-payment") PrepareEnergyChannel(scene);
         else if (contract == "repeated-targets") PrepareExplosion(scene);
         else if (contract == "card-look") PrepareLook(scene);
+        else if (contract.StartsWith("bruno-", StringComparison.Ordinal)) BrunoNativeScene.Prepare(scene);
         else if (contract == "resource-declaration") PrepareDeclaration(scene);
         else PrepareSpiderMan(scene);
     }

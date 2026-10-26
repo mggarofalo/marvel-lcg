@@ -48,6 +48,14 @@ public sealed class AbilityCostLoweringTests
     }
 
     [Fact]
+    public void DistinctResourcesRetainTheirTypedConstraint()
+    {
+        var spend = Assert.IsType<AbilityCost.Spend>(Lower("""{"spendDistinct":2}"""));
+        Assert.Equal(2, spend.Amount);
+        Assert.True(spend.DistinctTypes);
+    }
+
+    [Fact]
     public void CostSelectionHasOneCheckedRange()
     {
         Assert.Equal(new AbilityCost.ExhaustChosen(AbilityCardQuery.HeroesAndAllies,
@@ -68,6 +76,8 @@ public sealed class AbilityCostLoweringTests
     [InlineData("{\"removeCounters\":{\"card\":\"this\",\"counter\":\"web\",\"count\":0}}", "positive integer")]
     [InlineData("{\"takeDamage\":{\"cards\":\"chosen\",\"amount\":1}}", "not a card supported by this cost")]
     [InlineData("{\"takeDamage\":{\"cards\":\"you\",\"amount\":1,\"ignorePrevention\":1}}", "unknown argument")]
+    [InlineData("{\"spendDistinct\":0}", "positive integer")]
+    [InlineData("{\"spendDistinct\":5}", "exceeds the resource types")]
     [InlineData("{\"spend\":\"Q\"}", "supported resource symbols")]
     [InlineData("{\"spendEnergyX\":\"B\"}", "expected 'Y'")]
     [InlineData("{\"draw\":{\"player\":\"you\",\"count\":1}}", "not a cost operation")]

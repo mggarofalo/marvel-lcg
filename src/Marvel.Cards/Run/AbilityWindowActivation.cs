@@ -10,17 +10,13 @@ namespace Marvel.Cards.Run;
 /// <summary>Commits window costs and starts the admitted effect with its explicit recipient.</summary>
 internal static class AbilityWindowActivation
 {
-    internal static bool Pay(AbilityResolutionExecution execution, AbilityResolutionState cast,
-        CompiledCardAbility found, PendingAbility address, Decision answer)
+    internal static AbilityPaymentPlan Prepare(AbilityResolutionExecution execution, AbilityResolutionState cast,
+        CompiledCardAbility found, Decision answer)
     {
         World world = cast.World;
         Card card = cast.Source;
-        Occurrence occurrence = cast.Occurrence;
-        List<GameEvent> events = cast.Events;
         IReadOnlyList<int> paying = answer.Spent;
         IReadOnlyList<int> chosen = answer.Targets;
-        var costOwner = world.Agenda.Current;
-        var costOccurrence = world.Agenda.Occurrence;
         AbilityEventThreatFacts.Validate(execution, cast, found);
         var arrowPayment = AbilityCostPayment.Prepare(
             world, card, cast.Player, found.Cost, execution.program, execution.resourceAbilities,
@@ -28,11 +24,21 @@ internal static class AbilityWindowActivation
                 cast.Results.ContainsKey(AbilityRecipientCommitment.PendingRecipient) ? [] : chosen,
                 answer.DefinedValues,
                 resourcesPaidByEvent: EffectiveCards.Kind(card, world.Facts) == CardKind.Event
-                    && (ResourceRequirement(found.Cost, card).Length + GenericResourceAmount(found.Cost)) > 0));
+                    && (ResourceRequirement(found.Cost, card).Length + GenericResourceAmount(found.Cost)) > 0, allocations: answer.Allocations));
         var eventPayment = AbilityEventPayment.Prepare(
             world, card, cast.Player, paying, found,
             execution.resourceAbilities, answer.Allocated);
-        cast.PendingPayment = new AbilityInitiationPayment(eventPayment, arrowPayment);
+        if (eventPayment is not null)
+            AbilityPaymentReceiptAdmission.Validate(found, execution.AdmissionContext(cast), eventPayment.PreviewPaid);
+        return new AbilityInitiationPayment(eventPayment, arrowPayment);
+    }
+
+    internal static bool Pay(AbilityResolutionExecution execution, AbilityResolutionState cast,
+        PendingAbility address, AbilityPaymentPlan payment)
+    {
+        var costOwner = cast.World.Agenda.Current;
+        var costOccurrence = cast.World.Agenda.Occurrence;
+        cast.PendingPayment = payment;
         if (cast.PendingPayment.Commit(execution, cast))
         {
             cast.PendingPayment = null;

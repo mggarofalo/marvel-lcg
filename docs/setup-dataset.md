@@ -5,8 +5,8 @@ admission determines which declared products the runtime can start; an incomplet
 expansion is excluded from public discovery as a whole.
 
 `RuntimeProductAdmission` owns the closed accepted-product policy: Core Set,
-Rise of Red Skull, Captain America and Wrecking Crew. Merely adding an authored
-ability or setup recipe does not admit another product. Unaccepted product-owned
+Rise of Red Skull, Captain America, Wrecking Crew and the complete Green Goblin
+integration candidate. Merely adding an authored ability or setup recipe does not admit another product. Unaccepted product-owned
 recipes are excluded; a retained accepted recipe that references an unavailable face
 still fails validation. The same admitted face set controls discovery, research
 cards' runtime-support flags, deck assessment and game creation.
@@ -23,27 +23,29 @@ The file has 3 groups:
 
 | Group | Admitted rows | Declared rows |
 |---|---:|---:|
-| `campaigns` | 35 Core Set, Rise of Red Skull and Wrecking Crew scenario/mode combinations | 39 |
+| `campaigns` | 39 Core Set, Rise of Red Skull, Wrecking Crew and Green Goblin scenario/mode combinations | 39 |
 | `heroes` | 8 Core Set, Rise of Red Skull and Captain America starter decks | 9 |
-| `encounter_sets` | 10 Core Set and Rise of Red Skull fixed/modular sets | 14 |
+| `encounter_sets` | 14 Core Set, Rise of Red Skull and Green Goblin fixed/modular sets | 14 |
 
 Ms. Marvel is a declared research hero. Her 40-card starter, obligation and
 nemesis set follow a pinned FFG divider; the runtime product gate excludes her
 recipe until complete pack acceptance. Four Green Goblin modular sets are
-also declared research recipes: A Mess of Things contains 02037, 02038, 02039
+also declared and admitted by the complete-product candidate policy: A Mess of Things contains 02037, 02038, 02039
 and two copies of 02040; Goblin Gimmicks contains two copies each of
-02033–02036; Power Drain contains one copy each of 02041–02045. The Green
-Goblin product remains outside runtime admission, so these recipes are excluded
-from public discovery even when all their faces have authored abilities.
+02033–02036; Power Drain contains one copy each of 02041–02045. Running Interference contains 02046, 02047, 02048 and two copies of 02049.
+All four sets require exact physical quantities and modular roles for admission.
 
-Risky Business declares Standard and Expert research recipes: eighteen scenario
+Risky Business declares Standard and Expert recipes: eighteen scenario
 encounter cards, the selected Norman I/II or II/III stage pair, two physical main
 schemes, and Criminal Enterprise/State of Madness set aside as one physical card.
 The normal recipe recommends one Goblin Gimmicks modular set (02033–02036, two
-copies each). Goblin Gimmicks has authored research abilities and composition data.
+copies each). Goblin Gimmicks has authored abilities and composition data.
 `RiskyBusinessSetupTests` exercises the production dealer and authored setup
 with one chosen Core modular set at one through four players in both modes.
-This nonpublic evidence does not admit Green Goblin or prove complete gameplay.
+Public factory tests additionally cover both scenarios and modes at one through
+four players, legal custom decks and modular replacement in Core, Rise of Red
+Skull and both Goblin scenarios. These setup checks do not prove whole-game,
+restart or native acceptance.
 
 The scenario rows are Rhino, Klaw and Ultron in Standard and Expert modes. The
 hero rows are Spider-Man, Captain Marvel, She-Hulk, Iron Man and Black Panther.
@@ -252,9 +254,11 @@ The runtime does not currently accept:
 A request that needs one of these surfaces fails at setup or card registration.
 It must not produce a partial board.
 
-Mutagen Formula declares Standard and Expert research recipes with 26 encounter
-cards, the selected I/II or II/III villain pair, and two physical double-sided
-main schemes. Goblin Gimmicks is the one-module recommendation. Actual authored
-setup and stage-II reveal run through the production dealer at 1–4 players in
-`MutagenFormulaSetupTests`. Fourteen encounter faces remain unauthored; Green
-Goblin remains excluded from public discovery and game creation.
+Mutagen Formula declares Standard and Expert recipes with 26 encounter cards,
+the selected I/II or II/III villain pair, and two physical double-sided main
+schemes. Goblin Gimmicks is the one-module recommendation. Authored setup and
+stage-II reveal run through the production dealer at one through four players
+in `MutagenFormulaSetupTests`. The complete Green Goblin candidate supplies all
+57 printed faces and admits both scenarios and all four modular sets through
+the public setup contract. Whole-game, restart and native acceptance remain
+separate from these admission and setup checks.

@@ -11,14 +11,17 @@ namespace Marvel.Server.Tests;
 
 public sealed class VariablePaymentTransportTests : TransportTestBase
 {
-    [Fact]
-    public async Task BothTransportsPreserveEveryTypedSlotAndWildDeclaration()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task BothTransportsPreserveEveryTypedSlotAndWildDeclaration(bool distinct)
     {
         // Synthetic contract fixture: X energy requires X energy declarations.
         var cost = new CostOption(0, "X",
             Sources: [new ResourceSource(1, "Y"), new ResourceSource(2, "B"), new ResourceSource(3, "G")],
             Variables: [new VariableRequest("X", 1, 2)],
-            Components: [new ResourceCost("X") { RepeatedResource = Resources.Energy }]);
+            Components: [new ResourceCost("X")
+            { RepeatedResource = distinct ? null : Resources.Energy, DistinctTypes = distinct }]);
         var prompt = new Prompt(0, Question.TurnOption, TimingPriority.Untimed,
             "Action", "Pay", false, [new Affordance(7, "Action", 4, 0, "Pay", Costs: [cost])]);
         var request = EngineRequest.SyncGame("variable", "table", "capability");
@@ -31,17 +34,24 @@ public sealed class VariablePaymentTransportTests : TransportTestBase
             new SocketEngineServer(endpoint, IPAddress.Loopback, 0), request);
 
         Assert.Equal(EngineJson.Write(local), EngineJson.Write(socket));
+        string wire = System.Text.Encoding.UTF8.GetString(EngineJson.Write(local));
+        Assert.Equal(distinct, wire.Contains("distinct_types", StringComparison.Ordinal));
         foreach (EngineResponse restored in new[] { local, socket })
         {
             var composer = new DecisionComposer(restored.Prompt!);
             composer.SelectAffordance(7);
             composer.Define("X", 2);
             composer.ToggleResource(1);
-            Assert.False(DecisionResourceEligibility.CanToggle(composer, 2));
+            Assert.Equal(distinct, DecisionResourceEligibility.CanToggle(composer, 2));
             Assert.False(composer.TryBuild(out _, out _));
             composer.ToggleResource(3);
             Assert.True(composer.TryBuild(out var answer, out var error), error);
-            Assert.All(answer!.Allocations!, allocation => Assert.Equal("Y", allocation.PaidAs));
+            Assert.Equal(distinct, Assert.Single(restored.Prompt!.Affordances[0].CostOptions)
+                .ResourceCosts[0].DistinctTypes);
+            if (distinct)
+                Assert.Equal(2, string.Concat(answer!.Allocations!.Select(part => part.PaidAs)).Distinct().Count());
+            else
+                Assert.All(answer!.Allocations!, allocation => Assert.Equal("Y", allocation.PaidAs));
             Assert.Equal(2, answer.Values!["X"]);
         }
     }

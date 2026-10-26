@@ -89,7 +89,8 @@ internal static class AbilityPlayerBindingAnalysis
 
     private static bool ContainsBasicCard(AbilityEffect effect) => effect switch
     {
-        AbilityEffect.CardAction action => Contains(action.Selection),
+        AbilityEffect.CardAction action => action.Instruction == AbilityCardInstruction.PlaceOnBottomOfDeck
+            || Contains(action.Selection),
         AbilityEffect.Heal heal => Contains(heal.Card) || Contains(heal.Amount),
         AbilityEffect.SetHitPoints assignment => Contains(assignment.Card),
         AbilityEffect.Damage damage => Contains(damage.Cards) || Contains(damage.Amount),
@@ -167,6 +168,7 @@ internal static class AbilityPlayerBindingAnalysis
         AbilityEffect.RecruitDiscarded => true,
         AbilityEffect.DiscardUntil discard => discard.Player == AbilityPlayer.You,
         AbilityEffect.AttachCards attach => Contains(attach.Cards) || Contains(attach.Host),
+        AbilityEffect.ChooseCardsToHand group => Contains(group.From),
         AbilityEffect.ReleaseBeneath => false,
         AbilityEffect.StoreBeneath store => Contains(store.Cards) || Contains(store.Host),
         AbilityEffect.InitializeAuxiliaryDeck initialize => Contains(initialize.Cards),

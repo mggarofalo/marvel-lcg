@@ -20,7 +20,7 @@ internal sealed class EncounterGroupTableRenderer(
             .SelectMany(SpatialTableZones.Current).ToArray();
         foreach (var card in main) AddFace(card, new Rect2(22, 38, left - 40, 132), 8, cards);
         HashSet<int?> paired = [.. groups.Select(group => group.Scheme)];
-        var extra = areas.Where(area => area.Zone == "SideSchemesArea")
+        var extra = areas.Where(SpatialTableZones.IsEncounterSupport)
             .SelectMany(SpatialTableZones.Current).Where(card => !paired.Contains(card.TargetId)).ToArray();
         if (extra.Length > 0)
             cards.AddRange(SchemeStackCollection.Render(surface, new Rect2(22, 184, left - 40, 160), extra, result, faces));

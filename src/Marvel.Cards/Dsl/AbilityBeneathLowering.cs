@@ -7,6 +7,13 @@ namespace Marvel.Cards.Dsl;
 
 internal static class AbilityBeneathLowering
 {
+    internal static AbilityEffect.ChooseCardsToHand ChooseToHand(AbilityValue value, AbilityLocation location)
+    {
+        var fields = Fields(value, location, "from", "maximum");
+        return new(Selected(fields, "from", location),
+            PositiveCount(Required(fields, "maximum", location), location.Child("maximum")));
+    }
+
     internal static AbilityEffect.ReleaseBeneath Release(AbilityValue value, AbilityLocation location)
     {
         var fields = Fields(value, location, "removeHost", "rescue");

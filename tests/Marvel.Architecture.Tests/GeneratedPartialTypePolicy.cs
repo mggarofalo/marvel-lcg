@@ -33,6 +33,8 @@ internal static class GeneratedPartialTypePolicy
             // Global transform notifications track actual themed table placement.
             "src/Marvel.Godot/TableCanvasSurface.cs" => (Namespace: "Marvel.Godot", Type: "TableCanvasSurface"),
             "src/Marvel.Godot/smoke/ResourceFinalizerProbe.cs" => (Namespace: "Marvel.Godot", Type: "ResourceFinalizerProbe"),
+            // The native receipt probe is a Godot Node invoked through generated GDScript bindings.
+            "src/Marvel.Godot/smoke/EncounterStackReceiptProbe.cs" => (Namespace: "Marvel.Godot", Type: "EncounterStackReceiptProbe"),
             "src/Marvel.Godot/smoke/CardFaceReuseNativeProbe.cs" => (Namespace: "Marvel.Godot", Type: "CardFaceReuseNativeProbe"),
             "src/Marvel.Godot/smoke/CampaignTrackerNativeProbe.cs" => (Namespace: "Marvel.Godot", Type: "CampaignTrackerNativeProbe"),
             "src/Marvel.Godot/smoke/GroupedDecisionNativeProbe.cs" => (Namespace: "Marvel.Godot", Type: "GroupedDecisionNativeProbe"),

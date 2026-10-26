@@ -95,10 +95,12 @@ internal static class AbilityResolutionActions
             world, card, cast.Player, found.Cost, execution.program, execution.resourceAbilities,
             AbilityPaymentSelection.Capture(paying, recipientChoice is null ? chosen : [], values,
                 resourcesPaidByEvent: EffectiveCards.Kind(card, world.Facts) == CardKind.Event
-                    && (ResourceRequirement(found.Cost, card).Length + GenericResourceAmount(found.Cost)) > 0));
+                    && (ResourceRequirement(found.Cost, card).Length + GenericResourceAmount(found.Cost)) > 0, allocations: allocations));
         var eventPayment = AbilityEventPayment.Prepare(
             world, card, cast.Player, paying, found, execution.resourceAbilities, allocations);
         cast.TrackResolution(ability.Ordinal);
+        if (eventPayment is not null)
+            AbilityPaymentReceiptAdmission.Validate(found, execution.AdmissionContext(cast), eventPayment.PreviewPaid);
         cast.PendingPayment = new AbilityInitiationPayment(eventPayment, arrowPayment);
         cast.PendingPayment.Commit(execution, cast);
         if (cast.Suspended)

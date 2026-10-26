@@ -159,6 +159,7 @@ internal static class AbilityEffectTargetAdmission
             "preventAttackDamage" => cast.World.Attack is { PreventAllDamage: false }
             ? TargetLegality.Valid : TargetLegality.Invalid,
             "attachCards" => AbilityAttachmentExecution.Target((AbilityEffect.AttachCards)node, cast),
+            "chooseCardsToHand" => AbilityGroupRetrieval.Target((AbilityEffect.ChooseCardsToHand)node, cast.Context),
             "releaseBeneath" => AbilityBeneathAdmission.Target((AbilityEffect.ReleaseBeneath)node, cast),
             "storeBeneath" => AbilityBeneathAdmission.Target((AbilityEffect.StoreBeneath)node, cast),
             "putIntoPlay" => AbilityAllyEntry.HasTarget(EffectOf<AbilityEffect.PutIntoPlay>(node, cast), cast)

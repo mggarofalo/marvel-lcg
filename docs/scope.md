@@ -23,6 +23,14 @@ The runtime supports:
 pack requires its exact 35-face inventory and published starter; Wrecking Crew
 requires its exact 60-face inventory and all nineteen setup recipes. Removing any
 required authored face or recipe closes that entire pack.
+
+The integrated Green Goblin candidate also has public admission for its exact
+57-face inventory, Risky Business and Mutagen Formula in Standard and Expert,
+and all four modular sets. Admission pins stage and scheme order, fixed sets,
+set-aside cards and physical encounter quantities. A missing or changed required
+face or recipe closes the whole product. Ms. Marvel remains excluded. This
+admission/setup increment does not establish whole-game, restart or native
+acceptance; those results belong to the integrated pack delivery evidence.
 `datasets/setup/setup.json` supplies the recipes the runtime can start.
 `datasets/abilities/abilities.json` defines which printed faces have executable
 card text. Both datasets fail closed outside that boundary.

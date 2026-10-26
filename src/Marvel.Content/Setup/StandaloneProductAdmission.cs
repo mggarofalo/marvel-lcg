@@ -20,6 +20,14 @@ public static class StandaloneProductAdmission
         && WreckingRecipes().All(key => setup.CampaignNames.Contains(key)
             && StandaloneProductRecipes.WreckingCrew(key, setup.Campaign(key)));
 
+    /// <summary>Admits both Green Goblin scenarios and all four modular sets together.</summary>
+    public static bool GreenGoblin(SetupCatalog setup, CardCatalog cards, IReadOnlySet<string> authored) =>
+        Complete("gob", [.. Enumerable.Range(1, 6).SelectMany(number => new[] { $"02{number:000}a", $"02{number:000}b" }),
+            .. Enumerable.Range(7, 10).Select(number => $"02{number:000}"),
+            "02017a", "02017b", "02018a", "02018b",
+            .. Enumerable.Range(19, 31).Select(number => $"02{number:000}")], cards, authored)
+        && GreenGoblinRecipes.Complete(setup);
+
     private static IEnumerable<string> WreckingRecipes() =>
         FixedWreckingRecipes
         .Concat(Enumerable.Range(0, 16).Select(value => "wrecking_crew_custom_"

@@ -15,13 +15,16 @@ internal static class SpatialTableZones
     internal static bool IsResolving(BoardAreaPresentation area) =>
         area.Zone is "RevealingArea" or "BoostingArea";
 
+    internal static bool IsEncounterSupport(BoardAreaPresentation area) =>
+        area.Zone is "SideSchemesArea" or "EnvironmentArea";
+
     internal static BoardAreaPresentation[] Resolving(IReadOnlyList<BoardAreaPresentation> areas) =>
         [.. areas.Where(IsResolving).OrderBy(area => area.Zone == "BoostingArea" ? 0 : 1)];
 
     internal static readonly HashSet<string> Known = new(StringComparer.Ordinal)
     {
         "EncounterDiscardPile", "EncounterDeck", "MainSchemesArea", "VillainArea",
-        "SideSchemesArea", "RevealingArea", "BoostingArea", "DiscardPile", "PlayerDeck",
+        "SideSchemesArea", "EnvironmentArea", "RevealingArea", "BoostingArea", "DiscardPile", "PlayerDeck",
         "EngagedEnemiesArea", "HeroArea", "AlliesArea", "SupportsArea", "UpgradesArea",
         "DealtEncounterCardsDeck",
     };

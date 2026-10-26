@@ -13,7 +13,7 @@ internal sealed class AbilityChoiceAnswer(
 {
     private static readonly ImmutableArray<string> SpecialOperations =
     [
-        "resolveSpecials", "chooseTopForHand", "chooseDiscardToShuffle", "discardHandCards", "discardResourceIcons",
+        "chooseCardsToHand", "resolveSpecials", "chooseTopForHand", "chooseDiscardToShuffle", "discardHandCards", "discardResourceIcons",
         "peekTop", "inspectEncounterTop",
     ];
 
@@ -57,6 +57,7 @@ internal sealed class AbilityChoiceAnswer(
     private List<Marvel.Rules.Events.GameEvent> ApplySpecial(AbilityEffect choice) =>
         choice.OperationName() switch
         {
+            "chooseCardsToHand" => ApplyGroupRetrieval((AbilityEffect.ChooseCardsToHand)choice),
             "peekTop" => AbilityDeckPeek.Answer(execution, choice, cast, input) ? Continue() : cast.Events,
             "inspectEncounterTop" => ApplyInspection((AbilityEffect.InspectEncounterTop)choice),
             "resolveSpecials" => ApplyResolveSpecials(choice),
@@ -66,6 +67,16 @@ internal sealed class AbilityChoiceAnswer(
             _ => throw new InvalidOperationException("Unknown special choice"),
         };
 
+    private List<Marvel.Rules.Events.GameEvent> ApplyGroupRetrieval(AbilityEffect.ChooseCardsToHand choice)
+    {
+        var answer = AbilityGroupRetrieval.Answer(execution.StructuralContext(cast), choice, input);
+        ThrowIfUnsupported(answer);
+        var targets = ((RetrieveCardsCommand)answer).Targets;
+        AbilityGroupRetrieval.Commit(cast, targets);
+        if (targets.Length > 0) cast.ResolveEffect();
+        return Continue();
+    }
+
     private List<Marvel.Rules.Events.GameEvent> ApplyInspection(AbilityEffect.InspectEncounterTop inspection)
     {
         AbilityEncounterInspection.Answer(cast, inspection);
@@ -74,7 +85,7 @@ internal sealed class AbilityChoiceAnswer(
 
     private List<Marvel.Rules.Events.GameEvent> ApplyResolveSpecials(AbilityEffect choice)
     {
-        var answer = AbilityStructuralExecution.AnswerSpecialChoice(
+        var answer = AbilitySpecialChoiceDispatch.AnswerSpecialChoice(
             execution.StructuralContext(cast), choice, input);
         ThrowIfUnsupported(answer);
         execution.ApplyStructuralDecision(answer, cast);
@@ -119,7 +130,7 @@ internal sealed class AbilityChoiceAnswer(
 
     private List<Marvel.Rules.Events.GameEvent> ApplyChooseTopForHand(AbilityEffect choice)
     {
-        var answer = AbilityStructuralExecution.AnswerSpecialChoice(
+        var answer = AbilitySpecialChoiceDispatch.AnswerSpecialChoice(
             execution.StructuralContext(cast), choice, input);
         ThrowIfUnsupported(answer);
         var command = answer as ChooseTopForHandCommand
@@ -135,7 +146,7 @@ internal sealed class AbilityChoiceAnswer(
     private List<Marvel.Rules.Events.GameEvent> ApplyChooseDiscardToShuffle(
         AbilityEffect choice)
     {
-        var answer = AbilityStructuralExecution.AnswerSpecialChoice(
+        var answer = AbilitySpecialChoiceDispatch.AnswerSpecialChoice(
             execution.StructuralContext(cast), choice, input);
         ThrowIfUnsupported(answer);
         var command = answer as ShuffleDiscardCommand
@@ -150,7 +161,7 @@ internal sealed class AbilityChoiceAnswer(
 
     private List<Marvel.Rules.Events.GameEvent> ApplySelectedHandDiscard(AbilityEffect choice)
     {
-        var answer = AbilityStructuralExecution.AnswerSpecialChoice(execution.StructuralContext(cast), choice, input);
+        var answer = AbilitySpecialChoiceDispatch.AnswerSpecialChoice(execution.StructuralContext(cast), choice, input);
         ThrowIfUnsupported(answer);
         AbilitySelectedHandDiscard.Commit(cast, ((DiscardSelectedHandCardsCommand)answer).Targets);
         cast.ResolveEffect();

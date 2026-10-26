@@ -1100,3 +1100,45 @@ including canceled event plays. Controller, hero form and printed trait conditio
 remain explicit authored trigger requirements. This mechanism alone does not admit
 Embiggen!, Shrink, or Ms. Marvel's pack; printed removal caps and characteristic
 nested/cancellation/prevention proofs remain separate delivery work.
+
+### Ordered deck-bottom placement
+
+`{"placeOnBottomOfDeck":"chosen"}` moves one selected card to the resolving
+player's deck at its bottom, preserving the other cards' order without shuffling.
+The selection uses the same typed selectors as other card instructions. A
+`chooseCard` over `cardsIn: { area: "yourDiscardPile" }` supplies an exact discard
+selection. The committed movement supplies completion evidence for `then`; an
+absent or blocked card does not complete the instruction. Normal draw and deck
+reset rules apply to a following draw.
+
+### Distinct resource arrow costs
+
+Arrow costs also support `spendDistinct: N` for one through four resources whose
+paid declarations must all have different types. This is an engine spelling for
+the printed constraint, not a list of alternative fixed-type actions. Each wild
+icon declares its own type (`rr:wild-resource.1`, `.1.1`). Pricing retains the
+constraint in `ResourceCost.DistinctTypes`; preparation snapshots the selected
+allocation, validates it before any cost, and retains it while resource generators
+suspend. Event printed costs combined with this arrow cost remain unsupported.
+
+Ordinary single arrow prices keep an implicit resource component. Their durable
+prompt has `Components: null`, with typed requirements such as `["Y"]` or the
+generic requirement `[""]`. Combined event and simultaneous ordinary prices retain
+that generic requirement on the corresponding explicit component. These are
+engine choices preserving exact replay-v24 prompt identity; distinct-resource
+prices carry an explicit component to retain their additional constraint.
+Combined event pricing has exactly two components: its printed price and one
+aggregate arrow price. A sequence of ordinary arrow resource costs contributes
+its summed amount and concatenated typed requirements to that aggregate, matching
+the committed event payment ledger and its paid-resource receipt.
+
+`chooseCardsToHand` takes a `from` card selector and positive `maximum`. It offers
+one physical-card group with zero through that maximum distinct ids; the entire
+answer is validated before any card moves. Only out-of-play player-owned cards outside the resolving hand
+are candidates. The selected cards enter the resolving player's hand faceup,
+preserving physical ownership. `from: {"query":"beneathThis"}` selects only the
+source host's stored cards. The selector follows the captured source incarnation; it cannot retrieve from a
+reentered new copy. An ongoing ability may finish after its source leaves play. Costs precede the
+choice; accepting an empty group does not undo costs. This operation suspends and
+resumes the ordinary ability continuation once. Its spelling and movement order
+(the submitted physical-id order) are engine choices.

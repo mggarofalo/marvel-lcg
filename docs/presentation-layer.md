@@ -336,7 +336,7 @@ visibility configuration, durable sessions and shutdown behavior.
 The socket protocol uses source-generated JSON inside a 4-byte big-endian length
 frame. Frames are bounded. Unknown operations, unsupported protocol versions and
 unknown JSON members fail before they reach the engine. Both endpoints must use
-protocol 37. Setup and decisions replay under engine-replay-v24, with session
+protocol 38. Setup and decisions replay under engine-replay-v24, with session
 schema 7 retaining the exact ordered decks. Requests carry engine-authored
 commitments and explicit payment allocations; authorized responses include
 readable choices, active attack participants, attack completion events and
@@ -507,3 +507,11 @@ contract is defined in [release-policy.md](release-policy.md). The RNG,
 card-state digest and save envelope retain their existing formats. Supporting
 travel, reveal and installation receipts may share one presentation beat; every
 raw event remains available in diagnostics.
+
+Protocol 38 adds an engine-authored `distinct_types` requirement to resource-cost
+components. A true value requires different declared resource types within that
+component. Wild icons may each declare any of the four types. The field is omitted
+when false, preserving the spelling of ordinary costs. Protocol 37 peers are rejected
+by the existing strict version boundary before gameplay; additive data is not assumed
+safe for a peer that disallows unknown members. The engine owns allocation and
+assessment. This contract does not admit Red Dagger or another expansion ability.

@@ -148,8 +148,8 @@ public static class Offering
         World world, IWindowAbilities abilities, Occurrence occurrence,
         WindowKind kind, List<GameEvent> events, PendingAbility ability)
     {
-        occurrence.Trigger(kind, ability);
-        ActivityBatches.Append(events, abilities.ResolveWindow(world, occurrence, ability, new Decision(ability.Card, [], [])).Events);
+        ActivityBatches.Append(events, abilities.ResolveWindow(world, occurrence, ability,
+            new Decision(ability.Card, [], []), () => occurrence.Trigger(kind, ability)).Events);
     }
 
     /// <summary>

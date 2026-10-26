@@ -34,6 +34,7 @@ internal static class AbilityCostLowering
             "consumeCampaignCard" => new AbilityCost.ConsumeCampaignCard(CostCard(argument, child)),
             "removeCounters" => RemoveCounterCost(argument, child),
             "spend" => new AbilityCost.Spend(ResourceString(argument, child), PrintedOnly: false),
+            "spendDistinct" => DistinctCost(argument, child),
             "spendAny" => new AbilityCost.Spend("", PrintedOnly: false) { Generic = PositiveCount(argument, child) },
             "spendPrinted" => new AbilityCost.Spend(ResourceString(argument, child), PrintedOnly: true),
             "spendEnergyX" => EnergyCost(argument, child),
@@ -47,6 +48,14 @@ internal static class AbilityCostLowering
             "takeDamage" => DamageCost(argument, child, mustTakeAll: true),
             _ => throw child.Error($"'{node.Kind}' is not a cost operation"),
         };
+    }
+
+    private static AbilityCost.Spend DistinctCost(AbilityValue value, AbilityLocation location)
+    {
+        int amount = PositiveCount(value, location);
+        if (amount > Resources.Types.Length)
+            throw location.Error("distinct resource count exceeds the resource types");
+        return new("", PrintedOnly: false) { Generic = amount, DistinctTypes = true };
     }
 
     private static string NamedCostTitle(AbilityValue value, AbilityLocation location)

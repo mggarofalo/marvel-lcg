@@ -98,7 +98,7 @@ public sealed class ActionAbilityPowerTraceDirectDiscardPreflightsPermanentHoste
             advanced = board.CreateCard("01143", board.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
             board.Seats[0].IdentityCard.TakeDamage(9);
         }, hero: true, heroes: ["spider_man", "captain_marvel"], abilities: runner));
-        Assert.Contains("defeat-triggered ability", refused.Message);
+        Assert.Contains("continuation reads the board after an unprojected defeat window", refused.Message);
         Assert.True(source!.Ready);
         Assert.Equal(0, advanced!.Damage);
         Assert.Equal(9, world!.Seats[0].IdentityCard.Damage);
@@ -187,7 +187,7 @@ public sealed class ActionAbilityPowerTraceDirectDiscardPreflightsPermanentHoste
             tracer = board.CreateCard("01007", board.AreaOf(DeckType.UpgradesArea, minion.Area.PlayArea, minion.ObjectId, 0));
             board.TheCardIn(DeckType.MainSchemesArea)!.PlaceTokens("k_threat", 1);
         }, hero: true, abilities: runner));
-        Assert.Contains("defeat-triggered ability", refused.Message);
+        Assert.Contains("unprojected defeat window", refused.Message);
         Assert.True(source!.Ready);
         Assert.Equal(0, minion!.Damage);
         Assert.Equal(minion.ObjectId, tracer!.Area.Host);

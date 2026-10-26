@@ -14,7 +14,8 @@ public sealed class StandaloneProductDiscoveryTests
         string[] heroes = ["black_panther", "captain_america", "captain_marvel", "hawkeye", "iron_man", "she_hulk", "spider_man", "spider_woman"];
         Assert.Equal(heroes,
             discovery.Heroes.Select(hero => hero.Key).Order(StringComparer.Ordinal));
-        string[] scenarios = ["rhino", "klaw", "ultron", "crossbones", "absorbing_man", "taskmaster", "zola", "red_skull"];
+        string[] scenarios = ["rhino", "klaw", "ultron", "crossbones", "absorbing_man", "taskmaster", "zola", "red_skull",
+            "risky_business", "mutagen_formula"];
         string[] wrecking = ["wrecking_crew_standard", "wrecking_crew_expert", "wrecking_crew_extreme",
             .. Enumerable.Range(0, 16).Select(value => "wrecking_crew_custom_" + Convert.ToString(value, 2).PadLeft(4, '0').Replace('0', 'a').Replace('1', 'b'))];
         Assert.Equal(scenarios.SelectMany(key => new[] { key, key + "_expert" }).Concat(wrecking).Order(StringComparer.Ordinal),
@@ -24,6 +25,8 @@ public sealed class StandaloneProductDiscoveryTests
         Assert.Contains(factory.DiscoverDecks().Cards, card => card.Face == "03024");
         foreach (string scenario in wrecking)
             Assert.NotNull(factory.Create(new GameSpecification(scenario, ["captain_america"], [], 7)));
+        foreach (string scenario in new[] { "risky_business", "risky_business_expert", "mutagen_formula", "mutagen_formula_expert" })
+            Assert.NotNull(factory.Create(new GameSpecification(scenario, ["captain_america"], null, 7)));
         Assert.NotNull(factory.Create(new GameSpecification("rhino", ["captain_america"], [], 7)));
         Assert.NotNull(factory.Create(new GameSpecification("crossbones", ["hawkeye"], [], 7)));
     }

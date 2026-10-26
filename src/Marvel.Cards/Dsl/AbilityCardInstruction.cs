@@ -22,6 +22,8 @@ public enum AbilityCardInstruction
     ReturnOwnedToDiscard,
     /// <summary>Add the selected card to the resolver's hand.</summary>
     AddToHand,
+    /// <summary>Place one selected card on the bottom of the resolving player's deck.</summary>
+    PlaceOnBottomOfDeck,
     /// <summary>Reveal the selected encounter card.</summary>
     Reveal,
     /// <summary>Attach the source to the selected host.</summary>

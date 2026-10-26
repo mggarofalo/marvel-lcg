@@ -41,6 +41,12 @@ public sealed partial class NativeGameWitness : RefCounted
     /// <summary>Reports operational progress without exposing a capability.</summary>
     public string ProgressKind() => table?.lifecycle.Progress?.Kind.ToString() ?? string.Empty;
 
+    /// <summary>Reports authorized candidates from the displayed engine prompt.</summary>
+    public int[] CandidateIds() => table?.CurrentGame?.Prompt?.Affordances.SingleOrDefault()?.Targets?.Legal.ToArray() ?? [];
+
+    /// <summary>Reports the current draft's selected physical targets.</summary>
+    public int[] SelectedTargets() => table?.decisions.composer?.Targets.ToArray() ?? [];
+
     /// <summary>Captures selected identities, ordered targets, costs and allocations for continuity assertions.</summary>
     public string Draft()
     {

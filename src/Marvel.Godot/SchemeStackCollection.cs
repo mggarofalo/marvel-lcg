@@ -3,7 +3,7 @@ using Marvel.View;
 
 namespace Marvel.Godot;
 
-/// <summary>Overlapping landscape schemes expose a full-width inspectable header for every copy.</summary>
+/// <summary>Encounter schemes and environments expose a full-width inspectable header for every copy.</summary>
 internal static class SchemeStackCollection
 {
     internal static IReadOnlyList<CardControl> Render(Control surface, Rect2 bounds,
@@ -13,7 +13,10 @@ internal static class SchemeStackCollection
             Size = bounds.Size, CustomMinimumSize = bounds.Size, MouseFilter = Control.MouseFilterEnum.Ignore };
         panel.AddThemeConstantOverride("separation", 3);
         surface.AddChild(panel);
-        panel.AddChild(new Label { Text = $"SIDE SCHEMES · {cards.Length}", ThemeTypeVariation = GodotThemeVariations.Caption,
+        string caption = cards.Any(card => card.Kind == "ENVIRONMENT")
+            ? cards.Any(card => card.Kind != "ENVIRONMENT") ? "SIDE SCHEMES & ENVIRONMENTS" : "ENVIRONMENTS"
+            : "SIDE SCHEMES";
+        panel.AddChild(new Label { Text = $"{caption} · {cards.Length}", ThemeTypeVariation = GodotThemeVariations.Caption,
             MouseFilter = Control.MouseFilterEnum.Ignore });
         var scroll = new ScrollContainer { Name = "ContinuousSideSchemesArea", FollowFocus = true,
             SizeFlagsVertical = Control.SizeFlags.ExpandFill, HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled,
@@ -30,38 +33,15 @@ internal static class SchemeStackCollection
             BoardCardPresentation card = cards[index];
             CardLayoutMetrics layout = CardControl.LayoutFor(card, CardDisplaySize.Board, faces.Scale);
             float factor = Math.Min(1, (bounds.Size.X - 18) / layout.Width);
+            if (card.Kind == "ENVIRONMENT")
+                factor = Math.Min(factor, (bounds.Size.Y - 26) / layout.MinimumHeight);
             CardControl control = faces.CreateFitted(card, factor);
             control.Name = $"ProceduralCard{card.TargetId}";
             control.Position = new Vector2(0, index * 64);
             control.ZIndex = index;
             stack.AddChild(control);
-            var header = new PanelContainer { Name = "SchemeStackHeader", Position = Vector2.Zero,
-                Size = new Vector2(control.CustomMinimumSize.X, 60),
-                MouseFilter = Control.MouseFilterEnum.Ignore };
-            using var ink = new StyleBoxFlat { BgColor = CardFaceStyle.Ink,
-                ContentMarginLeft = 7, ContentMarginRight = 7, ContentMarginTop = 3, ContentMarginBottom = 3 };
-            header.AddThemeStyleboxOverride("panel", ink);
-            var copy = new VBoxContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
-            copy.AddThemeConstantOverride("separation", 0);
-            header.AddChild(copy);
-            Label title = CardSourceStrip.Label(card.Title, "StackTitle", 14, CardTypography.Title);
-            title.AddThemeColorOverride("font_color", CardFaceStyle.Paper);
-            copy.AddChild(title);
-            if (CardProgressValue.From(card) is { IsThreat: true } threat)
-            {
-                Label value = CardSourceStrip.Label($"Threat {threat.Value}", "StackThreat", 11, CardTypography.Body);
-                value.AddThemeColorOverride("font_color", CardFaceStyle.Paper);
-                copy.AddChild(value);
-            }
-            string statuses = string.Join(" · ", CardStatusEntries.From(card).Select(entry => entry.Text));
-            if (statuses.Length > 0)
-            {
-                Label badges = CardSourceStrip.Label(statuses, "StackStatuses", 11, CardTypography.Body);
-                badges.AddThemeColorOverride("font_color", CardFaceStyle.Paper);
-                badges.AutowrapMode = TextServer.AutowrapMode.Word;
-                copy.AddChild(badges);
-            }
-            var overlay = new Control { MouseFilter = Control.MouseFilterEnum.Ignore };
+            PanelContainer header = EncounterStackHeader.Create(card, control.CustomMinimumSize.X);
+            var overlay = new Control { Name = "EncounterStackOverlay", MouseFilter = Control.MouseFilterEnum.Ignore };
             control.AddChild(overlay);
             overlay.AddChild(header);
             if (card.TargetId is { } id) result.Register(id, control);

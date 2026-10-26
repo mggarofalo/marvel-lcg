@@ -145,7 +145,9 @@ internal sealed class SpatialTableObjectRenderer
         CardDisplaySize size,
         bool includeHosted = false)
     {
-        BoardAreaPresentation[] matching = [.. areas.Where(area => area.Zone == zone && (includeHosted || area.Host < 0))];
+        BoardAreaPresentation[] matching = [.. areas.Where(area =>
+            (zone == "SideSchemesArea" ? SpatialTableZones.IsEncounterSupport(area) : area.Zone == zone)
+            && (includeHosted || area.Host < 0))];
         RenderCardRegion(matching, zone, region, size);
     }
 

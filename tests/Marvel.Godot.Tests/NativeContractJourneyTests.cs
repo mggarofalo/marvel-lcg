@@ -25,7 +25,7 @@ public sealed class NativeContractJourneyTests
             UseShellExecute = false, CreateNoWindow = true,
             RedirectStandardOutput = true, RedirectStandardError = true,
         };
-        foreach (string argument in new[] { "--headless", "--audio-driver", "Dummy", "--path",
+        foreach (string argument in new[] { Environment.GetEnvironmentVariable("MARVEL_NATIVE_RENDERED") == "true" ? "--minimized" : "--headless", "--audio-driver", "Dummy", "--path",
             Path.Combine(RepositoryPaths.Root, "src", "Marvel.Godot"), "--script", "res://smoke/native_contract_smoke.gd" })
             start.ArgumentList.Add(argument);
         start.Environment["MARVEL_ENGINE_ENDPOINT"] = server.Endpoint;
@@ -66,7 +66,7 @@ public sealed class NativeContractJourneyTests
         int expected = contract switch
         {
             "dense-table" => 0,
-            "end-phase" or "card-look" => 2,
+            "end-phase" or "card-look" or "bruno-0" or "bruno-1" or "bruno-3" => 2,
             "wakanda-daggers-first" or "wakanda-claws-first" => 4,
             _ => 1,
         };
@@ -78,6 +78,7 @@ public sealed class NativeContractJourneyTests
         if (contract == "variable-payment") VerifyVariable(server, mutations);
         if (contract == "repeated-targets") VerifyRepeated(server, mutations);
         VerifyCardChoices(contract, server, mutations);
+        if (contract.StartsWith("bruno-", StringComparison.Ordinal)) BrunoNativeAssertions.Verify(contract, server, mutations);
     }
 
     private static void VerifyCardChoices(string contract, NativeContractServer server, EngineRequest[] mutations)

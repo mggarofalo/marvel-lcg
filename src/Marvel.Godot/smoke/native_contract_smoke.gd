@@ -3,6 +3,7 @@ extends "res://smoke/search_choice_smoke.gd"
 var contract := OS.get_environment("MARVEL_NATIVE_CONTRACT")
 var witness = preload("res://smoke/NativeGameWitness.cs").new()
 var stale_commit: Callable
+var ui: RefCounted
 
 func _entry_modes_are_explicit() -> bool:
     var endpoint := _node("Setup/Selections/Fields/ConnectionGrid/Endpoint") as LineEdit
@@ -23,12 +24,14 @@ func _run() -> void:
         _select_named_option(_node("Setup/Selections/Fields/Grid/Hero"), "Iron Man")
     if not await _pointer_activate(_button_named("Start game")): return
     witness.Bind(main)
+    ui = preload("res://smoke/automation/ui_driver.gd").new(main, render_viewport, _fail)
     if not await _wait_for(_scene_ready):
         _fail("prepared scene did not become actionable: " + _visible_text(main))
         return
     print("NATIVE_CONTRACT_STAGE ready " + contract)
     var passed := false
     match contract:
+        "bruno-0", "bruno-1", "bruno-3": passed = await preload("res://smoke/native_bruno_contract.gd").run(self)
         "victory": passed = await _victory_contract()
         "lost-reply", "not-sent": passed = await _recovery_contract()
         "end-phase": passed = await _end_phase_contract()

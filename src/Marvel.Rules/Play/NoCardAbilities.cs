@@ -213,6 +213,11 @@ public class NoCardAbilities : ICardAbilities
         World world, Occurrence occurrence, WindowKind window) => [];
 
     /// <inheritdoc/>
+    public virtual Func<AbilityExecution, AbilityExecutionResult> PrepareWindow(
+        World world, Occurrence occurrence, PendingAbility ability, Decision answer) =>
+        invocation => Resolve(world, invocation, answer);
+
+    /// <inheritdoc/>
     public virtual AbilityExecutionResult Resolve(
         World world, AbilityExecution invocation, Decision answer) =>
         throw new RulesNotImplementedException(

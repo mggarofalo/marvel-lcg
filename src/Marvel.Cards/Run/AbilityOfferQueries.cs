@@ -75,7 +75,7 @@ internal sealed class AbilityOfferQueries
             return new AbilityAdmissionResult(true, []);
         }
 
-        return AbilityDiscardReceiptAdmission.Admit(ability, context, costSelection);
+        return AbilityPaymentReceiptAdmission.Admit(ability, context, costSelection);
     }
 
     internal IReadOnlyList<ResourceSource> ResourceAbilities(World world, int player)

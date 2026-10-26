@@ -55,17 +55,7 @@ internal static class AbilityPaymentRules
             // an approximation: `rr:cost.4` permits generating beyond the cost,
             // so if everything together cannot pay then no choice among them
             // can, and if it can then spending it all is a payment.
-            AbilityCost.Spend { PrintedOnly: false } spend => Resources.Pays(
-                string.Concat(CardPayment.Generators(
-                        world, world.Facts, world.Seats[player], resourceAbilities, abilitySource: card)
-                    .SelectMany(source => source.Generates)),
-                spend.Amount,
-                spend.Resources),
-            AbilityCost.Spend { PrintedOnly: true } spend => Resources.PaysPrinted(
-                string.Concat(AbilityPaymentPricing.PrintedGenerators(world, player, resourceAbilities, card)
-                    .SelectMany(source => source.Generates)),
-                spend.Amount,
-                spend.Resources),
+            AbilityCost.Spend spend => ResourcePayable(world, card, player, spend, resourceAbilities),
             AbilityCost.SpendEnergy => Resources.Pays(
                 string.Concat(CardPayment.Generators(
                         world, world.Facts, world.Seats[player], resourceAbilities, abilitySource: card)
@@ -144,24 +134,21 @@ internal static class AbilityPaymentRules
                     + "resource costs, whose allocation is not implemented");
             }
 
-            string required = string.Concat(spends.Select(step => step.Resources));
-            string pool = string.Concat((printed
-                    ? AbilityPaymentPricing.PrintedGenerators(world, player, resourceAbilities, card)
-                    : CardPayment.Generators(
-                        world, world.Facts, world.Seats[player], resourceAbilities, abilitySource: card))
-                .SelectMany(source => source.Generates));
-            bool pays = printed
-                ? Resources.PaysPrinted(pool, spends.Sum(step => step.Amount), required)
-                : Resources.Pays(pool, spends.Sum(step => step.Amount), required);
-            if (!pays)
-            {
+            var price = AbilityPaymentPricing.Price(world, card, player, cost, resourceAbilities)!;
+            if (ResourcePayment.Allocate(price, price.Generators.Select(source => source.Effect).ToArray()) is null)
                 return false;
-            }
         }
 
         return steps.Where(step => step is not (AbilityCost.Spend or AbilityCost.RemoveCounters))
             .All(step => Payable(
                 world, card, player, step, program, resourceAbilities));
+    }
+
+    private static bool ResourcePayable(World world, Card card, int player,
+        AbilityCost.Spend spend, IResourceCardAbilities resourceAbilities)
+    {
+        var price = AbilityPaymentPricing.Price(world, card, player, spend, resourceAbilities)!;
+        return ResourcePayment.Allocate(price, price.Generators.Select(source => source.Effect).ToArray()) is not null;
     }
 
     private static bool PhysicalCostsPayable(World world, Card card, int player, AbilityCost.Sequence cost) =>
@@ -273,6 +260,8 @@ internal static class AbilityPaymentRules
     internal static string ResourceRequirement(AbilityCost? cost, Card card) => cost switch
     {
         null => string.Empty,
+        AbilityCost.Spend { DistinctTypes: true } => throw new RulesNotImplementedException(
+            "event printed costs combined with a distinct-type arrow cost are not implemented"),
         AbilityCost.Spend { PrintedOnly: false } spend => spend.Resources,
         AbilityCost.Spend { PrintedOnly: true } => throw new RulesNotImplementedException(
             $"event '{card.FaceId}' combines its printed card cost with a printed-resource "
@@ -280,6 +269,8 @@ internal static class AbilityPaymentRules
         AbilityCost.Sequence sequence => string.Concat(sequence.Costs
             .Select(step => step switch
             {
+                AbilityCost.Spend { DistinctTypes: true } => throw new RulesNotImplementedException(
+                    "event printed costs combined with a distinct-type arrow cost are not implemented"),
                 AbilityCost.Spend { PrintedOnly: false } spend => spend.Resources,
                 AbilityCost.Spend { PrintedOnly: true } => throw new RulesNotImplementedException(
                     $"event '{card.FaceId}' combines its printed card cost with a "

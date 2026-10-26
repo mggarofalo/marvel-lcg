@@ -64,8 +64,16 @@ internal static class AbilityPaymentPricing
             Cost: spend.Amount.ToString(System.Globalization.CultureInfo.InvariantCulture),
             Rule: [letters],
             Sources: CardPayment.Generators(
-                world, world.Facts, world.Seats[player], resourceAbilities, abilitySource: card));
+                world, world.Facts, world.Seats[player], resourceAbilities, abilitySource: card),
+            // Engine choice: ordinary single costs use the implicit component
+            // so their durable replay-v24 prompt shape remains stable.
+            Components: spend.DistinctTypes ? [Component(spend)] : null);
     }
+
+    internal static ResourceCost Component(AbilityCost.Spend spend) =>
+        new(spend.Amount.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            spend.Resources.Length > 0 ? [spend.Resources] : null, spend.PrintedOnly)
+        { DistinctTypes = spend.DistinctTypes };
 
     private static CostOption? SequencePrice(
         World world, Card card, int player, AbilityCost.Sequence sequence,
@@ -132,6 +140,8 @@ internal static class AbilityPaymentPricing
                 .GroupBy(source => source.Effect)
                 .Select(group => group.First())
                 .ToList(),
+            // Engine choice: event allocation uses the printed price and one
+            // aggregate arrow price, matching the committed payment ledger.
             Components:
             [
                 new ResourceCost(printed.Cost, printed.Rule),

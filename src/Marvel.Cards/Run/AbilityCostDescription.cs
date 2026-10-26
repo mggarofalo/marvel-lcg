@@ -19,6 +19,8 @@ internal static class AbilityCostDescription
         }
         // Resource amounts and canonical symbols are already offered in
         // CostOptions. This contract supplies the other mandatory commitments.
+        if (cost is AbilityCost.Spend { DistinctTypes: true } spend)
+            return $"Spend {Number(spend.Amount)} resources of different types";
         if (cost is AbilityCost.Spend or AbilityCost.SpendEnergy) return null;
         return Bound(world, source, player, cost) ?? Chosen(cost);
     }

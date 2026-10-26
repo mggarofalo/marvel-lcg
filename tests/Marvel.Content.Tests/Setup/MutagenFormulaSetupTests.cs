@@ -9,7 +9,7 @@ using Xunit;
 
 namespace Marvel.Content.Tests.Setup;
 
-// Research uses the production dealer and authored abilities without public pack admission.
+// Direct dealer evidence complements the public factory acceptance tests.
 public sealed class MutagenFormulaSetupTests
 {
     private static readonly SetupCatalog Setup = SetupCatalog.Parse(
@@ -116,10 +116,10 @@ public sealed class MutagenFormulaSetupTests
     }
 
     [Fact]
-    public void ResearchRecipesRemainExcludedEvenWhenEveryFaceIsSupplied()
+    public void IncompleteProductRecipesRemainExcluded()
     {
         // Complete-product acceptance is repository policy, independent of authoring.
-        var admitted = RuntimeProductAdmission.Discover(Setup, Cards, Cards.Faces.ToHashSet(StringComparer.Ordinal));
+        var admitted = RuntimeProductAdmission.Discover(Setup, Cards, Cards.Faces.Where(face => face != "02049").ToHashSet(StringComparer.Ordinal));
         Assert.DoesNotContain("mutagen_formula", admitted.Setup.CampaignNames);
         Assert.DoesNotContain("mutagen_formula_expert", admitted.Setup.CampaignNames);
         Assert.DoesNotContain("goblin_gimmicks", admitted.Setup.EncounterSetNames);

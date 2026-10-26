@@ -747,3 +747,9 @@ names, decks, journals or game state. Interrupted cleanup is retried on restart;
 the revocation prevents a retained creation request from resurrecting the
 deleted campaign. The desktop removes its private connection generations only
 after an authoritative deletion acknowledgement.
+
+Resource cost components retain an optional `distinct_types` fact in durable prompt
+records. False is omitted, so existing ordinary prompt records and their replay
+semantics remain unchanged under replay v24 and save schema 7. True is preserved
+when captured. There is no authored ability using this contract in this mechanism
+packet. Public wire support is protocol 38 and rejects protocol 37 peers.

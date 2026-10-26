@@ -17,7 +17,7 @@ public static class ResourcePaymentProgress
         if (option.HasAlternative || option.VariableRequests.Count != 0
             || option.ResourceCosts.Count != 1) return null;
         ResourceCost cost = option.ResourceCosts[0];
-        if (cost.Printed || cost.RepeatedResource is not null || cost.Rule is { Count: > 0 }
+        if (HasTypedRequirements(cost)
             || !int.TryParse(cost.Cost, NumberStyles.None, CultureInfo.InvariantCulture, out int required)
             || paying.Distinct().Count() != paying.Count) return null;
         int generated = 0;
@@ -29,4 +29,7 @@ public static class ResourcePaymentProgress
         }
         return Math.Max(0, required - generated);
     }
+    private static bool HasTypedRequirements(ResourceCost cost) =>
+        cost.DistinctTypes || cost.Printed || cost.RepeatedResource is not null
+        || cost.Rule is { Count: > 0 };
 }
