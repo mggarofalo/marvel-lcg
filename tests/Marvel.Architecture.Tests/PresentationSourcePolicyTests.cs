@@ -138,6 +138,8 @@ public sealed class PresentationSourcePolicyTests
             "Marvel.Rules.Prompts.Affordance.AnchorPlayer",
             // Passive engine-authored text; View does not derive the operation.
             "Marvel.Rules.Prompts.Affordance.CommitLabel",
+            // Engine-owned causal recipients; View filters their visibility before copying.
+            "Marvel.Rules.Prompts.Affordance.ContextCardIds",
             // Passive mandatory non-resource commitments from the engine cost DSL.
             "Marvel.Rules.Prompts.Affordance.CostDescription",
             "Marvel.Rules.Prompts.Affordance.CostOptions",
