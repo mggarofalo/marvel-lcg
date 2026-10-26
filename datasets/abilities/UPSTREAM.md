@@ -169,3 +169,13 @@ The queried FAQ has no entry for these three faces. Actual full-book tests are
 Home by Dawn and Thomas Edison add two whole Ms. Marvel research faces (25 of 34; 567 total). Printed authority is `datasets/cards/cards.json`. Thomas follows the engaged player per vendored `ruling:3aba0c6abbd5c2ad`; tests cover foreign damage sources and live engagement. No public admission changes.
 
 Nova (05012) and Get Behind Me! (05013) add two Ms. Marvel research faces. Printed authority is datasets/cards/cards.json. MsMarvelDefenseCardTests exercises actual rows, energy payment, multiplayer cancellation, nested attack completion and Nova defeating its attacker (faq:05012). Energy Barrier, Preemptive Strike and Lockjaw remain unauthored pending dedicated engine support; see docs/content/research/ms-marvel-defense-basic-evidence.md. No public admission follows.
+
+
+Generation Why? (05026) adds one Ms. Marvel research face (28 of 34; 570 total).
+Authority is joined datasets/cards/cards.json and vendored
+ruling:e8654dd34b58be12, which fixes the ally/Persona-support count at initiation.
+The reviewed global support query and existing each-player discard instruction
+provide that quota; rr:player-deck.3 bounds each deck at its immediate reset.
+GenerationWhyCardTests exercises the actual full book and encounter lifecycle,
+printed starting threat and hazard, short-deck reset and no eligible cards.
+See docs/content/generation-why-evidence.md. Public admission stays closed.

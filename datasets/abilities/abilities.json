@@ -17267,6 +17267,45 @@
           }
         }
       ]
+    },
+    {
+      "card": "05026",
+      "name": "Generation Why?",
+      "note": "Printed When Revealed counts every ally and Persona support in play, across all players. The discardTop each-player instruction evaluates the combined quota once at initiation, per ruling:e8654dd34b58be12; a player-deck reset stops further discards from that deck (rr:player-deck.3). Starting threat, hazard and boost icons are printed card facts.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "discardTop": {
+              "from": "yourDeck",
+              "player": "each",
+              "count": {
+                "add": [
+                  {
+                    "count": {
+                      "query": "allies"
+                    }
+                  },
+                  {
+                    "count": {
+                      "withTrait": {
+                        "cards": {
+                          "query": "supports"
+                        },
+                        "trait": "PERSONA"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ]
     }
   ]
 }
