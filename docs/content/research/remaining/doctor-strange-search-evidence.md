@@ -24,6 +24,50 @@ Mutation evidence: remove both Brother `top: 5` bounds, leaving valid lowered pr
 
 A raw JSON-decoder comparison against base `2da740d9` proved all **659 predecessor object strings byte-identical in UTF-8**, and the total is 661. The append adds no starting counters. Resource reprint content, public admission, and Invocation mechanisms are unchanged. Broader Content/whole-game/platform certification belongs to integration, not this packet.
 
+## Independent two-card review
+
+Reviewed candidate `5e07f6420aa223f0372d96316d218440ac3e1c73` against
+`2da740d9` on 2026-10-26, including both actual authored rows, the complete
+search test class and its fixtures, changed inventory assertions, generated
+printed rows, RR 1.8 search/target/ownership/form/cost clauses, the Invocation
+insert and local FAQ/HoH corpus. The local FAQ has no card-specific entry for
+either card; the historical “your deck” ruling is consistent with the current
+separate-deck insert. The new review tests use the actual production book.
+
+**Verdict: accept this bounded two-card content packet.** No correctness
+finding remains in the reviewed Sanctum/Brother behavior. Sanctum's controller
+supplies the form, discard, deck and drawn card even when another seat owns the
+support; its draw is independent and follows the Spell shuffle. Brother searches
+physical top-five cards before Event filtering, accepts entry without playing,
+and leaves the search optional. Existing exact-copy, foreign-area, short-deck,
+no-match, departure and cost-continuation controls retain their assertions.
+
+`DoctorStrangeSearchReviewTests` adds four independent cases. Sanctum offer and
+description queries have a baseline captured before the first query, including
+digest, full RNG state/consumption and agenda work, followed by comparison with
+an unprobed world's completed decisions for both Spell/no-Spell branches.
+Its resolution explicitly preserves Invocation deck/discard order and membership
+and the other player's hand. Brother's accepted/declined put-into-play cases
+distinguish an entry response from a played-only response and prove declining
+does not move cards or shuffle.
+
+The whole relevant-class command above passes **134/134**, zero skipped,
+including the four independent cases. Log:
+`C:/Users/mggar/Source/strange-search-independent-relevant.log`.
+The full Architecture project passes **129/129**, zero skipped; log:
+`C:/Users/mggar/Source/strange-search-independent-architecture.log`.
+An independent raw JSON-decoder comparison again confirms all 659 predecessor
+object strings unchanged, exactly 661 rows, and only 09008/09012 appended.
+The implementation's two compiled/lowered mutant logs and restored
+non-incremental build log were inspected; their failures distinguish the sixth
+Event and shuffle-before-draw errors as reported above. Those mutant runs were
+performed by the implementer, not rerun by this reviewer.
+
+This verdict does not admit Doctor Strange publicly or accept the remaining
+24 faces, Mystical Studies, a complete starter, UI behavior, save/replay or
+cross-platform gameplay. MARVEL-812's exact printed-set prerequisite is separate
+from this two-card acceptance.
+
 ## MARVEL-812: exact printed-set prerequisite
 
 Generated card metadata already carries `set: "doctor_strange"` for 09006 and signature cards. `ICardFacts.EncounterSet(faceId)` exists, and `src/Marvel.Content/CardCatalog.cs:102` returns `Find(faceId).Set`; despite its historical name it exposes this general printed set. Reuse that port. Current `cardsIn` filtering admits area(s), kind, trait, title, top, aspectOnly, cardClass, but **no printed-set filter**. Hero class is not exact printed Doctor Strange membership, and enumerating the signature list in the authored row is not the shared mechanism.
