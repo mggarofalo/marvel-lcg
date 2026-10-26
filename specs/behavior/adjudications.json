@@ -24038,9 +24038,10 @@
           "work_item": null,
           "exception": null,
           "scenarios": [
-            "specs/behavior/core/villain-phase.feature::Enhanced Spider-Sense cancels a treachery's When Revealed effect"
+            "specs/behavior/core/villain-phase.feature::Enhanced Spider-Sense cancels a treachery's When Revealed effect",
+            "specs/behavior/core/treachery-cancellation.feature::Enhanced Spider-Sense cancels Exhaustion and its Surge"
           ],
-          "mutation": "Do not offer Enhanced Spider-Sense when Advance is revealed; the accepted opportunity cannot be reached."
+          "mutation": "Do not offer Enhanced Spider-Sense when Advance is revealed; the accepted opportunity cannot be reached. Schedule Surge despite cancellation; the Exhaustion transcript fails because the next encounter card leaves the deck."
         }
       ]
     },
@@ -52244,10 +52245,34 @@
       "obligations": [
         {
           "key": "simultaneous-card-and-ability-costs",
-          "summary": "The event resource cost and its ability cost are paid together, allowing generated resources to cover both.",
+          "summary": "The event resource cost and its ability cost must be paid simultaneously.",
           "disposition": "narrower",
-          "reason": "The Core simultaneous-cost obligation already carries this proposition.",
+          "reason": "The Core simultaneous-cost obligation carries simultaneity; resource division is adjudicated separately.",
           "target": "behavior:rr:cost.5:simultaneous-costs",
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        },
+        {
+          "key": "split-resources-between-card-and-ability-costs",
+          "summary": "Resources generated for an event can be divided between its resource cost and its ability cost as specified by rr:cost.5.1.",
+          "disposition": "outside-core",
+          "reason": "rr:cost.5.1 is outside Core: no legal Core card has both a positive resource cost and a positive resource ability cost to split payment between.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        },
+        {
+          "key": "power-of-chosen-ally-aspect",
+          "summary": "A Power Of card uses the chosen ally’s aspect when generating resources for Make the Call’s ability cost.",
+          "disposition": "narrower",
+          "reason": "The Core Make the Call FAQ obligation carries the chosen-ally aspect payment proposition.",
+          "target": "behavior:faq:01071:power-of-aspect-pays-printed-ally-cost",
           "implementation": null,
           "work_item": null,
           "exception": null,
@@ -63511,7 +63536,7 @@
       "obligations": [
         {
           "key": "source-disposition",
-          "summary": "Exactly defending an attack compares the modified DEF or applicable ATK value.",
+          "summary": "Exactly defending requires the defender’s modified DEF to equal the attacker’s modified ATK for that attack; damage prevention or reduction cannot satisfy this requirement.",
           "disposition": "outside-core",
           "reason": "The exactly-defend abilities on Hercules and Luke Cage are absent from the Core Set.",
           "target": null,
