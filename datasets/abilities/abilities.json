@@ -15962,6 +15962,251 @@
           }
         }
       ]
+    },
+    {
+      "card": "02026",
+      "name": "Goblin Reinforcements",
+      "note": "Printed authority: datasets/cards/cards.json 02026. Selector and receipt spellings are engine choices. Public Green Goblin admission remains closed.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "placeThreat": {
+              "scheme": "this",
+              "amount": {
+                "count": {
+                  "withTrait": {
+                    "cards": {
+                      "query": "minions"
+                    },
+                    "trait": "GOBLIN"
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "02027",
+      "name": "Goblin Nation",
+      "note": "Printed authority: datasets/cards/cards.json 02027. Selector and receipt spellings are engine choices. Public Green Goblin admission remains closed.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant"
+          },
+          "effect": {
+            "grantEach": {
+              "cards": {
+                "inObjectIdOrder": {
+                  "enemiesWithTrait": "GOBLIN"
+                }
+              },
+              "keyword": "attack",
+              "amount": 1
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "Boost",
+            "subject": "this"
+          },
+          "effect": {
+            "putIntoPlay": {
+              "card": "this",
+              "where": "printedDestination"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "02028",
+      "name": "Overrun",
+      "note": "Printed authority: datasets/cards/cards.json 02028. Selector and receipt spellings are engine choices. Public Green Goblin admission remains closed.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardDefeated",
+            "timing": "WhenDefeated",
+            "subject": "this"
+          },
+          "effect": {
+            "eachPlayer": {
+              "order": "playerOrder",
+              "effect": {
+                "forEachDiscarded": {
+                  "effect": {
+                    "discardTop": {
+                      "from": "encounterDeck",
+                      "count": 2
+                    }
+                  },
+                  "when": {
+                    "and": [
+                      {
+                        "isKind": {
+                          "card": "that",
+                          "kind": "minion"
+                        }
+                      },
+                      {
+                        "hasTrait": {
+                          "card": "that",
+                          "trait": "GOBLIN"
+                        }
+                      }
+                    ]
+                  },
+                  "then": {
+                    "putIntoPlay": {
+                      "card": "that",
+                      "where": "engagedWithYou"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "02029",
+      "name": "Death from Above",
+      "note": "Printed authority: datasets/cards/cards.json 02029. Selector and receipt spellings are engine choices. Public Green Goblin admission remains closed.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this",
+            "form": "hero"
+          },
+          "effect": {
+            "enemyAttacks": {
+              "enemies": {
+                "titled": "Green Goblin"
+              },
+              "against": "you",
+              "modifier": {
+                "modified": {
+                  "card": {
+                    "titled": "Green Goblin"
+                  },
+                  "field": "printed_stage"
+                }
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this",
+            "form": "alter-ego"
+          },
+          "effect": {
+            "enemySchemes": {
+              "enemies": {
+                "titled": "Green Goblin"
+              },
+              "against": "you",
+              "modifier": {
+                "modified": {
+                  "card": {
+                    "titled": "Green Goblin"
+                  },
+                  "field": "printed_stage"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "02032",
+      "name": "Wicked Ambitions",
+      "note": "Printed authority: datasets/cards/cards.json 02032. Selector and receipt spellings are engine choices. Public Green Goblin admission remains closed.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "eachTime": {
+              "effect": {
+                "discardTop": {
+                  "from": "encounterDeck",
+                  "count": {
+                    "mul": [
+                      2,
+                      {
+                        "modified": {
+                          "card": {
+                            "query": "villain"
+                          },
+                          "field": "printed_stage"
+                        }
+                      }
+                    ]
+                  }
+                }
+              },
+              "when": {
+                "and": [
+                  {
+                    "isKind": {
+                      "card": "that",
+                      "kind": "minion"
+                    }
+                  },
+                  {
+                    "hasTrait": {
+                      "card": "that",
+                      "trait": "GOBLIN"
+                    }
+                  }
+                ]
+              },
+              "then": {
+                "choose": {
+                  "descriptions": [
+                    "Take 3 damage",
+                    "Put that Goblin minion into play engaged with you"
+                  ],
+                  "options": [
+                    {
+                      "dealDamage": {
+                        "cards": "you",
+                        "amount": 3
+                      }
+                    },
+                    {
+                      "putIntoPlay": {
+                        "card": "that",
+                        "where": "engagedWithYou"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      ]
     }
   ]
 }

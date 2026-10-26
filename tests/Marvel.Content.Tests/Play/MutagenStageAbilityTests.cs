@@ -91,13 +91,8 @@ public sealed class MutagenStageAbilityTests : CoreCardTestBase
     }
 
     [Theory]
-    [InlineData("02026")]
-    [InlineData("02027")]
-    [InlineData("02028")]
-    [InlineData("02029")]
     [InlineData("02030")]
     [InlineData("02031")]
-    [InlineData("02032")]
     public void RemainingEncounterFacesFailClosed(string face)
     {
         var world = Hero("01001a");

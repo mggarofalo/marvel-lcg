@@ -4,7 +4,7 @@
 |---|---|
 | Kind | authored |
 | Product boundary | Core Set, Rise of Red Skull, Captain America and Wrecking Crew; Green Goblin research rows remain publicly excluded |
-| Records | 518 printed card faces, including explicit empty rows |
+| Records | 523 printed card faces, including explicit empty rows |
 | Authorities | Generated `datasets/cards/`, vendored Rules Reference, expansion rulebooks and published rulings |
 | Gated by | Ability admission/lowering tests, complete-product admission, actual-card tests, campaign acceptance and executable Core behavioral transcripts |
 
@@ -81,7 +81,7 @@ Printed cards are authoritative; ruling `ruling:9a1cb4d914aa6778` confirms that
 attack overkill to the identity satisfies "attacks and damages you".
 `MutagenStageAbilityTests`, `MutagenEscalationTests` and
 `MutagenFormulaSetupTests` exercise actual authored rows. Remaining encounters
-02026–02032 fail closed; Green Goblin public admission remains excluded.
+02030–02031 fail closed; Green Goblin public admission remains excluded.
 
 
 Mutagen Formula encounter research adds 02019–02025. Glider and Bombs are exact
@@ -96,3 +96,12 @@ ruling:6fd4652a06512d03 (Thrall Guard limits initiation), and
 ruling:cef917d276a31694 (Soldier defeat resolves between printed sentences).
 Focused tests cover characteristic paths; the evidence document explicitly
 records outstanding review and proof. Public Green Goblin admission stays closed.
+
+Final Mutagen research packet adds 02026–02029 and 02032 (55/57 distinct Goblin faces).
+Authority is joined printed cards. Overrun uses the reviewed ordered discard receipt;
+Wicked Ambitions uses immediate each-time choices and double printed stage.
+Rulings 7c484b8434a60f3a and d4def3183850e80f cover discard/reset.
+02030 remains unauthored at this bounded checkpoint. 02031 requires an activation
+damage-placed receipt: existing activationDamage counts damage dealt, which differs
+from placed damage under rr:damage.3.2 and ruling:d855181a23d49683.
+Public admission remains closed. See docs/content/mutagen-final-face-evidence.md.
