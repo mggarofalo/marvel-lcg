@@ -32,3 +32,45 @@ Evidence logs live outside the repository in `%LOCALAPPDATA%/Temp/b6-*.log`:
 The final architecture and normal-hook results are reported with the commit handoff.
 Independent review, integrated managed lanes, replay/session and native acceptance
 remain lead-owned integration evidence. This packet does not establish pack readiness.
+
+## Independent review of `4167443afbe6b27e51fe1882fff3521485a9d94a`
+
+No production correctness finding from raw 08024, current RR 1.8, the vendored
+Target Acquired ruling, affected admission/completion/execution paths, or the
+separate exact-card star/icon receipts. The discarded Preparation source retains
+its captured controller and incarnation. Source tests cover attack/scheme,
+multiple boosts, decline, invalid/stale rejection and query/control equivalence.
+
+`BoostAbilityReplayReviewTests` adds four independent synthetic cases through the
+existing `IDurableGameFactory` seam. They use actual `FileSessionStore` JSON and
+new factories/hosts at the pending faceup Response and, when accepted, the
+discarded-source Preparation completion Response. Both accept/decline branches
+run with numeric cancellation accepted/declined first. They compare full card
+digests, pending prompt records and RNG states with uninterrupted controls,
+preserve every existing store-file hash on restart, and assert the counted boost
+damage, numeric contribution, attack completion and Suit response. This is
+persistence mechanism evidence, without public admission of Black Widow.
+
+Independent Release evidence, with logs outside the repository in `%TEMP%`:
+
+- `b6-review-content.log`: 23 Target Acquired and numeric boost cancellation tests.
+- `b6-review-durable.log`: final four durable receipt/independence cases passed.
+- `b6-review-historical.log`: 45 replay/upgrade/publication/Preparation tests passed.
+- `b6-review-played-historical.log`: 10 genuine standard/expert played-campaign
+  predecessor tests passed, retaining their expected first-divergence checks and
+  original-file preservation. These incompatible campaigns are rejection evidence,
+  not successful migration evidence for their remaining histories.
+
+The global deferral changes the relative order of faceup Responses and the star;
+that change is required by the ruling. The production book currently has the
+05014 faceup Interrupt, preserving its pre-star order, and no faceup Response.
+The additional scheduler frame does not allocate another dynamic occurrence id.
+Boost execution still creates its own occurrence id zero and retains the authored
+ability ordinal. Frame identities are reconstructed internal execution state,
+not saved event ordinals. No supported-history event/ordinal divergence was
+observed in these historical checks. This finite evidence does not prove every
+possible supported history byte-identical. The integrating lead owns the final
+replay identity decision; this review changes no compatibility version.
+
+Public pack setup/admission, integrated broader lanes, native interaction and
+visible cancellation explanation remain outside this mechanism review.
