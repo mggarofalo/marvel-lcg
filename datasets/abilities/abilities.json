@@ -17399,6 +17399,44 @@
           }
         }
       ]
+    },
+    {
+      "card": "05028",
+      "name": "Edison's Giant Robot",
+      "note": "Printed damage prohibition applies to every source. Hero Action spends one mental resource and blanks the entire printed text box, including this action, until phase end for all players (ruling:d1087a7e030d2fd9). Traits, printed stats and boost icons remain. blankPrintedTextUntilEndOfPhase is an engine spelling for the printed instruction.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "preventDamageWhile": {
+              "card": "this",
+              "condition": {
+                "atLeast": {
+                  "value": 1,
+                  "count": 1
+                }
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "cost": {
+            "spend": "B"
+          },
+          "effect": {
+            "blankPrintedTextUntilEndOfPhase": "this"
+          }
+        }
+      ]
     }
   ]
 }

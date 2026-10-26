@@ -195,3 +195,11 @@ following faq:05017 and rr:prevent.1.1 while retaining distinct dealt amounts.
 The actual full book drives RemainingDamageInterruptTests. Three reflection
 counters and Uses disposal follow the printed dataset; arbitrary damage in
 either form qualifies, and the reflected damage is not an attack.
+
+Edison's Giant Robot (05028) adds one actual research face (31 of 34 Ms. Marvel;
+573 total). Printed authority is joined `datasets/cards/cards.json`; vendored
+`ruling:d1087a7e030d2fd9` confirms blanking applies to all players.
+`PrintedTextBlankingTests` uses the unmodified full book for typed mental payment,
+form restriction, multiplayer damage, suppression, expiry and reentry. The
+standalone timed self-blank opcode has independent bounded engine review; the
+actual row requires separate content review. Public admission stays closed.

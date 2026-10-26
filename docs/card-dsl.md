@@ -5,6 +5,17 @@ forced and optional attack-end responses and is zero without a completed attack.
 
 # The card DSL
 
+`blankPrintedTextUntilEndOfPhase: "this"` is an engine spelling for a standalone
+self-blank Action on a live nonpermanent minion. It suppresses the whole printed
+text box for every player until the phase scheduler expires the lasting effect.
+Traits, printed basic stats and icons outside the text box remain; independently
+created lasting effects and already-triggered continuations remain. The marker
+binds the in-play incarnation, so departure and reentry restore printed text.
+Compound shapes, other card kinds and permanent targets are unsupported. Preflight
+checks constant-ending consequences before costs. Actual 05028 admission to the
+ability book is gated by `PrintedTextBlankingTests` and the ability-data inventory;
+it does not admit the incomplete Ms. Marvel product.
+
 `attackAnotherEnemy: { "amount": <positive constant> }` is the second sentence
 of one attack whose first sentence deals constant damage to its chosen enemy.
 It waits for the first damage and defeat procedures, then offers another legal

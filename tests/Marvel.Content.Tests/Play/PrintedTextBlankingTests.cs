@@ -1,4 +1,4 @@
-using Marvel.Cards.Dsl;
+using Marvel.Content.Tests.Cards;
 using Marvel.Cards.Run;
 using Marvel.Rules.Play;
 using Marvel.Rules.State;
@@ -50,6 +50,9 @@ public sealed class PrintedTextBlankingTests
         var random = world.Random.Generator.GetState();
         var pending = world.Agenda.Outstanding.ToArray();
         var registered = world.Effects.Registered.ToArray();
+        var active = world.Effects.Active().ToArray();
+        for (int query = 0; query < 3; query++)
+            Assert.Contains(runner.Actions(world, 0), action => action.Card == robot.ObjectId);
         var action = Assert.Single(runner.Actions(world, 0), action => action.Card == robot.ObjectId);
         Assert.False(runner.CanTakeDamage(world, robot, world.Seats[0].IdentityCard));
         Assert.Throws<RulesNotImplementedException>(() =>
@@ -59,6 +62,8 @@ public sealed class PrintedTextBlankingTests
         Assert.Equal(random.Words, world.Random.Generator.GetState().Words);
         Assert.Equal(pending, world.Agenda.Outstanding.ToArray());
         Assert.Equal(registered, world.Effects.Registered);
+        Assert.Equal(active, world.Effects.Active());
+        Assert.Same(world.Seats[0].Hand, energy.Area);
         Assert.Same(world.Seats[0].Hand, mental.Area);
     }
 
@@ -77,14 +82,7 @@ public sealed class PrintedTextBlankingTests
         Assert.Contains(runner.Actions(world, 0), action => action.Card == robot.ObjectId);
     }
 
-    private static AbilityRunner Runner() => new(AbilityCatalog.Parse("""
-        {"cards":[{"card":"05028","abilities":[
-          {"trigger":{"timing":"Constant","subject":"this"},
-           "effect":{"preventDamageWhile":{"card":"this","condition":{"atLeast":{"value":1,"count":1}}}}},
-          {"trigger":{"event":"WhenActionTriggered","timing":"Action","subject":"this","form":"hero"},
-           "cost":{"spend":"B"},"effect":{"blankPrintedTextUntilEndOfPhase":"this"}}
-        ]}]}
-        """));
+    private static AbilityRunner Runner() => AuthoredCards.Runner();
 
     [Theory]
     [InlineData(0)]
@@ -106,6 +104,8 @@ public sealed class PrintedTextBlankingTests
         var mental = world.CreateCard("01089", world.Seats[actingPlayer].Hand);
         Assert.Contains('B', Resources.GeneratedBy(mental.FaceId, world.Facts));
         Assert.False(runner.CanTakeDamage(world, robot, source));
+        DamagePlacement.Resolve(world, world.Facts, new(source, robot, 1, "probe", "damage"), []);
+        Assert.Equal(0, robot.Damage);
         var action = Assert.Single(runner.Actions(world, actingPlayer), action => action.Card == robot.ObjectId);
 
         runner.ExecuteAction(world, new PlayerAction(action, [mental.ObjectId], []));
@@ -113,13 +113,52 @@ public sealed class PrintedTextBlankingTests
         Assert.Equal(DeckType.DiscardPile, mental.Area.Type);
         Assert.True(PrintedText.IsBlanked(world, robot));
         Assert.True(runner.CanTakeDamage(world, robot, source));
+        DamagePlacement.Resolve(world, world.Facts, new(world.Seats[1 - actingPlayer].IdentityCard,
+            robot, 1, "probe", "damage"), []);
+        Assert.Equal(1, robot.Damage);
+        Assert.DoesNotContain(runner.Actions(world, 1 - actingPlayer), action => action.Card == robot.ObjectId);
         Assert.DoesNotContain(runner.Actions(world, actingPlayer), action => action.Card == robot.ObjectId);
         Assert.True(Traits.Has(world, robot, "ROBOT", world.Facts));
         Assert.Equal(2, StateFields.Modified(world, robot, "attack", world.Facts, world.Players));
+        Assert.Equal(1, StateFields.Modified(world, robot, "scheme", world.Facts, world.Players));
+        Assert.Equal(8, DamagePlacement.Health(world, world.Facts, robot));
+        PhaseEnd.EndPlayerTurn(world, actingPlayer, []);
+        Assert.True(PrintedText.IsBlanked(world, robot));
         PhaseEnd.EndPlayerPhase(world, []);
         Assert.False(PrintedText.IsBlanked(world, robot));
         Assert.False(runner.CanTakeDamage(world, robot, source));
+        DamagePlacement.Resolve(world, world.Facts, new(source, robot, 1, "probe", "damage"), []);
+        Assert.Equal(1, robot.Damage);
         Assert.Contains(runner.Actions(world, actingPlayer), action => action.Card == robot.ObjectId);
+    }
+
+    [Fact]
+    [Rule("rr:end-of-player-phase.step.4")]
+    public void GameSchedulerRestoresTheActualRobotsTextAtThePhaseBoundary()
+    {
+        // "Any ... effects that last until the end of the phase end."
+        // This path commits the actual action and end-phase decision through Game.
+        Card? robot = null;
+        Card? payment = null;
+        var runner = Runner();
+        var (game, world) = Playing(board =>
+        {
+            robot = board.CreateCard("05028", board.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+            payment = board.CreateCard("01089", board.Seats[0].Hand);
+        }, hero: true, abilities: runner);
+        var action = Assert.Single(game.Pending!.Affordances,
+            option => option.Verb == Game.ActionVerb && option.AnchorId == robot!.ObjectId);
+        game.Resolve(PaidDecision.Take(action, [payment!.ObjectId]));
+        Assert.True(PrintedText.IsBlanked(world, robot!));
+        Assert.Equal(DeckType.DiscardPile, payment.Area.Type);
+        game.Resolve(Decision.Decline);
+        Assert.Equal(GamePhase.EndPhase, game.Phase);
+        Assert.True(PrintedText.IsBlanked(world, robot!));
+        var discard = Assert.Single(game.Pending!.Affordances, option => option.Verb == Game.EndPhaseVerb);
+        game.Resolve(Decision.Take(discard.Id, world.Seats[0].Hand.Cards.Select(card => card.ObjectId).ToArray(), []));
+        Assert.False(PrintedText.IsBlanked(world, robot!));
+        Assert.False(runner.CanTakeDamage(world, robot!, world.Seats[0].IdentityCard));
+        Assert.NotNull(game.Pending);
     }
 
     [Fact]
