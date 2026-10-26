@@ -140,7 +140,13 @@ internal static class AbilityPaymentPricing
                 .GroupBy(source => source.Effect)
                 .Select(group => group.First())
                 .ToList(),
-            Components: [.. printed.ResourceCosts, .. arrow.ResourceCosts]);
+            // Engine choice: event allocation uses the printed price and one
+            // aggregate arrow price, matching the committed payment ledger.
+            Components:
+            [
+                new ResourceCost(printed.Cost, printed.Rule),
+                new ResourceCost(arrow.Cost, arrow.Rule),
+            ]);
     }
 
     private static bool TryCombinedAmounts(

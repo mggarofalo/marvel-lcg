@@ -1127,3 +1127,7 @@ generic requirement `[""]`. Combined event and simultaneous ordinary prices reta
 that generic requirement on the corresponding explicit component. These are
 engine choices preserving exact replay-v24 prompt identity; distinct-resource
 prices carry an explicit component to retain their additional constraint.
+Combined event pricing has exactly two components: its printed price and one
+aggregate arrow price. A sequence of ordinary arrow resource costs contributes
+its summed amount and concatenated typed requirements to that aggregate, matching
+the committed event payment ledger and its paid-resource receipt.

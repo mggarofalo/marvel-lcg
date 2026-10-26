@@ -39,6 +39,24 @@ public sealed class OrdinaryArrowPromptCompatibilityTests
         TimingPriority.Untimed, "Action", "Synthetic payment", false,
         [new Affordance(7, "Action", 4, 0, "Pay", Costs: [price])]);
 
+    [Theory]
+    [InlineData("", "")]
+    [InlineData("", "Y")]
+    [InlineData("Y", "")]
+    [InlineData("Y", "B")]
+    public void PredecessorShapedCombinedSequenceRejectsExpandedArrowComponents(string first, string second)
+    {
+        string required = first + second;
+        var price = new CostOption(4, "5", Rule: ["", required],
+            Components: [new ResourceCost("3"), new ResourceCost("2", [required])]);
+        var prompt = PromptFor(price);
+        var expected = RoundTrip(prompt);
+        JournalReplay.RequirePrompt(expected, prompt, "aggregate event arrow");
+        Assert.Throws<ReplayDivergenceException>(() => JournalReplay.RequirePrompt(expected,
+            PromptFor(price with { Components = [new ResourceCost("3"),
+                new ResourceCost("1", [first]), new ResourceCost("1", [second])] }), "expanded event arrow"));
+    }
+
     private static PromptRecord RoundTrip(Prompt prompt) => JsonSerializer.Deserialize<PromptRecord>(
         JsonSerializer.Serialize(PromptRecord.From(prompt), JournalJson.Options), JournalJson.Options)!;
 }
