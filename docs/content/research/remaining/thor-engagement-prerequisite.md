@@ -1,7 +1,9 @@
 # Thor engagement prerequisite — MARVEL-741 / MARVEL-563
 
 Base: `7e352dbc`. This packet adds a nonpublic engine capability; Thor is not
-admitted by this work. Compatibility remains v25 / protocol 39.
+admitted by this work. Independent review of `69459de2` identifies a Core timing
+change requiring a new replay compatibility decision before integration; the
+packet's unchanged v25 identity does not yet account for that change.
 
 Authority: generated `06001a` draws two after engaging a minion, once per phase;
 `rr:engage` distinguishes entry from re-engagement; `.2` makes either direction
@@ -20,8 +22,9 @@ continuation, but gains neither an enters-play condition nor entry state resets.
 A same-seat instruction completes with zero movement and no engagement condition.
 Discard-until first-player placement now uses this procedure as well.
 
-Quickstrike finishes before the optional engagement response for reveal, ordinary
-non-reveal entry and transfer. Teamwork remains entry-specific. Existing ability
+Quickstrike finishes before the optional engagement response for reveal and direct
+non-reveal entry. Interpreted transfer has the review finding below. Teamwork
+remains entry-specific. Existing ability
 limits retain phase reset ownership; no Thor-specific use counter was introduced.
 
 `ThorEngagementTests` uses local ability bodies only. It covers both Thor seats,
@@ -51,7 +54,43 @@ delegates that responsibility without changing complexity thresholds or baseline
 Logs are preserved outside the checkout in the sibling
 `marvel-thor-engagement-evidence` directory.
 
-Remaining: independent review; complete Defender discard-until/cost composition;
+## Independent engine review
+
+Review checkout: `marvel-thor-engagement-review`, based on `69459de2`.
+`ThorEngagementReviewTests` adds four distinguishing cases. On that revision,
+three pass and interpreted transfer fails; this is a rejected candidate until
+the ordering finding is fixed and the compatibility work is complete.
+
+1. **Interpreted transfer exposes Thor before Quickstrike.** A synthetic placement
+   body transfers the existing Vulture from seat 1 to Thor at seat 0. Thor's
+   response is offered with zero identity damage while the attack remains after
+   the entry frame. `rr:quickstrike.1` defines Quickstrike as a forced response;
+   `rr:ability.step.4` orders forced responses before optional responses. The
+   direct-scheduling control passes, isolating the failure to interpreted entry
+   composition. The passing control also proves no Core Hawkeye entry response
+   or synthetic When Revealed damage, and retains the minion's incarnation,
+   instance state, damage, exhaustion, counters and confused status.
+2. **Core ordering changes from `7e352dbc`.** Real authored Core Hawkeye and
+   Vulture now reach Hawkeye's optional entry response after Vulture has dealt
+   three Quickstrike damage, for both reveal and non-reveal entry. The same
+   tests compile and fail on `7e352dbc`, where damage is still zero when Hawkeye
+   is offered. This is authority-correct behavior on the candidate, but changes
+   an existing supported Core decision trace. `docs/release-policy.md` requires
+   an engine replay contract change when the same setup and decisions can
+   resolve differently. No version files or historical expected facts are
+   changed by this review.
+
+The three adapted Core encounter-search cases retain their original exact-card,
+discard-order, destination and event-order assertions; draining scheduled entry
+does not weaken those observations.
+
+Evidence outside the checkout, under `marvel-thor-engagement-evidence`:
+`review-candidate-red.log` (3 pass / 1 fail), `review-transfer-red.log` (diagnostic
+pending-frame evidence), and `review-baseline-hawkeye.log` (2 compiled failures
+on `7e352dbc`). No engine fix or final acceptance is claimed by this review.
+
+Remaining: interpreted-transfer timing fix and independent retest; engine replay
+compatibility decision and route proof; complete Defender discard-until/cost composition;
 full Get Over Here event initiation/payment and stale-cost controls; replay/save
 coverage of engagement response suspension; full pack abilities/setup/admission.
 No public Thor gameplay, native/UI acceptance or complete-pack readiness is claimed.
