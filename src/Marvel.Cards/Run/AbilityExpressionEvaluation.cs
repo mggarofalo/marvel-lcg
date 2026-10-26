@@ -93,7 +93,7 @@ internal sealed class AbilityExpressionEvaluation(
         AbilityCondition.Any any => any.Operands.Any(operand => Test(operand)),
         AbilityCondition.Negated negated => !Test(negated.Operand),
         AbilityCondition.Flag flag => TestFact(flag.Kind),
-        AbilityCondition.PaidWithResource resource => PaidWith(resource.Resource.ToString()),
+        AbilityCondition.PaidWithResource resource => AbilityPaidResourceQuery.Includes(context, resource.Resource),
         AbilityCondition.DiscardedWithTrait trait => context.Discarded.Any(card =>
             context.World.Facts.Traits(card.FaceId).Contains(trait.Trait, StringComparer.Ordinal)),
         AbilityCondition.DiscardedWithResource resource => context.Discarded.Any(card =>
@@ -217,12 +217,6 @@ internal sealed class AbilityExpressionEvaluation(
                 .Where(pair => pair.Key.StartsWith("c_", StringComparison.Ordinal))
                 .Sum(pair => pair.Value)
             : card.Tokens.GetValueOrDefault("c_" + type);
-
-    private bool PaidWith(string resource) =>
-        context.Payment.Contains(resource[0])
-        || context.World.Effects.Active().Any(effect =>
-            effect.Card == context.Source.ObjectId
-            && string.Equals(effect.Kind, "paid:" + resource, StringComparison.Ordinal));
 
     // Player order and then pile order match the rules query; absent piles are empty.
     internal static IReadOnlyList<Card> AlliesInPlayerDiscards(World world) =>

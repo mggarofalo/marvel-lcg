@@ -211,9 +211,9 @@ internal static class GameActions
             option => option.Id == input.Affordance);
 
         var happened = new List<GameEvent>();
-        CardPlay.Play(
-            game.world, game.facts, game.world.CardPlayAbilities, seat, game.world.Cards[affordance.AnchorId],
-            input.Spent, happened, input.Targets);
+        CardPlay.PlayAllocated(
+            game.world, game.facts, game.world.CardPlayAbilities, seat,
+            game.world.Cards[affordance.AnchorId], input, happened);
 
         return game.Turn(happened);
     }

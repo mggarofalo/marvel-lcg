@@ -1296,3 +1296,20 @@ preparation, including gratuitous generation at price zero. Event-price prefligh
 raises for a positive adjusted price or required icons before payment. A discount
 to zero remains within the no-generation boundary. Dedicated negative tests
 assert untouched source, generator, Weapon, digest, RNG and pending work.
+
+### Original card price at entry
+
+For an entry response on the card that was played, `paidWithResource` reads the
+original card-play price, excluding excess generated icons. It does not read the
+response ability's own resource cost. The receipt belongs to the played/entry
+occurrence and identifies the physical card, its entered incarnation and the
+playing seat. Mandatory ally-limit choices and suspended resource generators
+retain that receipt. Putting an ally into play, revealing it, and ignoring its
+resource cost create no paid-resource credit from an earlier entry.
+
+Ordinary card play retains submitted `ResourceAllocation` declarations and
+validates them before exposing the card or committing a contributor. Wild icons
+use the declared type; an undeclared wild does not imply energy. Without an
+explicit allocation, the existing deterministic `Resources.Paid` selection
+excludes overpayment. The receipt is transient engine data reconstructed by
+command replay; it adds no card state or digest field.

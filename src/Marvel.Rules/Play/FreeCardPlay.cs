@@ -45,6 +45,6 @@ internal static class FreeCardPlay
         // `rr:ignore.1`: zero resources are considered paid. Cost reductions
         // are neither applied nor consumed because there is no resource cost
         // in effect during this play.
-        Enter(world, facts, abilities, seat, card, events, targets ?? []);
+        Enter(world, facts, abilities, seat, card, events, new CardEntryChoices(targets ?? [], string.Empty));
     }
 }

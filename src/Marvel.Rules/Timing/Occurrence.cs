@@ -91,6 +91,10 @@ public sealed record Occurrence
     [JsonIgnore]
     public bool? EventRemovesThreat { get; init; }
 
+    /// <summary>Original card-play payment for this exact entry, reconstructed by replay.</summary>
+    [JsonIgnore]
+    public Play.PlayedCardPayment? CardPlayPayment { get; init; }
+
     /// <summary>The imminent threat placement, when this occurrence is one.</summary>
     public State.ThreatPlacement? Threat { get; }
 

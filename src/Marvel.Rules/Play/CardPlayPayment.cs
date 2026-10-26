@@ -43,6 +43,13 @@ internal static class CardPlayPayment
             Paying = play.Paying, Cost = play.Cost.Amount,
             Required = Resources.Required(world, play.Card, play.Facts),
             Itself = play.Card.ObjectId, Payer = play.Seat.Index, PayingFor = play.Card,
+            Allocations = play.Allocations,
+            Price = play.Allocations.Count == 0 ? null : new Marvel.Rules.Prompts.CostOption(
+                0, play.Cost.Amount.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                [Resources.Required(world, play.Card, play.Facts)], Sources: [..
+                    CardPayment.Paying(world, play.Facts, play.Seat, play.Card)
+                        .SelectMany(seat => CardPayment.Generators(
+                            world, play.Facts, seat, world.ResourceAbilities, play.Card))]),
         });
         payment.Prepare();
         return payment;

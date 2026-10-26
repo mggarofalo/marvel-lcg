@@ -40,7 +40,9 @@ internal sealed class CardResourcePayment(
         world.Agenda.Executions.RunBatch(
             new Occurrence(0, ["ResourcePayment"], Subject: request.Itself, Player: request.Payer),
             entry => { Execution = entry; return Continue(events); });
-        return new(Execution);
+        return new(Execution, () => request.Allocations.Count > 0
+            ? string.Concat(request.Allocations.Select(allocation => allocation.PaidAs))
+            : Resources.Paid(generated.ToString(), request.Cost, request.Required));
     }
 
     private void Validate()
