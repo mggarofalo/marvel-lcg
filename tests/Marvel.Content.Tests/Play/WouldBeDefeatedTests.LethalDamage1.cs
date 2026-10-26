@@ -207,6 +207,7 @@ public sealed class WouldBeDefeatedLethalDamageTests : WouldBeDefeatedTestBase
     public void TheFirstPlayerBreaksAHighestHitPointAttachmentTie()
     {
         var world = Empty();
+        world.Seats[0].IdentityCard = world.CreateCard("01001a", world.Seats[0].Hero);
         world.CreateCard(Mercenary, world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
         world.CreateCard(Mercenary, world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
         var minions = world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)).Cards.ToList();
