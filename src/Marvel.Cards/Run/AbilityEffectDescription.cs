@@ -17,6 +17,7 @@ internal static class AbilityEffectDescription
         AbilityEffect.BoostBasicUse bonus => $"Add {bonus.Amount} ATK for this basic attack only",
         AbilityEffect.ModifyPlayedEvent modifier =>
             $"Increase each {(modifier.Kind == "eventDamage" ? "damage" : "threat removal")} instance of this event by {modifier.Amount} until this play finishes",
+        AbilityEffect.IncreaseNextEventCost increase => $"Your next event costs {increase.Amount} additional resources; discard this obligation after that event",
         AbilityEffect.ResolveInvocation => "Resolve your captured Invocation top Special",
         AbilityEffect.ChooseCard choice => ChoiceSummary(choice),
         AbilityEffect.Draw draw => DrawSummary(draw),

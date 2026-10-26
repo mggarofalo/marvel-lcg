@@ -270,6 +270,9 @@ public abstract record AbilityEffect
     public sealed record DiscardHandWithResource(char Resource) : AbilityEffect;
     /// <summary>Recover cards discarded this way with a printed resource.</summary>
     public sealed record RecoverDiscardedByResource(char Resource) : AbilityEffect;
+    /// <summary>Increase your next event cost, then discard this source after that event.</summary>
+    public sealed record IncreaseNextEventCost(long Amount) : AbilityEffect;
+
     /// <summary>Reduce the next card cost paid by a player.</summary>
     public sealed record ReduceNextCardCost(AbilityPlayer Player, AbilityNumber Amount) : AbilityEffect
     {

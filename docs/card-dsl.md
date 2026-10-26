@@ -1641,3 +1641,13 @@ chosen area/incarnation departs, both removals apply nothing while the private
 inspection still completes. Independent drawing likewise survives departure
 through the ordinary labelled thwart lifecycle. Confusion cancels the complete
 effect after costs.
+
+`increaseNextEventCost: <positive integer>` is a bounded obligation instruction.
+Its source must be in the resolving player's obligations area. It increases that
+player's next played event cost, with no phase expiration, and discards the
+original obligation after that event resolves or its effects are canceled.
+The source's in-play incarnation and the paid event are captured independently.
+Invocation Special resolution pays an ability cost and never consumes it.
+The instruction spelling and effect/receipt keys are engine choices.
+The actual-text Physical Toll candidate remains test-local; this capability does
+not admit 09027 or Doctor Strange into public setup.

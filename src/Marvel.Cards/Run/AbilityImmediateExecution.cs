@@ -12,6 +12,7 @@ internal static class AbilityImmediateExecution
     {
         return effect switch
         {
+            AbilityEffect.IncreaseNextEventCost increase => IncreaseEventCost(increase, context),
             AbilityEffect.BoostBasicUse bonus => BoostBasicUse(bonus, context),
             AbilityEffect.ModifyPlayedEvent modifier => AbilityPlayedEventModifier.Run(modifier, context),
             AbilityEffect.Fixed fixedEffect => RunFixed(fixedEffect, context),
@@ -28,6 +29,13 @@ internal static class AbilityImmediateExecution
                 RunDelayedEffect(effect, context),
             _ => new(false, false),
         };
+    }
+
+    private static AbilityImmediateResult IncreaseEventCost(AbilityEffect.IncreaseNextEventCost increase, AbilityImmediateContext context)
+    {
+        NextEventCost.Register(context.Admission.World, context.Admission.Source,
+            context.Admission.Query.Player, increase.Amount);
+        return new(true, true);
     }
 
     private static AbilityImmediateResult BoostBasicUse(AbilityEffect.BoostBasicUse bonus, AbilityImmediateContext context)

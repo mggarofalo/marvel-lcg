@@ -27,7 +27,7 @@ internal static class AbilityInvocationPayment
         _ => cost,
     };
 
-    private static int Amount(World world, int player)
+    internal static int Amount(World world, int player)
     {
         var top = Top(world, player) ?? throw new RulesNotImplementedException("no owned public Invocation top");
         // Spell Mastery pays an ability cost, so ordinary event-play discounts do not apply.

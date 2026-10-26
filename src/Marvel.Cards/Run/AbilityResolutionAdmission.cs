@@ -131,6 +131,7 @@ internal static class AbilityResolutionAdmission
             "requireAttackedPlayerAllyDefender" => cast.World.Attack is not null
                 && cast.World.Activation is { Attacking: true, Id: >= 0 },
             "replaceThreatWithDamage" => cast.Occurrence.Threat is { Remaining: > 0 },
+            "increaseNextEventCost" => NextEventCost.CanRegister(cast.World, cast.Source, cast.Context.Query.Player),
             "grantCharactersControlledBy" or "grantCharactersWithTrait" or "reduceNextCardCost" => true,
 
             // Target availability is the only state-dependent precondition

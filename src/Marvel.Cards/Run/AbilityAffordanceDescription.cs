@@ -32,7 +32,7 @@ internal static class AbilityAffordanceDescription
             AnchorPlayer: ability.Player,
             Label: found.Name,
             Targets: recipients ?? AbilityCostSelection.Ask(world, card, ability.Player, found.Cost),
-            Costs: price is null ? null : [price], Description: Description(found.Effect, contextual))
+            Costs: price is null ? null : [price], Description: Description(execution, world, ability.Player, found.Effect, contextual))
         {
             Timing = found.Trigger.Timing,
             ContextCardIds = ability.TriggeringWouldDefeat is { } imminent ? [imminent]
@@ -66,9 +66,12 @@ internal static class AbilityAffordanceDescription
             ? $"{caption ?? name} after {defeat.Title ?? EffectiveCards.Title(world.Cards[defeat.Card], world.Facts)} is defeated"
             : caption;
 
-    private static string? Description(AbilityEffect effect, string? contextual) => contextual is not null
-        ? contextual + ". Damage prevention and interrupts can change the result."
-        : AbilityEffectDescription.Summary(effect) ?? AbilitySourceActionDescription.Caption(effect);
+    private static string? Description(AbilityResolutionExecution execution, World world,
+        int player, AbilityEffect effect, string? contextual) =>
+        AbilityInvocationDescription.Summary(execution, world, player, effect)
+        ?? (contextual is not null
+            ? contextual + ". Damage prevention and interrupts can change the result."
+            : AbilityEffectDescription.Summary(effect) ?? AbilitySourceActionDescription.Caption(effect));
 
     private static bool CanCommitRecipient(TargetRequest? recipients, CardKind kind, AbilityType timing) =>
         recipients is not null && (kind != CardKind.Event

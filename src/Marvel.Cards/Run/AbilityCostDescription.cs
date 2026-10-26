@@ -11,7 +11,7 @@ internal static class AbilityCostDescription
     internal static string? Summary(World world, Card source, int player, AbilityCost? cost)
     {
         if (cost is null) return null;
-        if (cost is AbilityCost.InvocationTop) return "Pay the cost of your public Invocation top; resolve its Special ability";
+        if (cost is AbilityCost.InvocationTop) return AbilityInvocationDescription.Cost(world, player);
         if (cost is AbilityCost.Sequence sequence)
         {
             string[] parts = [.. sequence.Costs.Select(step => Summary(world, source, player, step))

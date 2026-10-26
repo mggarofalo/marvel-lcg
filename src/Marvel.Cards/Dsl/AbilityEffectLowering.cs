@@ -148,6 +148,7 @@ internal static class AbilityEffectLowering
             "discardHandWithResource" => new AbilityEffect.DiscardHandWithResource(Resource(argument, child)),
             "recoverDiscardedByResource" => new AbilityEffect.RecoverDiscardedByResource(Resource(argument, child)),
             "recruitDiscarded" => AbilityDiscardedRecruitmentLowering.Lower(argument, child),
+            "increaseNextEventCost" => new AbilityEffect.IncreaseNextEventCost(PositiveInteger(argument, child)),
             "reduceNextCardCost" => ReduceCostEffect(argument, child),
             "attack" => PowerEffect(argument, child, AbilityPowerKind.Attack),
             "defense" => PowerEffect(argument, child, AbilityPowerKind.Defense),

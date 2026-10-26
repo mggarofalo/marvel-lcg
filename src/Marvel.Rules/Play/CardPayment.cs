@@ -73,6 +73,8 @@ public static class CardPayment
             && Matches(world, card, effect.CostFilter)
             && effect.Amount > 0).ToList();
 
+        var increases = NextEventCost.Applied(world, seat, card);
+        amount = checked(amount + increases.Sum(effect => effect.Amount));
         foreach (var modifier in modifiers)
         {
             amount = Math.Max(0, amount - modifier.Amount);
@@ -81,7 +83,7 @@ public static class CardPayment
         amount = Math.Max(0, amount - world.CardPlayAbilities.SelfPlayCostReduction(world, card, seat.Index));
         amount = AllyPlayHistory.AdjustCost(world, card, amount);
         amount = UpgradeHostCost.Adjust(world, card, attachmentHost, amount);
-        return new AdjustedCardCost(amount, modifiers);
+        return new AdjustedCardCost(amount, [.. modifiers, .. increases]);
     }
 
     private static bool Matches(World world, Card card, CardCostFilter? filter) =>

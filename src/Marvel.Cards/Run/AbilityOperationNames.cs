@@ -109,6 +109,7 @@ internal static class AbilityOperationNames
         AbilityEffect.RemoveCounters => "removeCounters",
         AbilityEffect.DiscardHandWithResource => "discardHandWithResource",
         AbilityEffect.RecoverDiscardedByResource => "recoverDiscardedByResource",
+        AbilityEffect.IncreaseNextEventCost => "increaseNextEventCost",
         AbilityEffect.ReduceNextCardCost => "reduceNextCardCost",
         AbilityEffect.Sequence => "seq",
         AbilityEffect.Simultaneous => "and",

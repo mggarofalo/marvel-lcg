@@ -217,7 +217,7 @@ internal static class AbilityEffectBindingAnalysis
             or AbilityEffect.PreventDamageFrom or AbilityEffect.DelayedStun
             or AbilityEffect.ChooseTopForHand or AbilityEffect.ChooseDiscardToShuffle
             or AbilityEffect.DiscardHandWithResource
-            or AbilityEffect.RecoverDiscardedByResource or AbilityEffect.RecruitDiscarded or AbilityEffect.GrantTraitCharacters or AbilityEffect.ModifyPlayedEvent or AbilityEffect.BoostBasicUse => false,
+            or AbilityEffect.RecoverDiscardedByResource or AbilityEffect.RecruitDiscarded or AbilityEffect.GrantTraitCharacters or AbilityEffect.ModifyPlayedEvent or AbilityEffect.BoostBasicUse or AbilityEffect.IncreaseNextEventCost => false,
         _ => throw new InvalidOperationException("Unknown compiled effect in player-binding analysis"),
     };
 
