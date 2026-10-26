@@ -84,6 +84,7 @@ public sealed class PresentationSourcePolicyTests
             "Marvel.Rules.Events.EventCause.TargetTitle",
             "Marvel.Rules.Events.EventCauseKind.Scheme",
             "Marvel.Rules.Events.EventCauseKind.Thwart",
+            "Marvel.Rules.Events.EventCauseKind.operator ==(Marvel.Rules.Events.EventCauseKind, Marvel.Rules.Events.EventCauseKind)",
             "Marvel.Rules.Events.FieldSet.Card",
             "Marvel.Rules.Events.FieldSet.Field",
             "Marvel.Rules.Events.FieldSet.From",

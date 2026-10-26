@@ -13,8 +13,8 @@ has parent `c1decfff`. Every row and its engine prerequisite has independent
 review. The verified printed starter, public admission, eight complete public games
 and reviewed damage-cost interruption are integrated. Native cost/consequence
 repairs have independent managed and rendered evidence. Historical replay
-regressions remain under exact-event audit in MARVEL-783; the candidate is not
-accepted or merged until these and final CI resolve.
+regressions are resolved with unchanged-archive rejection and corrected owning
+receipts in MARVEL-783/795. The candidate awaits required CI and merge.
 
 Earlier integration evidence follows; these runs do not certify the current head.
 All 6,104 Content tests passed on prerequisite revision `f601932b` (2026-10-26);
@@ -288,3 +288,33 @@ Server historical campaign differences are separately audited before changing
 expectations; archived bytes and strict event verification remain intact.
 
 Full combined Server completed: 581 passed, three historical campaign expectation failures under MARVEL-783. Exact audit identifies frozen legacy Backflip rows exposed by the direct-damage prevention window. No archive is rewritten; final rejection/control evidence is pending integration.
+
+
+At combined commit d9a9122b, the full nonincremental Release solution build passes
+with zero warnings/errors. The full Godot managed lane passes 981 tests, with one
+conditional native-fixture entry skipped in that lane and exercised by the separate
+native profile. The earlier socket-abort failure does not recur. Logs:
+`widow-final-release-build.log`, `widow-final-godot-managed.log`.
+
+The complete Acceptance assembly passes all168 tests on d9a9122b, including the final eight Black Widow public-game cases, with zero skips/failures. Log: widow-combined-acceptance-full.log. Provenance remediation and its final independent review remain separate pending changes.
+
+
+## Final provenance integration
+
+Implementation 3c74dfd6 and independent review e088693d preserve the captured
+forced owner through single/simultaneous damage, synchronous defeat/cleanup and
+following authored instructions. Association is restricted to invocations actually
+suspended by the new optional damage window. Optional children and reflection do
+not borrow an ancestor; preexisting separately suspended defeat policy is unchanged.
+Combined focused tests pass 7 Content and 34 historical/upgrade Server cases.
+Independent fresh-host tests additionally prove actual Taskmaster/Energy Barrier
+receipt preservation and rejection of ability-occurrence-only archive tampering.
+Three compiled mutation controls fail as intended; restored sources pass.
+Historical original bytes remain unchanged; frozen unscoped Backflip histories
+are rejected at the proven earliest difference, with compatible nonempty controls.
+
+The full architecture gate also identified an omitted reviewed member for the
+existing targetless-thwart visibility filter. Its exact EventCauseKind equality
+operator is a passive event-fact comparison, independently reviewed; no gameplay
+call, wildcard exemption or debt baseline is admitted. All 129 architecture tests
+and 368 View tests pass with that exact allowlist addition.

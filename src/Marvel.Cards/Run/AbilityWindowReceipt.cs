@@ -11,12 +11,7 @@ internal static class AbilityWindowReceipt
     internal static void Emit(AbilityResolutionState cast, CompiledCardAbility ability, int ordinal)
     {
         if (ability.Trigger.Timing is not (AbilityType.ForcedInterrupt or AbilityType.ForcedResponse)) return;
-        // This association is engine-chosen evidence, scoped to this actual ability execution.
-        for (int index = 0; index < cast.Events.Count; index++)
-            if (cast.Events[index].AbilitySource is null)
-                cast.Events[index] = cast.Events[index] with
-                { AbilitySource = cast.Source.ObjectId, AbilityOccurrence = cast.Occurrence.Id,
-                    AbilityTiming = ability.Trigger.Timing, AbilityOrdinal = ordinal };
+        Associate(cast);
         cast.Events.Add(new AbilityWindowResult(cast.Source.ObjectId, ability.Trigger.Timing,
             cast.Player, cast.Occurrence.Id, Description(ability.Effect) ?? PrintedInstructions(cast), !cast.Suspended)
         {
@@ -27,6 +22,18 @@ internal static class AbilityWindowReceipt
             Subjects = new Dictionary<int, string>
                 { [cast.Source.ObjectId] = EffectiveCards.Title(cast.Source, cast.World.Facts) },
         });
+    }
+
+    internal static void Associate(AbilityResolutionState cast)
+    {
+        if (cast.Execution is not { IsBatch: false } owner
+            || owner.Ability.Type is not (AbilityType.ForcedInterrupt or AbilityType.ForcedResponse)) return;
+        // This association is engine-chosen evidence, scoped to this actual ability execution.
+        for (int index = 0; index < cast.Events.Count; index++)
+            if (cast.Events[index].AbilitySource is null)
+                cast.Events[index] = cast.Events[index] with
+                { AbilitySource = owner.Ability.Card, AbilityOccurrence = owner.Occurrence.Id,
+                    AbilityTiming = owner.Ability.Type, AbilityOrdinal = owner.Ability.Ordinal };
     }
     private static string PrintedInstructions(AbilityResolutionState cast)
     {

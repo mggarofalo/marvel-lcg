@@ -26,6 +26,8 @@ public sealed class AbilityExecution
     internal PendingAbility? Resolution { get; }
     /// <summary>Whether this scope owns entry work without changing an individual ability's semantic result.</summary>
     public bool IsBatch => Resolution is null;
+    /// <summary>Whether an optional direct-damage window split this invocation's initial event receipt.</summary>
+    public bool DamagePreventionSuspended { get; internal set; }
     internal long OwnerFrame { get; }
     internal long SegmentOwnerFrame { get; set; }
     internal AbilityExecution? Parent { get; }

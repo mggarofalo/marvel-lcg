@@ -75,10 +75,15 @@ Black Widow's 34 faces and bounded prerequisites are mapped in its
 Black Widow is the active integration candidate with all 34 playable faces and
 645 total ability rows. All card packets and engine prerequisites have independent
 review. The verified starter and complete public admission are integrated; focused
-combined admission checks pass 11 Content and 11 Server cases. Pack-wide public
-games, final regression certification and native explanation fixes remain open.
-Prepared native Safe House and Preparation journeys pass eight profiles, but
-MARVEL-792 tracks visible cost/consequence defects before final UI acceptance.
+combined admission checks pass 11 Content and 11 Server cases. Eight complete
+public games have independent review, including natural Counterattack use.
+Reviewed native cost/consequence repairs pass combined Safe House and Preparation
+journeys; the final Godot managed suite passes 981 tests (the conditional native
+entry point is separately exercised). Historical replay audit exposed lost forced
+ability metadata after optional damage prevention; implementation 3c74dfd6 and
+independent review e088693d now preserve the owning receipt through damage and
+following effects. Strict historical rejection and compatible controls pass.
+The candidate awaits final required CI and merge.
 Replay v27 and protocol 41 describe the unpublished combined candidate; released
 main remains replay v26. Doctor Strange's complete 40-face handoff and repaired
 pinned Invocation rules extract are integrated for the next engine slice.

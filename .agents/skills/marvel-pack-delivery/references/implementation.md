@@ -58,6 +58,14 @@ Prove that answering completes the exact original frame, including attachment an
 ordering choices. Direct-runner fixtures must drain the real continuation before
 asserting final outcomes; do not weaken outcomes to accommodate pending work.
 
+When adding a suspension point to an existing effect, compare its complete causal
+events with the uninterrupted path, not only final state or same-candidate replay.
+Check delayed placement, owned synchronous defeat/cleanup, simultaneous recipients
+and later instructions in the same ability where reachable. Preserve the existing
+forced-ability association policy across resumption without borrowing a nested
+interrupt's or an ancestor's identity. Same-candidate replay can reproduce the
+same missing metadata twice and still pass.
+
 Use explicit UTF-8 when editing dataset and authority text. Inspect unrelated
 non-ASCII diff changes; changing both a test input and its expected value can hide
 encoding damage from the test itself.
@@ -99,6 +107,12 @@ Ask which plausible wrong implementation still passes. New decisions should earn
 distinguishing behavior tests and mutants under repository policy. Review cost
 atomicity and identity/ownership across suspended choices, not just happy-path text.
 Retain genuine historical fixtures; do not rewrite them to make current replay pass.
+Trace the first differing prompt/event against the exact factory and ability book
+used by the fixture before revising its expected result. Frozen content may retain
+an old card interpretation even when the current book is corrected. A newly
+exposed divergence needs explicit rejection, unchanged archive/no-publication
+proof and a compatible nonempty control; it is not permission to retrofit the
+archive or relax event comparison. Separately prove the corrected current card.
 
 ## Public integration
 
