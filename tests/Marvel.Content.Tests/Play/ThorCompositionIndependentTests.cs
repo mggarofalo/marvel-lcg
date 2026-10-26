@@ -132,6 +132,15 @@ public sealed class ThorCompositionIndependentTests : CoreCardTestBase
         Assert.Equal(new[] { hero.ObjectId, villain.ObjectId }, prompt.ContextCardIds);
         Sequence.Answer(world, world.Facts, runner, prompt,
             accept ? new Decision(offer.Id, [hammer.ObjectId]) : Decision.Decline, []);
+        var aftermath = Sequence.Work(world, world.Facts, runner, []);
+        if (!accept)
+        {
+            // The held Mean Swing can pay Jarnbjorn's physical response; decline it explicitly.
+            Assert.NotNull(aftermath);
+            Assert.Single(aftermath.Affordances, response => response.AnchorId == axe.ObjectId);
+            Sequence.Answer(world, world.Facts, runner, aftermath, Decision.Decline, []);
+        }
+        else Assert.Null(aftermath);
         Sequence.Finish(world, world.Facts, runner, []);
         Assert.True(axe.Ready);
         Assert.Equal(!accept, hammer.Ready);
