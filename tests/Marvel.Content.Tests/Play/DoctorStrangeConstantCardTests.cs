@@ -4,6 +4,7 @@ using Marvel.Cards.Run;
 using Marvel.Content.Tests.Cards;
 using Marvel.Rules.Play;
 using Marvel.Rules.State;
+using Marvel.Rules.Timing;
 using Marvel.Tests;
 using Xunit;
 
@@ -134,6 +135,36 @@ public sealed class DoctorStrangeConstantCardTests : CoreCardTestBase
         Assert.Equal(added, rows.Skip(651).Select(r => r.GetProperty("card").GetString()));
         Assert.All(rows.Skip(651), row => Assert.False(row.TryGetProperty("startingCounters", out _)));
         Assert.Equal(9, AuthoredCards.Book.Authored.Count(face => face.StartsWith("09", StringComparison.Ordinal)));
+    }
+
+    [Fact]
+    [Rule("rr:play-restrictions-and-permissions.1")]
+    [Rule("rr:ability.9")]
+    public void GrantedMysticAllowsActualSupremeAndLaterTraitLossDoesNotDiscardIt()
+    {
+        // "In order to ... play a card, all of its play restrictions must be observed."
+        // Constant effects "are active anytime the specific condition is met."
+        var world = Hero("01010a", 2);
+        var runner = AuthoredCards.Runner();
+        world.Abilities = runner;
+        var seat = world.Seats[1];
+        world.CreateCard("01090", seat.Deck);
+        var upgrade = world.CreateCard("09026", seat.Hand);
+        var payment = world.CreateCard("09022", seat.Hand);
+        Assert.False(Traits.Has(world, seat.IdentityCard, "MYSTIC", Cards));
+        Assert.Null(CardPayment.Price(world, Cards, seat, upgrade));
+        var grant = world.Effects.Register(new(EffectSource.LastingEffect,
+            Traits.Granted + "MYSTIC", Affects: seat.IdentityCard.ObjectId));
+        Assert.NotNull(CardPayment.Price(world, Cards, seat, upgrade));
+        CardPlay.Play(world, Cards, runner, seat, upgrade, [payment.ObjectId], []);
+        Assert.Equal(DeckType.UpgradesArea, upgrade.Area.Type);
+        Assert.Equal(DeckType.DiscardPile, payment.Area.Type);
+        Assert.Equal(6, Modified(world, seat.IdentityCard, "hand_size"));
+        grant.Dispose();
+        Assert.False(Traits.Has(world, seat.IdentityCard, "MYSTIC", Cards));
+        Assert.Equal(DeckType.UpgradesArea, upgrade.Area.Type);
+        Assert.Equal(6, Modified(world, seat.IdentityCard, "hand_size"));
+        Assert.Equal(5, Modified(world, world.Seats[0].IdentityCard, "hand_size"));
     }
 
     private static (World World, AbilityRunner Runner) Board()

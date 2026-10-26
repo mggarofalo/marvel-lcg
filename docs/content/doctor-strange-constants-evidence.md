@@ -69,3 +69,40 @@ An initial suspension fixture used the default alter-ego Playing state, making
 Eye unavailable before payment. The final fixture explicitly starts in hero form.
 The initial wrong-cost controls were corrected against generated printed values;
 these fixture failures are not engine findings.
+
+## Independent combined review (2026-10-26)
+
+The independent reviewer combined content commit `60e4a9f7` with prerequisite
+`e34f921a` (review-worktree cherry-pick `fc6e03698cc64cf339582ec791ffcb2e6311ccf8`).
+Review covered actual printed 09009/09011/09026, RR 1.8 you/your, identity,
+traits, form, constant/triggered abilities and printed restrictions, the generic
+reader, current effective-trait legality, rejected-play purity and payment
+suspension. No blocking correctness finding remains in either bounded scope.
+No card ID or trait name is special-cased by the reader; controlled-character
+restrictions remain separate. The 651 preceding raw JSON object texts are
+unchanged after checkout-newline normalization; only the intended three unique
+rows are appended, giving 654 rows. Inventory edits preserve the existing
+negative controls and do not expand public admission.
+
+The complete unchanged `SupremeRequiresCurrentMysticWithValidSameCostControl`
+theory passes with the prerequisite integrated. The reviewer added
+`GrantedMysticAllowsActualSupremeAndLaterTraitLossDoesNotDiscardIt`: a non-first,
+non-Strange identity gains Mystic, pays for the actual upgrade, then loses the
+trait while retaining the upgrade and its hero-form bonus. This distinguishes
+the play prerequisite from a continuing condition on the hand-size effect.
+The prepared deck contains a card to keep the payment in discard rather than
+triggering empty-deck recycling.
+
+Final Release evidence, including the added review test: **119 passed, zero
+failed/skipped**, in `C:/Users/mggar/Source/strange-constants-review-final.log`.
+The filter includes all `DoctorStrange`, `HaveTraitPlayRestrictionTests`,
+`IdentityTraitPlayRestrictionTests`, `ControlledCharacterPlayRestrictionTests`,
+`AbilityData`, the four affected Black Widow inventory/card classes and
+`RuleCitationTests`. No Supreme exclusion applies. The earlier combined run
+before adding the review test passed 118 tests, recorded separately in
+`strange-constants-review-focused.log`. Normal pre-commit gates remain enabled;
+their result is in `strange-constants-review-hooks.log`.
+
+Verdict: approve the combined three-face research packet and generic parser
+prerequisite for integration. This review does not establish complete Doctor
+Strange admission, whole-game behavior, native UI or platform certification.
