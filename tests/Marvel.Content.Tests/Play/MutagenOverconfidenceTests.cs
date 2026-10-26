@@ -122,6 +122,30 @@ public sealed class MutagenOverconfidenceTests : CoreCardTestBase
         AssertFinished(f, false);
     }
 
+    [Theory]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [Rule("rr:attack-enemy-activation.step.3.b")]
+    [Rule("rr:damage.step.5")]
+    public void OwnedBoostPlacementAcrossThreeRecipientsDecidesSurgeWithoutAttackDamage(bool toughAlly, bool surge)
+    {
+        // Printed 02031 counts damage "placed by this activation" without a recipient restriction.
+        // Concussive Blast deals 1 to each character you control during activation step 3.b.
+        var f = Create(true, "01154");
+        var area = f.World.AreaOf(DeckType.AlliesArea, PlayArea.Of(1), cardOwner: 1);
+        var ally = f.World.CreateCard("01020", area);
+        var other = f.World.CreateCard("01083", area);
+        if (toughAlly) Statuses.Give(f.World, ally, Statuses.Tough);
+        // A generic engine modifier isolates boost placement from the zero-damage attack.
+        f.World.Effects.Register(new ContinuousEffect(EffectSource.LastingEffect,
+            "attack", Amount: -2, Affects: f.Villain.ObjectId));
+        var events = f.Finish();
+        Assert.Equal(1, f.World.Seats[1].IdentityCard.Damage);
+        Assert.Equal(toughAlly ? 0 : 1, ally.Damage);
+        Assert.Equal(1, other.Damage);
+        Assert.Equal(0, Assert.Single(events.OfType<AttackCompleted>()).DamageDealt);
+        AssertFinished(f, surge);
+    }
     private static RedSkullFixture Create(bool hero, string boost, string stage = "02014")
     {
         var world = Hero("01001a", 2);

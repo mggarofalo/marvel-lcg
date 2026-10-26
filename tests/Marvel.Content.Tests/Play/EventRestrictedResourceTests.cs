@@ -107,6 +107,35 @@ public sealed class EventRestrictedResourceTests
             Assert.Empty(runner.ResourceAbilities(world, 0));
     }
 
+    [Theory]
+    [InlineData("non-event")]
+    [InlineData("other-player")]
+    [InlineData("alter-ego")]
+    [InlineData("exhausted")]
+    [InlineData("duplicate")]
+    [Rule("rr:initiating-abilities.step.5")]
+    public void ReviewInvalidContributionPreservesEarlierHandResource(string invalid)
+    {
+        // Costs that cannot be paid abort "without paying any costs".
+        var (world, runner, suit) = Board(hero: invalid != "alter-ego", players: 2);
+        int payer = invalid == "other-player" ? 1 : 0;
+        var target = world.CreateCard(invalid == "non-event" ? "05002" : "27018", world.Seats[payer].Hand);
+        var energy = world.CreateCard("01088", world.Seats[payer].Hand);
+        if (invalid == "exhausted") suit.Exhaust();
+        int[] paying = invalid == "duplicate"
+            ? [energy.ObjectId, suit.ObjectId, suit.ObjectId] : [energy.ObjectId, suit.ObjectId];
+        string before = world.Digest().Canonical();
+        long random = world.Random.Generator.WordsConsumed;
+        var outstanding = world.Agenda.Outstanding.ToArray();
+        var events = new List<Marvel.Rules.Events.GameEvent>();
+        Assert.Throws<RulesNotImplementedException>(() => AbilityResourcePayment.Spend(world, runner,
+            new(target, payer, paying, 3, ""), events));
+        Assert.Equal(before, world.Digest().Canonical());
+        Assert.Equal(random, world.Random.Generator.WordsConsumed);
+        Assert.Equal(outstanding, world.Agenda.Outstanding);
+        Assert.Empty(events);
+        Assert.Equal(DeckType.HandsArea, energy.Area.Type);
+    }
     private static (World World, AbilityRunner Runner, Card Suit) Board(bool hero = true, int players = 1)
     {
         var runner = new AbilityRunner(AbilityCatalog.Parse("""
