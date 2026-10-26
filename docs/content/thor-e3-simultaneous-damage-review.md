@@ -1,5 +1,12 @@
 # Thor E3 simultaneous damage review
 
+Current scope clarification: the overkill-specific ruling quoted in this
+historical review describes pre-1.8 overkill. It is not current authority for
+overkill. The retained direct-damage barrier applies the current damage stages
+to a simultaneous effect; see [timing.md](../timing.md) and the separate
+[RR 1.8 adjudication](overkill-rr18-adjudication.md). No overkill timing change
+was integrated from the rejected MARVEL-756 candidates.
+
 Candidate: `10684748978c342817c78f575254f6a8bd315c68`.
 Verdict: **rejected**. The Tough bypass prerequisite has a concrete simultaneous
 damage timing defect. Lightning Strike (`06006`) remains unauthored and unadmitted.

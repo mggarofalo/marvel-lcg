@@ -15,9 +15,9 @@ internal sealed class SimultaneousCharacterDefeats(World world, ICardFacts facts
 
     internal bool Continue(List<GameEvent> events)
     {
-        // ruling:304a4798e0b453b4: "each step is resolved simultaneously for both targets."
-        // rr:damage.step.6-.8: all imminent-defeat interrupts precede all defeat
-        // interrupts, and every defeat interrupt finishes before any departure.
+        // rr:and: effects "resolve simultaneously"; rr:damage.step.6-.8 order
+        // "would be defeated", "is defeated", then "Discarding". Applying those
+        // stages to one simultaneous effect keeps every recipient at the same stage.
         wouldDefeat ??= BeginWouldDefeat(events);
         if (!wouldDefeat.IsComplete) return false;
         if (!admitted)

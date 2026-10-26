@@ -590,8 +590,11 @@ damage or threat modifiers and their lifetime require their own implementation.
 stage: all step-6 would-be-defeated interrupts, all step-7 when-defeated
 interrupts, then step-8 departures. The damage occurrence retains every exact
 causal defeat; response opportunities remain after the complete procedure.
-This follows `ruling:304a4798e0b453b4`: "each step is resolved simultaneously for
-both targets", together with `rr:damage.step.6` through `.step.8`.
+This applies the ordered stages in current `rr:damage.step.6` through `.step.8`
+to one simultaneous effect (`rr:and`), with simultaneous forced ordering under
+`rr:forced.5`. It does not make RR 1.8 overkill simultaneous: overkill now requires
+the primary target's actual defeat before the excess is dealt. The older
+overkill-specific `ruling:304a4798e0b453b4` does not govern that changed keyword.
 
 Step 6 combines live eligible tiers across exact recipient occurrences. The
 first player orders simultaneous forced abilities (`rr:forced.5`); optional

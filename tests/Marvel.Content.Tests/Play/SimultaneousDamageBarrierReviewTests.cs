@@ -55,7 +55,7 @@ public sealed class SimultaneousDamageBarrierReviewTests
     [InlineData("WhenCardDefeated", false)]
     public void DyingGlobalObserverAnswersBothRecipientsBeforeDeparture(string condition, bool observerFirst)
     {
-        // ruling:304a4798e0b453b4: "each step is resolved simultaneously for both targets."
+        // rr:damage.step.6-.8: "would be defeated", "is defeated", then "Discarding".
         // A synthetic forced observer counts both step-6/step-7 instances before
         // step 8 removes it. Reversing declaration order is the distinguishing control.
         var (world, observer, other, scheme) = Board(GlobalObserver(condition, "ForcedInterrupt"));
