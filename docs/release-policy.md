@@ -59,10 +59,20 @@ independent identities do:
 |---|---:|---|
 | Engine protocol | `39` | A request, response, affordance, event or descriptor change is not understood by the prior endpoint. |
 | Session schema | `7` | The strict persisted JSON shape changes. |
-| Engine replay contract | `engine-replay-v25` | The same setup and decision trace may resolve differently. |
+| Engine replay contract | `engine-replay-v26` | The same setup and decision trace may resolve differently. |
 | RNG contract | `mt19937-iso-cxx` | The seeded random stream changes. |
 | State digest | `state-digest-v3` | The canonical hidden-state serialization changes. |
 | Runtime datasets | Three SHA-256 values | Any byte in `cards.json`, `setup.json` or `abilities.json` changes. |
+
+Replay v26 completes minion Quickstrike before optional engagement and entry
+responses. Real Core Hawkeye and Vulture can therefore reach the same optional
+response with different damage and event order from v25. V25 sources have no
+named admission and remain quarantined unchanged. Frozen v19/v20/v21 sources
+retain explicit v26 routes that verify every original recorded fact; divergent
+histories are rejected. Protocol 39, session schema 7, RNG, state digest and
+runtime datasets retain their identities for this replay boundary. Historical
+v22/v23/v24/v25 destination routes remain destination-bound.
+See [the minion-entry boundary evidence](content/minion-entry-replay-boundary.md).
 
 Replay v25 emits one ally-entry response occurrence after the mandatory ally-limit
 choice, for ordinary play and put-into-play. This changes existing Core outcomes

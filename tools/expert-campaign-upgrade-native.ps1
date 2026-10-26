@@ -1,5 +1,6 @@
 [CmdletBinding()]
-param([Parameter(Mandatory)][string]$Root, [string]$GodotBin, [switch]$NoBuild)
+param([Parameter(Mandatory)][string]$Root, [string]$GodotBin, [switch]$NoBuild,
+    [string]$ReplayContract = 'engine-replay-v26')
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 $repo = Split-Path $PSScriptRoot -Parent
@@ -36,7 +37,7 @@ foreach ($choice in @('decline')) {
         $environment = @{ MARVEL_ENGINE_ENDPOINT = ''; MARVEL_SAVE_DIRECTORY = "$scope/authority"; MARVEL_CAMPAIGN_ACCESS_DIRECTORY = "$scope/access"; MARVEL_DECK_LIBRARY_DIRECTORY = "$scope/decks"; MARVEL_UI_SCALE = '100'; MARVEL_SMOKE_VIEWPORT = '1920x1080'; MARVEL_SMOKE_MOTION = 'disabled'; MARVEL_EXPERT_JOURNEY = $journey; MARVEL_UI_EVIDENCE_DIRECTORY = "$scope/$journey-artifacts" }
         $run = Invoke-NativeProcess $godot @('--headless', '--audio-driver', 'Dummy', '--path', "$repo/src/Marvel.Godot", '--script', "$PSScriptRoot/expert_campaign_upgrade_native.gd") $environment 90 "$scope/$journey.log" $repo
         if ($run.ExitCode -ne 0 -or $run.TimedOut -or $run.Output -match '(?m)^(SCRIPT ERROR:|ERROR:|WARNING:.*leaked)' -or $run.Output -notmatch "(?m)^EXPERT_CAMPAIGN_NATIVE_OK journey=$journey\s*$") { throw "Expert native $journey failed: $scope/$journey.log" }
-        Assert-ExpertCampaignUpgrade $published "$scope/authority/Campaigns/$id" $(if ($journey -eq 'inspect') { '' } else { $choice })
+        Assert-ExpertCampaignUpgrade $published "$scope/authority/Campaigns/$id" $(if ($journey -eq 'inspect') { '' } else { $choice }) $ReplayContract
         $current = Read-CampaignGeneration "$scope/authority/Campaigns/$id"
         if ($journey -eq $choice) { $continued = $current.ToJsonString() }
         if ($journey -eq 'restart' -and $continued -cne $current.ToJsonString()) { throw 'Restart changed persisted campaign.' }

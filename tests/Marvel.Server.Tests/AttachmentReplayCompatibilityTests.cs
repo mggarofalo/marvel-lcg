@@ -11,6 +11,7 @@ public sealed class AttachmentReplayCompatibilityTests
     [InlineData("engine-replay-v22", SessionReplayUpgrade.CoreRorsV19ToV22)]
     [InlineData("engine-replay-v23", SessionReplayUpgrade.CoreRorsV19ToV23)]
     [InlineData("engine-replay-v24", SessionReplayUpgrade.CoreRorsV19ToV24)]
+    [InlineData("engine-replay-v25", SessionReplayUpgrade.CoreRorsV19ToV25)]
     public void UnsupportedPredecessorRemainsQuarantinedWithoutChangingAnySourceFile(
         string replay, SessionReplayUpgrade historicalRoute)
     {
@@ -18,7 +19,7 @@ public sealed class AttachmentReplayCompatibilityTests
         {
             var (previous, factory) = ReplayContractUpgradeTests.Fixture(root);
             // Derived intermediate evidence verifies every fact of the authentic v19 trace.
-            // This is a compatibility control, not a historical v22/v23 recording.
+            // This is a compatibility control, not a historical recording of the derived version.
             var source = previous.Save.Compatibility with { ReplayContract = replay };
             var original = new SessionContentUpgrade(previous.Save.Compatibility, source, historicalRoute)
                 .Verify(previous.Save, setup => ReplayContractUpgradeTests.Open(factory, setup));
