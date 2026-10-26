@@ -75,16 +75,19 @@ public sealed class InvocationDeckTests
         var game = Game.Begin(world, world.Facts, new NoCardAbilities());
         var top = invocation.Deck.Cards[^1];
         var before = world.Digest().Canonical();
+        Assert.False(invocation.CanDiscardTop(top));
         Assert.Throws<ArgumentException>(() => invocation.DiscardTop(top, "early", []));
         Assert.Equal(before, world.Digest().Canonical());
 
         CompleteMulligan(game);
         Assert.Equal(GamePhase.Mulligan, game.Phase);
         Assert.Null(invocation.PublicTop);
+        Assert.False(invocation.CanDiscardTop(top));
         Assert.All(cards, card => Assert.False(card.FaceUp));
         var result = CompleteMulligan(game);
 
         Assert.Same(top, invocation.PublicTop);
+        Assert.True(invocation.CanDiscardTop(top));
         Assert.Equal([top], cards.Where(card => card.FaceUp));
         var flip = Assert.Single(result.Events.OfType<CardsFlipped>());
         Assert.Equal([top.ObjectId], flip.Cards);
@@ -217,7 +220,13 @@ public sealed class InvocationDeckTests
         var pending = game.Pending;
         var events = new List<GameEvent>();
 
-        for (int i = 0; i < 3; i++) Assert.Same(invocation.Deck.Cards[^1], invocation.PublicTop);
+        for (int i = 0; i < 3; i++)
+        {
+            Assert.Same(invocation.Deck.Cards[^1], invocation.PublicTop);
+            Assert.True(invocation.CanDiscardTop(invocation.PublicTop!));
+            Assert.False(invocation.CanDiscardTop(unprobed.PublicTop!));
+            Assert.False(invocation.CanDiscardTop(invocation.Deck.Cards[0]));
+        }
         Assert.Throws<ArgumentException>(() => invocation.DiscardTop(unprobed.PublicTop!, "foreign", events));
         Assert.Throws<ArgumentException>(() => invocation.DiscardTop(invocation.Deck.Cards[0], "deep", events));
         Assert.Throws<InvalidOperationException>(() => InvocationDeck.Initialize(world, 0, cards, "again", events));

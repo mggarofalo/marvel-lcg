@@ -113,4 +113,23 @@ Repair evidence outside the repository under `C:/Users/mggar/Source/`:
 - `invocation-admission-deck.log`: all 17 Invocation lifecycle cases pass.
 - `invocation-admission-architecture.log`: 92 focused architecture cases pass.
 
-Independent review and integrated wider checks remain with the delivery lead.
+Independent review of `d242e47a` accepts only this non-choice self-discard
+admission repair. The typed query checks the resolving seat, exact bound physical
+membership, ownership, current top and draw-pile location; execution shares that
+validation. The review adds direct query assertions to the existing two-player
+mulligan and purity tests, including an unprobed subsequent discard/recycle
+control. No production code changes are part of the review.
+
+Independent evidence outside the repository under `C:/Users/mggar/Source/`:
+
+- `invocation-admission-independent-content.log`: all 76 focused content cases
+  pass, including the unchanged self-discard-only regression, ordinary Winds and
+  Black Panther Special controls.
+- `invocation-admission-independent-rules.log`: all 22 focused lifecycle,
+  rules-graph and citation cases pass with the additional query assertions.
+- `invocation-admission-independent-hooks.log`: normal review-commit hooks,
+  including architecture policy, complexity and file-length checks.
+
+The genuine empty-choice Images finding above remains unresolved; this verdict
+does not accept complete Master/Images/Vapors behavior, all Invocations or Doctor
+Strange admission. Integrated wider checks remain with the delivery lead.
