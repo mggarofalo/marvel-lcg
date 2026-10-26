@@ -24,3 +24,22 @@ The divider uses local card numbers; the canonical IDs below map to datasets/car
 
 Player starter total: 40 cards (15 hero + 17 aspect + 8 basic), with identity 09001a/b separate. Obligation and nemesis are not shuffled into the starting player deck. Extra customization cards 09037–09039 are absent from this printed starter; their playable quantities must follow the pack inventory rather than a marketing total.
 The five Invocation cards form the separate printed Invocation deck; they do not increase the 40-card player starter. Setup/shuffle/top-card rules still come from the pinned product insert and printed identity abilities.
+
+## Invocation rulesheet authority
+
+The complete “The Invocation Deck” section from PDF page 1 is transcribed in
+[`the-invocation-deck.md`](the-invocation-deck.md), indexed as
+`pack:mc08:the-invocation-deck`. Its three printed paragraphs have no named
+subheadings. They establish the separate five-card deck, setup placement,
+public top during play, Spell Mastery resolution, separate discard, and
+penalty-free recycling whenever empty. This section is source authority only;
+it does not establish executable Doctor Strange support.
+
+The [official resource page](https://www.fantasyflightgames.com/product/marvel-champions-the-card-game/)
+links the [relocated PDF](https://cdn.svc.asmodee.net/production-fantasyflightgames/uploads/2026/09/mc08_doctor_strange_rulesheet.pdf),
+retrieved and visually inspected 2026-10-26. It matches the existing manifest pin:
+`mc08_doctor_strange_rulesheet.pdf`, 7,181,027 bytes, SHA-256
+`15dba31ffeafaedac36cfd81b4f95e635c929d87775f52152595adebcd3a1cb3`.
+The original PDF stays outside Git. See the parent
+[`UPSTREAM.md`](../UPSTREAM.md#doctor-strange-invocation-authority-repair-2026-10-26)
+for transcription conventions, rights and offline gates.

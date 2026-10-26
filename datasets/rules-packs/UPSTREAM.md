@@ -13,13 +13,13 @@ is the first.
 | Pinned by | `sources.manifest.json`: every local PDF byte and the committed snapshot |
 | Tier | `pack:<code>:<section>[.<rule>]` |
 
-**62 documents → 553 sections → 902 citable rules.**
+**62 documents → 554 sections → 903 citable rules.**
 
 | Kind | Documents | Records |
 |---|---|---|
 | Expansion rulebook | 11 | 529 |
 | Scenario insert | 20 | 229 |
-| Hero rulesheet | 30 | 76 |
+| Hero rulesheet | 30 | 77 |
 | Learn to Play | 1 | 68 |
 
 Campaign logs (9 documents) are excluded: they are play aids for recording
@@ -48,7 +48,7 @@ what a parser should not be guessing at:
   removes the sections that are reliably not rules (`CREDITS`, `PLAYTESTERS`,
   `S.H.I.E.L.D. BRIEFING`, `STRATEGY TIPS`, `EXPANSION SYMBOL`…).
 
-The denylist is deliberately not an allowlist. There are **531 distinct
+The denylist is deliberately not an allowlist. There are **532 distinct
 headings** across the corpus — mostly scenario, keyword and villain names that
 no list could anticipate. Excluding the known-not-rules keeps the unknown,
 which is the right default for a corpus meant to be complete.
@@ -70,7 +70,7 @@ pack:mc02:new-rules.when-the-villain-changes-form    one rule
 pack:mc32:featured-keywords.hinder-x                 a keyword definition
 ```
 
-349 of the 902 records are named rules found this way.
+349 of the 903 records are named rules found this way.
 
 ## References are authored, and live somewhere else
 
@@ -174,3 +174,31 @@ all other pack entries and PDF pins remain unchanged. The generic typography
 harvester is a candidate generator, not a byte-identical reproduction of this
 reviewed vendored text. `WreckingCrewAuthorityTests` holds these operative clauses;
 `PackRulesHarvestTests` independently checks the offline snapshot pin.
+
+## Doctor Strange Invocation authority repair (2026-10-26)
+
+The official FFG [product resource page](https://www.fantasyflightgames.com/product/marvel-champions-the-card-game/)
+links the [relocated rulesheet](https://cdn.svc.asmodee.net/production-fantasyflightgames/uploads/2026/09/mc08_doctor_strange_rulesheet.pdf).
+Its 7,181,027 bytes and SHA-256
+`15dba31ffeafaedac36cfd81b4f95e635c929d87775f52152595adebcd3a1cb3`
+match the existing `mc08_doctor_strange_rulesheet.pdf` source pin. The former
+`images-cdn.fantasyflightgames.com` URL is recorded in the implementation handoff;
+the official resource relocation does not change the pinned source. Copyright
+Marvel / Fantasy Flight Games; no open-content license is asserted. The PDF
+remains in the local document library, outside Git.
+
+`mc08/the-invocation-deck.md` is a reviewed transcription of the complete
+three-paragraph “The Invocation Deck” section on PDF page 1, visually inspected
+2026-10-26. It preserves the five named cards, separate deck and discard,
+facedown setup, faceup top during play, Spell Mastery resolution, and recycling
+whenever empty without penalty. Whitespace and the stylized Invocation typeface
+are normalized; no printed subheadings exist, so its source-derived section id
+is `pack:mc08:the-invocation-deck` with no child rule ids.
+
+This is a narrow adoption of reviewed vendored text, following the mc03/mc10
+procedure above. The generic typography harvester remains a candidate generator;
+do not overwrite the complete corpus to adopt this section. Every existing
+record and source PDF pin is preserved; only the new section, combined index and
+snapshot pin change. `DoctorStrangeAuthorityTests` holds its operative clauses,
+source identity and PDF pin; `PackRulesHarvestTests` independently checks the
+offline snapshot. This authority admission does not implement or admit the hero.
