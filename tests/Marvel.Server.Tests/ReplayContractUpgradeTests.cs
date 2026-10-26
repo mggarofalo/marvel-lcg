@@ -30,7 +30,7 @@ public sealed class ReplayContractUpgradeTests
             string bytes = SessionSaveJson.Write(original);
             var upgrade = Assert.IsType<SessionContentUpgrade>(factory.ContentUpgrade(original.Compatibility));
             var current = upgrade.Verify(original, setup => Open(factory, setup));
-            Assert.Equal("engine-replay-v23", current.Compatibility.ReplayContract);
+            Assert.Equal("engine-replay-v24", current.Compatibility.ReplayContract);
             Assert.Equal(bytes, SessionSaveJson.Write(current with { Compatibility = original.Compatibility }));
             Assert.Equal(bytes, SessionSaveJson.Write(original));
             Assert.Null(factory.ContentUpgrade(original.Compatibility with { ReplayContract = "engine-replay-v22" }));
@@ -152,7 +152,7 @@ public sealed class ReplayContractUpgradeTests
     [InlineData("engine-replay-v19")]
     [InlineData("engine-replay-v20")]
     [InlineData("engine-replay-v21")]
-    [InlineData("engine-replay-v24")]
+    [InlineData("engine-replay-v25")]
     public void HostAdmissionRequiresThisDeliveryDestination(string destination)
     {
         AdditiveContentUpgradeTests.WithAddedScenario((root, _) =>
@@ -164,8 +164,10 @@ public sealed class ReplayContractUpgradeTests
         });
     }
 
-    [Fact]
-    public void DivergentRecordedGameplayIsRejectedWithoutProducingAnUpgrade()
+    [Theory]
+    [InlineData("engine-replay-v22")]
+    [InlineData("engine-replay-v24")]
+    public void DivergentRecordedGameplayIsRejectedWithoutProducingAnUpgrade(string destination)
     {
         AdditiveContentUpgradeTests.WithAddedScenario((root, _) =>
         {
@@ -173,7 +175,7 @@ public sealed class ReplayContractUpgradeTests
             var original = previous.Save with { Initial = previous.Save.Initial with { StateDigest = "wrong historical outcome" } };
             string bytes = SessionSaveJson.Write(original);
             var route = Assert.IsType<SessionContentUpgrade>(Admission(root,
-                factory.Compatibility with { ReplayContract = "engine-replay-v22" }).For(original.Compatibility));
+                factory.Compatibility with { ReplayContract = destination }).For(original.Compatibility));
             Assert.Throws<ReplayDivergenceException>(() => route.Verify(original, setup => Open(factory, setup)));
             Assert.Equal(bytes, SessionSaveJson.Write(original));
         });

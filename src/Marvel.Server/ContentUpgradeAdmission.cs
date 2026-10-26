@@ -34,7 +34,7 @@ internal sealed class ContentUpgradeAdmission
 
     internal SessionContentUpgrade? For(SessionCompatibility actual)
     {
-        if (target.ReplayContract is not ("engine-replay-v22" or "engine-replay-v23") || source is null
+        if (target.ReplayContract is not ("engine-replay-v22" or "engine-replay-v23" or "engine-replay-v24") || source is null
             || actual with { Application = target.Application } == target) return null;
         var route = (actual.ReplayContract, target.ReplayContract) switch
         {
@@ -46,6 +46,10 @@ internal sealed class ContentUpgradeAdmission
             ("engine-replay-v20", "engine-replay-v23") => SessionReplayUpgrade.CoreRorsV20ToV23,
             ("engine-replay-v21", "engine-replay-v23") => SessionReplayUpgrade.CoreRorsV21ToV23,
             ("engine-replay-v23", "engine-replay-v23") => SessionReplayUpgrade.Unchanged,
+            ("engine-replay-v19", "engine-replay-v24") => SessionReplayUpgrade.CoreRorsV19ToV24,
+            ("engine-replay-v20", "engine-replay-v24") => SessionReplayUpgrade.CoreRorsV20ToV24,
+            ("engine-replay-v21", "engine-replay-v24") => SessionReplayUpgrade.CoreRorsV21ToV24,
+            ("engine-replay-v24", "engine-replay-v24") => SessionReplayUpgrade.Unchanged,
             _ => (SessionReplayUpgrade?)null,
         };
         if (route is null) return null;

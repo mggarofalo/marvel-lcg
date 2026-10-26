@@ -23,4 +23,10 @@ public enum SessionReplayUpgrade
     CoreRorsV20ToV23,
     /// <summary>Verify the complete v21 trace under v23 without replacing historical outcomes.</summary>
     CoreRorsV21ToV23,
+    /// <summary>Verify the complete v19 trace under v24 without replacing historical outcomes.</summary>
+    CoreRorsV19ToV24,
+    /// <summary>Verify the complete v20 trace under v24 without replacing historical outcomes.</summary>
+    CoreRorsV20ToV24,
+    /// <summary>Verify the complete v21 trace under v24 without replacing historical outcomes.</summary>
+    CoreRorsV21ToV24,
 }
