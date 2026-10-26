@@ -987,7 +987,9 @@ from card names.
 
 The condition discardedWithTrait tests whether a card discarded by the current resolution has the named printed trait. It reads the discard receipt, including cards that have subsequently moved, rather than searching the current discard pile.
 
-The `cardsIn` filter `cardSet` matches the canonical printed card-set identifier, independently of class or title.
+The `cardsIn` filter `set` matches the canonical printed card-set identifier, independently of class or title.
+The separate `cardSet` condition tests one selected card's printed set; `cardSet`
+is not a `cardsIn` filter.
 `useAttackForThwart: "trigger"` is an interrupt instruction attached to the exact
 initiated thwart. It substitutes the acting character's ATK for THW and uses ATK
 consequential icons for an ally. It does not grant permission to initiate a

@@ -44,3 +44,64 @@ Logs are outside the repository under
 `C:/Users/mggar/Source/printed-set-{mutant,restored-build,final-tests,commit}.log`.
 The final run supersedes earlier fixture-entry failures. Broader whole-game,
 platform and integrated-candidate certification belongs to wave integration.
+
+## Independent prerequisite review
+
+Reviewed implementation `4261d57f` against base `52033c88`, 2026-10-26,
+in the isolated `review/printed-set-search` worktree. Printed 09006 and current
+RR 1.8 SEARCH govern the card-shaped fixture; `set`, ordinal matching and
+description spelling remain explicit engine choices. No runtime correctness
+finding remains in this bounded prerequisite review. This permits dependent
+card authoring to use this selector; it establishes no whole-pack acceptance,
+production 09006 row, public admission, native interaction or platform result.
+
+The consumer audit traced singular and plural selection, removal membership,
+projected membership traces and `AbilityProjectedStateQueries` to
+`AbilitySelectorEvaluation.CardsIn`, directly or through
+`AbilityRuntimeQueries.Every`. Those consumers retain the full typed selector.
+Area-dependency, resolving-player and concealed-pile analyses read the named
+areas rather than duplicate printed criteria. The description equivalence guard
+compares `Set` alongside every existing area criterion. `SearchRange` applies
+the physical top bound before the criteria; ordinary own deck/discard areas do
+not expand to foreign or Invocation areas.
+
+`PrintedSetSearchReviewTests` adds 13 independent cases: live singular/plural
+and projected queries with combined kind/trait/title/class/set criteria;
+exact-case rejection; projected departure without live mutation; pre-search
+labels independent of zero/one/two hidden matches, without digest/RNG/agenda
+changes; omitted, wrong-case and trailing-space guard mismatch with a matching
+guard control; whitespace rejection at the lowering path; boolean/null rejection
+by the value parser; and strict rejection of the unsupported `cardSet` alias.
+The stale `cardSet` prose in the DSL reference is corrected to `set`.
+The implementation tests separately exercise physical choice in both own areas,
+same-pack/different-set and other-Hero exclusions, foreign answer atomicity,
+Invocation exclusion, top-bound ordering, paid no-match shuffle and omitted-set
+legacy behavior.
+
+Measured independent verification:
+
+- Focused implementation plus independent cases: **27 passed**, none failed or
+  skipped.
+- Compiled removal of runtime set filtering: **7 failed, 20 passed**, including
+  the independent live/projected query case.
+- Compiled omission of `Set` from description guard equality: **4 failed,
+  23 passed**; the independent omitted, wrong-case and trailing-space guards all
+  reject the misleading search label.
+- Both mutations restored exactly. A nonincremental Release build of
+  `tests/Marvel.Content.Tests/Marvel.Content.Tests.csproj` follows each
+  restoration, with **0 warnings and 0 errors**.
+- Final restored-source Release run with `--no-build` and filter
+  `FullyQualifiedName~PrintedSetSearch|FullyQualifiedName~EveryWordTheDatasetUsesIsWrittenDownInTheDslDocument`:
+  **28 passed, 0 failed, 0 skipped**, including the corrected DSL vocabulary
+  reference. This bounded result supplements, rather than repeats, the
+  implementation packet's 219-class-filter test evidence.
+
+Independent logs are outside the repository at
+`C:/Users/mggar/Source/printed-set-review-{tests,filter-mutant,equivalence-mutant,restored-build,final-tests,commit}.log`.
+An attempted broader substring-filter run is **incomplete**, not passing
+evidence. It exposed the missing `cardSet` vocabulary after the prose edit;
+the reference now documents both the standalone condition and the distinct
+`cardsIn.set` filter. That run was cancelled after its broad filter selected
+work beyond the bounded prerequisite review. Its process completed before the
+final focused verification; no global process termination was used. Normal
+commit hooks retain architecture, complexity and file-length policies.
