@@ -49,6 +49,8 @@ func _run() -> void:
 		return
 	if not await _missing_choice_is_reported("Absent"):
 		return
+	if not await _late_setup_layout_is_visible():
+		return
 	print("SETUP_READINESS_SMOKE_OK")
 	quit(0)
 
@@ -74,6 +76,75 @@ func _missing_choice_is_reported(path: String) -> bool:
 	expected_failure = false
 	if accepted or not reported_failure.contains("has no visible choice control"):
 		super._fail("incomplete setup did not report its missing choice: " + path)
+		return false
+	return true
+
+
+func _late_setup_layout_is_visible() -> bool:
+	main.queue_free()
+	await process_frame
+	main = Control.new()
+	root.add_child(main)
+	render_viewport = root
+	root.size = Vector2i(1920, 1080)
+	var page := ScrollContainer.new()
+	page.name = "Margin"
+	page.position = Vector2(20, 20)
+	page.size = Vector2(600, 300)
+	page.follow_focus = true
+	main.add_child(page)
+	var shell := PanelContainer.new()
+	shell.name = "Shell"
+	page.add_child(shell)
+	var content := VBoxContainer.new()
+	content.name = "Content"
+	shell.add_child(content)
+	var preceding := Control.new()
+	preceding.custom_minimum_size = Vector2(400, 700)
+	content.add_child(preceding)
+	var target := Button.new()
+	target.name = "Seed"
+	target.text = "Synthetic setup target"
+	target.custom_minimum_size = Vector2(400, 66)
+	content.add_child(target)
+	var following := Control.new()
+	following.custom_minimum_size = Vector2(400, 400)
+	content.add_child(following)
+	await process_frame
+	await process_frame
+	_expand_during_reveal(preceding)
+	if not await _setup_control_is_visible(page, "Seed"):
+		return false
+	var ui = preload("res://smoke/automation/ui_driver.gd").new(main, root, _fail)
+	var locator = ui.named("Seed")
+	if not await ui.expect_fully_visible_enabled(locator): return false
+	var clicks := [0]
+	target.pressed.connect(func() -> void: clicks[0] += 1)
+	if not await ui.click(locator): return false
+	if clicks[0] != 1:
+		super._fail("settled setup target did not receive exactly one native click")
+		return false
+	# A clickable exposed edge cannot satisfy the complete-target requirement.
+	page.size.x = 200
+	if not await _clipped_setup_is_reported(page): return false
+	page.size = Vector2(600, 50)
+	if not await _clipped_setup_is_reported(page): return false
+	return true
+
+
+func _expand_during_reveal(preceding: Control) -> void:
+	await process_frame
+	await process_frame
+	preceding.custom_minimum_size.y += 200
+
+
+func _clipped_setup_is_reported(page: ScrollContainer) -> bool:
+	expected_failure = true
+	reported_failure = ""
+	var accepted := await _setup_control_is_visible(page, "Seed")
+	expected_failure = false
+	if accepted or not reported_failure.contains("cannot be brought into the viewport; target="):
+		super._fail("inaccessible setup target was accepted or lacked geometry diagnostics")
 		return false
 	return true
 
