@@ -102,10 +102,10 @@ public sealed class BehaviorAuthorityTests
     public void JcsEscapingUsesLiteralUnicodeAndRequiredControlEscapes()
     {
         using var document = JsonDocument.Parse(
-            "{\"z\":\"<b>â€”\\n\",\"a\":\"\\u0001\\\"\\\\\"}");
+            "{\"z\":\"<b>—\\n\",\"a\":\"\\u0001\\\"\\\\\"}");
 
         Assert.Equal(
-            "{\"a\":\"\\u0001\\\"\\\\\",\"z\":\"<b>â€”\\n\"}",
+            "{\"a\":\"\\u0001\\\"\\\\\",\"z\":\"<b>—\\n\"}",
             CanonicalJson.Serialize(document.RootElement));
     }
 
