@@ -85,6 +85,11 @@ internal static class AbilityChoiceStability
         AbilityEffect effect, HashSet<DeckType> sensitiveAreas, AbilityAdmissionScope cast) =>
         effect.OperationName() switch
         {
+            // The engine refuses a hidden player-deck traversal whose movement
+            // can change a later singular lookup; admission never predicts the
+            // discarded cards or their recovery from hidden deck contents.
+            "discardUntil" when effect is AbilityEffect.DiscardUntil { From: AbilitySearchArea.YourDeck } =>
+                !MayChangeAnyArea(effect, sensitiveAreas, cast),
             "choose" => ChoiceOptionsAreStable(effect, sensitiveAreas, cast),
             "chooseCard" => CardChoicesAreStable(effect, sensitiveAreas, cast),
             "forEach" when CurrentlyZeroForEach(effect, cast) => true,

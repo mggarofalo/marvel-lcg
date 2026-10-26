@@ -125,6 +125,9 @@ internal static class AbilityPowerOutcomeTrace
         };
         foreach (var card in current.Where(card => !state.Discarded.Contains(card.ObjectId)))
         {
+            // rr:target.4.1: the ability "does not resolve against" invalid targets.
+            if (node.OperationName() == "ready"
+                && !AbilityProjectedCharacterPermissions.CanReady(card, cast, state)) continue;
             possibilities = NextReadinessPossibilities(
                 possibilities, PowerReady(card, state), node.OperationName() == "exhaust");
         }
@@ -172,6 +175,8 @@ internal static class AbilityPowerOutcomeTrace
         var change = FormChangeOf(node, cast);
         if (bindingMayChange && change.Player == AbilityPlayer.ChosenPlayer) return null;
         int seat = Seat(change.Player, cast);
+        if (!AbilityProjectedCharacterPermissions.CanChangeForm(seat, cast, state))
+            return [AdmissionResolution.None];
         bool live = AlreadyInForm(change, cast);
         bool current = SeatMayChange(state.FormsMayChange, seat) ? !live : live;
         return [current ? AdmissionResolution.None : AdmissionResolution.Full];
@@ -201,10 +206,15 @@ internal static class AbilityPowerOutcomeTrace
         {
             return reachability with
             {
-                FormsMayChange = reachability.FormsMayChange | AllPlayerSeats(cast),
+                FormsMayChange = reachability.FormsMayChange
+                    | cast.World.PlayerOrder.Where(seat =>
+                        AbilityProjectedCharacterPermissions.CanChangeForm(seat, cast, reachability))
+                        .Aggregate(0UL, (seats, seat) => seats | PlayerSeat(seat)),
             };
         }
         int seat = Seat(player, cast);
+        if (!AbilityProjectedCharacterPermissions.CanChangeForm(seat, cast, reachability))
+            return reachability;
         ulong bit = PlayerSeat(seat);
         bool destinationIsCurrent = AlreadyInForm(change, cast);
         return reachability with

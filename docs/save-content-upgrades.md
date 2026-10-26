@@ -19,12 +19,14 @@ The baseline is embedded in the executable; a save cannot supply a new baseline
 or authorize its own migration.
 
 This is a conservative product policy, not a rule inferred from the tabletop.
-The current v23 delivery retains named routes from the exact frozen v19/v20/v21
-content triple to `engine-replay-v23`, plus frozen-content v23 additive upgrades.
-Every original recorded fact must verify; none is regenerated. V22 has no named
-source admission and is quarantined unchanged. Stacked damage prevention and
-recovered-event replay can change outcomes even with identical Core datasets.
-The v22 routes below remain explicit historical adapters, not v22-to-v23 admission.
+The current v24 delivery retains named routes from the exact frozen v19/v20/v21
+content triple to `engine-replay-v24`, plus frozen-content v24 additive upgrades.
+Every original recorded fact must verify; none is regenerated. V22 and v23 have no
+named source admission and are quarantined unchanged. V24 discards unattached
+revealed attachments after reveal/surge completion: Core 01163/01185 and RoRS
+04117–04119/04135 can change recorded digests and later shuffles even with
+identical datasets. Historical v22/v23 adapters remain explicit destination-bound
+routes; they do not authorize a v22/v23 source upgrade to v24.
 The v22 delivery admits four explicit routes on this exact frozen content
 triple: `engine-replay-v19` to `engine-replay-v22`, `engine-replay-v20` to
 `engine-replay-v22`, `engine-replay-v21` to `engine-replay-v22`, and frozen-content
@@ -44,7 +46,7 @@ played attempt, not a compatible complete campaign aggregate. A newly recorded,
 authentic compatible predecessor campaign aggregate is still required for positive
 full-campaign upgrade acceptance. No frozen expected gameplay value is rewritten.
 
-The frozen Expert campaign is also quarantined unchanged under v23. Its journal
+The frozen Expert campaign is also quarantined unchanged under v24. Its journal
 entry 13 (Crossbones attempt 4) first differs at unit 31 decision 3: two Backflip
 prevention registrations are consumed together by the preceding defended
 Crossbones attack. The original history leaves one registration to erase Hydra

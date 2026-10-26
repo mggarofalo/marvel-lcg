@@ -55,8 +55,23 @@ internal static class AbilityProcedureLowering
 
     internal static AbilityEffect.DiscardUntil DiscardUntilEffect(AbilityValue value, AbilityLocation location)
     {
-        var fields = Fields(value, location, "from", "kind", "trait", "then", "player");
-        FixedWord(Required(fields, "from", location), location.Child("from"), "encounterDeck");
+        var fields = Fields(value, location, "from", "kind", "trait", "then", "player", "set");
+        var from = SearchArea(Required(fields, "from", location), location.Child("from"));
+        if (from == AbilitySearchArea.YourDeck)
+        {
+            if (fields.ContainsKey("kind") || fields.ContainsKey("trait"))
+                throw location.Error("player discardUntil matches an identity set, not a kind or trait");
+            FixedWord(Required(fields, "then", location), location.Child("then"), "addToHand");
+            return new(null, null, AbilityDiscardUntilResult.AddToHand)
+            {
+                From = from,
+                Set = Text(Required(fields, "set", location), location.Child("set")),
+                Player = fields.TryGetValue("player", out var owner)
+                    ? AbilityLowering.Player(owner, location.Child("player")) : AbilityPlayer.You,
+            };
+        }
+        if (from != AbilitySearchArea.EncounterDeck || fields.ContainsKey("set"))
+            throw location.Error("encounter discardUntil requires an encounter deck and kind");
         var result = Text(Required(fields, "then", location), location.Child("then")) switch
         {
             "reveal" => AbilityDiscardUntilResult.Reveal,

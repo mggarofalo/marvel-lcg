@@ -35,13 +35,16 @@ internal static class AbilityLeafTargetAvailability
         "putIntoPlay" => AbilityAllyEntry.HasTarget(EffectOf<AbilityEffect.PutIntoPlay>(node, cast), cast),
         "placeAtRandom" => Find(EffectOf<AbilityEffect.PlaceAtRandom>(node, cast).Host, cast) is not null,
         "search" => HasSearchableArea(node, cast),
+        // Admission uses only the public deck count, never the hidden matching cards.
+        "discardUntil" => node is not AbilityEffect.DiscardUntil { From: AbilitySearchArea.YourDeck } discard
+            || cast.World.Seats[Seat(discard.Player, cast)].Deck.Cards.Count > 0,
 
         // The delayed effect's game element comes from its future occurrence;
         // rr:target.5 requires no target at initiation.
         "delayUntil" => true,
         "generate" or "preventDamage" or "cancelWhenRevealed" or "cancelOccurrence"
-            or "dealEncounterCards" or "revealTop" or "discardUntil"
-            or "recoverDiscardedByResource" or "shuffleInto" or "shuffle" => true,
+            or "dealEncounterCards" or "revealTop"
+            or "recoverDiscardedByResource" or "shuffleInto" or "recruitDiscarded" or "shuffle" => true,
         _ => throw new RulesNotImplementedException(
             $"'{cast.Source.FaceId}' uses '{node.OperationName()}' in an option whose target "
             + "legality is not implemented"),

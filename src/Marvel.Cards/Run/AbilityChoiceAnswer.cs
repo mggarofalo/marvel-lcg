@@ -88,11 +88,11 @@ internal sealed class AbilityChoiceAnswer(
         ThrowIfUnsupported(answer);
         if (((PayOrCommand)answer).Pay)
         {
-            string required = ((AbilityEffect.PayOrEffect)choice).Resources;
+            var requirement = (AbilityEffect.PayOrEffect)choice;
             var owner = cast.World.Agenda.Current;
             var occurrence = cast.World.Agenda.Occurrence;
             var payment = AbilityResourcePayment.Spend(cast.World, execution.resourceAbilities,
-                new(cast.Source, player, input.Spent, required.Length, required), cast.Events);
+                new(cast.Source, player, input.Spent, requirement.Amount, requirement.Resources), cast.Events);
             if (!payment.IsComplete)
             {
                 cast.PendingPayment = new AbilityChoicePayment(payment);

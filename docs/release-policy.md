@@ -53,10 +53,18 @@ independent identities do:
 |---|---:|---|
 | Engine protocol | `37` | A request, response, affordance, event or descriptor change is not understood by the prior endpoint. |
 | Session schema | `7` | The strict persisted JSON shape changes. |
-| Engine replay contract | `engine-replay-v23` | The same setup and decision trace may resolve differently. |
+| Engine replay contract | `engine-replay-v24` | The same setup and decision trace may resolve differently. |
 | RNG contract | `mt19937-iso-cxx` | The seeded random stream changes. |
 | State digest | `state-digest-v3` | The canonical hidden-state serialization changes. |
 | Runtime datasets | Three SHA-256 values | Any byte in `cards.json`, `setup.json` or `abilities.json` changes. |
+
+Replay v24 discards revealed attachments when they cannot attach to an eligible
+host, after their reveal and surge work completes. Core 01163/01185 and RoRS
+04117–04119/04135 can therefore change the same recorded trace, including its
+state digest and later encounter shuffles. V23 and v22 sources have no named
+admission and remain quarantined unchanged. Frozen v19/v20/v21 sources retain
+named v24 routes only after every original gameplay fact verifies. Protocol 37,
+schema 7, RNG and digest formats retain their identities.
 
 Replay v23 consumes every prevention committed to one damage instance, including
 stacked Cosmic Flights, and preserves separate resolutions when a recovered event
@@ -66,7 +74,7 @@ to the first player, deferring attack-end response activations until the enclosi
 attack finishes. These corrections change existing Core traces, including
 Gang-Up, independently of expansion content. There is no named
 v22 source admission: v22 saves are quarantined unchanged before replay. Frozen
-v19/v20/v21 sources retain explicitly named v23 routes that verify every original
+v19/v20/v21 sources retain explicitly named v24 routes that verify every original
 gameplay fact and reject divergent histories. Protocol 37, schema 7, RNG and digest
 identities are unchanged; internal continuations are rebuilt from decisions.
 

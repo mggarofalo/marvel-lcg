@@ -117,7 +117,13 @@ public abstract record AbilityEffect
     /// <summary>Shuffle an engine-supported search area.</summary>
     public sealed record Shuffle(AbilitySearchArea Area) : AbilityEffect;
     /// <summary>Pay resources or resolve the alternative effect.</summary>
-    public sealed record PayOrEffect(string Resources, AbilityEffect Otherwise, bool ExhaustOnly) : AbilityEffect;
+    public sealed record PayOrEffect(string Resources, AbilityEffect Otherwise, bool ExhaustOnly) : AbilityEffect
+    {
+        /// <summary>Additional resources with no required type.</summary>
+        public int Generic { get; init; }
+        /// <summary>Total resources required, including unrestricted resources.</summary>
+        public int Amount => checked(Resources.Length + Generic);
+    }
     /// <summary>Grant a live trait, continuously or until a timing point.</summary>
     public sealed record GrantTrait(AbilityCardSelection Cards, string Trait, bool EachCard, string? Until) : AbilityEffect;
     /// <summary>Grant a supported modifier, continuously or until a timing point.</summary>
@@ -158,16 +164,22 @@ public abstract record AbilityEffect
     public sealed record PlaceAtRandom(AbilityPlayerSelection Players, AbilityNumber Count, AbilityCardSelection Host) : AbilityEffect;
     /// <summary>Discard cards from a supported deck or the named players' decks.</summary>
     public sealed record DiscardTop(AbilitySearchArea From, AbilityPlayerSelection? Players, AbilityNumber Count) : AbilityEffect;
-    /// <summary>Discard from the encounter deck until a matching card is found.</summary>
-    public sealed record DiscardUntil(CardKind Kind, string? Trait, AbilityDiscardUntilResult Result) : AbilityEffect
+    /// <summary>Discard from a bounded deck until a printed match is found.</summary>
+    public sealed record DiscardUntil(CardKind? Kind, string? Trait, AbilityDiscardUntilResult Result) : AbilityEffect
     {
         /// <summary>The player explicitly instructed to reveal the match, or the resolving player.</summary>
         public AbilityPlayer Player { get; init; } = AbilityPlayer.You;
+        /// <summary>The deck whose current contents bound the discard.</summary>
+        public AbilitySearchArea From { get; init; } = AbilitySearchArea.EncounterDeck;
+        /// <summary>The printed identity set required for a player-deck match.</summary>
+        public string? Set { get; init; }
     }
     /// <summary>Move selected cards into a deck and shuffle it.</summary>
     public sealed record ShuffleInto(AbilityCardSelection Cards, AbilitySearchArea Deck) : AbilityEffect;
     /// <summary>Search ordered areas for a printed face and reveal it.</summary>
     public sealed record Search(string Face, ImmutableArray<AbilitySearchArea> Areas) : AbilityEffect;
+    /// <summary>Put the exact matching discarded minion into play engaged with the resolver.</summary>
+    public sealed record RecruitDiscarded(string Face) : AbilityEffect;
     /// <summary>Put a selected card into play by its printed destination or engaged with the resolver.</summary>
     public sealed record PutIntoPlay(AbilityCardSelection Card, bool PrintedDestination) : AbilityEffect
     {

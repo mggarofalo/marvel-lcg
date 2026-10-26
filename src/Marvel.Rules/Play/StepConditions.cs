@@ -14,6 +14,7 @@ public static class StepConditions
     {
         [PlaceThreat] = [ThreatWouldBePlaced],
         [PlaceThreatEffect] = [ThreatWouldBePlaced],
+        [MainSchemeCompletionOperation.Completed] = [MainSchemeCompletionOperation.Completed],
 
         // Two conditions at one moment again: an attack *is* an activation
         // (`rr:activation`, "whenever an enemy attacks or schemes, it is

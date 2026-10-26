@@ -3012,12 +3012,99 @@
           }
         ]
       }
+    },
+    "risky_business": {
+      "campaign_log": {},
+      "challenges": [],
+      "encounter_sets": [
+        "standard"
+      ],
+      "encounters": [
+        "02007",
+        "02007",
+        "02007",
+        "02008",
+        "02008",
+        "02008",
+        "02008",
+        "02009",
+        "02010",
+        "02010",
+        "02011",
+        "02011",
+        "02012",
+        "02012",
+        "02012",
+        "02012",
+        "02013",
+        "02013"
+      ],
+      "expert": false,
+      "modular_sets": [
+        "goblin_gimmicks"
+      ],
+      "name": "Risky Business",
+      "schemes": [
+        "02004a,02004b",
+        "02005a,02005b"
+      ],
+      "set_aside": [
+        "02006a,02006b"
+      ],
+      "villain": [
+        "02001a,02001b",
+        "02002a,02002b"
+      ]
+    },
+    "risky_business_expert": {
+      "campaign_log": {},
+      "challenges": [],
+      "encounter_sets": [
+        "standard",
+        "expert"
+      ],
+      "encounters": [
+        "02007",
+        "02007",
+        "02007",
+        "02008",
+        "02008",
+        "02008",
+        "02008",
+        "02009",
+        "02010",
+        "02010",
+        "02011",
+        "02011",
+        "02012",
+        "02012",
+        "02012",
+        "02012",
+        "02013",
+        "02013"
+      ],
+      "expert": true,
+      "modular_sets": [
+        "goblin_gimmicks"
+      ],
+      "name": "Risky Business",
+      "schemes": [
+        "02004a,02004b",
+        "02005a,02005b"
+      ],
+      "set_aside": [
+        "02006a,02006b"
+      ],
+      "villain": [
+        "02002a,02002b",
+        "02003a,02003b"
+      ]
     }
   },
   "contract": "docs/setup-dataset.md",
   "counts": {
-    "campaigns": 35,
-    "encounter_sets": 11,
+    "campaigns": 37,
+    "encounter_sets": 12,
     "heroes": 9
   },
   "encounter_sets": {
@@ -3148,6 +3235,20 @@
         "04154"
       ],
       "name": "Hydra Patrol"
+    },
+    "goblin_gimmicks": {
+      "name": "Goblin Gimmicks",
+      "role": "modular",
+      "encounters": [
+        "02033",
+        "02033",
+        "02034",
+        "02034",
+        "02035",
+        "02035",
+        "02036",
+        "02036"
+      ]
     }
   },
   "heroes": {

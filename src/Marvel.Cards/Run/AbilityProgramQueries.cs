@@ -57,12 +57,12 @@ internal static class AbilityProgramQueries
             : new DefenderChoice(candidates, Required: false);
     }
 
-    internal static int? AttachesTo(World world, AbilityProgram program, Card card)
+    internal static int? AttachesTo(World world, AbilityProgram program, Card card, int? player = null)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(card);
 
-        var candidates = AttachmentCandidates(world, program, card);
+        var candidates = AttachmentCandidates(world, program, card, player);
         return candidates is null ? null : candidates.Count switch
         {
             0 => null,
@@ -75,12 +75,12 @@ internal static class AbilityProgramQueries
     }
 
     internal static IReadOnlyList<int>? AttachmentTargets(
-        World world, AbilityProgram program, Card card)
+        World world, AbilityProgram program, Card card, int? player = null)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(card);
 
-        return AttachmentCandidates(world, program, card) is { } candidates
+        return AttachmentCandidates(world, program, card, player) is { } candidates
             ? [.. candidates.Select(candidate => candidate.ObjectId)]
             : null;
     }
@@ -134,24 +134,29 @@ internal static class AbilityProgramQueries
     }
 
     private static IReadOnlyList<Card>? AttachmentCandidates(
-        World world, AbilityProgram program, Card card)
+        World world, AbilityProgram program, Card card, int? player)
     {
         if (program.AttachTo.GetValueOrDefault(card.FaceId) is not { } selector) return null;
 
         // Attachment placement asks a board question; it neither resolves an
         // ability nor emits events, so its bindings are a query context.
         var context = new AbilityQueryContext(
-            world, card, new Occurrence(0, []), card.Owner, card.Incarnation,
+            world, card, new Occurrence(0, []), player ?? card.Owner, card.Incarnation,
             null, null, null, []);
         return new AbilitySelectorEvaluation(context, null, program).Every(selector);
     }
 
-    internal static bool CanReady(World world, AbilityProgram program, Card target)
+    internal static bool CanReady(
+        World world, AbilityProgram program, Card target,
+        HashSet<int>? discarded = null, long? prohibition = null)
     {
+        if (prohibition is { } projected
+            ? projected > 0 : !ReadinessPermissions.CanReady(world, target)) return false;
         foreach (var card in world.Areas.Where(area => DeckTypes.IsInPlay(area.Type))
                      .SelectMany(area => area.Cards))
         {
-            if (EffectiveCards.HasProfile(card)) continue;
+            if (discarded?.Contains(card.ObjectId) == true
+                || EffectiveCards.HasProfile(card)) continue;
             foreach (var ability in On(program, card).Where(ability =>
                          ability.Trigger.Timing == AbilityType.Constant))
             {

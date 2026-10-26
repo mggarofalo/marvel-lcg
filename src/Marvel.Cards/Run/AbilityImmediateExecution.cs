@@ -188,7 +188,7 @@ internal static class AbilityImmediateExecution
     {
         World world = context.Admission.World;
         var seat = world.Seats[seatOf(change.Player)];
-        if (AbilityAdmissionFacts.AlreadyInForm(world, seatOf(change.Player), change.Form)) return;
+        if (!AbilityAdmissionFacts.CanChangeForm(world, seatOf(change.Player), change.Form)) return;
         string was = seat.IdentityCard.FaceId;
         Forms.Change(seat, world.Facts);
         context.Events.Add(new CardsFlipped([seat.IdentityCard.ObjectId], true)

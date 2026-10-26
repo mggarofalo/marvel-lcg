@@ -228,6 +228,7 @@ public static class Forms
     public static string ChangeAndSchedule(World world, Seat seat, ICardFacts facts, int round)
     {
         ArgumentNullException.ThrowIfNull(world);
+        FormChangePermissions.Require(world, seat.IdentityCard);
         string was = Change(seat, facts);
         world.Agenda.Then(new PhaseStep(
             new LifecycleOperation(LifecycleKind.FormChanged),

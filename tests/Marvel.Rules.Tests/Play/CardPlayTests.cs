@@ -92,7 +92,7 @@ public abstract class CardPlayTestBase
 
     protected sealed class Targets(params int[] targets) : NoCardAbilities
     {
-        public override IReadOnlyList<int>? AttachmentTargets(World world, Card card) => targets;
+        public override IReadOnlyList<int>? AttachmentTargets(World world, Card card, int? player = null) => targets;
     }
 
     protected sealed class ConditionalResources(string matching) : NoCardAbilities

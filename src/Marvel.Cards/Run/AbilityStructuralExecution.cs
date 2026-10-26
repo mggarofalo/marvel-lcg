@@ -161,7 +161,7 @@ internal static class AbilityStructuralExecution
             context.Expressions.World.Facts, context.Expressions.World.Seats[context.Player],
             context.ResourceAbilities, abilitySource: context.Expressions.Source);
         return Resources.Pays(string.Concat(sources.SelectMany(source => source.Generates)),
-            payment.Resources.Length, payment.Resources)
+            payment.Amount, payment.Resources)
             ? new PayOrCommand(true)
             : new Unsupported($"'{context.SourceFace}' cannot pay the offered resources");
     }

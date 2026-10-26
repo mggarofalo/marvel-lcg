@@ -45,13 +45,13 @@ internal static class CardEntryDestination
             // does not trigger one on a card put into play without being
             // revealed, and a setup attachment is exactly that.
             //
-            // `rr:attach-to.3.1` is the case this does not reach: "the 'attach
-            // to' phrase on a card is not resolved if another ability causes
+            // `rr:attach-to.3.1`: "the 'attach to' phrase on a card is not
+            // resolved if another ability causes
             // that card to attach to a specific game element." An ability that
-            // attaches says so with the `attachTo` node instead, and it moves
-            // the card itself rather than coming through here.
+            // attaches supplies an explicit target, which takes precedence over
+            // the printed placement query.
             CardKind.Attachment when (placement.AttachmentTarget
-                ?? world.PlacementAbilities.AttachesTo(world, card)) is { } element
+                ?? world.PlacementAbilities.AttachesTo(world, card, player)) is { } element
                 => world.AreaOf(
                     DeckType.UpgradesArea,
                     world.Cards[element].Area.PlayArea,

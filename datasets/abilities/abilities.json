@@ -14122,6 +14122,217 @@
       }]
     },
     {
+      "card": "02033",
+      "name": "Goblin Glider",
+      "note": "Printed 02033: attach to the enemy with the highest printed hit points and without another Goblin Glider attached; if unable, gain surge. Rank the eligible enemies by printedHealth, not remaining or modified health (rr:attach-to). Printed ATK+1 is read by StateFields under rr:attachment.1. Hero Action spends two energy resources to discard this card. Selector and resource-code spellings are engine choices. The queried MarvelCDB FAQ has no entry for this face.",
+      "attachTo": {
+        "maxBy": {
+          "of": {
+            "withoutAnotherCopyAttached": {
+              "query": "enemies"
+            }
+          },
+          "by": "printedHealth"
+        }
+      },
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "WhenRevealed",
+            "event": "WhenCardRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "not": {
+                  "exists": {
+                    "withoutAnotherCopyAttached": {
+                      "query": "enemies"
+                    }
+                  }
+                }
+              },
+              "then": {
+                "gainSurge": 1
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "cost": {
+            "spend": "YY"
+          },
+          "effect": {
+            "discard": "this"
+          }
+        }
+      ]
+    },
+    {
+      "card": "02034",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenAttackEnds",
+            "timing": "ForcedResponse",
+            "actor": "attachedTo",
+            "player": "trigger.player"
+          },
+          "effect": {
+            "seq": [
+              {
+                "discard": "this"
+              },
+              {
+                "indirectDamage": {
+                  "among": {
+                    "query": "charactersYouControl"
+                  },
+                  "amount": 2
+                }
+              }
+            ]
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "cost": {
+            "spend": "RR"
+          },
+          "effect": {
+            "discard": "this"
+          }
+        }
+      ],
+      "name": "Pumpkin Bombs",
+      "note": "Printed 02034: attach to the villain. After the villain attacks you, discard this attachment and take 2 indirect damage. rr:you-your.7 binds the completed attack player, including ally defense; rr:defend-defense.5.1 transfers that player when another player defends. The completed attack retains this binding across the source discard. rr:stun-stunned.7 excludes canceled attacks. Hero Action spends two physical resources to discard this card. The queried MarvelCDB FAQ has no entry; vendored ruling:e6531edb529e342d agrees on ally defense.",
+      "attachTo": {
+        "query": "villain"
+      }
+    },
+    {
+      "card": "02035",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "WhenRevealed",
+            "event": "WhenCardRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "payOrEffect": {
+              "generic": 2,
+              "otherwise": {
+                "giveAdditionalBoost": {
+                  "enemy": {
+                    "query": "villain"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "timing": "Boost",
+            "event": "WhenCardRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "giveAdditionalBoost": {
+              "enemy": {
+                "query": "villain"
+              }
+            }
+          }
+        }
+      ],
+      "name": "Intimidation",
+      "note": "Printed 02035: choose to spend 2 resources of any type or give the villain 1 facedown boost card. Generic payment is two resources, independent of type (rr:cost.3). Outside an activation the facedown card remains hosted until that enemy next activates (rr:boost-boost-icon.6). Its Boost instruction adds a card to the current activation. The queried MarvelCDB FAQ has no entry for this face; DSL payment and selector spellings are engine choices."
+    },
+    {
+      "card": "02036",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "WhenRevealed",
+            "event": "WhenCardRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "heal": {
+                  "card": {
+                    "query": "villain"
+                  },
+                  "amount": {
+                    "mul": [
+                      2,
+                      {
+                        "modified": {
+                          "card": {
+                            "query": "villain"
+                          },
+                          "field": "printed_stage"
+                        }
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                "if": {
+                  "test": {
+                    "not": {
+                      "atLeast": {
+                        "value": {
+                          "result": "healed"
+                        },
+                        "count": 1
+                      }
+                    }
+                  },
+                  "then": {
+                    "gainSurge": 1
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "trigger": {
+            "timing": "Boost",
+            "event": "WhenCardRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "heal": {
+              "card": {
+                "query": "villain"
+              },
+              "amount": 2
+            }
+          }
+        }
+      ],
+      "name": "Regenerative Healing",
+      "note": "Printed 02036: heal double the current villain stage number; gain surge only when no damage was actually healed (rr:heal; rr:surge.1). Read the printed stage through the engine-selected printed_stage field and the committed healed receipt. Boost heals exactly 2, independently of stage, without surge. The queried MarvelCDB FAQ has no entry for this face."
+    },
+    {
       "card": "02037",
       "name": "A Mess of Things",
       "note": "When revealed, place 2 additional threat here for each stunned friendly character. Friendly characters include identities in either form and allies in play; a character with steady needs two stunned status cards (rr:friendly; rr:character; rr:stun-stunned.3.1). Printed starting threat and the hazard icon are engine-owned.",
@@ -14180,6 +14391,26 @@
         {
           "trigger": { "event": "WhenCardRevealed", "timing": "Boost", "subject": "this" },
           "effect": { "giveStatus": { "card": "you", "status": "stunned" } }
+        }
+      ]
+    },
+    {
+      "card": "02048",
+      "name": "All Tied Up",
+      "note": "Attach to the revealing player's identity in either form (rr:attach-to). Its host cannot ready or change form, including by card ability (rr:cannot; ruling:6cc2957c6bbe4596). Only the host controller may spend mental and physical resources to discard it; the printed Action is usable in either form (rr:ability.8.1). Derived prohibition modifier names are engine choices.",
+      "attachTo": "you",
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant" },
+          "effect": { "seq": [
+            { "grant": { "card": "attachedTo", "keyword": "ready_prohibited", "amount": 1 } },
+            { "grant": { "card": "attachedTo", "keyword": "form_change_prohibited", "amount": 1 } }
+          ] }
+        },
+        {
+          "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "game" },
+          "cost": { "spend": "BR" },
+          "effect": { "discard": "this" }
         }
       ]
     },
@@ -14774,6 +15005,104 @@
           }
         }
       ]
+    },
+    {
+      "card": "02004a",
+      "name": "Hostile Takeover",
+      "note": "Printed 02004a: put the set-aside Criminal Enterprise environment into play, then shuffle the encounter deck. Contents belong to setup recipes; rr:appendix-ii-setup.step.12.b performs the printed advance to 1B.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Setup",
+            "subject": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "putIntoPlay": {
+                  "card": {
+                    "cardsIn": {
+                      "area": "scenarioSetAside",
+                      "title": "Criminal Enterprise"
+                    }
+                  },
+                  "where": "printedDestination"
+                }
+              },
+              {
+                "shuffle": "encounterDeck"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "02004b",
+      "name": "Hostile Takeover",
+      "note": "Printed 02004b: place 1 per-player infamy on Criminal Enterprise, then discard from each player deck by the resulting total infamy. The existence guard requires the antecedent to complete (rr:then.1); positive placement on present Criminal Enterprise resolves in full. The guarded sequence reads counters after placement and before advancement; player-deck exhaustion stops the discard under rr:player-deck.3.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenMainSchemeCompleted",
+            "timing": "WhenCompleted",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "exists": {
+                  "titled": "Criminal Enterprise"
+                }
+              },
+              "then": {
+                "seq": [
+                  {
+                    "placeCounters": {
+                      "card": {
+                        "titled": "Criminal Enterprise"
+                      },
+                      "counter": "infamy",
+                      "count": {
+                        "perPlayer": 1
+                      }
+                    }
+                  },
+                  {
+                    "eachPlayer": {
+                      "effect": {
+                        "discardTop": {
+                          "from": "yourDeck",
+                          "count": {
+                            "countersOn": {
+                              "card": {
+                                "titled": "Criminal Enterprise"
+                              },
+                              "counter": "infamy"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "02005a",
+      "name": "Corporate Acquisition",
+      "note": "Printed 02005a: advance to stage 2B. rr:main-scheme-main-scheme-deck.step.2 and .step.3 own the generic two-sided stage reveal; no separate ability advances the deck a second time.",
+      "abilities": []
+    },
+    {
+      "card": "02005b",
+      "name": "Corporate Acquisition",
+      "note": "Printed 02005b: if this stage is completed, the players lose. rr:main-scheme-main-scheme-deck.2.1 is resolved by Threat.Completed when the main scheme deck is empty. Printed escalation, starting threat, target threat and hazard icon are generic card facts.",
+      "abilities": []
     }
   ]
 }

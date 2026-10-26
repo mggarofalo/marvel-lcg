@@ -85,7 +85,8 @@ internal static class GamePrompts
 
         // `rr:form-change-form.1` permits one voluntary change each round, so a
         // player who has used theirs is not offered it again.
-        if (seat.FormChangedInRound != game.Round)
+        if (seat.FormChangedInRound != game.Round
+            && FormChangePermissions.CanChange(game.world, seat.IdentityCard))
         {
             options.Add(game.Anchored(ChangeForm, seat));
         }

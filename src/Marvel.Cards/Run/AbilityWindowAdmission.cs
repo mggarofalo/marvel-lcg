@@ -72,7 +72,8 @@ internal static class AbilityWindowAdmission
         Occurrence occurrence, WindowKind window, IResourceCardAbilities resourceAbilities)
     {
         var (card, ability, controller, _) = candidate;
-        if (!TriggerMatches(ability, occurrence)) return false;
+        // rr:when-completed-abilities.1: "When this scheme is completed..."
+        if (!TriggerMatchesCandidate(ability, card, occurrence)) return false;
         occurrence = candidate.TriggeringThreat ?? occurrence;
         if (!Answers(program, world, candidate, occurrence, window,
                 ability.AnyPlayer ? controller : null)
@@ -89,6 +90,10 @@ internal static class AbilityWindowAdmission
 
     private static bool ControllerCanInitiate(int controller, CompiledCardAbility ability,
         AbilityAdmissionContext context) => controller < 0 || CanInitiate(ability, context);
+
+    private static bool TriggerMatchesCandidate(CompiledCardAbility ability, Card card, Occurrence occurrence) =>
+        TriggerMatches(ability, occurrence) && (ability.Trigger.Timing != AbilityType.WhenCompleted
+            || occurrence.Is(MainSchemeCompletionOperation.Completed) && occurrence.Subject == card.ObjectId);
 
     private static AbilityAdmissionContext Context(
         AbilityProgram program, World world, Card card, Occurrence occurrence,

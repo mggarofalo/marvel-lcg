@@ -68,3 +68,100 @@ Owning layers: `datasets/setup` for composition; `datasets/abilities` and `Marve
 - **Current Plane dependencies:** the supplied audit snapshot establishes MARVEL-559's description only. Fetch child, link, relation and comment endpoints once before naming blockers or editing Plane; this packet makes no assertion that those endpoints are empty.
 
 Completion of this packet means an implementer can start the identified engine capability and understand the later public journey dependencies. It does not certify either scenario, any modular set, whole-pack authority, or player acceptance.
+
+
+## MARVEL-690 main schemes and research setup (2026-10-25)
+
+The completion candidate based on reviewed engine revision `c0ed938c` authors
+02004a/b and 02005a/b. Risky Business now has nineteen distinct authored faces:
+six villain, four main-scheme, two environment and seven encounter faces.
+Its physical inventory is eighteen encounter copies plus six double-sided
+villain/scheme/environment components; each mode allocates only its chosen two
+villain stages. Standard/Expert research recipes retain Standard, add Expert
+in Expert mode, and recommend exactly one eight-card Goblin Gimmicks set.
+Goblin Gimmicks has four authored research faces (02033–02036). Green Goblin public admission and
+complete-game acceptance remain outstanding.
+
+`RiskyBusinessSetupTests` uses `ScenarioDealer.Prepare` and `WorldSetup.Deal`
+with actual authored abilities, normal complete Core starters and one chosen
+Bomb Scare modular set, at every one-through-four-player count in both modes.
+It observes Criminal Enterprise entry with 2 per-player infamy, scheme 1B
+with 2 per-player threat, exact encounters/selected villains, mulligan entry,
+and the seeded stream after player-deck and both encounter-deck shuffles.
+`RiskyBusinessMainSchemeTests` observes 1B completion adding per-player infamy
+before milling by the resulting total, a State of Madness no-effect branch,
+2B entry with per-player starting threat and final loss. The existing completion
+fixture now uses the actual authored 02004b row for missing-environment and
+player-deck exhaustion cases; generic ordering fixtures remain synthetic.
+The three new setup sources are explicitly outside the executable Core corpus.
+
+Windows evidence for this authored-data/test candidate:
+
+- `dotnet test tests/Marvel.Content.Tests/Marvel.Content.Tests.csproj -c Release --filter
+  'FullyQualifiedName~RiskyBusiness|FullyQualifiedName~MainSchemeCompletion|FullyQualifiedName~AbilityData|FullyQualifiedName~AbilityProgram|FullyQualifiedName~SetupDataset|FullyQualifiedName~RiseOfRedSkullSetupData'`:
+  124 passed, zero failed. TRX: `%TEMP%/marvel690-tests/risky-main-setup-final.trx`.
+- `dotnet run --project tools/Marvel.Behavior.Index -c Release --no-build -- check`:
+  catalog and generated Core card-face specification current.
+- Executed data mutant: change only 02004b `placeCounters.count.perPlayer` from
+  1 to 2. Run the no-build content test filter
+  `FullyQualifiedName~RiskyBusinessMainSchemeTests|FullyQualifiedName~HostileTakeoverAddsPerPlayerInfamyThenDiscardsTheResultingCount`:
+  seven failed and two passed, process exit 1; the one-player observation was
+  expected 3 infamy, actual 4. TRX: `%TEMP%/marvel690-tests/risky-main-mutant.trx`.
+  Original ability-file bytes restored in `finally`; catalog check passed afterward.
+
+These are nonpublic content/setup checks. They do not claim Linux execution,
+full-suite results, native UI evidence, public setup or complete Green Goblin games.
+
+
+## Goblin Gimmicks authored research packet (2026-10-25)
+
+Based on integrated engine revision `ffffb969`, this packet authors all four
+Goblin Gimmicks faces (02033–02036), two copies each in the existing eight-card
+recipe. It does not change setup or public product admission. Actual authored
+rows replace the test-local interpretations for Pumpkin Bombs, Intimidation
+and Regenerative Healing; 02042 remains an unauthored boost negative control.
+
+Printed `datasets/cards/cards.json` supplies the authority. Goblin Glider selects
+the highest printed-hit-point enemy without another same-title Glider, adds its
+printed +1 ATK and spends energy/energy only in hero form to remove it. Tests
+distinguish printed from remaining health, exclude another encounter set's
+same-title Glider, fall back to a minion, and verify no-host surge and discard
+for a non-first revealing player. Pumpkin Bombs attaches to the villain, has a
+physical/physical Hero Action, and binds indirect damage to the completed attack
+player across source discard, other-player defense and stun cancellation.
+Both removal actions reject wrong-type resources without changing the prompt or
+card state and are absent in alter-ego form. Intimidation proves actual generic
+payment, invalid underpayment, persistent facedown boosts and its activation-only
+boost effect. Regenerative Healing exercises stages I/II/III, partial/zero healing,
+zero-heal surge and stage-independent boost healing. The queried MarvelCDB FAQ
+contains no entries for these faces; vendored `ruling:e6531edb529e342d` supports
+the Pumpkin Bombs ally-defense interpretation alongside current `rr:you-your.7`.
+
+MARVEL-714 fixes shared encounter cleanup: an attachment whose authored attach-to
+instruction cannot place it resolves its reveal text and is discarded before
+reveal responses. An entered attachment or one moved elsewhere remains where it
+went. A synthetic attachment with no attach-to instruction retains the distinct
+`rr:reveal.1` out-of-play table behavior. The scheduled operation spelling remains
+unchanged. The distinguishing actual Core 01163 test exercises surge before
+cleanup, with absent-attach-to and existing attachment/reveal regression controls.
+
+Windows verification of this source/data candidate:
+
+- Release content filter `GoblinGimmicks|AbilityData|AbilityProgram|RiskyBusinessSetup|
+  TeenSpirit|AllTiedUp|UnattachedRevealCleanup|AttachToTests|AttachmentEventIntegrity|
+  NestedRevealCompletion|EncounterAttachmentContext`: 137 passed, zero failed.
+  Each term uses `FullyQualifiedName~`. Final TRX:
+  `%TEMP%/goblin-gimmicks-results/goblin-gimmicks-final.trx`.
+- Executed authored-row mutant: change only 02036 healing multiplier from 2 to 3.
+  Stage-healing filter: three failed, two passed; process exit 1.
+  `%TEMP%/goblin-gimmicks-results/stage-heal-mutant.log`.
+- Executed engine mutant: disable the failed-attachment cleanup scheduling branch.
+  Actual Core failed-placement test failed; process exit 1.
+  `%TEMP%/goblin-gimmicks-results/attachment-cleanup-mutant.log`.
+- Both source files restored byte-for-byte in `finally`, then rebuilt for the
+  final 137-test run. Final log:
+  `%TEMP%/goblin-gimmicks-results/restored-final.log`.
+
+These checks cover nonpublic authored content and shared reveal behavior. They do
+not establish public Green Goblin admission, complete games, Linux or native UI
+execution. Independent review of the shared lifecycle change remains required.

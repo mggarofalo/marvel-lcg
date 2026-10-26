@@ -84,7 +84,7 @@ internal static class AbilityResolutionAdmission
                 && CanPartiallyResolve(EffectBody(node), cast),
             "choose" => ((AbilityEffect.Choose)node).Options.Any(option => OptionIsLegal(option, cast)),
             "chooseCard" => LegalCardChoices(node, cast).Count > 0,
-            "changeForm" => !AlreadyInForm(FormChangeOf(node, cast), cast),
+            "changeForm" => CanChangeForm(FormChangeOf(node, cast), cast),
             _ => null,
         };
 
@@ -136,7 +136,7 @@ internal static class AbilityResolutionAdmission
                 or "cancelOccurrence"
                 or "dealEncounterCards" or "dealEncounterCard"
                 or "revealFromVillainDeck" or "revealTop" or "reveal" or "placeAtRandom"
-                or "returnToHand" or "discardUntil" or "recoverDiscardedByResource"
+                or "returnToHand" or "discardUntil" or "recoverDiscardedByResource" or "recruitDiscarded"
                 or "shuffleInto" or "search" or "giveStatus" or "declareDefender"
                 or "attachTo"
                 or "grantUntil" or "delayUntil" or "discard" or "enemyAttacks"
@@ -187,9 +187,9 @@ internal static class AbilityResolutionAdmission
                     ? ResolutionOf(branch, cast)
                     : AdmissionResolution.None,
             "forEach" when ForEachCount(node, cast) == 0 => AdmissionResolution.None,
-            "changeForm" => AlreadyInForm(FormChangeOf(node, cast), cast)
-                ? AdmissionResolution.None
-                : AdmissionResolution.Full,
+            "changeForm" => CanChangeForm(FormChangeOf(node, cast), cast)
+                ? AdmissionResolution.Full
+                : AdmissionResolution.None,
             _ => null,
         };
 

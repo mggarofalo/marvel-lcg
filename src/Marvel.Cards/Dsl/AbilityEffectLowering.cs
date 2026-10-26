@@ -101,7 +101,7 @@ internal static class AbilityEffectLowering
             "initializeAuxiliaryDeck" => AbilityAuxiliaryDeckLowering.Initialize(argument, child),
             "revealAuxiliaryTop" => new AbilityEffect.RevealAuxiliaryTop(AbilityAuxiliaryDeckLowering.Deck(argument, child)),
             "shuffle" => new AbilityEffect.Shuffle(SearchArea(argument, child)),
-            "payOrEffect" or "payOrExhaust" => PayAlternative(argument, child, node.Kind == "payOrExhaust"),
+            "payOrEffect" or "payOrExhaust" => AbilityPaymentAlternativeLowering.PayAlternative(argument, child, node.Kind == "payOrExhaust"),
             "grant" or "grantEach" or "grantUntil" => GrantEffect(argument, child, node.Kind == "grantEach", node.Kind == "grantUntil"),
             "grantCharactersWithTrait" => AbilityTraitGroupLowering.Lower(argument, child),
             "grantCharactersControlledBy" => GrantControlledEffect(argument, child),
@@ -125,6 +125,7 @@ internal static class AbilityEffectLowering
             "discardResourceIcons" => AbilityResourceIconDiscardLowering.Lower(argument, child),
             "discardHandWithResource" => new AbilityEffect.DiscardHandWithResource(Resource(argument, child)),
             "recoverDiscardedByResource" => new AbilityEffect.RecoverDiscardedByResource(Resource(argument, child)),
+            "recruitDiscarded" => new AbilityEffect.RecruitDiscarded(Text(argument, child)),
             "reduceNextCardCost" => ReduceCostEffect(argument, child),
             "attack" => PowerEffect(argument, child, AbilityPowerKind.Attack),
             "defense" => PowerEffect(argument, child, AbilityPowerKind.Defense),
@@ -295,14 +296,5 @@ internal static class AbilityEffectLowering
         return new(instruction);
     }
 
-    internal static AbilityEffect.PayOrEffect PayAlternative(AbilityValue value, AbilityLocation location, bool exhaustOnly)
-    {
-        var fields = Fields(value, location, "resources", "otherwise");
-        var otherwise = LowerEffect(Required(fields, "otherwise", location), location.Child("otherwise"));
-        if (exhaustOnly && otherwise is not AbilityEffect.CardAction { Instruction: AbilityCardInstruction.Exhaust })
-        {
-            throw location.Child("otherwise").Error("payOrExhaust requires an exhaust alternative");
-        }
-        return new(ResourceString(Required(fields, "resources", location), location.Child("resources")), otherwise, exhaustOnly);
-    }
 }
+

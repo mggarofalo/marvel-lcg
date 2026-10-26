@@ -162,6 +162,10 @@ public sealed class CardCatalog : ICardFacts
     public bool HasWhenDefeated(string faceId) =>
         Find(faceId).Text.Contains("When Defeated:", StringComparison.Ordinal);
 
+    /// <inheritdoc/>
+    public bool HasWhenCompleted(string faceId) =>
+        Find(faceId).Text.Contains("When Completed:", StringComparison.Ordinal);
+
     /// <inheritdoc />
     public IReadOnlyList<string> Traits(string faceId) => Find(faceId).Traits;
 

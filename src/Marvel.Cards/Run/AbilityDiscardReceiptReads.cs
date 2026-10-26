@@ -6,7 +6,7 @@ namespace Marvel.Cards.Run;
 internal static class AbilityDiscardReceiptReads
 {
     internal static bool NeedsPhysicalMembers(AbilityEffect effect) =>
-        effect is AbilityEffect.RecoverDiscardedByResource
+        effect is AbilityEffect.RecoverDiscardedByResource or AbilityEffect.RecruitDiscarded
         || AbilityEffectStructure.EffectNumbers(effect).Any(NeedsPhysicalMembers)
         || AbilityEffectStructure.EffectConditions(effect).Any(NeedsPhysicalMembers)
         || AbilityEffectStructure.AllEffectChildren(effect).Any(NeedsPhysicalMembers);

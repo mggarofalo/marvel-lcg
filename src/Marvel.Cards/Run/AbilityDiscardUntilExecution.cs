@@ -3,17 +3,26 @@ using Marvel.Rules.Play;
 
 namespace Marvel.Cards.Run;
 
-/// <summary>Resolves a bounded encounter search and its distinct printed entry instruction.</summary>
+/// <summary>Resolves a bounded discard and its distinct printed entry instruction.</summary>
 internal static class AbilityDiscardUntilExecution
 {
     internal static AbilityDeckAndRevealResult Run(
         AbilityEffect.DiscardUntil effect, AbilityDeckAndRevealContext context)
     {
-        var found = EncounterDeck.DiscardUntil(context.World, context.World.Facts,
-            effect.Kind, context.Trigger, context.Events, effect.Trait);
+        var found = effect.From == AbilitySearchArea.YourDeck
+            ? PlayerDeck.DiscardUntil(context.World,
+                new AbilityExpressionEvaluation(context.Expressions,
+                    new AbilitySelectorEvaluation(context.Expressions.Bindings)).Seat(effect.Player),
+                effect.Set!, context.Trigger, context.Events)
+            : EncounterDeck.DiscardUntil(context.World, context.World.Facts,
+                effect.Kind!.Value, context.Trigger, context.Events, effect.Trait);
         if (found is null) return AbilityDeckAndRevealResult.Handled;
         switch (effect.Result)
         {
+            case AbilityDiscardUntilResult.AddToHand:
+                AbilityCardMovementExecution.MoveToHand(context.World, found,
+                    context.World.Seats[found.Owner].Hand, context.Trigger, context.Events, "Add_To_Hand");
+                break;
             case AbilityDiscardUntilResult.Reveal:
                 int player = new AbilityExpressionEvaluation(context.Expressions,
                     new AbilitySelectorEvaluation(context.Expressions.Bindings)).Seat(effect.Player);

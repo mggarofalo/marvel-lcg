@@ -16,6 +16,15 @@ namespace Marvel.Rules.Play;
 public class NoCardAbilities : ICardAbilities
 {
     /// <inheritdoc/>
+    public virtual bool ObservesMainSchemeCompletion(World world, Card scheme)
+    {
+        if (world.Facts.HasWhenCompleted(scheme.FaceId))
+            throw new RulesNotImplementedException(
+                $"card '{scheme.FaceId}' has unsupported When Completed text");
+        return false;
+    }
+
+    /// <inheritdoc/>
     public virtual bool RequiresAllyPlayHistory(World world) => false;
 
     /// <inheritdoc/>
@@ -179,7 +188,7 @@ public class NoCardAbilities : ICardAbilities
         throw new RulesNotImplementedException("no authored choice is installed");
 
     /// <inheritdoc/>
-    public virtual int? AttachesTo(World world, Card card) => null;
+    public virtual int? AttachesTo(World world, Card card, int? player = null) => null;
 
     /// <inheritdoc/>
     public virtual int? SetupController(World world, Card card) => null;
@@ -188,7 +197,7 @@ public class NoCardAbilities : ICardAbilities
     public virtual void ValidateForPlay(World world) { }
 
     /// <inheritdoc/>
-    public virtual IReadOnlyList<int>? AttachmentTargets(World world, Card card) => null;
+    public virtual IReadOnlyList<int>? AttachmentTargets(World world, Card card, int? player = null) => null;
 
     /// <inheritdoc/>
     public virtual IReadOnlyList<Card> PlayerSetupCards(World world, int player) => [];

@@ -245,4 +245,7 @@ public interface ICardFacts
     /// </remarks>
     /// <param name="faceId">A printed card id.</param>
     bool HasWhenDefeated(string faceId) => false;
+
+    /// <summary>Whether the printed text contains a When Completed ability.</summary>
+    bool HasWhenCompleted(string faceId) => false;
 }
