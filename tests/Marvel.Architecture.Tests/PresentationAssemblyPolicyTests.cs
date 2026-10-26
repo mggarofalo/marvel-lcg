@@ -53,6 +53,8 @@ public sealed class PresentationAssemblyPolicyTests
             "Marvel.Rules.Events.WhenRevealedCanceled",
             // Passive engine-owned attack lifetime and participants; no timing reconstruction.
             "Marvel.Rules.Play.ActiveAttack",
+            // Public area identity from the engine-owned typed auxiliary deck.
+            "Marvel.Rules.Play.InvocationDeck",
             "Marvel.Rules.Play.Outcome",
             "Marvel.Rules.Play.PlayerLossReason",
             "Marvel.Rules.Prompts.Affordance",

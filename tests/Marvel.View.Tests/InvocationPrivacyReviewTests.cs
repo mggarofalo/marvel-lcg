@@ -11,8 +11,10 @@ namespace Marvel.View.Tests;
 /// <summary>Existing projection privacy at the nonpublic Invocation lifecycle boundary.</summary>
 public sealed class InvocationPrivacyReviewTests
 {
-    [Fact]
-    public void MulliganRevealDiscardAndRecycleNeverPublishDeeperIdentitiesOrShuffleOrder()
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    public void MulliganRevealDiscardAndRecycleNeverPublishDeeperIdentitiesOrShuffleOrder(int owner)
     {
         // pack:mc08:the-invocation-deck: "top card ... faceup at all times".
         // A synthetic research board exercises existing View filtering, not public admission.
@@ -21,14 +23,14 @@ public sealed class InvocationPrivacyReviewTests
         for (int player = 0; player < 2; player++)
         {
             var seat = world.CreateSeat($"p{player}");
-            seat.IdentityCard = world.CreateCard(player == 0 ? "09001b,09001a" : "01001b,01001a", seat.Hero);
+            seat.IdentityCard = world.CreateCard(player == owner ? "09001b,09001a" : "01001b,01001a", seat.Hero);
             for (int i = 0; i < 10; i++) world.CreateCard("01088", seat.Deck);
         }
-        var source = world.CreateArea(DeckType.AsideDeck, 0, PlayArea.Of(0));
+        var source = world.CreateArea(DeckType.AsideDeck, owner, PlayArea.Of(owner));
         var cards = Enumerable.Range(32, 5)
             .Select(number => world.CreateCard($"090{number}", source)).ToArray();
         var events = new List<GameEvent>();
-        var invocation = InvocationDeck.Initialize(world, 0, cards, "setup", events);
+        var invocation = InvocationDeck.Initialize(world, owner, cards, "setup", events);
         var game = Game.Begin(world, facts, new NoCardAbilities());
         AssertPrivacy(world, invocation, events, publicCount: 0);
         var first = game.Resolve(Decision.Take(Assert.Single(game.Pending!.Affordances).Id));
@@ -53,7 +55,19 @@ public sealed class InvocationPrivacyReviewTests
                      new RestrictedVisibilityPolicy(1).Authorize(null, 2),
                      new PermissiveVisibilityPolicy().Authorize(null, 2) })
         {
+            var before = world.Digest().Canonical();
+            long words = world.Random.Generator.WordsConsumed;
             var visible = WorldProjection.For(world, null, events, scope);
+            var relationship = Assert.Single(visible.World.InvocationDecks);
+            Assert.Equal(new InvocationDeckDescriptor(invocation.Player,
+                invocation.Deck.Id, invocation.Discard.Id), relationship);
+            var board = BoardPresentation.From(visible.World);
+            Assert.Equal("INVOCATION DECK", Assert.Single(board.Areas,
+                area => area.Id == relationship.Deck).Title);
+            Assert.Equal("INVOCATION DISCARD", Assert.Single(board.Areas,
+                area => area.Id == relationship.Discard).Title);
+            Assert.Equal(before, world.Digest().Canonical());
+            Assert.Equal(words, world.Random.Generator.WordsConsumed);
             var deck = Assert.Single(visible.World.Areas, area => area.Id == invocation.Deck.Id);
             var discard = Assert.Single(visible.World.Areas, area => area.Id == invocation.Discard.Id);
             Assert.Equal(publicCount, deck.Cards.Count(card => card.Face is not null) + discard.Cards.Count);

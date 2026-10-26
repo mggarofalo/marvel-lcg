@@ -61,6 +61,22 @@ Black Widow content passes 526 cases, none failed/skipped:
 `Source/evidence/strange-next-four-integration.log`. See
 [four-row evidence](doctor-strange-next-four-rows.md).
 
+Typed Invocation pile source `f3542f7a` and independent review `dcea603c` are
+integrated. Protocol 42 publishes only owner/deck/discard area IDs and validates
+their exact relationships. Typed piles receive explicit labels; ordinary additional
+areas are not inferred to be Invocations. The complete integrated View lane passes
+372 cases; affected transport, contract and old-peer checks pass 56 cases. Logs:
+`Source/evidence/strange-area-integration-view.log` and
+`Source/evidence/strange-area-integration-server.log`. See
+[area contract evidence](doctor-strange-area-contract.md).
+MARVEL-817 remains open for choice/cost/source explanations and native proof;
+this partial acceptance is not complete UI or product acceptance.
+
+Next active packets: MARVEL-818 extends private inspection with the exact numeric
+boost receipt required by Astral Projection; MARVEL-819 authors remaining
+ally/support rows and isolates demonstrated engine prerequisites. Public admission
+remains closed while fourteen playable faces are still unauthored.
+
 Reviewed lifecycle source 3a20ae07 and review dd5b2f4a reuse player-owned additional
 deck/discard zones with exact physical binding, seeded shuffle, post-mulligan top
 reveal and penalty-free immediate recycling. Independent Rules 1,156 and View 365

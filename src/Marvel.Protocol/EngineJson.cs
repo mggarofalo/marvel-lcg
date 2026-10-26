@@ -51,6 +51,8 @@ public static class EngineJson
 
         if (response.World is { } world && !EncounterGroupContract.IsValid(world))
             throw new JsonException("response encounter groups contain invalid references");
+        if (response.World is { } invocationWorld && !InvocationDeckContract.IsValid(invocationWorld))
+            throw new JsonException("response Invocation decks contain invalid references");
 
         return response;
     }

@@ -49,6 +49,9 @@ public static class WorldProjection
             EventFaces = EventFaceProjection.From(safeEvents, world.Facts),
             ActiveAttack = ActiveAttackProjection.From(world, visible),
             EncounterGroups = EncounterGroupProjection.From(world, visible),
+            InvocationDecks = world.Seats.Where(seat => seat.InvocationDeck is not null)
+                .Select(seat => new InvocationDeckDescriptor(seat.Index,
+                    seat.InvocationDeck!.Deck.Id, seat.InvocationDeck.Discard.Id)).ToArray(),
         };
         return new VisibleResult(visible, authorizedPrompt, safeEvents);
     }
