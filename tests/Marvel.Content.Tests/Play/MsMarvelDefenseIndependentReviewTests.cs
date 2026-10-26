@@ -47,11 +47,13 @@ public sealed class MsMarvelDefenseIndependentReviewTests : CoreCardTestBase
     }
 
     [Theory]
-    [InlineData("01104")]
-    [InlineData("01191")]
+    [InlineData("01104", "05013")]
+    [InlineData("01191", "05013")]
+    [InlineData("01104", "01078")]
+    [InlineData("01191", "01078")]
     [Rule("rr:cancel.4")]
     [Rule("rr:surge.1")]
-    public void FullCrossSeatRevealCancelsOnlyWhenRevealedAndDiscardsAfterNestedAttack(string face)
+    public void FullCrossSeatRevealCancelsOnlyWhenRevealedAndDiscardsAfterNestedAttack(string face, string sourceFace)
     {
         // "The card is still regarded as revealed" and goes to encounter discard.
         // Printed 01104 heals Rhino; canceling that text leaves his damage intact.
@@ -61,7 +63,7 @@ public sealed class MsMarvelDefenseIndependentReviewTests : CoreCardTestBase
         world.Abilities = runner;
         var villain = world.CreateCard("01094", world.AreaOf(DeckType.VillainArea));
         villain.TakeDamage(5);
-        var source = world.CreateCard("05013", world.Seats[1].Hand);
+        var source = world.CreateCard(sourceFace, world.Seats[1].Hand);
         var payment = world.CreateCard("01089", world.Seats[1].Hand);
         var treachery = world.CreateCard(face, world.AreaOf(DeckType.RevealingArea, PlayArea.Of(0)));
         world.Agenda.Add(new PhaseStep(new RevealStageOperation(RevealStageKind.RevealEncounterCard),

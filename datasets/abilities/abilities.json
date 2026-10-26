@@ -1800,7 +1800,7 @@
       "note": "Hero Interrupt: cancel a revealed treachery's When Revealed effects, then make the villain attack the resolving player instead. The revealed card itself remains revealed under rr:cancel.4.",
       "abilities": [
         {
-          "trigger": { "event": "WhenCardRevealed", "timing": "Interrupt", "subject": "game", "form": "hero", "player": "trigger.player" },
+          "trigger": { "event": "WhenCardRevealed", "timing": "Interrupt", "subject": "game", "form": "hero" },
           "when": { "isKind": { "card": "trigger.subject", "kind": "treachery" } },
           "effect": { "seq": [ { "cancelWhenRevealed": "trigger.subject" }, { "enemyAttacks": { "enemies": { "query": "villain" } } } ] }
         }
