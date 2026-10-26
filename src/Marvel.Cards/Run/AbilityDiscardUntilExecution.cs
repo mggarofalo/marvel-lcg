@@ -9,10 +9,11 @@ internal static class AbilityDiscardUntilExecution
     internal static AbilityDeckAndRevealResult Run(
         AbilityEffect.DiscardUntil effect, AbilityDeckAndRevealContext context)
     {
-        int owner = new AbilityExpressionEvaluation(context.Expressions,
-            new AbilitySelectorEvaluation(context.Expressions.Bindings)).Seat(effect.Player);
         var found = effect.From == AbilitySearchArea.YourDeck
-            ? PlayerDeck.DiscardUntil(context.World, owner, effect.Set!, context.Trigger, context.Events)
+            ? PlayerDeck.DiscardUntil(context.World,
+                new AbilityExpressionEvaluation(context.Expressions,
+                    new AbilitySelectorEvaluation(context.Expressions.Bindings)).Seat(effect.Player),
+                effect.Set!, context.Trigger, context.Events)
             : EncounterDeck.DiscardUntil(context.World, context.World.Facts,
                 effect.Kind!.Value, context.Trigger, context.Events, effect.Trait);
         if (found is null) return AbilityDeckAndRevealResult.Handled;
