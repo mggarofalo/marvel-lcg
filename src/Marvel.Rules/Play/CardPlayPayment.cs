@@ -30,7 +30,7 @@ internal static class CardPlayPayment
             });
     }
 
-    private static CardResourcePayment Prepare(World world, CardPlayInitiation play)
+    internal static CardResourcePayment Prepare(World world, CardPlayInitiation play)
     {
         if (EffectiveCards.Kind(play.Card, play.Facts) == CardKind.Upgrade
             && play.Abilities.AttachmentTargets(world, play.Card) is { } eligible
