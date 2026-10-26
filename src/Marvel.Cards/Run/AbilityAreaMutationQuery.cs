@@ -59,6 +59,7 @@ internal sealed class AbilityAreaMutationQuery(
         {
             return CardMovementChange(effect);
         }
+        if (operation == "chooseCardsToHand") return queried.Count > 0;
         if (operation == "search")
             return SearchAreaTypes(effect, context).Any(queried.Contains)
                 || queried.Contains(DeckType.RevealingArea);

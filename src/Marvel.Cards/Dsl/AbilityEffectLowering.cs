@@ -99,6 +99,7 @@ internal static class AbilityEffectLowering
             "doubleResourceFor" => new AbilityEffect.DoubleResourceFor(Text(argument, child)),
             "reduceFirstAllyCost" => new AbilityEffect.ReduceFirstAllyCost(PositiveInteger(argument, child)),
             "releaseBeneath" => AbilityBeneathLowering.Release(argument, child),
+            "chooseCardsToHand" => AbilityBeneathLowering.ChooseToHand(argument, child),
             "storeBeneath" => AbilityBeneathLowering.Store(argument, child),
             "initializeAuxiliaryDeck" => AbilityAuxiliaryDeckLowering.Initialize(argument, child),
             "revealAuxiliaryTop" => new AbilityEffect.RevealAuxiliaryTop(AbilityAuxiliaryDeckLowering.Deck(argument, child)),

@@ -11,7 +11,7 @@ namespace Marvel.Cards.Run;
 internal static class AbilityResolutionChoices
 {
     private static readonly System.Collections.Immutable.ImmutableArray<string> SpecialChoiceOperations =
-        ["resolveSpecials", "chooseTopForHand", "chooseDiscardToShuffle", "discardHandCards", "discardResourceIcons"];
+        ["chooseCardsToHand", "resolveSpecials", "chooseTopForHand", "chooseDiscardToShuffle", "discardHandCards", "discardResourceIcons"];
 
     internal static Prompt? Choosing(this AbilityResolutionExecution execution, World world, PhaseStep step)
     {
@@ -35,6 +35,9 @@ internal static class AbilityResolutionChoices
         if (choice.OperationName() is "discardHandCards" or "discardResourceIcons")
             AbilitySelectedHandDiscardPreflight.Validate(execution.StructuralContext(cast), choice,
                 execution.ContinuationFacts(cast.Source, step, cast.Tier));
+        if (choice is AbilityEffect.ChooseCardsToHand group
+            && AbilityGroupRetrieval.Answer(execution.StructuralContext(cast), group, input) is Unsupported rejected)
+            throw new ArgumentException(rejected.Reason, nameof(input));
         cast.TrackResolution(cast.AbilityOrdinal);
         cast.At(Math.Max(0, step.Index - 1));
         var events = new AbilityChoiceAnswer(execution, step.Seat, step.Index, input, step, cast).Apply(choice);
@@ -71,7 +74,7 @@ internal static class AbilityResolutionChoices
         string operation = choice.OperationName();
         if (choice is AbilityEffect.MoveThreat move) return AbilityThreatMoveChoice.Describe(cast, move);
         if (SpecialChoiceOperations.Contains(operation))
-            return AbilityStructuralExecution.DescribeSpecialChoice(structural, choice);
+            return AbilitySpecialChoiceDispatch.DescribeSpecialChoice(structural, choice);
         if (operation is "distributeThreat" or "thwartDifferentSchemes" or "legalPractice")
             return AbilityStructuralExecution.DescribeThwartChoice(
                 structural, (AbilityEffect.ThwartGroup)choice);
