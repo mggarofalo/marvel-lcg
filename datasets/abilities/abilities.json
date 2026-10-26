@@ -16614,6 +16614,148 @@
           }
         }
       ]
+    },
+    {
+      "card": "05006",
+      "name": "Aamir Khan",
+      "note": "Alter-Ego Action places the selected card from your discard pile on the bottom of its owner deck, then draws only after completed placement. The exhaust cost and form restriction belong to the controller.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "alter-ego"
+          },
+          "cost": {
+            "exhaust": "this"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "cardsIn": {
+                  "area": "yourDiscardPile"
+                }
+              },
+              "effect": {
+                "then": {
+                  "effect": {
+                    "placeOnBottomOfDeck": "chosen"
+                  },
+                  "then": {
+                    "draw": {
+                      "player": "you",
+                      "count": 1
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "05016",
+      "name": "The Power of Protection",
+      "note": "This card generates one wild resource normally and doubles that output while paying for a Protection card.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "doubleResourceFor": "Protection"
+          }
+        }
+      ]
+    },
+    {
+      "card": "05019",
+      "name": "Energy",
+      "note": "This resource card has no ability. Its two printed energy resources are read from datasets/cards by the resource rules.",
+      "abilities": []
+    },
+    {
+      "card": "05020",
+      "name": "Genius",
+      "note": "This resource card has no ability. Its two printed mental resources are read from datasets/cards by the resource rules.",
+      "abilities": []
+    },
+    {
+      "card": "05021",
+      "name": "Strength",
+      "note": "This resource card has no ability. Its two printed physical resources are read from datasets/cards by the resource rules.",
+      "abilities": []
+    },
+    {
+      "card": "05022",
+      "name": "Avengers Mansion",
+      "note": "The action exhausts the support, chooses a player through that player's identity, and has that player draw 1 card.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this"
+          },
+          "cost": {
+            "exhaust": "this"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "identities"
+              },
+              "effect": {
+                "draw": {
+                  "player": "chosenPlayer",
+                  "count": 1
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "05024",
+      "name": "Enhanced Reflexes",
+      "note": "Uses (3 energy counters). Hero Resource: Exhaust Enhanced Reflexes and remove 1 energy counter from it to generate a energy resource. The last counter discards this upgrade under rr:uses-x-type; the committed resource ability still generates its resource.",
+      "startingCounters": {
+        "type": "energy",
+        "count": 3,
+        "uses": true
+      },
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Resource",
+            "subject": "this",
+            "form": "hero"
+          },
+          "cost": {
+            "seq": [
+              {
+                "exhaust": "this"
+              },
+              {
+                "removeCounters": {
+                  "card": "this",
+                  "counter": "energy",
+                  "count": 1
+                }
+              }
+            ]
+          },
+          "printedResources": "Y",
+          "effect": {
+            "generate": "Y"
+          }
+        }
+      ]
     }
   ]
 }

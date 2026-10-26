@@ -4,7 +4,7 @@
 |---|---|
 | Kind | authored |
 | Product boundary | Core Set, Rise of Red Skull, Captain America and Wrecking Crew; Green Goblin and Ms. Marvel research rows remain publicly excluded |
-| Records | 549 printed card faces, including explicit empty rows |
+| Records | 558 printed card faces, including explicit empty rows |
 | Authorities | Generated `datasets/cards/`, vendored Rules Reference, expansion rulebooks and published rulings |
 | Gated by | Ability admission/lowering tests, complete-product admission, actual-card tests, campaign acceptance and executable Core behavioral transcripts |
 
@@ -131,6 +131,17 @@ Nakia uses the controlled player's one-use player-phase reduction, preserving it
 across form changes and rejected payments. Suit uses the event resource restriction
 and explicit hero form; ruling:5b44b2adcc60d4b7 distinguishes an event ability's
 own cost from a selected ally's cost. `MsMarvelPersonaTests` and
-`MsMarvelSuitCardTests` exercise these rows. Aamir (05006) and Bruno (05007)
-remain unauthored pending bottom-of-deck movement and optional bounded stored-card
-selection respectively. See `docs/content/ms-marvel-persona-evidence.md`.
+`MsMarvelSuitCardTests` exercise these rows. Bruno (05007) remains unauthored pending optional bounded stored-card selection. See `docs/content/ms-marvel-persona-evidence.md`.
+
+
+Aamir/resource reprint packet adds seven actual Ms. Marvel research faces:
+05006, 05016, 05019–05022 and 05024 (16 of 34 Ms. Marvel faces; 558 total).
+Printed authority is joined `datasets/cards/cards.json`; the vendored MarvelCDB
+FAQ has no entries for these seven faces, and the Hall of Heroes search yielded
+no card-specific clarification. Aamir uses reviewed bottom placement followed by
+dependent draw. Resource cards read printed icons; Protection doubling qualifies
+the card being paid. Mansion chooses a player; Reflexes uses three energy
+counters, Hero Resource, exhaustion and discard at the last counter.
+`MsMarvelAamirCardTests`, `MsMarvelResourceReprintTests` and
+`MsMarvelReflexesCardTests` exercise their actual rows. See
+`docs/content/ms-marvel-aamir-resource-evidence.md`. Public admission stays closed.
