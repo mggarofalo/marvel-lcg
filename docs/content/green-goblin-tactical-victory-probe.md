@@ -179,3 +179,20 @@ A next bounded attempt should address the visible causal failure: preserve enoug
 resources for minion removal while keeping Captain active and preventing an
 alter-ego turn from handing a live minion board enough scheme activations to end
 the game. Mutagen Standard victory with exact replay remains open.
+
+
+The first starter trace identifies a concrete committed tactical error. Decision
+8 uses Shield Toss, discards Heroic Strike and returns Captain America's Shield
+to hand. Decision 12 then uses I Can Do This All Day, discarding that sole hand
+card (object 20). This trades away the Shield's DEF/retaliate benefit and Shield
+Block enabler until it is drawn again. Later strategies explicitly preserve and
+replay the Shield; that correction alone is not winning evidence.
+
+The same first trace's terminal sequence is also concrete: decision 104 changes
+to alter-ego at 8 damage with 10 main-scheme threat. Steve's Apartment heals to
+7 damage; an ally thwart reduces main threat to 8. End Phase decision 111
+resolves to `VillainWins` before another prompt. Mutagen Cloud's printed target
+is 11 per player. The terminal cause is main-scheme completion during the
+following villain phase, rather than identity damage or deck exhaustion. The
+text trace does not itemize each automatic threat placement in that resolution,
+so it does not attribute the final three threat to a specific boost or minion.
