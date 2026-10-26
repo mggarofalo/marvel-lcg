@@ -5,6 +5,14 @@ namespace Marvel.Rules.Play;
 /// <summary>The active damage-prevention effects and their shared amount calculation.</summary>
 public static class DamagePrevention
 {
+    /// <summary>Read-only use counts of registered prevention, in live registration order.</summary>
+    public static IReadOnlyList<(ContinuousEffect Effect, int? Remaining)> CaptureUses(World world, Card target)
+    {
+        var active = Active(world, target).ToArray();
+        return world.Effects.entries.Where(entry => active.Contains(entry.Effect))
+            .Select(entry => (entry.Effect, entry.Remaining)).ToArray();
+    }
+
     /// <summary>Prevention in the same order used by live damage placement.</summary>
     public static IEnumerable<ContinuousEffect> Active(World world, Card target) =>
         world.Effects.Active().Where(effect =>

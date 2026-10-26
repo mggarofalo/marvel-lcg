@@ -96,12 +96,11 @@ internal sealed class AbilityCostPreparation
 
     private void PrepareSequence(AbilityCost.Sequence sequence)
     {
-        var components = Flatten(sequence).ToArray();
+        var components = AbilityCostOrder.Flatten(sequence).ToArray();
         // Engine choice: establish the taken-damage amount before other physical
         // payment. rr:cost.12 requires that "all of that damage was taken."
         // Defeat settlement waits until the combined costs have been committed.
-        foreach (var taking in components.OfType<AbilityCost.Damage>()
-                     .Where(damage => damage.MustTakeAll))
+        foreach (var taking in components.Where(AbilityCostOrder.IsTaking))
             PrepareSteps(taking);
         var spends = components.OfType<AbilityCost.Spend>().ToList();
         if (!resourcesPaidByEvent && spends.Count > 0)
@@ -112,16 +111,6 @@ internal sealed class AbilityCostPreparation
                      step is not (AbilityCost.Spend
                          or AbilityCost.Damage { MustTakeAll: true })))
             PrepareSteps(remaining);
-    }
-
-    private static IEnumerable<AbilityCost> Flatten(AbilityCost cost)
-    {
-        if (cost is AbilityCost.Sequence sequence)
-        {
-            foreach (var child in sequence.Costs)
-                foreach (var component in Flatten(child)) yield return component;
-        }
-        else yield return cost;
     }
 
     private void PrepareResource(AbilityCost component)

@@ -20328,6 +20328,106 @@
           }
         }
       ]
+    },
+    {
+      "card": "09016",
+      "name": "Momentum Shift",
+      "note": "Printed Hero Action (attack). Healing two is a full cost under rr:initiating-abilities.step.5; it precedes the attack damage.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "labels": [
+            "attack"
+          ],
+          "cost": {
+            "heal": {
+              "card": "you",
+              "amount": 2
+            }
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "attackableEnemies"
+              },
+              "effect": {
+                "attack": {
+                  "target": "chosen",
+                  "effect": {
+                    "dealAttackDamage": {
+                      "cards": "chosen",
+                      "amount": 2
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "09021",
+      "name": "Warning",
+      "note": "Printed Interrupt on any hero taking damage; no controller-form or attack restriction. Prevention affects only the pending damage instance.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenDamageWouldBeDealt",
+            "damage": "taken",
+            "timing": "Interrupt",
+            "target": "hero"
+          },
+          "effect": {
+            "preventDamage": {
+              "card": "trigger.target",
+              "amount": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "09037",
+      "name": "Skilled Strike",
+      "note": "Printed Interrupt on your hero making a basic attack. The engine-owned basic-attack occurrence follows exhaustion and binds the modifier to that attack.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenHeroBasicAttackInitiated",
+            "timing": "Interrupt",
+            "actor": "you"
+          },
+          "effect": {
+            "boostBasicUse": 2
+          }
+        }
+      ]
+    },
+    {
+      "card": "09038",
+      "name": "Foiled!",
+      "note": "Printed Interrupt on one physical boost card turning faceup during a scheme activation. Cancel numeric icons only; the star ability remains. Trigger, condition and instruction spellings are engine choices.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenBoostCardTurnedFaceup",
+            "timing": "Interrupt",
+            "subject": "game"
+          },
+          "when": {
+            "activationIs": "scheme"
+          },
+          "effect": {
+            "cancelBoostIcons": "trigger"
+          }
+        }
+      ]
     }
   ]
 }

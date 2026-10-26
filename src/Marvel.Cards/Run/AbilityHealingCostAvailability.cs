@@ -17,21 +17,28 @@ internal sealed class AbilityHealingCostAvailability(
         long required = HealingSteps(completeCost ?? heal)
             .Where(step => AbilityPaymentRules.CostTarget(world, source, player, step.Card) == target)
             .Sum(step => step.Amount);
-        if (target.Damage >= required) return true;
-        heal = heal with { Amount = required };
-        if (DamageSteps(completeCost).Any()) throw Unsupported();
+        var cost = completeCost ?? heal;
+        var offers = new AbilityOfferQueries(program, resources);
+        if (CurrentlyPayable(target, required, cost)
+            && (paying is null || !HasSelectedDamage(paying, offers))) return true;
         var price = EffectiveCards.Kind(source, world.Facts) == CardKind.Event
             ? EventPrice(completeCost)
             : AbilityPaymentPricing.Price(world, source, player, completeCost, resources);
         if (price is null) return false;
-        var offers = new AbilityOfferQueries(program, resources);
         if (paying is not null)
-            return ProjectSelected(heal, target, paying, price, offers);
+            return ProjectSelected(target, paying, price, offers, cost);
 
-        return Available(heal, target, price, offers);
+        return Available(target, price, offers, cost);
     }
 
-    private bool Available(AbilityCost.Heal heal, Card target, CostOption price, AbilityOfferQueries offers)
+    private bool HasSelectedDamage(IReadOnlyList<int> paying, AbilityOfferQueries offers) =>
+        paying.Any(id => world.Cards[id].Area.Type != DeckType.HandsArea
+            && DamageSteps(offers.ResourceAbility(world, player, world.Cards[id])?.Cost).Any());
+
+    private bool CurrentlyPayable(Card target, long required, AbilityCost cost) =>
+        DamageSteps(cost).Any() ? Project(target, cost) : target.Damage >= required;
+
+    private bool Available(Card target, CostOption price, AbilityOfferQueries offers, AbilityCost cost)
     {
         // Engine policy: prove a concrete plan using one damage-paying resource
         // ability plus hand resources. Shared or state-changing generator costs
@@ -47,7 +54,7 @@ internal sealed class AbilityHealingCostAvailability(
             if (!Supported(ability!.Cost)) { unresolved = true; continue; }
             int[] plan = [entry.Effect, .. hand];
             if (ResourcePayment.Allocate(price, plan) is null) continue;
-            if (ProjectSelected(heal, target, plan, price, offers)) return true;
+            if (ProjectSelected(target, plan, price, offers, cost)) return true;
         }
         if (unresolved || price.Generators.Count(entry => !hand.Contains(entry.Effect)
                 && DamageSteps(offers.ResourceAbility(world, player, world.Cards[entry.Effect])?.Cost).Any()) > 1)
@@ -68,14 +75,13 @@ internal sealed class AbilityHealingCostAvailability(
                 + AbilityPaymentRules.ResourceRequirement(cost, source)], Sources: generators);
     }
 
-    private bool ProjectSelected(AbilityCost.Heal heal, Card target, IReadOnlyList<int> paying,
-        CostOption price, AbilityOfferQueries offers)
+    private bool ProjectSelected(Card target, IReadOnlyList<int> paying,
+        CostOption price, AbilityOfferQueries offers, AbilityCost completeCost)
     {
         var generators = paying.Where(id => world.Cards[id].Area.Type != DeckType.HandsArea).ToArray();
         // A second damage procedure may change replacement admission, prevention
         // uses, defeat or another generator's cost. Do not add independent previews.
         if (generators.Length > 1) throw Unsupported();
-        long damage = target.Damage;
         foreach (int id in generators)
         {
             if (!price.Generators.Any(entry => entry.Effect == id)) return false;
@@ -84,33 +90,16 @@ internal sealed class AbilityHealingCostAvailability(
             if (ability is null) return false;
             if (!Supported(ability.Cost)) throw Unsupported();
             var cost = DamageSteps(ability.Cost).SingleOrDefault();
-            if (cost is null || AbilityPaymentRules.CostTarget(world, generator, player, cost.Card) != target)
+            if (cost is null)
                 continue;
-            long taken = ProjectDamage(target, generator, cost);
-            damage = AbilityAmounts.SaturatingSum(damage, [taken]);
+            return Project(target, completeCost, generator, ability.Cost);
         }
-        return damage >= heal.Amount;
+        return Project(target, completeCost);
     }
 
-    private long ProjectDamage(Card target, Card generator, AbilityCost.Damage cost)
-    {
-        if (!AbilityProgramQueries.CanTakeDamage(world, program, target, generator)) return 0;
-        long amount = cost.MustTakeAll ? cost.Amount : AbilityAmounts.SaturatingSum(cost.Amount,
-            [AbilityEventModifiers.Amount(world, generator, "eventDamage")]);
-        var replacement = new AbilityDamageProjection(program, resources)
-            .PreviewDamageReplacement(world, target, generator, amount);
-        if (replacement.Result is not RuleProjection<long>.Known known) throw Unsupported();
-        var assignment = DamageAssignment.AfterReplacement(known.Value,
-            Statuses.Has(world, target, Statuses.Tough));
-        long taken = assignment.Taken;
-        foreach (var prevention in DamagePrevention.Active(world, target))
-            taken = DamagePrevention.After(taken, prevention.Amount);
-        if (cost.MustTakeAll && taken != cost.Amount) return 0;
-        // Resource generation settles its own defeat before the outer heal.
-        if (AbilityAmounts.SaturatingSum(target.Damage, [taken]) >= DamagePlacement.Health(world, world.Facts, target))
-            throw Unsupported();
-        return taken;
-    }
+    private bool Project(Card target, AbilityCost cost, Card? generator = null, AbilityCost? generatorCost = null) =>
+        new AbilityHealingCostProjection(world, source, player, program, resources, target)
+            .CanPay(cost, generator, generatorCost);
 
     private static bool Supported(AbilityCost? cost) => cost switch
     {

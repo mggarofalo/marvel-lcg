@@ -22,7 +22,7 @@ internal sealed class AbilityPaymentValidation(
             return;
         }
 
-        IReadOnlyList<AbilityCost> steps = cost is AbilityCost.Sequence sequence ? sequence.Costs : [cost];
+        IReadOnlyList<AbilityCost> steps = AbilityCostOrder.Flatten(cost).ToArray();
         if (steps.Any(step => step is AbilityCost.DiscardFromHand) && paying.Intersect(chosen).Any())
             throw new RulesNotImplementedException(
                 $"'{source.FaceId}' cannot discard the same hand card for resources and an arrow cost");

@@ -180,10 +180,10 @@ internal static class AbilityProgramQueries
     }
 
     internal static bool CanTakeDamage(
-        World world, AbilityProgram program, Card target, Card source)
+        World world, AbilityProgram program, Card target, Card source, AbilityQueryProjection? projection = null)
     {
         if (!DeckTypes.IsInPlay(target.Area.Type)) return true;
-        if (AbilityTargetDamageProtection.Prevents(world, program, target)) return false;
+        if (AbilityTargetDamageProtection.Prevents(world, program, target, projection: projection)) return false;
         if (EffectiveCards.HasProfile(target)) return true;
         foreach (var ability in ActiveOn(world, program, target).Where(ability =>
                      ability.Trigger.Timing == AbilityType.Constant))
@@ -191,7 +191,7 @@ internal static class AbilityProgramQueries
             var bindings = new AbilityQueryContext(
                 world, target, new Occurrence(0, []),
                 AbilityCardQueries.ControllerOf(world, target), target.Incarnation,
-                null, null, null, []);
+                null, null, null, []) { Projection = projection };
             var expressions = new AbilityExpressionEvaluation(
                 new AbilityExpressionContext(
                     bindings, ImmutableDictionary<string, long>.Empty, [], string.Empty,

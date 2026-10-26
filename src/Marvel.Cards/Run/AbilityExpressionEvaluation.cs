@@ -82,7 +82,7 @@ internal sealed class AbilityExpressionEvaluation(
         {
             AbilityCardNumberProperty.Threat => context.Bindings.Quantities(card).Tokens.GetValueOrDefault("k_threat"),
             AbilityCardNumberProperty.Damage => context.Bindings.Quantities(card).Damage,
-            AbilityCardNumberProperty.RemainingHealth => Math.Max(0, DamagePlacement.Health(context.World, context.World.Facts, card) - card.Damage),
+            AbilityCardNumberProperty.RemainingHealth => Math.Max(0, DamagePlacement.Health(context.World, context.World.Facts, card) - context.Bindings.Quantities(card).Damage),
             AbilityCardNumberProperty.StartingHealth => StartingHealth(card),
             _ => throw new InvalidOperationException("Unknown compiled card number"),
         };
@@ -219,7 +219,7 @@ internal sealed class AbilityExpressionEvaluation(
     internal static long CounterCount(Card card, string type) =>
         CounterCount(card.InstanceState, type);
 
-    private static long CounterCount(CardInstanceState card, string type) =>
+    internal static long CounterCount(CardInstanceState card, string type) =>
         string.Equals(type, "allPurpose", StringComparison.Ordinal)
             ? card.Tokens
                 .Where(pair => pair.Key.StartsWith("c_", StringComparison.Ordinal))

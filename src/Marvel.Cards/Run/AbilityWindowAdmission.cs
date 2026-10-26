@@ -28,20 +28,20 @@ internal static class AbilityWindowAdmission
 
     internal static ImmutableArray<Candidate> Waiting(
         AbilityProgram program, World world, Occurrence occurrence,
-        WindowKind window, IResourceCardAbilities resourceAbilities)
+        WindowKind window, IResourceCardAbilities resourceAbilities, AbilityQueryProjection? projection = null)
     {
         var waiting = ImmutableArray.CreateBuilder<Candidate>();
         foreach (var card in world.Cards)
         {
             waiting.AddRange(CandidatesFor(
-                program, world, card, occurrence, window, resourceAbilities));
+                program, world, card, occurrence, window, resourceAbilities, projection));
         }
         return waiting.ToImmutable();
     }
 
     private static IEnumerable<Candidate> CandidatesFor(
         AbilityProgram program, World world, Card card, Occurrence occurrence,
-        WindowKind window, IResourceCardAbilities resourceAbilities)
+        WindowKind window, IResourceCardAbilities resourceAbilities, AbilityQueryProjection? projection)
     {
         if (!CanHostWindowAbility(world, card)) yield break;
         var written = program.On(card.FaceId);
@@ -54,7 +54,7 @@ internal static class AbilityWindowAdmission
                     candidate.Trigger.Timing == ability.Trigger.Timing);
                 var candidate = new Candidate(card, ability, controller, ordinal);
                 foreach (var instance in AbilityTriggerInstances.For(candidate, occurrence))
-                    if (IsWaitingCandidate(program, world, instance, occurrence, window, resourceAbilities))
+                    if (IsWaitingCandidate(program, world, instance, occurrence, window, resourceAbilities, projection))
                         yield return instance;
             }
         }
@@ -69,7 +69,8 @@ internal static class AbilityWindowAdmission
 
     private static bool IsWaitingCandidate(
         AbilityProgram program, World world, Candidate candidate,
-        Occurrence occurrence, WindowKind window, IResourceCardAbilities resourceAbilities)
+        Occurrence occurrence, WindowKind window, IResourceCardAbilities resourceAbilities,
+        AbilityQueryProjection? projection)
     {
         var (card, ability, controller, _) = candidate;
         // rr:when-completed-abilities.1: "When this scheme is completed..."
@@ -79,13 +80,21 @@ internal static class AbilityWindowAdmission
                 ability.AnyPlayer ? controller : null)
             || !InForm(world, controller, ability.Trigger.Form, card)) return false;
         var context = Context(program, world, card, occurrence, controller, ability.Cost, resourceAbilities);
-        context = context.WithQuery(context.Query with { TriggeringDefeat = candidate.TriggeringDefeat, TriggeringAttack = candidate.TriggeringAttack });
+        context = context.WithQuery(context.Query with { TriggeringDefeat = candidate.TriggeringDefeat, TriggeringAttack = candidate.TriggeringAttack, Projection = projection });
         return WhenHolds(ability, context)
             && ControllerCanInitiate(controller, ability, context)
-            && AbilityPaymentRules.Payable(world, card, controller, ability.Cost, program, resourceAbilities)
-            && AbilityPaymentRules.EventPayable(world, card, controller, ability, resourceAbilities)
+            && CostsPayable(program, world, candidate, resourceAbilities, projection)
             && AbilityAvailability.Available(world, card, ability,
                 AbilityAvailability.IndexOf(program, card, ability), occurrence);
+    }
+
+    private static bool CostsPayable(AbilityProgram program, World world, Candidate candidate,
+        IResourceCardAbilities resources, AbilityQueryProjection? projection)
+    {
+        var (card, ability, controller, _) = candidate;
+        return AbilityExhaustionCostAvailability.CanPay(world, card, controller, ability.Cost, projection)
+            && AbilityPaymentRules.Payable(world, card, controller, ability.Cost, program, resources)
+            && AbilityPaymentRules.EventPayable(world, card, controller, ability, resources);
     }
 
     private static bool ControllerCanInitiate(int controller, CompiledCardAbility ability,

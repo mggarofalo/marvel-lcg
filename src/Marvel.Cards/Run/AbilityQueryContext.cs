@@ -23,9 +23,11 @@ internal sealed record AbilityQueryContext(
 
     internal CardInstanceState SourceState { get; init; } = Source.InstanceState;
 
-    internal CardInstanceState Quantities(Card card) => SourceBindingIsCurrent(card)
+    internal AbilityQueryProjection? Projection { get; init; }
+
+    internal CardInstanceState Quantities(Card card) => Projection?.Cards.GetValueOrDefault(card.ObjectId) ?? (SourceBindingIsCurrent(card)
         && !DeckTypes.IsInPlay(card.Area.Type)
-        ? SourceState : card.InstanceState;
+        ? SourceState : card.InstanceState);
     internal Card? Chosen => ChosenBinding?.Resolve(World, Source, "chosen");
     internal Card? PlayerSelection => PlayerSelectionBinding?.Resolve(World, Source, "player selection");
 

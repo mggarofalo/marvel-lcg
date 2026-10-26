@@ -4,7 +4,7 @@
 |---|---|
 | Kind | authored |
 | Product boundary | Core Set, Rise of Red Skull, Captain America and Wrecking Crew; Green Goblin and Ms. Marvel research rows remain publicly excluded |
-| Records | 654 printed card faces, including explicit empty rows |
+| Records | 658 printed card faces, including explicit empty rows |
 | Authorities | Generated `datasets/cards/`, vendored Rules Reference, expansion rulebooks and published rulings |
 | Gated by | Ability admission/lowering tests, complete-product admission, actual-card tests, campaign acceptance and executable Core behavioral transcripts |
 
@@ -306,3 +306,5 @@ and non-first-player recipient tests gate these interpretations. See
 Doctor Strange remains outside complete-product public admission.
 
 Doctor Strange constant/resource research adds 09009, 09011 and 09026 (MARVEL-801). The preceding 651 raw row objects remain intact; 9/40 faces are authored. Printed authority is datasets/cards/cards.json; no starting counters or public admission changes. See docs/content/doctor-strange-constants-evidence.md.
+
+Doctor Strange response-event research adds 09016, 09021, 09037 and 09038 (MARVEL-803), preserving the preceding 654 raw row objects. There are 13/40 authored faces; public admission remains closed. See docs/content/doctor-strange-response-events-evidence.md.

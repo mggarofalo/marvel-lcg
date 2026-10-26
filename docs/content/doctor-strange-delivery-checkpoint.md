@@ -4,6 +4,27 @@ Canonical parent: MARVEL-565. The [40-face handoff](research/remaining/doctor-st
 defines complete scope. This branch contains nonpublic prerequisites, not admitted
 Doctor Strange content.
 
+Latest integration: 665 authored rows, 20 of the 40 Strange faces. Exact printed-set
+search source `4261d57f` and review `f7e59a6c` are integrated at `36628a0b`; its
+combined search checks pass 40 cases. Four response-event rows from `4953b480`
+and independent event review `de7310c9` now accompany the complete healing-cost
+chain through source `4d193dd6` and independent acceptance `0cf90669`.
+All 661 predecessor raw ability objects remain byte-identical.
+
+Combined Content verification includes whole cost/payment/healing classes,
+Doctor Strange, Spell Mastery, Master, Invocation, Black Widow, ability-data,
+citation, prevention and Green Goblin controls: 1,557 passed and two stale
+packet-inventory assertions failed. Those assertions now recognize the authored
+identity and bound the earlier two-row search packet; all 20 tests in their two
+classes pass after correction. No behavioral assertions were removed. Logs:
+`Source/evidence/strange-integrated-healing-content.log` and
+`Source/evidence/strange-integrated-healing-inventory-restored.log`.
+The merged sequence assessor receives costs already expanded by
+`AbilityPaymentRules.Payable`, preserving Invocation pricing while flattening
+nested costs into the complete payment context. Images/Vapors and Crimson
+prerequisite review are accepted but await integration. Public admission remains
+closed until the complete pack and its integration evidence are ready.
+
 Reviewed lifecycle source 3a20ae07 and review dd5b2f4a reuse player-owned additional
 deck/discard zones with exact physical binding, seeded shuffle, post-mulligan top
 reveal and penalty-free immediate recycling. Independent Rules 1,156 and View 365

@@ -208,7 +208,7 @@ internal sealed class AbilitySelectorEvaluation(
             AbilityCardRank.Cost => context.World.Facts.PrintedValue(card.FaceId, "Cost", context.World.Players),
             AbilityCardRank.Attack => StateFields.Modified(context.World, card, "attack", context.World.Facts, context.World.Players),
             AbilityCardRank.PrintedHealth => EffectiveCards.BaseValue(card, context.World.Facts, "HP", context.World.Players),
-            AbilityCardRank.RemainingHealth => CardValues.RemainingHealth(context.World, card, context.World.Facts),
+            AbilityCardRank.RemainingHealth => Math.Max(0, DamagePlacement.Health(context.World, context.World.Facts, card) - context.Quantities(card).Damage),
             _ => throw new InvalidOperationException("Unknown compiled card rank"),
         };
         long extreme = selection.Maximum ? among.Max(Rank) : among.Min(Rank);
