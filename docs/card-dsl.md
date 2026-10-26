@@ -1134,10 +1134,11 @@ the committed event payment ledger and its paid-resource receipt.
 
 `chooseCardsToHand` takes a `from` card selector and positive `maximum`. It offers
 one physical-card group with zero through that maximum distinct ids; the entire
-answer is validated before any card moves. Only out-of-play player-owned cards
+answer is validated before any card moves. Only out-of-play player-owned cards outside the resolving hand
 are candidates. The selected cards enter the resolving player's hand faceup,
 preserving physical ownership. `from: {"query":"beneathThis"}` selects only the
-source host's stored cards. The source must remain in play. Costs precede the
+source host's stored cards. The selector follows the captured source incarnation; it cannot retrieve from a
+reentered new copy. An ongoing ability may finish after its source leaves play. Costs precede the
 choice; accepting an empty group does not undo costs. This operation suspends and
 resumes the ordinary ability continuation once. Its spelling and movement order
 (the submitted physical-id order) are engine choices.

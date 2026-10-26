@@ -72,7 +72,10 @@ internal sealed class CardQueryEvaluator(
         AbilityCardQuery.OtherEnvironments => [.. cast.World.Cards.Where(card =>
             DeckTypes.IsInPlay(card.Area.Type) && card.ObjectId != cast.Occurrence.Subject
             && EffectiveCards.Kind(card, cast.World.Facts) == CardKind.Environment)],
-        AbilityCardQuery.BeneathThis => BeneathCards.Of(cast.World, cast.Source),
+        // rr:leaves-play.1: a departed card is "a new copy of the card".
+        // A continuing ability cannot follow storage beneath its source's new incarnation.
+        AbilityCardQuery.BeneathThis => cast.SourceReference is { } host
+            ? BeneathCards.Of(cast.World, host) : [],
         // rr:player-side-scheme.1 puts both kinds of side scheme together.
         AbilityCardQuery.SideSchemes =>
             [.. InArea(cast.World, DeckType.SideSchemesArea, PlayArea.Villains)],

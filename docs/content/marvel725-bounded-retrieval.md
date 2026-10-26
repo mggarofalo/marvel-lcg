@@ -27,6 +27,35 @@ all 18 focused cases passed (`bruno-final-focused.log`).
 Normal commit hooks remain enabled. The packet also extracts special-choice
 routing into its cohesive owner, keeping structural traversal below 300 lines.
 
-Limits: no broad suite, native UI journey, public product admission, or independent
-review is claimed. Restricted-view end-to-end disclosure and selectors beyond the
-Bruno beneathThis use remain explicit independent-review concerns.
+Independent review reproduced two admission defects on `1c58b671`: cards already
+in the destination hand could justify initiation, and a reentered host could supply
+stored candidates to an earlier continuation. Retained review tests failed 2/2
+before this correction (`bruno-review-red.log`). Candidates now exclude the resolving
+hand. The beneathThis query uses the already-captured source incarnation, as
+`rr:leaves-play.1` treats a departed card as a new copy. This changes no digest,
+wire or continuation state format.
+
+`rr:initiating-abilities.3` says source departure does not stop the initiated
+sequence, unless it prevents payment of a required cost. Accordingly the executor
+can finish an empty optional retrieval after departure, and a synthetic independent
+out-of-play selection can still retrieve its valid card. Source departure/reentry
+probes mutate fixtures while a prompt waits: no legal gameplay interleaving that
+performs those mutations here has been established. They prove defensive identity
+handling, not a newly reachable Bruno sequence.
+
+Corrected focused evidence: 21 content cases and two actual engine-to-View cases
+pass (`bruno-review-green.log`, `bruno-review-view.log`). Restricted projections
+expose eligible faces only to the answering seat and revoke unselected exposure
+after zero- or two-card completion, including foreign physical ownership.
+
+Limits: no broad suite, native UI journey, or public product admission is claimed.
+Independent re-review remains required. Generic selectors beyond the current tests
+are not claimed as exhaustively verified.
+
+Correction mutants compiled independently: replacing captured source identity with
+the current source failed only the reentry control (1 failed, 2 passed); removing
+the destination-hand exclusion failed only the initiation control (1 failed,
+2 passed). Logs: `bruno-review-identity-mutant.log` and
+`bruno-review-hand-mutant.log`. After restoration, an explicit non-incremental
+build and all 21 focused content tests passed (`bruno-review-restored-build.log`,
+`bruno-review-restored-test.log`).

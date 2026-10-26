@@ -17,9 +17,9 @@ internal static class AbilityGroupRetrieval
     internal static IReadOnlyList<Card> Candidates(AbilityEffect.ChooseCardsToHand group,
         AbilityAdmissionContext context)
     {
-        if (!DeckTypes.IsInPlay(context.Expressions.Source.Area.Type)) return [];
         var selector = new AbilitySelectorEvaluation(context.Expressions.Bindings);
         return selector.Every(group.From).Where(card => !DeckTypes.IsInPlay(card.Area.Type)
+            && card.Area != context.Expressions.World.Seats[context.Query.Player].Hand
             && card.Owner >= 0 && card.Owner < context.Expressions.World.Players).ToList();
     }
 
@@ -51,7 +51,7 @@ internal static class AbilityGroupRetrieval
     internal static AbilityStructuralTransition Answer(AbilityStructuralContext context,
         AbilityEffect.ChooseCardsToHand group, Decision answer) =>
         answer.IsDecline || answer.Affordance != context.Expressions.Source.ObjectId
-            || answer.Spent.Count != 0 || !DeckTypes.IsInPlay(context.Expressions.Source.Area.Type)
+            || answer.Spent.Count != 0
             || !Request(context, group).Allows(answer.Targets)
             ? new Unsupported("select a bounded group of distinct currently eligible cards")
             : new RetrieveCardsCommand([.. answer.Targets]);

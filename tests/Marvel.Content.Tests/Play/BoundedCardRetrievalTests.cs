@@ -114,7 +114,8 @@ public sealed class BoundedCardRetrievalTests
     }
 
     [Fact]
-    public void DepartedHostCannotRetrieveEvenEmptyGroup()
+    [Rule("rr:initiating-abilities.3")]
+    public void DepartedHostCanFinishOngoingRetrievalWithAnEmptyGroup()
     {
         Card host = null!;
         Card stored = null!;
@@ -127,9 +128,12 @@ public sealed class BoundedCardRetrievalTests
         }, abilities: runner);
         game.Resolve(Decision.Take(Assert.Single(game.Pending!.Affordances, offer => offer.AnchorId == host.ObjectId).Id));
         var choice = Assert.Single(game.Pending!.Affordances);
+        // "the sequence does not stop from completing if that card leaves play".
+        // Synthetic fixture mutation during a pending decision tests the execution
+        // boundary; no legal gameplay interleaving here is claimed.
         Discard.Card(world, host, "depart", []);
         var before = System.Text.Json.JsonSerializer.Serialize(world.Digest());
-        Assert.Throws<ArgumentException>(() => game.Resolve(Decision.Take(choice.Id)));
+        game.Resolve(Decision.Take(choice.Id));
         Assert.Equal(before, System.Text.Json.JsonSerializer.Serialize(world.Digest()));
         Assert.Equal(DeckType.DiscardPile, stored.Area.Type);
     }
