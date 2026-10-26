@@ -86,6 +86,10 @@ public sealed class AbilityRunner : ICardAbilities
                 : resolution.ResumeAbility(world, continuation);
     public void ResolveCardAttack(World world, CharacterAttack attack, Occurrence occurrence, List<GameEvent> events) => resolution.ResolveCardAttack(world, attack, occurrence, events);
     public void ResolveCardThwart(World world, CharacterThwart thwart, Occurrence occurrence, List<GameEvent> events) => resolution.ResolveCardThwart(world, thwart, occurrence, events);
+    public Func<AbilityExecution, AbilityExecutionResult> PrepareWindow(
+        World world, Occurrence occurrence, PendingAbility ability, Decision answer) =>
+        resolution.PrepareWindow(world, occurrence, ability, answer);
+
     public AbilityExecutionResult Resolve(World world, AbilityExecution invocation, Decision answer) => resolution.Resolve(world, invocation, answer);
     public IReadOnlyList<PendingAbility> WhenRevealedAbilities(World world, Card card, int player) => resolution.WhenRevealedAbilities(world, card, player);
     public void RequireWhenRevealed(string face) => resolution.RequireWhenRevealed(face);

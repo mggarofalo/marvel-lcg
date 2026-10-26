@@ -48,12 +48,17 @@ internal static class AbilityWindowResolution
     private static AbilityExecutionResult ResolveCore(AbilityResolutionExecution execution,
         World world, AbilityExecution invocation, Decision answer, DamageReplacement? replacement)
     {
+        world.Agenda.Executions.RequireActive(invocation);
+        return PrepareWindow(execution, world, invocation.Occurrence, invocation.Ability,
+            answer, replacement)(invocation);
+    }
+
+    internal static Func<AbilityExecution, AbilityExecutionResult> PrepareWindow(
+        this AbilityResolutionExecution execution, World world, Occurrence occurrence,
+        PendingAbility ability, Decision answer, DamageReplacement? replacement = null)
+    {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(answer);
-        world.Agenda.Executions.RequireActive(invocation);
-        var occurrence = invocation.Occurrence;
-        var ability = invocation.Ability;
-
         var card = world.Cards[ability.Card];
         var found = execution.Pending(card, ability);
         var events = new List<GameEvent>();
@@ -79,10 +84,10 @@ internal static class AbilityWindowResolution
         if (!execution.WhenHolds(found, cast))
             throw new RulesNotImplementedException(
                 $"'{card.FaceId}' cannot initiate this ability while its printed condition is false");
-        cast.EnterExecution(invocation);
         EnsureAvailable(execution, world, card, found, occurrence);
-        if (!CanPayAbility(execution, world, card, found, resolving)) return invocation.Finish(events);
-        if (!CanInitiateAbility(execution, card, found, resolving, cast)) return invocation.Finish(events);
+        if (!CanPayAbility(execution, world, card, found, resolving)
+            || !CanInitiateAbility(execution, card, found, resolving, cast))
+            return invocation => invocation.Finish(events);
 
         // `rr:initiating-abilities` keeps the steps apart, and step 5 pays
         // before step 6 resolves. Nothing here can abort for want of resources,
@@ -92,16 +97,22 @@ internal static class AbilityWindowResolution
         // refuses one that does not.
         if (AbilityRecipientCommitment.Validate(execution, cast, found, answer.Targets) is not null)
             cast.Results[AbilityRecipientCommitment.PendingRecipient] = answer.Targets[0];
-        cast.TrackResolution(ability.Ordinal);
-        if (!AbilityWindowActivation.Pay(execution, cast, found, ability, answer))
+        var payment = AbilityWindowActivation.Prepare(execution, cast, found, answer);
+        return invocation =>
         {
-            cast.CompleteResolution();
+            world.Agenda.Executions.RequireActive(invocation);
+            cast.EnterExecution(invocation);
+            cast.TrackResolution(ability.Ordinal);
+            if (!AbilityWindowActivation.Pay(execution, cast, ability, payment))
+            {
+                cast.CompleteResolution();
+                AbilityWindowReceipt.Emit(cast, found, ability.Ordinal);
+                return invocation.Report(events);
+            }
+            AbilityWindowActivation.Execute(execution, cast, found, ability);
             AbilityWindowReceipt.Emit(cast, found, ability.Ordinal);
             return invocation.Report(events);
-        }
-        AbilityWindowActivation.Execute(execution, cast, found, ability);
-        AbilityWindowReceipt.Emit(cast, found, ability.Ordinal);
-        return invocation.Report(events);
+        };
     }
 
     private static AbilityResolutionState CreateAbilityState(

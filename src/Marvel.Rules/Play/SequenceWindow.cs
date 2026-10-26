@@ -80,14 +80,13 @@ internal static class SequenceWindow
 
         PendingAbility ability = AcceptedAbility(world, abilities, window, asked, input);
 
-        window.Occurrence.Trigger(window.Kind, ability);
-
         // `rr:initiating-abilities.step.5` -- what the player spent is part of
         // the answer, not something the engine picks for them. Empty when the
         // affordance was free, which is almost all of them.
         var healthBefore = world.Effects.CaptureCharacterHealth();
         ActivityBatches.Append(events, abilities.ResolveWindow(
-            world, window.Occurrence, ability, input).Events);
+            world, window.Occurrence, ability, input,
+            () => window.Occurrence.Trigger(window.Kind, ability)).Events);
         Statuses.RemoveAfflictionsIfStalwart(
             world, facts, "stalwart", events);
         world.Effects.SettleLostHealth(healthBefore, asked.Trigger, events);

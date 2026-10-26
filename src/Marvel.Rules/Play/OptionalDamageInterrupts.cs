@@ -18,6 +18,10 @@ internal sealed class OptionalDamageInterrupts(IWindowAbilities inner)
             window != WindowKind.Interrupt
             || !AbilityTypes.IsMandatory(ability.Type))];
 
+    public Func<AbilityExecution, AbilityExecutionResult> PrepareWindow(
+        World world, Occurrence occurrence, PendingAbility ability, Decision answer) =>
+        inner.PrepareWindow(world, occurrence, ability, answer);
+
     public AbilityExecutionResult Resolve(World world, AbilityExecution invocation, Decision answer) =>
         inner.Resolve(world, invocation, answer);
 
