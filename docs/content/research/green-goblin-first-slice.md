@@ -68,3 +68,46 @@ Owning layers: `datasets/setup` for composition; `datasets/abilities` and `Marve
 - **Current Plane dependencies:** the supplied audit snapshot establishes MARVEL-559's description only. Fetch child, link, relation and comment endpoints once before naming blockers or editing Plane; this packet makes no assertion that those endpoints are empty.
 
 Completion of this packet means an implementer can start the identified engine capability and understand the later public journey dependencies. It does not certify either scenario, any modular set, whole-pack authority, or player acceptance.
+
+
+## MARVEL-690 main schemes and research setup (2026-10-25)
+
+The completion candidate based on reviewed engine revision `c0ed938c` authors
+02004a/b and 02005a/b. Risky Business now has nineteen distinct authored faces:
+six villain, four main-scheme, two environment and seven encounter faces.
+Its physical inventory is eighteen encounter copies plus six double-sided
+villain/scheme/environment components; each mode allocates only its chosen two
+villain stages. Standard/Expert research recipes retain Standard, add Expert
+in Expert mode, and recommend exactly one eight-card Goblin Gimmicks set.
+Goblin Gimmicks abilities remain unauthored. Green Goblin public admission and
+complete-game acceptance remain outstanding.
+
+`RiskyBusinessSetupTests` uses `ScenarioDealer.Prepare` and `WorldSetup.Deal`
+with actual authored abilities, normal complete Core starters and one chosen
+Bomb Scare modular set, at every one-through-four-player count in both modes.
+It observes Criminal Enterprise entry with 2 per-player infamy, scheme 1B
+with 2 per-player threat, exact encounters/selected villains, mulligan entry,
+and the seeded stream after player-deck and both encounter-deck shuffles.
+`RiskyBusinessMainSchemeTests` observes 1B completion adding per-player infamy
+before milling by the resulting total, a State of Madness no-effect branch,
+2B entry with per-player starting threat and final loss. The existing completion
+fixture now uses the actual authored 02004b row for missing-environment and
+player-deck exhaustion cases; generic ordering fixtures remain synthetic.
+The three new setup sources are explicitly outside the executable Core corpus.
+
+Windows evidence for this authored-data/test candidate:
+
+- `dotnet test tests/Marvel.Content.Tests/Marvel.Content.Tests.csproj -c Release --filter
+  'FullyQualifiedName~RiskyBusiness|FullyQualifiedName~MainSchemeCompletion|FullyQualifiedName~AbilityData|FullyQualifiedName~AbilityProgram|FullyQualifiedName~SetupDataset|FullyQualifiedName~RiseOfRedSkullSetupData'`:
+  124 passed, zero failed. TRX: `%TEMP%/marvel690-tests/risky-main-setup-final.trx`.
+- `dotnet run --project tools/Marvel.Behavior.Index -c Release --no-build -- check`:
+  catalog and generated Core card-face specification current.
+- Executed data mutant: change only 02004b `placeCounters.count.perPlayer` from
+  1 to 2. Run the no-build content test filter
+  `FullyQualifiedName~RiskyBusinessMainSchemeTests|FullyQualifiedName~HostileTakeoverAddsPerPlayerInfamyThenDiscardsTheResultingCount`:
+  seven failed and two passed, process exit 1; the one-player observation was
+  expected 3 infamy, actual 4. TRX: `%TEMP%/marvel690-tests/risky-main-mutant.trx`.
+  Original ability-file bytes restored in `finally`; catalog check passed afterward.
+
+These are nonpublic content/setup checks. They do not claim Linux execution,
+full-suite results, native UI evidence, public setup or complete Green Goblin games.

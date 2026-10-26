@@ -2,15 +2,16 @@
 
 What Core Set, Rise of Red Skull, Captain America and Wrecking Crew games are
 dealt from: scenario, villain and main scheme decks, encounter sets, and eight
-admitted printed starter decks. The Ms. Marvel starter and A Mess of Things
-modular set are declared as research and excluded by runtime product admission.
+admitted printed starter decks. The Ms. Marvel starter, Risky Business modes,
+A Mess of Things and Goblin Gimmicks modular sets are declared research and
+excluded by runtime admission.
 
 | | |
 |---|---|
 | Kind | authored |
-| Declared products | Marvel Champions Core Set; Rise of Red Skull; The Wrecking Crew; Captain America; Ms. Marvel (research); Green Goblin (A Mess of Things research recipe) |
-| Records | 35 scenario modes, 9 heroes, 11 encounter sets; runtime admission exposes 35 modes, 8 heroes and 10 sets |
-| Gated by | `SetupDatasetTests`, `RiseOfRedSkullSetupDataTests`, `CaptainAmericaSetupTests`, `MsMarvelSetupTests`, `MessOfThingsSetupTests`, complete-product admission |
+| Declared products | Marvel Champions Core Set; Rise of Red Skull; The Wrecking Crew; Captain America; Ms. Marvel (research); Green Goblin (Risky Business and modular research recipes) |
+| Records | 37 scenario modes, 9 heroes, 12 encounter sets; runtime admission exposes 35 modes, 8 heroes and 10 sets |
+| Gated by | `SetupDatasetTests`, `RiseOfRedSkullSetupDataTests`, `CaptainAmericaSetupTests`, `MsMarvelSetupTests`, `MessOfThingsSetupTests`, `RiskyBusinessSetupTests`, complete-product admission |
 
 ## Why it is authored
 
@@ -31,7 +32,7 @@ Rise of Red Skull printed faces before exposing its runtime recipes.
 - every named encounter or modular set is defined;
 - every scenario has valid main schemes and villain stages;
 - every hero has two identity faces, an obligation, and a nemesis set;
-- the declared products contain 35 authored modes, 9 heroes, and 11 sets;
+- the declared products contain 37 authored modes, 9 heroes, and 12 sets;
 - required encounter sets remain fixed when optional modular sets change;
 - the header counts match the file.
 
@@ -65,3 +66,16 @@ A Mess of Things uses the set membership and printed faces in
 has two copies. `MessOfThingsSetupTests` checks all five cards in composition
 order and exclusion from runtime discovery even when every face is supplied
 as authored. This recipe does not admit the Green Goblin product.
+
+Risky Business Standard and Expert recipes follow printed 02004a Contents and
+`pack:mc02:how-to-use-this-pack`. The pinned `gob_encounter.json` snapshot above
+supplies 02007×3, 02008×4, 02009×1, 02010×2, 02011×2, 02012×4 and 02013×2
+(eighteen encounter copies), three physical double-sided villain stages, two
+physical double-sided main schemes and one double-sided environment. Each mode
+allocates only its selected two villain stages. Criminal Enterprise/State of
+Madness (02006a/b) begins set aside; printed 02004a setup puts it into play.
+Goblin Gimmicks is the printed one-set recommendation: 02033–02036×2 each,
+eight encounter cards. This composition record does not implement those cards.
+The normal Expert convention adds the Expert set alongside Standard.
+`RiskyBusinessSetupTests` checks exact recipes, 1–4-player production deals with
+one supported chosen modular set, authored setup and continued public exclusion.

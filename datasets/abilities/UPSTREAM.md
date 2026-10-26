@@ -3,8 +3,8 @@
 | | |
 |---|---|
 | Kind | authored |
-| Product boundary | Marvel Champions Core Set and Rise of Red Skull |
-| Records | 395 printed card faces, including explicit empty rows |
+| Product boundary | Core Set, Rise of Red Skull, Captain America and Wrecking Crew; Green Goblin research rows remain publicly excluded |
+| Records | 508 printed card faces, including explicit empty rows |
 | Authorities | Generated `datasets/cards/`, vendored Rules Reference, expansion rulebooks and published rulings |
 | Gated by | Ability admission/lowering tests, complete-product admission, actual-card tests, campaign acceptance and executable Core behavioral transcripts |
 
@@ -29,3 +29,15 @@ that removing it restores inactive-villain attack targets.
 New products require the complete admission work described in
 [scope.md](../../docs/scope.md). UI layout, gestures, art and transport settings
 do not belong in this dataset.
+
+Risky Business has nineteen authored faces: six villain faces (02001a–02003b),
+four main-scheme faces (02004a–02005b), two environment faces (02006a/b),
+and seven encounter faces (02007–02013). A Mess of Things adds four authored
+research faces (02037–02040). Green Goblin remains outside public admission.
+The main-scheme interpretation follows printed card text, Appendix II setup,
+main-scheme advancement and `rr:then`: completion places per-player infamy before
+reading the resulting total for each player deck. Criminal Enterprise absent
+(including its State of Madness face) cannot complete that antecedent.
+`RiskyBusinessMainSchemeTests`, `MainSchemeCompletionTests` and
+`RiskyBusinessSetupTests` exercise the authored rows through ordinary engine
+operations; no public complete-game claim follows from these research tests.

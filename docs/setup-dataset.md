@@ -23,9 +23,9 @@ The file has 3 groups:
 
 | Group | Admitted rows | Declared rows |
 |---|---:|---:|
-| `campaigns` | 35 Core Set, Rise of Red Skull and Wrecking Crew scenario/mode combinations | 35 |
+| `campaigns` | 35 Core Set, Rise of Red Skull and Wrecking Crew scenario/mode combinations | 37 |
 | `heroes` | 8 Core Set, Rise of Red Skull and Captain America starter decks | 9 |
-| `encounter_sets` | 10 Core Set and Rise of Red Skull fixed/modular sets | 11 |
+| `encounter_sets` | 10 Core Set and Rise of Red Skull fixed/modular sets | 12 |
 
 Ms. Marvel is a declared research hero. Her 40-card starter, obligation and
 nemesis set follow a pinned FFG divider; the runtime product gate excludes her
@@ -33,6 +33,15 @@ recipe until complete pack acceptance. A Mess of Things is a declared research
 modular set containing 02037, 02038, 02039 and two copies of 02040. The Green
 Goblin product remains outside runtime admission, so this recipe is excluded
 from public discovery even when all its faces have authored abilities.
+
+Risky Business declares Standard and Expert research recipes: eighteen scenario
+encounter cards, the selected Norman I/II or II/III stage pair, two physical main
+schemes, and Criminal Enterprise/State of Madness set aside as one physical card.
+The normal recipe recommends one Goblin Gimmicks modular set (02033–02036, two
+copies each). Goblin Gimmicks has composition data but lacks authored abilities.
+`RiskyBusinessSetupTests` exercises the production dealer and authored setup
+with one chosen Core modular set at one through four players in both modes.
+This nonpublic evidence does not admit Green Goblin or prove complete gameplay.
 
 The scenario rows are Rhino, Klaw and Ultron in Standard and Expert modes. The
 hero rows are Spider-Man, Captain Marvel, She-Hulk, Iron Man and Black Panther.

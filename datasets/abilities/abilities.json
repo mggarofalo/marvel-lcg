@@ -14774,6 +14774,104 @@
           }
         }
       ]
+    },
+    {
+      "card": "02004a",
+      "name": "Hostile Takeover",
+      "note": "Printed 02004a: put the set-aside Criminal Enterprise environment into play, then shuffle the encounter deck. Contents belong to setup recipes; rr:appendix-ii-setup.step.12.b performs the printed advance to 1B.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Setup",
+            "subject": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "putIntoPlay": {
+                  "card": {
+                    "cardsIn": {
+                      "area": "scenarioSetAside",
+                      "title": "Criminal Enterprise"
+                    }
+                  },
+                  "where": "printedDestination"
+                }
+              },
+              {
+                "shuffle": "encounterDeck"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "02004b",
+      "name": "Hostile Takeover",
+      "note": "Printed 02004b: place 1 per-player infamy on Criminal Enterprise, then discard from each player deck by the resulting total infamy. The existence guard requires the antecedent to complete (rr:then.1); positive placement on present Criminal Enterprise resolves in full. The guarded sequence reads counters after placement and before advancement; player-deck exhaustion stops the discard under rr:player-deck.3.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenMainSchemeCompleted",
+            "timing": "WhenCompleted",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "exists": {
+                  "titled": "Criminal Enterprise"
+                }
+              },
+              "then": {
+                "seq": [
+                  {
+                    "placeCounters": {
+                      "card": {
+                        "titled": "Criminal Enterprise"
+                      },
+                      "counter": "infamy",
+                      "count": {
+                        "perPlayer": 1
+                      }
+                    }
+                  },
+                  {
+                    "eachPlayer": {
+                      "effect": {
+                        "discardTop": {
+                          "from": "yourDeck",
+                          "count": {
+                            "countersOn": {
+                              "card": {
+                                "titled": "Criminal Enterprise"
+                              },
+                              "counter": "infamy"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "02005a",
+      "name": "Corporate Acquisition",
+      "note": "Printed 02005a: advance to stage 2B. rr:main-scheme-main-scheme-deck.step.2 and .step.3 own the generic two-sided stage reveal; no separate ability advances the deck a second time.",
+      "abilities": []
+    },
+    {
+      "card": "02005b",
+      "name": "Corporate Acquisition",
+      "note": "Printed 02005b: if this stage is completed, the players lose. rr:main-scheme-main-scheme-deck.2.1 is resolved by Threat.Completed when the main scheme deck is empty. Printed escalation, starting threat, target threat and hazard icon are generic card facts.",
+      "abilities": []
     }
   ]
 }

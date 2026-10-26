@@ -1,5 +1,6 @@
 using Marvel.Cards.Dsl;
 using Marvel.Cards.Run;
+using Marvel.Content.Tests.Cards;
 using Marvel.Rules.Events;
 using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
@@ -9,7 +10,7 @@ using Xunit;
 
 namespace Marvel.Content.Tests.Play;
 
-// Nonpublic capability fixtures; the completion row is test-local.
+// Nonpublic capability fixtures and actual authored Risky Business completion.
 public sealed class MainSchemeCompletionTests : CoreCardTestBase
 {
     [Theory]
@@ -53,6 +54,7 @@ public sealed class MainSchemeCompletionTests : CoreCardTestBase
     [InlineData(2, 8, true)]
     [InlineData(2, 2, true)]
     [InlineData(2, 8, false)]
+    [InlineData(4, 8, true)]
     [Rule("rr:when-completed-abilities.1")]
     [Rule("rr:player-deck.3")]
     public void HostileTakeoverAddsPerPlayerInfamyThenDiscardsTheResultingCount(int players, int deckSize, bool environmentPresent)
@@ -62,12 +64,7 @@ public sealed class MainSchemeCompletionTests : CoreCardTestBase
         // discarding when the deck empties, after shuffling and dealing a card.
         // Present Criminal Enterprise receives this positive placement in full;
         // the guard makes the dependent instruction fail with its antecedent.
-        var runner = Runner("""
-            {"if":{"test":{"exists":{"titled":"Criminal Enterprise"}},"then":{"seq":[
-              {"placeCounters":{"card":{"titled":"Criminal Enterprise"},"counter":"infamy","count":{"perPlayer":1}}},
-              {"eachPlayer":{"effect":{"discardTop":{"from":"yourDeck","count":{"countersOn":{"card":{"titled":"Criminal Enterprise"},"counter":"infamy"}}}}}}
-            ]}}}
-            """);
+        var runner = AuthoredCards.Runner();
         var (world, scheme, environment) = Board(runner, players, true);
         environment.PlaceTokens("c_infamy", 2);
         if (!environmentPresent) World.MoveToTop(environment, world.AreaOf(DeckType.RemovedArea));

@@ -72118,6 +72118,42 @@
       ]
     },
     {
+      "id": "setup:campaign:risky_business",
+      "fingerprint": "sha256:2f6e93a91152739396cfaff51270cca2bdc5ad6c03eab33461be236af7c5e0f1",
+      "obligations": [
+        {
+          "key": "green-goblin-setup",
+          "summary": "The risky_business record supplies Green Goblin scenario-pack composition and setup.",
+          "disposition": "outside-core",
+          "reason": "This record requires the Green Goblin scenario pack, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
+      "id": "setup:campaign:risky_business_expert",
+      "fingerprint": "sha256:9224ede212aa76520dc5e04924451af77db8a3da6845816c08ea3029fc2a9d4f",
+      "obligations": [
+        {
+          "key": "green-goblin-setup",
+          "summary": "The risky_business_expert record supplies Green Goblin scenario-pack composition and setup.",
+          "disposition": "outside-core",
+          "reason": "This record requires the Green Goblin scenario pack, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
       "id": "setup:campaign:taskmaster",
       "fingerprint": "sha256:3556e178ebd931d5cb1b8c47eb63446d8efef239a46084c9a2ebaad3e6da2701",
       "obligations": [
@@ -72908,6 +72944,24 @@
           "summary": "name: \"Expert\"",
           "disposition": "no-independent-behavior",
           "reason": "The display label creates no game-state component independent of the setup record it names.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
+      "id": "setup:encounter-set:goblin_gimmicks",
+      "fingerprint": "sha256:95e3b295893ed3ac892af2c8f7e1d382f1994607905281c1164489d0add0623d",
+      "obligations": [
+        {
+          "key": "green-goblin-setup",
+          "summary": "The goblin_gimmicks record supplies Green Goblin scenario-pack composition and setup.",
+          "disposition": "outside-core",
+          "reason": "This record requires the Green Goblin scenario pack, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
           "target": null,
           "implementation": null,
           "work_item": null,
