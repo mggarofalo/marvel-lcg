@@ -340,3 +340,18 @@ remain. Normal source hooks pass all 66 architecture checks, complexity and
 file length. Artifacts are under `Source/evidence/complete-sheet-final-20261026`,
 `complete-sheet-rendered-20261026` and `complete-sheet-independent-20261026`.
 Replacement CI on the updated PR candidate remains required before merge.
+
+Run `40383561464` on `851bd3a8` passes all four Windows/Linux native shards,
+the Windows package and Linux platform gates. Its managed unit lane passes
+every assembly, including 6,573 Content tests in 21m41s. Acceptance starts
+afterward but the job exceeds its 30-minute limit; GitHub's check annotation
+explicitly confirms that timeout. Acceptance completion is not claimed.
+
+MARVEL-807 extends only the managed job's bounded allowance to 60 minutes.
+All commands and required checks are unchanged. Independent review accepts
+that adjustment, and all five existing CI-policy tests pass. The previous Thor
+managed run took 24m56s; this candidate's local acceptance evidence is 168 tests
+in 3m31s, which is not a substitute for finishing CI on the updated head.
+Evidence: `Source/evidence/widow-ci-managed-timeout.log` and
+`widow-managed-timeout-policy-tests.log`. The new candidate must finish its
+managed lane and every required platform check before merge.
