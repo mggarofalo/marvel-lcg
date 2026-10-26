@@ -34,12 +34,16 @@ public sealed class GreenGoblinRestartTests
             Assert.Equal(JsonSerializer.Serialize(PromptRecord.From(control.Pending)),
                 JsonSerializer.Serialize(PromptRecord.From(response.Prompt!)));
             var decision = policy.Answer(control);
+            var expectedPrompt = PromptRecord.From(control.Pending);
+            var expectedDecision = DurableDecision.From(control.Pending.Player, control.Pending, decision);
             var result = control.Resolve(decision);
             response = host.Exchange(EngineRequest.ResolveGame($"answer-{index}", "goblin",
                 capability, decision, response.Revision));
             Assert.Null(response.Error);
             var saved = Assert.Single(store.Load());
             var step = saved.Save.Units.SelectMany(unit => unit.Decisions).Last();
+            Assert.Equal(JsonSerializer.Serialize(expectedPrompt), JsonSerializer.Serialize(step.Prompt));
+            Assert.Equal(JsonSerializer.Serialize(expectedDecision), JsonSerializer.Serialize(step.Decision));
             Assert.Equal(control.State.Digest().Fingerprint(), step.StateFingerprint);
             Assert.Equal(control.State.Random.Generator.WordsConsumed, step.RngWords);
             Assert.Equal(result.Events.Select(JournalJson.Event).Select(item => item.GetRawText()),
