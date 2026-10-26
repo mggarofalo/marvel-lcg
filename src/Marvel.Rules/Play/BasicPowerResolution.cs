@@ -131,6 +131,8 @@ public static class BasicPowerResolution
             ? attack.Amount
             : StateFields.Modified(world, attacker, "attack", facts, world.Players);
 
+        amount += occurrence.BasicUse?.Bonus ?? 0;
+
         var target = world.Cards[attack.Enemy];
         occurrence.Retaliation = new(attacker.ObjectId, attacker.Incarnation,
             AttackKeywords.Has(world, attacker, source, Keywords.Ranged,

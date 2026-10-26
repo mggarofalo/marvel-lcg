@@ -42,6 +42,12 @@ internal static class AbilityCostSelection
 
     internal static IReadOnlyList<Card> Choices(World world, int player, AbilityCardQuery relation) => relation switch
     {
+        AbilityCardQuery.UpgradesOnYourHero => [.. world.Cards.Where(card =>
+            card.Area.Type == DeckType.UpgradesArea
+            && card.Area.Host == world.Seats[player].IdentityCard.ObjectId
+            && CardControl.ControllerOf(world, card) == player
+            && EffectiveCards.Kind(card, world.Facts) == CardKind.Upgrade
+            && Forms.In(world, world.Seats[player], world.Facts, Forms.Hero))],
         AbilityCardQuery.HeroesAndAllies =>
         [
             .. world.PlayerOrder

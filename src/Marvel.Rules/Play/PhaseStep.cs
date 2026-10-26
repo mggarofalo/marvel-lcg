@@ -80,12 +80,12 @@ public readonly record struct PhaseStep(
             Steps.CharacterAttacks when Require<CharacterAttackOperation>().Attack is { } attack =>
                 Occurrence.ForAttack(
                     id,
-                    Conditions,
+                    BasicUse.AttackConditions(world, facts, attack, Conditions),
                     world,
                     facts,
                     attack.Attacker,
                     attack.Enemy,
-                    attack.Player),
+                    attack.Player) with { BasicUse = BasicUse.ForAttack(world, facts, attack) },
             Steps.CharacterThwarts when Require<CharacterThwartOperation>().Thwart is { } thwart =>
                 Occurrence.ForThwart(
                     id,

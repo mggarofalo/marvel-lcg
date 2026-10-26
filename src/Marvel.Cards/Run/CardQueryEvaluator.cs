@@ -26,7 +26,7 @@ internal sealed class CardQueryEvaluator(
     ];
     private static readonly ImmutableArray<AbilityCardQuery> ControlledQueries =
     [
-        AbilityCardQuery.UpgradesAndSupportsYouControl, AbilityCardQuery.CardsYouControl,
+        AbilityCardQuery.UpgradesOnYourHero, AbilityCardQuery.UpgradesAndSupportsYouControl, AbilityCardQuery.CardsYouControl,
         AbilityCardQuery.IdentitySpecificInYourHand,
         AbilityCardQuery.SupportsYouControl,
         AbilityCardQuery.CharactersYouControl, AbilityCardQuery.CharactersYouControlExceptCost,
@@ -152,6 +152,7 @@ internal sealed class CardQueryEvaluator(
     private IReadOnlyList<Card> EvaluateControlled(AbilityCardQuery query) => query switch
     {
         // rr:play-area.1: cards in a player's play area are under their control.
+        AbilityCardQuery.UpgradesOnYourHero => AbilityCostSelection.Choices(cast.World, cast.Player, query),
         AbilityCardQuery.CardsYouControl => [.. cast.World.Cards.Where(card =>
             DeckTypes.IsInPlay(card.Area.Type) && CardControl.ControllerOf(cast.World, card) == cast.Player)],
         AbilityCardQuery.UpgradesAndSupportsYouControl =>

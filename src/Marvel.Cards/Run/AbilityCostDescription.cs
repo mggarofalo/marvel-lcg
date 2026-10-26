@@ -71,6 +71,7 @@ internal static class AbilityCostDescription
 
     private static string Relation(AbilityCardQuery relation) => relation switch
     {
+        AbilityCardQuery.UpgradesOnYourHero => "upgrades attached to your hero",
         AbilityCardQuery.HeroesAndAllies => "heroes or allies",
         AbilityCardQuery.CharactersYouControl => "characters you control",
         AbilityCardQuery.AlliesYouControl => "allies you control",

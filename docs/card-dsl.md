@@ -1270,3 +1270,29 @@ from the hand and consumes no resource or RNG state. The engine chooses this
 bounded instruction and pricing-port spelling; printed 06011 supplies the
 behavior. The accepted cost snapshot survives resource-generator suspension.
 This mechanism does not admit the Thor product or author its actual ability row.
+
+
+## Basic-use interrupt prerequisite
+
+`WhenHeroBasicAttackInitiated` joins the existing attack occurrence only for a
+hero's printed basic attack, including permission to attack without exhausting.
+It excludes fixed card attacks, labeled attack continuations and ally attacks.
+`boostBasicUse: 3` adds three to that occurrence's basic attack amount. The typed
+`BasicUse` retains the performer incarnation, matching field and accumulated
+bonus; it creates no general ATK effect and cannot affect another attack.
+
+`exhaustChosen` accepts `from: {query: "upgradesOnYourHero"}` and an optional
+current `trait`. Candidates must be ready upgrades controlled by the resolving
+player and physically attached to that player's hero. Exact selected cards are
+validated before payment and the existing prepared payment binds their
+incarnations. `CostDescription` names attachment/exhaustion; the effect describes
+the one-attack bonus and the interrupt prompt exposes its accumulated amount.
+Compound arrow sequences containing this relation raise before execution because
+their simultaneous-payment transaction is not represented. This prerequisite
+neither authors 06015 nor admits Thor or Teamwork.
+
+Attached-upgrade costs additionally refuse any supplied resource payment during
+preparation, including gratuitous generation at price zero. Event-price preflight
+raises for a positive adjusted price or required icons before payment. A discount
+to zero remains within the no-generation boundary. Dedicated negative tests
+assert untouched source, generator, Weapon, digest, RNG and pending work.

@@ -8,6 +8,8 @@ public enum AbilityCardQuery
 {
     /// <summary>The authored villain relation.</summary>
     Villain,
+    /// <summary>Controlled upgrades physically attached to the resolving hero.</summary>
+    UpgradesOnYourHero,
     /// <summary>The side scheme paired with the current active villain.</summary>
     ActiveVillainSideScheme,
     /// <summary>The current villain physically paired with the attached scheme.</summary>

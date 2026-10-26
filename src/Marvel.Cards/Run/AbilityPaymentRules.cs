@@ -232,6 +232,7 @@ internal static class AbilityPaymentRules
             return true;
         }
 
+        AttachedUpgradeCostBound.Validate(world, card, player, ability.Cost, []);
         if (!Resources.HasPlayableCost(card.FaceId, world.Facts))
         {
             return false;

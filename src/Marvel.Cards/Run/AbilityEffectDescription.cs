@@ -13,6 +13,7 @@ internal static class AbilityEffectDescription
     {
         AbilityEffect.Fixed { Instruction: AbilityFixedInstruction.UseAttackForThwart } =>
             "Use ATK instead of THW for this thwart, including ally consequential damage",
+        AbilityEffect.BoostBasicUse bonus => $"Add {bonus.Amount} ATK for this basic attack only",
         AbilityEffect.ModifyPlayedEvent modifier =>
             $"Increase each {(modifier.Kind == "eventDamage" ? "damage" : "threat removal")} instance of this event by {modifier.Amount} until this play finishes",
         AbilityEffect.ChooseCard choice => ChoiceSummary(choice),

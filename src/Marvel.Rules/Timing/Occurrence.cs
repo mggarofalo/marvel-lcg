@@ -130,6 +130,10 @@ public sealed record Occurrence
     // to it -- see `Also`.
     private readonly List<string> conditions;
 
+    /// <summary>The exact printed basic power being used, reconstructed by replay.</summary>
+    [JsonIgnore]
+    public Play.BasicUse? BasicUse { get; init; }
+
     private readonly List<State.Defeated> defeats = [];
 
     /// <summary>The lifecycle owner for abilities and cards resolving in this occurrence.</summary>

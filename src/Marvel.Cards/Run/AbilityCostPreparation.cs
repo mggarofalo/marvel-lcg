@@ -43,6 +43,7 @@ internal sealed class AbilityCostPreparation
 
     internal AbilityCostPayment Build(AbilityCost? cost)
     {
+        AttachedUpgradeCostBound.Validate(world, source, player, cost, paying);
         var price = AbilityPaymentPricing.Price(world, source, player, cost, resourceAbilities);
         if (!resourcesPaidByEvent && price is not null
             && price.ResourceCosts.Any(component => component.DistinctTypes)

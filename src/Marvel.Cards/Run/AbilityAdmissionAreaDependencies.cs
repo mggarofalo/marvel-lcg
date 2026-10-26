@@ -47,7 +47,7 @@ internal static class AbilityAdmissionAreaDependencies
     [
         typeof(AbilityEffect.Damage), typeof(AbilityEffect.AttackDamage),
         typeof(AbilityEffect.IndirectDamage), typeof(AbilityEffect.PlaceThreat),
-        typeof(AbilityEffect.ModifyPlayedEvent), typeof(AbilityEffect.PreventThreat), typeof(AbilityEffect.PreventDamage),
+        typeof(AbilityEffect.BoostBasicUse), typeof(AbilityEffect.ModifyPlayedEvent), typeof(AbilityEffect.PreventThreat), typeof(AbilityEffect.PreventDamage),
         typeof(AbilityEffect.GrantControlledCharacters),
         typeof(AbilityEffect.DiscardAtRandom), typeof(AbilityEffect.DiscardTop),
         typeof(AbilityEffect.ReduceNextCardCost), typeof(AbilityEffect.DiscardHandCards),
@@ -230,7 +230,7 @@ internal static class AbilityAdmissionAreaDependencies
                 or AbilityEffect.ChooseDiscardToShuffle
                 or AbilityEffect.DiscardHandWithResource
                 or AbilityEffect.RecoverDiscardedByResource or AbilityEffect.RecruitDiscarded
-                or AbilityEffect.ActivateEnemies or AbilityEffect.GrantTraitCharacters or AbilityEffect.ModifyPlayedEvent => true,
+                or AbilityEffect.ActivateEnemies or AbilityEffect.GrantTraitCharacters or AbilityEffect.ModifyPlayedEvent or AbilityEffect.BoostBasicUse => true,
             _ => false,
         };
 

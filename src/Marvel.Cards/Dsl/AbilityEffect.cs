@@ -9,6 +9,9 @@ public abstract record AbilityEffect
 {
     private AbilityEffect() { }
 
+    /// <summary>Increase the current basic attack only.</summary>
+    public sealed record BoostBasicUse(int Amount) : AbilityEffect;
+
     /// <summary>Select up to a bounded number of physical out-of-play cards to add to your hand.</summary>
     public sealed record ChooseCardsToHand(AbilityCardSelection From, int Maximum) : AbilityEffect;
 

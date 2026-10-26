@@ -110,6 +110,10 @@ internal static class AbilityCostLowering
         if (builder.Any(cost => cost is AbilityCost.DiscardUntilMinionEngaged))
             throw new RulesNotImplementedException(
                 "discardUntilMinionEngaged in a compound arrow cost requires simultaneous payment");
+        if (builder.Any(cost => cost is AbilityCost.ExhaustChosen
+                { From: AbilityCardQuery.UpgradesOnYourHero }))
+            throw new RulesNotImplementedException(
+                "attached-upgrade exhaustion in a compound arrow cost requires simultaneous payment");
         return new(builder.MoveToImmutable());
     }
 
@@ -160,7 +164,7 @@ internal static class AbilityCostLowering
         var fields = Fields(value, location, "from", "count", "upTo", "anyNumber", "trait");
         var from = SelectCards(Required(fields, "from", location), location.Child("from"));
         if (from is not AbilityCardSelection.Query
-            { Kind: AbilityCardQuery.HeroesAndAllies or AbilityCardQuery.CharactersYouControl or AbilityCardQuery.AlliesYouControl } query)
+            { Kind: AbilityCardQuery.HeroesAndAllies or AbilityCardQuery.CharactersYouControl or AbilityCardQuery.AlliesYouControl or AbilityCardQuery.UpgradesOnYourHero } query)
         {
             throw location.Child("from").Error("expected a supported exhaust-cost relation");
         }

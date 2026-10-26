@@ -25,6 +25,7 @@ internal static class AbilityEffectLowering
         return node.Kind switch
         {
             "attackAnotherEnemy" => AbilityStagedAttackLowering.Lower(argument, child),
+            "boostBasicUse" => new AbilityEffect.BoostBasicUse(PositiveCount(argument, child)),
             "modifyPlayedEvent" => PlayedEventModifier(argument, child),
             "seq" => new AbilityEffect.Sequence(Effects(argument, child)),
             "and" => new AbilityEffect.Simultaneous(Effects(argument, child)),

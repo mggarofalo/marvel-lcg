@@ -12,6 +12,7 @@ internal static class AbilityImmediateExecution
     {
         return effect switch
         {
+            AbilityEffect.BoostBasicUse bonus => BoostBasicUse(bonus, context),
             AbilityEffect.ModifyPlayedEvent modifier => AbilityPlayedEventModifier.Run(modifier, context),
             AbilityEffect.Fixed fixedEffect => RunFixed(fixedEffect, context),
             AbilityEffect.CardAction action => RunCardAction(action, context),
@@ -27,6 +28,14 @@ internal static class AbilityImmediateExecution
                 RunDelayedEffect(effect, context),
             _ => new(false, false),
         };
+    }
+
+    private static AbilityImmediateResult BoostBasicUse(AbilityEffect.BoostBasicUse bonus, AbilityImmediateContext context)
+    {
+        var use = context.Admission.Query.Occurrence.BasicUse
+            ?? throw new RulesNotImplementedException("basic-use bonus requires its exact occurrence");
+        use.Increase(bonus.Amount);
+        return new(true, true);
     }
 
     private static AbilityImmediateResult RunFixed(
