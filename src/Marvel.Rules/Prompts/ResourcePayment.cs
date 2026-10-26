@@ -95,15 +95,14 @@ public static class ResourcePayment
         IReadOnlyDictionary<string, long>? values,
         IReadOnlyList<ResourceAllocation> allocations)
     {
-        var availableBySource = selected.ToDictionary(
-            source => source.Effect,
-            source => source.Generates.ToList());
+        var sources = selected.Select(source => source.Effect).ToHashSet();
+        var slots = new List<Slot>();
         var paid = Enumerable.Range(0, costs.Count)
             .Select(_ => new System.Text.StringBuilder())
             .ToList();
         foreach (ResourceAllocation allocation in allocations)
         {
-            if (!ApplyAllocation(allocation, costs, availableBySource, paid)) return false;
+            if (!ApplyAllocation(allocation, costs, sources, paid, slots)) return false;
         }
 
         for (int index = 0; index < costs.Count; index++)
@@ -111,34 +110,27 @@ public static class ResourcePayment
             if (!ComponentPaid(costs[index], paid[index], values)) return false;
         }
 
-        return true;
+        // Source and declaration are the player's commitments. Physical icon
+        // assignment must satisfy all components together, including printed
+        // requirements, rather than depending on allocation enumeration order.
+        return new ResourceAllocationSearch(slots, selected).CanAllocate();
     }
 
     private static bool ApplyAllocation(
         ResourceAllocation allocation, IReadOnlyList<ResourceCost> costs,
-        Dictionary<int, List<char>> availableBySource,
-        List<System.Text.StringBuilder> paid)
+        HashSet<int> sources, List<System.Text.StringBuilder> paid, List<Slot> slots)
     {
-        if (!availableBySource.TryGetValue(allocation.Source, out List<char>? available)
+        if (!sources.Contains(allocation.Source)
             || allocation.Cost < 0 || allocation.Cost >= costs.Count
-            || allocation.PaidAs.Length == 0) return false;
+            || allocation.PaidAs.Length == 0
+            || !allocation.PaidAs.All(Resources.Types.Contains)) return false;
         ResourceCost cost = costs[allocation.Cost];
         foreach (char declared in allocation.PaidAs)
         {
-            if (!TakeIcon(available, declared, cost.Printed)) return false;
             paid[allocation.Cost].Append(declared);
+            slots.Add(new Slot(allocation.Cost, declared, cost.Printed,
+                cost.DistinctTypes, allocation.Source));
         }
-        return true;
-    }
-
-    private static bool TakeIcon(List<char> available, char declared, bool printedCost)
-    {
-        if (!Resources.Types.Contains(declared)) return false;
-        int icon = available.IndexOf(declared);
-        if (icon < 0 && CanDeclare(Resources.Wild, declared, printedCost))
-            icon = available.IndexOf(Resources.Wild);
-        if (icon < 0) return false;
-        available.RemoveAt(icon);
         return true;
     }
 

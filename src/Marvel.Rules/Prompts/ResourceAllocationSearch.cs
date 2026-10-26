@@ -21,7 +21,9 @@ internal sealed class ResourceAllocationSearch
     }
 
     internal IReadOnlyList<ResourceAllocation>? Allocate() =>
-        icons.Count >= slots.Count && Search(0) ? Collapse() : null;
+        CanAllocate() ? Collapse() : null;
+
+    internal bool CanAllocate() => icons.Count >= slots.Count && Search(0);
 
     private bool Search(int slotIndex)
     {
@@ -59,6 +61,7 @@ internal sealed class ResourceAllocationSearch
     {
         IEnumerable<int> candidates = Enumerable.Range(0, icons.Count)
             .Where(index => !used[index]
+                && (slot.Source is null || icons[index].Source == slot.Source)
                 && Accepts(icons[index].Printed, slot.Required, slot.Printed));
         return slot.Required is { } required
             ? candidates.OrderBy(index => icons[index].Printed == required ? 0 : 1)

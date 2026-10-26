@@ -61,5 +61,6 @@ internal static class ResourcePaymentRequirements
         || printed == required
         || !printedCost && printed == Resources.Wild;
 
-    internal readonly record struct Slot(int Component, char? Required, bool Printed, bool DistinctTypes);
+    internal readonly record struct Slot(
+        int Component, char? Required, bool Printed, bool DistinctTypes, int? Source = null);
 }
