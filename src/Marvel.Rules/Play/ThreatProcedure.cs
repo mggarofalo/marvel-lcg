@@ -12,6 +12,14 @@ internal static class ThreatProcedure
     internal static Prompt? Apply(
         World world, ICardFacts facts, PhaseStep step, List<GameEvent> events)
     {
+        if (step.Operation is MainSchemeCompletionOperation completion)
+        {
+            var scheme = world.Cards[step.Subject];
+            if (scheme.Incarnation == completion.Incarnation
+                && scheme.Area.Type == DeckType.MainSchemesArea)
+                MainSchemeCompletion.Commit(world, facts, world.ThreatAbilities, scheme, events);
+            return null;
+        }
         if (step.Operation is ThreatMovementOperation movement)
         {
             ThreatMovement.Apply(world, facts, movement, events);

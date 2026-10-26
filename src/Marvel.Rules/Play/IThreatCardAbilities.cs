@@ -12,6 +12,15 @@ namespace Marvel.Rules.Play;
 // reveal its card text, so this cohesive port includes that nested operation.
 public interface IThreatCardAbilities : IEncounterCardAbilities
 {
+    /// <summary>Validate completion text and report whether its interrupt window is needed.</summary>
+    bool ObservesMainSchemeCompletion(World world, Card scheme)
+    {
+        if (world.Facts.HasWhenCompleted(scheme.FaceId))
+            throw new RulesNotImplementedException(
+                $"card '{scheme.FaceId}' has unsupported When Completed text");
+        return false;
+    }
+
     bool CanRemoveThreat(World world, Card scheme, int ignoredSource = -1);
 
     /// <summary>Whether threat may be removed specifically by a thwart.</summary>

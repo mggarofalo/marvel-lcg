@@ -89,6 +89,8 @@ public sealed class AbilityRunner : ICardAbilities
     public AbilityExecutionResult Resolve(World world, AbilityExecution invocation, Decision answer) => resolution.Resolve(world, invocation, answer);
     public IReadOnlyList<PendingAbility> WhenRevealedAbilities(World world, Card card, int player) => resolution.WhenRevealedAbilities(world, card, player);
     public void RequireWhenRevealed(string face) => resolution.RequireWhenRevealed(face);
+    public bool ObservesMainSchemeCompletion(World world, Card scheme) =>
+        MainSchemeCompletionAbilities.Observes(program, world, scheme);
     public AbilityExecutionResult WhenRevealed(World world, AbilityExecution entry, Card card, int player) =>
         AbilityEntryExecution.Run(world, entry, () => resolution.WhenRevealed(world, card, player, entry.Occurrence));
     public WhenRevealedCanceled? CancelWhenRevealed(World world, Card card, int player, Occurrence occurrence) => resolution.CancelWhenRevealed(world, card, player, occurrence);

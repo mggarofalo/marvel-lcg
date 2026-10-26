@@ -252,35 +252,6 @@ public static class Threat
         World world, ICardFacts facts, IThreatCardAbilities abilities, Card scheme,
         List<GameEvent> events)
     {
-        ArgumentNullException.ThrowIfNull(world);
-        ArgumentNullException.ThrowIfNull(facts);
-        ArgumentNullException.ThrowIfNull(scheme);
-        ArgumentNullException.ThrowIfNull(events);
-
-        long held = scheme.Tokens.GetValueOrDefault("k_threat");
-        long target = StateFields.Modified(
-            world, scheme, "target_threat", facts, world.Players);
-        if (target <= 0 || held < target || scheme.Area.Type != DeckType.MainSchemesArea)
-        {
-            // A side scheme has a target threat value too, and reaching it does
-            // nothing: `rr:side-scheme.2` keeps a side scheme in play "until there is no
-            // threat on it", which is the opposite direction.
-            return;
-        }
-
-        scheme.PlaceTokens("is_completed", 1);
-        events.Add(new FieldSet(scheme.ObjectId, "is_completed", 0, 1)
-        {
-            Trigger = "main scheme completed",
-            Verb = "Complete",
-        });
-
-        if (world.AreaOf(DeckType.MainSchemesDeck).Cards.Count > 0)
-        {
-            MainScheme.Advance(world, facts, abilities, scheme, "main scheme completed", events);
-            return;
-        }
-
-        world.Finish(Outcome.VillainWins);
+        MainSchemeCompletion.Check(world, facts, abilities, scheme, events);
     }
 }
