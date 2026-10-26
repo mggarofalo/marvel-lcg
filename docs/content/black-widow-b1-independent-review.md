@@ -4,8 +4,43 @@ Reviewed source: `9a961b65bf1f9e937020633248a5b6bddee1c0e5`, with Thor
 `707a0ed1`, Preparation receipt `a804ad86`, and initial review `6584332d`.
 Plane: MARVEL-763 (`4cd7bec9-69e2-4586-8286-da68a3207054`).
 
-Verdict: **request changes**. The lethal Bite path succeeds, but the shared
-projection change loses necessary validation and nested abstract state.
+Current verdict: **approve the bounded B1 prerequisite**, after independent
+re-review of remediation `7bdcdb5095849b30e7388b629b345fab02a9493b` together
+with review tests `ab2fbfebc92c0b3d3dda5a16c3fed158f92fa31d`. The initial
+`9a961b65` submission required changes for the projection finding below.
+
+## Remediation re-review
+
+The remediation restores full ordered projection through
+`PowerProjectionChildren`, separate from suspension-only admission. Prefixes
+are still projected and validated. The live-settlement permission has one writer
+in suspension traversal and one consumer in minion step-6 deferral; it applies
+only before a recursively independent final suffix. Full sequence projection
+does not grant that permission. Conditional/dependent/repeated traversal cannot
+erase a predecessor result via the independent-suffix shortcut.
+
+The live minion path validates the complete hosted departure tree before
+deferring. It retains `DefeatWindowDeferred`, so a subsequent recipient in the
+same damage batch and later board-dependent work still refuse opaque reads.
+Unknown live step-6 choices remain owned by the runtime damage continuation;
+the admission path does not predict their source/target/control changes.
+No further production finding was identified in this bounded re-review.
+
+Independent Release verification at review-tree source `085838686cba0634e6c78e5dfdff5c733f7e0a3b`
+(the remediation cherry-picked after the test packet):
+
+- Content: **38 passed**, including all four original failing controls, the
+  permanent-host/step-6 negative, the independent false-branch/source-control
+  tests, Hydra Patrol continuation controls and would-be-defeated controls.
+- Server: **2 passed**, rerunning both strict replay/host-restart variants.
+
+The Content filter was
+`FullyQualifiedName~Preparation|FullyQualifiedName~PowerContinuationDependency|FullyQualifiedName~HydraPatrolPowerContinuation|FullyQualifiedName~ActionAbilityPowerTraceWouldBeDefeatedInterruptRaises`.
+The Server filter remained `FullyQualifiedName~PreparationReplayReview`.
+Logs are `C:/Users/mggar/AppData/Local/Temp/widow-remediation-independent-content.log`
+and `C:/Users/mggar/AppData/Local/Temp/widow-remediation-independent-replay.log`.
+Normal hooks remain enabled. Full Content/combined validation belongs to the
+integrated candidate; this approval does not assert complete Black Widow admission.
 
 ## Finding
 
@@ -70,7 +105,7 @@ already reject the submitted production revision. Normal commit hooks remain on.
 
 The generic suspended Preparation completion and optional-decline replay shape
 now has supported test-local durable evidence. Source remediation and independent
-re-review remain required, followed by combined Black Widow validation. A public
+re-review are complete; combined Black Widow validation remains required. A public
 setup-to-Bite-to-restart journey remains deferred until complete pack admission;
 this synthetic factory does not establish that journey. Resource Preparation
 completion remains unimplemented, but no printed Black Widow Preparation has a
