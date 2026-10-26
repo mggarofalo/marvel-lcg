@@ -269,6 +269,8 @@ internal static class AbilityPaymentRules
         AbilityCost.Sequence sequence => string.Concat(sequence.Costs
             .Select(step => step switch
             {
+                AbilityCost.Spend { DistinctTypes: true } => throw new RulesNotImplementedException(
+                    "event printed costs combined with a distinct-type arrow cost are not implemented"),
                 AbilityCost.Spend { PrintedOnly: false } spend => spend.Resources,
                 AbilityCost.Spend { PrintedOnly: true } => throw new RulesNotImplementedException(
                     $"event '{card.FaceId}' combines its printed card cost with a "

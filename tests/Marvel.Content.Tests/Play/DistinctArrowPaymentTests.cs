@@ -24,8 +24,8 @@ public sealed class DistinctArrowPaymentTests
     [Rule("rr:wild-resource.1.1")]
     public void ConsequentialDefeatRequiresDifferentTypesFromResourcesRatherThanCards(string generated, bool payable)
     {
-        // Wild resources "can be used as any other resource type"; multiple wild
-        // resources "may be declared as different resource types".
+        // A player may "specify which resource type" a generated wild is used as.
+        // For doubled wilds, "each of its wild resources can be declared a different type."
         var (world, ally, enemy, generator) = Board(generated);
         BasicPowerResolution.Consequential(world, Cards, ally, true, "Attack", []);
         var prompt = Sequence.Work(world, Cards, world.Abilities, []);
@@ -68,7 +68,43 @@ public sealed class DistinctArrowPaymentTests
         Assert.Equal(0, enemy.Damage);
     }
 
-    private static (World World, Card Ally, Card Enemy, Card Generator) Board(string generated)
+    [Fact]
+    [Rule("rr:initiating-abilities.step.5")]
+    public void SuspendedGeneratorRetainsTheAcceptedAllocationBeforePostArrowEffects()
+    {
+        // "Pay the cost(s)." The effect waits while the chosen generator pays
+        // its own lethal damage cost and the nested defeat interrupt is open.
+        var (world, ally, enemy, generator) = Board("GG", suspend: true);
+        BasicPowerResolution.Consequential(world, Cards, ally, true, "Attack", []);
+        var prompt = Sequence.Work(world, Cards, world.Abilities, [])!;
+        // The observer first offers its interrupt for Red Dagger's damage.
+        Sequence.Answer(world, Cards, world.Abilities, prompt, Decision.Decline, []);
+        prompt = Sequence.Work(world, Cards, world.Abilities, [])!;
+        var offer = Assert.Single(prompt.Affordances);
+        var allocation = ResourcePayment.Allocate(Assert.Single(offer.Costs!), [generator.ObjectId])!.ToList();
+        Sequence.Answer(world, Cards, world.Abilities, prompt,
+            new Decision(offer.Id, [enemy.ObjectId], [generator.ObjectId], Allocations: allocation), []);
+        var nested = Sequence.Work(world, Cards, world.Abilities, [])!;
+        Assert.Equal(Question.Opportunity, nested.Asking);
+        Assert.Equal(4, generator.Damage);
+        Assert.Equal(DeckType.AlliesArea, ally.Area.Type);
+        Assert.Equal(3, ally.Damage);
+        Assert.Equal(0, enemy.Damage);
+
+        // The submitted list is caller-owned. Its later edits cannot rewrite
+        // the declarations retained by the accepted, suspended payment.
+        allocation.Clear();
+        allocation.Add(new(generator.ObjectId, 0, "YY"));
+        Sequence.Answer(world, Cards, world.Abilities, nested, Decision.Decline, []);
+        Assert.Null(Sequence.Work(world, Cards, world.Abilities, []));
+        Assert.Equal(DeckType.DiscardPile, generator.Area.Type);
+        Assert.Equal(2, enemy.Damage);
+        Assert.Same(world.Seats[0].Hand, ally.Area);
+        Assert.Equal(0, ally.Damage);
+        Assert.False(world.Agenda.IsBusy);
+    }
+
+    private static (World World, Card Ally, Card Enemy, Card Generator) Board(string generated, bool suspend = false)
     {
         var world = new World(Cards, players: 2);
         foreach (string hero in new[] { "01001a", "01010a" })
@@ -77,6 +113,7 @@ public sealed class DistinctArrowPaymentTests
             seat.IdentityCard = world.CreateCard(hero, seat.Hero);
             for (int index = 0; index < 5; index++) world.CreateCard("01088", seat.Deck);
         }
+        string generatorCost = suspend ? "\"cost\":{\"dealDamage\":{\"cards\":\"this\",\"amount\":2}}," : "";
         world.Abilities = new AbilityRunner(AbilityCatalog.Parse($$$"""
             {"cards":[
               {"card":"05002","abilities":[{
@@ -89,7 +126,12 @@ public sealed class DistinctArrowPaymentTests
               }]},
               {"card":"01030","abilities":[{
                 "trigger":{"event":"WhenActionTriggered","timing":"Resource","subject":"game"},
+                {{{generatorCost}}}
                 "effect":{"generate":"{{{generated}}}"}
+              }]},
+              {"card":"01092","abilities":[{
+                "trigger":{"event":"WhenCardWouldBeDefeated","timing":"Interrupt","subject":"game"},
+                "effect":{"draw":{"player":"you","count":1}}
               }]}
             ]}
             """));
@@ -99,9 +141,12 @@ public sealed class DistinctArrowPaymentTests
         var ally = world.CreateCard("05002", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(1), cardOwner: 0));
         ally.TakeDamage(2);
         var enemy = world.CreateCard("01102", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(1)));
-        var generator = world.CreateCard("01030", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(1), cardOwner: 1));
+        var generator = world.CreateCard("01030", world.AreaOf(suspend ? DeckType.AlliesArea : DeckType.SupportsArea, PlayArea.Of(1), cardOwner: 1));
+        if (suspend)
+        {
+            generator.TakeDamage(2);
+            world.CreateCard("01092", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(1), cardOwner: 1));
+        }
         return (world, ally, enemy, generator);
     }
 }
-
-

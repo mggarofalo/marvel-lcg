@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-
 using Marvel.Rules.Play;
 
 namespace Marvel.Cards.Run;
@@ -14,4 +13,3 @@ internal sealed record AbilityPaymentSelection(
         bool resourcesPaidByEvent = false, IReadOnlyList<ResourceAllocation>? allocations = null) =>
         new([.. paying], [.. chosen], values?.ToImmutableDictionary(StringComparer.Ordinal), resourcesPaidByEvent, [.. allocations ?? []]);
 }
-
