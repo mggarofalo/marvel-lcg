@@ -39,3 +39,29 @@ PowerShell scripts parse successfully. These are Windows source-build checks;
 they do not claim packaged-artifact journeys or Linux certification.
 Independent compatibility review and integrated Thor validation remain separate
 from this compatibility packet.
+
+## Independent compatibility review
+
+Reviewed `cb01b1d4908a779c81304c2961b48227c9d522cf` in isolated checkout
+`marvel-thor-replay26-review`. The explicit frozen-source routes retain their
+historical destinations and verify original facts. V25 has no current admission;
+its fixture is identified as a verified derivative, not an authentic recording.
+Release and tool pins agree on replay v26 and protocol 39. Existing authentic
+retaliation and played-campaign controls reject divergent outcomes before
+publication; the complete campaign rejection is not a positive campaign receipt.
+
+`EngagementReplayReviewTests` adds v26 application-downgrade, RNG and digest
+controls, plus a final pending-prompt mismatch after replay has opened gameplay.
+The latter checks exact durable file hashes, including the manifest and authority,
+across two fresh store/host restarts and requires no migration backup. A compiled
+mutant bypassing session replay verification fails because the expected divergence
+exception is absent. The production source is restored byte-for-byte before a
+nonincremental full Release build with zero warnings/errors.
+
+Independent logs under `marvel-thor-replay26-evidence/independent` record the
+118-case replay/content-upgrade Server run, 36-case Release run, architecture
+and desktop identity checks, and the killed replay-verification mutant.
+The existing rollback test verifies restoration of the retained original pair
+through the current implementation; it does not launch the historical binary.
+Packaged predecessor rollback, Linux certification, integrated Thor validation
+and public Thor admission remain outside this source compatibility review.
