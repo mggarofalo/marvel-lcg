@@ -116,3 +116,66 @@ The final failed custom-deck proof source is preserved there as
 be mistaken for an admitted passing test. No exploratory policy change is
 retained. Expert victory is unproven by this investigation; Mutagen was not
 probed here. This note does not reinterpret the pack acceptance criteria.
+
+
+## Bounded Mutagen Formula Standard strategy probe
+
+A separate isolated probe on base `67446424` used `mutagen_formula`, Captain
+America and the fixed seed 3. It did **not** establish a victory. No new winning
+acceptance test is admitted from this probe, and the reviewed Risky Business
+policy is unchanged. The existing Standard/Expert defeat evidence remains valid;
+this record does not claim pack completion. The canonical obligation is victory
+and defeat for each scenario plus explicit difficulty coverage, rather than a
+winning transcript for each difficulty.
+
+Every attempted game was created by `DatasetGameFactory.Load` and the ordinary
+public `GameSpecification`. Each custom deck was checked through
+`factory.AssessDeck("captain_america", cards).IsValid` before creation. The
+strategy read only the answering player's hand, public board/form/health/threat
+and current engine offers. It used offered targets, `TargetRequest.Allows` and
+`ResourcePayment.Allocate`; there was no hidden deck-order read, world mutation,
+RNG mutation, setup bypass or seed search. Each decision was resolved against an
+independently created replay game and compared canonical state, RNG words,
+outcome, phase, round, prompt, events and information. The policy-answer step
+also retained the pre/post observable-state equality assertion. This is not a
+serialization of every internal pending continuation.
+
+The first probe used the admitted Captain America starter. It prioritized
+minions, ally defense and recovery, and ended `VillainWins` at round 11 after
+111 decisions. Its raw first-failure trace is preserved as
+`C:/Users/mggar/Source/mutagen-victory-probe-evidence/mutagen-victory-first.log`.
+Subsequent public-board strategy changes preserved the fixed seed: protect the
+Shield from payment, build Serum, use Hawkeye/Quinjet responses, ready Captain
+before spending his hand, favor enemy removal and select more Shield Toss
+hand discards for a visible swarm.
+
+Two legal 40-card custom-deck approaches were also attempted. Leadership used
+Maria Hill/Nick Fury, additional economy and healing instead of the starter's
+expensive Avengers Assemble/Quinjet package; Aggression used Relentless Assault,
+Uppercut, Chase Them Down and Tac Team to address Mutagen's minion pressure.
+Neither established a win. These were strategy choices, not new legality rules.
+The latest Aggression attempt ended `PlayersLose`, round 8, 94 decisions. Its
+`PlayersWin` assertion failed; the assertion was not weakened to admit the loss.
+The last logged attack sequence left Captain at 9 damage, followed by the
+engaged Goblin Knight taking him to 11 damage. Earlier Leadership attempts lost
+to threat after an alter-ego recovery turn while multiple minions remained.
+
+Failed probe sources, including the complete last custom deck, and raw run logs
+are preserved outside the repository at
+`C:/Users/mggar/Source/mutagen-victory-probe-evidence/`. The final source is
+`MutagenVictoryTests.cs`, `MutagenTacticalPolicy.cs` and
+`MutagenPolicyPayment.cs`; `mutagen-leadership-failed-test.cs` preserves the
+Leadership deck. The first raw log is retained independently; the first policy
+source was iterated and is not represented as an exact retained source snapshot.
+The focused command was:
+
+```powershell
+dotnet test tests/Marvel.Acceptance.Tests/Marvel.Acceptance.Tests.csproj -c Release --filter FullyQualifiedName~MutagenVictoryTests --logger 'console;verbosity=detailed'
+```
+
+The temporary failing tests/helpers were removed from the candidate rather than
+committed as passing coverage. No engine defect is established by these losses.
+A next bounded attempt should address the visible causal failure: preserve enough
+resources for minion removal while keeping Captain active and preventing an
+alter-ego turn from handing a live minion board enough scheme activations to end
+the game. Mutagen Standard victory with exact replay remains open.
