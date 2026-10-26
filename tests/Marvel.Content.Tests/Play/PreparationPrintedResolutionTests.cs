@@ -182,6 +182,31 @@ public sealed class PreparationPrintedResolutionTests
         Assert.Equal(DeckType.UpgradesArea, f.Bite.Area.Type);
     }
 
+    [Fact]
+    public void IndependentStunCannotAdmitUnsupportedDepartureBehindAChoice()
+    {
+        // Synthetic boundary control: a terminal retained status does not excuse
+        // unsupported host departure, even when a live step-6 choice may move it.
+        var f = new PreparationPrintedFixture("01182");
+        f.World.CreateCard("08023",
+            f.World.AreaOf(DeckType.SupportsArea, PlayArea.Of(1), cardOwner: 1));
+        var entry = EntryResponse(f);
+        f.Minion.TakeDamage(2);
+        var attachment = f.World.CreateCard("16149",
+            f.World.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), f.Minion.ObjectId, cardOwner: -1));
+        string before = f.World.Digest().Canonical();
+        var pending = f.World.Agenda.Outstanding.ToArray();
+        var random = f.World.Random.Generator.GetState();
+        var error = Assert.Throws<RulesNotImplementedException>(() => Answer(f, entry, f.Bite.ObjectId));
+        Assert.Contains("permanent attachment", error.Message);
+        Assert.Equal(before, f.World.Digest().Canonical());
+        Assert.Equal(pending, f.World.Agenda.Outstanding.ToArray());
+        Assert.Equal(random.Words, f.World.Random.Generator.GetState().Words);
+        Assert.Equal(random.Index, f.World.Random.Generator.GetState().Index);
+        Assert.Equal(f.Minion.ObjectId, attachment.Area.Host);
+        Assert.Equal(DeckType.UpgradesArea, f.Bite.Area.Type);
+    }
+
     private static Prompt EntryResponse(PreparationPrintedFixture f)
     {
         for (int i = 0; i < 12; i++)

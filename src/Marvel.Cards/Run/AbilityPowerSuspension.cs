@@ -69,6 +69,16 @@ internal static class AbilityPowerSuspension
         AbilityEffect Node, bool StateMayChange, bool BindingMayChange,
         PowerReachability Reachability)> PowerSuspensionChildren(
         AbilityEffect node, AbilityAdmissionScope cast, bool stateMayChange,
+        bool bindingMayChange, PowerReachability reachability) =>
+        node.OperationName() == "seq"
+            ? PowerSequenceChildren(node, cast, stateMayChange, bindingMayChange,
+                reachability, suspensionOnly: true)
+            : PowerProjectionChildren(node, cast, stateMayChange, bindingMayChange, reachability);
+
+    internal static IEnumerable<(
+        AbilityEffect Node, bool StateMayChange, bool BindingMayChange,
+        PowerReachability Reachability)> PowerProjectionChildren(
+        AbilityEffect node, AbilityAdmissionScope cast, bool stateMayChange,
         bool bindingMayChange, PowerReachability reachability)
     {
         if (node.OperationName() == "seq")
@@ -103,7 +113,7 @@ internal static class AbilityPowerSuspension
         AbilityEffect Node, bool StateMayChange, bool BindingMayChange,
         PowerReachability Reachability)> PowerSequenceChildren(
         AbilityEffect node, AbilityAdmissionScope cast, bool stateMayChange,
-        bool bindingMayChange, PowerReachability reachability)
+        bool bindingMayChange, PowerReachability reachability, bool suspensionOnly = false)
     {
         var children = OrderedEffects(node).ToList();
         var result = new List<(AbilityEffect, bool, bool, PowerReachability)>(children.Count);
@@ -112,13 +122,16 @@ internal static class AbilityPowerSuspension
         {
             bool mayChange = stateMayChange || index > 0;
             result.Add((children[index], mayChange, bindingMayChange, state));
-            if (index + 1 < children.Count
-                && !children.Skip(index + 1).All(AbilityPowerContinuationDependencies.IsIndependent))
+            if (index + 1 < children.Count)
             {
-                // Only a later projected read needs this abstract result. A
-                // terminal independent tail runs on the settled live board;
-                // predicting its predecessor's defeat windows adds no evidence.
-                state = PowerStateAfter(children[index], cast, mayChange, bindingMayChange, state);
+                // Admission still projects the prefix to check damage batches and
+                // unsupported departures. An independent final tail needs no
+                // predicted result from a live minion defeat interrupt.
+                bool liveSettlement = suspensionOnly && children.Skip(index + 1)
+                    .All(AbilityPowerContinuationDependencies.IsIndependent);
+                state = MergePowerAlternatives(PowerPaths(state).Select(path =>
+                    PowerStateAfter(children[index], cast, mayChange, bindingMayChange,
+                        path with { LiveMinionDefeatSettlement = liveSettlement })));
             }
         }
         return result;

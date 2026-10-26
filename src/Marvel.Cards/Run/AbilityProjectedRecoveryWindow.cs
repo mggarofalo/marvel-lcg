@@ -12,6 +12,8 @@ internal static class AbilityProjectedRecoveryWindow
 {
     internal static AbilityPowerState Defer(AbilityPowerState state, Card subject, AbilityAdmissionScope cast)
     {
+        if (CanSettleLive(state, subject, cast))
+            return state with { DefeatWindowDeferred = true };
         if (!CanDefer(state, subject, cast))
             throw new RulesNotImplementedException(
                 $"character '{subject.FaceId}' would be defeated before a "
@@ -19,6 +21,17 @@ internal static class AbilityProjectedRecoveryWindow
                 + "which is not implemented");
         return state with { DefeatWindowDeferred = true, RecoveryWindowDeferred = true,
             RecoverySubject = subject.ObjectId };
+    }
+
+    private static bool CanSettleLive(AbilityPowerState state, Card subject, AbilityAdmissionScope cast)
+    {
+        if (!state.LiveMinionDefeatSettlement
+            || EffectiveCards.Kind(subject, cast.World.Facts) != CardKind.Minion) return false;
+        // A live interrupt may heal or move its subject. Validate the supported
+        // departure without predicting which result it chooses.
+        AbilityPowerHealthTrace.PowerLeavingTree(subject, cast);
+        return !AbilityProjectedDefeatWindows.HasWork(state, subject, cast)
+            || AbilityProjectedDefeatWindows.CanDeferDefeat(state, subject, cast);
     }
 
     private static bool CanDefer(AbilityPowerState state, Card subject, AbilityAdmissionScope cast)

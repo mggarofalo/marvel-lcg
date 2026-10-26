@@ -700,7 +700,10 @@ retains that recipient's incarnation; use `chosen` inside its body when later
 instructions must affect the same copy. Departure makes the guard false, even
 if the physical card reenters before the tail runs. Damage and its defeat
 interrupts, choices and responses settle before the tail and ability completion.
-The engine does not project an earlier sequence result solely for such a tail.
+Suspension admission still projects the prefix to validate damage batches and
+unsupported departures. Only an independent final tail permits an opaque minion
+defeat interrupt to settle live. Full state projection preserves every ordered
+predecessor, including a nested sequence ending with an independent draw.
 If any later instruction needs a projected board read, ordinary projection and
 unsupported-window guards still apply before costs. This bounded composition
 does not predict hidden encounter draws or admit Black Widow content.

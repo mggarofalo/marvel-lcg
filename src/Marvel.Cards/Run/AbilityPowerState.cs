@@ -24,4 +24,7 @@ internal readonly record struct AbilityPowerState(
     internal bool RecoveryWindowDeferred { get; init; }
     internal int? RecoverySubject { get; init; }
     internal bool EncounterCardsChanged { get; init; }
+    // Suspension admission alone may defer minion defeat for an independent
+    // final tail. Full state projection never enables this permission.
+    internal bool LiveMinionDefeatSettlement { get; init; }
 }
