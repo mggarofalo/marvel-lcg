@@ -14,5 +14,6 @@ public static class AbilityResourcePayment
             Hands = [world.Seats[request.Player].Hand], Paying = [.. request.Paying],
             Cost = request.Cost, Required = request.Required, Itself = -1, Payer = request.Player,
             AbilitySource = request.Source,
+            Price = request.Price, Allocations = request.Allocations,
         }).Spend(events);
 }

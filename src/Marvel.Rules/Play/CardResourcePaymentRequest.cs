@@ -11,6 +11,8 @@ internal sealed record CardResourcePaymentRequest
     internal required string Required { get; init; }
     internal required int Itself { get; init; }
     internal required int Payer { get; init; }
+    internal Marvel.Rules.Prompts.CostOption? Price { get; init; }
+    internal IReadOnlyList<ResourceAllocation> Allocations { get; init; } = [];
     internal Card? PayingFor { get; init; }
     internal Card? AbilitySource { get; init; }
     internal IReadOnlyDictionary<int, int>? ResourcePayers { get; init; }

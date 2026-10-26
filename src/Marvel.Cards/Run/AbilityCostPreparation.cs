@@ -19,6 +19,8 @@ internal sealed class AbilityCostPreparation
     private readonly ImmutableDictionary<string, long>? variables;
     private readonly bool resourcesPaidByEvent;
     private readonly int incarnation;
+    private readonly AbilityPaymentSelection selection;
+    private Marvel.Rules.Prompts.CostOption? resourcePrice;
     private readonly ImmutableArray<Step>.Builder ordered =
         ImmutableArray.CreateBuilder<Step>();
 
@@ -27,6 +29,7 @@ internal sealed class AbilityCostPreparation
         IResourceCardAbilities resourceAbilities, AbilityPaymentSelection selection)
     {
         this.world = world;
+        this.selection = selection;
         this.source = source;
         this.player = player;
         paying = selection.Paying;
@@ -40,6 +43,12 @@ internal sealed class AbilityCostPreparation
 
     internal AbilityCostPayment Build(AbilityCost? cost)
     {
+        var price = AbilityPaymentPricing.Price(world, source, player, cost, resourceAbilities);
+        if (!resourcesPaidByEvent && price is not null
+            && price.ResourceCosts.Any(component => component.DistinctTypes)
+            && !Marvel.Rules.Prompts.ResourcePayment.Allows(price, paying, variables, selection.Allocations))
+            throw new RulesNotImplementedException("the selected allocation does not pay the distinct resource cost");
+        resourcePrice = price?.ResourceCosts.Any(component => component.DistinctTypes) == true ? price : null;
         PrepareSteps(cost);
         return new AbilityCostPayment(
             world, source, player, resourceAbilities, paying, ordered.ToImmutable());
@@ -83,7 +92,8 @@ internal sealed class AbilityCostPreparation
         var spends = sequence.Costs.OfType<AbilityCost.Spend>().ToList();
         if (!resourcesPaidByEvent && spends.Count > 0)
             ordered.Add(new Spend(string.Concat(spends.Select(step => step.Resources)),
-                Generic: spends.Sum(step => step.Generic)));
+                Generic: spends.Sum(step => step.Generic))
+                { Price = resourcePrice, Allocations = selection.Allocations });
         foreach (var remaining in sequence.Costs.Where(step =>
                      step is not (AbilityCost.Spend
                          or AbilityCost.Damage { MustTakeAll: true })))
@@ -95,7 +105,8 @@ internal sealed class AbilityCostPreparation
         if (resourcesPaidByEvent) return;
         if (component is AbilityCost.Spend spend)
         {
-            ordered.Add(new Spend(spend.Resources, Generic: spend.Generic));
+            ordered.Add(new Spend(spend.Resources, Generic: spend.Generic)
+                { Price = resourcePrice, Allocations = selection.Allocations });
             return;
         }
         long x = AbilityPaymentValidation.DefinedVariable(variables, "X", source);

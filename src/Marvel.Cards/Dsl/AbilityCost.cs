@@ -32,6 +32,8 @@ public abstract record AbilityCost
     {
         /// <summary>Additional resources with no required type.</summary>
         public int Generic { get; init; }
+        /// <summary>Each paid icon declares a different resource type.</summary>
+        public bool DistinctTypes { get; init; }
         /// <summary>Total icons required, including unrestricted resources.</summary>
         public int Amount => checked(Resources.Length + Generic);
     }

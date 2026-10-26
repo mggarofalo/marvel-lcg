@@ -19,6 +19,7 @@ internal static class AbilityOperationNames
         AbilityCost.DealEncounterToYou => "dealEncounterCard",
         AbilityCost.ConsumeCampaignCard => "consumeCampaignCard",
         AbilityCost.RemoveCounters => "removeCounters",
+        AbilityCost.Spend { DistinctTypes: true } => "spendDistinct",
         AbilityCost.Spend { Generic: > 0 } => "spendAny",
         AbilityCost.Spend spend => spend.PrintedOnly ? "spendPrinted" : "spend",
         AbilityCost.SpendEnergy => "spendEnergyX",

@@ -64,8 +64,14 @@ internal static class AbilityPaymentPricing
             Cost: spend.Amount.ToString(System.Globalization.CultureInfo.InvariantCulture),
             Rule: [letters],
             Sources: CardPayment.Generators(
-                world, world.Facts, world.Seats[player], resourceAbilities, abilitySource: card));
+                world, world.Facts, world.Seats[player], resourceAbilities, abilitySource: card),
+            Components: [Component(spend)]);
     }
+
+    internal static ResourceCost Component(AbilityCost.Spend spend) =>
+        new(spend.Amount.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            spend.Resources.Length > 0 ? [spend.Resources] : null, spend.PrintedOnly)
+        { DistinctTypes = spend.DistinctTypes };
 
     private static CostOption? SequencePrice(
         World world, Card card, int player, AbilityCost.Sequence sequence,
@@ -132,11 +138,7 @@ internal static class AbilityPaymentPricing
                 .GroupBy(source => source.Effect)
                 .Select(group => group.First())
                 .ToList(),
-            Components:
-            [
-                new ResourceCost(printed.Cost, printed.Rule),
-                new ResourceCost(arrow.Cost, arrow.Rule),
-            ]);
+            Components: [.. printed.ResourceCosts, .. arrow.ResourceCosts]);
     }
 
     private static bool TryCombinedAmounts(

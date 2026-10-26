@@ -1110,3 +1110,13 @@ The selection uses the same typed selectors as other card instructions. A
 selection. The committed movement supplies completion evidence for `then`; an
 absent or blocked card does not complete the instruction. Normal draw and deck
 reset rules apply to a following draw.
+
+### Distinct resource arrow costs
+
+Arrow costs also support `spendDistinct: N` for one through four resources whose
+paid declarations must all have different types. This is an engine spelling for
+the printed constraint, not a list of alternative fixed-type actions. Each wild
+icon declares its own type (`rr:wild-resource.1`, `.1.1`). Pricing retains the
+constraint in `ResourceCost.DistinctTypes`; preparation snapshots the selected
+allocation, validates it before any cost, and retains it while resource generators
+suspend. Event printed costs combined with this arrow cost remain unsupported.

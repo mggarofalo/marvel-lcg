@@ -28,7 +28,7 @@ internal static class AbilityWindowActivation
                 cast.Results.ContainsKey(AbilityRecipientCommitment.PendingRecipient) ? [] : chosen,
                 answer.DefinedValues,
                 resourcesPaidByEvent: EffectiveCards.Kind(card, world.Facts) == CardKind.Event
-                    && (ResourceRequirement(found.Cost, card).Length + GenericResourceAmount(found.Cost)) > 0));
+                    && (ResourceRequirement(found.Cost, card).Length + GenericResourceAmount(found.Cost)) > 0, allocations: answer.Allocations));
         var eventPayment = AbilityEventPayment.Prepare(
             world, card, cast.Player, paying, found,
             execution.resourceAbilities, answer.Allocated);

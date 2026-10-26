@@ -16,7 +16,11 @@ internal static class AbilityPaymentInstructions
     }
 
     internal abstract record Step;
-    internal sealed record Spend(string Required, long? Energy = null, int Generic = 0) : Step;
+    internal sealed record Spend(string Required, long? Energy = null, int Generic = 0) : Step
+    {
+        internal Marvel.Rules.Prompts.CostOption? Price { get; init; }
+        internal ImmutableArray<ResourceAllocation> Allocations { get; init; }
+    }
     internal sealed record DiscardHand(Area Hand, ImmutableArray<BoundCard> Cards) : Step;
     internal sealed record RandomDiscardHand(Area Hand, ImmutableArray<BoundCard> Cards, int Count) : Step;
     internal sealed record ExhaustSelected(ImmutableArray<BoundCard> Cards) : Step;

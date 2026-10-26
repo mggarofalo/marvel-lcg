@@ -14,6 +14,7 @@ internal sealed class CardResourcePayment(
     private readonly StringBuilder generated = new();
     private IReadOnlyDictionary<int, int> payers = new Dictionary<int, int>();
     private ResourceContribution[] contributions = [];
+    private readonly Dictionary<int, string> actualResources = [];
     private int next;
     private ResourceExecutionResult? pending;
     internal AbilityExecution Execution { get; private set; } = null!;
@@ -65,6 +66,7 @@ internal sealed class CardResourcePayment(
             }
         }
         RequireEnough(proposed.ToString());
+        RequireAllocation(request.Price);
     }
 
     internal void Resume(List<GameEvent> events)
@@ -80,6 +82,7 @@ internal sealed class CardResourcePayment(
             if (!previous.Execution.IsComplete || !previous.Generation.IsComplete)
                 throw new InvalidOperationException("payment resumed before its resource generator completed");
             generated.Append(previous.Generation.Resources);
+            actualResources[contributions[next - 1].Card.ObjectId] = previous.Generation.Resources;
             pending = null;
         }
         while (next < contributions.Length)
@@ -93,6 +96,9 @@ internal sealed class CardResourcePayment(
             }
         }
         RequireEnough(generated.ToString());
+        RequireAllocation(request.Price is { } price ? price with
+        { Sources = [.. price.Generators.Select(source => source with
+            { Generates = actualResources.GetValueOrDefault(source.Effect, source.Generates) })] } : null);
         CompleteDiscardBatch(events);
         return Execution.Finish(events);
     }
@@ -111,11 +117,14 @@ internal sealed class CardResourcePayment(
             events.AddRange(result.Execution.Events);
             if (!result.Execution.IsComplete) { pending = result; return false; }
             generated.Append(result.Generation.Resources);
+            actualResources[card.ObjectId] = result.Generation.Resources;
         }
         else
         {
             RequireHand(card);
-            generated.Append(abilities.ResourcesGeneratedBy(world, card, request.PayingFor));
+            string produced = abilities.ResourcesGeneratedBy(world, card, request.PayingFor);
+            generated.Append(produced);
+            actualResources[card.ObjectId] = produced;
             // rr:resource.1: generate resources "by discarding cards from their hand".
             // Generation commits this discard before a later generator can suspend.
             if (firstDiscardEvent < 0) firstDiscardEvent = events.Count;
@@ -139,6 +148,13 @@ internal sealed class CardResourcePayment(
     {
         if (!request.Hands.Contains(card.Area) || card.ObjectId == request.Itself)
             throw new RulesNotImplementedException($"card {card.ObjectId} cannot be discarded to pay this cost");
+    }
+
+    private void RequireAllocation(Marvel.Rules.Prompts.CostOption? price)
+    {
+        if (price is not null && !Marvel.Rules.Prompts.ResourcePayment.Allows(
+                price, request.Paying, null, request.Allocations))
+            throw new RulesNotImplementedException("the generated resources do not satisfy the accepted allocation");
     }
 
     private void RequireEnough(string resources)
