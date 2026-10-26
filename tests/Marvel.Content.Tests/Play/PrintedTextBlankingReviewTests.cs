@@ -30,14 +30,15 @@ public sealed class PrintedTextBlankingReviewTests : CoreCardTestBase
         var source = world.CreateCard("05028", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
         var ally = world.CreateCard("01002", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
         world.CreateCard("27189a", world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), ally.ObjectId));
-        ally.TakeDamage(2);
         var payment = world.CreateCard("01089", world.Seats[0].Hand);
         var action = Assert.Single(runner.Actions(world, 0), option => option.Card == source.ObjectId);
+        ally.TakeDamage(2);
         string before = world.Digest().Canonical();
         var effects = world.Effects.Registered.ToArray();
         var pending = world.Agenda.Outstanding.ToArray();
         var random = world.Random.Generator.GetState();
 
+        Assert.Throws<RulesNotImplementedException>(() => runner.Actions(world, 0));
         Assert.Throws<RulesNotImplementedException>(() =>
             runner.ExecuteAction(world, new PlayerAction(action, [payment.ObjectId], [])));
 

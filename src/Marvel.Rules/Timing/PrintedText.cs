@@ -36,6 +36,14 @@ public static class PrintedText
         && EffectiveCards.Kind(target, world.Facts) == CardKind.Minion
         && StateFields.Modified(world, target, "permanent", world.Facts, world.Players) == 0;
 
+    /// <summary>Proves that ending this minion's constants can settle before costs are paid.</summary>
+    public static bool CanBeginBlank(World world, Card target)
+    {
+        if (!CanBlank(world, target)) return false;
+        _ = world.Effects.PreflightConstantsEnding(target, includeHostedCards: false);
+        return true;
+    }
+
     /// <summary>Creates immutable direct blanking data for the current in-play copy.</summary>
     public static ContinuousEffect UntilEndOfPhase(World world, Card source, Card target)
     {
