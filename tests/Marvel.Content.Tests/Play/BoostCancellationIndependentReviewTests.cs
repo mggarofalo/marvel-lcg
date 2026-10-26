@@ -155,24 +155,6 @@ public sealed class BoostCancellationIndependentReviewTests : CoreCardTestBase
     }
 
     [Fact]
-    public void VillainSchemeFaceupDoesNotOfferTheAttackOnlyInterrupt()
-    {
-        // 05014: "while the villain attacks"; a Defense label alone permits
-        // abilities outside attacks under rr:defend-defense.4.8.
-        var runner = Runner();
-        var world = Board(runner);
-        var source = world.CreateCard("05014", world.Seats[0].Hand);
-        world.CreateCard("01089", world.Seats[0].Hand);
-        world.CreateCard("01102", world.AreaOf(DeckType.EncounterDeck));
-        world.Agenda.Add(new PhaseStep(new EnemySchemeOperation(), 1, 2,
-            Subject: world.TheCardIn(DeckType.VillainArea)!.ObjectId, Seat: 0));
-        var prompt = Sequence.Work(world, Cards, runner, []);
-        Assert.False(world.Activation!.Attacking);
-        Assert.Equal(2, world.Agenda.Occurrence!.BoostIcons!.Remaining);
-        Assert.DoesNotContain(prompt?.Affordances ?? [], a => a.AnchorId == source.ObjectId);
-    }
-
-    [Fact]
     public void PaymentThatLeftHandIsRejectedWithoutConsumingTheFaceupWindow()
     {
         var control = ResolveAfterStalePayment(false);
@@ -262,7 +244,7 @@ public sealed class BoostCancellationIndependentReviewTests : CoreCardTestBase
     private static AbilityRunner Runner(string extra = "") => new(AbilityCatalog.Parse("""
         {"cards":[{"card":"05014","abilities":[{
           "labels":["Defense"],
-          "trigger":{"event":"WhenBoostCardTurnedFaceup","timing":"Interrupt","actor":"villain","form":"hero"},
+          "trigger":{"event":"WhenAttackBoostCardTurnedFaceup","timing":"Interrupt","actor":"villain","form":"hero"},
           "effect":{"then":{"effect":{"cancelBoostIcons":"trigger"},
             "then":{"dealDamage":{"cards":"trigger.actor","amount":{"result":"cancelledBoostIcons"}}}}}
         }]}

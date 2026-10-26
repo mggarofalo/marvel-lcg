@@ -5,6 +5,46 @@ worktree `C:/Users/mggar/Source/marvel-preemptive-review`, branch
 `review/preemptive-boost`, on 2026-10-26. Verdict: **changes required**.
 No authored ability-book row or public admission for 05014 is included.
 
+## Attack-only faceup repair candidate, 2026-10-26
+
+The engine adds `WhenAttackBoostCardTurnedFaceup` to the same physical faceup
+occurrence only when `BoostFaceupOperation.Attacking` is true. The generic
+`WhenBoostCardTurnedFaceup` remains available during attacks and schemes. The
+alias does not reuse attack-initiation timing or inspect `world.Attack`, so a
+suspended outer attack cannot qualify a scheme boost. Synthetic 05014 triggers
+combine the attack alias with villain actor and hero form; no authored ability
+row or public content admission changes.
+
+The existing `VillainSchemeFaceupDoesNotOfferTheAttackOnlyInterrupt` regression
+now lives in `AttackBoostFaceupQualifierTests`, with standalone and nested cases.
+A costed generic faceup observer keeps the exact scheme window open. The nested
+case first reaches a real villain attack faceup window, then synthetically
+suspends it with a scheme while `world.Attack` remains present. This isolates the
+scheduler binding; printed Boost-requested activations ordinarily wait for the
+current activation to finish. Both cases retain the event in hand and offer
+only the generic observer. A minion attack carries the attack alias but does not
+offer the villain-only event. The villain positive control executes the generic
+interrupt and then the cancellation in the same occurrence, with one completed
+attack and the expected numeric cancellation/damage.
+
+Focused Windows Release evidence outside the repository:
+
+- `C:/Users/mggar/Source/attack-boost-qualifier-content.log`: **35 pass**,
+  cancellation, live-count review controls, qualifier cases, existing boost,
+  activation, Green Goblin and citation cases.
+- `C:/Users/mggar/Source/attack-boost-qualifier-rules.log`: **53 pass**,
+  Rules boost and citation cases.
+- `C:/Users/mggar/Source/attack-boost-qualifier-mutant.log`: compiled mutant
+  restoring the attack alias on scheme faceup occurrences; both standalone and
+  suspended-attack scheme controls fail, exit 1.
+- Source restored in `finally`, followed by forced `--no-incremental` Release
+  build, zero warnings/errors in `attack-boost-qualifier-restored-build.log`;
+  restored focused Content set **35 pass** in
+  `attack-boost-qualifier-restored-content.log`.
+
+This candidate awaits independent review and integration gates. These focused
+results do not claim full managed, native or cross-platform acceptance.
+
 ## Independent final review of live-count repair, 2026-10-26
 
 Reviewed `40bbdc74f6ca74629b6a684adb1f729225d3dfe3` in

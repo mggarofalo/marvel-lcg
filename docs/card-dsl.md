@@ -16,6 +16,14 @@ checks constant-ending consequences before costs. Actual 05028 admission to the
 ability book is gated by `PrintedTextBlankingTests` and the ability-data inventory;
 it does not admit the incomplete Ms. Marvel product.
 
+`WhenBoostCardTurnedFaceup` identifies one physical boost card during either an
+attack or a scheme. That same occurrence also carries
+`WhenAttackBoostCardTurnedFaceup` only when its own `BoostFaceupOperation.Attacking`
+is true. This engine-chosen alias does not describe attack initiation and does not
+borrow an enclosing or suspended attack. An attack-only villain trigger combines
+the alias with `actor: "villain"`; a Defense label alone does not restrict timing.
+Both descriptions share one interrupt/response window and cancellation receipt.
+
 `cancelBoostIcons: "trigger"` cancels the remaining numeric icons on the exact
 physical boost card in its faceup interrupt occurrence. Constants and amplify
 are included; its star ability still resolves, and icons gained by that later

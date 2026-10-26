@@ -16,7 +16,7 @@ public sealed class IndividualBoostCancellationTests : CoreCardTestBase
     private static AbilityRunner Runner(string extra = "") => new(AbilityCatalog.Parse("""
         {"cards":[{"card":"05014","abilities":[{
           "labels":["Defense"],
-          "trigger":{"event":"WhenBoostCardTurnedFaceup","timing":"Interrupt","actor":"villain","form":"hero"},
+          "trigger":{"event":"WhenAttackBoostCardTurnedFaceup","timing":"Interrupt","actor":"villain","form":"hero"},
           "effect":{"then":{"effect":{"cancelBoostIcons":"trigger"},
             "then":{"dealDamage":{"cards":"trigger.actor","amount":{"result":"cancelledBoostIcons"}}}}}
         }]}
@@ -188,7 +188,7 @@ public sealed class IndividualBoostCancellationTests : CoreCardTestBase
         // Sequential speculative result reads fail closed until implemented.
         var runner = new AbilityRunner(AbilityCatalog.Parse("""
             {"cards":[{"card":"05014","abilities":[{
-              "trigger":{"event":"WhenBoostCardTurnedFaceup","timing":"Interrupt","actor":"villain","form":"hero"},
+              "trigger":{"event":"WhenAttackBoostCardTurnedFaceup","timing":"Interrupt","actor":"villain","form":"hero"},
               "effect":{"seq":[{"cancelBoostIcons":"trigger"},
                 {"dealDamage":{"cards":"trigger.actor","amount":{"result":"cancelledBoostIcons"}}}]}
             }]}]}
