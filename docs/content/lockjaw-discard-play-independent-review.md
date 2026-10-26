@@ -31,3 +31,55 @@ All commands used Release configuration in isolated worktree `marvel-lockjaw-rev
 - Existing storage/Quiver/stored-event tests in that combined run pass. This is focused regression evidence, not a full Content-suite result.
 
 No new production logic was authored by the reviewer. No additional mutant was run in this review packet; previously reported implementation mutants were not treated as independently reproduced evidence. The failing information and duplicate-entry regressions are preserved for implementation and fresh review. Required integrated managed/platform gates remain the lead's responsibility.
+
+## Final bounded re-review at d174876e
+
+Reviewed the origin fix `f66bf09d` and entry-window fix `d174876e` in isolated
+worktree `marvel-lockjaw-final-review` on 2026-10-26. The original published-origin
+finding is resolved: both moved-to-deck and changed-owner submissions retain
+information signals and accept a corrected retry. Ordinary second-seat discard
+play costs four resources, respects a cost reduction, and is unavailable off turn.
+Uniqueness, foreign target and self-payment controls retain ordinary restrictions.
+The paired hand/discard ally-limit response tests and put-into-play controls pass:
+mandatory discard precedes entry response, entry resolves once, and only ordinary
+play opens the separate optional played response with its causal context.
+
+Verdict: **request changes for live payment rejection purity**. The bounded
+origin fix and shared duplicate-entry correction (MARVEL-740) are accepted.
+This is not public 05018 admission or a completed pack.
+Two integration concerns remain separate from that bounded acceptance:
+
+- A newly checked adjacent invalid-payment path still violates the published
+  answer contract. Publish an allocated discard-play answer, move one selected
+  resource card from hand to deck, record a Reveal signal, then submit. Rejection
+  occurs after information signals are cleared. Card digest, complete RNG state
+  and consumed words, agenda, registered effects and prompt identity are unchanged.
+  `DiscardPlayFinalReviewTests` preserves this failing counterexample. Short and
+  duplicated payment answers and newly blocked uniqueness each reject without
+  losing information and accept a corrected retry. The stale-payment failure is
+  inherited from general live resource validation, separate from live origin.
+- The shared entry correction changes outcomes for a previously duplicated entry
+  response after an ally-limit choice. Engine replay remains v24. Release policy
+  requires a compatibility decision when the same setup/decisions resolve
+  differently. Existing replay verification checks prompts, events, RNG and digest,
+  which guards against silently publishing divergent history. The focused passing
+  replay tests below do not establish a genuine predecessor save exercising this
+  exact path. Integration must preserve such a source fixture (for example actual
+  Core Maria Hill entering as the fourth ally), prove its rejection or supported
+  transition, and record the version/admission choice. No fixture was regenerated
+  and no compatibility identity was changed during this review.
+
+Independent Release evidence, logs outside the repository at
+`C:/Users/mggar/Source/`:
+
+- `lockjaw-final-content.log`: discard permission/decision tests, 24 passed.
+- `lockjaw-final-core.log`: `FullyQualifiedName~CoreCardFaceTranscript`, all 20
+  pinned Core transcript tests passed. The earlier exact `...TranscriptTests`
+  filter did not match their refactored class names and is not Core evidence.
+- `lockjaw-final-replay.log`: SessionPersistenceTests, ReplayContractUpgradeTests
+  and QuinjetReplayTests, 33 passed.
+- `lockjaw-final-negative.log`: independent controls, 3 passed and the one
+  stale-payment information assertion failed as described above.
+
+No production logic was changed. These results are focused evidence; integrated
+managed/platform gates remain the lead's responsibility.
