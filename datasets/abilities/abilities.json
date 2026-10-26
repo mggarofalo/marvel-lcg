@@ -17306,6 +17306,46 @@
           }
         }
       ]
+    },
+    {
+      "card": "05030",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "attackableEnemies"
+              },
+              "effect": {
+                "attack": {
+                  "target": "chosen",
+                  "effect": {
+                    "seq": [
+                      {
+                        "dealAttackDamage": {
+                          "cards": "chosen",
+                          "amount": 3
+                        }
+                      },
+                      {
+                        "attackAnotherEnemy": {
+                          "amount": 3
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
     }
   ]
 }

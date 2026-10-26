@@ -10,7 +10,7 @@ using Xunit;
 
 namespace Marvel.Content.Tests.Play;
 
-// Synthetic Melee body exercises the engine prerequisite with physical cards.
+// Synthetic receipt observers and actual full-book Melee cover attack settlement.
 public sealed class StagedAttackReceiptTests
 {
     private const string Melee = """
@@ -91,9 +91,7 @@ public sealed class StagedAttackReceiptTests
         Card? source = null;
         Card? minion = null;
         Card? next = null;
-        var root = JsonNode.Parse(AuthoredCards.Text)!;
-        root["cards"]!.AsArray().Add(JsonNode.Parse(Melee));
-        var runner = new AbilityRunner(AbilityCatalog.Parse(root.ToJsonString()));
+        var runner = AuthoredCards.Runner();
         var (game, world) = Playing(board =>
         {
             source = PayableMelee(board);
@@ -122,9 +120,7 @@ public sealed class StagedAttackReceiptTests
     {
         // "each of those instances is modified"; ruling a43333f9f9d3634a:
         // Embiggen increases both Melee instances to 5.
-        var root = JsonNode.Parse(AuthoredCards.Text)!;
-        root["cards"]!.AsArray().Add(JsonNode.Parse(Melee));
-        var runner = new AbilityRunner(AbilityCatalog.Parse(root.ToJsonString()));
+        var runner = AuthoredCards.Runner();
         Card? source = null;
         Card? minion = null;
         Card? upgrade = null;

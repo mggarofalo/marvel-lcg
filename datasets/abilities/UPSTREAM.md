@@ -179,3 +179,12 @@ provide that quota; rr:player-deck.3 bounds each deck at its immediate reset.
 GenerationWhyCardTests exercises the actual full book and encounter lifecycle,
 printed starting threat and hazard, short-deck reset and no eligible cards.
 See docs/content/generation-why-evidence.md. Public admission stays closed.
+
+Melee (05030) adds one Ms. Marvel face (29 of 34; 571 total). Its two
+sentences share one attack while choosing the second enemy after the first
+settles. Printed authority is datasets/cards/cards.json; rulings e0333bc6316bd7f0,
+9aa6221cd0950fbb, f32c53356db718a6 and a43333f9f9d3634a establish Guard,
+villain stage identity, final responses and Embiggen behavior. StagedAttackTests
+and the actual full-book cases in StagedAttackReceiptTests and
+StagedAttackIndependentTests exercise this row. Public Ms. Marvel admission
+remains closed; native and hosted persistence proof remain separate.

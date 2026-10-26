@@ -1,5 +1,4 @@
-using Marvel.Cards.Dsl;
-using Marvel.Cards.Run;
+using Marvel.Content.Tests.Cards;
 using Marvel.Rules.Play;
 using Marvel.Rules.State;
 using Marvel.Rules.Prompts;
@@ -8,7 +7,7 @@ using Xunit;
 
 namespace Marvel.Content.Tests.Play;
 
-// Synthetic body on the physical Melee event isolates the engine prerequisite.
+// Actual authored Melee resolves both sentences through the full ability book.
 public sealed class StagedAttackTests
 {
     [Rule("rr:ability.4")]
@@ -18,16 +17,7 @@ public sealed class StagedAttackTests
     public void SecondEnemyIsChosenAfterFirstDamageSettles(bool guard)
     {
         // rr:ability.4: "resolve the ability one sentence at a time".
-        var runner = new AbilityRunner(AbilityCatalog.Parse("""
-            {"cards":[{"card":"05030","abilities":[{
-              "trigger":{"event":"WhenActionTriggered","timing":"Action","subject":"this","form":"hero"},
-              "effect":{"chooseCard":{"from":{"query":"attackableEnemies"},"effect":{
-                "attack":{"target":"chosen","effect":{"seq":[
-                  {"dealAttackDamage":{"cards":"chosen","amount":3}},
-                  {"attackAnotherEnemy":{"amount":3}}
-                ]}}}}}
-            }]}]}
-            """));
+        var runner = AuthoredCards.Runner();
         Card? source = null;
         Card? first = null;
         Card? other = null;

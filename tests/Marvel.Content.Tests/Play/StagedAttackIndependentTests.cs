@@ -33,7 +33,7 @@ public sealed class StagedAttackIndependentTests
             upgrade = board.CreateCard("05010", board.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), cardOwner: 0));
             AddPayment(board);
             AddPayment(board);
-        }, hero: true, abilities: Runner(StagedAttackSafetyTests.Body, authored: true));
+        }, hero: true, abilities: AuthoredCards.Runner());
         var villain = world.TheCardIn(DeckType.VillainArea)!;
         Pay(game, world, source!);
         game.Resolve(Decision.Take(Assert.Single(game.Pending!.Affordances).Id));
@@ -94,9 +94,9 @@ public sealed class StagedAttackIndependentTests
         Assert.False(world.Agenda.IsBusy);
     }
 
-    private static AbilityRunner Runner(string body, bool authored = false)
+    private static AbilityRunner Runner(string body)
     {
-        var root = JsonNode.Parse(authored ? AuthoredCards.Text : "{\"cards\":[]}")!;
+        var root = JsonNode.Parse("{\"cards\":[]}")!;
         root["cards"]!.AsArray().Add(JsonNode.Parse("""
             {"card":"05030","abilities":[{
               "trigger":{"event":"WhenActionTriggered","timing":"Action","subject":"this","form":"hero"},

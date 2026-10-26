@@ -5,6 +5,14 @@ forced and optional attack-end responses and is zero without a completed attack.
 
 # The card DSL
 
+`attackAnotherEnemy: { "amount": <positive constant> }` is the second sentence
+of one attack whose first sentence deals constant damage to its chosen enemy.
+It waits for the first damage and defeat procedures, then offers another legal
+enemy. The first physical enemy remains excluded across villain stage changes;
+a departed and reentered minion is a new copy. Both sentences retain one attack
+context and consume a whole-attack modifier once. Arbitrary choice-inside-power
+shapes remain unsupported. This spelling is an engine choice for Melee.
+
 `forEachDiscarded` uses the `eachTime` fields (`effect`, `when`, `then`) for an
 encounter-deck `discardTop`, but finishes that discard before traversing its own
 ordered physical receipt. `that` binds each discarded card, including after an
