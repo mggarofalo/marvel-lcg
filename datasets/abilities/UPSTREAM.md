@@ -4,7 +4,7 @@
 |---|---|
 | Kind | authored |
 | Product boundary | Core Set, Rise of Red Skull, Captain America and Wrecking Crew; Green Goblin research rows remain publicly excluded |
-| Records | 508 printed card faces, including explicit empty rows |
+| Records | 509 printed card faces, including explicit empty rows |
 | Authorities | Generated `datasets/cards/`, vendored Rules Reference, expansion rulebooks and published rulings |
 | Gated by | Ability admission/lowering tests, complete-product admission, actual-card tests, campaign acceptance and executable Core behavioral transcripts |
 
@@ -41,3 +41,13 @@ reading the resulting total for each player deck. Criminal Enterprise absent
 `RiskyBusinessMainSchemeTests`, `MainSchemeCompletionTests` and
 `RiskyBusinessSetupTests` exercise the authored rows through ordinary engine
 operations; no public complete-game claim follows from these research tests.
+
+All Tied Up (02048) is an authored Running Interference research face. Its
+attachment targets the revealing player's identity in either form. The constant
+host prohibitions use the reviewed readiness/form mechanism (MARVEL-709), and
+its printed Action spends mental and physical resources in either form.
+`AllTiedUpProhibitionTests` exercises the actual row, host-only permissions,
+live blanking/departure, dependent projections and multiplayer reveal placement.
+The interpretation includes vendored ruling `ruling:6cc2957c6bbe4596` on
+card-forced flips; the queried MarvelCDB FAQ has no entry for this face.
+Green Goblin remains outside public admission.

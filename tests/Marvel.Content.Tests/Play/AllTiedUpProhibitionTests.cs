@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Marvel.Cards.Dsl;
 using Marvel.Cards.Run;
+using Marvel.Content.Tests.Cards;
 using Marvel.Rules.Events;
 using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
@@ -62,7 +63,7 @@ public sealed class AllTiedUpProhibitionTests
     [Rule("rr:then.2")]
     public void FormChangesAreUnavailableAndAFailedCardChangeDoesNotResolveItsThen()
     {
-        // Vendored ruling on All Tied Up / Inner Demons: "prevents changing
+        // ruling:6cc2957c6bbe4596 on All Tied Up / Inner Demons: "prevents changing
         // form (or flipping), even if that comes from another card ability."
         // rr:then.1: the pre-then text must "fully resolve" first.
         var (game, world, _) = Playing(true, _ => { },
@@ -214,6 +215,13 @@ public sealed class AllTiedUpProhibitionTests
         var runner = (AbilityRunner)world.Abilities;
         Assert.DoesNotContain(runner.Actions(world, 1), action => action.Card == attachment.ObjectId);
         var action = Assert.Single(game.Pending!.Affordances, offer => offer.AnchorId == attachment.ObjectId);
+        Assert.Equal("BR", ResourcePayment.RequiredResources(Assert.Single(action.CostOptions[0].ResourceCosts)));
+        var prompt = game.Pending;
+        string before = world.Digest().Canonical();
+        Assert.Throws<ArgumentException>(() => game.Resolve(new Decision(action.Id, [],
+            [physical!.ObjectId], Allocations: [])));
+        Assert.Same(prompt, game.Pending);
+        Assert.Equal(before, world.Digest().Canonical());
         int[] payment = [mental!.ObjectId, physical!.ObjectId];
         game.Resolve(new Decision(action.Id, [], payment,
             Allocations: ResourcePayment.Allocate(action.CostOptions[0], payment)));
@@ -236,19 +244,17 @@ public sealed class AllTiedUpProhibitionTests
     private static (Game Game, World World, Card Attachment) Playing(
         bool hero, Action<World> prepare, string probeEffect = """{"ready":"you"}""")
     {
-        // Local authored row exercises a characteristic printed card without
-        // changing the production ability book or product admission.
-        var runner = new AbilityRunner(AbilityCatalog.Parse($$$$$"""
-            {"cards":[{"card":"02048","attachTo":"you","abilities":[
-              {"trigger":{"timing":"Constant"},"effect":{"seq":[
-                {"grant":{"card":"attachedTo","keyword":"ready_prohibited","amount":1}},
-                {"grant":{"card":"attachedTo","keyword":"form_change_prohibited","amount":1}}]}},
+        // The actual attachment row is paired with a synthetic probe so its
+        // permissions can be challenged by card effects and projections.
+        var probe = AbilityCatalog.Parse($$$$$"""
+            {"cards":[{"card":"01008","abilities":[
               {"trigger":{"event":"WhenActionTriggered","timing":"Action","subject":"game"},
-               "cost":{"spend":"BR"},"effect":{"discard":"this"}}]},
-              {"card":"01008","abilities":[
-                {"trigger":{"event":"WhenActionTriggered","timing":"Action","subject":"game"},
-                 "effect":{{{{{probeEffect}}}}}}]}]}
-            """));
+               "effect":{{{{{probeEffect}}}}}}]}]}
+            """);
+        var runner = new AbilityRunner(new AbilityBook(
+            [.. AuthoredCards.Book.On("02048"), .. probe.Abilities],
+            new HashSet<string>(["02048", "01008"], StringComparer.Ordinal),
+            new Dictionary<string, AbilityValue> { ["02048"] = AuthoredCards.Book.Attaches("02048")! }));
         Card? attachment = null;
         var (game, world) = ActionAbilitySupportFixtures6.Playing(board =>
         {

@@ -14184,6 +14184,26 @@
       ]
     },
     {
+      "card": "02048",
+      "name": "All Tied Up",
+      "note": "Attach to the revealing player's identity in either form (rr:attach-to). Its host cannot ready or change form, including by card ability (rr:cannot; ruling:6cc2957c6bbe4596). Only the host controller may spend mental and physical resources to discard it; the printed Action is usable in either form (rr:ability.8.1). Derived prohibition modifier names are engine choices.",
+      "attachTo": "you",
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant" },
+          "effect": { "seq": [
+            { "grant": { "card": "attachedTo", "keyword": "ready_prohibited", "amount": 1 } },
+            { "grant": { "card": "attachedTo", "keyword": "form_change_prohibited", "amount": 1 } }
+          ] }
+        },
+        {
+          "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "game" },
+          "cost": { "spend": "BR" },
+          "effect": { "discard": "this" }
+        }
+      ]
+    },
+    {
       "card": "03033",
       "name": "Expert Defense",
       "note": "Hero Interrupt (defense): When your hero defends against an attack, it gets +3 DEF for that attack. Uses the committed hero-defense occurrence, including RR1.8 defense-labeled initiation.",
