@@ -51,7 +51,7 @@ public sealed record EnemyActivation(
     long DamageDealt = 0,
     long ThreatPlaced = 0)
 {
-    /// <summary>Step-5 damage placed by the attack, including overkill, after prevention.</summary>
+    /// <summary>Damage placed by this activation, including owned boost damage while live and attack overkill, after prevention.</summary>
     public long DamagePlaced { get; init; }
 
     /// <summary>Whether new boost cards may be dealt for this activation.</summary>

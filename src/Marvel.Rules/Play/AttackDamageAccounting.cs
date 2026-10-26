@@ -12,6 +12,13 @@ namespace Marvel.Rules.Play;
 /// <summary>Records actual attack-step damage independently of placement and defeat.</summary>
 internal static class AttackDamageAccounting
 {
+    internal static void ValidateBoostPlacement(World world, int? activationId)
+    {
+        if (activationId is null) return;
+        if (activationId < 0 || world.Activation?.Id != activationId)
+            throw new InvalidOperationException("boost placement has no live activation receipt");
+    }
+
     internal static void RecordPlacement(World world, int? activationId, Damage.PlacedDamage damage)
     {
         // rr:damage.step.5 places damage after prevention; rr:damage.2 places

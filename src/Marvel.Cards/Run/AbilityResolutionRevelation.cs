@@ -175,12 +175,12 @@ internal static class AbilityResolutionRevelation
         // rr:attack-enemy-activation.step.3.b: "Resolve any Boost abilities" is
         // part of this activation. Capture its identity before any ability can
         // suspend or request a child activation. Responses have their own casts.
-        int? activationId = world.Activation?.Id;
+        var damageOrigin = BoostDamageOrigin.Capture(world);
         execution.RunOrdered(boosts,
             ability => new AbilityResolutionState(world, card, occurrence, player, events)
             {
                 Tier = ability.Trigger.Timing,
-                DamageActivationId = activationId,
+                DamageOrigin = damageOrigin,
             });
 
         return events;

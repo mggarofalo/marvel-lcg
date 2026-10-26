@@ -10,5 +10,5 @@ internal sealed record AbilityInvocation(AbilityContinuationAddress Address,
     internal Marvel.Rules.State.Defeated? TriggeringDefeat { get; init; }
     internal Marvel.Rules.State.Attacked? TriggeringAttack { get; init; }
     internal Occurrence? TriggeringThreat { get; init; }
-    internal int? DamageActivationId { get; init; }
+    internal BoostDamageOrigin? DamageOrigin { get; init; }
 }

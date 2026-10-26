@@ -24,7 +24,7 @@ internal sealed record AbilityResolutionState(
     public Defeated? TriggeringDefeat { get; set; }
     public Attacked? TriggeringAttack { get; set; }
     public Occurrence? TriggeringThreat { get; set; }
-    internal int? DamageActivationId { get; set; }
+    internal BoostDamageOrigin? DamageOrigin { get; set; }
     internal System.Collections.Immutable.ImmutableArray<(int Card, int Incarnation)> DamageDefeats { get; set; } = [];
     internal AbilityExecution? Execution { get; set; }
     internal AbilityPowerExecutionState? PowerExecution { get; set; }
