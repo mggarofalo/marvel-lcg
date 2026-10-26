@@ -4,7 +4,7 @@
 |---|---|
 | Kind | authored |
 | Product boundary | Core Set, Rise of Red Skull, Captain America and Wrecking Crew; Green Goblin and Ms. Marvel research rows remain publicly excluded |
-| Records | 558 printed card faces, including explicit empty rows |
+| Records | 562 printed card faces, including explicit empty rows |
 | Authorities | Generated `datasets/cards/`, vendored Rules Reference, expansion rulebooks and published rulings |
 | Gated by | Ability admission/lowering tests, complete-product admission, actual-card tests, campaign acceptance and executable Core behavioral transcripts |
 
@@ -145,3 +145,14 @@ counters, Hero Resource, exhaustion and discard at the last counter.
 `MsMarvelAamirCardTests`, `MsMarvelResourceReprintTests` and
 `MsMarvelReflexesCardTests` exercise their actual rows. See
 `docs/content/ms-marvel-aamir-resource-evidence.md`. Public admission stays closed.
+
+The ally/condition packet adds actual rows 05002 Red Dagger, 05023 Endurance,
+05032 Morale Boost and 05033 Down Time (20 of 34 Ms. Marvel faces; 562 total).
+Printed authority is joined `datasets/cards/cards.json`. Defeat payment uses two
+different resource types; the controller pays and the owner receives the ally
+(rulings 10293662ffefd5b2 and 2368dda1610740b3). The upgrades use any-player
+control and the printed one-per-player limit. Morale Boost expires at round end.
+`MsMarvelRedDaggerTests`, `MsMarvelConditionUpgradeTests` and
+`MsMarvelAdditionalEventTests` exercise the unmodified full book. Melee, Tackle
+and Concussive Blow remain unauthored pending the engine gaps recorded in
+`docs/content/ms-marvel-ally-condition-evidence.md`. Public admission stays closed.

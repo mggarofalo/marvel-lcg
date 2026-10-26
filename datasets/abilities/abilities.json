@@ -16756,6 +16756,139 @@
           }
         }
       ]
+    },
+    {
+      "card": "05002",
+      "name": "Red Dagger",
+      "note": "Executable interpretation of joined printed text in datasets/cards/cards.json; research face, with public pack admission unchanged.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardDefeated",
+            "timing": "Interrupt",
+            "subject": "this"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "enemies"
+              },
+              "effect": {
+                "seq": [
+                  {
+                    "dealDamage": {
+                      "cards": "chosen",
+                      "amount": 2
+                    }
+                  },
+                  {
+                    "returnToHand": "this"
+                  }
+                ]
+              }
+            }
+          },
+          "cost": {
+            "spendDistinct": 2
+          }
+        }
+      ]
+    },
+    {
+      "card": "05023",
+      "name": "Endurance",
+      "note": "Executable interpretation of joined printed text in datasets/cards/cards.json; research face, with public pack admission unchanged.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "grant": {
+              "card": "you",
+              "keyword": "health",
+              "amount": 3
+            }
+          }
+        }
+      ],
+      "attachTo": {
+        "query": "identitiesWithinPerPlayerLimit"
+      }
+    },
+    {
+      "card": "05033",
+      "name": "Down Time",
+      "note": "Executable interpretation of joined printed text in datasets/cards/cards.json; research face, with public pack admission unchanged.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "grant": {
+              "card": "yourAlterEgo",
+              "keyword": "recover",
+              "amount": 2
+            }
+          }
+        }
+      ],
+      "attachTo": {
+        "query": "identitiesWithinPerPlayerLimit"
+      }
+    },
+    {
+      "card": "05032",
+      "name": "Morale Boost",
+      "note": "Executable interpretation of joined printed text in datasets/cards/cards.json; research face, with public pack admission unchanged.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "heroes"
+              },
+              "effect": {
+                "seq": [
+                  {
+                    "grantUntil": {
+                      "card": "chosen",
+                      "keyword": "thwart",
+                      "amount": 1,
+                      "until": "EndOfRound"
+                    }
+                  },
+                  {
+                    "grantUntil": {
+                      "card": "chosen",
+                      "keyword": "attack",
+                      "amount": 1,
+                      "until": "EndOfRound"
+                    }
+                  },
+                  {
+                    "grantUntil": {
+                      "card": "chosen",
+                      "keyword": "defense",
+                      "amount": 1,
+                      "until": "EndOfRound"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ]
     }
   ]
 }
