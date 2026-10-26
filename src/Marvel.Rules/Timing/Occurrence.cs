@@ -111,6 +111,10 @@ public sealed record Occurrence
     [JsonIgnore]
     public Play.BoostIconCancellation? BoostIcons { get; internal set; }
 
+    /// <summary>The exact boost ability available before its execution.</summary>
+    [JsonIgnore]
+    public Play.BoostAbilityCancellation? BoostAbility { get; internal set; }
+
     private readonly HashSet<(WindowKind Window, int Card, AbilityType Type, int Ordinal, State.Defeated? Defeat, State.Attacked? Attack, NativeAbilityKind Native, Occurrence? Threat, int EventPlay)> spent = [];
 
     private readonly Dictionary<int, int> completedEventPlays = [];
@@ -123,7 +127,7 @@ public sealed record Occurrence
     // to it -- see `Also`.
     private readonly List<string> conditions;
 
-    private readonly List<State.Defeated> defeats = [];
+    private readonly OccurrenceDefeats defeats = new();
 
     private readonly AttackRecipients attacks = new();
 
@@ -225,7 +229,7 @@ public sealed record Occurrence
     /// field on <see cref="State.World"/> would have to be set before that and
     /// cleared after it, and the clearing is what nobody remembers.
     /// </remarks>
-    public IReadOnlyList<State.Defeated> Defeats => defeats;
+    public IReadOnlyList<State.Defeated> Defeats => defeats.Items;
 
     /// <summary>Engine-owned completion facts for native retaliate responses.</summary>
     [JsonIgnore]
@@ -258,13 +262,7 @@ public sealed record Occurrence
     /// singular defeated-card reference must bind the chosen triggering fact;
     /// only an unambiguous singleton can be read without that binding.
     /// </remarks>
-    public State.Defeated? Defeat => defeats.Count switch
-    {
-        0 => null,
-        1 => defeats[0],
-        _ => throw new Play.RulesNotImplementedException(
-            "a singular defeated-card reference requires its exact triggering instance in a multiple-defeat window"),
-    };
+    public State.Defeated? Defeat => defeats.Single;
 
     /// <summary>Whether this occurrence creates a named triggering condition.</summary>
     /// <param name="condition">One of <c>rr:triggering-condition</c>'s occurrences.</param>

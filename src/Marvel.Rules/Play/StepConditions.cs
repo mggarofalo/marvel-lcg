@@ -29,6 +29,7 @@ public static class StepConditions
         [DeclareDefender] = ["WhenDefenderDeclared"],
         [HeroDefenseTiming.Defends] = [HeroDefenseTiming.Defends],
         [BoostFaceupOperation.Faceup] = [BoostFaceupOperation.Faceup],
+        [BoostAbilityOperation.Resolve] = [],
         [FlipBoostCards] = ["WhenBoostCardsFlipped"],
         // Damage from an attack is imminent before this step applies. Whether
         // it was dealt is known only afterwards: Tough may prevent it, so the

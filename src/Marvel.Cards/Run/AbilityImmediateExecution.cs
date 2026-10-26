@@ -47,6 +47,7 @@ internal static class AbilityImmediateExecution
         AbilityEffect.Fixed effect, AbilityImmediateContext context)
     {
         var world = context.Admission.World;
+        if (AbilityBoostCancellation.TryRun(effect, context) is { } boost) return boost;
         switch (effect.Instruction)
         {
             case AbilityFixedInstruction.DiscardOtherEnvironments:
@@ -57,11 +58,6 @@ internal static class AbilityImmediateExecution
             case AbilityFixedInstruction.CancelWhenRevealed:
                 CancelWhenRevealed(context);
                 return new(true, true);
-            case AbilityFixedInstruction.CancelBoostIcons:
-                long cancelled = (context.Admission.Query.Occurrence.BoostIcons
-                    ?? throw new RulesNotImplementedException("boost cancellation requires a faceup card occurrence"))
-                    .Cancel(world);
-                return new(true, cancelled > 0) { CancelledBoostIcons = cancelled };
             case AbilityFixedInstruction.CancelOccurrence:
                 if (world.Agenda.IsOutstanding(context.Admission.Query.Occurrence))
                     world.Agenda.Cancel(context.Admission.Query.Occurrence);

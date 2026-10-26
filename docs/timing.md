@@ -609,3 +609,15 @@ own When Defeated handles only for the exact defeated incarnation still in play.
 
 The attack-specific simultaneous coordinator remains a separate consumer and is
 not covered by this direct-damage repair.
+
+## Faceup boost responses
+
+Each physical boost card opens its own faceup interrupt and response windows before
+its star ability executes. Target Acquired's printed Hero Response retains that tier:
+local ruling `a66ca21bca34a71f` explicitly permits its cancellation before Boost resolves.
+A typed `BoostAbilityOperation` follows the completed faceup window. Its exact-card
+cancellation receipt is independent of numeric icon cancellation; cancelling the star
+preserves the card's numeric contribution and the next boost card's ability.
+A successful cancellation resolves an effect and therefore publishes the usual
+completed Preparation receipt after its discard cost. Pending windows and receipts
+are reconstructed by accepted-decision replay; no new persisted field is introduced.

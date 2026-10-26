@@ -138,7 +138,11 @@ internal static class AbilityEffectTargetAdmission
             _ => throw new InvalidOperationException("Unknown damage or threat target operation"),
         };
 
-    private static TargetLegality BoostCancellationTargetLegality(AbilityAdmissionScope cast) =>
+    private static TargetLegality BoostCancellationTargetLegality(AbilityEffect node, AbilityAdmissionScope cast) =>
+        node.OperationName() == "cancelBoostAbility"
+            ? cast.Occurrence.BoostAbility is { } boost && boost.CanCancel(cast.World)
+                ? TargetLegality.Valid : TargetLegality.Invalid
+            :
         cast.Occurrence.BoostIcons is { Remaining: > 0 } icons && icons.IsCurrent(cast.World)
             ? TargetLegality.Valid : TargetLegality.Invalid;
 
@@ -148,7 +152,7 @@ internal static class AbilityEffectTargetAdmission
         {
             // rr:target.3.4: "at least one of those effects must be able to
             // affect the target." Deferring resolution retains the bound target.
-            "cancelBoostIcons" => BoostCancellationTargetLegality(cast),
+            "cancelBoostIcons" or "cancelBoostAbility" => BoostCancellationTargetLegality(node, cast),
             "boostBasicUse" => BasicUseLegality((AbilityEffect.BoostBasicUse)node, cast),
             "modifyPlayedEvent" => AbilityPlayedEventModifier.CanModify(EffectOf<AbilityEffect.ModifyPlayedEvent>(node, cast), cast.Context)
                 ? TargetLegality.Valid : TargetLegality.Invalid,
