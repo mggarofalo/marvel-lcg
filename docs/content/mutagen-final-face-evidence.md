@@ -73,3 +73,42 @@ Logs: `%TEMP%/mutagen-isee-mutant-boost-deal.log`,
 Final direct JSON inventory: 541 authored ability rows, of which 56/57 distinct
 printed Goblin pack faces are authored. UPSTREAM total-row metadata is reconciled
 against that count.
+
+
+## Overconfidence actual-row continuation
+
+Base `4ceaab8819473dd3c1618aa433c4149039c0c8c7`. Printed 02031 is now authored,
+bringing the direct JSON inventory to 542 total rows and 57/57 distinct printed
+Green Goblin faces. Public runtime admission remains closed pending full-pack
+proof; this packet changes no engine, setup or public admission code.
+
+Authority: joined 02031 printed text; ruling:d855181a23d49683 declines errata;
+rr:attack-enemy-activation.step.3.b includes resolving Boost abilities within the
+activation, and rr:damage.step.5 places damage after prevention. The row reads
+activationDamagePlaced, including owned boost placement, rather than the legacy
+damage-dealt receipt; alter-ego reads activationThreat from its own scheme.
+Legal standard Goblin modular choices contain no scheme-boost threat placement.
+This packet makes no claim for generic Taskmaster 04101 boost threat scope.
+
+Thirteen actual-row cases use the full encounter queue/reveal procedure in a
+two-player research board. They prove two versus three placement, both forms,
+non-first-player resolution, prevention, Tough, canceled stun/confuse activations,
+actual Concussive Blast boost damage (one boost plus two attack), ally excess,
+overkill and unrelated damage exclusion. Each asserts source cleanup, an empty
+reveal queue/agenda, completed activation and active game, and exactly one extra
+inert Bomb Scare minion reveal when surge applies. Overkill uses a deliberately
+supplied generic engine modifier; no printed Goblin attachment is claimed to
+grant it. This is characteristic encounter evidence, not production setup or
+whole-game proof. Queued/nested ownership isolation remains covered separately
+by the independent synthetic activation-placement contract tests in the focused
+selection; no natural Goblin boost card queues another activation.
+
+The canonical row mutant activationDamagePlaced -> activationDamage compiles and
+fails three intended cases: damage prevention, Tough, and owned Concussive Blast
+boost placement. Log: `%TEMP%/overconfidence-mutant-dealt.log` (3 failed, 10 passed).
+The restored focused selection and normal pre-commit hooks are recorded below.
+
+Restored focused Release Windows selection passes 184 tests, zero failures,
+including all Mutagen cases, ability-data/lowering, unknown 11028 negatives,
+rule citations and independent activation-placement probes.
+Log: `%TEMP%/overconfidence-final-focused.log`. No full suite or native run.

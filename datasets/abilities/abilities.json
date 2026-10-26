@@ -16515,6 +16515,83 @@
           }
         }
       ]
+    },
+    {
+      "card": "02031",
+      "name": "Overconfidence",
+      "note": "Printed authority: datasets/cards/cards.json 02031. ruling:d855181a23d49683 declines errata. Damage placed counts actual placement after prevention, including owned boost abilities within attack step 3.b (rr:attack-enemy-activation.step.3.b), rather than damage dealt. Each form reads only its completed activation receipt. Selector and receipt spellings are engine choices. Public Green Goblin admission remains closed.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this",
+            "form": "hero"
+          },
+          "effect": {
+            "seq": [
+              {
+                "enemyAttacks": {
+                  "enemies": {
+                    "titled": "Green Goblin"
+                  },
+                  "against": "you"
+                }
+              },
+              {
+                "if": {
+                  "test": {
+                    "atLeast": {
+                      "value": {
+                        "result": "activationDamagePlaced"
+                      },
+                      "count": 3
+                    }
+                  },
+                  "then": {
+                    "gainSurge": 1
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this",
+            "form": "alter-ego"
+          },
+          "effect": {
+            "seq": [
+              {
+                "enemySchemes": {
+                  "enemies": {
+                    "titled": "Green Goblin"
+                  },
+                  "against": "you"
+                }
+              },
+              {
+                "if": {
+                  "test": {
+                    "atLeast": {
+                      "value": {
+                        "result": "activationThreat"
+                      },
+                      "count": 3
+                    }
+                  },
+                  "then": {
+                    "gainSurge": 1
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
     }
   ]
 }

@@ -31,9 +31,11 @@ integration tests (one existing opt-in skip), and 122 acceptance tests. Risky
 Business and all four Goblin modular sets are authored. The next candidate
 contains reviewed Mutagen stages and encounters. The final six-face packet at
 `12ac4fde` has independent review with 80 passing focused checks, bringing the
-reviewed Goblin inventory to 56 of 57 faces. Overconfidence remains behind
-MARVEL-719's exact activation damage-placement work; MARVEL-720 separately
-investigates a queued-activation continuation boundary. Neither pack has public
+reviewed Goblin inventory to 56 of 57 faces. The subsequent Overconfidence
+research row brings authoring to 57/57, with actual full-encounter threshold and
+cleanup evidence in `mutagen-final-face-evidence.md`. Independent review of this
+final row and complete-pack proof remain separate. MARVEL-720 separately
+investigates expired synthetic boost-child accounting. Neither pack has public
 admission yet.
 
 Ms. Marvel's exact-event modifier mechanism, including indirect damage, printed
