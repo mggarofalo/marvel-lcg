@@ -1,4 +1,4 @@
-using Marvel.Cards.Dsl;
+using Marvel.Content.Tests.Cards;
 using Marvel.Cards.Run;
 using Marvel.Rules.Events;
 using Marvel.Rules.Play;
@@ -12,64 +12,50 @@ namespace Marvel.Content.Tests.Play;
 
 public sealed class RemainingDamageInterruptTests : CoreCardTestBase
 {
-    // Test-only interpretation of printed 05017; this does not admit the card.
-    private static AbilityRunner Runner() => new(AbilityCatalog.Parse("""
-        {"cards":[
+    private static AbilityRunner Runner() => AuthoredCards.Runner();
+
+    [Rule("rr:uses-x-type")]
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void PlayedBarrierEntersWithThreeCountersAndFinalUseStillReflects(bool heroForm)
+    {
+        // "When a card with uses has no counters of the specified type remaining,
+        // it is discarded from play."
+        Card? barrier = null;
+        Card? payment = null;
+        var runner = Runner();
+        var (game, world) = Playing(board =>
         {
-          "card": "05017",
-          "name": "Energy Barrier",
-          "note": "Printed Uses (3 reflection counters). Interrupt removes one reflection counter to prevent one damage to your identity and deal one damage to a chosen enemy. Any damage and either form qualify; this is not a defense ability. rr:uses-x-type discards the upgrade when its final counter is removed.",
-          "startingCounters": {
-            "type": "reflection",
-            "count": 3,
-            "uses": true
-          },
-          "abilities": [
-            {
-              "trigger": {
-                "event": "WhenDamageWouldBeDealt",
-                "damage": "taken",
-                "timing": "Interrupt",
-                "target": "you"
-              },
-              "when": {
-                "isYourIdentity": "trigger.target"
-              },
-              "cost": {
-                "removeCounters": {
-                  "card": "this",
-                  "counter": "reflection",
-                  "count": 1
-                }
-              },
-              "effect": {
-                "seq": [
-                  {
-                    "preventDamage": {
-                      "card": "trigger.target",
-                      "amount": 1
-                    }
-                  },
-                  {
-                    "chooseCard": {
-                      "from": {
-                        "query": "enemies"
-                      },
-                      "effect": {
-                        "dealDamage": {
-                          "cards": "chosen",
-                          "amount": 1
-                        }
-                      }
-                    }
-                  }
-                ]
-              }
-            }
-          ]
+            barrier = board.CreateCard("05017", board.Seats[0].Hand);
+            payment = board.CreateCard("01088", board.Seats[0].Hand);
+        }, hero: heroForm, abilities: runner);
+        var offer = Assert.Single(game.Pending!.Affordances,
+            option => option.Verb == CardPlay.Verb && option.AnchorId == barrier!.ObjectId);
+        game.Resolve(PaidDecision.Take(offer, [payment!.ObjectId])
+            with { Targets = [world.Seats[0].IdentityCard.ObjectId] });
+        Assert.Equal(DeckType.UpgradesArea, barrier!.Area.Type);
+        Assert.Equal(3, barrier.Tokens["c_reflection"]);
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        var hero = world.Seats[0].IdentityCard;
+        var events = new List<GameEvent>();
+        for (int use = 0; use < 3; use++)
+        {
+            BeginAttack(world, villain, hero, 0, 1);
+            var prompt = Assert.IsType<Prompt>(Sequence.Work(world, Cards, runner, events));
+            var interrupt = Assert.Single(prompt.Affordances,
+                option => option.AnchorId == barrier.ObjectId);
+            Sequence.Answer(world, Cards, runner, prompt, Decision.Take(interrupt.Id), events);
+            var target = Assert.IsType<Prompt>(Sequence.Work(world, Cards, runner, events));
+            Sequence.Answer(world, Cards, runner, target, Decision.Take(villain.ObjectId), events);
+            Sequence.Finish(world, Cards, runner, events);
+            Assert.Equal(use + 1, villain.Damage);
+            Assert.Equal(0, hero.Damage);
+            Assert.Equal(use == 2 ? DeckType.DiscardPile : DeckType.UpgradesArea, barrier.Area.Type);
         }
-        ]}
-        """));
+        Assert.Equal(0, barrier.Tokens.GetValueOrDefault("c_reflection"));
+        Assert.False(world.Agenda.IsBusy);
+    }
 
     [Theory]
     [InlineData(0, 0)]

@@ -46,6 +46,7 @@ public sealed class AbilityDataPrintedTextBoxResourceIconsTests : AbilityDataTes
             ["02006b"] = new("madness", 2, Uses: false) { PerPlayer = true },
             ["03012"] = new("arrow", 4, Uses: false),
             ["03034"] = new("mental", 3, Uses: true),
+            ["05017"] = new("reflection", 3, Uses: true),
             ["05024"] = new("energy", 3, Uses: true),
             ["04042"] = new("attack", 3, Uses: true),
             ["04064"] = new("ammo", 2, Uses: true) { PerPlayer = true },

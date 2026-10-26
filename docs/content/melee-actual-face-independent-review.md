@@ -10,10 +10,7 @@ The appended 05030 row matches generated `datasets/cards/cards.json`: cost 3,
 Hero Action (attack), three damage to an enemy, then three to another enemy.
 Reviewed the raw Melee FAQ and rulings for distinct enemies, stun cancelling the
 whole attack, Guard removal, villain-stage identity, final responses and
-Embiggen. The actual-row evidence misspells Guard ruling `e0333bc6316bd7f0` in
-the ability provenance as `e0333bc6316bd77f0`; this is a documentation typo,
-not a different rules source. The independent prerequisite review names the
-correct ruling.
+Embiggen. The ability provenance cites Guard ruling `e0333bc6316bd7f0` correctly.
 
 The migration replaces synthetic book appends with `AuthoredCards.Runner()`
 without weakening the existing assertions for fresh second selection, Guard,

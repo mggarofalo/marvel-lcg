@@ -17346,6 +17346,59 @@
           }
         }
       ]
+    },
+    {
+      "card": "05017",
+      "name": "Energy Barrier",
+      "note": "Printed Uses (3 reflection counters). Interrupt removes one reflection counter to prevent one damage to your identity and deal one damage to a chosen enemy. Any damage and either form qualify; this is not a defense ability. rr:uses-x-type discards the upgrade when its final counter is removed.",
+      "startingCounters": {
+        "type": "reflection",
+        "count": 3,
+        "uses": true
+      },
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenDamageWouldBeDealt",
+            "damage": "taken",
+            "timing": "Interrupt",
+            "target": "you"
+          },
+          "when": {
+            "isYourIdentity": "trigger.target"
+          },
+          "cost": {
+            "removeCounters": {
+              "card": "this",
+              "counter": "reflection",
+              "count": 1
+            }
+          },
+          "effect": {
+            "seq": [
+              {
+                "preventDamage": {
+                  "card": "trigger.target",
+                  "amount": 1
+                }
+              },
+              {
+                "chooseCard": {
+                  "from": {
+                    "query": "enemies"
+                  },
+                  "effect": {
+                    "dealDamage": {
+                      "cards": "chosen",
+                      "amount": 1
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
     }
   ]
 }

@@ -188,3 +188,10 @@ villain stage identity, final responses and Embiggen behavior. StagedAttackTests
 and the actual full-book cases in StagedAttackReceiptTests and
 StagedAttackIndependentTests exercise this row. Public Ms. Marvel admission
 remains closed; native and hosted persistence proof remain separate.
+
+Energy Barrier (05017) adds one face (30 of 34 Ms. Marvel; 572 total).
+Its typed damage-taken trigger observes remaining damage after prevention,
+following faq:05017 and rr:prevent.1.1 while retaining distinct dealt amounts.
+The actual full book drives RemainingDamageInterruptTests. Three reflection
+counters and Uses disposal follow the printed dataset; arbitrary damage in
+either form qualifies, and the reflected damage is not an attack.
