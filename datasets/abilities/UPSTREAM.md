@@ -4,7 +4,7 @@
 |---|---|
 | Kind | authored |
 | Product boundary | Core Set, Rise of Red Skull, Captain America and Wrecking Crew; Green Goblin research rows remain publicly excluded |
-| Records | 524 printed card faces, including explicit empty rows |
+| Records | 541 printed card faces, including explicit empty rows |
 | Authorities | Generated `datasets/cards/`, vendored Rules Reference, expansion rulebooks and published rulings |
 | Gated by | Ability admission/lowering tests, complete-product admission, actual-card tests, campaign acceptance and executable Core behavioral transcripts |
 

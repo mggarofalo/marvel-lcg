@@ -69,3 +69,7 @@ Logs: `%TEMP%/mutagen-isee-mutant-boost-deal.log`,
 `%TEMP%/mutagen-isee-mutant-icon-amount.log`,
 `%TEMP%/mutagen-isee-mutant-engagement-owner.log`, and
 `%TEMP%/mutagen-isee-restored.log`.
+
+Final direct JSON inventory: 541 authored ability rows, of which 56/57 distinct
+printed Goblin pack faces are authored. UPSTREAM total-row metadata is reconciled
+against that count.
