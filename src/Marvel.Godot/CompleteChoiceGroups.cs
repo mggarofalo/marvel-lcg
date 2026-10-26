@@ -7,12 +7,17 @@ namespace Marvel.Godot;
 internal static class CompleteChoiceGroups
 {
     internal static readonly string[] Headings =
-        ["Current decision", "Identity and allies", "Upgrades and supports", "Hand"];
+        ["Current decision", "Identity and allies", "Upgrades and supports", "Hand", "Discard pile"];
 
     internal static int Category(AffordancePresentation offer, bool turn, string? zone)
     {
         if (!turn) return 0;
-        if (offer.PlaysCard) return 3;
+        if (offer.PlaysCard) return zone switch
+        {
+            "HandsArea" => 3,
+            "DiscardPile" => 4,
+            _ => 0,
+        };
         return zone switch
         {
             "HeroArea" or "AlliesArea" => 1,

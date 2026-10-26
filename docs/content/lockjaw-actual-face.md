@@ -52,3 +52,19 @@ Separate presentation finding: All actions currently groups discarded Lockjaw
 under Hand because CompleteChoiceGroups assigns ordinary Play to that heading.
 The action and payment work, but this heading misstates the source zone. This
 native proof does not certify the heading as correct or waive its correction.
+
+## Integrated source-group correction
+
+The complete-choice catalogue now groups ordinary discard play under **Discard
+pile** using the authorized source zone. Hand plays remain under Hand; an
+unknown source is not labelled as a hand. The two regression rows fail against
+the old categorizer and all eleven organization checks pass with the fix.
+The registered native case additionally requires the Discard pile heading before
+selecting Lockjaw. Headless and minimized rendered runs pass at 1920x1080,
+100 percent scale, reduced motion; the lead inspected the actual source-choice
+capture, which visibly separates hand plays from Lockjaw's discard play.
+Evidence: `C:/Users/mggar/Source/lockjaw-source-group-headless/results.jsonl`
+and `C:/Users/mggar/Source/lockjaw-source-group-rendered-100/`. An initial direct
+rendered invocation omitted the manifest scale/viewport and failed at setup under
+an inherited 80 percent profile; the explicitly configured run above is the
+pixel evidence. No gameplay or public admission changes are part of this fix.

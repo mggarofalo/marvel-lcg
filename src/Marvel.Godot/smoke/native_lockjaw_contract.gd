@@ -22,6 +22,9 @@ static func _select(smoke) -> bool:
     if not await smoke.ui.click(smoke.ui.named("CompleteChoiceSheet")): return false
     if not await smoke.ui.expect(func(): return _offers(smoke).size() == 1,
         "one explicit ordinary Lockjaw play offer in complete choices"): return false
+    if not await smoke.ui.expect(func(): return "Discard pile" in smoke._visible_text(smoke.main),
+        "discard-origin play is grouped under its actual source pile"): return false
+    await _capture(smoke, "lockjaw-discard-choice")
     var offers: Array = _offers(smoke)
     if offers.size() != 1:
         smoke._fail("discarded Lockjaw must have one explicit ordinary play offer")

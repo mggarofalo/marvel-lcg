@@ -11,7 +11,9 @@ public sealed class DecisionOrganizationTests
     [InlineData("UpgradesArea", false, 2)]
     [InlineData("SupportsArea", false, 2)]
     [InlineData("HandsArea", false, 3)]
-    [InlineData(null, true, 3)]
+    [InlineData("HandsArea", true, 3)]
+    [InlineData("DiscardPile", true, 4)]
+    [InlineData(null, true, 0)]
     [InlineData(null, false, 0)]
     public void TurnCatalogueUsesAuthorizedSourceLocation(string? zone, bool play, int group)
     {

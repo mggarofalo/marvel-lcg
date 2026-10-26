@@ -38,6 +38,7 @@ public sealed class ActiveAttackTests : AttackTestBase
 
         Assert.Contains(Steps.AttackInitiated, observer.Conditions);
         Assert.Contains("WhenBoostCardsFlipped", observer.Conditions);
+        Assert.Contains(BoostFaceupOperation.Faceup, observer.Conditions);
         Assert.Contains(Steps.DamageWouldBeDealt, observer.Conditions);
         Assert.Contains(Steps.AttackEnds, observer.Conditions);
         Assert.NotNull(world.FinishedAttack);
@@ -140,7 +141,15 @@ public sealed class ActiveAttackTests : AttackTestBase
             if (occurrence.Actor < 0) return [];
             var active = Assert.IsType<ActiveAttack>(ActiveAttack.From(world));
             Assert.Equal(occurrence.Actor, active.Source);
-            Assert.Equal(occurrence.Target, active.Target);
+            if (occurrence.Is(BoostFaceupOperation.Faceup))
+            {
+                // Faceup targets the boost card; the enclosing attack retains its victim.
+                Assert.Equal(occurrence.Subject, occurrence.Target);
+                if (window == WindowKind.Interrupt)
+                    Assert.Equal(DeckType.BoostingArea, world.Cards[occurrence.Target].Area.Type);
+                Assert.Equal(world.Seats[0].IdentityCard.ObjectId, active.Target);
+            }
+            else Assert.Equal(occurrence.Target, active.Target);
             Conditions.UnionWith(occurrence.Conditions);
             return [];
         }
