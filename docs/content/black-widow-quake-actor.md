@@ -57,3 +57,48 @@ External logs are under `C:/Users/mggar/Source/`:
 This is focused Windows engine evidence. Independent review and combined
 integration/wire-history verification belong to the integrated candidate;
 neither full-suite certification nor Quake content admission is claimed here.
+
+## Independent review of `5ae4efdfd7e9017ba9482b69bbb9f0452150e62d`
+
+Reviewed in isolated branch `review/quake-incarnation`, worktree
+`C:/Users/mggar/Source/marvel-quake-review`. No production correctness finding
+was identified within the occurrence-capture and actor-binding change.
+The review adds only tests and this evidence; ability-book, admission and
+compatibility/version changes remain outside this packet.
+
+`QuakeActorIndependentReviewTests` supplies three independent controls:
+
+- Moving the scheming actor between in-play engagement areas preserves its
+  incarnation and the retained Quake answer still exhausts Quake and damages
+  that actor. This distinguishes a departed copy from ordinary board movement.
+- A captured occurrence and an explicitly constructed legacy occurrence both
+  offer Quake before reentry. Afterwards only the legacy occurrence without a
+  captured incarnation offers it; historical minion/controller facts remain
+  unchanged. The missing-incarnation fallback is deliberate, not a claim that
+  deserialized occurrence JSON is suitable for resuming a live window.
+- Different runtime incarnations produce exactly identical participant JSON.
+  Deserialization retains the historical public facts and omits incarnation;
+  the complete occurrence JSON is identical to the equivalent historical value.
+
+Independent Windows evidence, with all logs outside the worktree:
+
+| Log under `C:/Users/mggar/Source/` | Result |
+| --- | --- |
+| `quake-independent-content.log` | 68/68: three independent controls, five supplied Quake cases, attack/threat binding, payment atomicity, combat responses, Widow encounter composition, typed activation targeting, Jet Trooper and boost cancellation. |
+| `quake-independent-rules.log` | 18/18: attack/lifecycle occurrences and rule citations. |
+| `quake-independent-history.log` | 14/14: journal records, capture isolation and replay history activity. |
+| `quake-independent-mutant.log` | Binding-bypass mutant compiles; captured actor reentry control fails at `Assert.Empty`, while the other two independent controls pass. |
+| `quake-independent-restored-build.log` | Successful nonincremental content-project rebuild after restoring the original source bytes in `finally`. |
+| `quake-independent-restored-content.log` | Restored 68/68 content checks pass. |
+
+The public facts' JSON representation is unchanged, and authoritative session
+reconstruction uses setup plus accepted decisions rather than loading mutable
+occurrence objects. Correcting actor eligibility can nevertheless change prompts
+or effects during replay. The journal/history regressions above do not establish
+compatibility for a genuine predecessor trace reaching that changed behavior;
+the integrated replay/version decision remains separate.
+
+The normal accepted response and accepted child-damage reentry paths are proved
+with synthetic abilities. No actual printed discard/reentry card combination,
+Quake admission, full game, native UI, cross-platform certification or complete
+managed-suite certification is claimed by this review.
