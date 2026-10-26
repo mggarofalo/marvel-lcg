@@ -14,6 +14,7 @@ internal static class EventActivityCardRendering
         card.AccessibilityName = CardLiveStateRendering.Description(presentation);
         card.TooltipText = string.Empty;
         RefreshSourceHeader(card, presentation);
+        EncounterStackHeader.Refresh(card, presentation);
         RefreshLiveState(card, presentation);
         card.SetMeta("activity_health", presentation.Fields.FirstOrDefault(field => field.Name == "HEALTH")?.Value ?? "");
         card.SetMeta("activity_readiness", presentation.Status);

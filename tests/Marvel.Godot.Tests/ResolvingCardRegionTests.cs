@@ -6,6 +6,18 @@ namespace Marvel.Godot.Tests;
 
 public sealed class ResolvingCardRegionTests
 {
+    [Theory]
+    [InlineData("EnvironmentArea", true)]
+    [InlineData("SideSchemesArea", true)]
+    [InlineData("AsideDeck", false)]
+    public void EncounterSupportStaysOnTheTableInsteadOfInOtherPiles(string zone, bool onTable)
+    {
+        // Synthetic public area: placement uses the supplied zone, never its title.
+        var area = Area(1, zone, new(10, 1, false, "Scenario card", "", "", "", []));
+        Assert.Equal(onTable, SpatialTableZones.IsEncounterSupport(area));
+        Assert.Equal(onTable ? 0 : 1, SpatialTableObjectRenderer.Unplaced([area]).Count);
+    }
+
     [Fact]
     public void VisibleBoostTakesTheResolvingSlotWhileItsSuspendedCauseRemainsInspectable()
     {

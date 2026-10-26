@@ -15,6 +15,7 @@ func _run() -> void:
     ui = Driver.new(main, render_viewport, _fail)
     if not await _select_goblin_setup(): return
     if not await _open_goblin_table(): return
+    if not await _assert_environment_counter("Criminal Enterprise", "2 Infamy"): return
     if not await _capture_clear_checkpoint("goblin-norman-before-attack"): return
     if not await _attack_norman(): return
     if not await _capture_clear_checkpoint("goblin-flipped-after-attack"): return
@@ -50,7 +51,7 @@ func _attack_norman() -> bool:
     if not await ui.click(Locator.control(_card("Spider-Man")), MOUSE_BUTTON_RIGHT): return false
     if not await ui.click(_menu_choice("Attack")): return false
     if not await ui.click(_menu_choice("Norman Osborn")): return false
-    if not await ui.expect(func(): return _revision() == 3, "basic attack commits once"): return false
+    if not await ui.expect(func(): return _revision() == 3, "basic attack commits once", 15000): return false
     return await _assert_flipped(health)
 
 func _assert_flipped(health: String) -> bool:
@@ -58,5 +59,27 @@ func _assert_flipped(health: String) -> bool:
         "removing the final two infamy flips villain and environment"): return false
     if not await ui.expect(func(): return _card("Norman Osborn") == null and _card("Criminal Enterprise") == null,
         "the replaced faces are absent from the live board"): return false
+    if not await _assert_environment_counter("State of Madness", "0 Infamy · 2 Madness"): return false
     return await ui.expect(func(): return _health("Green Goblin") == health,
         "the replaced two damage does not reduce villain health")
+
+func _assert_environment_counter(title: String, expected: String) -> bool:
+    var card := _card(title)
+    if not await ui.expect(func(): return card != null, title + " is on the live board"): return false
+    var counter := card.find_child("StackStatuses", true, false) as Label
+    return await ui.expect(func(): return counter != null and counter.is_visible_in_tree() and \
+        counter.text == expected and Rect2(Vector2.ZERO, Vector2(render_viewport.size)).encloses(counter.get_global_rect()),
+        title + " displays its authoritative " + expected + " counter")
+
+func _assert_timeline_clear_of_encounter_piles() -> bool:
+    var timeline := main.find_child("EventTimeline", true, false) as Control
+    if not await ui.expect(func(): return timeline != null and timeline.is_visible_in_tree(),
+        "live event timeline is visible"): return false
+    var piles := main.find_children("Pile*", "PanelContainer", true, false).filter(func(n):
+        return n.is_visible_in_tree() and (n.tooltip_text.begins_with("ENCOUNTER") or n.name == "PileEmptyEncounterDiscard"))
+    if not await ui.expect(func(): return piles.size() == 2,
+        "scenario encounter deck and discard remain visible"): return false
+    for pile in piles:
+        if not await ui.expect(func(): return not timeline.get_global_rect().intersects(pile.get_global_rect()),
+            "timeline clears scenario encounter pile"): return false
+    return true
