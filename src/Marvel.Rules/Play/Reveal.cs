@@ -132,6 +132,7 @@ public static class Reveal
                 Verb = placement.Verb,
             });
         }
+        MinionEngagement.RecordEntry(card, facts, occurrence);
         EnterPlay(world, facts, card, events, occurrence);
     }
 

@@ -117,6 +117,7 @@ public sealed class LifecycleOccurrenceTests
     }
 
     [Rule("rr:enters-play")]
+    [Rule("rr:engage")]
     [Fact]
     public void ARevealedCardAddsEntryToTheRevealOccurrence()
     {
@@ -128,7 +129,8 @@ public sealed class LifecycleOccurrenceTests
 
         Reveal.Resolve(world, facts, minion, 0, [], occurrence);
 
-        Assert.Equal([Steps.CardRevealed, Steps.CardEntersPlay], occurrence.Conditions);
+        // "When a minion enters play in a player's play area, it engages that player."
+        Assert.Equal([Steps.CardRevealed, MinionEngagement.Engaged, Steps.CardEntersPlay], occurrence.Conditions);
         Assert.Equal(DeckType.EngagedEnemiesArea, minion.Area.Type);
     }
 

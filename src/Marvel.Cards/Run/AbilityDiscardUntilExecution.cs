@@ -30,10 +30,11 @@ internal static class AbilityDiscardUntilExecution
                 { Expressions = context.Expressions with { Bindings = context.Expressions.Bindings with { Player = player } } };
                 return AbilityDeckAndRevealExecution.RevealCard(found, revealContext);
             case AbilityDiscardUntilResult.PutIntoPlayFirstPlayer:
-                AbilityCardStateExecution.PutIntoPlay(found, context.World.FirstPlayer,
-                    new(context.Expressions, context.Trigger, context.Events,
-                        context.CardPlayAbilities, context.Readiness, new AbilityCardStateResult()));
-                break;
+                return AbilityDeckAndRevealResult.Handled with
+                {
+                    Entry = EncounterEntryRequest.For(found, context.World.FirstPlayer,
+                        new CardEntryPlacement(Verb: "Put_Into_Play")),
+                };
             case AbilityDiscardUntilResult.AttachToThis:
                 // rr:attach-to.3.1: another ability's specified host replaces the
                 // attachment's printed "attach to" selection. This is not a reveal.
