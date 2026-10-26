@@ -24,6 +24,10 @@ public sealed class PreparationResourceTransportTests : TransportTestBase
         var request = EngineRequest.SyncGame("preparation", "table", "capability");
         var response = new EngineResponse(EngineProtocol.Version, request.RequestId,
             request.GameId, null, prompt, []);
+        // The appended numeric value is an engine wire choice. Prior enum values remain stable.
+        Assert.Equal(4, (int)ResourceRestriction.PreparationCard);
+        Assert.Contains("\"restriction\":4", System.Text.Encoding.UTF8.GetString(EngineJson.Write(response)),
+            StringComparison.Ordinal);
         var endpoint = new EchoEndpoint(request, response);
         var local = await new InProcessTransport(endpoint).ExchangeAsync(request, TestContext.Current.CancellationToken);
         var socket = await ExchangeOverSocket(new SocketEngineServer(endpoint, IPAddress.Loopback, 0), request);
