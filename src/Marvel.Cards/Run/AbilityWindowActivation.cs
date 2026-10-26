@@ -21,6 +21,7 @@ internal static class AbilityWindowActivation
         IReadOnlyList<int> chosen = answer.Targets;
         var costOwner = world.Agenda.Current;
         var costOccurrence = world.Agenda.Occurrence;
+        AbilityEventThreatFacts.Validate(execution, cast, found);
         var arrowPayment = AbilityCostPayment.Prepare(
             world, card, cast.Player, found.Cost, execution.program, execution.resourceAbilities,
             AbilityPaymentSelection.Capture(paying,

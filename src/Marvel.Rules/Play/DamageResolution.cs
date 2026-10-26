@@ -26,6 +26,7 @@ internal sealed class DamageResolution(World world, ICardFacts facts, DamageRequ
                 ? Damage.Outcome.Defeated : Damage.Outcome.NotDefeated, events);
             return;
         }
+        AttackDamageAccounting.ValidateBoostPlacement(world, request.ActivationId);
         replacement ??= DamagePlacement.Replace(world, request, events);
         if (!replacement.IsComplete) { Suspend(events); return; }
         if (request.Target.Incarnation != incarnation || !DeckTypes.IsInPlay(request.Target.Area.Type))
@@ -35,6 +36,7 @@ internal sealed class DamageResolution(World world, ICardFacts facts, DamageRequ
             execution.Finish(events);
             return;
         }
+        AttackDamageAccounting.ValidateBoostPlacement(world, request.ActivationId);
         var damage = DamagePlacement.PrepareAfterReplacement(world, facts, request.Source, request.Target,
             replacement.ResolvedAmount, request.Trigger, events);
         DamagePlacement.ApplyPlaced(world, facts, damage, request.Trigger, request.Verb, events);
@@ -45,6 +47,7 @@ internal sealed class DamageResolution(World world, ICardFacts facts, DamageRequ
     {
         world.Agenda.Executions.RequireActive(execution);
         Result.Place(damage);
+        AttackDamageAccounting.RecordPlacement(world, request.ActivationId, damage);
         placement = damage;
         if (damage.Landed) request.RecordDefeatOn?.Also(Steps.DamageDealt);
         placed = true;

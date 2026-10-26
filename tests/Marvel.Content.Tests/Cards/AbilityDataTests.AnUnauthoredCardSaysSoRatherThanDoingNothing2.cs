@@ -17,10 +17,8 @@ public sealed class AbilityDataAnUnauthoredCardSaysSoRatherThanDoingNothingTests
         // card produces a board that is plausible and wrong.
         var world = new World(Printed, players: 1);
         world.CreateSeat("p0");
-        // Mutagen Formula remains unauthored. Its stage I face keeps the
-        // fail-closed contract observable while Risky Business stage faces
-        // have bounded research authoring without public pack admission.
-        var card = world.CreateCard("02014", world.AreaOf(DeckType.RevealingArea));
+        // Time-Travel Tactics has printed reveal text and remains unauthored.
+        var card = world.CreateCard("11028", world.AreaOf(DeckType.RevealingArea));
         var thrown = Assert.Throws<RulesNotImplementedException>(() => AuthoredCards.Runner().ExecuteReveal(world, card, 0));
         Assert.Contains("no ability data", thrown.Message, StringComparison.Ordinal);
     }
@@ -205,6 +203,10 @@ public sealed class AbilityDataAnUnauthoredCardSaysSoRatherThanDoingNothingTests
         permitted.UnionWith(["02033", "02034", "02035", "02036"]);
         permitted.UnionWith(["02037", "02038", "02039", "02040", "02048"]);
         permitted.UnionWith(["02041", "02042", "02043", "02044", "02045", "02046", "02047", "02049"]);
+        permitted.UnionWith(["02014", "02015", "02016", "02017a", "02017b", "02018a", "02018b"]);
+        permitted.UnionWith(["02019", "02020", "02021", "02022", "02023", "02024", "02025"]);
+        permitted.UnionWith(["02026", "02027", "02028", "02029", "02030", "02031", "02032"]);
+        permitted.UnionWith(["05001a", "05001b", "05003", "05004", "05005", "05010", "05011"]);
         Assert.All(AuthoredCards.Book.Authored, face => Assert.Contains(face, permitted));
     }
 

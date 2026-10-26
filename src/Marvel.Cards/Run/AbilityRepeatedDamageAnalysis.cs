@@ -174,7 +174,9 @@ internal static class AbilityRepeatedDamageAnalysis
         AbilityEffect node, AbilityAdmissionScope cast) =>
         [.. TraceCards(DamageSelectionOf(node, cast), cast).Select(target =>
             new DamageTransfer(
-                -1, target.Card.ObjectId, Amount(DamageAmountOf(node, cast), cast),
+                -1, target.Card.ObjectId, node is AbilityEffect.IndirectDamage
+                    ? AbilityEventModifiers.DamageAmount(cast.World, cast.Source, Amount(DamageAmountOf(node, cast), cast))
+                    : Amount(DamageAmountOf(node, cast), cast),
                 DealsDamage: true, ToVillain: target.VillainSelector))];
 
     private static IReadOnlyList<DamageTransfer> ReplacedThreatTransfer(
@@ -304,7 +306,9 @@ internal static class AbilityRepeatedDamageAnalysis
             : EffectOf<AbilityEffect.PlaceThreat>(node, cast).Amount;
         return [.. Every(ThreatSelectionOf(node, cast), cast).Select(scheme =>
             new DamageTransfer(
-                0, scheme.ObjectId, Amount(amount, cast),
+                0, scheme.ObjectId, removes
+                    ? AbilityEventModifiers.ThreatRemovalAmount(EffectOf<AbilityEffect.RemoveThreat>(node, cast),
+                        cast.World, cast.Source, Amount(amount, cast)) : Amount(amount, cast),
                 RemovesThreat: removes, PlacesThreat: !removes))];
     }
 

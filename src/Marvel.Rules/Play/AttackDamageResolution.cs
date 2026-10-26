@@ -120,6 +120,8 @@ internal sealed class AttackDamageResolution
 
     private void RecordDamage(Damage.PlacedDamage damage)
     {
+        if (request.EnemyAttack is not null || spillOnly)
+            AttackDamageAccounting.RecordPlacement(world, request.ActivationId, damage);
         if (damage.Landed) Execution.Occurrence.Also(Steps.DamageDealt);
         if (!spillOnly && request.EnemyAttack is { } attack)
             AttackDamageAccounting.RecordAttackDamage(world, attack, damage);

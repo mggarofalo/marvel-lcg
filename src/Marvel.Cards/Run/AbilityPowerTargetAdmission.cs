@@ -148,7 +148,7 @@ internal static class AbilityPowerTargetAdmission
         && Every(ThreatSelectionOf(node, cast), cast).Any(candidate =>
             candidate.ObjectId == scheme.ObjectId)
         && scheme.Tokens.GetValueOrDefault("k_threat") > 0
-        && Amount(EffectOf<AbilityEffect.RemoveThreat>(node, cast).Amount, cast) > 0
+        && AbilityEventModifiers.ThreatRemovalAmount(EffectOf<AbilityEffect.RemoveThreat>(node, cast), cast.World, cast.Source, Amount(EffectOf<AbilityEffect.RemoveThreat>(node, cast).Amount, cast)) > 0
         && CanRemoveThreatFrom(node, cast, scheme);
 
     private static bool? StructuralCrisisIgnoringRemovalCanAffect(

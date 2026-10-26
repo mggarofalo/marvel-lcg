@@ -117,21 +117,25 @@ public sealed class GoblinGimmicksEngineTests : CoreCardTestBase
     }
 
     [Theory]
-    [InlineData(-1, false)]
-    [InlineData(0, false)]
-    [InlineData(1, false)]
-    [InlineData(-1, true)]
+    [InlineData(-1, false, "02021")]
+    [InlineData(0, false, "02021")]
+    [InlineData(1, false, "02021")]
+    [InlineData(-1, true, "02021")]
+    [InlineData(-1, false, "02034")]
+    [InlineData(0, false, "02034")]
+    [InlineData(1, false, "02034")]
+    [InlineData(-1, true, "02034")]
     [Rule("rr:you-your.7")]
     [Rule("rr:defend-defense.5.1")]
     [Rule("rr:stun-stunned.7")]
-    public void PumpkinBombsBindsTheCompletedAttackPlayerAcrossItsDiscard(int defender, bool stunned)
+    public void PumpkinBombsBindsTheCompletedAttackPlayerAcrossItsDiscard(int defender, bool stunned, string face)
     {
-        // 02034: "After the villain attacks you, discard Pumpkin Bombs and take 2 indirect damage."
+        // 02021/02034: "After the villain attacks you, discard Pumpkin Bombs and take 2 indirect damage."
         // rr:you-your.7: "the attacked player, even if that player defended with an ally".
         // rr:defend-defense.5.1: "the player whose character defended the attack".
         // rr:stun-stunned.7: the character "is not considered to have attacked".
         var (world, runner, villain) = Create("01094");
-        var bombs = world.CreateCard("02034", world.AreaOf(DeckType.UpgradesArea, PlayArea.Villains, villain.ObjectId));
+        var bombs = world.CreateCard(face, world.AreaOf(DeckType.UpgradesArea, PlayArea.Villains, villain.ObjectId));
         if (stunned) Statuses.Give(world, villain, Statuses.Stunned);
         world.Agenda.Add(new PhaseStep(new EnemyAttackOperation(), 1, 2, Subject: villain.ObjectId, Seat: 1));
         Finish(world, runner, defender);

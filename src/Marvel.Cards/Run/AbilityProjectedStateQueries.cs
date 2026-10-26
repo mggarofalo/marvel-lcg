@@ -297,7 +297,7 @@ internal static class AbilityProjectedStateQueries
                 ProjectedEvery(EffectOf<AbilityEffect.RemoveThreat>(effect, context).Schemes, state, context).Select(scheme =>
                     ResolutionOfAmount(
                         state.ThreatOf(scheme),
-                        Amount(EffectOf<AbilityEffect.RemoveThreat>(effect, context).Amount, context)))),
+                        AbilityEventModifiers.ThreatRemovalAmount(EffectOf<AbilityEffect.RemoveThreat>(effect, context), context.World, context.Source, Amount(EffectOf<AbilityEffect.RemoveThreat>(effect, context).Amount, context))))),
             _ => ResolutionOf(effect, context),
         };
 

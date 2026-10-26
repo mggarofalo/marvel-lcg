@@ -82191,6 +82191,50 @@
       ]
     },
     {
+      "id": "setup:campaign:mutagen_formula",
+      "kind": "setup",
+      "title": "Mutagen Formula",
+      "fingerprint": "sha256:80bf798a1270f0e185afdebc297e41a26d85ec1f4851b9d5a1728d82d17350c0",
+      "scope": "campaign",
+      "disposition": "outside-core",
+      "obligations": [
+        {
+          "id": "behavior:setup:campaign:mutagen_formula:green-goblin-setup",
+          "summary": "The mutagen_formula record supplies Green Goblin scenario-pack composition and setup.",
+          "disposition": "outside-core",
+          "reason": "This record requires the Green Goblin scenario pack, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
+      "id": "setup:campaign:mutagen_formula_expert",
+      "kind": "setup",
+      "title": "Mutagen Formula",
+      "fingerprint": "sha256:5ce18b41d195aafb654a96d87a24a4b5b264baa09d23ef041131e1f9547305c5",
+      "scope": "campaign",
+      "disposition": "outside-core",
+      "obligations": [
+        {
+          "id": "behavior:setup:campaign:mutagen_formula_expert:green-goblin-setup",
+          "summary": "The mutagen_formula_expert record supplies Green Goblin scenario-pack composition and setup.",
+          "disposition": "outside-core",
+          "reason": "This record requires the Green Goblin scenario pack, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
       "id": "setup:campaign:red_skull",
       "kind": "setup",
       "title": "Red Skull",

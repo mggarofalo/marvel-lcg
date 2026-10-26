@@ -23,7 +23,7 @@ The file has 3 groups:
 
 | Group | Admitted rows | Declared rows |
 |---|---:|---:|
-| `campaigns` | 35 Core Set, Rise of Red Skull and Wrecking Crew scenario/mode combinations | 37 |
+| `campaigns` | 35 Core Set, Rise of Red Skull and Wrecking Crew scenario/mode combinations | 39 |
 | `heroes` | 8 Core Set, Rise of Red Skull and Captain America starter decks | 9 |
 | `encounter_sets` | 10 Core Set and Rise of Red Skull fixed/modular sets | 14 |
 
@@ -251,3 +251,10 @@ The runtime does not currently accept:
 
 A request that needs one of these surfaces fails at setup or card registration.
 It must not produce a partial board.
+
+Mutagen Formula declares Standard and Expert research recipes with 26 encounter
+cards, the selected I/II or II/III villain pair, and two physical double-sided
+main schemes. Goblin Gimmicks is the one-module recommendation. Actual authored
+setup and stage-II reveal run through the production dealer at 1–4 players in
+`MutagenFormulaSetupTests`. Fourteen encounter faces remain unauthored; Green
+Goblin remains excluded from public discovery and game creation.

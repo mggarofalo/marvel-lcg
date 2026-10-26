@@ -9,6 +9,9 @@ public sealed record LifecycleOperation(LifecycleKind Kind) : AgendaOperation
     /// <summary>The exact paid-event initiation, when this lifecycle belongs to one.</summary>
     public EventPlayInitiation? EventInitiation { get; init; }
 
+    /// <summary>Reachable threat-removal fact supplied by the exact event interpreter.</summary>
+    public bool? EventRemovesThreat { get; init; }
+
     /// <inheritdoc/>
     public override string What => Kind switch
     {

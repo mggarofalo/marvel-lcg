@@ -3099,11 +3099,110 @@
         "02002a,02002b",
         "02003a,02003b"
       ]
+    },
+    "mutagen_formula": {
+      "campaign_log": {},
+      "challenges": [],
+      "encounter_sets": [
+        "standard"
+      ],
+      "encounters": [
+        "02019",
+        "02020",
+        "02021",
+        "02022",
+        "02023",
+        "02023",
+        "02023",
+        "02023",
+        "02024",
+        "02024",
+        "02024",
+        "02024",
+        "02024",
+        "02024",
+        "02025",
+        "02026",
+        "02026",
+        "02027",
+        "02028",
+        "02028",
+        "02029",
+        "02029",
+        "02030",
+        "02031",
+        "02032",
+        "02032"
+      ],
+      "expert": false,
+      "modular_sets": [
+        "goblin_gimmicks"
+      ],
+      "name": "Mutagen Formula",
+      "schemes": [
+        "02017a,02017b",
+        "02018a,02018b"
+      ],
+      "set_aside": [],
+      "villain": [
+        "02014",
+        "02015"
+      ]
+    },
+    "mutagen_formula_expert": {
+      "campaign_log": {},
+      "challenges": [],
+      "encounter_sets": [
+        "standard",
+        "expert"
+      ],
+      "encounters": [
+        "02019",
+        "02020",
+        "02021",
+        "02022",
+        "02023",
+        "02023",
+        "02023",
+        "02023",
+        "02024",
+        "02024",
+        "02024",
+        "02024",
+        "02024",
+        "02024",
+        "02025",
+        "02026",
+        "02026",
+        "02027",
+        "02028",
+        "02028",
+        "02029",
+        "02029",
+        "02030",
+        "02031",
+        "02032",
+        "02032"
+      ],
+      "expert": true,
+      "modular_sets": [
+        "goblin_gimmicks"
+      ],
+      "name": "Mutagen Formula",
+      "schemes": [
+        "02017a,02017b",
+        "02018a,02018b"
+      ],
+      "set_aside": [],
+      "villain": [
+        "02015",
+        "02016"
+      ]
     }
   },
   "contract": "docs/setup-dataset.md",
   "counts": {
-    "campaigns": 37,
+    "campaigns": 39,
     "encounter_sets": 14,
     "heroes": 9
   },

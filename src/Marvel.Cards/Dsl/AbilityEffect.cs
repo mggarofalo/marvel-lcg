@@ -97,6 +97,8 @@ public abstract record AbilityEffect
     {
         /// <summary>Remove the quantity assigned to each power target.</summary>
         public bool Assigned { get; init; }
+        /// <summary>Printed ceiling applied after event modifiers.</summary>
+        public int? Maximum { get; init; }
     }
     /// <summary>Move threat between exact selected schemes.</summary>
     public sealed record MoveThreat(AbilityCardSelection From, AbilityCardSelection To, AbilityNumber Amount) : AbilityEffect
@@ -108,6 +110,8 @@ public abstract record AbilityEffect
     public sealed record PreventThreat(AbilityNumber Amount) : AbilityEffect;
     /// <summary>Prevent damage to the interrupted occurrence's recipient.</summary>
     public sealed record PreventDamage(AbilityNumber Amount) : AbilityEffect;
+    /// <summary>Increase every damage or removal instance of the paid event.</summary>
+    public sealed record ModifyPlayedEvent(string Kind, int Amount) : AbilityEffect;
     /// <summary>Gain this many instances of Surge.</summary>
     public sealed record GainSurge(long Instances) : AbilityEffect;
     /// <summary>An operation whose authored argument is a fixed marker.</summary>

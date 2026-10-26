@@ -11,6 +11,8 @@ public static class ResourceSourceEligibility
         source.Restriction switch
         {
             ResourceRestriction.None => true,
+            ResourceRestriction.Event => target is not null
+                && EffectiveCards.Kind(target, facts) == CardKind.Event,
             ResourceRestriction.ArrowEvent => target is not null
                 && EffectiveCards.Kind(target, facts) == CardKind.Event
                 && Traits.Of(world, target, facts).Contains("ARROW", StringComparer.Ordinal),

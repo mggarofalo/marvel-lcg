@@ -15,6 +15,21 @@ namespace Marvel.Cards.Dsl;
 
 internal static class AbilityModifierLowering
 {
+    internal static AbilityEffect.ModifyPlayedEvent PlayedEventModifier(AbilityValue value, AbilityLocation location)
+    {
+        var fields = Fields(value, location, "quantity", "amount");
+        string quantity = Text(Required(fields, "quantity", location), location.Child("quantity"));
+        string kind = quantity switch
+        {
+            "damage" => "eventDamage",
+            "threatRemoval" => "eventThreatRemoval",
+            _ => throw location.Error("expected damage or threatRemoval"),
+        };
+        long amount = Integer(Required(fields, "amount", location), location.Child("amount"));
+        if (amount is <= 0 or > int.MaxValue) throw location.Error("expected a positive event modifier");
+        return new(kind, (int)amount);
+    }
+
     internal static AbilityEffect GrantEffect(AbilityValue value, AbilityLocation location, bool each, bool lasting)
     {
         string target = each ? "cards" : "card";

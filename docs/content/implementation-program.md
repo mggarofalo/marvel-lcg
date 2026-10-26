@@ -23,6 +23,28 @@ The existing Content Expansion module defines these **11 planning waves**. Range
 | Fear No Evil cycle | 617 Fear No Evil; 618 Jessica Jones; 619 Luke Cage; 620 Elektra; 621 Iron Fist; 622 Shadowland | 6 |
 | **Total** | **64 parents, including 2 accepted** | **62** |
 
+## Current integration checkpoint
+
+PRs #446, #447 and #448 are merged. Main is `08f330df`; #448 passed all eleven
+CI checks at `98fc5194`, with local Release build, 6,072 unit tests, 1,567
+integration tests (one existing opt-in skip), and 122 acceptance tests. Risky
+Business and all four Goblin modular sets are authored. The next candidate
+contains reviewed Mutagen stages and encounters. The final six-face packet at
+`12ac4fde` has independent review with 80 passing focused checks, bringing the
+reviewed Goblin inventory to 56 of 57 faces. The subsequent Overconfidence
+research row brings authoring to 57/57, with actual full-encounter threshold and
+cleanup evidence in `mutagen-final-face-evidence.md`. Independent review of this
+final row and complete-pack proof remain separate. MARVEL-720 separately
+investigates expired synthetic boost-child accounting. Neither pack has public
+admission yet.
+
+Ms. Marvel's exact-event modifier mechanism, including indirect damage, printed
+removal caps and payment-dependent preflight, has independent review. Actual
+identity/event authoring follows in one serialized ability-book packet. Persona,
+Red Dagger, obligation/nemesis and remaining aspect/basic faces still require
+their characteristic proofs. Canonical Plane records retain current revisions
+and distinguish prerequisites from complete playable products.
+
 ## Delivery order and shared capability queue
 
 Work through one integrated pack candidate at a time, starting with Green Goblin plus Ms. Marvel as the first delivery. A source acquisition or narrowly owned review may run beside it when paths and integration capacity are independent. Within later waves, choose the first source-ready pack whose characteristic capability yields reusable proof; the table order is the default until evidence changes the dependency. Do not bulk author all cards or admit an incomplete pack to manufacture an early public journey. Before whole-pack admission, use nonpublic engine tests for characteristic mechanics. When complete, use the normal `DatasetGameFactory` and session/client path for setup, action, save and restart.

@@ -242,11 +242,11 @@ public sealed class Agenda
         ) { OccurrenceId = nextPlayerActionOccurrence-- });
 
     /// <summary>Open the paid event's initiation window before its effects resolve.</summary>
-    public EventPlayInitiation NowEventPlayInitiated(int round, int subject, int player)
+    public EventPlayInitiation NowEventPlayInitiated(int round, int subject, int player, bool? removesThreat = null)
     {
         var initiation = new EventPlayInitiation();
         this.Now(new PhaseStep(
-            new LifecycleOperation(LifecycleKind.EventPlayInitiated) { EventInitiation = initiation },
+            new LifecycleOperation(LifecycleKind.EventPlayInitiated) { EventInitiation = initiation, EventRemovesThreat = removesThreat },
             round, 0, Subject: subject, Seat: player)
         { OccurrenceId = nextPlayerActionOccurrence-- });
         return initiation;

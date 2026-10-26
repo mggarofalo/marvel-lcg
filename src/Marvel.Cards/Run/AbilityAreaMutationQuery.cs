@@ -183,10 +183,8 @@ internal sealed class AbilityAreaMutationQuery(
     {
         if (!queried.Contains(DeckType.EncounterDiscardPile)) return false;
         var effect = EffectOf<AbilityEffect.RemoveThreat>(removal, context);
-        long amount = AbilityAmounts.SaturatingSum(
-            AbilityAmounts.SaturatingMultiply(
-                Amount(effect.Amount, context), multiplier),
-            [EventModifier(context, "eventThreatRemoval")]);
+        long amount = AbilityEventModifiers.ThreatRemovalAmount(effect,
+            context.World, context.Source, Amount(effect.Amount, context), multiplier);
         return Every(effect.Schemes, context).Any(scheme =>
             EffectiveCards.Kind(scheme, context.World.Facts) == CardKind.EncounterSideScheme
             && AbilityThreatPermissions.CanRemoveThreat(context.World, context.Program, scheme,

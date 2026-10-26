@@ -92,7 +92,8 @@ internal static class AbilityResolutionAdmission
         AbilityEffect node, AbilityAdmissionScope cast) => node.OperationName() switch
         {
             "indirectDamage" => HasPartialResolutionTargets(node, cast)
-                && Amount(EffectOf<AbilityEffect.IndirectDamage>(node, cast).Amount, cast) > 0,
+                && AbilityEventModifiers.DamageAmount(cast.World, cast.Source,
+                    Amount(EffectOf<AbilityEffect.IndirectDamage>(node, cast).Amount, cast)) > 0,
             "dealDamage" => HasPartialResolutionTargets(node, cast)
                 && Amount(EffectOf<AbilityEffect.Damage>(node, cast).Amount, cast) > 0,
             "dealAttackDamage" => HasPartialResolutionTargets(node, cast)
@@ -284,7 +285,7 @@ internal static class AbilityResolutionAdmission
     internal static AdmissionResolution ResolutionOfThreat(AbilityEffect node, AbilityAdmissionScope cast)
     {
         var schemes = Every(ThreatSelectionOf(node, cast), cast);
-        long wanted = Amount(EffectOf<AbilityEffect.RemoveThreat>(node, cast).Amount, cast);
+        long wanted = AbilityEventModifiers.ThreatRemovalAmount(EffectOf<AbilityEffect.RemoveThreat>(node, cast), cast.World, cast.Source, Amount(EffectOf<AbilityEffect.RemoveThreat>(node, cast).Amount, cast));
         if (schemes.Count == 0 || wanted <= 0)
         {
             return AdmissionResolution.None;

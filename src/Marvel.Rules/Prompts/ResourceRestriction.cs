@@ -9,4 +9,6 @@ public enum ResourceRestriction
     ArrowEvent,
     /// <summary>An aspect card's resource cost or ability cost, as printed on Finesse.</summary>
     AspectCard,
+    /// <summary>An event's resource or ability cost, as printed on Biokinetic Polymer Suit.</summary>
+    Event,
 }

@@ -14,6 +14,7 @@ internal static class AbilityResolutionPayment
             bool playedInWindow = !cast.Occurrence.Is(Steps.TurnAction);
             Rules.Play.Discard.Card(cast.World, card, CardPlay.Verb, cast.Events);
             ConsumePaymentMarkers(cast.World, card);
+            AbilityPlayedEventModifier.Complete(cast.World, card);
             cast.Occurrence.CompleteEventPlay(card.ObjectId);
 
             if (playedInWindow)

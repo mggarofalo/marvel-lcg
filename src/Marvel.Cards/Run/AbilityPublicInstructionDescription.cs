@@ -9,6 +9,7 @@ internal static class AbilityPublicInstructionDescription
 {
     internal static string? From(AbilityStructuralContext context, AbilityEffect effect, string? chosenTitle = null) => effect switch
     {
+        AbilityEffect.ModifyPlayedEvent => AbilityEffectDescription.Summary(effect),
         AbilityEffect.Sequence sequence => Sequence(context, sequence, chosenTitle),
         AbilityEffect.Dependent { OnFull: true } dependent => Dependent(context, dependent, chosenTitle),
         AbilityEffect.ChooseCard choice => Choice(context, choice),

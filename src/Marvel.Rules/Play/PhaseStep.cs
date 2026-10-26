@@ -55,6 +55,8 @@ public readonly record struct PhaseStep(
                     ? [Steps.CardEntersPlay] : [], Subject, Seat);
         return What switch
         {
+            EventPlayTiming.Initiated => new Occurrence(id, Conditions, Subject, Seat)
+            { EventRemovesThreat = Require<LifecycleOperation>().EventRemovesThreat },
             Steps.RevealEncounterCard => new Occurrence(id, EncounterEntry.WillEnter(world, world.Cards[Subject],
                 EncounterRevealExposure.RevealingPlayer(world, world.Cards[Subject], Seat))
                 ? [Steps.CardRevealed, Steps.CardEntersPlay] : Conditions, Subject,
@@ -193,5 +195,6 @@ public readonly record struct PhaseStep(
             or Steps.RevealEncounterCard
             ? null
             : new Occurrence(
-                OccurrenceId ?? Moment.Id(Round, Number, Index), Conditions, Subject, Seat);
+                OccurrenceId ?? Moment.Id(Round, Number, Index), Conditions, Subject, Seat)
+            { EventRemovesThreat = (Operation as LifecycleOperation)?.EventRemovesThreat };
 }

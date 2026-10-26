@@ -3,8 +3,8 @@
 | | |
 |---|---|
 | Kind | authored |
-| Product boundary | Core Set, Rise of Red Skull, Captain America and Wrecking Crew; Green Goblin research rows remain publicly excluded |
-| Records | 518 printed card faces, including explicit empty rows |
+| Product boundary | Core Set, Rise of Red Skull, Captain America and Wrecking Crew; Green Goblin and Ms. Marvel research rows remain publicly excluded |
+| Records | 549 printed card faces, including explicit empty rows |
 | Authorities | Generated `datasets/cards/`, vendored Rules Reference, expansion rulebooks and published rulings |
 | Gated by | Ability admission/lowering tests, complete-product admission, actual-card tests, campaign acceptance and executable Core behavioral transcripts |
 
@@ -74,3 +74,53 @@ repeats reveal effects finitely and has an alter-ego mental removal action.
 The printed authority is `datasets/cards/cards.json`; `faq:02049` and vendored
 rulings `ruling:49dc5a965dcd4028` and `ruling:c516c82788ea8d77` distinguish
 cancellation and villain promotion. Green Goblin remains publicly excluded.
+
+Mutagen Formula adds seven authored research faces: Green Goblin I–III
+(02014–02016), Unleashing the Mutagen (02017a/b), and Mutagen Cloud (02018a/b).
+Printed cards are authoritative; ruling `ruling:9a1cb4d914aa6778` confirms that
+attack overkill to the identity satisfies "attacks and damages you".
+`MutagenStageAbilityTests`, `MutagenEscalationTests` and
+`MutagenFormulaSetupTests` exercise actual authored rows. All 57 Green Goblin
+faces are authored research data; public admission remains excluded.
+
+
+Mutagen Formula encounter research adds 02019–02025. Glider and Bombs are exact
+printed-text, stat and annotation reprints of 02033/02034. Hysteria separates
+attack initiation (actor) and scheme initiation (subject) in the existing engine
+trigger vocabulary. Knight uses the physical discard receipt; Soldier and Thrall
+use ordinary boost entry; Knight and Monster defer their exact source shuffle
+until activation completion. Monster branches on the initial stunned state.
+The vendored MarvelCDB FAQ contains no entry for these seven faces. Relevant
+vendored rulings include ruling:e6531edb529e342d (attacks with ally defense),
+ruling:6fd4652a06512d03 (Thrall Guard limits initiation), and
+ruling:cef917d276a31694 (Soldier defeat resolves between printed sentences).
+Focused tests cover characteristic paths; the evidence document explicitly
+records outstanding review and proof. Public Green Goblin admission stays closed.
+
+Final Mutagen research packets add 02026–02032 (57/57 distinct Goblin faces).
+Authority is joined printed cards. Overrun uses the reviewed ordered discard receipt;
+Wicked Ambitions uses immediate each-time choices and double printed stage.
+Rulings 7c484b8434a60f3a and d4def3183850e80f cover discard/reset.
+02030 attacks either form and suppresses ordinary/additional boost deals in alter-ego
+form. Its exact-source boost_const modifier adds one icon only with an engaged
+Goblin minion. Official FAQ 02030 and ruling:ab735d7ce752f211 confirm alter-ego
+attacks; ruling:9e43ecc7878167bd concerns icon cancellation. Actual-row tests prove
+form/Hysteria, attack/scheme, non-first-player engagement and source isolation.
+02031 reads activationDamagePlaced after an attack and activationThreat after a
+scheme. Damage placement includes activation-owned boost abilities, after
+prevention, plus attack and overkill placement. rr:damage.3.2 distinguishes it
+from damage dealt; ruling:d855181a23d49683 declines errata. Actual-row full
+encounter tests prove the two/three threshold, one additional reveal, cleanup,
+both forms, stun/confuse cancellation, Tough, prevention and ally/overkill cases.
+Public admission remains closed. See docs/content/mutagen-final-face-evidence.md.
+
+Ms. Marvel adds seven research faces: 05001a/b, 05003–05005 and 05010–05011.
+Printed text comes from `datasets/cards/cards.json`. Morphogenetics uses the
+exact completed physical event in its owner discard (rulings
+`ruling:7f69f006cddce07e`, `ruling:556ecad3abe55ce9` and
+`ruling:b144656def387a1e`). Teen Spirit searches the identity-specific set,
+with the normal player-deck exhaustion boundary. Event modifiers use each
+instance (`rr:event.5`, `faq:05010`, `faq:05011`) and preserve printed caps
+(`ruling:88369b11361157e4`). `MsMarvelEventCardTests`,
+`MsMarvelIdentityEventTests` and `MsMarvelTeenSpiritTests` exercise these actual
+rows. This partial authoring keeps Ms. Marvel outside public admission.

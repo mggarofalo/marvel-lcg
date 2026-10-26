@@ -17,6 +17,7 @@ public static class DamagePlacement
         World world, ICardFacts facts, DamageRequest request, List<GameEvent> events)
     {
         ArgumentNullException.ThrowIfNull(request);
+        AttackDamageAccounting.ValidateBoostPlacement(world, request.ActivationId);
         DamageResolution? resolution = null;
         AbilityExecutionResult Apply(Occurrence cause, AbilityExecution? completion) =>
             world.Agenda.Executions.RunBatch(cause, entry =>

@@ -12,6 +12,27 @@ namespace Marvel.Rules.Play;
 /// <summary>Records actual attack-step damage independently of placement and defeat.</summary>
 internal static class AttackDamageAccounting
 {
+    internal static void ValidateBoostPlacement(World world, int? activationId)
+    {
+        if (activationId is null) return;
+        if (activationId < 0 || world.Activation?.Id != activationId)
+            throw new InvalidOperationException("boost placement has no live activation receipt");
+    }
+
+    internal static void RecordPlacement(World world, int? activationId, Damage.PlacedDamage damage)
+    {
+        // rr:damage.step.5 places damage after prevention; rr:damage.2 places
+        // the specified tokens on allies, including damage beyond their hit points.
+        // rr:overkill.2 makes the spill damage part of the same attack.
+        if (activationId is not >= 0 || !damage.Landed) return;
+        if (world.Activation is { } active && active.Id == activationId)
+            world.Activation = active with { DamagePlaced = active.DamagePlaced + damage.Taken };
+        else if (world.FinishedActivation is { } finished && finished.Id == activationId)
+            world.FinishedActivation = finished with { DamagePlaced = finished.DamagePlaced + damage.Taken };
+        else
+            throw new InvalidOperationException("attack placement has no matching activation receipt");
+    }
+
     internal static void RecordAttackDamage(World world, EnemyAttack attack, Damage.PlacedDamage damage)
     {
         // Record placement before defeat can end the activation and emit its result.

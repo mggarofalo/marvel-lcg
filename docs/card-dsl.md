@@ -17,6 +17,17 @@ most recent scheduled activation collection. Completion captures the final
 defender before attack-end responses; prevented damage still counts, while
 stun and other attack replacements do not. A new collection clears this receipt.
 
+`result: "activationDamagePlaced"` sums damage taken after prevention in the
+most recent scheduled attack collection. It includes owned Boost ability damage
+resolved while that activation is live (`rr:attack-enemy-activation.step.3.b`),
+step-5 damage and each overkill placement. Ally damage is the specified token
+placement, including excess beyond its remaining hit points (`rr:damage.2`).
+The exact activation id binds each share; unrelated damage is excluded.
+A boost continuation retains its original causal identity, but damage requested
+after that activation completes does not change its frozen receipt or join a
+subsequent activation (`rr:activation.8`). `activationDamage` retains its separate
+attack-step damage-dealt meaning.
+
 Static `enemyAttacks` and `enemySchemes` support a following `then`: every
 requested activation must actually be made. Stun or confuse replacement does not
 complete an activation; an attack whose damage is prevented still does. The
@@ -760,12 +771,16 @@ host as if in hand; the query never moves them to hand or makes them resources.
 ### Restricted resource abilities
 
 A resource ability may declare `"resourceRestriction": "arrowEvent"` (Expert
-Marksman) or `"resourceRestriction": "aspectCard"` (Finesse). The payment engine
+Marksman), `"resourceRestriction": "aspectCard"` (Finesse), or
+`"resourceRestriction": "event"` (Biokinetic Polymer Suit). The payment engine
 checks the cost's actual card before offering or spending the source. Finesse
 can pay an aspect card's printed cost or a cost within its ability
 (`ruling:6800619dc41a043c`); ability-cost context does not activate card-play-only
 resource multipliers. The restriction is valid only on a Resource ability and
 unknown values fail admission. Printed wild icons use `G` as elsewhere in this DSL.
+The event restriction includes a cost within the event's own ability; a cost paid
+for a chosen ally uses that ally's context instead. The distinction follows
+`ruling:5b44b2adcc60d4b7`. Hero-form requirements remain explicit trigger fields.
 
 Discard receipts expose `printedResourceIconsDiscarded` and `distinctPrintedResourceTypesDiscarded` numeric expressions (value `"game"`). They count printed resource icons, including wild as its own type, without payment multipliers. `printedBoostIconsDiscarded` counts numeric boost icons and excludes boost stars. Empty receipts yield zero. `printedCostDiscarded` sums the printed resource costs of the physical cards discarded in this resolution, with undefined X equal to zero. `distinctCardTypesDiscarded` counts distinct printed card types in that same receipt. Both take `"game"`; random hand discards retain the same physical receipt as top-deck discards.
 Arrow costs support `spendAny: N` for a positive number of resources without a required type, and `returnToHand: "this"` for returning the source from play to its owner. Event payment combines generic arrow costs with its printed price without charging twice. Returning a source discards attachments and ends its continuous effects before the post-arrow effect.
@@ -1074,3 +1089,14 @@ is discard order, including after the encounter deck resets; current discard-pil
 membership is not the selection. The string form continues to require at most one
 physical match for its named face. Putting the card into play does not reveal it.
 The object spelling and printed-trait filter are engine choices.
+
+
+`modifyPlayedEvent: { "quantity": "damage", "amount": 2 }` increases every
+instance of damage from the physical event in `WhenEventPlayInitiated`.
+`quantity: "threatRemoval"` instead increases actual removal, independently of
+threat prevention. The quantity names and positive fixed amount syntax are engine
+choices. The modifier is retired at event disposal, before recovery responses,
+including canceled event plays. Controller, hero form and printed trait conditions
+remain explicit authored trigger requirements. This mechanism alone does not admit
+Embiggen!, Shrink, or Ms. Marvel's pack; printed removal caps and characteristic
+nested/cancellation/prevention proofs remain separate delivery work.

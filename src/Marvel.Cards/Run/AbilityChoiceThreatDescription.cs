@@ -31,8 +31,8 @@ internal static class AbilityChoiceThreatDescription
             ?? world.Seats[AbilityCardQueries.Resolver(context.Expressions.Bindings)].IdentityCard;
         if (Statuses.Afflicted(world, world.Facts, actor, Statuses.Confused))
             return $"{title} · Confused cancels this thwart; no threat will be removed";
-        long amount = AbilityAmounts.SaturatingSum(Amount(threat.Amount, context.Expressions),
-            [AbilityEventModifiers.Amount(world, context.Expressions.Source, "eventThreatRemoval")]);
+        long amount = AbilityEventModifiers.ThreatRemovalAmount(threat,
+            world, context.Expressions.Source, Amount(threat.Amount, context.Expressions));
         return $"{title} · Current thwart amount: {amount} threat. Restrictions and later effects can change the result.";
     }
 
@@ -41,7 +41,8 @@ internal static class AbilityChoiceThreatDescription
         var world = context.Expressions.World;
         string title = EffectiveCards.Title(card, world.Facts);
         long current = card.Tokens.GetValueOrDefault("k_threat");
-        long result = current - Math.Min(current, Amount(threat.Amount, context.Expressions));
+        long result = current - Math.Min(current, AbilityEventModifiers.ThreatRemovalAmount(threat, world, context.Expressions.Source,
+            Amount(threat.Amount, context.Expressions)));
         long threshold = world.Facts.PrintedValue(card.FaceId, "TargetThreat", world.Players);
         return threshold > 0
             ? $"{title} · {current}/{threshold} → {result}/{threshold} threat"

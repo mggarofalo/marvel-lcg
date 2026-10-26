@@ -12,6 +12,7 @@ internal static class AbilityImmediateExecution
     {
         return effect switch
         {
+            AbilityEffect.ModifyPlayedEvent modifier => AbilityPlayedEventModifier.Run(modifier, context),
             AbilityEffect.Fixed fixedEffect => RunFixed(fixedEffect, context),
             AbilityEffect.CardAction action => RunCardAction(action, context),
             AbilityEffect.ChangeForm or AbilityEffect.Generate =>

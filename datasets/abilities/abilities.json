@@ -15424,6 +15424,1174 @@
           }
         }
       ]
+    },
+    {
+      "card": "02014",
+      "name": "Green Goblin",
+      "note": "Printed attacks and damages you requires the completed attack receipt after prevention, including overkill to the identity. Stage reveal deals encounter cards without revealing them.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenAttackEnds",
+            "timing": "ForcedResponse",
+            "actor": "this",
+            "player": "trigger.player"
+          },
+          "when": {
+            "attackDamagedYou": "you"
+          },
+          "effect": {
+            "placeThreat": {
+              "scheme": {
+                "query": "mainScheme"
+              },
+              "amount": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "02015",
+      "name": "Green Goblin",
+      "note": "Printed attacks and damages you requires the completed attack receipt after prevention, including overkill to the identity. Stage reveal deals encounter cards without revealing them.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "eachPlayer": {
+              "effect": {
+                "dealEncounterCards": {
+                  "player": "you",
+                  "count": 2
+                }
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenAttackEnds",
+            "timing": "ForcedResponse",
+            "actor": "this",
+            "player": "trigger.player"
+          },
+          "when": {
+            "attackDamagedYou": "you"
+          },
+          "effect": {
+            "placeThreat": {
+              "scheme": {
+                "query": "mainScheme"
+              },
+              "amount": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "02016",
+      "name": "Green Goblin",
+      "note": "Printed attacks and damages you requires the completed attack receipt after prevention, including overkill to the identity. Stage reveal deals encounter cards without revealing them.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "eachPlayer": {
+              "effect": {
+                "dealEncounterCards": {
+                  "player": "you",
+                  "count": 3
+                }
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenAttackEnds",
+            "timing": "ForcedResponse",
+            "actor": "this",
+            "player": "trigger.player"
+          },
+          "when": {
+            "attackDamagedYou": "you"
+          },
+          "effect": {
+            "placeThreat": {
+              "scheme": {
+                "query": "mainScheme"
+              },
+              "amount": 2
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "02017a",
+      "name": "Unleashing the Mutagen",
+      "note": "Printed setup puts one Goblin Thrall engaged with each player, then shuffles. Engine choice: select the last object-id copy of identical Thralls from the assembled deck. Appendix II owns the advance to 1B.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Setup",
+            "subject": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "eachPlayer": {
+                  "order": "playerOrder",
+                  "effect": {
+                    "putIntoPlay": {
+                      "card": {
+                        "last": {
+                          "inObjectIdOrder": {
+                            "cardsIn": {
+                              "area": "encounterDeck",
+                              "title": "Goblin Thrall"
+                            }
+                          }
+                        }
+                      },
+                      "where": "engagedWithYou"
+                    }
+                  }
+                }
+              },
+              {
+                "shuffle": "encounterDeck"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "02017b",
+      "name": "Unleashing the Mutagen",
+      "note": "Printed When Completed resolves before advancement. In player order only players without an engaged Goblin minion discard three encounter cards; recruitDiscarded retains the first physical Goblin minion of that receipt through deck reset.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenMainSchemeCompleted",
+            "timing": "WhenCompleted",
+            "subject": "this"
+          },
+          "effect": {
+            "eachPlayer": {
+              "order": "playerOrder",
+              "effect": {
+                "if": {
+                  "test": {
+                    "not": {
+                      "exists": {
+                        "withTrait": {
+                          "cards": {
+                            "query": "minionsEngagedWithYou"
+                          },
+                          "trait": "GOBLIN"
+                        }
+                      }
+                    }
+                  },
+                  "then": {
+                    "seq": [
+                      {
+                        "discardTop": {
+                          "from": "encounterDeck",
+                          "count": 3
+                        }
+                      },
+                      {
+                        "recruitDiscarded": {
+                          "trait": "GOBLIN"
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "02018a",
+      "name": "Mutagen Cloud",
+      "note": "Printed advance to 2B uses generic main-scheme stage entry; no separate ability advances twice.",
+      "abilities": []
+    },
+    {
+      "card": "02018b",
+      "name": "Mutagen Cloud",
+      "note": "Printed X counts living Goblin enemies including Green Goblin once, without a per-player multiplier. Engine choice: additive escalation_threat on the generated zero placeholder represents X. Final completion loses through generic main-scheme completion.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant"
+          },
+          "effect": {
+            "grant": {
+              "card": "this",
+              "keyword": "escalation_threat",
+              "amount": {
+                "count": {
+                  "enemiesWithTrait": "GOBLIN"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "02019",
+      "name": "Goblin Glider",
+      "note": "Printed 02019: attach to the enemy with the highest printed hit points and without another Goblin Glider attached; if unable, gain surge. Rank the eligible enemies by printedHealth, not remaining or modified health (rr:attach-to). Printed ATK+1 is read by StateFields under rr:attachment.1. Hero Action spends two energy resources to discard this card. Selector and resource-code spellings are engine choices. The queried MarvelCDB FAQ has no entry for this face. Printed text and numeric attributes match reprint 02033.",
+      "attachTo": {
+        "maxBy": {
+          "of": {
+            "withoutAnotherCopyAttached": {
+              "query": "enemies"
+            }
+          },
+          "by": "printedHealth"
+        }
+      },
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "WhenRevealed",
+            "event": "WhenCardRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "not": {
+                  "exists": {
+                    "withoutAnotherCopyAttached": {
+                      "query": "enemies"
+                    }
+                  }
+                }
+              },
+              "then": {
+                "gainSurge": 1
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "cost": {
+            "spend": "YY"
+          },
+          "effect": {
+            "discard": "this"
+          }
+        }
+      ]
+    },
+    {
+      "card": "02020",
+      "name": "Hysteria",
+      "note": "Printed authority: datasets/cards/cards.json 02020. Selector, event and resource spellings are engine choices. The queried vendored MarvelCDB FAQ has no entry for this face.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "ForcedInterrupt",
+            "event": "WhenAttackInitiated",
+            "actor": "attachedTo"
+          },
+          "effect": {
+            "giveAdditionalBoost": {
+              "enemy": "attachedTo"
+            }
+          }
+        },
+        {
+          "trigger": {
+            "timing": "ForcedInterrupt",
+            "event": "WhenEnemySchemes",
+            "subject": "attachedTo"
+          },
+          "effect": {
+            "giveAdditionalBoost": {
+              "enemy": "attachedTo"
+            }
+          }
+        },
+        {
+          "trigger": {
+            "timing": "Action",
+            "event": "WhenActionTriggered",
+            "subject": "this",
+            "form": "hero"
+          },
+          "cost": {
+            "spend": "BB"
+          },
+          "effect": {
+            "discard": "this"
+          }
+        }
+      ],
+      "attachTo": {
+        "titled": "Green Goblin"
+      }
+    },
+    {
+      "card": "02021",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenAttackEnds",
+            "timing": "ForcedResponse",
+            "actor": "attachedTo",
+            "player": "trigger.player"
+          },
+          "effect": {
+            "seq": [
+              {
+                "discard": "this"
+              },
+              {
+                "indirectDamage": {
+                  "among": {
+                    "query": "charactersYouControl"
+                  },
+                  "amount": 2
+                }
+              }
+            ]
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "cost": {
+            "spend": "RR"
+          },
+          "effect": {
+            "discard": "this"
+          }
+        }
+      ],
+      "name": "Pumpkin Bombs",
+      "note": "Printed 02021: attach to the villain. After the villain attacks you, discard this attachment and take 2 indirect damage. rr:you-your.7 binds the completed attack player, including ally defense; rr:defend-defense.5.1 transfers that player when another player defends. The completed attack retains this binding across the source discard. rr:stun-stunned.7 excludes canceled attacks. Hero Action spends two physical resources to discard this card. The queried MarvelCDB FAQ has no entry; vendored ruling:e6531edb529e342d agrees on ally defense. Printed text and numeric attributes match reprint 02034.",
+      "attachTo": {
+        "query": "villain"
+      }
+    },
+    {
+      "card": "02022",
+      "name": "Goblin Knight",
+      "note": "Printed authority: datasets/cards/cards.json 02022. Selector, event and resource spellings are engine choices. The queried vendored MarvelCDB FAQ has no entry for this face.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "ForcedResponse",
+            "event": "WhenAttackEnds",
+            "actor": "this",
+            "player": "trigger.player"
+          },
+          "effect": {
+            "seq": [
+              {
+                "discardTop": {
+                  "from": "encounterDeck",
+                  "count": 1
+                }
+              },
+              {
+                "recruitDiscarded": {
+                  "trait": "GOBLIN"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "trigger": {
+            "timing": "Boost",
+            "event": "WhenCardRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "afterActivation": {
+              "effect": {
+                "shuffleInto": {
+                  "cards": "this",
+                  "deck": "encounterDeck"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "02023",
+      "name": "Goblin Soldier",
+      "note": "Printed authority: datasets/cards/cards.json 02023. Selector, event and resource spellings are engine choices. The queried vendored MarvelCDB FAQ has no entry for this face.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "WhenDefeated",
+            "event": "WhenCardDefeated",
+            "subject": "this"
+          },
+          "effect": {
+            "dealDamage": {
+              "cards": {
+                "inPlayerArea": {
+                  "area": "identity",
+                  "player": "engagedPlayer"
+                }
+              },
+              "amount": 1
+            }
+          }
+        },
+        {
+          "trigger": {
+            "timing": "Boost",
+            "event": "WhenCardRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "putIntoPlay": {
+              "card": "this",
+              "where": "engagedWithYou"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "02024",
+      "name": "Goblin Thrall",
+      "note": "Printed authority: datasets/cards/cards.json 02024. Selector, event and resource spellings are engine choices. The queried vendored MarvelCDB FAQ has no entry for this face.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Boost",
+            "event": "WhenCardRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "putIntoPlay": {
+              "card": "this",
+              "where": "engagedWithYou"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "02025",
+      "name": "Monster",
+      "note": "Printed authority: datasets/cards/cards.json 02025. Selector, event and resource spellings are engine choices. The queried vendored MarvelCDB FAQ has no entry for this face.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "WhenRevealed",
+            "event": "WhenCardRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "hasStatus": {
+                  "card": "you",
+                  "status": "stunned"
+                }
+              },
+              "then": {
+                "dealDamage": {
+                  "cards": "you",
+                  "amount": 2
+                }
+              },
+              "else": {
+                "giveStatus": {
+                  "card": "you",
+                  "status": "stunned"
+                }
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "timing": "Boost",
+            "event": "WhenCardRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "afterActivation": {
+              "effect": {
+                "shuffleInto": {
+                  "cards": "this",
+                  "deck": "encounterDeck"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "02026",
+      "name": "Goblin Reinforcements",
+      "note": "Printed authority: datasets/cards/cards.json 02026. Selector and receipt spellings are engine choices. Public Green Goblin admission remains closed.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "placeThreat": {
+              "scheme": "this",
+              "amount": {
+                "count": {
+                  "withTrait": {
+                    "cards": {
+                      "query": "minions"
+                    },
+                    "trait": "GOBLIN"
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "02027",
+      "name": "Goblin Nation",
+      "note": "Printed authority: datasets/cards/cards.json 02027. Selector and receipt spellings are engine choices. Public Green Goblin admission remains closed.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant"
+          },
+          "effect": {
+            "grantEach": {
+              "cards": {
+                "inObjectIdOrder": {
+                  "enemiesWithTrait": "GOBLIN"
+                }
+              },
+              "keyword": "attack",
+              "amount": 1
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "Boost",
+            "subject": "this"
+          },
+          "effect": {
+            "putIntoPlay": {
+              "card": "this",
+              "where": "printedDestination"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "02028",
+      "name": "Overrun",
+      "note": "Printed authority: datasets/cards/cards.json 02028. Selector and receipt spellings are engine choices. Public Green Goblin admission remains closed.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardDefeated",
+            "timing": "WhenDefeated",
+            "subject": "this"
+          },
+          "effect": {
+            "eachPlayer": {
+              "order": "playerOrder",
+              "effect": {
+                "forEachDiscarded": {
+                  "effect": {
+                    "discardTop": {
+                      "from": "encounterDeck",
+                      "count": 2
+                    }
+                  },
+                  "when": {
+                    "and": [
+                      {
+                        "isKind": {
+                          "card": "that",
+                          "kind": "minion"
+                        }
+                      },
+                      {
+                        "hasTrait": {
+                          "card": "that",
+                          "trait": "GOBLIN"
+                        }
+                      }
+                    ]
+                  },
+                  "then": {
+                    "putIntoPlay": {
+                      "card": "that",
+                      "where": "engagedWithYou"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "02029",
+      "name": "Death from Above",
+      "note": "Printed authority: datasets/cards/cards.json 02029. Selector and receipt spellings are engine choices. Public Green Goblin admission remains closed.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this",
+            "form": "hero"
+          },
+          "effect": {
+            "enemyAttacks": {
+              "enemies": {
+                "titled": "Green Goblin"
+              },
+              "against": "you",
+              "modifier": {
+                "modified": {
+                  "card": {
+                    "titled": "Green Goblin"
+                  },
+                  "field": "printed_stage"
+                }
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this",
+            "form": "alter-ego"
+          },
+          "effect": {
+            "enemySchemes": {
+              "enemies": {
+                "titled": "Green Goblin"
+              },
+              "against": "you",
+              "modifier": {
+                "modified": {
+                  "card": {
+                    "titled": "Green Goblin"
+                  },
+                  "field": "printed_stage"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "02032",
+      "name": "Wicked Ambitions",
+      "note": "Printed authority: datasets/cards/cards.json 02032. Selector and receipt spellings are engine choices. Public Green Goblin admission remains closed.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "eachTime": {
+              "effect": {
+                "discardTop": {
+                  "from": "encounterDeck",
+                  "count": {
+                    "mul": [
+                      2,
+                      {
+                        "modified": {
+                          "card": {
+                            "query": "villain"
+                          },
+                          "field": "printed_stage"
+                        }
+                      }
+                    ]
+                  }
+                }
+              },
+              "when": {
+                "and": [
+                  {
+                    "isKind": {
+                      "card": "that",
+                      "kind": "minion"
+                    }
+                  },
+                  {
+                    "hasTrait": {
+                      "card": "that",
+                      "trait": "GOBLIN"
+                    }
+                  }
+                ]
+              },
+              "then": {
+                "choose": {
+                  "descriptions": [
+                    "Take 3 damage",
+                    "Put that Goblin minion into play engaged with you"
+                  ],
+                  "options": [
+                    {
+                      "dealDamage": {
+                        "cards": "you",
+                        "amount": 3
+                      }
+                    },
+                    {
+                      "putIntoPlay": {
+                        "card": "that",
+                        "where": "engagedWithYou"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "02030",
+      "name": "I See You",
+      "note": "Printed authority: datasets/cards/cards.json 02030. Official FAQ 02030 and ruling:ab735d7ce752f211 confirm attacks against alter-ego identities. The form branch controls normal/additional boost dealing; pre-existing boosts remain assigned. The conditional extra boost_const icon belongs to this exact source through its activation. Selector and modifier spellings are engine choices. Public Green Goblin admission stays closed.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "inForm": {
+                  "player": "you",
+                  "form": "alter-ego"
+                }
+              },
+              "then": {
+                "enemyAttacks": {
+                  "enemies": {
+                    "titled": "Green Goblin"
+                  },
+                  "against": "you",
+                  "dealBoostCards": "false"
+                }
+              },
+              "else": {
+                "enemyAttacks": {
+                  "enemies": {
+                    "titled": "Green Goblin"
+                  },
+                  "against": "you"
+                }
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "Boost",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "exists": {
+                  "withTrait": {
+                    "cards": {
+                      "query": "minionsEngagedWithYou"
+                    },
+                    "trait": "GOBLIN"
+                  }
+                }
+              },
+              "then": {
+                "grantUntil": {
+                  "card": "this",
+                  "keyword": "boost_const",
+                  "amount": 1,
+                  "until": "EndOfActivation"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "05001a",
+      "name": "Ms. Marvel",
+      "note": "Printed Morphogenetics: recover the exact completed event from its owner discard after resolution (rr:event; ruling:7f69f006cddce07e). Attack, Thwart and Defense are traits (ruling:556ecad3abe55ce9). Off-turn return and replay follows ruling:b144656def387a1e.",
+      "abilities": [
+        {
+          "name": "Morphogenetics",
+          "trigger": {
+            "event": "WhenCardPlayed",
+            "timing": "Response",
+            "subject": "you",
+            "form": "hero"
+          },
+          "when": {
+            "and": [
+              {
+                "exists": "trigger.discardedEvent"
+              },
+              {
+                "or": [
+                  {
+                    "hasTrait": {
+                      "card": "trigger.subject",
+                      "trait": "ATTACK"
+                    }
+                  },
+                  {
+                    "hasTrait": {
+                      "card": "trigger.subject",
+                      "trait": "THWART"
+                    }
+                  },
+                  {
+                    "hasTrait": {
+                      "card": "trigger.subject",
+                      "trait": "DEFENSE"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "cost": {
+            "exhaust": "this"
+          },
+          "effect": {
+            "returnToHand": "trigger.discardedEvent"
+          }
+        }
+      ]
+    },
+    {
+      "card": "05001b",
+      "name": "Kamala Khan",
+      "note": "Printed Teen Spirit: discard from your deck until a Ms. Marvel identity-specific card, then add that exact card to hand. Once per round, without an exhaust cost. Deck exhaustion follows rr:player-deck.1 and rr:player-deck.3.",
+      "abilities": [
+        {
+          "name": "Teen Spirit",
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "alter-ego"
+          },
+          "limitPerRound": 1,
+          "effect": {
+            "discardUntil": {
+              "from": "yourDeck",
+              "set": "ms_marvel",
+              "then": "addToHand"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "05003",
+      "name": "Big Hands",
+      "note": "Printed Hero Action (attack): Deal 4 damage to an enemy. The attack body owns the printed attack label and normal attack permissions.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "attackableEnemies"
+              },
+              "effect": {
+                "attack": {
+                  "target": "chosen",
+                  "effect": {
+                    "dealAttackDamage": {
+                      "cards": "chosen",
+                      "amount": 4
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "05004",
+      "name": "Sneak By",
+      "note": "Printed Hero Action (thwart): Remove 3 threat from a scheme. The thwart body owns the printed thwart label.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "schemes"
+              },
+              "effect": {
+                "thwart": {
+                  "target": "chosen",
+                  "effect": {
+                    "removeThreat": {
+                      "scheme": "chosen",
+                      "amount": 3
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "05005",
+      "name": "Wiggle Room",
+      "note": "Printed Hero Interrupt (defense): When you would take any amount of damage, prevent 3 of that damage. Draw 1 card. The target is your identity; damage need not come from an attack. Current rr:defend-defense governs the defense label; ruling:b144656def387a1e allows recovered replay in the same damage window.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenDamageWouldBeDealt",
+            "timing": "Interrupt",
+            "target": "you",
+            "form": "hero"
+          },
+          "labels": [
+            "defense"
+          ],
+          "when": {
+            "isYourIdentity": "trigger.target"
+          },
+          "effect": {
+            "seq": [
+              {
+                "preventDamage": {
+                  "card": "trigger.target",
+                  "amount": 3
+                }
+              },
+              {
+                "draw": {
+                  "player": "you",
+                  "count": 1
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "05010",
+      "name": "Embiggen!",
+      "note": "Printed Hero Interrupt when you play the qualifying trait event: exhaust this upgrade to increase its damage by 2. WhenEventPlayInitiated is the engine timing choice after paid costs and before the event body (rr:initiating-abilities.step.6). Each instance is modified (rr:event.5; faq:05010); printed maxima still apply (ruling:88369b11361157e4).",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenEventPlayInitiated",
+            "timing": "Interrupt",
+            "subject": "you",
+            "form": "hero"
+          },
+          "when": {
+            "hasTrait": {
+              "card": "trigger.subject",
+              "trait": "ATTACK"
+            }
+          },
+          "cost": {
+            "exhaust": "this"
+          },
+          "effect": {
+            "modifyPlayedEvent": {
+              "quantity": "damage",
+              "amount": 2
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "05011",
+      "name": "Shrink",
+      "note": "Printed Hero Interrupt when you play the qualifying trait event: exhaust this upgrade to increase its threatRemoval by 2. WhenEventPlayInitiated is the engine timing choice after paid costs and before the event body (rr:initiating-abilities.step.6). Each instance is modified (rr:event.5; faq:05011); printed maxima still apply (ruling:88369b11361157e4).",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenEventPlayInitiated",
+            "timing": "Interrupt",
+            "subject": "you",
+            "form": "hero"
+          },
+          "when": {
+            "hasTrait": {
+              "card": "trigger.subject",
+              "trait": "THWART"
+            }
+          },
+          "cost": {
+            "exhaust": "this"
+          },
+          "effect": {
+            "modifyPlayedEvent": {
+              "quantity": "threatRemoval",
+              "amount": 2
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "02031",
+      "name": "Overconfidence",
+      "note": "Printed authority: datasets/cards/cards.json 02031. ruling:d855181a23d49683 declines errata. Damage placed counts actual placement after prevention, including owned boost abilities within attack step 3.b (rr:attack-enemy-activation.step.3.b), rather than damage dealt. Each form reads only its completed activation receipt. Selector and receipt spellings are engine choices. Public Green Goblin admission remains closed.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this",
+            "form": "hero"
+          },
+          "effect": {
+            "seq": [
+              {
+                "enemyAttacks": {
+                  "enemies": {
+                    "titled": "Green Goblin"
+                  },
+                  "against": "you"
+                }
+              },
+              {
+                "if": {
+                  "test": {
+                    "atLeast": {
+                      "value": {
+                        "result": "activationDamagePlaced"
+                      },
+                      "count": 3
+                    }
+                  },
+                  "then": {
+                    "gainSurge": 1
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this",
+            "form": "alter-ego"
+          },
+          "effect": {
+            "seq": [
+              {
+                "enemySchemes": {
+                  "enemies": {
+                    "titled": "Green Goblin"
+                  },
+                  "against": "you"
+                }
+              },
+              {
+                "if": {
+                  "test": {
+                    "atLeast": {
+                      "value": {
+                        "result": "activationThreat"
+                      },
+                      "count": 3
+                    }
+                  },
+                  "then": {
+                    "gainSurge": 1
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
     }
   ]
 }

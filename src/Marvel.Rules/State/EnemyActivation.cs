@@ -51,6 +51,9 @@ public sealed record EnemyActivation(
     long DamageDealt = 0,
     long ThreatPlaced = 0)
 {
+    /// <summary>Damage placed by this activation, including owned boost damage while live and attack overkill, after prevention.</summary>
+    public long DamagePlaced { get; init; }
+
     /// <summary>Whether new boost cards may be dealt for this activation.</summary>
     public bool DealBoostCards { get; init; } = true;
 

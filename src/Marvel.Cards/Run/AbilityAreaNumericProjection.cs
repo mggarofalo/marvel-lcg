@@ -112,10 +112,9 @@ internal static class AbilityAreaNumericProjection
         if (effect.OperationName() == "removeThreat")
         {
             var instruction = EffectOf<AbilityEffect.RemoveThreat>(effect, projection.context);
-            long amount = AbilityAmounts.SaturatingSum(
-                AbilityAmounts.SaturatingMultiply(
-                    Amount(instruction.Amount, projection.context), baseMultiplier),
-                [EventModifier(projection.context, "eventThreatRemoval")]);
+            long amount = AbilityEventModifiers.ThreatRemovalAmount(instruction,
+                projection.context.World, projection.context.Source,
+                Amount(instruction.Amount, projection.context), baseMultiplier);
             foreach (var state in states)
             {
                 foreach (var scheme in ProjectedEvery(

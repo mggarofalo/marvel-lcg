@@ -14,6 +14,7 @@ internal static class AbilityLeafTargetAvailability
     /// <summary>Target existence for leaf options without a dedicated partial-resolution check.</summary>
     internal static bool HasTargets(AbilityEffect node, AbilityAdmissionScope cast) => node.OperationName() switch
     {
+        "modifyPlayedEvent" => AbilityPlayedEventModifier.CanModify(EffectOf<AbilityEffect.ModifyPlayedEvent>(node, cast), cast.Context),
         "revealFromVillainDeck" => AbilitySelectedDeckReveal.HasTarget(node, cast),
         "reveal" or "returnToHand" =>
             Every(EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast).Count > 0,
@@ -26,7 +27,8 @@ internal static class AbilityLeafTargetAvailability
                 ReplaceableDefenseDefender(cast)),
         "grantUntil" => Find(GrantSelectionOf(node, cast), cast) is not null,
         "dealEncounterCard" => Find(EffectOf<AbilityEffect.DealEncounterCard>(node, cast).Card, cast) is not null,
-        "indirectDamage" => Amount(EffectOf<AbilityEffect.IndirectDamage>(node, cast).Amount, cast) <= 0
+        "indirectDamage" => AbilityEventModifiers.DamageAmount(cast.World, cast.Source,
+            Amount(EffectOf<AbilityEffect.IndirectDamage>(node, cast).Amount, cast)) <= 0
             || Assignable(DamageSelectionOf(node, cast), cast).Count > 0,
         "dealDamage" or "dealAttackDamage" => DamageTargets(DamageSelectionOf(node, cast), cast).Count > 0,
         "placeThreat" => Every(ThreatSelectionOf(node, cast), cast).Count > 0,

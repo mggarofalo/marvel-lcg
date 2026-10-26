@@ -129,7 +129,8 @@ internal static class AbilityDamageAndThreatExecution
     private static void Indirect(AbilityEffect.IndirectDamage damage, AbilityEffect node,
         AbilityDamageAndThreatContext context, AbilityDamageAndThreatState state)
     {
-        long amount = Amount(damage.Amount, context);
+        long amount = AbilityEventModifiers.DamageAmount(
+            context.World, context.Source, Amount(damage.Amount, context));
         var eligible = Assignable(Every(damage.Among, context), context);
         if (amount <= 0 || eligible.Count == 0) return;
         if (eligible.Count == 1)
@@ -178,7 +179,7 @@ internal static class AbilityDamageAndThreatExecution
         {
             var request = new DamageRequest(context.Source, context.World.Cards[card], damage,
                 context.Trigger, "Indirect_Damage", AbilityEffectAttribution.IdentityPlayer(context))
-                { RecordDefeatOn = occurrence };
+                { RecordDefeatOn = occurrence, ActivationId = context.DamageActivationId };
             suspended |= DamagePlacement.Resolve(context.World, context.World.Facts, request,
                 context.Events).Outcome == Damage.Outcome.Suspended;
         }
@@ -200,7 +201,7 @@ internal static class AbilityDamageAndThreatExecution
             var result = DamagePlacement.Resolve(context.World, context.World.Facts,
                 new DamageRequest(context.Source, target, amount, context.Trigger, verb,
                     AbilityEffectAttribution.IdentityPlayer(context))
-                    { RecordDefeatOn = occurrence }, context.Events);
+                    { RecordDefeatOn = occurrence, ActivationId = context.DamageActivationId }, context.Events);
             suspended |= !result.IsComplete;
             state.Damage.Add(result, amount, context.Power == BasicPowers.AttackVerb);
         }

@@ -90,6 +90,7 @@ internal static class AbilityResolutionActions
         var costOwner = world.Agenda.Current;
         var costOccurrence = world.Agenda.Occurrence;
         var recipientChoice = AbilityRecipientCommitment.Validate(execution, cast, found, chosen);
+        AbilityEventThreatFacts.Validate(execution, cast, found);
         var arrowPayment = AbilityCostPayment.Prepare(
             world, card, cast.Player, found.Cost, execution.program, execution.resourceAbilities,
             AbilityPaymentSelection.Capture(paying, recipientChoice is null ? chosen : [], values,

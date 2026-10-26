@@ -13,6 +13,8 @@ internal static class AbilityEffectDescription
     {
         AbilityEffect.Fixed { Instruction: AbilityFixedInstruction.UseAttackForThwart } =>
             "Use ATK instead of THW for this thwart, including ally consequential damage",
+        AbilityEffect.ModifyPlayedEvent modifier =>
+            $"Increase each {(modifier.Kind == "eventDamage" ? "damage" : "threat removal")} instance of this event by {modifier.Amount} until this play finishes",
         AbilityEffect.ChooseCard choice => ChoiceSummary(choice),
         AbilityEffect.Draw draw => DrawSummary(draw),
         AbilityEffect.GiveStatus status => StatusAction(status.Status),
@@ -54,8 +56,9 @@ internal static class AbilityEffectDescription
             $"Printed damage: {amount.Value}",
         AbilityEffect.Damage { Amount: AbilityNumber.Constant amount } =>
             $"Printed damage: {amount.Value}",
-        AbilityEffect.RemoveThreat { Amount: AbilityNumber.Constant amount } =>
-            $"Printed threat removal: {amount.Value}",
+        AbilityEffect.RemoveThreat { Amount: AbilityNumber.Constant amount } threat =>
+            $"Printed threat removal: {amount.Value}"
+            + (threat.Maximum is { } maximum ? $" (maximum {maximum})" : ""),
         AbilityEffect.Power power => PrintedAmount(power.Effect),
         AbilityEffect.Sequence { Effects.Length: 1 } sequence => PrintedAmount(sequence.Effects[0]),
         _ => null,

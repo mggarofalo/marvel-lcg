@@ -172,10 +172,15 @@ internal static class AbilityResolutionRevelation
         var occurrence = new Occurrence(
             0, [Steps.CardRevealed], Subject: card.ObjectId, Player: player);
 
+        // rr:attack-enemy-activation.step.3.b: "Resolve any Boost abilities" is
+        // part of this activation. Capture its identity before any ability can
+        // suspend or request a child activation. Responses have their own casts.
+        var damageOrigin = BoostDamageOrigin.Capture(world);
         execution.RunOrdered(boosts,
             ability => new AbilityResolutionState(world, card, occurrence, player, events)
             {
                 Tier = ability.Trigger.Timing,
+                DamageOrigin = damageOrigin,
             });
 
         return events;
