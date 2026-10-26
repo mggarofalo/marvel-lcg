@@ -61,6 +61,10 @@ internal static class AbilityWindowResolution
         ArgumentNullException.ThrowIfNull(answer);
         var card = world.Cards[ability.Card];
         var found = execution.Pending(card, ability);
+        if (found.Trigger.Event == Steps.DamageWouldBeDealt
+            && !AbilityTypes.IsMandatory(found.Trigger.Timing)
+            && !DamageWindowEligibility.HasRemainingDamage(world, occurrence))
+            throw new RulesNotImplementedException("no damage remains for this interrupt");
         var events = new List<GameEvent>();
 
         // **Who "you" is, which is not who may trigger it.**

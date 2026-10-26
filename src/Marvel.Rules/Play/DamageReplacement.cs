@@ -12,6 +12,7 @@ public sealed class DamageReplacement
         TargetIncarnation = Target.Incarnation;
         CurrentAmount = Math.Max(0, request.Amount);
         Execution = execution;
+        execution.Occurrence.Damage = this;
     }
 
     /// <summary>The card dealing the damage.</summary>
