@@ -19,6 +19,12 @@ The baseline is embedded in the executable; a save cannot supply a new baseline
 or authorize its own migration.
 
 This is a conservative product policy, not a rule inferred from the tabletop.
+The current v23 delivery retains named routes from the exact frozen v19/v20/v21
+content triple to `engine-replay-v23`, plus frozen-content v23 additive upgrades.
+Every original recorded fact must verify; none is regenerated. V22 has no named
+source admission and is quarantined unchanged. Stacked damage prevention and
+recovered-event replay can change outcomes even with identical Core datasets.
+The v22 routes below remain explicit historical adapters, not v22-to-v23 admission.
 The v22 delivery admits four explicit routes on this exact frozen content
 triple: `engine-replay-v19` to `engine-replay-v22`, `engine-replay-v20` to
 `engine-replay-v22`, `engine-replay-v21` to `engine-replay-v22`, and frozen-content
@@ -37,6 +43,15 @@ five-decision Taskmaster attempt remains compatible; this proves an unaffected
 played attempt, not a compatible complete campaign aggregate. A newly recorded,
 authentic compatible predecessor campaign aggregate is still required for positive
 full-campaign upgrade acceptance. No frozen expected gameplay value is rewritten.
+
+The frozen Expert campaign is also quarantined unchanged under v23. Its journal
+entry 13 (Crossbones attempt 4) first differs at unit 31 decision 3: two Backflip
+prevention registrations are consumed together by the preceding defended
+Crossbones attack. The original history leaves one registration to erase Hydra
+Mercenary's subsequent two damage; the corrected runtime reduces the hero from
+7 to 5 hit points. Restore and import reject the aggregate before publication.
+The unaffected initial Absorbing Man attempt still upgrades exactly and permits
+both recovery and decline; this is not full-campaign upgrade acceptance.
 
 Replay v21 moves retaliation into the forced after-attack response window and
 corrects zero-damage retaliation. The actual predecessor Black Panther/Rhino trace

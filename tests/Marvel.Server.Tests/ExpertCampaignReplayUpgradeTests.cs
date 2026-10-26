@@ -1,7 +1,6 @@
 using System.IO.Compression;
 using System.Security.Cryptography;
 using System.Text.Json;
-using System.Text.Json.Nodes;
 using Marvel.Protocol;
 using Marvel.Rules.Campaign;
 using Marvel.Session;
@@ -12,22 +11,18 @@ namespace Marvel.Server.Tests;
 
 public sealed class ExpertCampaignReplayUpgradeTests
 {
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void GenuineExpertPredecessorPreservesEveryProofAndCanCommitItsInitialRecovery(bool recover)
+    [Fact]
+    public void StackedPreventionDivergenceQuarantinesTheExpertCampaignWithoutChangingSourceFiles()
     {
         WithFixture((published, factory) =>
         {
             string storage = Path.Combine(published, "campaigns");
-            StoredCampaign original;
-            StoredCampaign continued;
-            var request = EngineJson.ReadRequest(File.ReadAllBytes(Path.Combine(published,
-                recover ? "recovery-request.json" : "decline-request.json"))) with { Version = EngineProtocol.Version };
-            EngineResponse resolved;
-            using (var store = new FileCampaignStore(storage))
+            var before = Snapshot(storage);
+            using var access = JsonDocument.Parse(File.ReadAllText(Path.Combine(published, "access.json")));
+            for (int restart = 0; restart < 2; restart++)
             {
-                original = Assert.Single(store.Load()).Campaign!;
+                using var store = new FileCampaignStore(storage);
+                var original = Assert.Single(store.Load()).Campaign!;
                 Assert.True(original.Save.State.Expert);
                 Assert.Equal(CampaignStage.AbsorbingMan, original.Save.State.Stage);
                 Assert.Equal(7, original.Save.Attempts.Length);
@@ -36,114 +31,117 @@ public sealed class ExpertCampaignReplayUpgradeTests
                 Assert.Contains("04072", original.Save.State.ExperimentalWeapons);
                 Assert.Contains(original.Save.State.Players[0].Cards, card => card.Face == "04155");
                 Assert.Equal("engine-replay-v19", original.Save.Compatibility.ReplayContract);
-                Assert.Empty(original.Save.Attempts[^1].Units);
-                var setup = original.Save.Attempts[^1].Setup;
-                var control = factory.Create(new(setup.Scenario, setup.Heroes, setup.ModularSets,
-                    setup.Seed, setup.PlayerDecks, setup.Campaign)).Game;
-                var pending = control.Pending!;
-                var answer = control.Resolve(request.Decision!);
-                var expectedStep = JournalStep.From(pending.Player, pending, request.Decision!, answer.Events,
-                    control.State.Random.Generator.WordsConsumed, SessionReplay.Fingerprint(control), SessionReplay.Result(control));
+                var route = Assert.IsType<SessionContentUpgrade>(factory.ContentUpgrade(original.Save.Compatibility));
+                var failure = Assert.Throws<ReplayDivergenceException>(() => route.Verify(original.Save,
+                    factory.CampaignDefinition!, setup => ReplayContractUpgradeTests.Open(factory, setup),
+                    factory.InspectCampaign));
+                Assert.Equal("unit 31 decision 3 events diverged: expected 10, got 11", failure.Message);
+                if (restart == 0) AssertPreventionCause(original.Save, factory);
                 var host = new CampaignHost(factory, store, new MemorySessionStore());
-                var resumed = host.Exchange(EngineRequest.SyncGame("resume", request.GameId, request.Capability!));
-                Assert.Null(resumed.Error);
-                var oldResponse = HistoricalProtocol35Response.Read(File.ReadAllBytes(Path.Combine(published, "resumed-wire-response.json")));
-                Equal(oldResponse.Prompt, resumed.Prompt);
-                Equal(oldResponse.World, resumed.World);
-                var upgraded = Assert.Single(store.Load()).Campaign!;
-                AssertCompatibility(upgraded.Save, factory.Compatibility);
-                Equal(original, upgraded with { Save = Normalize(upgraded.Save, original.Save) });
-                AssertOriginalBackup(storage, original);
-                resolved = host.Exchange(request);
-                Assert.Null(resolved.Error);
-                Assert.Equal(1, resolved.Revision);
-                continued = Assert.Single(store.Load()).Campaign!;
-                Assert.Single(continued.Save.Attempts[^1].Units);
-                Assert.Single(continued.Save.Attempts[^1].Units[0].Decisions);
-                Equal(expectedStep, continued.Save.Attempts[^1].Units[0].Decisions[0]);
-                AssertOriginalBackup(storage, original);
-            }
-            using (var store = new FileCampaignStore(storage))
-            {
-                var restarted = new CampaignHost(factory, store, new MemorySessionStore());
-                var resumed = restarted.Exchange(EngineRequest.SyncGame("restart", request.GameId, request.Capability!));
-                Assert.Null(resumed.Error);
-                Assert.Equal(resolved.Revision, resumed.Revision);
-                Equal(resolved.Prompt, resumed.Prompt);
-                Equal(resolved.World, resumed.World);
-                Equal(continued, Assert.Single(store.Load()).Campaign);
-                AssertOriginalBackup(storage, original);
+                Assert.Equal("campaign_not_found", host.Exchange(new(EngineProtocol.Version, "owner",
+                    EngineProtocol.Campaign, access.RootElement.GetProperty("id").GetString()!,
+                    Capability: access.RootElement.GetProperty("owner").GetString())
+                    { Campaign = new("sync") }).Error?.Code);
+                Assert.Equal("session_not_found", host.Exchange(EngineRequest.SyncGame("game",
+                    access.RootElement.GetProperty("game").GetString()!,
+                    access.RootElement.GetProperty("capability").GetString()!)).Error?.Code);
+                Assert.Equal(before, Snapshot(storage));
+                Assert.Equal(CampaignSaveJson.Canonical(original),
+                    CampaignSaveJson.Canonical(Assert.Single(store.Load()).Campaign));
             }
         });
     }
 
     [Fact]
-    public void ExpertTransferImportsWithFreshAuthorityAndRetainsEveryRecordedAttempt()
+    public void DivergentExpertTransferCannotPublishAnImportedCopy()
     {
         WithFixture((published, factory) =>
         {
-            var original = CampaignSaveJson.Read(File.ReadAllBytes(Path.Combine(published, "campaign.json")));
-            string storage = Path.Combine(published, "imported");
-            EngineResponse imported;
-            using (var store = new FileCampaignStore(storage))
-            {
-                var host = new CampaignHost(factory, store, new MemorySessionStore());
-                imported = host.Exchange(new(EngineProtocol.Version, "import", EngineProtocol.Campaign,
-                    "Expert import", Entry: EntryClaim.Create())
+            var before = Snapshot(published);
+            using var store = new FileCampaignStore(Path.Combine(Path.GetDirectoryName(published)!, "imported"));
+            var host = new CampaignHost(factory, store, new MemorySessionStore());
+            var imported = host.Exchange(new(EngineProtocol.Version, "import", EngineProtocol.Campaign,
+                "Expert import", Entry: EntryClaim.Create())
                 { Campaign = new("import") { Transfer = File.ReadAllText(Path.Combine(published, "campaign-transfer.txt")) } });
-                Assert.Null(imported.Error);
-                var copy = Assert.Single(store.Load()).Campaign!.Save;
-                AssertCompatibility(copy, factory.Compatibility);
-                Assert.NotEqual(original.Identity.StorageId, copy.Identity.StorageId);
-                Equal(original, Normalize(copy, original, remapIdentity: true));
-                using var access = JsonDocument.Parse(File.ReadAllText(Path.Combine(published, "access.json")));
-                Assert.NotEqual(access.RootElement.GetProperty("owner").GetString(), imported.Capability);
-                Assert.Equal("session_not_found", host.Exchange(EngineRequest.SyncGame("old-authority",
-                    imported.CampaignGame!.GameId, access.RootElement.GetProperty("capability").GetString()!)).Error!.Code);
-            }
-            using (var store = new FileCampaignStore(storage))
-            {
-                var host = new CampaignHost(factory, store, new MemorySessionStore());
-                var resumed = host.Exchange(EngineRequest.SyncGame("resume", imported.CampaignGame!.GameId,
-                    imported.CampaignGame.Capability));
-                Assert.Null(resumed.Error);
-                var expected = HistoricalProtocol35Response.Read(File.ReadAllBytes(Path.Combine(published, "resumed-wire-response.json")));
-                Equal(expected.Prompt, resumed.Prompt);
-                Equal(expected.World, resumed.World);
-            }
+            Assert.Equal("campaign_rejected", imported.Error?.Code);
+            Assert.Empty(store.Load());
+            Assert.Equal(before, Snapshot(published));
         });
     }
 
-    private static void AssertCompatibility(CampaignSave save, SessionCompatibility target)
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void UnaffectedAbsorbingManAttemptUpgradesAndCanResolveItsInitialRecovery(bool recover)
     {
-        Assert.Equal(target, save.Compatibility);
-        Assert.All(save.Attempts, attempt => Assert.Equal(target, attempt.Compatibility));
-        Assert.All(save.Journal.Where(entry => entry.Proof is not null), entry => Assert.Equal(target, entry.Proof!.Compatibility));
-    }
-
-    private static CampaignSave Normalize(CampaignSave copy, CampaignSave original, bool remapIdentity = false)
-    {
-        Assert.Equal(original.Attempts.Length, copy.Attempts.Length);
-        Assert.Equal(original.Journal.Length, copy.Journal.Length);
-        return copy with
+        WithFixture((published, factory) =>
         {
-            Identity = remapIdentity ? original.Identity : copy.Identity,
-            Compatibility = original.Compatibility,
-            Attempts = [.. copy.Attempts.Zip(original.Attempts, (current, old) => current with
-                { Compatibility = old.Compatibility, Session = remapIdentity ? old.Session : current.Session })],
-            Journal = [.. copy.Journal.Zip(original.Journal, (current, old) => current.Proof is { } proof
-                ? current with { Proof = proof with { Compatibility = old.Proof!.Compatibility,
-                    Session = remapIdentity ? old.Proof.Session : proof.Session } } : current)],
-        };
+            var campaign = CampaignSaveJson.Read(File.ReadAllBytes(Path.Combine(published, "campaign.json")));
+            var original = campaign.Attempts[^1];
+            Assert.Equal("absorbing_man", original.Setup.Scenario);
+            Assert.Empty(original.Units);
+            string bytes = SessionSaveJson.Write(original);
+            var route = Assert.IsType<SessionContentUpgrade>(factory.ContentUpgrade(original.Compatibility));
+            var candidate = route.Verify(original, setup => ReplayContractUpgradeTests.Open(factory, setup));
+            Assert.Equal(factory.Compatibility, candidate.Compatibility);
+            Assert.Equal(bytes, SessionSaveJson.Write(candidate with { Compatibility = original.Compatibility }));
+            Assert.Equal(bytes, SessionSaveJson.Write(original));
+            var game = SessionReplay.Verify(candidate, factory.Compatibility,
+                setup => ReplayContractUpgradeTests.Open(factory, setup));
+            var request = EngineJson.ReadRequest(File.ReadAllBytes(Path.Combine(published,
+                recover ? "recovery-request.json" : "decline-request.json")));
+            Assert.Equal("CampaignRecovery", game.Pending!.Trigger);
+            long damageBefore = game.State.Seats[0].IdentityCard.Damage;
+            long rngBefore = game.State.Random.Generator.WordsConsumed;
+            _ = game.Resolve(request.Decision!);
+            Assert.NotNull(game.Pending);
+            Assert.NotEqual("CampaignRecovery", game.Pending.Trigger);
+            Assert.Equal(recover ? 0 : damageBefore, game.State.Seats[0].IdentityCard.Damage);
+            Assert.Equal(recover, game.State.Random.Generator.WordsConsumed > rngBefore);
+        });
     }
 
-    private static void AssertOriginalBackup(string storage, StoredCampaign original) =>
-        Assert.Equal(CampaignSaveJson.Canonical(original), File.ReadAllText(Assert.Single(
-            Directory.GetFiles(storage, ".upgrade-*.archive", SearchOption.AllDirectories))));
+    private static void AssertPreventionCause(CampaignSave campaign, DatasetGameFactory factory)
+    {
+        var proof = campaign.Journal[13].Proof!;
+        Assert.Equal("crossbones", proof.Setup.Scenario);
+        Assert.Equal(4, proof.Setup.Campaign!.Attempt);
+        var game = ReplayContractUpgradeTests.Open(factory, proof.Setup).Game;
+        for (int unit = 0; unit <= 31; unit++)
+        {
+            int decisions = unit == 31 ? 2 : proof.Units[unit].Decisions.Count;
+            for (int decision = 0; decision < decisions; decision++)
+            {
+                var step = proof.Units[unit].Decisions[decision];
+                _ = game.Resolve(step.Decision.Resolve(game.Pending!));
+            }
+        }
+        // Both Backflips (unit 28) commit prevention before the defended Crossbones attack.
+        // Each registration belongs to that damage; neither can protect a later minion attack.
+        var preventions = game.State.Effects.Active().Where(effect => effect.Kind == "preventDamage").ToArray();
+        Assert.Equal(new int?[] { 9, 10 }, preventions.Select(effect => effect.Card));
+        Assert.All(preventions, effect => Assert.Equal(1, effect.Lasts!.Uses));
+        var defended = proof.Units[31].Decisions[2];
+        _ = game.Resolve(defended.Decision.Resolve(game.Pending!));
+        Assert.DoesNotContain(game.State.Effects.Active(), effect => effect.Kind == "preventDamage");
+        var mercenary = proof.Units[31].Decisions[3];
+        Assert.Equal("01182", mercenary.Decision.Selector.Label);
+        Assert.DoesNotContain(mercenary.Events, happened => happened.GetProperty("kind").GetString() == "FieldSet"
+            && happened.GetProperty("verb").GetString() == "Deal_Damage"
+            && happened.GetProperty("attack_identity").GetProperty("id").GetInt32() == 10);
+        var result = game.Resolve(mercenary.Decision.Resolve(game.Pending!));
+        var damage = result.Events.Select(JournalJson.Event).First(happened =>
+            happened.GetProperty("kind").GetString() == "FieldSet"
+            && happened.GetProperty("verb").GetString() == "Deal_Damage");
+        Assert.Equal(7, damage.GetProperty("from").GetInt64());
+        Assert.Equal(5, damage.GetProperty("to").GetInt64());
+    }
 
-    private static void Equal<T>(T expected, T actual) =>
-        Assert.True(JsonNode.DeepEquals(JsonSerializer.SerializeToNode(expected), JsonSerializer.SerializeToNode(actual)),
-            "JSON values differ");
+    private static string[] Snapshot(string directory) => Directory.GetFiles(directory, "*", SearchOption.AllDirectories)
+        .Where(path => !path.EndsWith(".writer", StringComparison.Ordinal))
+        .OrderBy(path => path, StringComparer.Ordinal)
+        .Select(path => Path.GetRelativePath(directory, path) + ":" +
+            Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(path)))).ToArray();
 
     private static void WithFixture(Action<string, DatasetGameFactory> check) =>
         AdditiveContentUpgradeTests.WithAddedScenario((root, _) =>
@@ -157,5 +155,3 @@ public sealed class ExpertCampaignReplayUpgradeTests
             check(Path.Combine(extraction, "published"), DatasetGameFactory.Load(root));
         });
 }
-
-

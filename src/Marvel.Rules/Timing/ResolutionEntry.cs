@@ -24,4 +24,8 @@ public sealed record ResolutionEntry(
 
     /// <summary>The game-local identity of the exact threat placement answered.</summary>
     public int? TriggeringThreatId { get; init; }
+
+    /// <summary>Event-play generation within the containing triggering occurrence.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public int EventPlay { get; init; }
 }

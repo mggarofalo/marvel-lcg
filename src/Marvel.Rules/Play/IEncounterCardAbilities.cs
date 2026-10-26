@@ -10,6 +10,8 @@ namespace Marvel.Rules.Play;
 /// <summary>Card text needed while resolving an encounter card.</summary>
 public interface IEncounterCardAbilities
 {
+    /// <summary>Require that a face's reveal has been interpreted before an enclosing mutation.</summary>
+    void RequireWhenRevealed(string face);
     AbilityExecutionResult EntersPlay(World world, AbilityExecution entry, Card card);
     AbilityExecutionResult WhenRevealed(World world, AbilityExecution entry, Card card, int player);
     IReadOnlyList<PendingAbility> WhenRevealedAbilities(World world, Card card, int player);

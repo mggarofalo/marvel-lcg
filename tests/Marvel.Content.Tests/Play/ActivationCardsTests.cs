@@ -2,6 +2,7 @@ using Marvel.Rules.Setup;
 using Marvel.Content.Setup;
 using Marvel.Content.Tests.Cards;
 using Marvel.Rules.Play;
+using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
 using Marvel.Tests;
 using Xunit;
@@ -167,6 +168,77 @@ public sealed class ActivationCardsTests
             [villain.ObjectId],
             world.Agenda.Outstanding.Select(step => step.Subject));
         Assert.All(world.Agenda.Outstanding, step => Assert.Equal(1, step.Seat));
+    }
+
+    [Rule("rr:activation.5")]
+    [Rule("rr:reveal.2")]
+    [Fact]
+    public void NonFirstPlayerOrdersTheMinionsInTheirOwnGangUp()
+    {
+        // "followed by minion activations in the order of your choice."
+        // The player who revealed Gang-Up is "you", even when not first player.
+        var world = Deal("spider_man", "she_hulk");
+        world.Seats[1].IdentityCard.TurnTo(SheHulk);
+        var engaged = world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(1));
+        var hydra = world.CreateCard(HydraMercenary, engaged);
+        var sandman = world.CreateCard(Sandman, engaged);
+        var card = world.CreateCard(AuthoredCards.GangUp, world.AreaOf(DeckType.RevealingArea));
+        var runner = AuthoredCards.Runner();
+        runner.ExecuteReveal(world, card, 1);
+
+        var events = new List<Marvel.Rules.Events.GameEvent>();
+        var defenders = new List<int>();
+        Prompt? prompt = null;
+        for (int answered = 0; answered < 20; answered++)
+        {
+            prompt = Sequence.Work(world, Cards, runner, events);
+            Assert.NotNull(prompt);
+            if (prompt.Asking == Question.Order) break;
+            if (prompt.Asking == Question.Defender)
+                defenders.Add(world.Attack!.Enemy);
+            Sequence.Answer(world, Cards, runner, prompt, Decision.Decline, events);
+        }
+
+        Assert.NotNull(prompt);
+        Assert.Equal(Question.Order, prompt.Asking);
+        Assert.Equal([world.TheCardIn(DeckType.VillainArea)!.ObjectId], defenders);
+        string cardState = world.Digest().Canonical();
+        var rngState = world.Random.Generator.GetState();
+        var pendingSteps = world.Agenda.Outstanding.ToArray();
+        var pendingStage = world.Agenda.Stage;
+        int eventCount = events.Count;
+        var repeated = Sequence.Work(world, Cards, runner, events);
+        Assert.Equal(prompt.Player, repeated!.Player);
+        Assert.Equal(prompt.Affordances.Single().Targets!.Legal,
+            repeated.Affordances.Single().Targets!.Legal);
+        Assert.Equal(cardState, world.Digest().Canonical());
+        Assert.Equal(rngState.Index, world.Random.Generator.GetState().Index);
+        Assert.Equal(rngState.Words, world.Random.Generator.GetState().Words);
+        Assert.Equal(pendingSteps, world.Agenda.Outstanding);
+        Assert.Equal(pendingStage, world.Agenda.Stage);
+        Assert.Equal(eventCount, events.Count);
+        Assert.Equal(1, prompt.Player);
+        var offer = Assert.Single(prompt.Affordances);
+        Assert.Equal(1, offer.AnchorPlayer);
+        Assert.Equal([hydra.ObjectId, sandman.ObjectId], offer.Targets!.Legal);
+        var reversed = Decision.Take(offer.Id, [sandman.ObjectId, hydra.ObjectId], []);
+        string before = world.Digest().Canonical();
+        var wrongSeat = DecisionAssessment.Assess(prompt, reversed, actor: 0);
+        Assert.Equal(DecisionRejection.UnauthorizedActor, wrongSeat.Rejection);
+        Assert.Equal(before, world.Digest().Canonical());
+        Assert.True(DecisionAssessment.Assess(prompt, reversed, actor: 1).IsAccepted);
+
+        Sequence.Answer(world, Cards, runner, prompt, reversed, events);
+        for (int answered = 0; answered < 20 && defenders.Count < 3; answered++)
+        {
+            prompt = Sequence.Work(world, Cards, runner, events);
+            Assert.NotNull(prompt);
+            if (prompt.Asking == Question.Defender)
+                defenders.Add(world.Attack!.Enemy);
+            Sequence.Answer(world, Cards, runner, prompt, Decision.Decline, events);
+        }
+        Assert.Equal([world.TheCardIn(DeckType.VillainArea)!.ObjectId,
+            sandman.ObjectId, hydra.ObjectId], defenders);
     }
 
     [Rule("rr:surge.2")]

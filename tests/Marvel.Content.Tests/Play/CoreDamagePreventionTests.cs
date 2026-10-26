@@ -44,6 +44,30 @@ public sealed class CoreDamagePreventionTests : CoreCardTestBase
         Assert.Equal(DeckType.DiscardPile, flight.Area.Type);
     }
 
+    [Fact]
+    [Rule("rr:prevent.1")]
+    public void StackedCosmicFlightsExpireTogetherWithTheirDamageInstance()
+    {
+        // Prevention "modif[ies] the amount of damage before it is taken".
+        // Both interrupts apply to this instance; neither persists into another.
+        var world = Hero("01010a");
+        var hero = world.Seats[0].IdentityCard;
+        var villain = world.CreateCard("01134", world.AreaOf(DeckType.VillainArea));
+        for (int index = 0; index < 2; index++)
+            world.CreateCard("01017", world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), cardOwner: 0));
+        var runner = AuthoredCards.Runner();
+        world.Abilities = runner;
+        var occurrence = Occurrence.ForAttack(1, [Steps.DamageWouldBeDealt], world, Cards,
+            villain.ObjectId, hero.ObjectId, player: 0);
+        var interrupts = runner.Waiting(world, occurrence, WindowKind.Interrupt);
+        Assert.Equal(2, interrupts.Count);
+        foreach (var interrupt in interrupts)
+            runner.ResolveWindow(world, occurrence, interrupt, new Decision(interrupt.Card, [], []));
+        Assert.Equal(0, runner.WouldTake(world, hero, villain, 5, []));
+        Assert.DoesNotContain(world.Effects.Active(), effect => effect.Kind == "preventDamage");
+        Assert.Equal(2, runner.WouldTake(world, hero, villain, 2, []));
+    }
+
     [Rule("rr:tough.2")]
     [Rule("rr:damage.step.3")]
     [Fact]

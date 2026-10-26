@@ -16,8 +16,10 @@ internal sealed class NativeWindowAbilities(IWindowAbilities authored) : IWindow
     public IReadOnlyList<PendingAbility> Waiting(World world, Occurrence occurrence, WindowKind window)
     {
         var printed = authored.Waiting(world, occurrence, window);
-        var native = Retaliation(world, occurrence, window).ToArray();
-        return native.Length == 0 ? printed
+        var native = Retaliation(world, occurrence, window).ToList();
+        if (GreenGoblinActivationReplacement.Waiting(world, occurrence, window) is { } replacement)
+            native.Add(replacement);
+        return native.Count == 0 ? printed
             : AbilityOfferHandles.Assign(printed.Concat(native), world.Cards.Count);
     }
 
@@ -38,6 +40,8 @@ internal sealed class NativeWindowAbilities(IWindowAbilities authored) : IWindow
     public Affordance Describe(World world, PendingAbility ability)
     {
         if (ability.Native == NativeAbilityKind.Authored) return authored.Describe(world, ability);
+        if (ability.Native == NativeAbilityKind.GreenGoblinActivationReplacement)
+            return GreenGoblinActivationReplacement.Describe(world, ability);
         if (ability.Native != NativeAbilityKind.Retaliate) throw new InvalidOperationException("Unknown native ability");
         var context = world.Windows.Current?.Occurrence.Retaliation
             ?? throw new InvalidOperationException("Retaliate description has no current attack window");
@@ -56,6 +60,8 @@ internal sealed class NativeWindowAbilities(IWindowAbilities authored) : IWindow
     {
         if (invocation.Ability.Native == NativeAbilityKind.Authored)
             return authored.Resolve(world, invocation, answer);
+        if (invocation.Ability.Native == NativeAbilityKind.GreenGoblinActivationReplacement)
+            return GreenGoblinActivationReplacement.Resolve(world, invocation);
         if (invocation.Ability.Native != NativeAbilityKind.Retaliate)
             throw new InvalidOperationException("Unknown native ability");
         return NativeRetaliationResolution.Begin(world, invocation);

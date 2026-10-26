@@ -12,6 +12,14 @@ namespace Marvel.Cards.Run;
 
 internal static class AbilityResolutionRevelation
 {
+    internal static void RequireWhenRevealed(this AbilityResolutionExecution execution, string face)
+    {
+        if (!execution.program.KnowsWhenRevealed(face))
+            throw new RulesNotImplementedException(
+                $"card '{face}' was revealed and no ability data is written for it; "
+                + $"this engine has {execution.program.Authored.Count} authored card(s)");
+    }
+
     internal static IReadOnlyList<GameEvent> WhenRevealed(this AbilityResolutionExecution execution, World world, Card card, int player) =>
         execution.WhenRevealed(
             world, card, player,
@@ -27,12 +35,7 @@ internal static class AbilityResolutionRevelation
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(card);
-        if (!execution.program.KnowsWhenRevealed(card.FaceId))
-        {
-            throw new RulesNotImplementedException(
-                $"card '{card.FaceId}' was revealed and no ability data is written for it; "
-                + $"this engine has {execution.program.Authored.Count} authored card(s)");
-        }
+        execution.RequireWhenRevealed(card.FaceId);
 
         return [.. execution.On(card)
             .Where(ability => ability.Trigger.Timing == AbilityType.WhenRevealed)
@@ -51,14 +54,8 @@ internal static class AbilityResolutionRevelation
         ArgumentNullException.ThrowIfNull(card);
         ArgumentNullException.ThrowIfNull(occurrence);
 
-        if (!execution.program.KnowsWhenRevealed(card.FaceId))
-        {
-            // Authored-and-does-nothing is a different thing from nobody having
-            // read the card, and only one of them is safe to treat as silence.
-            throw new RulesNotImplementedException(
-                $"card '{card.FaceId}' was revealed and no ability data is written for it; "
-                + $"this engine has {execution.program.Authored.Count} authored card(s)");
-        }
+        // Authored-and-does-nothing is distinct from an unread face.
+        execution.RequireWhenRevealed(card.FaceId);
 
         var reveals = execution.On(card)
             .Where(ability => ability.Trigger.Timing == AbilityType.WhenRevealed)

@@ -25,13 +25,7 @@ internal static class AbilityCardOperations
         string key = AbilityCostSelection.CounterKeyForRemoval(card, type, count)
             ?? throw new RulesNotImplementedException(
                 $"'{card.FaceId}' has fewer than {count} {type} counters");
-        long before = card.Tokens.GetValueOrDefault(key);
-        card.PlaceTokens(key, -count);
-        events.Add(new FieldSet(card.ObjectId, key, before, before - count)
-        {
-            Trigger = trigger,
-            Verb = "Remove_Counter",
-        });
+        RemovePhysicalCounters(world, card, type, count, key, trigger, events);
 
         if (AbilityExpressionEvaluation.CounterCount(card, "allPurpose") == 0
             && !Characteristics.IsLost(world, card, "uses")
@@ -40,5 +34,24 @@ internal static class AbilityCardOperations
             if (!VictoryDisplay.ToVictoryDisplay(world, world.Facts, card, trigger, events))
                 Discard.Card(world, card, trigger, events);
         }
+    }
+
+    private static void RemovePhysicalCounters(World world, Card card, string type,
+        long count, string key, string trigger, List<GameEvent> events)
+    {
+        if (card.FaceId is ("02006a" or "02006b")
+            && (card.FaceId == "02006a" && type == "infamy"
+                || card.FaceId == "02006b" && type == "madness"))
+        {
+            GreenGoblinTransition.RemoveCounters(world, card, type, count, trigger, events);
+            return;
+        }
+        long before = card.Tokens.GetValueOrDefault(key);
+        card.PlaceTokens(key, -count);
+        events.Add(new FieldSet(card.ObjectId, key, before, before - count)
+        {
+            Trigger = trigger,
+            Verb = "Remove_Counter",
+        });
     }
 }

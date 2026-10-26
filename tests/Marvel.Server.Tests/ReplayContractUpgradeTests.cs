@@ -8,6 +8,35 @@ namespace Marvel.Server.Tests;
 
 public sealed class ReplayContractUpgradeTests
 {
+    [Theory]
+    [InlineData("engine-replay-v19")]
+    [InlineData("engine-replay-v20")]
+    [InlineData("engine-replay-v21")]
+    public void CurrentNamedAdapterVerifiesTheOriginalHistory(string sourceReplay)
+    {
+        AdditiveContentUpgradeTests.WithAddedScenario((root, _) =>
+        {
+            var (previous, factory) = Fixture(root);
+            var original = previous.Save;
+            if (sourceReplay != original.Compatibility.ReplayContract)
+            {
+                var intermediate = original.Compatibility with { ReplayContract = sourceReplay };
+                var route = sourceReplay == "engine-replay-v20"
+                    ? SessionReplayUpgrade.CoreRorsV19ToV20 : SessionReplayUpgrade.CoreRorsV19ToV21;
+                // Derived intermediate evidence retains every fact from the authentic v19 trace.
+                original = new SessionContentUpgrade(original.Compatibility, intermediate, route)
+                    .Verify(original, setup => Open(factory, setup));
+            }
+            string bytes = SessionSaveJson.Write(original);
+            var upgrade = Assert.IsType<SessionContentUpgrade>(factory.ContentUpgrade(original.Compatibility));
+            var current = upgrade.Verify(original, setup => Open(factory, setup));
+            Assert.Equal("engine-replay-v23", current.Compatibility.ReplayContract);
+            Assert.Equal(bytes, SessionSaveJson.Write(current with { Compatibility = original.Compatibility }));
+            Assert.Equal(bytes, SessionSaveJson.Write(original));
+            Assert.Null(factory.ContentUpgrade(original.Compatibility with { ReplayContract = "engine-replay-v22" }));
+        });
+    }
+
     [Fact]
     public void NamedAdapterVerifiesActualV19SaveBeforeChangingOnlyCompatibility()
     {
@@ -123,7 +152,7 @@ public sealed class ReplayContractUpgradeTests
     [InlineData("engine-replay-v19")]
     [InlineData("engine-replay-v20")]
     [InlineData("engine-replay-v21")]
-    [InlineData("engine-replay-v23")]
+    [InlineData("engine-replay-v24")]
     public void HostAdmissionRequiresThisDeliveryDestination(string destination)
     {
         AdditiveContentUpgradeTests.WithAddedScenario((root, _) =>

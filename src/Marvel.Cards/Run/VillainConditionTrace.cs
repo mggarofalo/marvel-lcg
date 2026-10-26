@@ -121,8 +121,7 @@ internal sealed class VillainConditionTrace(
             return true;
         }
         if (TryTraceCount(
-            cards, next, cast, changes.Discarded, changes.Traits, changes.Modifiers,
-            changes.Engagement, formsMayChange, out long count))
+            cards, next, cast, changes, formsMayChange, out long count))
         {
             result = count > 0;
             return true;
@@ -135,11 +134,9 @@ internal sealed class VillainConditionTrace(
         AbilityCondition.AtLeast comparison, out bool result)
     {
         if (!TryTraceCountAmount(
-                comparison.Value, next, cast, changes.Discarded, changes.Traits,
-                changes.Modifiers, changes.Engagement, formsMayChange, out long value)
+                comparison.Value, next, cast, changes, formsMayChange, out long value)
             || !TryTraceCountAmount(
-                comparison.Count, next, cast, changes.Discarded, changes.Traits,
-                changes.Modifiers, changes.Engagement, formsMayChange, out long count))
+                comparison.Count, next, cast, changes, formsMayChange, out long count))
         {
             result = false;
             return false;
@@ -211,8 +208,7 @@ internal sealed class VillainConditionTrace(
 
     private bool CountCanDiffer(AbilityCardSelection cards) =>
         !TryTraceCount(
-            cards, next, cast, changes.Discarded, changes.Traits, changes.Modifiers,
-            changes.Engagement, formsMayChange, out long traced)
+            cards, next, cast, changes, formsMayChange, out long traced)
         || traced != Every(cards, cast).Count;
 
     private bool ModifiedCanDiffer(AbilityNumber.Modified modified, int depth) =>
@@ -253,7 +249,8 @@ internal sealed class VillainConditionTrace(
             AbilityCondition.IsEnemyAttacker => true,
             AbilityCondition.TitleInPlay title => TitleCanChange(title.Title),
             AbilityCondition.Exists exists => TraceCardsInPlayMayDiffer(changes.Discarded, cast)
-                || PotentialVillainSelector(exists.Cards, cast),
+                || PotentialVillainSelector(exists.Cards, cast)
+                || AbilitySelectorTrace.SelectorReadsStatus(exists.Cards),
             AbilityCondition.IsKind kind => PotentialVillainSelector(kind.Card, cast)
                 || Find(kind.Card, cast) is { } card
                     && changes.Discarded.Contains(card.ObjectId),

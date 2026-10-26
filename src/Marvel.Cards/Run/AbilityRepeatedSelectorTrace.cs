@@ -94,6 +94,8 @@ internal static class AbilityRepeatedSelectorTrace
             AbilityCardSelection.EnemiesWithTrait trait => TraceHasTrait(current, trait.Trait, cast, []),
             AbilityCardSelection.WithTrait trait => TraceHasTrait(current, trait.Trait, cast, []) != trait.Exclude
                 && SelectorCanTrackVillain(trait.Cards, current, cast),
+            AbilityCardSelection.WithStatus status => Statuses.Afflicted(cast.World, cast.World.Facts, current, status.Status)
+                && SelectorCanTrackVillain(status.Cards, current, cast),
             AbilityCardSelection.FirstAvailable fallback => fallback.Options.Any(option => SelectorCanTrackVillain(option, current, cast)),
             AbilityCardSelection.Last last => SelectorCanTrackVillain(last.Cards, current, cast),
             AbilityCardSelection.InObjectIdOrder ordered => SelectorCanTrackVillain(ordered.Cards, current, cast),

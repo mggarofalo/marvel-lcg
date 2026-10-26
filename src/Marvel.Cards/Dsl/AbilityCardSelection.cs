@@ -22,6 +22,8 @@ public abstract record AbilityCardSelection
         /// <summary>Select cards lacking the named trait.</summary>
         public bool Exclude { get; init; }
     }
+    /// <summary>Selected cards currently afflicted by a named status.</summary>
+    public sealed record WithStatus(AbilityCardSelection Cards, string Status) : AbilityCardSelection;
     /// <summary>Selected cards whose physical face is down.</summary>
     public sealed record FaceDown(AbilityCardSelection Cards) : AbilityCardSelection;
     /// <summary>The first nonempty ordered selection.</summary>

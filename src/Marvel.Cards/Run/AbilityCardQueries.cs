@@ -90,11 +90,27 @@ internal static class AbilityCardQueries
         AbilityCardBinding.TriggerSubject => cast.Occurrence.Subject >= 0
             ? cast.World.Cards[cast.Occurrence.Subject]
             : null,
+        AbilityCardBinding.DiscardedEvent => DiscardedEvent(cast),
         // rr:defend-defense.6: without a defending character the attack is
         // undefended, including when a boost ability defeats its defending ally.
         AbilityCardBinding.DefendingCharacter => CurrentDefender(cast.World),
         _ => throw new InvalidOperationException("Unknown compiled card binding"),
     };
+
+    private static Card? DiscardedEvent(AbilityQueryContext cast)
+    {
+        // rr:event places the resolved event in its owner's discard pile.
+        // Ruling 7f69f006cddce07e: recovery happens after full resolution;
+        // an event removed from the game cannot be recovered this way.
+        if (!cast.Occurrence.Is(Steps.CardPlayed) || cast.Occurrence.Subject < 0)
+            return null;
+        var card = cast.World.Cards[cast.Occurrence.Subject];
+        return card.Owner == Resolver(cast) && card.Owner == cast.Occurrence.Player
+            && EffectiveCards.Kind(card, cast.World.Facts) == CardKind.Event
+            && card.Area.Type == DeckType.DiscardPile
+            && card.Area.PlayArea == PlayArea.Of(card.Owner)
+                ? card : null;
+    }
 
     private static Card? CurrentDefender(World world)
     {

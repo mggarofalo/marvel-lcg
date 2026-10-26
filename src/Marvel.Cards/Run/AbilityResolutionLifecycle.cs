@@ -104,11 +104,7 @@ internal static class AbilityResolutionLifecycle
             {
                 cast.Occurrence.Resolution.BeginCard(
                     source.ObjectId,
-                    [new PendingAbility(
-                        source.ObjectId,
-                        ability.Trigger.Timing,
-                        continuation.Seat,
-                        resumed.Invocation.Address.Ordinal)]);
+                    [cast.ResolutionAbility!.Value]);
             }
             if (!AbilityRecipientCommitment.Resume(execution, cast, ability))
                 execution.Run(ability, cast);

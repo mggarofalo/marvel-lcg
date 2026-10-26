@@ -14,6 +14,7 @@ internal static class AbilityEncounterSchemeQueries
     {
         AbilityCardSelection.Query query => IsRanked(query.Kind) || query.Kind == AbilityCardQuery.OtherVillainSideSchemes,
         AbilityCardSelection.WithTrait filter => UsesGroupOrder(filter.Cards),
+        AbilityCardSelection.WithStatus filter => UsesGroupOrder(filter.Cards),
         AbilityCardSelection.FaceDown filter => UsesGroupOrder(filter.Cards),
         AbilityCardSelection.Last filter => UsesGroupOrder(filter.Cards),
         AbilityCardSelection.InObjectIdOrder filter => UsesGroupOrder(filter.Cards),

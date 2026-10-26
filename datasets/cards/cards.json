@@ -45111,8 +45111,8 @@
         "Boost": "2",
         "GiveTo": "Jean Grey"
       },
-      "text": "",
-      "text_plain": "",
+      "text": "<b><i>Give to the Jean Grey player.</i></b>\n<b>When Revealed</b>: If you have the [[UNLEASHED]] trait, search the encounter deck, discard pile, and set-aside area for Dark Phoenix and reveal her. Then, remove Burning Hunger from the game. If you have the [[RESTRAINED]] trait, remove 1 power counter from Phoenix Force and this card gains surge. Discard this card.",
+      "text_plain": "Give to the Jean Grey player.\nWhen Revealed: If you have the UNLEASHED trait, search the encounter deck, discard pile, and set-aside area for Dark Phoenix and reveal her. Then, remove Burning Hunger from the game. If you have the RESTRAINED trait, remove 1 power counter from Phoenix Force and this card gains surge. Discard this card.",
       "pack": "phoenix",
       "set": "phoenix"
     },

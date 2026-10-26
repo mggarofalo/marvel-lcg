@@ -143,7 +143,7 @@ The narrow [named save upgrade path](save-content-upgrades.md) admits a
 pinned predecessor only after checking unchanged admitted content. It verifies
 the complete retained trace and all campaign proof sessions, then preserves the
 original archive before atomic publication. The save schema remains unchanged.
-The explicit frozen Core/RoRS v19, v20 and v21 routes target replay v22, and only
+The explicit frozen Core/RoRS v19, v20 and v21 routes target replay v23, and only
 when every original recorded fact verifies under the corrected runtime. Unknown
 contracts and divergent histories remain unsupported; admission is not a promise
 that every predecessor trace can migrate.
@@ -247,7 +247,7 @@ answers from another seat.
 Initial campaign recovery therefore belongs to one setup unit through the
 opening-hand boundary, including recovery decisions from every participating
 seat. This is a ledger grouping choice, not a tabletop rule. It uses schema 7
-and replay v22 unchanged: setup, accepted decisions, outcomes and replay
+and replay v23 unchanged: setup, accepted decisions, outcomes and replay
 verification retain their existing formats and meaning. The host initializes
 the active prefix at cursor zero, including after an authorized undo; later
 dependent decisions still require an open unit.
@@ -696,7 +696,13 @@ Campaign schema 1 and protocol 37 are strict compatibility boundaries. No
 migration invents missing campaign meaning. Complete content admission is
 required before the host advertises a campaign or starts its first attempt.
 
-The current replay identity is `engine-replay-v22`. Nested reveals finish before
+The current replay identity is `engine-replay-v23`. All prevention committed to
+one damage instance is consumed together. Replaying a recovered event in the same
+window tracks a separate play generation, including across suspended payment.
+These runtime changes can alter existing Core outcomes. V22 saves have no named
+source admission and are quarantined unchanged before replay. Frozen v19/v20/v21
+sources retain named v23 routes with exact original-history verification.
+Nested reveals finish before
 their parent continues, including minion Quickstrike. Native retaliation shares the
 forced after-attack window and applies after zero-damage attacks. Scheme defeat
 preserves the responsible player separately from identity-only credit, and selected villains

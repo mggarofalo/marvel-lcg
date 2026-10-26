@@ -7,6 +7,17 @@ namespace Marvel.Rules.Play;
 /// <summary>Schedules and completes nested enemy activations.</summary>
 public static class AgendaActivationScheduling
 {
+    /// <summary>The activation still resolving through its attack-end responses.</summary>
+    public static int EnclosingActivationId(this Agenda agenda)
+    {
+        int current = agenda.Current?.ActivationId ?? -1;
+        if (current >= 0) return current;
+        int origin = agenda.Current?.AttackOrigin?.ActivationId ?? -1;
+        return origin >= 0 && agenda.items.Any(item =>
+            item.Step.What == Steps.EndAttack && item.Step.ActivationId == origin)
+            ? origin : -1;
+    }
+
 
     /// <summary>Schedule one complete enemy activation and return its stable id.</summary>
     /// <remarks>
@@ -40,7 +51,7 @@ public static class AgendaActivationScheduling
             return id;
         }
 
-        int currentActivation = agenda.Current?.ActivationId ?? -1;
+        int currentActivation = agenda.EnclosingActivationId();
         if (currentActivation >= 0)
         {
             int at = agenda.CompletionIndex(currentActivation) + 1;

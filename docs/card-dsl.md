@@ -412,7 +412,7 @@ shuffle shuffleInto sideSchemes soakDamage sourceKind sourceTrait spend
 spendEnergyX startingCounters takeDamage then threatCause thwartDifferentSchemes thwartSchemes
 thwartableSchemes titleInPlay titled tokensOn topEncounterDiscardBoostPlusOne
 undefendedAttack until upgradesAndSupportsYouControl
-upgradesYouControl wasDefeated withTrait within withoutAnotherCopyAttached
+upgradesYouControl wasDefeated withStatus withTrait within withoutAnotherCopyAttached
 yourAsideMinion yourAsidePile yourAsideSideScheme
 ```
 
@@ -438,6 +438,15 @@ intervening game actions. This inspection does not support pre-then completion.
 name friendly characters; it is not appropriate when printed text names heroes.
 `allies` includes other players' allies, while `alliesYouControl` restricts
 selection to the resolving player's control.
+
+`withStatus` filters a selection to in-play characters currently afflicted by
+`tough`, `stunned`, or `confused`. For example,
+`{"count":{"withStatus":{"cards":{"query":"heroesAndAllies"},"status":"stunned"}}}`
+counts stunned friendly characters across all players. An identity in either form
+and each in-play ally can count; an enemy, a card out of play, and a Steady
+character with only one stunned card do not. The selector reads the current
+board when its numeric expression resolves, and projected admission reads
+projected status counts and Steady.
 
 `withTrait` filters by current engine traits. Black Panther's upgrades are data:
 `{"withTrait":{"cards":{"query":"upgradesYouControl"},"trait":"BLACK_PANTHER"}}`.
@@ -1040,3 +1049,9 @@ value prevents the selected character from performing basic or labeled thwarts,
 including an attempt canceled by Confused. It does not prevent nonthwart threat
 removal or another character's thwart. The field is an engine-selected constant
 modifier name, not a registered card-state or digest field.
+
+`trigger.discardedEvent` binds the exact physical event named by a card-play
+occurrence only while it remains in the playing owner's discard pile and that
+owner is the resolving player. It binds nothing before discard or after removal
+from the game. This engine-selected binding supports post-resolution recovery
+without selecting a different copy of the same printed card.

@@ -53,10 +53,29 @@ independent identities do:
 |---|---:|---|
 | Engine protocol | `37` | A request, response, affordance, event or descriptor change is not understood by the prior endpoint. |
 | Session schema | `7` | The strict persisted JSON shape changes. |
-| Engine replay contract | `engine-replay-v22` | The same setup and decision trace may resolve differently. |
+| Engine replay contract | `engine-replay-v23` | The same setup and decision trace may resolve differently. |
 | RNG contract | `mt19937-iso-cxx` | The seeded random stream changes. |
 | State digest | `state-digest-v3` | The canonical hidden-state serialization changes. |
 | Runtime datasets | Three SHA-256 values | Any byte in `cards.json`, `setup.json` or `abilities.json` changes. |
+
+Replay v23 consumes every prevention committed to one damage instance, including
+stacked Cosmic Flights, and preserves separate resolutions when a recovered event
+is replayed in the same window, including suspended payment. It also assigns
+ordinary simultaneous activations to the attacked player and nested activations
+to the first player, deferring attack-end response activations until the enclosing
+attack finishes. These corrections change existing Core traces, including
+Gang-Up, independently of expansion content. There is no named
+v22 source admission: v22 saves are quarantined unchanged before replay. Frozen
+v19/v20/v21 sources retain explicitly named v23 routes that verify every original
+gameplay fact and reject divergent histories. Protocol 37, schema 7, RNG and digest
+identities are unchanged; internal continuations are rebuilt from decisions.
+
+The frozen Expert campaign also contains a divergent Backflip history: at
+Crossbones attempt 4, unit 31 decision 3, the corrected prevention consumption
+allows Hydra Mercenary's two damage instead of carrying prevention from the
+preceding attack. Its complete aggregate remains quarantined unchanged on
+restore and import; the unaffected initial Absorbing Man attempt can still
+upgrade independently. See [save-content-upgrades.md](save-content-upgrades.md).
 
 Replay v22 completes nested reveals, including minion Quickstrike, before the
 parent reveal continues. This changes recorded event and decision boundaries;

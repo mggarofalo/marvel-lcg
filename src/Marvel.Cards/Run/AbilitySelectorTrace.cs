@@ -10,6 +10,41 @@ namespace Marvel.Cards.Run;
 
 internal static class AbilitySelectorTrace
 {
+    internal static bool SelectorReadsStatus(AbilityCardSelection selector) => selector switch
+    {
+        AbilityCardSelection.WithStatus => true,
+        AbilityCardSelection.WithTrait filtered => SelectorReadsStatus(filtered.Cards),
+        AbilityCardSelection.InObjectIdOrder ordered => SelectorReadsStatus(ordered.Cards),
+        AbilityCardSelection.Last last => SelectorReadsStatus(last.Cards),
+        AbilityCardSelection.FaceDown filtered => SelectorReadsStatus(filtered.Cards),
+        AbilityCardSelection.FirstAvailable fallback => fallback.Options.Any(option =>
+            SelectorReadsStatus(option)),
+        AbilityCardSelection.Ranked ranked => SelectorReadsStatus(ranked.Cards),
+        AbilityCardSelection.WithMatchingPlayerArea filtered => SelectorReadsStatus(filtered.Cards),
+        AbilityCardSelection.WithoutAnotherCopyAttached filtered => SelectorReadsStatus(filtered.Cards),
+        AbilityCardSelection.Discardable filtered => SelectorReadsStatus(filtered.Cards),
+        _ => false,
+    };
+
+    internal static bool CountSelectorFormsMayChange(AbilityCardSelection selector,
+        AbilityAdmissionScope cast, ulong formsMayChange) => selector switch
+    {
+        AbilityCardSelection.Bound { Binding: AbilityCardBinding.YourHero or AbilityCardBinding.YourAlterEgo } =>
+            SeatMayChange(formsMayChange, Resolver(cast)),
+        AbilityCardSelection.Query { Kind: AbilityCardQuery.Heroes } =>
+            Enumerable.Range(0, cast.World.Seats.Count).Any(seat => SeatMayChange(formsMayChange, seat)),
+        AbilityCardSelection.WithTrait filtered => CountSelectorFormsMayChange(filtered.Cards, cast, formsMayChange),
+        AbilityCardSelection.WithStatus filtered => CountSelectorFormsMayChange(filtered.Cards, cast, formsMayChange),
+        AbilityCardSelection.FirstAvailable fallback => fallback.Options.Any(option => CountSelectorFormsMayChange(option, cast, formsMayChange)),
+        AbilityCardSelection.Last filtered => CountSelectorFormsMayChange(filtered.Cards, cast, formsMayChange),
+        AbilityCardSelection.FaceDown filtered => CountSelectorFormsMayChange(filtered.Cards, cast, formsMayChange),
+        AbilityCardSelection.InObjectIdOrder filtered => CountSelectorFormsMayChange(filtered.Cards, cast, formsMayChange),
+        AbilityCardSelection.WithMatchingPlayerArea filtered => CountSelectorFormsMayChange(filtered.Cards, cast, formsMayChange),
+        AbilityCardSelection.Ranked ranked => CountSelectorFormsMayChange(ranked.Cards, cast, formsMayChange),
+        AbilityCardSelection.WithoutAnotherCopyAttached filtered => CountSelectorFormsMayChange(filtered.Cards, cast, formsMayChange),
+        _ => false,
+    };
+
     internal static List<Card> TraceCandidateCards(AbilityCardSelection selector, AbilityAdmissionScope cast) => selector switch
     {
         AbilityCardSelection.Query { Kind: AbilityCardQuery.OtherVillainSideSchemes } =>
@@ -24,6 +59,7 @@ internal static class AbilitySelectorTrace
                 .SelectMany(group => group.Stages)],
         AbilityCardSelection.Ranked ranked => TraceCandidateCards(ranked.Cards, cast),
         AbilityCardSelection.WithTrait filtered => TraceCandidateCards(filtered.Cards, cast),
+        AbilityCardSelection.WithStatus filtered => TraceCandidateCards(filtered.Cards, cast),
         AbilityCardSelection.FirstAvailable fallback => [.. fallback.Options.SelectMany(option => TraceCandidateCards(option, cast)).Distinct()],
         AbilityCardSelection.Last filtered => TraceCandidateCards(filtered.Cards, cast),
         AbilityCardSelection.FaceDown filtered => TraceCandidateCards(filtered.Cards, cast),
@@ -59,8 +95,8 @@ internal static class AbilitySelectorTrace
         AbilityCardSelection.Titled titled => string.Equals(titled.Title,
             EffectiveCards.Title(candidate, trace.Cast.World.Facts), StringComparison.Ordinal),
         AbilityCardSelection.EnemiesWithTrait filtered => HasTrait(candidate, filtered.Trait, trace),
-        AbilityCardSelection.WithTrait filtered => TraceSelectorMatches(filtered.Cards, candidate, trace)
-            && HasTrait(candidate, filtered.Trait, trace) != filtered.Exclude,
+        AbilityCardSelection.WithTrait or AbilityCardSelection.WithStatus =>
+            TraceFilterMatches(selector, candidate, trace),
         AbilityCardSelection.FaceDown filtered => !candidate.FaceUp
             && TraceSelectorMatches(filtered.Cards, candidate, trace),
         AbilityCardSelection.InObjectIdOrder ordered => TraceSelectorMatches(ordered.Cards, candidate, trace),
@@ -82,6 +118,38 @@ internal static class AbilitySelectorTrace
         AbilityCardSelection.Bound bound => BoundMatches(bound, candidate, trace),
         _ => throw new InvalidOperationException("Unknown compiled selector in projected membership"),
     };
+
+    private static bool TraceFilterMatches(AbilityCardSelection selector,
+        Card candidate, AbilitySelectorTraceContext trace) => selector switch
+    {
+        AbilityCardSelection.WithTrait filtered =>
+            TraceSelectorMatches(filtered.Cards, candidate, trace)
+            && HasTrait(candidate, filtered.Trait, trace) != filtered.Exclude,
+        AbilityCardSelection.WithStatus filtered =>
+            TraceSelectorMatches(filtered.Cards, candidate, trace)
+            && (DeckTypes.IsInPlay(candidate.Area.Type)
+                || candidate.ObjectId == trace.CurrentVillain
+                || trace.EncounterStages?.Values.Contains(candidate.ObjectId) == true)
+            && !trace.Discarded.Contains(candidate.ObjectId)
+            && TraceAfflicted(candidate, filtered.Status, trace),
+        _ => throw new InvalidOperationException("Unknown compiled card filter in projected membership"),
+    };
+
+    private static bool TraceAfflicted(Card candidate, string status,
+        AbilitySelectorTraceContext trace)
+    {
+        int count = trace.StatusCounts?.GetValueOrDefault(
+            (candidate.ObjectId, status), Statuses.Count(trace.Cast.World, candidate, status))
+            ?? Statuses.Count(trace.Cast.World, candidate, status);
+        if (status is Statuses.Stunned or Statuses.Confused)
+        {
+            if (TraceModified(candidate, "stalwart", trace.Cast, trace.Discarded,
+                    trace.Modifiers) > 0) return false;
+            return count >= (TraceModified(candidate, "steady", trace.Cast,
+                trace.Discarded, trace.Modifiers) > 0 ? 2 : 1);
+        }
+        return count > 0;
+    }
 
     private static bool BoundMatches(
         AbilityCardSelection.Bound bound, Card candidate, AbilitySelectorTraceContext trace)
@@ -147,6 +215,7 @@ internal static class AbilitySelectorTrace
         AbilityCardSelection.Query { Kind: AbilityCardQuery.MinionsEngagedWithYou
             or AbilityCardQuery.EnemiesEngagedWithChosenPlayer } => true,
         AbilityCardSelection.WithTrait filtered => UsesEngagedAreaOrder(filtered.Cards),
+        AbilityCardSelection.WithStatus filtered => UsesEngagedAreaOrder(filtered.Cards),
         AbilityCardSelection.FaceDown filtered => UsesEngagedAreaOrder(filtered.Cards),
         AbilityCardSelection.WithMatchingPlayerArea filtered => UsesEngagedAreaOrder(filtered.Cards),
         AbilityCardSelection.WithoutAnotherCopyAttached filtered => UsesEngagedAreaOrder(filtered.Cards),
@@ -159,6 +228,7 @@ internal static class AbilitySelectorTrace
     {
         AbilityCardSelection.InObjectIdOrder => true,
         AbilityCardSelection.WithTrait filtered => UsesObjectIdOrder(filtered.Cards),
+        AbilityCardSelection.WithStatus filtered => UsesObjectIdOrder(filtered.Cards),
         AbilityCardSelection.FaceDown filtered => UsesObjectIdOrder(filtered.Cards),
         AbilityCardSelection.WithMatchingPlayerArea filtered => UsesObjectIdOrder(filtered.Cards),
         AbilityCardSelection.WithoutAnotherCopyAttached filtered => UsesObjectIdOrder(filtered.Cards),

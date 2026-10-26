@@ -20,23 +20,24 @@ public sealed class OccurrenceResolutions
                 ability.Card, ability.Type, ability.Ordinal,
                 ability.Type == AbilityType.Constant
                     ? ResolutionStatus.Unresolved
-                    : ResolutionStatus.Pending) { TriggeringDefeat = ability.TriggeringDefeat, TriggeringAttack = ability.TriggeringAttack, TriggeringThreatId = ability.TriggeringThreat?.Id, Native = ability.Native });
+                    : ResolutionStatus.Pending) { TriggeringDefeat = ability.TriggeringDefeat, TriggeringAttack = ability.TriggeringAttack, TriggeringThreatId = ability.TriggeringThreat?.Id, Native = ability.Native, EventPlay = ability.EventPlay });
         }
     }
 
     /// <summary>Begin resolving an event or treachery and all of its abilities.</summary>
     public void BeginCard(int card, IReadOnlyList<PendingAbility> abilities)
     {
-        if (resolutions.All(entry => entry.Card != card || entry.Ability is not null))
+        int eventPlay = abilities.Count > 0 ? abilities[0].EventPlay : 0;
+        if (resolutions.All(entry => entry.Card != card || entry.Ability is not null || entry.EventPlay != eventPlay))
         {
             resolutions.Add(new ResolutionEntry(
-                card, null, -1, ResolutionStatus.Pending));
+                card, null, -1, ResolutionStatus.Pending) { EventPlay = eventPlay });
         }
         foreach (var ability in abilities)
         {
             Begin(ability);
         }
-        RefreshCard(card);
+        RefreshCard(card, eventPlay);
     }
 
     /// <summary>Record that at least one effect applied while the ability remains in progress.</summary>
@@ -57,7 +58,7 @@ public sealed class OccurrenceResolutions
                     ? ResolutionStatus.Resolved
                     : resolutions[found].Status,
             };
-            RefreshCard(ability.Card);
+            RefreshCard(ability.Card, ability.EventPlay);
         }
     }
 
@@ -79,14 +80,14 @@ public sealed class OccurrenceResolutions
                     : ResolutionStatus.Unresolved,
             };
         }
-        RefreshCard(ability.Card);
+        RefreshCard(ability.Card, ability.EventPlay);
     }
 
     /// <summary>Cancel an ability before any of its effects resolve.</summary>
     public void Cancel(PendingAbility ability)
     {
         Set(ability, ResolutionStatus.Unresolved, applied: false);
-        RefreshCard(ability.Card);
+        RefreshCard(ability.Card, ability.EventPlay);
     }
 
     /// <summary>The current status of an exact ability; absent abilities are unresolved.</summary>
@@ -97,7 +98,7 @@ public sealed class OccurrenceResolutions
     }
 
     /// <summary>The current status of a card; absent cards are unresolved.</summary>
-    public ResolutionStatus CardStatus(int card) => resolutions.FirstOrDefault(entry =>
+    public ResolutionStatus CardStatus(int card) => resolutions.LastOrDefault(entry =>
         entry.Card == card && entry.Ability is null)?.Status
         ?? ResolutionStatus.Unresolved;
 
@@ -105,6 +106,7 @@ public sealed class OccurrenceResolutions
         entry.Card == ability.Card
         && entry.Ability == ability.Type
         && entry.Ordinal == ability.Ordinal
+        && entry.EventPlay == ability.EventPlay
         && entry.Native == ability.Native
         && entry.TriggeringDefeat == ability.TriggeringDefeat
         && entry.TriggeringAttack == ability.TriggeringAttack
@@ -122,7 +124,7 @@ public sealed class OccurrenceResolutions
         {
             resolutions.Add(new ResolutionEntry(
                 ability.Card, ability.Type, ability.Ordinal, status, applied)
-                { TriggeringDefeat = ability.TriggeringDefeat, TriggeringAttack = ability.TriggeringAttack, TriggeringThreatId = ability.TriggeringThreat?.Id, Native = ability.Native });
+                { TriggeringDefeat = ability.TriggeringDefeat, TriggeringAttack = ability.TriggeringAttack, TriggeringThreatId = ability.TriggeringThreat?.Id, Native = ability.Native, EventPlay = ability.EventPlay });
         }
         else
         {
@@ -134,17 +136,17 @@ public sealed class OccurrenceResolutions
         }
     }
 
-    private void RefreshCard(int card)
+    private void RefreshCard(int card, int eventPlay)
     {
         int cardEntry = resolutions.FindIndex(entry =>
-            entry.Card == card && entry.Ability is null);
+            entry.Card == card && entry.Ability is null && entry.EventPlay == eventPlay);
         if (cardEntry < 0)
         {
             return;
         }
 
         var abilities = resolutions.Where(entry =>
-            entry.Card == card && entry.Ability is not null).ToList();
+            entry.Card == card && entry.Ability is not null && entry.EventPlay == eventPlay).ToList();
         var status = abilities.Any(entry => entry.Status == ResolutionStatus.Resolved)
             ? ResolutionStatus.Resolved
             : abilities.Any(entry => entry.Status == ResolutionStatus.Pending)

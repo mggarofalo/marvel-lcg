@@ -35,6 +35,7 @@ internal static class AbilitySelectorLowering
                 "you" => AbilityCardBinding.You,
                 "attachedTo" => AbilityCardBinding.AttachedTo,
                 "trigger.subject" => AbilityCardBinding.TriggerSubject,
+                "trigger.discardedEvent" => AbilityCardBinding.DiscardedEvent,
                 "defendingCharacter" => AbilityCardBinding.DefendingCharacter,
                 _ => throw location.Error($"'{word.Value}' is not a card binding"),
             });
@@ -47,6 +48,7 @@ internal static class AbilitySelectorLowering
             "titled" => new AbilityCardSelection.Titled(Text(node.Argument, child)),
             "enemiesWithTrait" => new AbilityCardSelection.EnemiesWithTrait(Text(node.Argument, child)),
             "withTrait" => WithTrait(node.Argument, child),
+            "withStatus" => WithStatus(node.Argument, child),
             "withoutTrait" => WithTrait(node.Argument, child) with { Exclude = true },
             "inObjectIdOrder" => new AbilityCardSelection.InObjectIdOrder(SelectCards(node.Argument, child)),
             "defeatedWithProfile" => DefeatedProfile(node.Argument, child),
@@ -161,6 +163,15 @@ internal static class AbilitySelectorLowering
         var fields = Fields(value, location, "cards", "trait");
         return new(SelectCards(Required(fields, "cards", location), location.Child("cards")),
             Text(Required(fields, "trait", location), location.Child("trait")));
+    }
+
+    private static AbilityCardSelection.WithStatus WithStatus(AbilityValue value, AbilityLocation location)
+    {
+        var fields = Fields(value, location, "cards", "status");
+        string status = Text(Required(fields, "status", location), location.Child("status"));
+        if (status is not (Statuses.Tough or Statuses.Stunned or Statuses.Confused))
+            throw location.Child("status").Error($"'{status}' is not a status");
+        return new(SelectCards(Required(fields, "cards", location), location.Child("cards")), status);
     }
 
     internal static AbilityCardSelection.Ranked Ranked(

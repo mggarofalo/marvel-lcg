@@ -36,7 +36,7 @@ internal static class AbilityDamageReplacementExecution
         var replacement = State(step).Replacement;
         return new Prompt(world.FirstPlayer, Question.Order, TimingPriority.ForcedInterrupt,
             Steps.DamageWouldBeDealt, "order forced damage replacements", false,
-            [.. Pending(resolver, world, replacement).Select(ability => resolver.Describe(world, ability))]);
+            [.. Pending(resolver, world, replacement).Select(ability => Describe(resolver, world, replacement, ability))]);
     }
 
     internal static IReadOnlyList<GameEvent> Chose(AbilityResolutionExecution resolver, World world,
@@ -47,7 +47,7 @@ internal static class AbilityDamageReplacementExecution
         if (!assessment.IsAccepted) throw new ArgumentException(assessment.Reason, nameof(answer));
         var replacement = State(step).Replacement;
         var chosen = Pending(resolver, world, replacement).Single(ability =>
-            resolver.Describe(world, ability).Id == answer.Affordance);
+            Describe(resolver, world, replacement, ability).Id == answer.Affordance);
         world.Agenda.Executions.Resume(replacement.Execution);
         var events = new List<GameEvent>();
         if (Resolve(resolver, world, replacement, chosen, events)) Continue(resolver, world, replacement, events);
@@ -89,10 +89,21 @@ internal static class AbilityDamageReplacementExecution
     }
 
     private static List<PendingAbility> Pending(AbilityResolutionExecution resolver,
-        World world, DamageReplacement replacement) =>
-        resolver.Waiting(world, replacement.Execution.Occurrence, WindowKind.Interrupt)
+        World world, DamageReplacement replacement)
+    {
+        var authored = resolver.Waiting(world, replacement.Execution.Occurrence, WindowKind.Interrupt);
+        var native = GreenGoblinDamageReplacement.Waiting(world, replacement);
+        return AbilityOfferHandles.Assign(native is { } pending
+                ? authored.Append(pending) : authored, world.Cards.Count)
             .Where(ability => ability.Type == AbilityType.ForcedInterrupt
                 && replacement.Execution.Occurrence.MayTrigger(WindowKind.Interrupt, ability)).ToList();
+    }
+
+    private static Affordance Describe(AbilityResolutionExecution resolver, World world,
+        DamageReplacement replacement, PendingAbility ability) =>
+        ability.Native == NativeAbilityKind.GreenGoblinDamageReplacement
+            ? GreenGoblinDamageReplacement.Describe(world, ability, replacement)
+            : resolver.Describe(world, ability);
 
     private static bool Resolve(AbilityResolutionExecution resolver, World world,
         DamageReplacement replacement, PendingAbility ability, List<GameEvent> events)
@@ -100,7 +111,10 @@ internal static class AbilityDamageReplacementExecution
         var occurrence = replacement.Execution.Occurrence;
         occurrence.Trigger(WindowKind.Interrupt, ability);
         var result = world.Agenda.Executions.Run(occurrence, ability, invocation =>
-            resolver.ResolveReplacement(world, invocation, new Decision(ability.OfferId ?? ability.Card, [], []), replacement));
+            ability.Native == NativeAbilityKind.GreenGoblinDamageReplacement
+                ? GreenGoblinDamageReplacement.Resolve(world, invocation, replacement)
+                : resolver.ResolveReplacement(world, invocation,
+                    new Decision(ability.OfferId ?? ability.Card, [], []), replacement));
         ActivityBatches.Append(events, result.Events);
         return result.IsComplete;
     }

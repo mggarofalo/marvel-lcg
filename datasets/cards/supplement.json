@@ -264,12 +264,19 @@
           "attributes": {
             "GiveTo": "Nebula"
           }
-        },
+        }
+      ]
+    },
+    {
+      "why": "MarvelSDB records Burning Hunger and its boost icons but omits its entire printed text box. The directly inspected English card image supplies the identity target and both trait branches.",
+      "cards": [
         {
           "card_id": "34028",
+          "authority": "English Phoenix #28 card image; docs/content/research/remaining/sources/phoenix-34028.png; SHA256 8d6d4160a5f64c7c6d4c2e5d56d2eb14aacd0f08cd1b440ee287e9f001881190; https://marvelcdb.com/bundles/cards/34028.png (retrieved 2026-10-25)",
           "attributes": {
             "GiveTo": "Jean Grey"
-          }
+          },
+          "text": "<b><i>Give to the Jean Grey player.</i></b>\n<b>When Revealed</b>: If you have the [[UNLEASHED]] trait, search the encounter deck, discard pile, and set-aside area for Dark Phoenix and reveal her. Then, remove Burning Hunger from the game. If you have the [[RESTRAINED]] trait, remove 1 power counter from Phoenix Force and this card gains surge. Discard this card."
         }
       ]
     },

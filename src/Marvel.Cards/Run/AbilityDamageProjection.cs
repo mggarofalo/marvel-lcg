@@ -30,9 +30,15 @@ internal sealed class AbilityDamageProjection
 
         var occurrence = new Occurrence(
             0, [Steps.DamageWouldBeDealt], Subject: target.ObjectId, Player: target.Owner);
-        foreach (var candidate in AbilityWindowAdmission.Waiting(
-                     program, world, occurrence, WindowKind.Interrupt, resourceAbilities)
-                     .Where(candidate => candidate.Ability.Trigger.Timing == AbilityType.ForcedInterrupt))
+        var candidates = AbilityWindowAdmission.Waiting(
+                program, world, occurrence, WindowKind.Interrupt, resourceAbilities)
+            .Where(candidate => candidate.Ability.Trigger.Timing == AbilityType.ForcedInterrupt)
+            .ToList();
+        DamageProjection? native = GreenGoblinDamageReplacement.Preview(world, target, amount);
+        if (native is not null && candidates.Count > 0)
+            return new(new RuleProjection<long>.Unsupported(
+                "Multiple forced damage replacements may resolve in a chosen order"));
+        foreach (var candidate in candidates)
         {
             Card card = candidate.Card;
             CompiledCardAbility ability = candidate.Ability;
@@ -53,7 +59,7 @@ internal sealed class AbilityDamageProjection
                     $"{name} has a forced interrupt whose damage projection is not implemented"));
         }
 
-        return new DamageProjection(amount);
+        return native ?? new DamageProjection(amount);
     }
 
     internal DefeatProjection? PreviewDefeatReplacement(

@@ -41,6 +41,9 @@ public sealed class SessionContentUpgrade(SessionCompatibility source, SessionCo
             SessionReplayUpgrade.CoreRorsV19ToV22 => RequireNamedReplay("engine-replay-v19", "engine-replay-v22"),
             SessionReplayUpgrade.CoreRorsV20ToV22 => RequireNamedReplay("engine-replay-v20", "engine-replay-v22"),
             SessionReplayUpgrade.CoreRorsV21ToV22 => RequireNamedReplay("engine-replay-v21", "engine-replay-v22"),
+            SessionReplayUpgrade.CoreRorsV19ToV23 => RequireNamedReplay("engine-replay-v19", "engine-replay-v23"),
+            SessionReplayUpgrade.CoreRorsV20ToV23 => RequireNamedReplay("engine-replay-v20", "engine-replay-v23"),
+            SessionReplayUpgrade.CoreRorsV21ToV23 => RequireNamedReplay("engine-replay-v21", "engine-replay-v23"),
             _ => throw new SessionCompatibilityException("replay_identity_mismatch", "unsupported named replay upgrade"),
         };
         // Application downgrade, RNG and digest checks remain exact. Source identity and

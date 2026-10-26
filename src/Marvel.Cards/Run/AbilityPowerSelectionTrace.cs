@@ -21,7 +21,8 @@ internal static class AbilityPowerSelectionTrace
                 return AbilitySingularTraceSelection.Find(value, new(reachability.CurrentVillain, cast,
                     reachability.Discarded, reachability.Traits, reachability.Modifiers, reachability.Engagement)
                 { EncounterStages = reachability.EncounterStages, EncounterOrder = reachability.EncounterOrder,
-                    SchemeThreat = reachability.SchemeThreat });
+                    SchemeThreat = reachability.SchemeThreat,
+                    StatusCounts = reachability.StatusCounts });
             return PowerEvery(value, cast, reachability).FirstOrDefault();
         }
         var found = Find(value, cast);
@@ -80,7 +81,8 @@ internal static class AbilityPowerSelectionTrace
                         reachability.Discarded, reachability.Traits,
                             reachability.Modifiers, reachability.Engagement)
                             { EncounterStages = reachability.EncounterStages, EncounterOrder = reachability.EncounterOrder,
-                                SchemeThreat = reachability.SchemeThreat })),
+                                SchemeThreat = reachability.SchemeThreat,
+                                StatusCounts = reachability.StatusCounts })),
         ];
         return reachability.EncounterOrder is not null && UsesObjectIdOrder(value)
             ? [.. selected.OrderBy(card => card.ObjectId)] : selected;

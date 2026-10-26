@@ -38,6 +38,12 @@ internal static class AbilityProjectedStateQueries
             AbilityCardSelection.InObjectIdOrder ordered => [.. ProjectedEvery(ordered.Cards, state, context).OrderBy(card => card.ObjectId)],
             AbilityCardSelection.WithTrait trait =>
                 ProjectedWithTrait(trait, state, context),
+            AbilityCardSelection.WithStatus status =>
+                [.. ProjectedEvery(status.Cards, state, context)
+                    .Where(card => (DeckTypes.IsInPlay(card.Area.Type)
+                            || state.Entered.Contains(card.ObjectId))
+                        && !state.Departed.Contains(card.ObjectId)
+                        && ProjectedAfflicted(status.Status, card, state, context))],
             AbilityCardSelection.Query { Kind: AbilityCardQuery.Villain } =>
                 ProjectedVillain(found, state, context),
             AbilityCardSelection.Query query =>
@@ -82,6 +88,16 @@ internal static class AbilityProjectedStateQueries
         AbilityAdmissionContext context) =>
         [.. ProjectedEvery(trait.Cards, state, context)
             .Where(card => state.HasTrait(context, card, trait.Trait) != trait.Exclude)];
+
+    private static bool ProjectedAfflicted(string status, Card card,
+        AreaProjectionState state, AbilityAdmissionContext context)
+    {
+        if (status is Statuses.Stunned or Statuses.Confused
+            && state.ModifiedOf(context, card, "stalwart") > 0) return false;
+        long needed = status is Statuses.Stunned or Statuses.Confused
+            && state.ModifiedOf(context, card, "steady") > 0 ? 2 : 1;
+        return state.StatusOf(context, card, status) >= needed;
+    }
 
     private static List<Card> ProjectedVillain(
         List<Card> found, AreaProjectionState state, AbilityAdmissionContext context)
@@ -164,6 +180,9 @@ internal static class AbilityProjectedStateQueries
             AbilityCardQuery.Villains => CardKinds.IsVillain(kind),
             AbilityCardQuery.Enemies => CardKinds.IsEnemy(kind),
             AbilityCardQuery.Characters => CardKinds.IsCharacter(kind),
+            AbilityCardQuery.Allies => kind == CardKind.Ally,
+            AbilityCardQuery.HeroesAndAllies => kind is CardKind.Hero or CardKind.AlterEgo or CardKind.Ally,
+            AbilityCardQuery.HeroAndAllyTargets => kind is CardKind.Hero or CardKind.Ally,
             _ => IsSchemeQuery(query) && kind == CardKind.EncounterSideScheme,
         };
     }

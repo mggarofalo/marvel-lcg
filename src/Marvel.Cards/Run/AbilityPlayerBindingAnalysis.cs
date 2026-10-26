@@ -204,6 +204,7 @@ internal static class AbilityPlayerBindingAnalysis
             or AbilityCardQuery.UpgradesYouControl or AbilityCardQuery.AlliesYouControl
            ,
         AbilityCardSelection.WithTrait trait => Contains(trait.Cards),
+        AbilityCardSelection.WithStatus status => Contains(status.Cards),
         AbilityCardSelection.FaceDown trait => Contains(trait.Cards),
         AbilityCardSelection.FirstAvailable fallback => fallback.Options.Any(Contains),
         AbilityCardSelection.Last trait => Contains(trait.Cards),

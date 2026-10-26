@@ -45,7 +45,7 @@ internal static class SequenceWindow
         PriorityStatusResolution status)
     {
         status.ObserveCancellation();
-        if (status.CancelledByStatus)
+        if (status.CancelledImminent)
             CancelAttackWindow(world, step, occurrence, cancelOccurrence: true);
         else if (status.CancelledOccurrence)
             CancelAttackWindow(world, step, occurrence, cancelOccurrence: false);
@@ -55,8 +55,11 @@ internal static class SequenceWindow
     private static void CancelAttackWindow(
         World world, PhaseStep step, Occurrence occurrence, bool cancelOccurrence)
     {
-        Attack.CancelPrepared(world, step.Subject);
-        world.PendingAdditionalAttackPlayers = [];
+        if (step.What == Steps.Attack)
+        {
+            Attack.CancelPrepared(world, step.Subject);
+            world.PendingAdditionalAttackPlayers = [];
+        }
         if (world.Windows.Current is not null) world.Windows.Close();
         if (cancelOccurrence) world.Agenda.Cancel(step, occurrence);
     }
@@ -67,6 +70,8 @@ internal static class SequenceWindow
         IWindowAbilities abilities = world.WindowAbilities;
         var window = world.Windows.Current
             ?? throw new InvalidOperationException("the bound window is no longer open");
+        var owner = ReferenceEquals(world.Agenda.Occurrence, window.Occurrence)
+            ? world.Agenda.Current : null;
         if (input.IsDecline)
         {
             DeclineWindow(world, asked, window);
@@ -86,6 +91,12 @@ internal static class SequenceWindow
         Statuses.RemoveAfflictionsIfStalwart(
             world, facts, "stalwart", events);
         world.Effects.SettleLostHealth(healthBefore, asked.Trigger, events);
+
+        if (owner is { } step && !world.Agenda.IsOutstanding(step, window.Occurrence))
+        {
+            CancelAttackWindow(world, step, window.Occurrence, cancelOccurrence: false);
+            return;
+        }
 
         if (window.Occurrence.Threat is { Replaced: true })
         {
@@ -149,7 +160,7 @@ internal static class SequenceWindow
         World world, ICardFacts facts, PhaseStep step, Occurrence occurrence,
         WindowKind kind, List<GameEvent> events)
     {
-        public bool CancelledByStatus { get; private set; }
+        public bool CancelledImminent { get; private set; }
         public bool CancelledOccurrence { get; private set; }
 
         public bool Resolve()
@@ -159,15 +170,17 @@ internal static class SequenceWindow
                 CancelledOccurrence = true;
                 return true;
             }
-            CancelledByStatus = kind == WindowKind.Interrupt
-                && step.What == Steps.Attack
-                && BasicPowerStatus.Cancelled(
-                    world, facts, world.Cards[step.Subject], Statuses.Stunned, events);
-            if (!CancelledByStatus && kind == WindowKind.Interrupt && step.What == Steps.Attack)
+            if (kind == WindowKind.Interrupt && step.What is Steps.Attack or Steps.Scheme)
+            {
+                string status = step.What == Steps.Attack ? Statuses.Stunned : Statuses.Confused;
+                CancelledImminent = BasicPowerStatus.Cancelled(
+                    world, facts, world.Cards[step.Subject], status, events);
+            }
+            if (!CancelledImminent && kind == WindowKind.Interrupt && step.What == Steps.Attack)
             {
                 Attack.Prepare(world, facts, step);
             }
-            return CancelledByStatus;
+            return CancelledImminent;
         }
 
         public void ObserveCancellation() =>

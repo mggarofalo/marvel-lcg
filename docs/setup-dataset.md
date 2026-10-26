@@ -4,10 +4,10 @@
 admission determines which declared products the runtime can start; an incomplete
 expansion is excluded from public discovery as a whole.
 
-`RuntimeProductAdmission` owns the closed accepted-product policy: Core Set and
-the complete Rise of Red Skull expansion. Merely adding an authored ability or
-setup recipe does not admit another product. Unaccepted product-owned recipes
-are excluded; a retained accepted recipe that references an unavailable face
+`RuntimeProductAdmission` owns the closed accepted-product policy: Core Set,
+Rise of Red Skull, Captain America and Wrecking Crew. Merely adding an authored
+ability or setup recipe does not admit another product. Unaccepted product-owned
+recipes are excluded; a retained accepted recipe that references an unavailable face
 still fails validation. The same admitted face set controls discovery, research
 cards' runtime-support flags, deck assessment and game creation.
 
@@ -21,16 +21,18 @@ sources, and `SetupDatasetTests` is the dataset gate.
 
 The file has 3 groups:
 
-| Group | Supported rows |
-|---|---:|
-| `campaigns` | 16 Core Set and Rise of Red Skull scenario/mode combinations |
-| `heroes` | 7 Core Set and Rise of Red Skull starter decks |
-| `encounter_sets` | 10 Core Set and Rise of Red Skull fixed/modular sets |
+| Group | Admitted rows | Declared rows |
+|---|---:|---:|
+| `campaigns` | 35 Core Set, Rise of Red Skull and Wrecking Crew scenario/mode combinations | 35 |
+| `heroes` | 8 Core Set, Rise of Red Skull and Captain America starter decks | 9 |
+| `encounter_sets` | 10 Core Set and Rise of Red Skull fixed/modular sets | 11 |
 
-One additional declared research hero is Captain America. Its 40-card starter,
-obligation and nemesis set follow the vendored FFG divider; the runtime product
-gate excludes this recipe until complete pack acceptance. The file therefore
-contains eight hero records while public discovery still exposes seven.
+Ms. Marvel is a declared research hero. Her 40-card starter, obligation and
+nemesis set follow a pinned FFG divider; the runtime product gate excludes her
+recipe until complete pack acceptance. A Mess of Things is a declared research
+modular set containing 02037, 02038, 02039 and two copies of 02040. The Green
+Goblin product remains outside runtime admission, so this recipe is excluded
+from public discovery even when all its faces have authored abilities.
 
 The scenario rows are Rhino, Klaw and Ultron in Standard and Expert modes. The
 hero rows are Spider-Man, Captain Marvel, She-Hulk, Iron Man and Black Panther.
@@ -39,6 +41,9 @@ in both modes, plus Hawkeye and Spider-Woman. The encounter rows include Standar
 Expert, five Core modular sets and three Rise of Red Skull modular sets.
 Crossbones keeps Legions of Hydra fixed; Taskmaster keeps Hydra Patrol fixed,
 as required by their scenario instructions.
+
+Captain America adds an admitted starter deck. Wrecking Crew adds nineteen
+scenario recipes: Standard, Expert, Extreme and sixteen Custom A/B combinations.
 
 Names are keys inside their own group. A campaign, hero and encounter set are
 different namespaces even when a future product gives them the same display
@@ -211,9 +216,9 @@ The setup and state tests hold each distinction independently.
 
 `SetupDatasetTests` checks that:
 
-- the supported keys are exactly the Core Set boundary;
+- declared recipes resolve and runtime discovery respects complete-product admission;
 - every referenced card face resolves in the generated card catalog;
-- every scenario contains the required Standard or Expert set;
+- ordinary scenarios contain the required Standard or Expert set, while independent encounter groups use their own decks;
 - modular recommendations resolve and remain replaceable;
 - starter decks satisfy construction rules;
 - no group contains duplicate or ambiguous keys; and
@@ -226,9 +231,8 @@ dataset, setup has no regeneration command that can serve as its oracle.
 
 The runtime does not currently accept:
 
-- campaign state or campaign logs;
 - Heroic, Skirmish or combined modes;
-- deck construction outside the admitted executable Core pool;
+- deck construction outside the admitted executable pool;
 - later heroes, scenarios or encounter sets;
 - player-side-scheme deck construction;
 - challenge or evidence setup; or

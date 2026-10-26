@@ -116,6 +116,7 @@ internal static class AbilityEffectDescription
             "villain whose side scheme has the most threat",
         AbilityCardSelection.Discardable discardable => Noun(discardable.Cards),
         AbilityCardSelection.WithTrait trait => $"{(trait.Exclude ? "non-" : "")}{trait.Trait} {Noun(trait.Cards)}",
+        AbilityCardSelection.WithStatus status => $"{status.Status} {Noun(status.Cards)}",
         AbilityCardSelection.Query { Kind: AbilityCardQuery.CharactersYouControlExceptCost } =>
             "character you control other than the character exhausted for this cost",
         AbilityCardSelection.Query { Kind: AbilityCardQuery.CardsYouControl } => "card you control",

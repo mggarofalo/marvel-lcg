@@ -14,11 +14,29 @@ answer must preserve the prompt, state, RNG and pending effects, including on re
 Challenge legal no-ops, ties, replacements, nested activations, departed targets
 and multiplayer ownership only where the mechanic makes them relevant.
 
+After authoring rows, run the ability-data tests as well as characteristic card
+tests. Reconcile explicit authored-face and starting-counter inventories with the
+printed facts, and keep unknown-card negative controls genuinely unauthored.
+Do not permit an entire incomplete pack merely to satisfy a face-inventory gate.
+
 Capture causal facts when an effect needs them later. Current active villain,
 current defender or current board membership may no longer describe the attack
 that caused a continuation. Distinguish declared defense, completed attacks,
 damage prevented/dealt, defeat and replacement; do not substitute one receipt for
 another. Expected behavior must come from the card/rule/ruling, not these examples.
+
+When a bespoke engine effect implements a printed interrupt or response, preserve
+its timing tier and ordering alongside data-authored abilities. A priority hook
+must not silently resolve it before another simultaneous forced ability. For
+example, Norman Osborn's would-attack replacement and Webbed Up require the
+first player's ordering choice (`rr:forced.5`); status cancellation still has
+priority (`rr:status-cards.2`). Prove both orders and suppression of the remaining
+ability after replacement, using an already admitted conflicting card where possible.
+
+Distinguish references to "you", "your hero" and "your identity" in both forms;
+an enemy attack primitive may legitimately support alter-ego targets when a card
+explicitly allows them. For player-specific ordering or selection, exercise a
+non-first player so a hardcoded first-player prompt cannot pass unnoticed.
 
 ## Independent review
 
@@ -44,6 +62,11 @@ and prove adjacent unsupported content stays excluded.
 
 For shared setup changes, compare ordinary supported scenarios as well as the new
 pack. Research-game coverage does not establish public catalog/setup correctness.
+Every new setup record also enters the behavioral authority universe. Add its
+reviewed adjudication, regenerate/check the behavior catalog and update the
+enumeration assertions. Expansion records remain `outside-core`; implementing
+them does not give them executable Core transcript coverage. Run those authority
+checks as well as the setup tests before handing off the packet.
 Whole-game replays supplement focused rules evidence; record whether they exercise
 victory, defeat, promotion and campaign continuation rather than inferring it.
 
