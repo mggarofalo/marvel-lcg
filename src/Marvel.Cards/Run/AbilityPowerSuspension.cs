@@ -35,7 +35,7 @@ internal static class AbilityPowerSuspension
 
     internal static bool SuspendsPowerEffect(
         AbilityEffect node, AbilityAdmissionScope cast, bool stateMayChange = false,
-        bool bindingMayChange = false, PowerReachability? reachability = null)
+        bool bindingMayChange = false, PowerReachability? reachability = null, bool terminal = true)
     {
         if (AbilityStagedAttackLowering.IsBody(node) || node is AbilityEffect.AttackAnotherEnemy) return false;
         var state = reachability ?? AbilityPowerStateFactory.Initial(cast);
@@ -43,6 +43,7 @@ internal static class AbilityPowerSuspension
         // unsupported is a missing calculation, never an absent legal option.
         var paths = PowerPaths(state).ToArray();
         if (AbilityPowerContinuationDependencies.IsIndependent(node)) return false;
+        if (AbilityStageEntryDependencies.CanFinishLive(node, cast, terminal, paths)) return false;
         foreach (var path in paths) AbilityProjectedDefeatWindows.ValidateContinuation(node, path, cast);
         return (node.OperationName() == "and" && OrderedEffects(node).Skip(1).Any())
             || IsChoice(node)
@@ -54,8 +55,15 @@ internal static class AbilityPowerSuspension
                 node, cast, stateMayChange, bindingMayChange, path)).Any(child =>
                 SuspendsPowerEffect(
                     child.Node, cast, child.StateMayChange, child.BindingMayChange,
-                    child.Reachability));
+                    child.Reachability, IsTerminalChild(node, child.Node, terminal)));
     }
+
+    private static bool IsTerminalChild(AbilityEffect parent, AbilityEffect child, bool terminal) => terminal && parent switch
+    {
+        AbilityEffect.Sequence sequence => ReferenceEquals(sequence.Effects[^1], child),
+        AbilityEffect.Conditional => true,
+        _ => false,
+    };
 
     internal static IEnumerable<(
         AbilityEffect Node, bool StateMayChange, bool BindingMayChange,

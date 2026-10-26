@@ -189,6 +189,11 @@ internal sealed class DecisionPaymentRenderer
             progress.ExcessIcons > 0 ? GodotThemeVariations.DangerText : GodotThemeVariations.Body,
             wrap: true);
         label.Name = "PaymentProgress";
+        foreach (Control component in CardPaymentPresentation.Components(progress))
+        {
+            if (panel.PaymentModalOpen || panel.LocalDecision.IsOpen) panel.AddCommit(component);
+            else panel.AddContent(component);
+        }
         if (panel.PaymentModalOpen || panel.LocalDecision.IsOpen) panel.AddCommit(label);
         else panel.AddContent(label);
     }

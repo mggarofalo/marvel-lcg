@@ -12,6 +12,7 @@ public sealed class CaptainAmericaSquirrelGirlTests
     [Fact]
     [Rule("rr:damage.step.7")]
     [Rule("rr:damage.step.8")]
+    [Rule("rr:forced.5")]
     public void LethalEntryDamageDefeatsEachPlayersSoldierAndDealsEachOwnerOneEncounterCard()
     {
         // rr:damage.step.7 resolves "When Defeated" abilities before step.8, "Discarding of a defeated character."
@@ -31,6 +32,13 @@ public sealed class CaptainAmericaSquirrelGirlTests
             Allocations: ResourcePayment.Allocate(play.CostOptions[0], payment)));
         game.Resolve(Decision.Take(Assert.Single(game.Pending!.Affordances,
             item => item.AnchorId == squirrel!.ObjectId).Id));
+        // rr:forced.5: "the first player determines the order" of simultaneous
+        // forced abilities. Both printed When Defeated abilities precede departure.
+        Assert.Equal(Question.Order, game.Pending!.Asking);
+        Assert.Equal(world.FirstPlayer, game.Pending.Player);
+        Assert.Equal(2, game.Pending.Affordances.Count);
+        Assert.All(soldiers, soldier => Assert.Equal(DeckType.EngagedEnemiesArea, soldier.Area.Type));
+        game.Resolve(Decision.Take(soldiers[1].ObjectId));
         Assert.All(soldiers, soldier => Assert.Equal(DeckType.EncounterDiscardPile, soldier.Area.Type));
         Assert.All(Enumerable.Range(0, 2), player => Assert.Single(
             world.AreaOf(DeckType.DealtEncounterCardsDeck, PlayArea.Of(player)).Cards));

@@ -5,6 +5,12 @@ forced and optional attack-end responses and is zero without a completed attack.
 
 # The card DSL
 
+`villainAndMinionsEngagedWithYou` selects the current villain and every effective
+minion engaged with the resolving player. It follows the active villain and
+projected stage/engagement changes, excludes other players' minions, and can feed
+one simultaneous `dealDamage`. The query spelling and villain-first ordering are
+engine choices. This primitive does not itself admit Lightning Strike.
+
 `blankPrintedTextUntilEndOfPhase: "this"` is an engine spelling for a standalone
 self-blank Action on a live nonpermanent minion. It suppresses the whole printed
 text box for every player until the phase scheduler expires the lasting effect.
@@ -498,6 +504,12 @@ for subsequent effects. Only the acting seat receives those prompt context
 faces; acknowledgement revokes that visibility. The pending decision excludes
 intervening game actions. This inspection does not support pre-then completion.
 
+`inspectDiscardOrderEncounterTop: 3` privately retains up to three physical
+encounter top cards, discards one chosen card, then asks for the remaining
+physical cards in top-to-bottom order. The cards remain in that deck during
+inspection; only the acting seat sees their faces until the ordered return.
+The discard follows ordinary encounter-deck reset rules.
+
 `heroAndAllyTargets` selects hero-form identities and allies. The existing
 `heroesAndAllies` selector includes identities in either form for effects that
 name friendly characters; it is not appropriate when printed text names heroes.
@@ -630,6 +642,23 @@ pending. Live resolution recomputes the amount from the resulting state.
 
 ## Costs and legality
 
+`cost: {"discardUntilMinionEngaged":"you"}` discards from the encounter deck
+until a minion is discarded, then puts that exact physical minion into play
+engaged with the resolving player. These two instructions together are the arrow
+cost. Offers inspect available counts and legal effects, without inspecting
+hidden deck identities. The retained payment waits for entry, Quickstrike and
+engagement responses before initiating the effect once. A no-match or prevented
+entry leaves the cost unpaid and completes the event without its effect;
+encounter exhaustion still resets the deck and adds acceleration. The current
+Defender clarifications are pinned in `datasets/rules-graph.json` as
+`ruling:6e301a347a5392fb` and `ruling:a1f4982cfebcd768`.
+
+This cost is admitted only as a standalone arrow cost. Any `seq` containing it,
+including nested or single-component sequences, raises `RulesNotImplementedException`
+during lowering before payment. Entry responses cannot expose partially paid
+compound costs under `rr:cost.5`; simultaneous compound payment remains unsupported.
+
+
 Target selection and payment are separate. A target answers what the effect will
 act on. A payment records what the player spent to initiate it.
 
@@ -714,6 +743,13 @@ continues with its captured source and occurrence context unless a rule or node
 explicitly stops it.
 
 ## Constant effects
+
+`{"isInPlay":"chosen"}` asks whether the retained selected incarnation is
+currently in play. It is false after departure, including when the same physical
+card has reentered as a new incarnation. Retained out-of-play facts remain
+available to other conditions. A follow-up that engages an attacked enemy can
+combine this condition with its printed trait requirement before `putIntoPlay`.
+This condition also participates in projected entry and departure checks.
 
 Constant abilities describe values the engine reads from the current board.
 They do not run once and cache their answer. The interpreter evaluates their
@@ -1215,3 +1251,138 @@ turn. It neither makes the discard pile a hand nor makes its cards resources.
 Printed cost, discounts, generators, uniqueness and mandatory ally-limit entry
 all use the ordinary play pipeline. The bounded permission has no `when`, cost,
 limit or maximum and does not generalize to other card kinds or another owner.
+
+### Complete in-play census
+
+`{"query":"cardsInPlay"}` selects physical cards in in-play engine areas, in
+object-id order, independently of controller, card kind or attachment host.
+It uses `Places.CanAffect` for game-area reach, including central shared cards.
+Use the existing `withTrait` selector and one `count` numeric expression to
+snapshot the additional threat quantity of Family Feud (06027). Its printed
+starting threat remains the ordinary reveal pipeline's responsibility.
+Out-of-play areas, including beneath-card storage in either orientation, do not
+contribute or produce search information. This engine selector does not admit
+Thor or author its actual ability row. Area-changing and repeated projections
+requiring complete projected placement explicitly refuse this selector.
+
+### Variable energy arrow cost with a printed event price
+
+An event whose sole arrow cost is `spendEnergyX: "Y"` uses one payment with
+separate components for its adjusted printed price and X energy. The displayed
+sum (for example `1+X`) is an engine spelling; the component contracts own
+allocation. The player defines positive X and assigns each used physical icon
+once. Wild declarations, overgeneration and suspended resource abilities use the
+ordinary payment pipeline. Printed-price reductions affect only that component;
+the committed `result: "energy"` remains the chosen X.
+
+Action admission evaluates feasible future positive X receipts against the same
+adjusted combined price and typed allocation bounds as payment. Effect admission
+reads the proposed energy result without committing generators, discounts or RNG.
+Payment-dependent branches additionally require a feasible declared receipt; the
+selected payment and X are checked again for a valid effect before any cost is
+committed. Synthetic damage, trait-conditional, no-effect and suspended-generator
+coverage exercises this boundary without admitting an expansion ability.
+
+This bounded spelling retains the existing positive-X requirement. It does not
+admit zero-X variants whose other effects or modifiers make them significant,
+or sequences containing variable arrow costs. Synthetic payment coverage does
+not admit Lightning Strike, ignore-tough damage, or Thor's product.
+
+`reduceSelfCostPerEngagedMinion` takes a positive integer and requires a direct,
+unconditional Constant ability on `this`. It reads only the physical candidate
+in the playing seat's hand and counts that seat's current engaged minions. It
+supplies a read-only reduction to the existing card payment calculation, stacks
+with existing discounts, and stops at zero. It registers no continuous effect
+from the hand and consumes no resource or RNG state. The engine chooses this
+bounded instruction and pricing-port spelling; printed 06011 supplies the
+behavior. The accepted cost snapshot survives resource-generator suspension.
+This mechanism does not admit the Thor product or author its actual ability row.
+
+
+## Basic-use interrupt prerequisite
+
+`WhenHeroBasicAttackInitiated` joins the existing attack occurrence only for a
+hero's printed basic attack, including permission to attack without exhausting.
+It excludes fixed card attacks, labeled attack continuations and ally attacks.
+`boostBasicUse: 3` adds three to that occurrence's basic attack amount. The typed
+`BasicUse` retains the performer incarnation, matching field and accumulated
+bonus; it creates no general ATK effect and cannot affect another attack.
+
+`exhaustChosen` accepts `from: {query: "upgradesOnYourHero"}` and an optional
+current `trait`. Candidates must be ready upgrades controlled by the resolving
+player and physically attached to that player's hero. Exact selected cards are
+validated before payment and the existing prepared payment binds their
+incarnations. `CostDescription` names attachment/exhaustion; the effect describes
+the one-attack bonus and the interrupt prompt exposes its accumulated amount.
+Compound arrow sequences containing this relation raise before execution because
+their simultaneous-payment transaction is not represented. This prerequisite
+neither authors 06015 nor admits Thor or Teamwork.
+
+`WhenHeroBasicUseInitiated` additionally names a hero's basic attack or thwart.
+The isolated `boostBasicUse: "exhaustedAllyPower"` effect requires a standalone
+`exhaustChosen` cost with `from: {query: "alliesYouControl"}`, `count: 1`, and
+`matchingBasicPower: "true"`. It snapshots the selected physical ally's current
+modified matching ATK or THW after exhaustion, with no consequential damage.
+The receipt retains incarnation and controller across suspension; a departed,
+reentered or foreign-controlled copy cannot contribute its captured power.
+An already paid continuation may finish while its bonus fizzles. The basic use's
+nominal attack/thwart selects the ally statistic even if the hero substitutes
+another statistic for its own power. The bonus belongs only to that occurrence.
+
+This engine-chosen bounded shape permits one matching application directly or
+inside sequential effects. Matching applications inside another power, branch,
+choice or repetition, unpaired effects/costs and compound matching costs are
+rejected at lowering. Cost selection requires the live agenda occurrence;
+out-of-agenda direct matching invocations are refused before payment. Positive
+adjusted event prices and supplied generators are outside this payment boundary.
+This mechanism does not author the 06032 ability-book row or admit its product.
+
+Attached-upgrade costs additionally refuse any supplied resource payment during
+preparation, including gratuitous generation at price zero. Event-price preflight
+raises for a positive adjusted price or required icons before payment. A discount
+to zero remains within the no-generation boundary. Dedicated negative tests
+assert untouched source, generator, Weapon, digest, RNG and pending work.
+
+### Original card price at entry
+
+For an entry response on the card that was played, `paidWithResource` reads the
+original card-play price, excluding excess generated icons. It does not read the
+response ability's own resource cost. The receipt belongs to the played/entry
+occurrence and identifies the physical card, its entered incarnation and the
+playing seat. Mandatory ally-limit choices and suspended resource generators
+retain that receipt. Putting an ally into play, revealing it, and ignoring its
+resource cost create no paid-resource credit from an earlier entry.
+
+Ordinary card play retains submitted `ResourceAllocation` declarations and
+validates them before exposing the card or committing a contributor. Wild icons
+use the declared type; an undeclared wild does not imply energy. Without an
+explicit allocation, the existing deterministic `Resources.Paid` selection
+excludes overpayment. The receipt is transient engine data reconstructed by
+command replay; it adds no card state or digest field.
+`dealDamage` accepts `ignoresTough: 1`, an engine-chosen marker for one
+instruction's damage instances. It bypasses Tough prevention without discarding
+those physical status cards, and leaves damage replacement, other prevention,
+and defeat handling intact. It creates no attack or piercing context. Direct
+damage recipients retain their physical incarnation. Multi-recipient damage
+finishes all replacements and prevention before placing every share, then settles
+defeat windows. The property is retained in area, labelled-power and repeated-effect projections. Unsupported
+follow-on projections still raise before costs; in particular, a changing
+singular area query and unprojected defeat windows remain unsupported.
+
+This prerequisite is synthetic coverage for Thor E3 (MARVEL-745), motivated by
+printed `06006` and its vendored non-attack erratum. It does not admit Lightning
+Strike or implement its energy payment.
+
+Simultaneous direct damage follows vendored ruling `3eb442853617fe14`: drones
+remain in play when Ultron III’s damage eligibility is fixed, even if the same
+damage defeats every drone. The direct procedure creates no attack aftermath.
+
+The replacement/prevention/placement barrier does not establish simultaneous
+defeat-window eligibility for every recipient. Settlement currently completes
+one recipient’s damage steps 6–8 before the next recipient begins step 6.
+Vendored ruling `304a4798e0b453b4` says each damage step resolves simultaneously;
+this remaining boundary requires independent review and a distinguishing control
+where an earlier departure changes a later defeat interrupt. Lightning Strike
+admission remains withheld pending that review and any required defeat-stage
+barrier. Save/replay and frozen-route compatibility also require integration
+evidence against the eventual admitted candidate.

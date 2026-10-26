@@ -121,7 +121,10 @@ if not await ui.expect_visible(ui.button("End turn")): return
 
 Available operations are `click(locator, mouse_button)`, `hover(locator)`,
 `press_key(key, shift, ctrl)`, `drag(source, destination, frames)`,
-`expect_visible(locator)` and `expect(predicate, description, deadline_ms)`.
+`expect_visible(locator)`, `expect_fully_visible_enabled(locator)` and
+`expect(predicate, description, deadline_ms)`. The full visibility assertion
+requires the enabled control's entire transformed rectangle inside the viewport
+and each clipping ancestor; a clickable exposed edge does not satisfy it.
 `button(text)` matches exact visible button text; `button(text, false)` matches
 a case-insensitive substring. `text(value)` matches visible Label/RichTextLabel
 text; `named(name)` matches an exact Control name. `UiLocator.button(scope, text)`

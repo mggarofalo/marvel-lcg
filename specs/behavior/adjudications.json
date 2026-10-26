@@ -73888,6 +73888,24 @@
           "mutation": null
         }
       ]
+    },
+    {
+      "id": "setup:hero:thor",
+      "fingerprint": "sha256:a5a471314903a293f30580c724e91ccfe9e302ec0210213e3b1d263a2e5d430a",
+      "obligations": [
+        {
+          "key": "thor-setup",
+          "summary": "The Thor hero record supplies the printed starter deck, obligation and nemesis set.",
+          "disposition": "outside-core",
+          "reason": "This record requires the Thor hero pack, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
     }
   ]
 }

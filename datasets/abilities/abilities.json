@@ -17539,6 +17539,1049 @@
           }
         }
       ]
+    },
+    {
+      "card": "06001b",
+      "name": "Odinson",
+      "note": "Worthy searches the controller deck and discard for the Mjolnir upgrade, then shuffles even without a match. The Action has one use per round.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Action",
+            "subject": "this",
+            "event": "WhenActionTriggered"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "exists": {
+                  "cardsIn": {
+                    "areas": [
+                      "yourDeck",
+                      "yourDiscardPile"
+                    ],
+                    "title": "Mjolnir",
+                    "kind": "Upgrade"
+                  }
+                }
+              },
+              "then": {
+                "chooseCard": {
+                  "from": {
+                    "cardsIn": {
+                      "areas": [
+                        "yourDeck",
+                        "yourDiscardPile"
+                      ],
+                      "title": "Mjolnir",
+                      "kind": "Upgrade"
+                    }
+                  },
+                  "effect": {
+                    "seq": [
+                      {
+                        "addToHand": "chosen"
+                      },
+                      {
+                        "shuffle": "yourDeck"
+                      }
+                    ]
+                  }
+                }
+              },
+              "else": {
+                "shuffle": "yourDeck"
+              }
+            }
+          },
+          "limitPerRound": 1
+        }
+      ]
+    },
+    {
+      "card": "06007",
+      "name": "Asgard",
+      "note": "Executable interpretation of joined printed text in datasets/cards/cards.json; Thor research remains outside public admission.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "grant": {
+              "card": "you",
+              "keyword": "hand_size",
+              "amount": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "06008",
+      "name": "God of Thunder",
+      "note": "Executable interpretation of joined printed text in datasets/cards/cards.json; Thor research remains outside public admission.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Resource",
+            "subject": "this",
+            "form": "hero"
+          },
+          "cost": {
+            "exhaust": "this"
+          },
+          "printedResources": "Y",
+          "effect": {
+            "generate": "Y"
+          }
+        }
+      ]
+    },
+    {
+      "card": "06009",
+      "name": "Mjolnir",
+      "note": "Executable interpretation of joined printed text in datasets/cards/cards.json; Thor research remains outside public admission.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "exists": {
+                  "titled": "Thor"
+                }
+              },
+              "then": {
+                "seq": [
+                  {
+                    "grant": {
+                      "card": {
+                        "titled": "Thor"
+                      },
+                      "keyword": "attack",
+                      "amount": 1
+                    }
+                  },
+                  {
+                    "grant": {
+                      "card": {
+                        "titled": "Thor"
+                      },
+                      "trait": "AERIAL"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "06010",
+      "name": "Thor's Helmet",
+      "note": "Executable interpretation of joined printed text in datasets/cards/cards.json; Thor research remains outside public admission.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "grant": {
+              "card": "you",
+              "keyword": "health",
+              "amount": 5
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "06013",
+      "name": "Chase Them Down",
+      "note": "After the player's hero attacks and that attack defeats its enemy target, the response chooses a scheme and removes 2 threat.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenAttackEnds",
+            "timing": "Response",
+            "actor": "you",
+            "target": "enemy"
+          },
+          "when": {
+            "wasDefeated": "trigger.target"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "thwartableSchemes"
+              },
+              "effect": {
+                "thwart": {
+                  "target": "chosen",
+                  "effect": {
+                    "removeThreat": {
+                      "scheme": "chosen",
+                      "amount": 2
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "06016",
+      "name": "The Power of Aggression",
+      "note": "This card generates one wild resource normally and doubles that output while paying for an Aggression card. The card being paid for is payment context supplied by the engine, not inferred from the hand.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "doubleResourceFor": "Aggression"
+          }
+        }
+      ]
+    },
+    {
+      "card": "06022",
+      "name": "Energy",
+      "note": "This resource card has no ability. Its two printed energy resources are read from datasets/cards by the resource rules.",
+      "abilities": []
+    },
+    {
+      "card": "06023",
+      "name": "Genius",
+      "note": "This resource card has no ability. Its two printed mental resources are read from datasets/cards by the resource rules.",
+      "abilities": []
+    },
+    {
+      "card": "06024",
+      "name": "Strength",
+      "note": "This resource card has no ability. Its two printed physical resources are read from datasets/cards by the resource rules.",
+      "abilities": []
+    },
+    {
+      "card": "06002",
+      "name": "Lady Sif",
+      "note": "The optional entry response readies the named in-play Thor or Odinson, including an identity controlled by another player.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardEntersPlay",
+            "timing": "Response",
+            "subject": "this"
+          },
+          "effect": {
+            "ready": {
+              "firstAvailable": [
+                {
+                  "titled": "Thor"
+                },
+                {
+                  "titled": "Odinson"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "06001a",
+      "name": "Thor",
+      "note": "Executable interpretation of joined printed text in datasets/cards/cards.json; Thor research remains outside public admission.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenMinionEngaged",
+            "timing": "Response",
+            "subject": "you",
+            "form": "hero"
+          },
+          "limitPerPhase": 1,
+          "effect": {
+            "draw": {
+              "player": "you",
+              "count": 2
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "06004",
+      "name": "For Asgard!",
+      "note": "Executable interpretation of joined printed text in datasets/cards/cards.json; Thor research remains outside public admission.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "alter-ego"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "exists": {
+                  "cardsIn": {
+                    "areas": [
+                      "yourDeck",
+                      "yourDiscardPile"
+                    ],
+                    "trait": "ASGARD"
+                  }
+                }
+              },
+              "then": {
+                "chooseCard": {
+                  "from": {
+                    "cardsIn": {
+                      "areas": [
+                        "yourDeck",
+                        "yourDiscardPile"
+                      ],
+                      "trait": "ASGARD"
+                    }
+                  },
+                  "effect": {
+                    "seq": [
+                      {
+                        "addToHand": "chosen"
+                      },
+                      {
+                        "shuffle": "yourDeck"
+                      }
+                    ]
+                  }
+                }
+              },
+              "else": {
+                "shuffle": "yourDeck"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "06003",
+      "name": "Defender of the Nine Realms",
+      "note": "The full pre-arrow discard and engagement cost must complete before the hero thwart; current rulings 6e301a347a5392fb and a1f4982cfebcd768 govern failed payment and post-payment legality.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "labels": [
+            "thwart"
+          ],
+          "cost": {
+            "discardUntilMinionEngaged": "you"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "thwartableSchemes"
+              },
+              "effect": {
+                "thwart": {
+                  "target": "chosen",
+                  "effect": {
+                    "removeThreat": {
+                      "scheme": "chosen",
+                      "amount": 3
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "06027",
+      "name": "Family Feud",
+      "note": "Printed starting threat belongs to encounter reveal. The When Revealed ability places one additional threat for each effective Asgard card in play across all reachable play areas.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "placeThreat": {
+              "scheme": "this",
+              "amount": {
+                "count": {
+                  "withTrait": {
+                    "cards": {
+                      "query": "cardsInPlay"
+                    },
+                    "trait": "ASGARD"
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "06021",
+      "name": "Invulnerability",
+      "note": "Hero Action: Give your hero a tough status card. The hero form restriction and yourHero selection identify only the controller's hero.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "effect": {
+            "giveStatus": {
+              "card": "yourHero",
+              "status": "tough"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "06025",
+      "name": "Avengers Mansion",
+      "note": "The action exhausts the support, chooses a player through that player's identity, and has that player draw 1 card.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this"
+          },
+          "cost": {
+            "exhaust": "this"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "identities"
+              },
+              "effect": {
+                "draw": {
+                  "player": "chosenPlayer",
+                  "count": 1
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "06033",
+      "name": "Second Wind",
+      "note": "Action: Heal 4 damage from an identity, or 5 when the committed payment includes mental. The identity choice includes alter-egos and other players.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "identities"
+              },
+              "effect": {
+                "if": {
+                  "test": {
+                    "paidWithResource": "B"
+                  },
+                  "then": {
+                    "heal": {
+                      "card": "chosen",
+                      "amount": 5
+                    }
+                  },
+                  "else": {
+                    "heal": {
+                      "card": "chosen",
+                      "amount": 4
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "06034",
+      "name": "Enhanced Physique",
+      "note": "Uses (3 physical counters). Hero Resource: Exhaust Enhanced Physique and remove 1 physical counter from it to generate a physical resource. The last counter discards this upgrade under rr:uses-x-type; the committed resource ability still generates its resource.",
+      "startingCounters": {
+        "type": "physical",
+        "count": 3,
+        "uses": true
+      },
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Resource",
+            "subject": "this",
+            "form": "hero"
+          },
+          "cost": {
+            "seq": [
+              {
+                "exhaust": "this"
+              },
+              {
+                "removeCounters": {
+                  "card": "this",
+                  "counter": "physical",
+                  "count": 1
+                }
+              }
+            ]
+          },
+          "printedResources": "R",
+          "effect": {
+            "generate": "R"
+          }
+        }
+      ]
+    },
+    {
+      "card": "06005",
+      "name": "Hammer Throw",
+      "note": "Printed 06005 exhausts Mjolnir as a cost. Damage and return joined by and resolve before the later optional defeat response (rr:and). The attack carries overkill.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "labels": [
+            "attack"
+          ],
+          "cost": {
+            "exhaustTitled": "Mjolnir"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "attackableEnemies"
+              },
+              "effect": {
+                "attack": {
+                  "target": "chosen",
+                  "effect": {
+                    "seq": [
+                      {
+                        "dealAttackDamage": {
+                          "cards": "chosen",
+                          "amount": 8,
+                          "overkill": 1
+                        }
+                      },
+                      {
+                        "returnToHand": {
+                          "titled": "Mjolnir"
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "06011",
+      "name": "Hercules",
+      "note": "The direct unconditional Constant supplies live self play-cost reduction per own engaged minion; it does not install a continuous effect from hand.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "reduceSelfCostPerEngagedMinion": 1
+          }
+        }
+      ]
+    },
+    {
+      "card": "06015",
+      "name": "Mean Swing",
+      "note": "Only the current hero basic attack receives +3. One ready controlled Weapon attached to that hero pays the arrow cost; the printed zero price requires no resource generation.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenHeroBasicAttackInitiated",
+            "timing": "Interrupt",
+            "actor": "you",
+            "form": "hero",
+            "player": "you"
+          },
+          "cost": {
+            "exhaustChosen": {
+              "from": {
+                "query": "upgradesOnYourHero"
+              },
+              "trait": "WEAPON",
+              "count": 1
+            }
+          },
+          "effect": {
+            "boostBasicUse": 3
+          }
+        }
+      ]
+    },
+    {
+      "card": "06017",
+      "name": "Hall of Heroes",
+      "note": "Identity defeat credit includes events and upgrades, and excludes allies and supports (rr:you-your). Glory is an ordinary counter pool, without Uses departure.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardDefeated", "timing": "Response", "subject": "game" },
+          "when": { "and": [ { "isKind": { "card": "defeated", "kind": "minion" } }, { "defeatedByYou": "you" } ] },
+          "effect": { "placeCounters": { "card": "this", "counter": "glory", "count": 1 } }
+        },
+        {
+          "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "game", "form": "alter-ego" },
+          "cost": { "seq": [ { "exhaust": "this" }, { "removeCounters": { "card": "this", "counter": "glory", "count": 3 } } ] },
+          "effect": { "draw": { "player": "you", "count": 3 } }
+        }
+      ]
+    },
+    {
+      "card": "06018",
+      "name": "Battle Fury",
+      "attachTo": { "query": "identitiesWithinPerPlayerLimit" },
+      "note": "The completed hero attack must defeat its minion target. The damage cost must be taken in full under the card's vendored ruling; discard and damage settle before readying.",
+      "abilities": [ {
+        "trigger": { "event": "WhenAttackEnds", "timing": "Response", "actor": "you", "target": "enemy", "form": "hero" },
+        "when": { "and": [ { "isKind": { "card": "trigger.target", "kind": "minion" } }, { "wasDefeated": "trigger.target" } ] },
+        "cost": { "seq": [ { "takeDamage": { "cards": "you", "amount": 1 } }, { "discard": "this" } ] },
+        "effect": { "ready": "you" }
+      } ]
+    },
+    {
+      "card": "06019",
+      "name": "Jarnbjorn",
+      "note": "Basic and labelled hero attacks qualify. This response deals nonattack damage to any enemy, with physical or wild payment, and therefore does not trigger itself.",
+      "abilities": [ {
+        "trigger": { "event": "WhenAttackEnds", "timing": "Response", "actor": "you", "target": "enemy", "form": "hero" },
+        "cost": { "spend": "R" },
+        "effect": { "chooseCard": { "from": { "query": "enemies" }, "effect": { "dealDamage": { "cards": "chosen", "amount": 2 } } } }
+      } ]
+    },
+    {
+      "card": "06030",
+      "name": "Trickster",
+      "note": "Only the physical receipt of this three-card discard contributes distinct printed card types, including cards shuffled by a deck reset.",
+      "abilities": [ {
+        "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+        "effect": { "seq": [ { "discardTop": { "from": "yourDeck", "count": 3 } }, { "placeThreat": { "scheme": { "query": "mainScheme" }, "amount": { "distinctCardTypesDiscarded": "game" } } } ] }
+      } ]
+    },
+    {
+      "card": "06031",
+      "name": "Under Surveillance",
+      "attachTo": { "query": "mainScheme" },
+      "note": "The attached main scheme gains four total target threat, independent of player count. Printed max one per scheme is enforced by ordinary placement.",
+      "abilities": [ {
+        "trigger": { "timing": "Constant", "subject": "this" },
+        "effect": { "grant": { "card": "attachedTo", "keyword": "target_threat", "amount": 4 } }
+      } ]
+    },
+    {
+      "card": "06012",
+      "name": "Valkyrie",
+      "note": "The entry response deals two damage, or three when this physical entry has an energy payment receipt. Putting into play cannot reuse an earlier payment.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardEntersPlay",
+            "timing": "Response",
+            "subject": "this"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "minions"
+              },
+              "effect": {
+                "if": {
+                  "test": {
+                    "paidWithResource": "Y"
+                  },
+                  "then": {
+                    "dealDamage": {
+                      "cards": "chosen",
+                      "amount": 3
+                    }
+                  },
+                  "else": {
+                    "dealDamage": {
+                      "cards": "chosen",
+                      "amount": 2
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "06020",
+      "name": "Heimdall",
+      "note": "The optional entry response privately looks at up to three physical encounter cards, discards one, and returns the others in the chosen top-to-bottom order (rr:look-looked-at; ruling:2001c6705b63bf4f).",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardEntersPlay",
+            "timing": "Response",
+            "subject": "this"
+          },
+          "effect": {
+            "inspectDiscardOrderEncounterTop": 3
+          }
+        }
+      ]
+    },
+    {
+      "card": "06026",
+      "name": "Odin's Anger",
+      "note": "Printed 06026. The named Odinson player may flip, then either exhausts the alter-ego to remove this obligation or discards their Mjolnir from hand or play, becomes stunned, and discards this obligation. Sequential choices and selectors are engine spellings.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "choose": {
+                  "descriptions": [
+                    "Change to alter-ego form",
+                    "Remain in your current form"
+                  ],
+                  "options": [
+                    {
+                      "changeForm": {
+                        "player": "you",
+                        "to": "alter-ego"
+                      }
+                    },
+                    {
+                      "seq": []
+                    }
+                  ]
+                }
+              },
+              {
+                "choose": {
+                  "descriptions": [
+                    "Exhaust Odinson and remove Odin's Anger from the game",
+                    "Discard Mjolnir, become stunned, and discard this obligation"
+                  ],
+                  "options": [
+                    {
+                      "then": {
+                        "effect": {
+                          "exhaust": "yourAlterEgo"
+                        },
+                        "then": {
+                          "removeFromGame": "this"
+                        }
+                      }
+                    },
+                    {
+                      "seq": [
+                        {
+                          "discard": {
+                            "cardsIn": {
+                              "areas": [
+                                "yourHand",
+                                "yourPlayArea"
+                              ],
+                              "title": "Mjolnir"
+                            }
+                          }
+                        },
+                        {
+                          "giveStatus": {
+                            "card": "you",
+                            "status": "stunned"
+                          }
+                        },
+                        {
+                          "discard": "this"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "06029",
+      "name": "Frost Giant",
+      "note": "Printed 06029. Toughness uses the normal minion-entry keyword. The boost delayed stun is bounded to the attacking villain activation; prevented damage and later unrelated damage do not stun. The condition and duration spellings are engine choices.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "Boost",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "and": [
+                  {
+                    "activationIs": "attack"
+                  },
+                  {
+                    "isEnemyAttacker": {
+                      "query": "villain"
+                    }
+                  }
+                ]
+              },
+              "then": {
+                "delayUntil": {
+                  "condition": "WhenDamageDealt",
+                  "within": "EndOfActivation",
+                  "effect": {
+                    "giveStatus": {
+                      "card": "damaged",
+                      "status": "stunned"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "06032",
+      "name": "Teamwork",
+      "note": "Printed 06032. This hero basic attack or thwart interrupt exhausts one controlled ally, adds its current modified matching power for that use, and causes no ally attack, thwart, or consequential damage. The exact physical cost receipt and basic-use vocabulary are engine choices.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenHeroBasicUseInitiated",
+            "timing": "Interrupt",
+            "actor": "you",
+            "form": "hero",
+            "player": "you"
+          },
+          "cost": {
+            "exhaustChosen": {
+              "from": {
+                "query": "alliesYouControl"
+              },
+              "count": 1,
+              "matchingBasicPower": "true"
+            }
+          },
+          "effect": {
+            "boostBasicUse": "exhaustedAllyPower"
+          }
+        }
+      ]
+    },
+    {
+      "card": "06006",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "cost": {
+            "spendEnergyX": "Y"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "hasTrait": {
+                  "card": "you",
+                  "trait": "AERIAL"
+                }
+              },
+              "then": {
+                "dealDamage": {
+                  "cards": {
+                    "query": "villainAndMinionsEngagedWithYou"
+                  },
+                  "amount": {
+                    "result": "energy"
+                  },
+                  "ignoresTough": 1
+                }
+              },
+              "else": {
+                "dealDamage": {
+                  "cards": {
+                    "query": "villainAndMinionsEngagedWithYou"
+                  },
+                  "amount": {
+                    "result": "energy"
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "name": "Lightning Strike",
+      "note": "Printed 06006 and vendored MarvelCDB FAQ 06006: direct damage, not an attack. Printed price and X energy use distinct components; Aerial ignores Tough without discarding it. Payment and selector spellings are engine choices."
+    },
+    {
+      "card": "06014",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "labels": [
+            "attack"
+          ],
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "attackableMinions"
+              },
+              "effect": {
+                "attack": {
+                  "target": "chosen",
+                  "effect": {
+                    "seq": [
+                      {
+                        "dealAttackDamage": {
+                          "cards": "chosen",
+                          "amount": 1
+                        }
+                      },
+                      {
+                        "if": {
+                          "test": {
+                            "and": [
+                              {
+                                "hasTrait": {
+                                  "card": "you",
+                                  "trait": "AERIAL"
+                                }
+                              },
+                              {
+                                "isInPlay": "chosen"
+                              }
+                            ]
+                          },
+                          "then": {
+                            "putIntoPlay": {
+                              "card": "chosen",
+                              "where": "engagedWithYou"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "name": "Get Over Here!",
+      "note": "Printed 06014 and vendored MarvelCDB FAQ 06014: attack a minion, then engage the surviving enemy with Aerial. An already engaged enemy cannot engage the same player again. Retained incarnation and in-play guard spellings are engine choices."
+    },
+    {
+      "card": "06028",
+      "name": "Loki",
+      "note": "Printed 06028 and mandatory Forced Interrupt erratum in datasets/marvelcdb-faq/faq.json. The physical top discard is tested after discard and any deck reset; treachery heals all damage on this Loki incarnation instead of defeat. Current RR 1.8 overkill requires actual defeat, so healing prevents excess damage and defeat credit. Receipt syntax is an engine choice.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardWouldBeDefeated",
+            "timing": "ForcedInterrupt",
+            "subject": "this"
+          },
+          "effect": {
+            "forEachDiscarded": {
+              "effect": {
+                "discardTop": {
+                  "from": "encounterDeck",
+                  "count": 1
+                }
+              },
+              "when": {
+                "isKind": {
+                  "card": "that",
+                  "kind": "treachery"
+                }
+              },
+              "then": {
+                "heal": {
+                  "card": "this",
+                  "amount": {
+                    "damageOn": "this"
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
     }
   ]
 }

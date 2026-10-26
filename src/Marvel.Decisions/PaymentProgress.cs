@@ -21,6 +21,9 @@ public sealed record PaymentProgress(
     /// <summary>Whether selected generators could cover the cost with a legal allocation.</summary>
     public bool CanCoverCost { get; init; }
 
+    /// <summary>Engine-suggested shortages; this does not assign the draft.</summary>
+    public IReadOnlyList<ResourceComponentProgress>? Components { get; init; }
+
     /// <summary>Generated icons that a complete payment will lose as excess.</summary>
     public int ExcessIcons => IsSatisfied
         ? Math.Max(0, GeneratedIcons - AssignedIcons)

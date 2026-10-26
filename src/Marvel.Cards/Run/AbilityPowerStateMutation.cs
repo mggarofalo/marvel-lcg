@@ -300,6 +300,7 @@ internal static class AbilityPowerStateMutation
         if (node is AbilityEffect.IndirectDamage)
             amount = AbilityEventModifiers.DamageAmount(cast.World, cast.Source, amount);
         var first = cast.World.Seats[cast.World.FirstPlayer].IdentityCard;
-        return ApplyPowerDamage(state, cards, amount, first, cast);
+        return ApplyPowerDamage(state, cards, amount, first, cast,
+            node is AbilityEffect.Damage { IgnoresTough: true });
     }
 }

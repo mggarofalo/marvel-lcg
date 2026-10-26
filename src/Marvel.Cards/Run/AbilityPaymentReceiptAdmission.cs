@@ -1,5 +1,6 @@
 using Marvel.Cards.Dsl;
 using Marvel.Rules.Play;
+using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
 
 namespace Marvel.Cards.Run;
@@ -10,6 +11,8 @@ internal static class AbilityPaymentReceiptAdmission
     internal static AbilityAdmissionResult? Admit(CompiledCardAbility ability,
         AbilityAdmissionContext context, IReadOnlyList<int>? selected)
     {
+        if (ability.Cost is AbilityCost.SpendEnergy)
+            return AdmitEnergy(ability, context, selected);
         if (!Applies(ability, context))
             return AbilityDiscardReceiptAdmission.Admit(ability, context, selected);
         var price = AbilityPaymentPricing.CombinedPrice(context.World, context.Source,
@@ -25,15 +28,61 @@ internal static class AbilityPaymentReceiptAdmission
         return null;
     }
 
-    internal static void Validate(CompiledCardAbility ability, AbilityAdmissionContext context, string receipt)
+    internal static void Validate(CompiledCardAbility ability, AbilityAdmissionContext context, string receipt, long? energy = null)
     {
         if (ability.Labels.Length > 0 && LabeledAbilities.WouldBeCancelled(
                 context.World, context.World.Facts, AbilityCardQueries.Resolver(context.Query),
                 context.Source, ability.Labels)) return;
-        if (Applies(ability, context)
-            && AbilityDiscardReceiptAdmission.Admit(ability, WithReceipt(context, receipt), null) is null)
+        if ((Applies(ability, context) || energy is not null)
+            && AbilityDiscardReceiptAdmission.Admit(ability,
+                WithReceipt(energy is { } x ? WithEnergy(context, x) : context, receipt), null) is null)
             throw new RulesNotImplementedException("the selected event payment has no valid effect target");
     }
+
+    private static AbilityAdmissionResult? AdmitEnergy(CompiledCardAbility ability,
+        AbilityAdmissionContext context, IReadOnlyList<int>? selected)
+    {
+        var price = AbilityPaymentPricing.CombinedPrice(context.World, context.Source,
+            context.Query.Player, ability, context.ResourceAbilities)!;
+        var request = price.VariableRequests.Single();
+        int[] sources = [.. price.Generators.Select(source => source.Effect)];
+        foreach (long x in EnergyValues(request))
+        {
+            var values = new Dictionary<string, long> { ["X"] = x };
+            // The same component allocation used by payment prevents counting one
+            // icon toward both the adjusted printed price and the energy cost.
+            if (ResourcePayment.Allocate(price, sources, values) is null) continue;
+            var future = WithEnergy(context, x);
+            if (!AbilityEffectStructure.PaidResourceQueries(ability.Effect).Any())
+            {
+                if (AbilityDiscardReceiptAdmission.Admit(ability, future, selected) is { } result)
+                    return result;
+                continue;
+            }
+            int amount = checked((int)price.ResourceCosts.Sum(component => component.Cost == "X"
+                ? x : long.Parse(component.Cost, System.Globalization.CultureInfo.InvariantCulture)));
+            string required = string.Concat(price.ResourceCosts.Select(component =>
+                ResourcePayment.RequiredResources(component, values)));
+            string generated = string.Concat(price.Generators.Select(source => source.Generates));
+            foreach (string receipt in Receipts(generated, amount))
+            {
+                // These are declarations: a wild declared as wild cannot also be energy.
+                if (!Resources.PaysDeclared(receipt, amount, required)) continue;
+                if (AbilityDiscardReceiptAdmission.Admit(ability, WithReceipt(future, receipt), selected)
+                    is { } result) return result;
+            }
+        }
+        return null;
+    }
+
+    private static IEnumerable<long> EnergyValues(VariableRequest request)
+    {
+        for (long x = request.Min; x <= request.Max; x++) yield return x;
+    }
+
+    private static AbilityAdmissionContext WithEnergy(AbilityAdmissionContext context, long energy) =>
+        context with { Expressions = context.Expressions with
+            { Results = context.Expressions.Results.SetItem("energy", energy) } };
 
     private static bool Applies(CompiledCardAbility ability, AbilityAdmissionContext context) =>
         ability.Cost is null && EffectiveCards.Kind(context.Source, context.World.Facts) == CardKind.Event

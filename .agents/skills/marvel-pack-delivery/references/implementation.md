@@ -7,6 +7,16 @@ extend visibility-safe contracts when the UI lacks necessary meaning.
 
 ## Before bulk card authoring
 
+Before turning a ruling-based failing probe into an engine prerequisite, compare
+the ruling's `rrg_scope` and date with the current vendored Rules Reference.
+Read the current keyword/timing clause, including its changed definition; a
+historical official answer is not automatically the current behavior. If they
+conflict, inspect the official update explanation and the provenance graph before
+dispatching implementation. Record which authority governs and why. For example,
+RR 1.8 overkill requires actual defeat; pre-1.8 Loki and simultaneous-overkill
+answers must not be used to restore the superseded behavior. An assertion based
+on the older rule is a test finding, not evidence of an engine defect.
+
 Map each new mechanic to its engine prerequisite and test a characteristic card.
 Keep card DSL changes separate from engine mechanisms where practical. Confirm
 cost assessment, choices and mutations happen in the correct order: a rejected
@@ -106,8 +116,18 @@ to Rise of Red Skull; its declared counts cover every research recipe. Preserve
 separate accepted-product counts until the product admission gate actually changes.
 Also update `ExpansionSetupAuthorityTests`: its independent source inventory and
 product reasons must include new research recipes without claiming Core transcripts.
+Include `BehaviorAuthorityTests` source and obligation totals, and both-transport
+public deck catalog inventories. Audit unsupported-content fixtures that name the
+new pack: replace their example with a catalogued, still-unsupported face while
+preserving every rejection assertion. Supported identity faces have zero permitted
+player-deck quantity; unsupported faces remain absent from the quantity map.
 Whole-game replays supplement focused rules evidence; record whether they exercise
 victory, defeat, promotion and campaign continuation rather than inferring it.
+Apply the canonical pack's outcome requirements: scenario packs need their stated
+victory/defeat matrix; hero packs need representative complete games and focused
+characteristic, nemesis, obligation and extra-card evidence. Do not invent a
+hero-specific victory gate or spend repeated tactical-policy packets pursuing one
+unless a stated requirement or concrete unproved behavior needs that outcome.
 
 ## Select verification by consequence
 

@@ -34,6 +34,13 @@ obligation and nemesis set. Its public setup and characteristic action/restart
 slice are verified separately from whole-game and native acceptance; those
 results belong to the integrated pack delivery evidence. Neither candidate is
 claimed accepted by this admission increment.
+The isolated Thor integration candidate adds all 35 printed faces, the exact
+40-card starter, obligation and reconciled five-card nemesis set. Missing a
+required face or changing the pinned recipe closes the whole pack. Integration
+is on hold pending independent Loki and Hammer Throw preflight reviews.
+Whole-game, native and final combined gates remain separate from focused setup
+and admission evidence. Black Widow remains outside public admission.
+
 `datasets/setup/setup.json` supplies the recipes the runtime can start.
 `datasets/abilities/abilities.json` defines which printed faces have executable
 card text. Both datasets fail closed outside that boundary.

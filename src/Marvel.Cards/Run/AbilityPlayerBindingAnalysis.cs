@@ -23,7 +23,7 @@ internal static class AbilityPlayerBindingAnalysis
         null => false,
         AbilityCost.ReturnSourceToHand => false,
         AbilityCost.DiscardTop discard => discard.From == AbilitySearchArea.YourDeck,
-        AbilityCost.DealEncounterToYou or AbilityCost.RandomDiscardFromHand => true,
+        AbilityCost.DiscardUntilMinionEngaged or AbilityCost.DealEncounterToYou or AbilityCost.RandomDiscardFromHand => true,
         AbilityCost.Sequence sequence => sequence.Costs.Any(Contains),
         AbilityCost.ExhaustTitled or AbilityCost.ReturnTitledToHand => true,
         AbilityCost.Exhaust exhaust => exhaust.Card == AbilityCostCard.Identity,
@@ -176,11 +176,11 @@ internal static class AbilityPlayerBindingAnalysis
         AbilityEffect.Shuffle shuffle => shuffle.Area == AbilitySearchArea.YourDeck,
         AbilityEffect.Search search => search.Areas.Contains(AbilitySearchArea.YourDeck),
         AbilityEffect.DefineProfile or AbilityEffect.GainSurge or AbilityEffect.Fixed or AbilityEffect.Generate
-            or AbilityEffect.AllowPlayBeneath or AbilityEffect.AllowPlayFromDiscard or AbilityEffect.ReduceFirstAllyCost or AbilityEffect.DoubleResourceFor or AbilityEffect.PreventDamageFrom
+            or AbilityEffect.AllowPlayBeneath or AbilityEffect.AllowPlayFromDiscard or AbilityEffect.ReduceSelfCostPerEngagedMinion or AbilityEffect.ReduceFirstAllyCost or AbilityEffect.DoubleResourceFor or AbilityEffect.PreventDamageFrom
             or AbilityEffect.DelayedStun
             or AbilityEffect.AttackAnotherEnemy or AbilityEffect.ChooseTopForHand or AbilityEffect.ChooseDiscardToShuffle
             or AbilityEffect.DiscardHandWithResource
-            or AbilityEffect.RecoverDiscardedByResource or AbilityEffect.GrantTraitCharacters or AbilityEffect.ModifyPlayedEvent => false,
+            or AbilityEffect.RecoverDiscardedByResource or AbilityEffect.GrantTraitCharacters or AbilityEffect.ModifyPlayedEvent or AbilityEffect.BoostBasicUse => false,
         _ => throw new InvalidOperationException(
             "Unknown compiled effect in player-binding analysis"),
     };
@@ -200,7 +200,7 @@ internal static class AbilityPlayerBindingAnalysis
             or AbilityCardBinding.YourAlterEgo,
         AbilityCardSelection.Query query => query.Kind is
             AbilityCardQuery.YourAsideMinion or AbilityCardQuery.YourAsideSideScheme
-            or AbilityCardQuery.MinionsEngagedWithYou or AbilityCardQuery.YourAsidePile
+            or AbilityCardQuery.VillainAndMinionsEngagedWithYou or AbilityCardQuery.MinionsEngagedWithYou or AbilityCardQuery.YourAsidePile
             or AbilityCardQuery.UpgradesAndSupportsYouControl or AbilityCardQuery.CardsYouControl
             or AbilityCardQuery.IdentitySpecificInYourHand
             or AbilityCardQuery.SupportsYouControl or AbilityCardQuery.CharactersYouControl
@@ -259,6 +259,7 @@ internal static class AbilityPlayerBindingAnalysis
         AbilityCondition.InForm form => form.Player == AbilityPlayer.You,
         AbilityCondition.CardText text => Contains(text.Card),
         AbilityCondition.IsKind kind => Contains(kind.Card),
+        AbilityCondition.IsInPlay inPlay => Contains(inPlay.Card),
         AbilityCondition.IsEnemyAttacker attacker => Contains(attacker.Card),
         AbilityCondition.WasDefeatedByDamage defeated => Contains(defeated.Card),
         AbilityCondition.WasDefeated defeated => Contains(defeated.Card),

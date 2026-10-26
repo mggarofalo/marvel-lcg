@@ -229,7 +229,7 @@ internal sealed class DamageTraceMutation
             ? AbilityDamageProtectionTrace.AfterForcedDamageReplacements(
                 cast, to, transfer.Amount, damage, discarded, currentVillain)
             : transfer.Amount;
-        AssignDamage(to, incoming);
+        AssignDamage(to, incoming, transfer.IgnoresTough);
         ObserveTarget();
     }
 
@@ -252,10 +252,10 @@ internal sealed class DamageTraceMutation
         || !transfer.DealsDamage
         || AbilityDamageProtectionTrace.CanTakeDamageInTrace(cast, cast.World.Cards[to], discarded);
 
-    private void AssignDamage(int cardId, long incoming)
+    private void AssignDamage(int cardId, long incoming, bool ignoresTough = false)
     {
         var assignment = DamageAssignment.AfterReplacement(
-            incoming, incoming > 0 && CurrentTough(cardId) > 0);
+            incoming, !ignoresTough && incoming > 0 && CurrentTough(cardId) > 0);
         if (assignment.SpendsTough)
         {
             tough[cardId] = CurrentTough(cardId) - 1;

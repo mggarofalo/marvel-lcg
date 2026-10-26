@@ -61,6 +61,16 @@ internal static class ResourcePaymentRequirements
         || printed == required
         || !printedCost && printed == Resources.Wild;
 
+    internal static IEnumerable<char> Declarations(Slot slot, char printed)
+    {
+        if (slot.Required is { } required) return [required];
+        // rr:wild-resource.1: the player may specify energy, mental, physical,
+        // or wild. Search each declaration when the cost distinguishes types.
+        return slot.DistinctTypes && !slot.Printed && printed == Resources.Wild
+            ? Resources.Types.OrderBy(type => type == Resources.Wild ? 0 : 1)
+            : [printed];
+    }
+
     internal readonly record struct Slot(
         int Component, char? Required, bool Printed, bool DistinctTypes, int? Source = null);
 }

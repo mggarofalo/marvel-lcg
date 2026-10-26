@@ -2,16 +2,16 @@
 
 What Core Set, Rise of Red Skull, Captain America, Wrecking Crew and Green
 Goblin games are dealt from: scenario, villain and main scheme decks, encounter
-sets, and printed starter decks. The complete Ms. Marvel integration candidate
-also admits its pinned starter, obligation and nemesis; declared data alone never
+sets, and printed starter decks. The complete Ms. Marvel and Thor integration candidates
+also admit their pinned starters, obligations and nemesis sets; declared data alone never
 admits a product without its complete face and recipe gates.
 
 | | |
 |---|---|
 | Kind | authored |
-| Declared products | Marvel Champions Core Set; Rise of Red Skull; The Wrecking Crew; Captain America; Ms. Marvel; Green Goblin (both scenarios and four modular sets) |
-| Records | 39 scenario modes, 9 heroes, 14 encounter sets; candidate runtime admission exposes 39 modes, 9 heroes and 14 sets |
-| Gated by | `SetupDatasetTests`, `RiseOfRedSkullSetupDataTests`, `CaptainAmericaSetupTests`, `MsMarvelSetupTests`, `MessOfThingsSetupTests`, `RiskyBusinessSetupTests`, complete-product admission |
+| Declared products | Marvel Champions Core Set; Rise of Red Skull; The Wrecking Crew; Captain America; Ms. Marvel; Thor; Green Goblin (both scenarios and four modular sets) |
+| Records | 39 scenario modes, 10 heroes, 14 encounter sets; candidate runtime admission exposes 39 modes, 10 heroes and 14 sets |
+| Gated by | `SetupDatasetTests`, `RiseOfRedSkullSetupDataTests`, `CaptainAmericaSetupTests`, `MsMarvelSetupTests`, `ThorSetupTests`, `MessOfThingsSetupTests`, `RiskyBusinessSetupTests`, complete-product admission |
 
 ## Why it is authored
 
@@ -32,7 +32,7 @@ Rise of Red Skull printed faces before exposing its runtime recipes.
 - every named encounter or modular set is defined;
 - every scenario has valid main schemes and villain stages;
 - every hero has two identity faces, an obligation, and a nemesis set;
-- the declared products contain 39 authored modes, 9 heroes, and 14 sets;
+- the declared products contain 39 authored modes, 10 heroes, and 14 sets;
 - required encounter sets remain fixed when optional modular sets change;
 - the header counts match the file.
 
@@ -103,3 +103,12 @@ one Thrall per player from the assembled deck, shuffles, and advances to 1B.
 Expert stage II deals two encounter cards per player during setup.
 `MutagenFormulaSetupTests` checks exact composition and 1–4-player production
 setup in both modes with a chosen Core module. Public admission stays closed.
+
+Thor is a complete integration candidate, with all 35 printed faces and an exact
+40-card starter: 15 signature, 17 Aggression and 8 Basic. The pinned divider in
+`datasets/rules-packs/mc06/UPSTREAM.md` supplies the starter; numbered nemesis
+components resolve its quantity discrepancy as two Frost Giants and one Trickster.
+`ThorSetupTests` and `ThorAdmissionTests` pin composition and whole-pack closure.
+Extra customization cards 06031–06034 are admitted but absent from the starter.
+This candidate remains on hold for independent Loki and Hammer Throw preflight
+review; setup evidence does not establish whole-game or native acceptance.

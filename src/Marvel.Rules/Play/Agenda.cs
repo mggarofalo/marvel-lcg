@@ -281,10 +281,14 @@ public sealed class Agenda
         // Nested work can move ahead of the owner while its effect is running.
         // Track the frames enqueued by this batch rather than inferring them
         // from a contiguous slice after the owner's current position.
+        // A procedure's children inherit its execution. Other invocations keep
+        // their own completion and continuation ordering.
         var children = items.Where(item => scheduledFrames.Contains(item.Step.FrameId)
-            && item.Step.ExecutionOwner is null && !item.Step.SameFrameAs(owner)).ToList();
+            && (item.Step.ExecutionOwner is null || item.Step.ExecutionOwner == owner.ExecutionOwner)
+            && !item.Step.SameFrameAs(owner)).ToList();
         items.RemoveAll(item => scheduledFrames.Contains(item.Step.FrameId)
-            && item.Step.ExecutionOwner is null && !item.Step.SameFrameAs(owner));
+            && (item.Step.ExecutionOwner is null || item.Step.ExecutionOwner == owner.ExecutionOwner)
+            && !item.Step.SameFrameAs(owner));
         parent = items.FindIndex(item => item.Step.SameFrameAs(owner));
         items.InsertRange(parent, children);
         scheduled = 0;

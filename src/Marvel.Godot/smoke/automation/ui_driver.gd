@@ -38,6 +38,28 @@ func expect_visible(locator: RefCounted) -> bool:
     return await expect(func() -> bool: return locator.all().size() == 1,
         "exactly one visible " + locator.description)
 
+func expect_fully_visible_enabled(locator: RefCounted) -> bool:
+    return await expect(func() -> bool:
+        var matches: Array = locator.all()
+        return matches.size() == 1 and _fully_visible_enabled(matches[0]),
+        "fully visible enabled " + locator.description)
+
+func _fully_visible_enabled(control: Control) -> bool:
+    if not _enabled(control) or control.size.x <= 0 or control.size.y <= 0: return false
+    var transform := control.get_global_transform_with_canvas()
+    var corners := [Vector2.ZERO, Vector2(control.size.x, 0), control.size, Vector2(0, control.size.y)]
+    for corner in corners:
+        var point: Vector2 = transform * corner
+        # Rect2.has_point excludes the right/bottom edge; enclosure includes it.
+        if not viewport.get_visible_rect().encloses(Rect2(point, Vector2.ZERO)): return false
+        var ancestor: Node = control.get_parent()
+        while ancestor != null and not ancestor is Viewport:
+            if ancestor is Control and ancestor.clip_contents:
+                var local: Vector2 = ancestor.get_global_transform_with_canvas().affine_inverse() * point
+                if not Rect2(Vector2.ZERO, ancestor.size).encloses(Rect2(local, Vector2.ZERO)): return false
+            ancestor = ancestor.get_parent()
+    return true
+
 func click(locator: RefCounted, button_index: MouseButton = MOUSE_BUTTON_LEFT) -> bool:
     if not failure.is_empty(): return false
     steps.append("click: " + locator.description)

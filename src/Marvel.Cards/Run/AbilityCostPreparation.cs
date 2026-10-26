@@ -43,6 +43,7 @@ internal sealed class AbilityCostPreparation
 
     internal AbilityCostPayment Build(AbilityCost? cost)
     {
+        AttachedUpgradeCostBound.Validate(world, source, player, cost, paying);
         var price = AbilityPaymentPricing.Price(world, source, player, cost, resourceAbilities);
         if (!resourcesPaidByEvent && price is not null
             && price.ResourceCosts.Any(component => component.DistinctTypes)
@@ -78,6 +79,10 @@ internal sealed class AbilityCostPreparation
             PrepareResource(component);
             return;
         }
+        if (component is AbilityCost.ExhaustChosen { CaptureBasicUsePower: true }
+            && (world.Agenda.Occurrence?.BasicUse is not { } use || !use.IsCurrent(world)
+                || selected.Length != 1 || BasicUseAllyReceipt.Power(world, world.Cards[selected[0]], use) <= 0))
+            throw new RulesNotImplementedException("matching basic power requires a current positive selected ally power");
         PreparePhysical(component);
     }
 
@@ -141,12 +146,12 @@ internal sealed class AbilityCostPreparation
         if (PrepareHandDiscard(component)) return;
         switch (component)
         {
-            case AbilityCost.DiscardTop or AbilityCost.DealEncounterToYou:
+            case AbilityCost.DiscardUntilMinionEngaged or AbilityCost.DiscardTop or AbilityCost.DealEncounterToYou:
                 ordered.Add(new DeckCost(component));
                 break;
-            case AbilityCost.ExhaustChosen:
+            case AbilityCost.ExhaustChosen exhaustChosen:
                 ordered.Add(new ExhaustSelected(
-                    [.. selected.Select(id => new BoundCard(world.Cards[id], world.Cards[id].Incarnation))]));
+                    [.. selected.Select(id => new BoundCard(world.Cards[id], world.Cards[id].Incarnation))], exhaustChosen.CaptureBasicUsePower));
                 break;
             case AbilityCost.ExhaustTitled named:
                 var target = NamedAbilityCost.RequireTarget(world, player, named.Title);

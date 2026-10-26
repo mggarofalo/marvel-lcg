@@ -14,6 +14,7 @@ internal static class ContinuationExecution
         EventCardCompletionOperation operation => operation.Execution,
         CardPaymentEntryOperation operation => operation.Entry.Execution,
         ResourcePaymentOperation operation => operation.Payment.Execution,
+        SimultaneousDirectDamageOperation operation => operation.Resolution.Execution,
         DamageResolutionOperation operation => operation.Resolution.Execution,
         DamageCostPlacementOperation operation => operation.Placement.Execution,
         _ => null,

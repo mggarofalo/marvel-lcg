@@ -19,10 +19,13 @@ The baseline is embedded in the executable; a save cannot supply a new baseline
 or authorize its own migration.
 
 This is a conservative product policy, not a rule inferred from the tabletop.
-The current v25 delivery retains named routes from the exact frozen v19/v20/v21
-content triple to `engine-replay-v25`, plus frozen-content v25 additive upgrades.
-Every original recorded fact must verify; none is regenerated. V22, v23 and v24
-have no named source admission and are quarantined unchanged. V25 emits one
+The current v26 delivery retains named routes from the exact frozen v19/v20/v21
+content triple to `engine-replay-v26`, plus frozen-content v26 additive upgrades.
+Every original recorded fact must verify; none is regenerated. V22, v23, v24 and v25
+have no named source admission and are quarantined unchanged. V26 completes
+minion Quickstrike before optional engagement and entry responses;
+real Core Hawkeye/Vulture traces can therefore change independently of content
+hashes. Historical v25 routes remain exact v25 destination routes. V25 emits one
 ally-entry response occurrence after the mandatory ally-limit choice, including
 ordinary play and put-into-play. Core Nick Fury, Maria Hill and Mockingbird can
 therefore change a recorded trace independently of content hashes. V24 discards unattached

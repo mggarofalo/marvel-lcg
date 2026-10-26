@@ -125,14 +125,23 @@ public static class CardPlay
         World world, ICardFacts facts, ICardPlayAbilities abilities, Seat seat, Card card,
         IReadOnlyList<int> paying, List<GameEvent> events,
         IReadOnlyList<int>? targets = null)
+        => PlayAllocated(world, facts, abilities, seat, card,
+            new Decision(card.ObjectId, targets ?? [], paying), events);
+
+    /// <summary>Plays a card with its exact declared resource allocation.</summary>
+    public static void PlayAllocated(
+        World world, ICardFacts facts, ICardPlayAbilities abilities, Seat seat,
+        Card card, Decision choice, List<GameEvent> events)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
         ArgumentNullException.ThrowIfNull(abilities);
         ArgumentNullException.ThrowIfNull(seat);
         ArgumentNullException.ThrowIfNull(card);
-        ArgumentNullException.ThrowIfNull(paying);
+        ArgumentNullException.ThrowIfNull(choice);
         ArgumentNullException.ThrowIfNull(events);
+        var targets = choice.Targets;
+        var paying = choice.Spent;
 
         // Admission checks precede committed changes; the accepted card is exposed
         // faceup outside play before any generator cost can open an interrupt.
@@ -155,7 +164,8 @@ public static class CardPlay
         // `rr:alliance` -- for an alliance card this is every player's hand,
         // and for every other card it is only this player's.
         CardPlayPayment.Play(world,
-            new CardPlayInitiation(facts, abilities, seat, card, adjusted, [.. targets ?? []], [.. paying]), events);
+            new CardPlayInitiation(facts, abilities, seat, card, adjusted, [.. targets], [.. paying])
+            { Allocations = [.. choice.Allocated] }, events);
     }
 
     /// <summary>Plays a card while an effect ignores its resource cost.</summary>

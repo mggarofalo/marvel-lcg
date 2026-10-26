@@ -21,6 +21,8 @@ public abstract record AbilityCost
     public sealed record ReturnTitledToHand(string Title) : AbilityCost;
     /// <summary>Discard an exact number from the top of the specified deck.</summary>
     public sealed record DiscardTop(AbilitySearchArea From, int Count) : AbilityCost;
+    /// <summary>Discard until a minion is found, then put that physical minion into play engaged with you.</summary>
+    public sealed record DiscardUntilMinionEngaged : AbilityCost;
     /// <summary>Deal one facedown encounter card to the resolving player.</summary>
     public sealed record DealEncounterToYou : AbilityCost;
     /// <summary>Discard a campaign TECH reward and permanently remove its saved instance.</summary>
@@ -49,6 +51,8 @@ public abstract record AbilityCost
     {
         /// <summary>Required current trait of the character paying this cost.</summary>
         public string? Trait { get; init; }
+        /// <summary>Capture the selected ally's matching modified power for one basic use.</summary>
+        public bool CaptureBasicUsePower { get; init; }
     }
     /// <summary>Heal a positive amount of damage from the cost's card.</summary>
     public sealed record Heal(AbilityCostCard Card, long Amount) : AbilityCost;

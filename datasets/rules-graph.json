@@ -32,6 +32,34 @@
     }
   },
   "card_clarifications": {
+    "ruling:6e301a347a5392fb": {
+      "ruling_hash": "sha256:977ce34c0da6d47efbe36667b0ee71d9e56802b0db6f90472090774fba575dbe",
+      "cards": {
+          "06003": "sha256:ba45b82323b6d9e6ac305069ba8993d542b91ce03d799779cce2781a7f65e186"
+      },
+      "references": [
+          "rr:cost-arrow-icon",
+          "rr:encounter-deck.2"
+      ],
+      "supersedes": {
+          "ruling:1fc1a3ff38a01231": "sha256:3898397e064673afa7957ddb4aa57129829834255af63e81fc620d895da68614"
+      },
+      "why": "The July 2023 answer explicitly updates the conflicting earlier Defender rulings: a discarded minion must actually engage before threat or Confused can be removed. Emptying the deck completes only the discard instruction, not the subsequent entry cost."
+    },
+    "ruling:a1f4982cfebcd768": {
+      "ruling_hash": "sha256:69ded470c4d7c43d9703754392c3d98ac41e4a3b4bb8147dd5f9b8f9528410d0",
+      "cards": {
+          "06003": "sha256:ba45b82323b6d9e6ac305069ba8993d542b91ce03d799779cce2781a7f65e186"
+      },
+      "references": [
+          "rr:initiating-abilities.step.5",
+          "rr:initiating-abilities.step.6"
+      ],
+      "supersedes": {
+          "ruling:4a7169aa3869c06c": "sha256:1199c40a64a95b0e300f04aa60ba7987052e03a1d2febb49ed9c350fdc48ed15"
+      },
+      "why": "The April 2026 clarification places effect initiation after arrow costs; an acquired status or Patrol can prevent that effect. This supersedes the older Defender and Baron Zemo answer that treated the thwart as already initiated."
+    },
     "ruling:6d6264d6620980b3": {
       "ruling_hash": "sha256:05dcf08549bf502f4386335dd379b4ef79642efca132cdfb44aedaa706f5b94b",
       "cards": { "04028": "sha256:35db3c88609a66f0a40e20cdc824da306fe2f0e83c5bf552b1106dea7d786bd9" },

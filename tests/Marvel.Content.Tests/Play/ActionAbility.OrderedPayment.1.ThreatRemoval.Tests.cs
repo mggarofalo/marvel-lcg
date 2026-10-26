@@ -247,7 +247,7 @@ public sealed class ActionAbilityOrderedPaymentThreatRemovalTests
         var occurrence = new Occurrence(0, [Steps.TurnAction], Subject: source.ObjectId, Player: 0);
         var ability = Assert.Single(program.On(source.FaceId));
         var arrowPayment = AbilityCostPayment.Prepare(world, source, 0, ability.Cost, program, probe, AbilityPaymentSelection.Capture([generator.ObjectId], [], resourcesPaidByEvent: true));
-        var eventPayment = Assert.IsType<AbilityEventPayment>(AbilityEventPayment.Prepare(world, source, 0, [generator.ObjectId], ability, probe, allocations: [new ResourceAllocation(generator.ObjectId, Cost: 1, PaidAs: "Y")]));
+        var eventPayment = Assert.IsType<AbilityEventPayment>(AbilityEventPayment.Prepare(world, source, 0, ability, probe, AbilityPaymentSelection.Capture([generator.ObjectId], [], allocations: [new ResourceAllocation(generator.ObjectId, Cost: 1, PaidAs: "Y")])));
         var events = new List<GameEvent>();
         eventPayment.Commit(occurrence, events);
         PreparedCostPayment.Commit(world, arrowPayment, runner, events);

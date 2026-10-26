@@ -25,6 +25,9 @@ internal static class AbilityEffectLowering
         return node.Kind switch
         {
             "attackAnotherEnemy" => AbilityStagedAttackLowering.Lower(argument, child),
+            "boostBasicUse" => argument is AbilityValue.Word { Value: "exhaustedAllyPower" }
+                ? new AbilityEffect.BoostBasicUse(0, MatchingAlly: true)
+                : new AbilityEffect.BoostBasicUse(PositiveCount(argument, child)),
             "modifyPlayedEvent" => PlayedEventModifier(argument, child),
             "seq" => new AbilityEffect.Sequence(Effects(argument, child)),
             "and" => new AbilityEffect.Simultaneous(Effects(argument, child)),
@@ -89,6 +92,7 @@ internal static class AbilityEffectLowering
             "preventAttackDamage" => FixedEffect(argument, child, "attack", AbilityFixedInstruction.PreventAttackDamage),
             "revealTop" => FixedEffect(argument, child, 1, AbilityFixedInstruction.RevealTop),
             "inspectEncounterTop" => AbilityInspectionLowering.Lower(argument, child),
+            "inspectDiscardOrderEncounterTop" => AbilityInspectionLowering.DiscardOrder(argument, child),
             "peekTop" => FixedEffect(argument, child, "anyDeck", AbilityFixedInstruction.PeekAnyDeck),
             "placeAccelerationToken" => FixedEffect(argument, child, 1, AbilityFixedInstruction.PlaceAccelerationToken),
             "generateTopDiscard" => FixedEffect(argument, child, "printed", AbilityFixedInstruction.GenerateTopDiscard),
@@ -100,6 +104,7 @@ internal static class AbilityEffectLowering
             "requireAttackedPlayerAllyDefender" => FixedEffect(argument, child, "attack", AbilityFixedInstruction.RequireAttackedPlayerAllyDefender),
             "generate" => new AbilityEffect.Generate(ResourceString(argument, child)),
             "doubleResourceFor" => new AbilityEffect.DoubleResourceFor(Text(argument, child)),
+            "reduceSelfCostPerEngagedMinion" => new AbilityEffect.ReduceSelfCostPerEngagedMinion(PositiveInteger(argument, child)),
             "reduceFirstAllyCost" => new AbilityEffect.ReduceFirstAllyCost(PositiveInteger(argument, child)),
             "releaseBeneath" => AbilityBeneathLowering.Release(argument, child),
             "chooseCardsToHand" => AbilityBeneathLowering.ChooseToHand(argument, child),
@@ -176,30 +181,17 @@ internal static class AbilityEffectLowering
         return new(Selected(fields, "card", location), Numeric(fields, "amount", location));
     }
 
-    internal static AbilityEffect.Damage DamageEffect(AbilityValue value, AbilityLocation location)
-    {
-        var fields = Fields(value, location, "cards", "amount", "attack");
-        return new(Selected(fields, "cards", location), Numeric(fields, "amount", location), Marker(fields, "attack", location));
-    }
+    internal static AbilityEffect.Damage DamageEffect(AbilityValue value, AbilityLocation location) =>
+        AbilityDamageLowering.DamageEffect(value, location);
 
-    internal static AbilityEffect.AttackDamage AttackDamageEffect(AbilityValue value, AbilityLocation location)
-    {
-        var fields = Fields(value, location, "cards", "amount", "overkill", "simultaneous");
-        return new(Selected(fields, "cards", location), Numeric(fields, "amount", location), Marker(fields, "overkill", location))
-        { SimultaneousPlacement = Marker(fields, "simultaneous", location) };
-    }
+    internal static AbilityEffect.AttackDamage AttackDamageEffect(AbilityValue value, AbilityLocation location) =>
+        AbilityDamageLowering.AttackDamageEffect(value, location);
 
-    internal static AbilityEffect.MoveDamage MoveDamageEffect(AbilityValue value, AbilityLocation location, bool attack)
-    {
-        var fields = Fields(value, location, "from", "to", "amount");
-        return new(Selected(fields, "from", location), Selected(fields, "to", location), Numeric(fields, "amount", location), attack);
-    }
+    internal static AbilityEffect.MoveDamage MoveDamageEffect(AbilityValue value, AbilityLocation location, bool attack) =>
+        AbilityDamageLowering.MoveDamageEffect(value, location, attack);
 
-    internal static AbilityEffect.IndirectDamage IndirectEffect(AbilityValue value, AbilityLocation location)
-    {
-        var fields = Fields(value, location, "among", "amount");
-        return new(Selected(fields, "among", location), Numeric(fields, "amount", location));
-    }
+    internal static AbilityEffect.IndirectDamage IndirectEffect(AbilityValue value, AbilityLocation location) =>
+        AbilityDamageLowering.IndirectEffect(value, location);
 
     internal static AbilityEffect.GiveStatus StatusEffect(AbilityValue value, AbilityLocation location)
     {
@@ -256,17 +248,8 @@ internal static class AbilityEffectLowering
             ? NonnegativeCount(maximum, location.Child("maximum")) : null };
     }
 
-    internal static AbilityEffect.PreventDamage PreventDamageEffect(AbilityValue value, AbilityLocation location)
-    {
-        if (value is AbilityValue.Word)
-        {
-            FixedWord(value, location, "trigger.target");
-            return new(new AbilityNumber.Constant(long.MaxValue));
-        }
-        var fields = Fields(value, location, "card", "amount");
-        FixedWord(Required(fields, "card", location), location.Child("card"), "trigger.target");
-        return new(fields.ContainsKey("amount") ? Numeric(fields, "amount", location) : new AbilityNumber.Constant(long.MaxValue));
-    }
+    internal static AbilityEffect.PreventDamage PreventDamageEffect(AbilityValue value, AbilityLocation location) =>
+        AbilityDamageLowering.PreventDamageEffect(value, location);
 
     internal static bool Marker(IReadOnlyDictionary<string, AbilityValue> fields, string name, AbilityLocation location)
     {

@@ -32,6 +32,7 @@ public sealed class RuntimeProductAdmission
         bool wreckingCrew = StandaloneProductAdmission.WreckingCrew(setup, cards, authored);
         bool greenGoblin = StandaloneProductAdmission.GreenGoblin(setup, cards, authored);
         bool msMarvel = StandaloneProductAdmission.MsMarvel(setup, cards, authored);
+        bool thor = StandaloneProductAdmission.Thor(setup, cards, authored);
         bool Accepted(string pack) => pack switch
         {
             "core" => true,
@@ -40,6 +41,7 @@ public sealed class RuntimeProductAdmission
             "twc" => wreckingCrew,
             "gob" => greenGoblin,
             "msm" => msMarvel,
+            "thor" => thor,
             _ => false,
         };
         var playable = authored.Where(face => Accepted(cards.Pack(face)))

@@ -75,6 +75,8 @@ internal static class AbilityResolutionChoices
                 structural, (AbilityEffect.ThwartGroup)choice);
         Prompt? prompt = operation switch
         {
+            "inspectDiscardOrderEncounterTop" => AbilityOrderedEncounterInspection.Describe(structural,
+                (AbilityEffect.InspectDiscardOrderEncounterTop)choice),
             "attack" => AbilityCountedAttackSelection.Describe(structural, (AbilityEffect.Power)choice),
             "inspectEncounterTop" => AbilityEncounterInspection.Describe(structural, (AbilityEffect.InspectEncounterTop)choice),
             "peekTop" => AbilityDeckPeek.Describe(structural),

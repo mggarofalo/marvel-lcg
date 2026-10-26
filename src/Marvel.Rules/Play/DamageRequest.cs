@@ -11,5 +11,7 @@ public sealed record DamageRequest(
     public Occurrence? RecordDefeatOn { get; init; }
     /// <summary>The live activation accepting this boost damage placement, when present.</summary>
     public int? ActivationId { get; init; }
+    /// <summary>Bypasses Tough for this damage instance while preserving its status cards.</summary>
+    public bool IgnoresTough { get; init; }
     internal bool PreventAllDamage { get; init; }
 }

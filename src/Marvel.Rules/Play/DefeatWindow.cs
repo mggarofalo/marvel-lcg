@@ -8,4 +8,8 @@ public sealed record DefeatWindow(Occurrence? Origin = null, IReadOnlyList<Pendi
 {
     /// <summary>Printed When Defeated addresses retained until their own exact triggering fact is consumed.</summary>
     public IReadOnlyList<PendingAbility> OwnAbilities { get; init; } = [];
+
+    /// <summary>Exact recipient occurrences sharing one simultaneous step-six ordering window.</summary>
+    public IReadOnlyList<DefeatWindowSource> Sources { get; init; } = [];
+
 }

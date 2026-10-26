@@ -17,6 +17,7 @@ internal sealed class AbilityModalFrame : IDisposable
     private float fittedWidth = 560;
     private bool disposed;
     internal VBoxContainer Content { get; }
+    internal VBoxContainer Footer => footer;
     internal Control Frame => frame;
 
     internal AbilityModalFrame(Main main, string name, Theme? theme, int currentChoices = 0)

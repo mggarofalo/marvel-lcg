@@ -38,7 +38,9 @@ internal sealed class AbilityConstantQueries
         var found = new List<ContinuousEffect>();
         foreach (var ability in AbilityProgramQueries.ActiveOn(world, program, card))
         {
-            if (ability.Trigger.Timing != AbilityType.Constant) continue;
+            // Candidate pricing has its own read-only port and never supplies an in-play grant.
+            if (ability.Trigger.Timing != AbilityType.Constant
+                || ability.Effect is AbilityEffect.ReduceSelfCostPerEngagedMinion) continue;
 
             var bindings = new AbilityQueryContext(
                 world, card, new Occurrence(0, []),

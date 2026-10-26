@@ -16,6 +16,7 @@ internal static class AbilityOperationNames
         AbilityCost.ReturnSourceToHand => "returnToHand",
         AbilityCost.ReturnTitledToHand => "returnTitledToHand",
         AbilityCost.DiscardTop => "discardTop",
+        AbilityCost.DiscardUntilMinionEngaged => "discardUntilMinionEngaged",
         AbilityCost.DealEncounterToYou => "dealEncounterCard",
         AbilityCost.ConsumeCampaignCard => "consumeCampaignCard",
         AbilityCost.RemoveCounters => "removeCounters",
@@ -40,6 +41,7 @@ internal static class AbilityOperationNames
     internal static string OperationName(this AbilityEffect effect) => effect switch
     {
         AbilityEffect.AttackAnotherEnemy => "attackAnotherEnemy",
+        AbilityEffect.BoostBasicUse => "boostBasicUse",
         AbilityEffect.ModifyPlayedEvent => "modifyPlayedEvent",
         AbilityEffect.Heal => "heal",
         AbilityEffect.SetHitPoints => "setHitPoints",
@@ -57,6 +59,7 @@ internal static class AbilityOperationNames
         AbilityEffect.GainSurge => "gainSurge",
         AbilityEffect.Generate => "generate",
         AbilityEffect.DoubleResourceFor => "doubleResourceFor",
+        AbilityEffect.ReduceSelfCostPerEngagedMinion => "reduceSelfCostPerEngagedMinion",
         AbilityEffect.ReduceFirstAllyCost => "reduceFirstAllyCost",
         AbilityEffect.AllowPlayBeneath => "allowPlayBeneath",
         AbilityEffect.AllowPlayFromDiscard => "allowPlayFromDiscard",
@@ -87,6 +90,7 @@ internal static class AbilityOperationNames
         AbilityEffect.RecruitDiscarded => "recruitDiscarded",
         AbilityEffect.PutIntoPlay => "putIntoPlay",
         AbilityEffect.InspectEncounterTop => "inspectEncounterTop",
+        AbilityEffect.InspectDiscardOrderEncounterTop => "inspectDiscardOrderEncounterTop",
         AbilityEffect.ChooseTopForHand => "chooseTopForHand",
         AbilityEffect.DiscardHandCards => "discardHandCards",
         AbilityEffect.DiscardResourceIcons => "discardResourceIcons",

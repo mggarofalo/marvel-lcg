@@ -32,7 +32,8 @@ internal static class AbilityPaymentRules
             AbilityCost.ReturnTitledToHand named => NamedAbilityCost.Target(world, player, named.Title) is { } returning
                 && AbilityPhysicalPayment.CanReturnToHand(world, returning),
             AbilityCost.DiscardTop discard => AbilityDeckCosts.CanDiscard(world, player, discard),
-            AbilityCost.DealEncounterToYou => player >= 0 && AbilityDeckCosts.EncounterAvailable(world) > 0,
+            // Hidden deck identities cannot establish whether this uncertain cost succeeds.
+            AbilityCost.DiscardUntilMinionEngaged or AbilityCost.DealEncounterToYou => player >= 0 && AbilityDeckCosts.EncounterAvailable(world) > 0,
             AbilityCost.Sequence sequence => SequencePayable(
                 world, card, player, sequence, program, resourceAbilities),
             AbilityCost.ExhaustTitled named => NamedAbilityCost.Target(world, player, named.Title)?.Ready == true,
@@ -99,7 +100,7 @@ internal static class AbilityPaymentRules
     /// </remarks>
     internal static bool MandatoryCostIsAutomatic(AbilityCost cost) => cost switch
     {
-        AbilityCost.DiscardTop or AbilityCost.DealEncounterToYou => true,
+        AbilityCost.DiscardUntilMinionEngaged or AbilityCost.DiscardTop or AbilityCost.DealEncounterToYou => true,
         AbilityCost.Sequence sequence => sequence.Costs.All(MandatoryCostIsAutomatic),
         AbilityCost.ReturnSourceToHand or AbilityCost.ReturnTitledToHand or AbilityCost.ConsumeCampaignCard
             or AbilityCost.Discard or AbilityCost.Exhaust or AbilityCost.ExhaustTitled or AbilityCost.RemoveCounters => true,
@@ -231,9 +232,18 @@ internal static class AbilityPaymentRules
             return true;
         }
 
+        AttachedUpgradeCostBound.Validate(world, card, player, ability.Cost, []);
         if (!Resources.HasPlayableCost(card.FaceId, world.Facts))
         {
             return false;
+        }
+
+        if (ability.Cost is AbilityCost.SpendEnergy)
+        {
+            var price = AbilityPaymentPricing.CombinedPrice(world, card, player, ability, resourceAbilities)!;
+            var sources = price.Generators.Where(source => discarded is null || !discarded.Contains(source.Effect))
+                .Select(source => source.Effect).ToArray();
+            return ResourcePayment.Allocate(price, sources, new Dictionary<string, long> { ["X"] = 1 }) is not null;
         }
 
         long cost = CardPayment.CostOf(
@@ -249,6 +259,11 @@ internal static class AbilityPaymentRules
         return AbilityHandDiscardAvailability.CanPay(ability.Cost,
             AbilityCostSelection.HandCandidates(world, card, player), generators, cost, required, discardCount);
     }
+
+    internal static bool EventPaysResources(World world, Card card, AbilityCost? cost) =>
+        EffectiveCards.Kind(card, world.Facts) == CardKind.Event
+        && (cost is AbilityCost.SpendEnergy
+            || ResourceRequirement(cost, card).Length + GenericResourceAmount(cost) > 0);
 
     internal static int GenericResourceAmount(AbilityCost? cost) => cost switch
     {

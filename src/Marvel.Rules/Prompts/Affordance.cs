@@ -36,6 +36,10 @@ public sealed record Affordance(
     /// <summary>Complete current intentions; an empty list retains explicit composition.</summary>
     public IReadOnlyList<WindowChoice> WindowChoices { get; init; } = [];
 
+    /// <summary>Cards causing this exact offer, independent of its source and effect targets.</summary>
+    /// <remarks>The engine chooses this prompt-local context contract; it authorizes no selection.</remarks>
+    public IReadOnlyList<int> ContextCardIds { get; init; } = [];
+
     /// <summary>Engine-authored display name, separate from the stable command label.</summary>
     public string? DisplayLabel { get; init; }
 

@@ -26,6 +26,7 @@ func _run() -> void:
     await process_frame
     await process_frame
     var ui := Driver.new(scene, surface)
+    _check(await ui.expect_fully_visible_enabled(Locator.control(play)), "complete enabled control is visible")
     _check(await ui.click(ui.button("Play")), "native click: " + ui.failure)
     _check(clicks == 1, "click must commit exactly once")
     _check(await ui.press_key(KEY_ENTER), "native keyboard dispatch")
@@ -44,6 +45,7 @@ func _run() -> void:
     hidden.queue_free()
     await process_frame
     play.disabled = true
+    await _reject_visibility(play, "disabled")
     await _reject(play, "disabled")
     play.disabled = false
     var cover := _button("Cover", play.position)
@@ -58,6 +60,11 @@ func _run() -> void:
     var clipped := _button("Clipped", Vector2(40, 40))
     clipped.reparent(clip, false)
     await _reject(clipped, "clipped")
+    clip.size = Vector2(100, 40)
+    clipped.position = Vector2(0, 0)
+    await _reject_visibility(clipped, "partly clipped by ancestor")
+    var offscreen := _button("Partial viewport", Vector2(740, 500))
+    await _reject_visibility(offscreen, "partly outside viewport")
     var delayed := _button("Later", Vector2(30, 160))
     delayed.disabled = true
     _enable_later(delayed)
@@ -123,6 +130,12 @@ func _reject(control: Control, reason: String) -> void:
 func _enable_later(button: Button) -> void:
     for frame in 4: await process_frame
     button.disabled = false
+
+func _reject_visibility(control: Control, reason: String) -> void:
+    var driver := Driver.new(scene, surface, _expected_failure)
+    driver.timeout_ms = 40
+    _check(not await driver.expect_fully_visible_enabled(Locator.control(control)), reason + " accepted as fully visible")
+    _check(driver.failure.contains("fully visible enabled"), reason + " visibility diagnostic")
 
 func _expected_failure(message: String) -> void:
     print("EXPECTED_UI_FAILURE ", message)

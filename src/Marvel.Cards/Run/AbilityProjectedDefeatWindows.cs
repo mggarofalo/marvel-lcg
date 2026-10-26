@@ -71,14 +71,19 @@ internal static class AbilityProjectedDefeatWindows
     internal static void ValidateContinuation(AbilityEffect node, AbilityPowerState state, AbilityAdmissionScope cast)
     {
         if (AbilityPowerContinuationDependencies.IsIndependent(node)) return;
-        if (state.UnprojectedStageEntry is { } reason)
+        if (state.UnprojectedStageEntry is { } reason
+            && !AbilityStageEntryDependencies.PreservesReads(node, state, cast))
             throw new RulesNotImplementedException(reason);
-        if (state.DefeatWindowDeferred && !AbilityDefeatReceiptProjection.PreservesReads(node))
-            throw new RulesNotImplementedException("A labelled-power continuation reads the board after an unprojected defeat window.");
+        if (state.DefeatWindowDeferred && !AbilityDefeatReceiptProjection.PreservesReads(node)
+            && !(state.RecoveryWindowDeferred && AbilityProjectedRecoveryWindow.PreservesReads(node, state, cast)))
+            throw new RulesNotImplementedException($"A labelled-power continuation reads the board after an {DeferredWindowDescription(state)}.");
         if (!state.EncounterCardsChanged) return;
         if (!AbilityEncounterDealProjection.PreservesReads(node))
             throw new RulesNotImplementedException("A labelled-power continuation has an unprojected read after a defeat-triggered encounter deal.");
     }
+
+    internal static string DeferredWindowDescription(AbilityPowerState state) =>
+        state.RecoveryWindowDeferred ? "unprojected defeat window (step-6 interrupt)" : "unprojected defeat window";
 
     private static bool MissingAuthoredDefeat(Card subject, AbilityAdmissionScope cast) =>
         !PrintedText.IsBlanked(cast.World, subject)

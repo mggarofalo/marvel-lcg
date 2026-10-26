@@ -36,7 +36,7 @@ public sealed class PrintedTextMeaningTransportTests : TransportTestBase
             ? await ExchangeOverSocket(new SocketEngineServer(endpoint, IPAddress.Loopback, 0), request)
             : await new InProcessTransport(endpoint).ExchangeAsync(request, TestContext.Current.CancellationToken);
 
-        Assert.Equal(39, received.Version);
+        Assert.Equal(40, received.Version);
         CardPersistentDescriptor facts = received.World!.Areas.SelectMany(area => area.Cards)
             .Single(card => card.Id == robot.ObjectId).Persistent!;
         Assert.Equal(robot.ObjectId, facts.Source.CardId);
@@ -53,16 +53,16 @@ public sealed class PrintedTextMeaningTransportTests : TransportTestBase
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public async Task Protocol38IsRejectedBeforeGameCreation(bool socket)
+    public async Task PreviousProtocolIsRejectedBeforeGameCreation(bool socket)
     {
         var host = new EngineHost(new UnusedFactory());
         EngineRequest request = EngineRequest.OpenGame("old", "robot",
-            new GameSpecification("rhino", ["spider_man"], [], Seed: 7)) with { Version = 38 };
+            new GameSpecification("rhino", ["spider_man"], [], Seed: 7)) with { Version = 39 };
         EngineResponse received = socket
             ? await ExchangeOverSocket(new SocketEngineServer(host, IPAddress.Loopback, 0), request)
             : await new InProcessTransport(host).ExchangeAsync(request, TestContext.Current.CancellationToken);
         Assert.Equal("unsupported_version", received.Error?.Code);
-        Assert.Equal(39, received.Version);
+        Assert.Equal(40, received.Version);
         Assert.Null(received.World);
     }
 }

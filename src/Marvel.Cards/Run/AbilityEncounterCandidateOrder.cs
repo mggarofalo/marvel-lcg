@@ -1,4 +1,5 @@
 using Marvel.Rules.State;
+using Marvel.Cards.Dsl;
 
 namespace Marvel.Cards.Run;
 
@@ -16,6 +17,36 @@ internal static class AbilityEncounterCandidateOrder
             // is a snapshot of the candidate board, taken before those reads.
             .Where(card => included.Contains(card.ObjectId)).ToArray();
     }
+
+    internal static IEnumerable<Card> ApplySelectorOrder(IEnumerable<Card> candidates,
+        AbilityCardSelection selector, AbilitySelectorTraceContext trace)
+    {
+        if (AbilitySelectorTrace.UsesObjectIdOrder(selector))
+            return candidates.OrderBy(card => card.ObjectId);
+        // Engine choice: the simultaneous villain/engaged-minion cohort puts its
+        // villain first, independently of projected villain-area chronology.
+        return VillainFirst(selector, trace)
+            ? candidates.OrderByDescending(card => CardKinds.IsVillain(EffectiveCards.Kind(card, trace.Cast.World.Facts)))
+            : candidates;
+    }
+
+    private static bool VillainFirst(AbilityCardSelection? selector,
+        AbilitySelectorTraceContext trace) => selector switch
+    {
+        AbilityCardSelection.Query { Kind: AbilityCardQuery.VillainAndMinionsEngagedWithYou } => true,
+        AbilityCardSelection.WithTrait filter => VillainFirst(filter.Cards, trace),
+        AbilityCardSelection.WithStatus filter => VillainFirst(filter.Cards, trace),
+        AbilityCardSelection.FaceDown filter => VillainFirst(filter.Cards, trace),
+        AbilityCardSelection.Last filter => VillainFirst(filter.Cards, trace),
+        AbilityCardSelection.WithMatchingPlayerArea filter => VillainFirst(filter.Cards, trace),
+        AbilityCardSelection.WithoutAnotherCopyAttached filter => VillainFirst(filter.Cards, trace),
+        AbilityCardSelection.Discardable filter => VillainFirst(filter.Cards, trace),
+        AbilityCardSelection.Ranked filter => VillainFirst(filter.Cards, trace),
+        AbilityCardSelection.FirstAvailable fallback => VillainFirst(fallback.Options.FirstOrDefault(
+            option => AbilitySelectorTrace.MatchingCandidates(option, trace).Any()), trace),
+        _ => false,
+    };
+
     private static int StageArea(World world, int id)
     {
         var card = world.Cards[id];

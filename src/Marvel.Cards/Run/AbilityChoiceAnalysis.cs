@@ -65,7 +65,7 @@ internal static class AbilityChoiceAnalysis
 
     internal static bool IsChoice(AbilityEffect node) =>
         node is AbilityEffect.AttackAnotherEnemy or AbilityEffect.MoveThreat or AbilityEffect.Power { TargetCount: not null } || node.OperationName() is "choose" or "chooseCard" or "indirectDamage"
-            or "resolveSpecials" or "payOrExhaust" or "chooseTopForHand" or "peekTop" or "inspectEncounterTop"
+            or "resolveSpecials" or "payOrExhaust" or "chooseTopForHand" or "peekTop" or "inspectEncounterTop" or "inspectDiscardOrderEncounterTop"
             or "discardHandCards" or "discardResourceIcons" or "chooseCardsToHand" or "chooseDiscardToShuffle" or "distributeThreat" or "thwartDifferentSchemes" or "makeTheCall"
             or "legalPractice" or "payOrEffect" or "enemyAttacks" or "enemySchemes";
 

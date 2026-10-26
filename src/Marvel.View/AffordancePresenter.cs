@@ -24,6 +24,8 @@ internal static class AffordancePresenter
         {
             Timing = option.Timing,
             WindowChoices = option.WindowChoices,
+            ContextCardIds = option.ContextCardIds.ToArray(),
+            ContextDescription = AffordanceContextPresentation.Describe(option.ContextCardIds, world),
             DisplayLabel = option.DisplayLabel,
             CommitLabel = option.CommitLabel,
             SourceName = sourceCopy.Name,

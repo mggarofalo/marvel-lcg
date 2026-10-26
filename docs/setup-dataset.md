@@ -5,8 +5,8 @@ admission determines which declared products the runtime can start; an incomplet
 expansion is excluded from public discovery as a whole.
 
 `RuntimeProductAdmission` owns the closed accepted-product policy: Core Set,
-Rise of Red Skull, Captain America, Wrecking Crew and the complete Green Goblin
-and Ms. Marvel integration candidates. Merely adding an authored ability or setup
+Rise of Red Skull, Captain America, Wrecking Crew and the complete Green Goblin,
+Ms. Marvel and Thor integration candidates. Merely adding an authored ability or setup
 recipe does not admit another product. Unaccepted product-owned recipes are excluded; a retained accepted recipe that references an unavailable face
 still fails validation. The same admitted face set controls discovery, research
 cards' runtime-support flags, deck assessment and game creation.
@@ -24,7 +24,7 @@ The file has 3 groups:
 | Group | Admitted rows | Declared rows |
 |---|---:|---:|
 | `campaigns` | 39 Core Set, Rise of Red Skull, Wrecking Crew and Green Goblin scenario/mode combinations | 39 |
-| `heroes` | 9 Core Set, Rise of Red Skull, Captain America and Ms. Marvel starter decks | 9 |
+| `heroes` | 10 Core Set, Rise of Red Skull, Captain America, Ms. Marvel and Thor starter decks | 10 |
 | `encounter_sets` | 14 Core Set, Rise of Red Skull and Green Goblin fixed/modular sets | 14 |
 
 Ms. Marvel is admitted as a complete integration candidate. Her 40-card starter,
@@ -267,3 +267,12 @@ in `MutagenFormulaSetupTests`. The complete Green Goblin candidate supplies all
 57 printed faces and admits both scenarios and all four modular sets through
 the public setup contract. Whole-game, restart and native acceptance remain
 separate from these admission and setup checks.
+
+Thor is a complete integration candidate, with all 35 printed faces and an exact
+40-card starter: 15 signature, 17 Aggression and 8 Basic. The pinned divider in
+`datasets/rules-packs/mc06/UPSTREAM.md` supplies the starter; numbered nemesis
+components resolve its quantity discrepancy as two Frost Giants and one Trickster.
+`ThorSetupTests` and `ThorAdmissionTests` pin composition and whole-pack closure.
+Extra customization cards 06031–06034 are admitted but absent from the starter.
+This candidate remains on hold for independent Loki and Hammer Throw preflight
+review; setup evidence does not establish whole-game or native acceptance.

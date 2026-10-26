@@ -119,6 +119,9 @@ internal static class AbilityPaymentPricing
             return printed ?? arrow;
         }
 
+        if (ability.Cost is AbilityCost.SpendEnergy)
+            return VariableEventPrice(printed);
+
         if (!TryCombinedAmounts(printed, arrow, out long printedAmount, out long arrowAmount))
         {
             throw new RulesNotImplementedException(
@@ -147,6 +150,22 @@ internal static class AbilityPaymentPricing
                 new ResourceCost(printed.Cost, printed.Rule),
                 new ResourceCost(arrow.Cost, arrow.Rule),
             ]);
+    }
+
+    private static CostOption VariableEventPrice(CostOption printed)
+    {
+        // Engine choice: display the sum; allocation evaluates its separate components.
+        long amount = long.Parse(printed.Cost, System.Globalization.CultureInfo.InvariantCulture);
+        long energy = printed.Generators.Sum(source => source.Generates.LongCount(
+            icon => icon is Resources.Energy or Resources.Wild));
+        long total = printed.Generators.Sum(source => (long)source.Generates.Length);
+        return printed with
+        {
+            Cost = printed.Cost + "+X",
+            Variables = [new VariableRequest("X", 1, Math.Min(energy, Math.Max(0, total - amount)))],
+            Components = [new ResourceCost(printed.Cost, printed.Rule),
+                new ResourceCost("X") { RepeatedResource = Resources.Energy }],
+        };
     }
 
     private static bool TryCombinedAmounts(

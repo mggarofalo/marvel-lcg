@@ -7,7 +7,8 @@ internal static class AbilitySearchDescription
 {
     internal static string? Action(AbilityEffect effect) => SearchChoice(effect) is { } choice
         && Criterion(choice.From) is { } criterion
-            ? $"Search {SearchExtent(choice.From)} for {criterion} and add it to your hand"
+        && SearchExtent(choice.From) is { } extent
+            ? $"Search {extent} for {criterion} and add it to your hand"
             : null;
 
     internal static string? Summary(AbilityEffect effect) => Action(effect) is { } action
@@ -43,17 +44,38 @@ internal static class AbilitySearchDescription
 
     private static string? Criterion(AbilityCardSelection selector) => selector switch
     {
-        AbilityCardSelection.WithTrait trait when Criterion(trait.Cards) is { } inner =>
+        AbilityCardSelection.WithTrait trait when trait.Cards is not AbilityCardSelection.InAreas { Title: not null }
+            && Criterion(trait.Cards) is { } inner =>
             trait.Exclude ? $"{inner} without the {trait.Trait} trait" : WithTrait(inner, trait.Trait),
-        AbilityCardSelection.InAreas { Areas: [AbilitySearchArea.YourDeck], Title: null } area =>
+        AbilityCardSelection.InAreas area => AreaCriterion(area),
+        _ => null,
+    };
+
+    private static string? AreaCriterion(AbilityCardSelection.InAreas selection) => selection switch
+    {
+        AbilityCardSelection.InAreas
+        {
+            Title: { } title, Trait: null, AspectOnly: false, CardClass: null,
+        } area when SearchExtent(area) is not null =>
+            area.Kind is { } kind ? $"the {title} {kind.ToString().ToLowerInvariant()}" : title,
+        AbilityCardSelection.InAreas { Title: null } area when SearchExtent(area) is not null =>
             Article(string.Join(" ", new[] { area.AspectOnly ? "aspect" : null,
                 area.CardClass == "Hero" ? "hero-specific" : area.CardClass?.ToLowerInvariant(), area.Trait?.Replace('_', ' '),
                 area.Kind?.ToString().ToLowerInvariant() ?? "card" }.Where(value => value is not null))),
         _ => null,
     };
 
-    private static string SearchExtent(AbilityCardSelection selector) => selector is AbilityCardSelection.InAreas { Top: { } count }
-        ? $"the top {count} cards of your deck" : "your deck";
+    private static string? SearchExtent(AbilityCardSelection selector) => selector switch
+    {
+        AbilityCardSelection.WithTrait trait => SearchExtent(trait.Cards),
+        AbilityCardSelection.InAreas { Areas: [AbilitySearchArea.YourDeck], Top: { } count } =>
+            $"the top {count} cards of your deck",
+        AbilityCardSelection.InAreas { Areas: [AbilitySearchArea.YourDeck] } => "your deck",
+        AbilityCardSelection.InAreas { Top: null, Areas: [AbilitySearchArea.YourDeck, AbilitySearchArea.YourDiscardPile] }
+            or AbilityCardSelection.InAreas { Top: null, Areas: [AbilitySearchArea.YourDiscardPile, AbilitySearchArea.YourDeck] } =>
+            "your deck and discard pile",
+        _ => null,
+    };
 
     private static string WithTrait(string criterion, string trait) =>
         Article($"{trait.Replace('_', ' ')} {criterion[(criterion.IndexOf(' ') + 1)..]}");

@@ -35,6 +35,8 @@ internal static class AbilityAffordanceDescription
             Costs: price is null ? null : [price], Description: Description(found.Effect, contextual))
         {
             Timing = found.Trigger.Timing,
+            ContextCardIds = ability.TriggeringWouldDefeat is { } imminent ? [imminent]
+                : ability.TriggeringDefeat is { } defeat ? [defeat.Card] : [],
             WindowChoices = AbilityWindowChoiceDescription.Describe(execution, world, card, found, ability.Player, ability),
             DisplayLabel = caption,
             CommitLabel = caption,
@@ -50,14 +52,19 @@ internal static class AbilityAffordanceDescription
     {
         string? caption = contextual ?? AbilitySourceActionDescription.Caption(found.Effect)
             ?? AbilitySearchDescription.Action(found.Effect);
+        if (ability.TriggeringWouldDefeat is { } imminent)
+            return $"{caption ?? found.Name} before {EffectiveCards.Title(world.Cards[imminent], world.Facts)} would be defeated";
         if (ability.TriggeringThreat is { } threat && threat.Target >= 0)
             return $"{caption ?? found.Name} after threat is placed on {threat.TargetFacts?.EffectiveTitle ?? EffectiveCards.Title(world.Cards[threat.Target], world.Facts)}";
         if (ability.TriggeringAttack is { } attack)
             return $"{caption ?? found.Name} after attacking {attack.Title ?? "an enemy"}";
-        return ability.TriggeringDefeat is { } defeat && world.Windows.Current?.Occurrence.Defeats.Count > 1
-            ? $"{caption ?? found.Name} after {defeat.Title ?? EffectiveCards.Title(world.Cards[defeat.Card], world.Facts)} is defeated"
-            : caption;
+        return DefeatCaption(world, ability, caption, found.Name);
     }
+
+    private static string? DefeatCaption(World world, PendingAbility ability, string? caption, string name) =>
+        ability.TriggeringDefeat is { } defeat && world.Windows.Current?.Occurrence.Defeats.Count > 1
+            ? $"{caption ?? name} after {defeat.Title ?? EffectiveCards.Title(world.Cards[defeat.Card], world.Facts)} is defeated"
+            : caption;
 
     private static string? Description(AbilityEffect effect, string? contextual) => contextual is not null
         ? contextual + ". Damage prevention and interrupts can change the result."

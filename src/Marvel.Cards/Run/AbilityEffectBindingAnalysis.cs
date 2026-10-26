@@ -44,7 +44,7 @@ internal static class AbilityEffectBindingAnalysis
     private static readonly ImmutableArray<Type> ThreatAndGrantTypes =
     [
         typeof(AbilityEffect.PlaceThreat), typeof(AbilityEffect.RemoveThreat),
-        typeof(AbilityEffect.ModifyPlayedEvent), typeof(AbilityEffect.PreventThreat), typeof(AbilityEffect.PreventDamage),
+        typeof(AbilityEffect.BoostBasicUse), typeof(AbilityEffect.ModifyPlayedEvent), typeof(AbilityEffect.PreventThreat), typeof(AbilityEffect.PreventDamage),
         typeof(AbilityEffect.GrantTrait), typeof(AbilityEffect.GrantField),
         typeof(AbilityEffect.DefineBaseValue),
         typeof(AbilityEffect.PreventDamageWhile),
@@ -210,11 +210,11 @@ internal static class AbilityEffectBindingAnalysis
         AbilityEffect.InitializeAuxiliaryDeck initialize => BindingCanChange(initialize.Cards),
         AbilityEffect.RevealAuxiliaryTop => false,
         AbilityEffect.Shuffle or AbilityEffect.Search => false,
-        AbilityEffect.DefineProfile or AbilityEffect.GainSurge or AbilityEffect.Fixed or AbilityEffect.Generate or AbilityEffect.AllowPlayBeneath or AbilityEffect.AllowPlayFromDiscard or AbilityEffect.ReduceFirstAllyCost or AbilityEffect.DoubleResourceFor
+        AbilityEffect.DefineProfile or AbilityEffect.GainSurge or AbilityEffect.Fixed or AbilityEffect.Generate or AbilityEffect.AllowPlayBeneath or AbilityEffect.AllowPlayFromDiscard or AbilityEffect.ReduceSelfCostPerEngagedMinion or AbilityEffect.ReduceFirstAllyCost or AbilityEffect.DoubleResourceFor
             or AbilityEffect.PreventDamageFrom or AbilityEffect.DelayedStun
             or AbilityEffect.ChooseTopForHand or AbilityEffect.ChooseDiscardToShuffle
             or AbilityEffect.DiscardHandWithResource
-            or AbilityEffect.RecoverDiscardedByResource or AbilityEffect.RecruitDiscarded or AbilityEffect.GrantTraitCharacters or AbilityEffect.ModifyPlayedEvent => false,
+            or AbilityEffect.RecoverDiscardedByResource or AbilityEffect.RecruitDiscarded or AbilityEffect.GrantTraitCharacters or AbilityEffect.ModifyPlayedEvent or AbilityEffect.BoostBasicUse => false,
         _ => throw new InvalidOperationException("Unknown compiled effect in player-binding analysis"),
     };
 

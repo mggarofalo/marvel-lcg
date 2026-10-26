@@ -30,6 +30,7 @@ internal static class AbilityCostLowering
             "returnToHand" => ReturnCost(argument, child),
             "returnTitledToHand" => new AbilityCost.ReturnTitledToHand(NamedCostTitle(argument, child)),
             "discardTop" => DeckDiscardCost(argument, child),
+            "discardUntilMinionEngaged" => MinionEntryCost(argument, child),
             "dealEncounterCard" => EncounterCardCost(argument, child),
             "consumeCampaignCard" => new AbilityCost.ConsumeCampaignCard(CostCard(argument, child)),
             "removeCounters" => RemoveCounterCost(argument, child),
@@ -80,6 +81,12 @@ internal static class AbilityCostLowering
         return new(area, PositiveCount(Required(fields, "count", location), location.Child("count")));
     }
 
+    private static AbilityCost.DiscardUntilMinionEngaged MinionEntryCost(AbilityValue value, AbilityLocation location)
+    {
+        FixedWord(value, location, "you");
+        return new();
+    }
+
     private static AbilityCost.DealEncounterToYou EncounterCardCost(AbilityValue value, AbilityLocation location)
     {
         FixedWord(value, location, "you");
@@ -97,6 +104,16 @@ internal static class AbilityCostLowering
         {
             builder.Add(LowerCost(list.Values[index], location.Item(index)));
         }
+        // rr:cost.5: multiple costs "must be paid simultaneously."
+        // Entry responses suspend payment, so this cost is admitted only standalone.
+        // Recursive lowering applies the same refusal to every nested sequence.
+        if (builder.Any(cost => cost is AbilityCost.DiscardUntilMinionEngaged))
+            throw new RulesNotImplementedException(
+                "discardUntilMinionEngaged in a compound arrow cost requires simultaneous payment");
+        if (builder.Any(cost => cost is AbilityCost.ExhaustChosen
+                { From: AbilityCardQuery.UpgradesOnYourHero } or AbilityCost.ExhaustChosen { CaptureBasicUsePower: true }))
+            throw new RulesNotImplementedException(
+                "attached-upgrade exhaustion in a compound arrow cost requires simultaneous payment");
         return new(builder.MoveToImmutable());
     }
 
@@ -144,10 +161,10 @@ internal static class AbilityCostLowering
 
     internal static AbilityCost.ExhaustChosen ExhaustChosenCost(AbilityValue value, AbilityLocation location)
     {
-        var fields = Fields(value, location, "from", "count", "upTo", "anyNumber", "trait");
+        var fields = Fields(value, location, "from", "count", "upTo", "anyNumber", "trait", "matchingBasicPower");
         var from = SelectCards(Required(fields, "from", location), location.Child("from"));
         if (from is not AbilityCardSelection.Query
-            { Kind: AbilityCardQuery.HeroesAndAllies or AbilityCardQuery.CharactersYouControl or AbilityCardQuery.AlliesYouControl } query)
+            { Kind: AbilityCardQuery.HeroesAndAllies or AbilityCardQuery.CharactersYouControl or AbilityCardQuery.AlliesYouControl or AbilityCardQuery.UpgradesOnYourHero } query)
         {
             throw location.Child("from").Error("expected a supported exhaust-cost relation");
         }
@@ -167,7 +184,14 @@ internal static class AbilityCostLowering
             FixedWord(any, location.Child("anyNumber"), "true");
             range = new AbilityCostRange.Any();
         }
-        return new(query.Kind, range) { Trait = OptionalText(fields, "trait", location) };
+        bool capture = fields.TryGetValue("matchingBasicPower", out var marker);
+        if (capture)
+        {
+            FixedWord(marker!, location.Child("matchingBasicPower"), "true");
+            if (query.Kind != AbilityCardQuery.AlliesYouControl || range is not AbilityCostRange.Exact { Count: 1 })
+                throw location.Error("matching basic power requires exactly one controlled ally");
+        }
+        return new(query.Kind, range) { Trait = OptionalText(fields, "trait", location), CaptureBasicUsePower = capture };
     }
 
     internal static AbilityCost.Heal HealCost(AbilityValue value, AbilityLocation location)

@@ -9,6 +9,9 @@ public abstract record AbilityEffect
 {
     private AbilityEffect() { }
 
+    /// <summary>Increase only the current basic use, optionally from its selected ally receipt.</summary>
+    public sealed record BoostBasicUse(int Amount, bool MatchingAlly = false) : AbilityEffect;
+
     /// <summary>Select up to a bounded number of physical out-of-play cards to add to your hand.</summary>
     public sealed record ChooseCardsToHand(AbilityCardSelection From, int Maximum) : AbilityEffect;
 
@@ -71,7 +74,11 @@ public abstract record AbilityEffect
     /// <summary>Assign a positive remaining value to the selected hit-point dial.</summary>
     public sealed record SetHitPoints(AbilityCardSelection Card, long Remaining) : AbilityEffect;
     /// <summary>Deal ordinary damage, optionally using the attack event verb.</summary>
-    public sealed record Damage(AbilityCardSelection Cards, AbilityNumber Amount, bool AttackVerb) : AbilityEffect;
+    public sealed record Damage(AbilityCardSelection Cards, AbilityNumber Amount, bool AttackVerb) : AbilityEffect
+    {
+        /// <summary>Bypasses Tough only for this instruction's damage instances.</summary>
+        public bool IgnoresTough { get; init; }
+    }
     /// <summary>Deal attack damage with its attack-specific rule handling.</summary>
     public sealed record AttackDamage(AbilityCardSelection Cards, AbilityNumber Amount, bool Overkill) : AbilityEffect
     {
@@ -130,6 +137,8 @@ public abstract record AbilityEffect
     public sealed record DoubleResourceFor(string Classification) : AbilityEffect;
     /// <summary>A constant discount for the first ally played globally each round.</summary>
     public sealed record ReduceFirstAllyCost(long Amount) : AbilityEffect;
+    /// <summary>Reduce only this candidate's play cost for each minion engaged with its future controller.</summary>
+    public sealed record ReduceSelfCostPerEngagedMinion(long Amount) : AbilityEffect;
     /// <summary>Shuffle an engine-supported search area.</summary>
     public sealed record Shuffle(AbilitySearchArea Area) : AbilityEffect;
     /// <summary>Pay resources or resolve the alternative effect.</summary>
@@ -212,6 +221,8 @@ public abstract record AbilityEffect
     public sealed record ChooseTopForHand(int Count) : AbilityEffect;
     /// <summary>Privately inspect encounter deck tops and retain the number of treacheries.</summary>
     public sealed record InspectEncounterTop(int Count, string Result) : AbilityEffect;
+    /// <summary>Privately look at a bounded encounter group, discard one, and order survivors.</summary>
+    public sealed record InspectDiscardOrderEncounterTop(int Count) : AbilityEffect;
     /// <summary>Choose differently titled discarded cards to shuffle into the deck.</summary>
     public sealed record ChooseDiscardToShuffle(int Maximum) : AbilityEffect
     {

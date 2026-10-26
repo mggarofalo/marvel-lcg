@@ -272,6 +272,11 @@ internal static class EncounterRevealProcedure
         MinionEntryActivations.Quickstrike(world, facts, card, player, round);
         MinionEntryActivations.Teamwork(world, facts, card, player, round);
 
+        // rr:ability.step.4: forced responses finish before optional responses.
+        // The engagement and reveal share the parent occurrence's response window.
+        if (beforeResponses && (quickstrike || teamwork))
+            world.Agenda.BeforeResponses(owner, revealOccurrence);
+
         EncounterRevealDiscard.Schedule(
             world, facts, card, player, owner, revealOccurrence, beforeResponses);
     }

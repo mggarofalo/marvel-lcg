@@ -27,6 +27,10 @@ internal sealed class AbilityCostPayment
     private DamageCostReceipt? damagePayment;
     private readonly List<DamageCostReceipt> damageCosts = [];
     private bool settled;
+    private BasicUseAllyReceipt? basicUseAlly;
+    private AbilityMinionEntryCost? minionEntry;
+    internal bool HasMinionEntryCost => minionEntry is not null;
+    internal bool Unpaid => minionEntry is { IsComplete: true, Paid: false };
     private long? requiredTakenDamage;
 
     internal AbilityCostPayment(
@@ -59,6 +63,9 @@ internal sealed class AbilityCostPayment
             throw new InvalidOperationException("resource payment resumed before its owned work completed");
         resourcePayment = null;
         CompleteDamagePayment();
+        if (minionEntry is { IsComplete: false })
+            throw new InvalidOperationException("minion entry cost resumed before entry completed");
+        if (Unpaid) nextStep = steps.Length;
         while (nextStep < steps.Length)
         {
             var step = steps[nextStep++];
@@ -85,7 +92,7 @@ internal sealed class AbilityCostPayment
             DamageCostSettlement.Settle(world, owner, damageCosts, events);
         }
         outcome.Suspended |= damageCosts.Any(damage => !damage.IsComplete);
-        return new(outcome.Healed, outcome.Energy, outcome.Suspended) { Discarded = [.. outcome.Discarded], Exhausted = [.. outcome.Exhausted] };
+        return new(outcome.Healed, outcome.Energy, outcome.Suspended) { Discarded = [.. outcome.Discarded], Exhausted = [.. outcome.Exhausted], BasicUseAlly = basicUseAlly };
     }
 
     private bool CommitImmediate(
@@ -93,6 +100,10 @@ internal sealed class AbilityCostPayment
     {
         switch (step)
         {
+            case DeckCost { Cost: AbilityCost.DiscardUntilMinionEngaged }:
+                minionEntry = AbilityMinionEntryCost.Begin(world, player, trigger, events);
+                outcome.Suspended = true;
+                return true;
             case DeckCost deck:
                 outcome.Discarded.AddRange(AbilityDeckCosts.Pay(world, player, deck.Cost, trigger, events));
                 return true;
@@ -113,6 +124,8 @@ internal sealed class AbilityCostPayment
                 var selected = exhaust.Cards.Select(card => card.RequireCurrent()).ToArray();
                 foreach (var card in selected) AbilityPhysicalPayment.RequireReady(card);
                 foreach (var card in selected) AbilityCardOperations.Exhaust(card, trigger, events);
+                if (exhaust.CaptureBasicUsePower)
+                    basicUseAlly = BasicUseAllyReceipt.Capture(world, selected.Single(), player);
                 outcome.Exhausted.AddRange(selected.Select(card => card.ObjectId));
                 return true;
             case TakeDamage damage:

@@ -299,3 +299,5 @@ Godot displays it while the draft is incomplete. Typed, printed, alternative,
 variable and simultaneous costs return no simple count. Zero does not authorize
 submission: normal allocation, declarations and answer validation still apply.
 The progress is calculated locally from the authorized offer, with no new wire field.
+
+`Affordance.ContextCardIds` (protocol 40) names the cards causing that exact offer. A shared imminent-defeat window binds each repeated source offer to its own physical recipient. These prompt-local facts do not change its source anchor, effect targets, costs, opaque handle or semantic command address. The existing incarnation eligibility guards and prompt revision bind them to the current occurrence. View copies and filters context identities and supplies readable copy/location descriptions.

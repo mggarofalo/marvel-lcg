@@ -60,6 +60,7 @@ internal static class AbilityResolutionPreventionAndDefeat
     internal static IReadOnlyList<GameEvent> WouldBeDefeated(this AbilityResolutionExecution execution,
         World world, Card target, DefeatCause cause, Occurrence occurrence)
     {
+        if (occurrence.SharedDefeatWindow is not null) return [];
         var pending = execution.Waiting(world, occurrence, WindowKind.Interrupt);
         if (AbilityWindow.Tiers(pending, WindowKind.Interrupt, occurrence).Count == 0) return [];
         var continuation = new PhaseStep(

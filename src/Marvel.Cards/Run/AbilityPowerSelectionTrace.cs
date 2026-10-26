@@ -84,8 +84,11 @@ internal static class AbilityPowerSelectionTrace
                                 SchemeThreat = reachability.SchemeThreat,
                                 StatusCounts = reachability.StatusCounts })),
         ];
-        return reachability.EncounterOrder is not null && UsesObjectIdOrder(value)
-            ? [.. selected.OrderBy(card => card.ObjectId)] : selected;
+        return [.. AbilityEncounterCandidateOrder.ApplySelectorOrder(selected, value,
+            new(reachability.CurrentVillain, cast, reachability.Discarded,
+                reachability.Traits, reachability.Modifiers, reachability.Engagement)
+            { EncounterStages = reachability.EncounterStages, EncounterOrder = reachability.EncounterOrder,
+                SchemeThreat = reachability.SchemeThreat, StatusCounts = reachability.StatusCounts })];
     }
 
     private static List<Card> StablePowerCards(

@@ -23,4 +23,15 @@ public sealed class HistoricalProtocol35ResponseTests
         Assert.Throws<InvalidDataException>(() => HistoricalProtocol35Response.Read(
             Encoding.UTF8.GetBytes("{\"version\":35,\"world\":{\"encounter_groups\":" + groups + "}}")));
     }
+
+    [Theory]
+    [InlineData("null")]
+    [InlineData("[]")]
+    [InlineData("[42]")]
+    public void UnexpectedOfferContextCannotBeErasedByTheComparisonReader(string context)
+    {
+        Assert.Throws<InvalidDataException>(() => HistoricalProtocol35Response.Read(
+            Encoding.UTF8.GetBytes("{\"version\":35,\"prompt\":{\"affordances\":[{\"context_card_ids\":"
+                + context + "}]}}")));
+    }
 }

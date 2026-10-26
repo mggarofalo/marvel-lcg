@@ -133,6 +133,7 @@ public sealed class PresentationAssemblyPolicyTests
             "Marvel.Rules.Prompts.ResourcePayment",
             // Engine-owned assessment of the current payment draft.
             "Marvel.Rules.Prompts.ResourcePaymentProgress",
+            "Marvel.Rules.Prompts.ResourceComponentProgress",
             "Marvel.Rules.Prompts.ResourceSource",
             "Marvel.Rules.Prompts.TargetRequest",
             "Marvel.Rules.Prompts.WindowChoice",

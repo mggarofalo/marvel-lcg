@@ -70,6 +70,11 @@ internal static class AbilitySelectorTrace
         AbilityCardSelection.InPlayerArea { Area: DeckType.EngagedEnemiesArea } =>
             [.. cast.World.Areas.SelectMany(area => area.Cards)
                 .Where(card => EffectiveCards.Kind(card, cast.World.Facts) == CardKind.Minion)],
+        AbilityCardSelection.Query { Kind: AbilityCardQuery.VillainAndMinionsEngagedWithYou } =>
+            [.. cast.World.Areas.SelectMany(area => area.Cards)
+                .Where(card => CardKinds.IsEnemy(EffectiveCards.Kind(card, cast.World.Facts)))
+                // Engine choice: this simultaneous cohort names the villain before its minions.
+                .OrderByDescending(card => CardKinds.IsVillain(EffectiveCards.Kind(card, cast.World.Facts)))],
         AbilityCardSelection.EnemiesWithTrait or AbilityCardSelection.Query
         {
             Kind: AbilityCardQuery.Villains or AbilityCardQuery.Enemies or AbilityCardQuery.AttackableEnemies
@@ -195,10 +200,10 @@ internal static class AbilitySelectorTrace
             .Where(card => card is not null).Cast<Card>().DistinctBy(card => card.ObjectId)
             .Where(card => !trace.Discarded.Contains(card.ObjectId)
                 && TraceSelectorMatches(selector, card, trace));
-        return UsesObjectIdOrder(selector)
+        return AbilityEncounterCandidateOrder.ApplySelectorOrder(UsesObjectIdOrder(selector)
             ? candidates.OrderBy(card => card.ObjectId)
             : AbilityEncounterCandidateOrder.Apply(candidates, trace.Cast.World,
-                AbilityEncounterSchemeQueries.UsesGroupOrder(selector) ? null : trace.EncounterOrder);
+                AbilityEncounterSchemeQueries.UsesGroupOrder(selector) ? null : trace.EncounterOrder), selector, trace);
     }
 
     private static Card? ProjectedCard(Card card, int boardVillain, AbilitySelectorTraceContext trace)
@@ -212,7 +217,7 @@ internal static class AbilitySelectorTrace
     private static bool UsesEngagedAreaOrder(AbilityCardSelection selector) => selector switch
     {
         AbilityCardSelection.InPlayerArea { Area: DeckType.EngagedEnemiesArea } => true,
-        AbilityCardSelection.Query { Kind: AbilityCardQuery.MinionsEngagedWithYou
+        AbilityCardSelection.Query { Kind: AbilityCardQuery.VillainAndMinionsEngagedWithYou or AbilityCardQuery.MinionsEngagedWithYou
             or AbilityCardQuery.EnemiesEngagedWithChosenPlayer } => true,
         AbilityCardSelection.WithTrait filtered => UsesEngagedAreaOrder(filtered.Cards),
         AbilityCardSelection.WithStatus filtered => UsesEngagedAreaOrder(filtered.Cards),

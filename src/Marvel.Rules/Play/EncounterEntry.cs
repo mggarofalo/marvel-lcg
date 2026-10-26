@@ -52,9 +52,28 @@ public static class EncounterEntry
             return null;
         }
         var card = world.Cards[request.Card];
+        var occurrence = world.Agenda.Occurrence
+            ?? throw new InvalidOperationException("encounter entry has no occurrence");
+        if (DeckTypes.IsInPlay(card.Area.Type))
+        {
+            bool engaged = MinionEngagement.Transfer(world, card, request.Player, occurrence, events);
+            operation.Completion.Complete(0, engaged ? 1 : 0);
+            if (engaged)
+            {
+                MinionEntryActivations.Quickstrike(world, world.Facts, card, request.Player, step.Round);
+                world.Agenda.BeforeResponses(step, occurrence);
+            }
+            return null;
+        }
         Reveal.Resolve(world, world.Facts, card, request.Player, events,
-            world.Agenda.Occurrence, request.Placement);
+            occurrence, request.Placement);
         operation.Completion.Complete(0, DeckTypes.IsInPlay(card.Area.Type) ? 1 : 0);
+        if (occurrence.Is(MinionEngagement.Engaged))
+        {
+            EncounterRevealProcedure.FinishEncounterRevealTail(
+                world, card, request.Player, step, occurrence, events);
+            world.Agenda.BeforeResponses(step, occurrence);
+        }
         return null;
     }
 }

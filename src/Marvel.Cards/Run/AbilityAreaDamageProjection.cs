@@ -29,7 +29,7 @@ internal sealed class AbilityAreaDamageProjection(AbilityAreaProjection projecti
 
     internal void DealProjected(
         AreaProjectionState state, Card target, long amount,
-        long repetitions)
+        long repetitions, bool ignoresTough = false)
     {
         var villains = new AbilityAreaVillainProjection(projection);
         target = villains.ProjectedDamageTarget(state, target);
@@ -38,7 +38,7 @@ internal sealed class AbilityAreaDamageProjection(AbilityAreaProjection projecti
             return;
         }
 
-        long prevented = Math.Min(state.ToughOf(context, target), repetitions);
+        long prevented = ignoresTough ? 0 : Math.Min(state.ToughOf(context, target), repetitions);
         state.Tough[target.ObjectId] = state.ToughOf(context, target) - prevented;
         long dealt = AbilityAmounts.SaturatingMultiply(amount, repetitions - prevented);
         state.Damage[target.ObjectId] = AbilityAmounts.SaturatingSum(

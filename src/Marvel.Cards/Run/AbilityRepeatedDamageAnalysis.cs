@@ -177,7 +177,8 @@ internal static class AbilityRepeatedDamageAnalysis
                 -1, target.Card.ObjectId, node is AbilityEffect.IndirectDamage
                     ? AbilityEventModifiers.DamageAmount(cast.World, cast.Source, Amount(DamageAmountOf(node, cast), cast))
                     : Amount(DamageAmountOf(node, cast), cast),
-                DealsDamage: true, ToVillain: target.VillainSelector))];
+                DealsDamage: true, ToVillain: target.VillainSelector)
+            { IgnoresTough = node is AbilityEffect.Damage { IgnoresTough: true } })];
 
     private static IReadOnlyList<DamageTransfer> ReplacedThreatTransfer(
         AbilityEffect node, AbilityAdmissionScope cast)

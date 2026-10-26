@@ -17,8 +17,9 @@ public static class CardEntry
     /// <summary>Where a played card goes — <c>rr:enters-play</c>.</summary>
     internal static void Enter(
         World world, ICardFacts facts, ICardPlayAbilities abilities, Seat seat, Card card,
-        List<GameEvent> events, IReadOnlyList<int> targets)
+        List<GameEvent> events, CardEntryChoices choices)
     {
+        var targets = choices.Targets;
         var kind = EffectiveCards.Kind(card, facts);
         if (kind is CardKind.Event or CardKind.Resource)
         {
@@ -104,7 +105,7 @@ public static class CardEntry
         {
             Reveal.EnterPlay(world, facts, card, events, abilities: abilities);
         }
-        Played(world, seat, card);
+        Played(world, seat, card, new PlayedCardPayment(card.ObjectId, card.Incarnation, seat.Index, choices.Paid));
         Restricted(world, facts, seat, card, events);
     }
 
@@ -191,14 +192,14 @@ public static class CardEntry
         ));
     }
 
-    internal static void Played(World world, Seat seat, Card card)
+    internal static void Played(World world, Seat seat, Card card, PlayedCardPayment? payment = null)
     {
         // The card has moved and all state it enters with has been applied.
         // The agenda supplies the ordinary response window, including the
         // optional responses `rr:ability.11` says must be chosen rather than
         // silently resolved or refused.
         world.Agenda.Then(new PhaseStep(
-            new LifecycleOperation(LifecycleKind.CardPlayed),
+            new LifecycleOperation(LifecycleKind.CardPlayed) { Payment = payment },
             world.Agenda.Current?.Round ?? 0,
             0,
             Index: seat.Index,

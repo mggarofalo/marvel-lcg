@@ -35,10 +35,7 @@ internal static class AbilityPowerCharacterDefeat
         }
         if (AbilityProjectedDefeatWindows.HasWork(state, damaged, cast, would: true))
         {
-            throw new RulesNotImplementedException(
-                $"character '{damaged.FaceId}' would be defeated before a "
-                + "labelled-power continuation reads a step-6 interrupt, "
-                + "which is not implemented");
+            return AbilityProjectedRecoveryWindow.Defer(state, damaged, cast);
         }
         if (AbilityProjectedDefeatWindows.CanProjectEncounterDeal(state, damaged, cast))
             state = state with { EncounterCardsChanged = true };

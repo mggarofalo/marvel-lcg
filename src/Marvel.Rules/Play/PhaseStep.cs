@@ -80,21 +80,21 @@ public readonly record struct PhaseStep(
             Steps.CharacterAttacks when Require<CharacterAttackOperation>().Attack is { } attack =>
                 Occurrence.ForAttack(
                     id,
-                    Conditions,
+                    BasicUse.AttackConditions(world, facts, attack, Conditions),
                     world,
                     facts,
                     attack.Attacker,
                     attack.Enemy,
-                    attack.Player),
+                    attack.Player) with { BasicUse = BasicUse.ForAttack(world, facts, attack) },
             Steps.CharacterThwarts when Require<CharacterThwartOperation>().Thwart is { } thwart =>
                 Occurrence.ForThwart(
                     id,
-                    Conditions,
+                    BasicUse.ThwartConditions(world, facts, thwart, Conditions),
                     world,
                     facts,
                     thwart.Thwarter,
                     thwart.Scheme,
-                    thwart.Player),
+                    thwart.Player) with { BasicUse = BasicUse.ForThwart(world, thwart) },
             Steps.PrepareIndirectAttackDamage => Occurrence.ForAttack(
                 id,
                 Conditions,
@@ -197,5 +197,8 @@ public readonly record struct PhaseStep(
             ? null
             : new Occurrence(
                 OccurrenceId ?? Moment.Id(Round, Number, Index), Conditions, Subject, Seat)
-            { EventRemovesThreat = (Operation as LifecycleOperation)?.EventRemovesThreat };
+            {
+                EventRemovesThreat = (Operation as LifecycleOperation)?.EventRemovesThreat,
+                CardPlayPayment = (Operation as LifecycleOperation)?.Payment,
+            };
 }

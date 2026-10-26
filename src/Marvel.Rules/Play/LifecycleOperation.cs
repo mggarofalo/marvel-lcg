@@ -12,6 +12,9 @@ public sealed record LifecycleOperation(LifecycleKind Kind) : AgendaOperation
     /// <summary>Reachable threat-removal fact supplied by the exact event interpreter.</summary>
     public bool? EventRemovesThreat { get; init; }
 
+    /// <summary>The original card price retained through its entry response window.</summary>
+    public PlayedCardPayment? Payment { get; init; }
+
     /// <inheritdoc/>
     public override string What => Kind switch
     {

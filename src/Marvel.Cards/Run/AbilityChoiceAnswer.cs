@@ -14,7 +14,7 @@ internal sealed class AbilityChoiceAnswer(
     private static readonly ImmutableArray<string> SpecialOperations =
     [
         "chooseCardsToHand", "resolveSpecials", "chooseTopForHand", "chooseDiscardToShuffle", "discardHandCards", "discardResourceIcons",
-        "peekTop", "inspectEncounterTop",
+        "peekTop", "inspectEncounterTop", "inspectDiscardOrderEncounterTop",
     ];
 
     internal List<Marvel.Rules.Events.GameEvent> Apply(AbilityEffect choice)
@@ -58,6 +58,7 @@ internal sealed class AbilityChoiceAnswer(
         choice.OperationName() switch
         {
             "chooseCardsToHand" => ApplyGroupRetrieval((AbilityEffect.ChooseCardsToHand)choice),
+            "inspectDiscardOrderEncounterTop" => AbilityOrderedEncounterInspection.Answer(execution, (AbilityEffect.InspectDiscardOrderEncounterTop)choice, cast, input) ? Continue() : cast.Events,
             "peekTop" => AbilityDeckPeek.Answer(execution, choice, cast, input) ? Continue() : cast.Events,
             "inspectEncounterTop" => ApplyInspection((AbilityEffect.InspectEncounterTop)choice),
             "resolveSpecials" => ApplyResolveSpecials(choice),

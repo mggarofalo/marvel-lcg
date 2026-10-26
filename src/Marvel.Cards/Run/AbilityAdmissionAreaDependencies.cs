@@ -222,7 +222,7 @@ internal static class AbilityAdmissionAreaDependencies
                 or AbilityEffect.DrawToHandSize or AbilityEffect.GainSurge
                 or AbilityEffect.Fixed or AbilityEffect.Generate
                 or AbilityEffect.InitializeAuxiliaryDeck or AbilityEffect.RevealAuxiliaryTop
-                or AbilityEffect.ChooseCardsToHand or AbilityEffect.ReleaseBeneath or AbilityEffect.AllowPlayBeneath or AbilityEffect.AllowPlayFromDiscard or AbilityEffect.ReduceFirstAllyCost or AbilityEffect.DoubleResourceFor or AbilityEffect.Shuffle
+                or AbilityEffect.ChooseCardsToHand or AbilityEffect.ReleaseBeneath or AbilityEffect.AllowPlayBeneath or AbilityEffect.AllowPlayFromDiscard or AbilityEffect.ReduceSelfCostPerEngagedMinion or AbilityEffect.ReduceFirstAllyCost or AbilityEffect.DoubleResourceFor or AbilityEffect.Shuffle
                 or AbilityEffect.PreventDamageFrom or AbilityEffect.DelayedStun
                 or AbilityEffect.DealEncounterCards or AbilityEffect.EngageTopAsMinion
                 or AbilityEffect.DiscardUntil or AbilityEffect.ShuffleInto
@@ -230,7 +230,7 @@ internal static class AbilityAdmissionAreaDependencies
                 or AbilityEffect.ChooseDiscardToShuffle
                 or AbilityEffect.DiscardHandWithResource
                 or AbilityEffect.RecoverDiscardedByResource or AbilityEffect.RecruitDiscarded
-                or AbilityEffect.ActivateEnemies or AbilityEffect.GrantTraitCharacters or AbilityEffect.ModifyPlayedEvent => true,
+                or AbilityEffect.ActivateEnemies or AbilityEffect.GrantTraitCharacters or AbilityEffect.ModifyPlayedEvent or AbilityEffect.BoostBasicUse => true,
             _ => false,
         };
 

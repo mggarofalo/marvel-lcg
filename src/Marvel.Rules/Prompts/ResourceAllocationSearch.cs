@@ -10,6 +10,7 @@ internal sealed class ResourceAllocationSearch
     private readonly List<Icon> icons;
     private readonly bool[] used;
     private readonly Choice[] choices;
+    private readonly bool[] assigned;
 
     internal ResourceAllocationSearch(List<Slot> slots, IReadOnlyList<ResourceSource> sources)
     {
@@ -18,6 +19,7 @@ internal sealed class ResourceAllocationSearch
             new Icon(source.Effect, resource))).ToList();
         used = new bool[icons.Count];
         choices = new Choice[slots.Count];
+        assigned = new bool[slots.Count];
     }
 
     internal IReadOnlyList<ResourceAllocation>? Allocate() =>
@@ -35,27 +37,22 @@ internal sealed class ResourceAllocationSearch
             foreach (char declared in Declarations(slot, icons[index]))
             {
                 if (AlreadyPaid(slotIndex, slot, declared)) continue;
+                assigned[slotIndex] = true;
                 choices[slotIndex] = new Choice(icons[index].Source, slot.Component, declared);
                 if (Search(slotIndex + 1)) return true;
             }
             used[index] = false;
+            assigned[slotIndex] = false;
         }
         return false;
     }
 
     private bool AlreadyPaid(int slotIndex, Slot slot, char declared) =>
-        slot.DistinctTypes && choices.Take(slotIndex).Any(choice =>
-            choice.Component == slot.Component && choice.Declared == declared);
+        slot.DistinctTypes && Enumerable.Range(0, slotIndex).Any(index => assigned[index]
+            && choices[index].Component == slot.Component && choices[index].Declared == declared);
 
-    private static IEnumerable<char> Declarations(Slot slot, Icon icon)
-    {
-        if (slot.Required is { } required) return [required];
-        // rr:wild-resource.1: the player may specify energy, mental, physical,
-        // or wild. Search each declaration when the cost distinguishes types.
-        return slot.DistinctTypes && !slot.Printed && icon.Printed == Resources.Wild
-            ? Resources.Types.OrderBy(type => type == Resources.Wild ? 0 : 1)
-            : [icon.Printed];
-    }
+    private static IEnumerable<char> Declarations(Slot slot, Icon icon) =>
+        ResourcePaymentRequirements.Declarations(slot, icon.Printed);
 
     private IEnumerable<int> Candidates(Slot slot)
     {

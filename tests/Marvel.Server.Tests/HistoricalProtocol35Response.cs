@@ -22,6 +22,17 @@ internal static class HistoricalProtocol35Response
             // proofs, and the production decoder's required-field checks are unchanged.
             world.Add("encounter_groups", new JsonArray());
         }
+        if (response["prompt"]?["affordances"] is JsonArray affordances)
+        {
+            foreach (JsonObject affordance in affordances.OfType<JsonObject>())
+            {
+                if (affordance.ContainsKey("context_card_ids"))
+                    throw new InvalidDataException("protocol 35 did not describe per-offer context cards");
+                // Protocol 40 represents absent per-offer context as an empty list.
+                // Only the comparison copy gains that empty presentation field.
+                affordance.Add("context_card_ids", new JsonArray());
+            }
+        }
         return EngineJson.ReadResponse(Encoding.UTF8.GetBytes(response.ToJsonString()));
     }
 }

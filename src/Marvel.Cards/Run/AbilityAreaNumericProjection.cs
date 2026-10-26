@@ -36,7 +36,8 @@ internal static class AbilityAreaNumericProjection
                 foreach (var target in ProjectedEvery(
                              cards, state, projection.context))
                 {
-                    projection.DealProjected(state, target, amount, repetitions);
+                    projection.DealProjected(state, target, amount, repetitions,
+                        effect is AbilityEffect.Damage { IgnoresTough: true });
                 }
             }
             return states;

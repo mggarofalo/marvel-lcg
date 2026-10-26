@@ -10,7 +10,7 @@ internal static class AbilityAreaCostProjection
 {
     internal static void TraceCost(this AbilityAreaProjection projection, AbilityCost payment, AreaProjectionState state)
     {
-        if (payment is AbilityCost.DiscardTop or AbilityCost.DealEncounterToYou)
+        if (payment is AbilityCost.DiscardUntilMinionEngaged or AbilityCost.DiscardTop or AbilityCost.DealEncounterToYou)
         {
             projection.couldDiscard = true;
             return;

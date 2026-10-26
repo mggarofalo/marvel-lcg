@@ -23,10 +23,11 @@ internal sealed class CardQueryEvaluator(
         AbilityCardQuery.Villains, AbilityCardQuery.Enemies, AbilityCardQuery.AttackableEnemies,
         AbilityCardQuery.AttackableMinions, AbilityCardQuery.ThwartableSchemes,
         AbilityCardQuery.EnemiesEngagedWithChosenPlayer,
+        AbilityCardQuery.VillainAndMinionsEngagedWithYou,
     ];
     private static readonly ImmutableArray<AbilityCardQuery> ControlledQueries =
     [
-        AbilityCardQuery.UpgradesAndSupportsYouControl, AbilityCardQuery.CardsYouControl,
+        AbilityCardQuery.UpgradesOnYourHero, AbilityCardQuery.UpgradesAndSupportsYouControl, AbilityCardQuery.CardsYouControl,
         AbilityCardQuery.IdentitySpecificInYourHand,
         AbilityCardQuery.SupportsYouControl,
         AbilityCardQuery.CharactersYouControl, AbilityCardQuery.CharactersYouControlExceptCost,
@@ -43,6 +44,8 @@ internal sealed class CardQueryEvaluator(
 
     internal IReadOnlyList<Card> Evaluate(AbilityCardQuery query)
     {
+        if (query == AbilityCardQuery.CardsInPlay)
+            return AbilityInPlayCardQuery.Live(cast);
         if (query == AbilityCardQuery.OtherVillainSideSchemes)
             return AbilityOtherVillainSchemeQuery.Live(cast);
         if (query == AbilityCardQuery.VillainOfAttachedScheme)
@@ -104,6 +107,11 @@ internal sealed class CardQueryEvaluator(
 
     private IReadOnlyList<Card> EvaluateEnemies(AbilityCardQuery query) => query switch
     {
+        // Engine choice: villain first, followed by the engaged area's physical order.
+        AbilityCardQuery.VillainAndMinionsEngagedWithYou =>
+            [.. Evaluate(AbilityCardQuery.Villain),
+                .. Evaluate(AbilityCardQuery.MinionsEngagedWithYou)
+                    .Where(card => EffectiveCards.Kind(card, cast.World.Facts) == CardKind.Minion)],
         // rr:engage.1: engagement is the player's engaged-enemy area.
         AbilityCardQuery.MinionsEngagedWithYou =>
             [.. InArea(cast.World, DeckType.EngagedEnemiesArea, PlayArea.Of(cast.Player))],
@@ -150,6 +158,7 @@ internal sealed class CardQueryEvaluator(
     private IReadOnlyList<Card> EvaluateControlled(AbilityCardQuery query) => query switch
     {
         // rr:play-area.1: cards in a player's play area are under their control.
+        AbilityCardQuery.UpgradesOnYourHero => AbilityCostSelection.Choices(cast.World, cast.Player, query),
         AbilityCardQuery.CardsYouControl => [.. cast.World.Cards.Where(card =>
             DeckTypes.IsInPlay(card.Area.Type) && CardControl.ControllerOf(cast.World, card) == cast.Player)],
         AbilityCardQuery.UpgradesAndSupportsYouControl =>

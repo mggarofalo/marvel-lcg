@@ -12,6 +12,13 @@ internal static class WindowPromptContext
         if (kind == WindowKind.Response) return Response(world, occurrence, prompt);
         if (kind != WindowKind.Interrupt) return prompt;
         if (occurrence.Is(HeroDefenseTiming.Defends)) return Defense(world, occurrence, prompt);
+        if (occurrence.BasicUse is { } use) return prompt with
+        {
+            DisplayQuestion = $"Basic {use.Field} — interrupt?",
+            Description = $"{world.Facts.Title(world.Cards[use.Actor].FaceId)} is making a basic {use.Field}. "
+                + $"Current {use.Field} bonus: {use.Bonus}. Resolve an interrupt or pass before the power resolves.",
+            ContextCardIds = [use.Actor, occurrence.Target],
+        };
         if (occurrence.Threat is { } threat) return Threat(world, threat, prompt);
         if (occurrence.Is(Steps.CardRevealed) && occurrence.Subject >= 0
             && world.Cards[occurrence.Subject] is { FaceUp: true } card)

@@ -696,7 +696,13 @@ Campaign schema 1 and protocol 37 are strict compatibility boundaries. No
 migration invents missing campaign meaning. Complete content admission is
 required before the host advertises a campaign or starts its first attempt.
 
-The current replay identity is `engine-replay-v24`. Revealed attachments without
+The current replay identity is `engine-replay-v26`. Minion Quickstrike completes
+before optional engagement and entry responses, changing real Core Hawkeye/Vulture
+traces from v25. V25 sources have no named admission and remain quarantined
+unchanged. Frozen v19/v20/v21 sources retain explicit v26 routes, verifying every
+original fact before changing metadata. Protocol 39 and schema 7 are unchanged.
+Replay v25 emits one ally-entry response after the mandatory ally-limit choice;
+v24 sources remain quarantined unchanged. Replay v24 behavior follows. Revealed attachments without
 an eligible host are discarded after reveal/surge completion. Core 01163/01185
 and RoRS 04117–04119/04135 can change state digests and later encounter shuffles
 for the same decisions. V23 saves have no named source admission and remain

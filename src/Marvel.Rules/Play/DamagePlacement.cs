@@ -84,7 +84,7 @@ public static class DamagePlacement
     {
         var (source, target, amount, trigger, _, _) = request;
         var assignment = DamageAssignment.AfterReplacement(
-            amount, amount > 0 && Statuses.Has(world, target, Statuses.Tough));
+            amount, !request.IgnoresTough && amount > 0 && Statuses.Has(world, target, Statuses.Tough));
         if (assignment.Dealt <= 0)
         {
             return new PlacedDamage(target, 0, 0);

@@ -26,6 +26,9 @@ public readonly record struct PendingAbility(
     /// <summary>The exact defeat that satisfies this trigger within its shared window.</summary>
     public State.Defeated? TriggeringDefeat { get; init; }
 
+    /// <summary>The exact imminent defeat answered by this prompt-local offer.</summary>
+    public int? TriggeringWouldDefeat { get; init; }
+
     /// <summary>The exact attacked enemy answered within a shared attack window.</summary>
     public State.Attacked? TriggeringAttack { get; init; }
 

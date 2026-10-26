@@ -91,12 +91,21 @@ public sealed record Occurrence
     [JsonIgnore]
     public bool? EventRemovesThreat { get; init; }
 
+    /// <summary>Original card-play payment for this exact entry, reconstructed by replay.</summary>
+    [JsonIgnore]
+    public Play.PlayedCardPayment? CardPlayPayment { get; init; }
+
     /// <summary>The imminent threat placement, when this occurrence is one.</summary>
     public State.ThreatPlacement? Threat { get; }
 
     /// <summary>The imminent damage owned by this window, reconstructed during replay.</summary>
     [JsonIgnore]
     public Play.DamageReplacement? Damage { get; internal set; }
+
+    /// <summary>The shared step-six window owning this exact recipient's authored interrupts.</summary>
+    [JsonIgnore]
+    public Play.DefeatWindow? SharedDefeatWindow { get; internal set; }
+
 
     /// <summary>The exact numeric boost contribution at its faceup interrupt.</summary>
     [JsonIgnore]
@@ -106,13 +115,23 @@ public sealed record Occurrence
 
     private readonly Dictionary<int, int> completedEventPlays = [];
 
+    private readonly List<Occurrence> threatPlacements = [];
+
+    // The positional parameter of the same name, copied. Inside this body
+    // `Conditions` is the constructor's argument; outside it is the property
+    // below, which is this list. The two are the same set until something adds
+    // to it -- see `Also`.
+    private readonly List<string> conditions;
+
+    private readonly List<State.Defeated> defeats = [];
+
+    private readonly AttackRecipients attacks = new();
+
     /// <summary>The next play generation of this physical event in this occurrence.</summary>
     public int EventPlay(int card) => completedEventPlays.GetValueOrDefault(card);
 
     /// <summary>Complete one played event after its effects finish and it is discarded.</summary>
     public void CompleteEventPlay(int card) => completedEventPlays[card] = checked(EventPlay(card) + 1);
-
-    private readonly List<Occurrence> threatPlacements = [];
 
     /// <summary>Exact positive placements belonging to one threat instruction.</summary>
     [JsonIgnore]
@@ -124,13 +143,9 @@ public sealed record Occurrence
         Also(Play.Steps.ThreatPlaced);
     }
 
-    // The positional parameter of the same name, copied. Inside this body
-    // `Conditions` is the constructor's argument; outside it is the property
-    // below, which is this list. The two are the same set until something adds
-    // to it -- see `Also`.
-    private readonly List<string> conditions;
-
-    private readonly List<State.Defeated> defeats = [];
+    /// <summary>The exact printed basic power being used, reconstructed by replay.</summary>
+    [JsonIgnore]
+    public Play.BasicUse? BasicUse { get; init; }
 
     /// <summary>The lifecycle owner for abilities and cards resolving in this occurrence.</summary>
     [JsonIgnore]
@@ -220,19 +235,11 @@ public sealed record Occurrence
     [JsonIgnore]
     public State.CompletedEnemyAttack? CompletedEnemyAttack { get; internal set; }
 
-    private readonly List<State.Attacked> attacks = [];
-
     /// <summary>Ordered recipient facts for one multi-target attack.</summary>
-    public IReadOnlyList<State.Attacked> Attacks => attacks;
+    public IReadOnlyList<State.Attacked> Attacks => attacks.Items;
 
     /// <summary>Record a recipient without creating another attack or window.</summary>
-    public void Also(State.Attacked what)
-    {
-        ArgumentNullException.ThrowIfNull(what);
-        if (attacks.Any(item => item.Card == what.Card && item.Incarnation == what.Incarnation))
-            throw new InvalidOperationException("an attack recipient was recorded twice");
-        attacks.Add(what);
-    }
+    public void Also(State.Attacked what) => attacks.Add(what);
 
     /// <summary>Ability and card resolution state accumulated in this occurrence.</summary>
     /// <remarks>

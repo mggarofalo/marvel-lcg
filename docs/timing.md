@@ -429,6 +429,12 @@ agenda. Activation work explicitly deferred under `rr:activation.8` remains
 behind the current activation. This permits the current activation to finish
 without reporting the deferred ability as complete (`rr:activation.7`, `.8.2`).
 
+Before a procedure opens its response window, it moves its scheduled children
+ahead of that window even when they inherit the procedure's execution owner.
+Frames owned by another invocation retain their own completion ordering. This
+keeps a transferred minion's Quickstrike ahead of optional engagement responses
+while the containing interpreted placement remains suspended.
+
 Interrupt and response windows also depend on unfinished invocations for their
 exact occurrence. Their prerequisites include every outstanding descendant frame,
 even when a finished parent body waits for a child that schedules more work.
@@ -577,3 +583,29 @@ This condition is separate from `WhenCardPlayed`, whose completion responses
 follow the event's effects and discard. The initiation occurrence is omitted
 when no interrupt observes it. The condition supplies timing only; event-specific
 damage or threat modifiers and their lifetime require their own implementation.
+
+## Simultaneous direct-damage defeat stages
+
+`SimultaneousCharacterDefeats` holds direct-damage recipients at each shared
+stage: all step-6 would-be-defeated interrupts, all step-7 when-defeated
+interrupts, then step-8 departures. The damage occurrence retains every exact
+causal defeat; response opportunities remain after the complete procedure.
+This applies the ordered stages in current `rr:damage.step.6` through `.step.8`
+to one simultaneous effect (`rr:and`), with simultaneous forced ordering under
+`rr:forced.5`. It does not make RR 1.8 overkill simultaneous: overkill now requires
+the primary target's actual defeat before the excess is dealt. The older
+overkill-specific `ruling:304a4798e0b453b4` does not govern that changed keyword.
+
+Step 6 combines live eligible tiers across exact recipient occurrences. The
+first player orders simultaneous forced abilities (`rr:forced.5`); optional
+opportunities retain the normal eligible-player choice and can select either
+recipient first. Each offered handle resolves against its original occurrence,
+so spending one global observer's interrupt does not consume its opportunity for
+a second recipient. Healing and departure invalidate only the affected imminent
+defeat. A per-occurrence typed shared-window marker lets card entry hooks execute
+without scheduling duplicate authored windows; unrelated nested occurrences have
+no such marker. Step 7 uses the existing shared defeated-card window, retaining
+own When Defeated handles only for the exact defeated incarnation still in play.
+
+The attack-specific simultaneous coordinator remains a separate consumer and is
+not covered by this direct-damage repair.
