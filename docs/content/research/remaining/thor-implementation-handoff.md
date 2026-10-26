@@ -62,7 +62,7 @@ Code paths checked, rather than inferred from primitive names:
 |---|---|---|---|
 | `06001a` | Thor | **G**, E0: `WhenMinionEngaged`, `player:you`, response, per-phase limit | Another seat's engagement draws zero; Thor's real transfer offers two; a second engagement in the phase draws zero; both phase changes reset usage. Use corrected Quickstrike order. |
 | `06001b` | Odinson | **A**: deck/discard Mjolnir choice, add-to-hand, shuffle, `limitPerRound:1` | Find the physical `06009` in either zone; never take another player's copy or an in-play copy; a missing match still shuffles; form changes do not refresh use. |
-| `06002` | Lady Sif | **A**: self entry response, ready controller's identity | Ready Thor and Odinson in separate cases; a second player's matching identity stays exhausted; declining leaves the identity exhausted. |
+| `06002` | Lady Sif | **A**: self entry response, ready named Thor or Odinson | Ready Thor and Odinson in separate cases, including a named identity controlled by another player; an unrelated identity stays exhausted; declining leaves the named identity exhausted. |
 | `06003` | Defender of the Nine Realms | **P**, E1: discard-until plus minion entry is the **arrow cost** | No scheme able to lose threat means no paid event; successful cost enters the exact milled minion, without When Revealed, before removing three threat; reset cannot lose the physical match. |
 | `06004` | For Asgard! | **A**: filtered multi-area `chooseCard`, add-to-hand, shuffle; alter-ego event | Offer Asgard cards in deck and discard, exclude non-Asgard; choose a non-first physical match; pay printed one once; no-match shuffle still happens. |
 | `06005` | Hammer Throw | **C**: `exhaustTitled:Mjolnir`, attack damage eight with `overkill`, return named upgrade as effect | Ready Mjolnir is required before paying three; eight against a five-HP minion spills three; Mjolnir returns after damage, ends ATK/Aerial, and remains returned if the enemy is defeated. Test suspended defeat responses and stun cancellation. |
@@ -229,3 +229,19 @@ timing. In particular, older Loki overkill answers are not a substitute for
 checking current `rr:overkill`. Generated corrected text remains the authoring
 source; the research inventory and external component images do not supply card
 behavior. E0's independent correction resolves its cited timing concern separately.
+
+## Tracked prerequisite queue
+
+- Replay: [MARVEL-742](https://plane.wallingford.me/dev/projects/cd677658-41d9-4576-b055-5f2a726b3c85/issues/2954ec8a-340c-49dd-b8fb-8096ce5bb18f) — Thor: replay v26 boundary and verified historical routes.
+- E1: [MARVEL-743](https://plane.wallingford.me/dev/projects/cd677658-41d9-4576-b055-5f2a726b3c85/issues/74389de0-104a-48d0-8a52-e58dabe7c358) — Thor: resumable discard-until and engagement arrow cost.
+- E2: [MARVEL-744](https://plane.wallingford.me/dev/projects/cd677658-41d9-4576-b055-5f2a726b3c85/issues/dae249c9-6765-4e99-8942-f66f6ccc1c23) — Thor: combine printed event price with variable typed payment.
+- E3: [MARVEL-745](https://plane.wallingford.me/dev/projects/cd677658-41d9-4576-b055-5f2a726b3c85/issues/85015012-4d58-42e6-838d-8bb45f86565b) — Thor: occurrence-bound damage that ignores tough.
+- E4: [MARVEL-746](https://plane.wallingford.me/dev/projects/cd677658-41d9-4576-b055-5f2a726b3c85/issues/499b6219-9106-4702-b1fe-ec0e45245a97) — Thor: live self play-cost reduction from engaged minions.
+- E5: [MARVEL-747](https://plane.wallingford.me/dev/projects/cd677658-41d9-4576-b055-5f2a726b3c85/issues/a70d0613-572f-4c93-89d9-5c29bdb10a90) — Thor: basic-use interrupt and chosen Weapon exhaustion cost.
+- E5b: [MARVEL-748](https://plane.wallingford.me/dev/projects/cd677658-41d9-4576-b055-5f2a726b3c85/issues/e9360c4d-b436-4518-a971-de44d6a916f3) — Thor: selected ally matching modified basic-use power.
+- E6: [MARVEL-749](https://plane.wallingford.me/dev/projects/cd677658-41d9-4576-b055-5f2a726b3c85/issues/feb0f4ff-8cb5-43c2-bfa1-422a32059e82) — Thor: private encounter inspection with discard and ordered return.
+- E7: [MARVEL-750](https://plane.wallingford.me/dev/projects/cd677658-41d9-4576-b055-5f2a726b3c85/issues/a1def3ec-97df-44ba-8ab2-bd27c518e436) — Thor: complete in-play Asgard census for side-scheme entry.
+
+These records track implementation and independent review separately from the
+complete MARVEL-563 product. E0 remains MARVEL-741; its timing correction is
+reviewed, with merge gated by the replay boundary and combined verification.
