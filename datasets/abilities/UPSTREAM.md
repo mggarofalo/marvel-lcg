@@ -238,3 +238,12 @@ ThorDefenderCardTests and ThorFamilyFeudCardTests use the full canonical book.
 See docs/content/thor-next-actual-evidence.md. Public admission remains closed.
 
 Thor utility research rows 06021, 06025, 06033 and 06034 bring the exact inventory to 19 Thor faces and 595 total. Full-book behavior and mutation evidence: `docs/content/thor-utility-evidence.md`.
+
+Valkyrie (06012) and Heimdall (06020) add two actual Thor research faces
+(24 Thor faces; 600 total on base 46827c67). Joined printed authority is
+`datasets/cards/cards.json`; faq:06006 is the Lightning Strike non-attack
+erratum, and ruling:2001c6705b63bf4f confirms private looking.
+`ThorValkyrieCardTests`, `ThorHeimdallCardTests` and
+`ThorHeimdallPrivacyTests` exercise the unmodified full book.
+See `docs/content/thor-valkyrie-heimdall-evidence.md`. Public admission remains
+closed; Lightning Strike remains unauthored pending its simultaneous target group.
