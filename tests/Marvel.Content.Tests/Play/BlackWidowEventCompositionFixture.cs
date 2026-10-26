@@ -8,14 +8,12 @@ using Marvel.Rules.Timing;
 
 namespace Marvel.Content.Tests.Play;
 
-// Full printed event interpretations are test-local; this fixture does not admit the pack.
+// Actual authored event rows; the incomplete pack remains outside public admission.
 internal static class BlackWidowEventCompositionFixture
 {
     internal static AbilityRunner Runner(bool observeThwart = false)
     {
         var book = JsonNode.Parse(AuthoredCards.Text)!;
-        foreach (var row in JsonNode.Parse(Rows)!["cards"]!.AsArray())
-            book["cards"]!.AsArray().Add(row!.DeepClone());
         if (observeThwart)
         {
             var identity = book["cards"]!.AsArray().Single(card => card!["card"]!.GetValue<string>() == "08001a")!;

@@ -100,7 +100,7 @@ public sealed class EspionageSurgeTests
     public void CanceledRevealEffectsNeverOfferEspionage()
     {
         // Ruling 84569f1a5fcccb6f: canceled surge leaves nothing to interrupt.
-        // Synthetic cancel control isolates that fact without authoring Spycraft.
+        // Synthetic cancel control isolates canceled Surge from Spycraft's replacement reveal.
         var f = new EspionageSurgeFixture(cancel: true);
         var reveal = f.Work();
         Assert.Equal(Steps.CardRevealed, reveal.Trigger);

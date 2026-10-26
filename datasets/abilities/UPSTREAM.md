@@ -268,3 +268,13 @@ prefix/order/semantics. No starting counters or public admission changes.
 Quake 08012 remains unauthored: a compiled characteristic incarnation probe
 found that the completed scheme actor selector damages a departed/reentered
 copy. See `docs/content/black-widow-allies-encounters.md` for bounded evidence.
+
+
+The seven-face Black Widow batch adds actual 08003, 08004, 08012, 08013,
+08018, 08024 and 08033, giving 639 rows and 28/34 playable Black Widow faces.
+The preceding 632-row text is preserved. These rows print no starting counters.
+Printed authority is datasets/cards/cards.json; current RR 1.8 governs Surge,
+defeat and labeled attacks. The reviewed mechanism authority and bounded actual-row
+evidence are linked in docs/content/black-widow-seven-faces.md. Public admission
+remains closed. This later batch includes the reviewed exact-incarnation Quake
+mechanism; the preceding batch's unauthored status describes that earlier batch.

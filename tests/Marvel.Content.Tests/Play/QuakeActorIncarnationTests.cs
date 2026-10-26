@@ -162,7 +162,7 @@ public sealed class QuakeActorIncarnationTests
             ? "\"event\":\"WhenDamageWouldBeDealt\",\"timing\":\"ForcedInterrupt\",\"subject\":\"game\""
             : "\"event\":\"WhenSchemeEnds\",\"timing\":\"Response\",\"actor\":\"minion\"";
         string target = interrupt ? "trigger.target" : "trigger.actor";
-        return new(AbilityCatalog.Parse($$$$"""
+        return ActualQuake($$$$"""
             {"cards":[
               {"card":"08012","abilities":[{
                 "trigger":{"event":"WhenSchemeEnds","timing":"Response","actor":"minion"},
@@ -177,7 +177,18 @@ public sealed class QuakeActorIncarnationTests
                 ]}
               }]}
             ]}
-            """));
+            """);
     }
+    private static AbilityRunner ActualQuake(string synthetic)
+    {
+        var root = System.Text.Json.Nodes.JsonNode.Parse(synthetic)!;
+        var rows = root["cards"]!.AsArray();
+        rows.Remove(rows.Single(row => (string?)row!["card"] == "08012"));
+        var actual = System.Text.Json.Nodes.JsonNode.Parse(Marvel.Content.Tests.Cards.AuthoredCards.Text)!["cards"]!.AsArray()
+            .Single(row => (string?)row!["card"] == "08012");
+        rows.Add(actual!.DeepClone());
+        return new(AbilityCatalog.Parse(root.ToJsonString()));
+    }
+
 }
 

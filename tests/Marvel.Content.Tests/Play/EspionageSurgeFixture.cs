@@ -9,7 +9,7 @@ using Xunit;
 
 namespace Marvel.Content.Tests.Play;
 
-// Printed test-local interpretations; the incomplete Black Widow pack stays unadmitted.
+// Actual Espionage with synthetic keyword/order controls; the pack stays unadmitted.
 internal sealed class EspionageSurgeFixture
 {
     internal CardCatalog Cards { get; } = CardCatalog.Parse(File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")));
@@ -55,23 +55,18 @@ internal sealed class EspionageSurgeFixture
         // Widow's Bite is covered by the separate Preparation composition tests.
         var identity = root["cards"]!.AsArray().Single(r => (string?)r!["card"] == "08001a")!;
         identity["abilities"] = new System.Text.Json.Nodes.JsonArray();
-        var rows = System.Text.Json.Nodes.JsonNode.Parse("""
-            {"cards":[
-              {"card":"08033","abilities":[{
-                
-                "trigger":{"event":"WhenSurgeWouldResolve","timing":"Interrupt","subject":"game"},
-                "cost":{"discard":"this"},"effect":{"draw":{"player":"you","count":2}}
-              }]}
-            ]}
-            """)!["cards"]!.AsArray();
-        foreach (var row in rows) root["cards"]!.AsArray().Add(row!.DeepClone());
         if (cancel)
+        {
+            // Synthetic cancellation-only control explicitly replaces actual Spycraft.
+            var cards = root["cards"]!.AsArray();
+            cards.Remove(cards.Single(row => (string?)row!["card"] == "08018"));
             root["cards"]!.AsArray().Add(System.Text.Json.Nodes.JsonNode.Parse("""
                 {"card":"08018","abilities":[{
                   "trigger":{"event":"WhenCardRevealed","timing":"Interrupt","subject":"game"},
                   "cost":{"discard":"this"},"effect":{"cancelWhenRevealed":"trigger.subject"}
                 }]}
                 """));
+        }
         if (printed || gained)
         {
             string replaced = gained ? "01167" : "01121";

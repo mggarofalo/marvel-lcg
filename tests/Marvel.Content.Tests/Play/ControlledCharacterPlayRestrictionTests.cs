@@ -11,7 +11,7 @@ using Xunit;
 
 namespace Marvel.Content.Tests.Play;
 
-// Nonpublic test-local rows isolate printed play restrictions without admitting Black Widow.
+// Actual authored rows exercise printed play restrictions without admitting Black Widow.
 public sealed class ControlledCharacterPlayRestrictionTests : CoreCardTestBase
 {
     [Theory]
@@ -108,7 +108,7 @@ public sealed class ControlledCharacterPlayRestrictionTests : CoreCardTestBase
     public void QueriesAndStalePlayPreservePendingExecutionAndMatchAnUnprobedControl(string face)
     {
         // Step 2: "Check play restrictions: can the card be played, or the ability initiated, at this time?"
-        var runner = new AbilityRunner(AbilityCatalog.Parse("{\"cards\":[{\"card\":\"" + face + "\",\"abilities\":[]}]}"));
+        var runner = Marvel.Content.Tests.Cards.AuthoredCards.Runner();
         var (game, world) = Playing(_ => { }, abilities: runner);
         var (controlGame, control) = Playing(_ => { }, abilities: runner);
         var card = world.CreateCard(face, world.Seats[0].Hand);

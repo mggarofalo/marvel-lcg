@@ -84,15 +84,8 @@ public sealed class QuakeActorIndependentReviewTests
 
     private static (World World, AbilityRunner Runner, Card Quake, Card Minion, Prompt Prompt) Response()
     {
-        // Test-only Quake interpretation of printed 08012; no ability-book admission.
         var world = WidowEncounterFixture.Board(false);
-        var runner = new AbilityRunner(AbilityCatalog.Parse("""
-            {"cards":[{"card":"08012","abilities":[{
-              "trigger":{"event":"WhenSchemeEnds","timing":"Response","actor":"minion"},
-              "cost":{"exhaust":"this"},
-              "effect":{"dealDamage":{"cards":"trigger.actor","amount":2}}
-            }]}]}
-            """));
+        var runner = WidowEncounterFixture.Runner();
         world.Abilities = runner;
         var quake = world.CreateCard("08012", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(1), cardOwner: 1));
         var minion = world.CreateCard("08026", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(1)));

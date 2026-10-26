@@ -11,10 +11,10 @@ using Xunit;
 
 namespace Marvel.Content.Tests.Play;
 
-/// <summary>Nonpublic printed Target Acquired row, with isolated boost effects.</summary>
+/// <summary>Actual Target Acquired row, with isolated synthetic boost effects.</summary>
 public sealed class TargetAcquiredBoostAbilityTests : CoreCardTestBase
 {
-    private static AbilityRunner Runner() => new(AbilityCatalog.Parse("""
+    private static AbilityRunner Runner() => ActualPreparations("""
         {"cards":[
           {"card":"08024","abilities":[{
             "trigger":{"event":"WhenBoostCardTurnedFaceup","timing":"Response","subject":"game","form":"hero"},
@@ -29,7 +29,7 @@ public sealed class TargetAcquiredBoostAbilityTests : CoreCardTestBase
             "cost":{"exhaust":"this"},"effect":{"ready":"you"}
           }]}
         ]}
-        """));
+        """);
 
     [Rule("rr:response")]
     [Rule("rr:boost-boost-icon.1")]
@@ -193,4 +193,19 @@ public sealed class TargetAcquiredBoostAbilityTests : CoreCardTestBase
         }
         throw new InvalidOperationException("Target Acquired was not offered");
     }
+    // The local Suit readies its controller to isolate cancellation across either seat;
+    // actual named-identity Synth-Suit composition is covered by EspionageSurgeTests.
+    private static AbilityRunner ActualPreparations(string synthetic)
+    {
+        var root = System.Text.Json.Nodes.JsonNode.Parse(synthetic)!;
+        var rows = root["cards"]!.AsArray();
+        var actual = System.Text.Json.Nodes.JsonNode.Parse(AuthoredCards.Text)!["cards"]!.AsArray();
+        foreach (string face in new[] { "08024" })
+        {
+            rows.Remove(rows.Single(row => (string?)row!["card"] == face));
+            rows.Add(actual.Single(row => (string?)row!["card"] == face)!.DeepClone());
+        }
+        return new(AbilityCatalog.Parse(root.ToJsonString()));
+    }
+
 }

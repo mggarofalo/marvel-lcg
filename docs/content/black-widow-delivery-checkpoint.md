@@ -8,8 +8,7 @@ which defines the complete scope and authority. Black Widow is not publicly admi
 
 `feat/black-widow-completion` at `29aa293f`, based on Thor's certified squash
 merge `c14a045c`. Counterattack and Rapid Response mechanisms are independently
-reviewed and integrated. The seven-face packet is independently reviewed but not
-yet integrated. The four-prevention review found missing optional prevention for
+reviewed and integrated. The seven-face packet is independently reviewed and integrated. The four-prevention review found missing optional prevention for
 nonattack damage; MARVEL-787 owns that engine fix and separate review. The final
 two actual rows are being authored. Public admission and pack-wide proof remain
 outstanding.
@@ -33,9 +32,8 @@ all 36 release checks. Logs are `widow-boost-combined-{content,server}.log` and
 `widow-protocol41-identity-{server,desktop,release}.log` under the external evidence directory.
 This does not claim a full green Server rerun after the correction.
 
-The current book has **632 rows and 21/34 Black Widow faces**: 08001a, 08001b,
-08002, 08005, 08007, 08009, 08010, 08011, 08014, 08015, 08016, 08019,
-08020, 08021, 08022, 08023, 08025, 08026, 08027, 08028 and 08029.
+The current book has **639 rows and 28/34 Black Widow faces**. The six
+remaining faces are 08006, 08008, 08017, 08030, 08031 and 08032.
 
 | Scope | Reviewed evidence | Integrated state |
 |---|---|---|
@@ -212,3 +210,12 @@ combined independent review. The book in this branch remains 632 rows and
 
 Thor's post-merge main run `40349177660` also passed all eleven jobs on
 `c14a045c`; its accepted status no longer relies only on pre-merge certification.
+
+## Reviewed seven-face integration
+
+Source `fbdd33b8` and independent review `bc1c01c8` are integrated. The exact
+632-row predecessor prefix is unchanged; seven actual rows bring the book to
+639 unique rows and 28/34 Black Widow faces. The combined focused Content run
+passes **187/187** (`widow-seven-integrated.log`), including actual Spycraft/
+Espionage nested reveal, Dance Guard reevaluation and Stealth Strike attribution.
+This is not full-pack or native acceptance.

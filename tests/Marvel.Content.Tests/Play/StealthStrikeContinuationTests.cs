@@ -189,20 +189,9 @@ public sealed class StealthStrikeContinuationTests
     internal static AbilityRunner Runner(bool suspended = false, bool inside = false)
     {
         var root = JsonNode.Parse(File.ReadAllText(RepositoryPaths.Dataset("abilities", "abilities.json")))!;
-        root["cards"]!.AsArray().Add(JsonNode.Parse("""
-            {"card":"08013","abilities":[{
-              "trigger":{"event":"TurnAction","timing":"Action","subject":"you","form":"hero"},
-              "labels":["attack"],
-              "effect":{"chooseCard":{"from":{"query":"enemies"},"effect":{"seq":[
-                {"attack":{"target":"chosen","effect":{"dealAttackDamage":{"cards":"chosen","amount":4}}}},
-                {"if":{"test":{"wasDefeatedByDamage":"chosen"},"then":
-                  {"chooseCard":{"from":{"query":"schemes"},"effect":{"removeThreat":{"scheme":"chosen","amount":2}}}}}}
-              ]}}}
-            }]}
-            """));
         if (inside)
         {
-            var sequence = root["cards"]!.AsArray()[^1]!["abilities"]![0]!["effect"]!["chooseCard"]!["effect"]!["seq"]!.AsArray();
+            var sequence = root["cards"]!.AsArray().Single(row => (string?)row!["card"] == "08013")!["abilities"]![0]!["effect"]!["chooseCard"]!["effect"]!["seq"]!.AsArray();
             var attack = sequence[0]!["attack"]!;
             attack["effect"] = new JsonObject { ["seq"] = new JsonArray(attack["effect"]!.DeepClone(), sequence[1]!.DeepClone()) };
             sequence.RemoveAt(1);

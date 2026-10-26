@@ -1,5 +1,6 @@
 using Marvel.Cards.Dsl;
 using Marvel.Cards.Run;
+using Marvel.Content.Tests.Cards;
 using Marvel.Rules.Events;
 using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
@@ -40,23 +41,16 @@ public sealed class StealthStrikeAttributionReviewTests
     {
         // Printed 08013 requires "that enemy is defeated by this attack". A nested response's
         // direct damage is its own cause, whether it defeats the attacked enemy or another one.
-        var runner = new AbilityRunner(AbilityCatalog.Parse("""
-            {"cards":[
-              {"card":"08013","abilities":[{
-                "trigger":{"event":"TurnAction","timing":"Action","subject":"you","form":"hero"},
-                "labels":["attack"],
-                "effect":{"chooseCard":{"from":{"query":"enemies"},"effect":{"seq":[
-                  {"attack":{"target":"chosen","effect":{"dealAttackDamage":{"cards":"chosen","amount":4}}}},
-                  {"if":{"test":{"wasDefeatedByDamage":"chosen"},"then":
-                    {"chooseCard":{"from":{"query":"schemes"},"effect":{"removeThreat":{"scheme":"chosen","amount":2}}}}}}
-                ]}}}
-              }]},
-              {"card":"08023","abilities":[{
+        var book = System.Text.Json.Nodes.JsonNode.Parse(AuthoredCards.Text)!;
+        var observerRow = book["cards"]!.AsArray().Single(row => (string?)row!["card"] == "08023")!;
+        // The observer is synthetic; Stealth Strike remains the actual authored row.
+        observerRow["abilities"] = System.Text.Json.Nodes.JsonNode.Parse("""
+              [{
                 "trigger":{"event":"WhenDamageDealt","timing":"Response","subject":"game"},
                 "effect":{"chooseCard":{"from":{"query":"enemies"},"effect":{"dealDamage":{"cards":"chosen","amount":10}}}}
-              }]}
-            ]}
-            """));
+              }]
+            """);
+        var runner = new AbilityRunner(AbilityCatalog.Parse(book.ToJsonString()));
         var world = ThorActualFixture.Board("06001a");
         world.Abilities = runner;
         var attacked = world.CreateCard("01181", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));

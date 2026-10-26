@@ -19362,6 +19362,309 @@
           }
         }
       ]
+    },
+    {
+      "card": "08003",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this"
+          },
+          "labels": [
+            "thwart"
+          ],
+          "effect": {
+            "seq": [
+              {
+                "if": {
+                  "test": {
+                    "exists": {
+                      "query": "thwartableSchemes"
+                    }
+                  },
+                  "then": {
+                    "chooseCard": {
+                      "from": {
+                        "query": "thwartableSchemes"
+                      },
+                      "effect": {
+                        "thwart": {
+                          "target": "chosen",
+                          "effect": {
+                            "seq": [
+                              {
+                                "removeThreat": {
+                                  "scheme": "chosen",
+                                  "amount": 4
+                                }
+                              },
+                              {
+                                "giveStatus": {
+                                  "card": {
+                                    "query": "villain"
+                                  },
+                                  "status": "confused"
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "else": {
+                    "thwart": {
+                      "effect": {
+                        "giveStatus": {
+                          "card": {
+                            "query": "villain"
+                          },
+                          "status": "confused"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "name": "Covert Ops",
+      "note": "One thwart in either branch: remove four from a legal scheme and confuse, or confuse alone when no scheme is thwartable (ruling 0fc2a7cc9197e127)."
+    },
+    {
+      "card": "08004",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "effect": {
+            "seq": [
+              {
+                "chooseCard": {
+                  "from": {
+                    "query": "attackableEnemies"
+                  },
+                  "effect": {
+                    "attack": {
+                      "target": "chosen",
+                      "effect": {
+                        "dealAttackDamage": {
+                          "cards": "chosen",
+                          "amount": 1
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "chooseCard": {
+                  "from": {
+                    "query": "attackableEnemies"
+                  },
+                  "effect": {
+                    "attack": {
+                      "target": "chosen",
+                      "effect": {
+                        "dealAttackDamage": {
+                          "cards": "chosen",
+                          "amount": 2
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "chooseCard": {
+                  "from": {
+                    "query": "attackableEnemies"
+                  },
+                  "effect": {
+                    "attack": {
+                      "target": "chosen",
+                      "effect": {
+                        "dealAttackDamage": {
+                          "cards": "chosen",
+                          "amount": 3
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "name": "Dance of Death",
+      "note": "Three separate attacks in printed order, selecting an eligible enemy anew for one, two and three damage."
+    },
+    {
+      "card": "08013",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "labels": [
+            "attack"
+          ],
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "enemies"
+              },
+              "effect": {
+                "seq": [
+                  {
+                    "attack": {
+                      "target": "chosen",
+                      "effect": {
+                        "dealAttackDamage": {
+                          "cards": "chosen",
+                          "amount": 4
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "if": {
+                      "test": {
+                        "wasDefeatedByDamage": "chosen"
+                      },
+                      "then": {
+                        "chooseCard": {
+                          "from": {
+                            "query": "schemes"
+                          },
+                          "effect": {
+                            "removeThreat": {
+                              "scheme": "chosen",
+                              "amount": 2
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "name": "Stealth Strike",
+      "note": "The four-damage attack completes before testing its settled enemy defeat and choosing a scheme for two threat removal."
+    },
+    {
+      "card": "08012",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenSchemeEnds",
+            "timing": "Response",
+            "actor": "minion"
+          },
+          "cost": {
+            "exhaust": "this"
+          },
+          "effect": {
+            "dealDamage": {
+              "cards": "trigger.actor",
+              "amount": 2
+            }
+          }
+        }
+      ],
+      "name": "Quake",
+      "note": "After a minion schemes, exhaust Quake to deal two damage to that captured minion incarnation, including a zero-SCH activation."
+    },
+    {
+      "card": "08018",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "Interrupt",
+            "subject": "game",
+            "player": "you"
+          },
+          "cost": {
+            "discard": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "cancelWhenRevealed": "trigger.subject"
+              },
+              {
+                "discard": "trigger.subject"
+              },
+              {
+                "revealTop": 1
+              }
+            ]
+          }
+        }
+      ],
+      "name": "Spycraft",
+      "note": "Only the controller revealing the encounter card may discard Spycraft to cancel and discard that card, then reveal one replacement. Printed controlled-SPY play restriction is enforced by the catalog."
+    },
+    {
+      "card": "08024",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenBoostCardTurnedFaceup",
+            "timing": "Response",
+            "subject": "game",
+            "form": "hero"
+          },
+          "cost": {
+            "discard": "this"
+          },
+          "effect": {
+            "cancelBoostAbility": "trigger"
+          }
+        }
+      ],
+      "name": "Target Acquired",
+      "note": "Hero Response cancels only the exact faceup boost card ability (ruling a66ca21bca34a71f); numeric boost icons remain. Printed max one per player is enforced by the catalog."
+    },
+    {
+      "card": "08033",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenSurgeWouldResolve",
+            "timing": "Interrupt",
+            "subject": "game"
+          },
+          "cost": {
+            "discard": "this"
+          },
+          "effect": {
+            "draw": {
+              "player": "you",
+              "count": 2
+            }
+          }
+        }
+      ],
+      "name": "Espionage",
+      "note": "Discard to draw two when actual printed or gained surge would resolve. Preparation completion precedes the surge deal; canceled surge provides no interrupt. Printed controlled-SPY play restriction is enforced by the catalog."
     }
   ]
 }

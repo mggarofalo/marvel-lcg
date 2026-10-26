@@ -1482,3 +1482,7 @@ continue to apply. Receipts are transient, omitted from diagnostic occurrence
 serialization and reconstructed by accepted-decision replay. They add no digest,
 card-state or protocol field. This capability neither authors Counterattack
 (08030) nor admits Black Widow.
+`cancelBoostAbility: "trigger"` cancels only the exact faceup boost card ability
+receipt in its Response window. Numeric icons retain their separate receipt.
+Target Acquired uses this operation after the flip and before the star resolves
+(ruling a66ca21bca34a71f); invalid activation or card incarnation cannot cancel.
