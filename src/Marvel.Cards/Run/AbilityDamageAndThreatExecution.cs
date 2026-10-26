@@ -272,6 +272,11 @@ internal static class AbilityDamageAndThreatExecution
 
     private static void PreventDamage(AbilityEffect.PreventDamage prevention, AbilityDamageAndThreatContext context)
     {
+        if (context.Occurrence.DirectDamage is { } direct)
+        {
+            direct.Prevent(context.World, Amount(prevention.Amount, context));
+            return;
+        }
         int target = context.Occurrence.Target >= 0 ? context.Occurrence.Target : context.Occurrence.Subject;
         context.World.Effects.Register(new ContinuousEffect(EffectSource.LastingEffect,
             Kind: "preventDamage", Amount: Amount(prevention.Amount, context), Card: context.Source.ObjectId,

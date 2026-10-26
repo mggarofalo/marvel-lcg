@@ -153,6 +153,7 @@ internal static class AbilityEffectTargetAdmission
             // rr:target.3.4: "at least one of those effects must be able to
             // affect the target." Deferring resolution retains the bound target.
             "cancelBoostIcons" or "cancelBoostAbility" => BoostCancellationTargetLegality(node, cast),
+            "preventThreat" => ThreatPreventionTargetLegality(node, cast),
             "boostBasicUse" => BasicUseLegality((AbilityEffect.BoostBasicUse)node, cast),
             "modifyPlayedEvent" => AbilityPlayedEventModifier.CanModify(EffectOf<AbilityEffect.ModifyPlayedEvent>(node, cast), cast.Context)
                 ? TargetLegality.Valid : TargetLegality.Invalid,
@@ -245,4 +246,11 @@ internal static class AbilityEffectTargetAdmission
         AbilityEffect.BoostBasicUse effect, AbilityAdmissionScope cast) =>
         BasicUseAllyReceipt.CanApply(effect, cast.Context)
             ? TargetLegality.Valid : TargetLegality.Invalid;
+    private static TargetLegality ThreatPreventionTargetLegality(
+        AbilityEffect node, AbilityAdmissionScope cast) =>
+        // rr:target.3: "if any part of that ability can affect that target".
+        // rr:prevent.2 reduces the assignment before placement; zero remaining
+        // threat cannot be affected by this prevention effect.
+        CanPartiallyResolve(node, cast) ? TargetLegality.Valid : TargetLegality.Invalid;
+
 }

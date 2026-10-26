@@ -1,5 +1,3 @@
-using System.Text.Json.Nodes;
-using Marvel.Cards.Dsl;
 using Marvel.Cards.Run;
 using Marvel.Content.Tests.Cards;
 using Marvel.Rules.Events;
@@ -11,7 +9,7 @@ using Xunit;
 
 namespace Marvel.Content.Tests.Play;
 
-// Test-local printed interpretation; this does not admit the Black Widow pack.
+// Actual authored rows; Black Widow remains outside public admission.
 public sealed class BlackWidowRapidResponseCompositionTests
 {
     [Theory]
@@ -28,9 +26,7 @@ public sealed class BlackWidowRapidResponseCompositionTests
         // and responses to defeat occur after "Discarding of a defeated character."
         // 08031: "After an ally you control is defeated"; return "that ally"
         // "from your discard pile and deal 1 damage to it."
-        var book = JsonNode.Parse(AuthoredCards.Text)!;
-        book["cards"]!.AsArray().Add(JsonNode.Parse(Row));
-        var runner = new AbilityRunner(AbilityCatalog.Parse(book.ToJsonString()));
+        var runner = new AbilityRunner(AuthoredCards.Book);
         var world = ThorActualFixture.Board("06001a", 2);
         var seat = world.Seats[1];
         World.MoveToTop(seat.IdentityCard, world.AreaOf(DeckType.RemovedArea));
@@ -97,15 +93,4 @@ public sealed class BlackWidowRapidResponseCompositionTests
         Assert.Null(Sequence.Work(world, world.Facts, runner, events));
     }
 
-    internal const string Row = """
-        {"card":"08031","abilities":[{
-          "trigger":{"event":"WhenCardDefeated","timing":"Response","subject":"game","form":"hero"},
-          "when":{"exists":{"defeatedAllyInYourDiscardPile":"you"}},
-          "cost":{"discard":"this"},
-          "effect":{"seq":[
-            {"putIntoPlay":{"card":{"defeatedAllyInYourDiscardPile":"you"},"where":"yourPlayArea"}},
-            {"dealDamage":{"cards":"chosen","amount":1}}
-          ]}
-        }]}
-        """;
 }

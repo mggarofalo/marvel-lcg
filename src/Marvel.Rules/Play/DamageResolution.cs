@@ -10,6 +10,7 @@ internal sealed class DamageResolution(World world, ICardFacts facts, DamageRequ
     private readonly int incarnation = targetIncarnation ?? request.Target.Incarnation;
     private DamageReplacement? replacement;
     private bool placed;
+    private DirectDamagePrevention? prevention;
     private Damage.PlacedDamage? placement;
     private EffectCompletion? excessThreat;
     private readonly int priorDefeats = request.RecordDefeatOn?.Defeats.Count ?? 0;
@@ -37,9 +38,18 @@ internal sealed class DamageResolution(World world, ICardFacts facts, DamageRequ
             return;
         }
         AttackDamageAccounting.ValidateBoostPlacement(world, request.ActivationId);
-        var damage = DamagePlacement.PrepareAfterReplacement(world, facts, request with { Amount = replacement.ResolvedAmount }, events);
+        var damage = PrepareDamage(events);
+        if (damage is null) { Suspend(events); return; }
         DamagePlacement.ApplyPlaced(world, facts, damage, request.Trigger, request.Verb, events);
         Settle(damage, events);
+    }
+
+    private Damage.PlacedDamage? PrepareDamage(List<GameEvent> events)
+    {
+        prevention ??= DirectDamagePrevention.Begin(world, request, replacement!,
+            DamagePlacement.PrepareAfterReplacement(world, facts,
+                request with { Amount = replacement!.ResolvedAmount }, events));
+        return prevention.IsComplete ? prevention.Placement : null;
     }
 
     internal void Settle(Damage.PlacedDamage damage, List<GameEvent> events, Damage.Outcome? settledOutcome = null)

@@ -6,6 +6,25 @@ namespace Marvel.View.Tests;
 
 public sealed class EventActivityProjectionTests : EventPresentationTestBase
 {
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void EnemyLessAttackKeepsOnlyItsAuthorizedSource(bool cooperative)
+    {
+        var world = VisibilityFixture.Board();
+        int source = world.TheCardIn(DeckType.VillainArea)!.ObjectId;
+        IVisibilityPolicy policy = cooperative ? new PermissiveVisibilityPolicy() : new RestrictedVisibilityPolicy(0);
+        var boundary = new AttackBoundary(new(19, false), source, -1, true)
+        { AttackIdentity = new(19, false), Subjects = new Dictionary<int, string> { [source] = "Hero" } };
+        var projected = WorldProjection.For(world, null, [boundary], policy.Authorize(null, world.Players));
+        var retained = Assert.IsType<AttackBoundary>(Assert.Single(projected.Events));
+        var presented = EventPresenter.Present(retained, projected.World);
+        Assert.Equal([source], presented.Anchors);
+        Assert.Contains("without an attacked enemy", presented.Summary);
+        Assert.Equal(source, Assert.Single(presented.Activity!.Subjects).Card);
+        Assert.Equal(ActivitySubjectRole.Source, Assert.Single(presented.Activity.Subjects).Role);
+    }
+
     [Fact]
     public void AttackParticipantsRemainDistinctEvenWhenTargetDefendsItself()
     {

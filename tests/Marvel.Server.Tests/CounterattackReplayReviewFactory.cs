@@ -36,14 +36,6 @@ internal sealed class CounterattackReplayReviewFactory(bool promote) : IDurableG
                 "cost":{"exhaust":"this"},
                 "effect":{"enemyAttacks":{"enemies":{"query":"villain"},"dealBoostCards":"false"}}
               }]},
-              {"card":"08030","abilities":[{
-                "trigger":{"event":"WhenDamageDealt","timing":"Response","actor":"enemy","target":"you","form":"hero"},
-                "when":{"atLeast":{"value":{"receivedAttackDamage":"game"},"count":1}},
-                "labels":["attack"],"cost":{"discard":"this"},
-                "effect":{"attack":{"target":"trigger.actor","effect":{
-                  "dealAttackDamage":{"cards":"trigger.actor","amount":{"receivedAttackDamage":"game"}}
-                }}}
-              }]},
               {"card":"08009","abilities":[{
                 "trigger":{"event":"WhenPreparationAbilityResolved","timing":"Response","subject":"you"},
                 "cost":{"exhaust":"this"},"effect":{"ready":"you"}
@@ -54,7 +46,7 @@ internal sealed class CounterattackReplayReviewFactory(bool promote) : IDurableG
         foreach (var row in authored["cards"]!.AsArray())
         {
             string face = row!["card"]!.GetValue<string>();
-            if (face is not ("01092" or "08009" or "08030"))
+            if (face is not ("01092" or "08009"))
                 book["cards"]!.AsArray().Add(row.DeepClone());
         }
         var runner = new AbilityRunner(AbilityCatalog.Parse(book.ToJsonString()));

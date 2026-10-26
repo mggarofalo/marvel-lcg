@@ -22,7 +22,6 @@ internal sealed class RapidResponseFixture
     internal RapidResponseFixture(bool entryChoice = false, bool oneHp = false)
     {
         var book = JsonNode.Parse(AuthoredCards.Text)!;
-        book["cards"]!.AsArray().Add(JsonNode.Parse(BlackWidowRapidResponseCompositionTests.Row));
         if (entryChoice)
         {
             // Synthetic entry response isolates a suspension before the damage suffix.

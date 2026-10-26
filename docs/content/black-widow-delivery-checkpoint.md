@@ -6,12 +6,12 @@ which defines the complete scope and authority. Black Widow is not publicly admi
 
 ## Integrated candidate
 
-`feat/black-widow-completion` at `29aa293f`, based on Thor's certified squash
-merge `c14a045c`. Counterattack and Rapid Response mechanisms are independently
-reviewed and integrated. The seven-face packet is independently reviewed and integrated. The four-prevention review found missing optional prevention for
-nonattack damage; MARVEL-787 owns that engine fix and separate review. The final
-two actual rows are being authored. Public admission and pack-wide proof remain
-outstanding.
+`feat/black-widow-completion` contains the complete 34-face authored book,
+based on Thor's certified squash merge `c14a045c`; the final six-face integration
+has parent `c1decfff`. Every row and its engine prerequisite has independent
+review. The verified printed starter is declared. Public admission and pack-wide
+proof remain outstanding. A separate preexisting Focused Rage/Energy Barrier
+cost-interruption gap is tracked as MARVEL-788 and under implementation.
 
 Earlier integration evidence follows; these runs do not certify the current head.
 All 6,104 Content tests passed on prerequisite revision `f601932b` (2026-10-26);
@@ -32,8 +32,10 @@ all 36 release checks. Logs are `widow-boost-combined-{content,server}.log` and
 `widow-protocol41-identity-{server,desktop,release}.log` under the external evidence directory.
 This does not claim a full green Server rerun after the correction.
 
-The current book has **639 rows and 28/34 Black Widow faces**. The six
-remaining faces are 08006, 08008, 08017, 08030, 08031 and 08032.
+The current book has **645 unique rows and all 34 Black Widow faces**: both
+identity sides and 08002–08033. Printed starter, nemesis, obligation and extra
+customization faces are all included. Public support remains closed pending
+complete admission and proof.
 
 | Scope | Reviewed evidence | Integrated state |
 |---|---|---|
@@ -219,3 +221,27 @@ Source `fbdd33b8` and independent review `bc1c01c8` are integrated. The exact
 passes **187/187** (`widow-seven-integrated.log`), including actual Spycraft/
 Espionage nested reveal, Dance Guard reevaluation and Stealth Strike attribution.
 This is not full-pack or native acceptance.
+
+## Complete authored book and prevention integration
+
+Four prevention rows from `bcc7005b`, expanded controls through `9d2978e0`,
+zero-threat fix `695d64ae`, Guard mechanism/review `3731a864` / `8d96f972`,
+independent row review `185eaea9`, and nonattack fix/review `59973d61` /
+`bef7b6c4` are integrated. Counterattack/Rapid Response actual rows `e58d0f00`
+and independent review `48cfecf8` complete the book. The exact preceding raw
+row objects and each incoming source object are preserved in the combined book.
+
+Combined focused Content checks pass **227/227** in `widow-34face-integrated.log`.
+The first integration exposed an obsolete empty Counterintelligence fixture and
+batch-length assumptions; the fixture now uses the actual row and inventories
+retain exact batch membership. No behavioral assertion or duplicate gate was
+removed. Combined strict-JSON/fresh-host journeys for Attacrobatics,
+Counterattack, Rapid Response and nonattack prevention pass **12/12** in
+`widow-34face-durable.log`. These focused runs do not certify the full solution,
+public product, native interactions or platform package.
+
+The independently reviewed nonattack path also fixes actual admitted Energy
+Barrier during ordinary effect damage. MARVEL-788 records the separately
+identified cost-payment path; no claim of complete cost interruption is made here.
+
+The combined occurrence receipts exceeded the 300-line class gate. Exact trigger-use and event-play generation bookkeeping now lives in the cohesive TriggerUses owner, with unchanged Occurrence entry points and serialized facts. All 82 Timing checks and the 227 combined Content checks pass after extraction (widow-trigger-uses-rules.log and widow-34face-final-focused.log). No architecture baseline was expanded.

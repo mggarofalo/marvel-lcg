@@ -31,6 +31,7 @@ internal static class AbilityPowerTargetAdmission
     internal static bool CanTargetAttack(AbilityEffect node, AbilityAdmissionScope cast)
     {
         var power = EffectOf<AbilityEffect.Power>(node, cast);
+        if (AbilityIndependentAttack.CanAffectBoost(power, cast.Context)) return true;
         if (power.TargetCount is not null) return AbilityCountedAttackSelection.CanInitiate(power, cast);
         var target = power.Target!;
         if (cast.Chosen is null && BindingCanChange(target)

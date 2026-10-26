@@ -71,7 +71,7 @@ public sealed class BlackWidowBurnNoticeTests
     {
         using var book = System.Text.Json.JsonDocument.Parse(AuthoredCards.Text);
         var rows = book.RootElement.GetProperty("cards").EnumerateArray().ToArray();
-        Assert.Equal(639, rows.Length);
+        Assert.Equal(645, rows.Length);
         string[] added = ["08023", "08025", "08026", "08029"];
         Assert.Equal(added,
             rows.Skip(628).Take(4).Select(row => row.GetProperty("card").GetString()));
@@ -79,8 +79,8 @@ public sealed class BlackWidowBurnNoticeTests
         Assert.DoesNotContain("11028", AuthoredCards.Book.Authored);
         string[] seven = ["08003", "08004", "08013", "08012", "08018", "08024", "08033"];
         Assert.Equal(seven,
-            rows.Skip(632).Select(row => row.GetProperty("card").GetString()));
-        Assert.All(rows.Skip(632), row => Assert.False(row.TryGetProperty("startingCounters", out _)));
+            rows.Skip(632).Take(7).Select(row => row.GetProperty("card").GetString()));
+        Assert.All(rows.Skip(632).Take(7), row => Assert.False(row.TryGetProperty("startingCounters", out _)));
     }
 
     private static Prompt Work(World world) => Assert.IsType<Prompt>(Sequence.Work(world, world.Facts, world.Abilities, []));

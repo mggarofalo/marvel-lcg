@@ -11,6 +11,7 @@ internal sealed class SimultaneousDirectDamageResolution
     private readonly SimultaneousDirectRecipient[] recipients;
     private int replacementIndex;
     private int settlementIndex;
+    private int interruptIndex;
     private bool placed;
     private SimultaneousCharacterDefeats? defeats;
     internal SimultaneousDirectDamageResolution(World world, ICardFacts facts,
@@ -32,6 +33,11 @@ internal sealed class SimultaneousDirectDamageResolution
         {
             if (!recipients[replacementIndex].Replace(world, events)) { Suspend(events); return; }
             replacementIndex++;
+        }
+        while (interruptIndex < recipients.Length)
+        {
+            if (!recipients[interruptIndex].Interrupt(world, facts, events)) { Suspend(events); return; }
+            interruptIndex++;
         }
         if (!placed)
         {

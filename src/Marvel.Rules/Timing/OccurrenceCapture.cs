@@ -22,7 +22,7 @@ internal static class OccurrenceCapture
             Actor: actor,
             Target: target,
             ActorFacts: OccurrenceCard.Capture(world.Cards[actor], facts),
-            TargetFacts: OccurrenceCard.Capture(world.Cards[target], facts));
+            TargetFacts: target >= 0 ? OccurrenceCard.Capture(world.Cards[target], facts) : null);
     }
 
     internal static Occurrence Thwart(

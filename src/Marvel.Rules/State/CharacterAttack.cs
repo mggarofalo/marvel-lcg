@@ -28,7 +28,7 @@ namespace Marvel.Rules.State;
 /// attack is <b>not</b> performed by that player's identity — so a card acting
 /// on "the attacking character" needs the character and not its controller.
 /// </param>
-/// <param name="Enemy">The object id of the enemy being attacked.</param>
+/// <param name="Enemy">The enemy's object id, or -1 for an independent labeled effect without an attacked enemy.</param>
 /// <param name="Player">
 /// The seat whose turn it is. <c>rr:you-your.6</c> is why this travels beside
 /// the attacker: an ability that triggers "after <b>you</b> attack" is about

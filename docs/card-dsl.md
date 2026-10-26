@@ -1486,3 +1486,21 @@ card-state or protocol field. This capability neither authors Counterattack
 receipt in its Response window. Numeric icons retain their separate receipt.
 Target Acquired uses this operation after the flip and before the star resolves
 (ruling a66ca21bca34a71f); invalid activation or card incarnation cannot cancel.
+## Independent boost cancellation in an attack
+
+The closed `attack` body `then(cancelBoostIcons(trigger),
+dealAttackDamage(chosen, cancelledBoostIcons))` with the automatic villain query
+can resolve its cancellation sentence when the villain is not a valid attack
+target. Current RR 1.8 `rr:target.3`, `.3.8`, `rr:guard.1`, and
+`rr:labeled-ability.2` agree with ruling `0fc2a7cc9197e127` (October 2024).
+The earlier pre-1.5 ruling `6919a92cb0376eac` does not govern this case.
+
+The interpreter retains one labeled attack, its identity performer and its exact
+live boost-icon receipt. A blocked villain is absent from the attack's targets,
+damage and retaliation recipients. Its source-only attack boundary can support
+an after-you-attack response, without an attacked-enemy response. The discard
+cost and successful Preparation completion remain part of the original ability.
+Stun cancels both sentences after costs; zero remaining icons cannot admit an
+otherwise ineffective ability. Explicit player-selected targets and all other
+attack body shapes keep their existing target validation. This adds no general
+targetless attack syntax, public pack admission, protocol or save format change.

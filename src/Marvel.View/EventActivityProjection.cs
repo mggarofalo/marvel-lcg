@@ -13,7 +13,7 @@ internal static class EventActivityProjection
         ActivitySubject[] subjects = happened switch
         {
             AttackBoundary attack => [Subject(happened, world, attack.Source, ActivitySubjectRole.Source),
-                Subject(happened, world, attack.Target, ActivitySubjectRole.Target)],
+                .. attack.Target >= 0 ? new[] { Subject(happened, world, attack.Target, ActivitySubjectRole.Target) } : []],
             AttackCompleted attack => [Subject(happened, world, attack.Enemy, ActivitySubjectRole.Source),
                 Subject(happened, world, attack.Target, ActivitySubjectRole.Target),
                 .. attack.Defender >= 0 ? new[] { Subject(happened, world, attack.Defender, ActivitySubjectRole.Defender) } : []],

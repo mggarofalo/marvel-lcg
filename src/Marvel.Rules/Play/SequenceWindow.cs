@@ -38,7 +38,7 @@ internal static class SequenceWindow
     }
 
     private static IWindowAbilities AbilitiesForStep(PhaseStep step, IWindowAbilities abilities) =>
-        step.What is Steps.PrepareIndirectAttackDamage or Steps.DealAttackDamage
+        step.Operation is DirectDamagePreventionOperation || step.What is Steps.PrepareIndirectAttackDamage or Steps.DealAttackDamage
             ? new OptionalDamageInterrupts(abilities) : abilities;
 
     private static void FinishWindow(World world, PhaseStep step, Occurrence occurrence,

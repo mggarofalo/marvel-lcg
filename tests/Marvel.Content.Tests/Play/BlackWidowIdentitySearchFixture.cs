@@ -1,5 +1,3 @@
-using System.Text.Json.Nodes;
-using Marvel.Cards.Dsl;
 using Marvel.Cards.Run;
 using Marvel.Content.Tests.Cards;
 using Marvel.Rules.Play;
@@ -9,17 +7,11 @@ using Xunit;
 
 namespace Marvel.Content.Tests.Play;
 
-// Nonpublic fixture: empty test-local hero and Preparation rows isolate actual new rows.
-// They do not claim the unauthored Preparation effects or a full-pack journey.
+// Nonpublic prepared states use the actual identity, ally and Preparation rows.
+// These focused search and payment checks do not claim a full-pack journey.
 internal static class BlackWidowIdentitySearchFixture
 {
-    internal static AbilityRunner Runner()
-    {
-        var book = JsonNode.Parse(AuthoredCards.Text)!;
-        foreach (string face in new[] { "08017" })
-            book["cards"]!.AsArray().Add(JsonNode.Parse("{\"card\":\"" + face + "\",\"abilities\":[]}"));
-        return new(AbilityCatalog.Parse(book.ToJsonString()));
-    }
+    internal static AbilityRunner Runner() => AuthoredCards.Runner();
 
     internal static World Board(int players = 2, int widow = 1)
     {

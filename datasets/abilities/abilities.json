@@ -19665,6 +19665,220 @@
       ],
       "name": "Espionage",
       "note": "Discard to draw two when actual printed or gained surge would resolve. Preparation completion precedes the surge deal; canceled surge provides no interrupt. Printed controlled-SPY play restriction is enforced by the catalog."
+    },
+    {
+      "card": "08006",
+      "name": "Attacrobatics",
+      "note": "Cancel exact physical boost icons; deal that much damage to the villain in one attack. Ruling 0fc2a7cc9197e127 (RR 1.6) permits cancellation under Guard, superseding historical 6919a92cb0376eac on that case.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenBoostCardTurnedFaceup",
+            "timing": "Interrupt",
+            "subject": "game",
+            "form": "hero"
+          },
+          "cost": {
+            "discard": "this"
+          },
+          "effect": {
+            "attack": {
+              "target": {
+                "query": "villain"
+              },
+              "effect": {
+                "then": {
+                  "effect": {
+                    "cancelBoostIcons": "trigger"
+                  },
+                  "then": {
+                    "dealAttackDamage": {
+                      "cards": "chosen",
+                      "amount": {
+                        "result": "cancelledBoostIcons"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "labels": [
+            "attack"
+          ]
+        }
+      ]
+    },
+    {
+      "card": "08008",
+      "name": "Grappling Hook",
+      "note": "Controller reveals treachery in hero form; cancel exact reveal and discard treachery. Includes keywords (rulings 49d5aba04226396f and 48dd96f060641cb8); discard this upgrade is a cost.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "Interrupt",
+            "subject": "game",
+            "player": "you",
+            "form": "hero"
+          },
+          "cost": {
+            "discard": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "cancelOccurrence": "trigger"
+              },
+              {
+                "discard": "trigger.subject"
+              }
+            ]
+          },
+          "when": {
+            "isKind": {
+              "card": "trigger.subject",
+              "kind": "treachery"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "08017",
+      "name": "Counterintelligence",
+      "note": "Main-scheme prevention in either form, independent of source/player. Printed Max 1 per player is catalog-owned; discard is a cost.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenThreatWouldBePlaced",
+            "timing": "Interrupt",
+            "subject": "game"
+          },
+          "cost": {
+            "discard": "this"
+          },
+          "effect": {
+            "preventThreat": 3
+          },
+          "when": {
+            "not": {
+              "isKind": {
+                "card": "trigger.target",
+                "kind": "sideScheme"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "08032",
+      "name": "Defensive Stance",
+      "note": "Hero-only prevention for controller identity, not ally or another identity. Prevention leaves damage dealt unchanged (rr:prevent.1.1). Printed Max 1 per player is catalog-owned; discard is a cost.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenDamageWouldBeDealt",
+            "damage": "taken",
+            "timing": "Interrupt",
+            "target": "you",
+            "form": "hero"
+          },
+          "cost": {
+            "discard": "this"
+          },
+          "effect": {
+            "preventDamage": {
+              "card": "trigger.target",
+              "amount": 3
+            }
+          },
+          "when": {
+            "isYourIdentity": "trigger.target"
+          }
+        }
+      ]
+    },
+    {
+      "card": "08030",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenDamageDealt",
+            "timing": "Response",
+            "actor": "enemy",
+            "target": "you",
+            "form": "hero"
+          },
+          "when": {
+            "atLeast": {
+              "value": {
+                "receivedAttackDamage": "game"
+              },
+              "count": 1
+            }
+          },
+          "labels": [
+            "attack"
+          ],
+          "cost": {
+            "discard": "this"
+          },
+          "effect": {
+            "attack": {
+              "target": "trigger.actor",
+              "effect": {
+                "dealAttackDamage": {
+                  "cards": "trigger.actor",
+                  "amount": {
+                    "receivedAttackDamage": "game"
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "08031",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardDefeated",
+            "timing": "Response",
+            "subject": "game",
+            "form": "hero"
+          },
+          "when": {
+            "exists": {
+              "defeatedAllyInYourDiscardPile": "you"
+            }
+          },
+          "cost": {
+            "discard": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "putIntoPlay": {
+                  "card": {
+                    "defeatedAllyInYourDiscardPile": "you"
+                  },
+                  "where": "yourPlayArea"
+                }
+              },
+              {
+                "dealDamage": {
+                  "cards": "chosen",
+                  "amount": 1
+                }
+              }
+            ]
+          }
+        }
+      ]
     }
   ]
 }

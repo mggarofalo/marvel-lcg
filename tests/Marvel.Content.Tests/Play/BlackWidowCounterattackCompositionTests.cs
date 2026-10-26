@@ -1,5 +1,3 @@
-using System.Text.Json.Nodes;
-using Marvel.Cards.Dsl;
 using Marvel.Cards.Run;
 using Marvel.Content.Tests.Cards;
 using Marvel.Rules.Events;
@@ -12,7 +10,7 @@ using Xunit;
 
 namespace Marvel.Content.Tests.Play;
 
-// Test-local actual printed interpretation; no public admission or ability-book change.
+// Actual authored rows; Black Widow remains outside public admission.
 public sealed class BlackWidowCounterattackCompositionTests
 {
     [Theory]
@@ -25,9 +23,7 @@ public sealed class BlackWidowCounterattackCompositionTests
         // Prevention modifies "the amount of damage a character takes", not damage dealt.
         // 08030: "After you take damage from an enemy attack, discard Counterattack"
         // and "deal an equal amount of damage to that enemy."
-        var book = JsonNode.Parse(AuthoredCards.Text)!;
-        book["cards"]!.AsArray().Add(JsonNode.Parse(Row));
-        var runner = new AbilityRunner(AbilityCatalog.Parse(book.ToJsonString()));
+        var runner = new AbilityRunner(AuthoredCards.Book);
         var world = ThorActualFixture.Board("06001a", 2);
         var seat = world.Seats[1];
         World.MoveToTop(seat.IdentityCard, world.AreaOf(DeckType.RemovedArea));
@@ -72,15 +68,4 @@ public sealed class BlackWidowCounterattackCompositionTests
         Assert.Null(Sequence.Work(world, world.Facts, runner, events));
     }
 
-    internal const string Row = """
-        {"card":"08030","abilities":[{
-          "trigger":{"event":"WhenDamageDealt","timing":"Response","actor":"enemy","target":"you","form":"hero"},
-          "when":{"atLeast":{"value":{"receivedAttackDamage":"game"},"count":1}},
-          "labels":["attack"],
-          "cost":{"discard":"this"},
-          "effect":{"attack":{"target":"trigger.actor","effect":{
-            "dealAttackDamage":{"cards":"trigger.actor","amount":{"receivedAttackDamage":"game"}}
-          }}}
-        }]}
-        """;
 }

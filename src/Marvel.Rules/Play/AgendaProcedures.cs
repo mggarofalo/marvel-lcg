@@ -74,7 +74,8 @@ public static class AgendaProcedures
 
     private static Prompt? ApplyDamage(World world, PhaseStep step, List<GameEvent> events)
     {
-        if (step.Operation is DamageCostPlacementOperation) DamageCostPlacement.Resume(world, step, events);
+        if (step.Operation is DirectDamagePreventionOperation prevention) prevention.Prevention.Complete();
+        else if (step.Operation is DamageCostPlacementOperation) DamageCostPlacement.Resume(world, step, events);
         else if (step.Operation is SimultaneousDirectDamageOperation) SimultaneousDirectDamageResolution.Resume(world, step, events);
         else DamageResolution.Resume(world, step, events);
         return null;

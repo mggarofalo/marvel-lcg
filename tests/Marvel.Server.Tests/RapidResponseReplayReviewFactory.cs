@@ -39,16 +39,7 @@ internal sealed class RapidResponseReplayReviewFactory : IDurableGameFactory
                {"giveStatus":{"card":"you","status":"confused"}},
                {"giveStatus":{"card":"you","status":"stunned"}}]}}}
             """));
-        // Printed 08031 is a test-local interpretation; no product admission is implied.
-        rows.Add(JsonNode.Parse("""
-            {"card":"08031","abilities":[{
-              "trigger":{"event":"WhenCardDefeated","timing":"Response","subject":"game","form":"hero"},
-              "when":{"exists":{"defeatedAllyInYourDiscardPile":"you"}},"cost":{"discard":"this"},
-              "effect":{"seq":[
-                {"putIntoPlay":{"card":{"defeatedAllyInYourDiscardPile":"you"},"where":"yourPlayArea"}},
-                {"dealDamage":{"cards":"chosen","amount":1}}
-              ]}}]}
-            """));
+        // Rapid Response uses the actual authored row.
         var runner = new AbilityRunner(AbilityCatalog.Parse(book.ToJsonString()));
         var world = WorldSetup.DealWithoutCardAbilities(cards,
             Blueprints.From(Dealer.DealOrder(setup, "rhino", ["spider_man"]), cards),

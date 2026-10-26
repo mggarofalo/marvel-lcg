@@ -39,6 +39,9 @@ internal static class AbilityStructuralPowerExecution
                 $"'{context.SourceFace}' suspends inside a {verb.ToLowerInvariant()}, which is not implemented");
         }
 
+        if (target is not null && AbilityIndependentAttack.HasIndependentCancellation(power)
+            && !AbilityIndependentAttack.CanAttack(context.Expressions.World,
+                context.Player, context.Expressions.Source, target)) target = null;
         return SchedulePower(context, power, target, targets, amount, verb);
     }
 

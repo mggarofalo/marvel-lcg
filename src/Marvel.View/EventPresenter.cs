@@ -73,9 +73,7 @@ public static class EventPresenter
         GameEvent happened, WorldDescriptor world) =>
         happened switch
         {
-            AttackBoundary boundary => ($"{Card(boundary.Source, world, boundary)} → {Card(boundary.Target, world, boundary)}"
-                + (boundary.Started ? boundary.Resumed ? " · Attack resumes." : " · Attack begins." : " · Attack resolved."),
-                [boundary.Source, boundary.Target], EventMotionKind.Attack),
+            AttackBoundary boundary => DescribeAttack(boundary, world),
             AbilityWindowResult result => (result.Description + (result.Completed
                 ? ". Ability resolved." : ". Resolution awaits a decision."), [result.Source], EventMotionKind.State),
             PhaseStarted phase => ($"Round {phase.Round}: {phase.Phase} phase.", [], EventMotionKind.State),
@@ -154,6 +152,18 @@ public static class EventPresenter
             _ => throw new InvalidOperationException(
                 $"event kind {happened.GetType().Name} has no presentation"),
         };
+
+    private static (string Summary, IReadOnlyList<int> Anchors, EventMotionKind Motion) DescribeAttack(
+        AttackBoundary boundary, WorldDescriptor world)
+    {
+        if (boundary.Target < 0)
+            return ($"{Card(boundary.Source, world, boundary)}"
+                + (boundary.Started ? " · Attack begins without an attacked enemy." : " · Attack resolved without an attacked enemy."),
+                [boundary.Source], EventMotionKind.Attack);
+        return ($"{Card(boundary.Source, world, boundary)} → {Card(boundary.Target, world, boundary)}"
+            + (boundary.Started ? boundary.Resumed ? " · Attack resumes." : " · Attack begins." : " · Attack resolved."),
+            [boundary.Source, boundary.Target], EventMotionKind.Attack);
+    }
 
     /// <summary>Describes a newly reached terminal state without inventing a game event.</summary>
     public static EventPresentation Terminal(Outcome outcome,

@@ -10,7 +10,7 @@ using Xunit;
 
 namespace Marvel.Content.Tests.Play;
 
-// Test-local printed composition; Black Widow remains outside public admission.
+// Actual authored rows; Black Widow remains outside public admission.
 internal sealed class CounterattackReceiptFixture
 {
     internal World World { get; } = BlackWidowEventCompositionFixture.Board();
@@ -23,7 +23,6 @@ internal sealed class CounterattackReceiptFixture
     internal CounterattackReceiptFixture(bool villain = false, string? additionalRow = null)
     {
         var book = JsonNode.Parse(AuthoredCards.Text)!;
-        book["cards"]!.AsArray().Add(JsonNode.Parse(BlackWidowCounterattackCompositionTests.Row));
         if (additionalRow is not null) book["cards"]!.AsArray().Add(JsonNode.Parse(additionalRow));
         Runner = new(AbilityCatalog.Parse(book.ToJsonString()));
         World.Abilities = Runner;

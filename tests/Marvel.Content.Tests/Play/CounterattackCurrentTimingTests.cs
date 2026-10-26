@@ -18,16 +18,21 @@ public sealed class CounterattackCurrentTimingTests
         // "The attack finishes resolving" before forced damage-taking responses.
         // Synthetic marker response distinguishes damage timing without admitting another card.
         var f = new CounterattackReceiptFixture(additionalRow: """
-            {"card":"08031","abilities":[{
+            {"card":"09020","abilities":[{
               "trigger":{"event":"WhenDamageDealt","timing":"ForcedResponse","target":"you"},
               "effect":{"giveStatus":{"card":"you","status":"tough"}}
             }]}
             """);
-        f.World.CreateCard("08031", f.World.AreaOf(DeckType.UpgradesArea, PlayArea.Of(1), cardOwner: 1));
+        f.World.CreateCard("09020", f.World.AreaOf(DeckType.UpgradesArea, PlayArea.Of(1), cardOwner: 1));
         f.Attack();
         var prompt = f.CounterPrompt();
         Assert.Single(f.Events.OfType<AttackCompleted>());
         Assert.True(Statuses.Has(f.World, f.Hero, Statuses.Tough));
+        var tough = Assert.Single(f.Events.OfType<CardAttached>(), item =>
+            item.Host == f.Hero.ObjectId && item.Verb == "Give_Status"
+            && f.World.Cards[item.Card].FaceId == Statuses.Tough);
+        Assert.True(f.Events.IndexOf(Assert.Single(f.Events.OfType<AttackCompleted>()))
+            < f.Events.IndexOf(tough));
         Assert.Single(f.World.Windows.Current!.Value.Occurrence.ReceivedAttackDamage);
         Assert.Contains(prompt.Affordances, offer => offer.AnchorId == f.Counter.ObjectId);
         Assert.Equal(1, f.Finish());

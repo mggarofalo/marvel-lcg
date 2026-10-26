@@ -278,3 +278,21 @@ defeat and labeled attacks. The reviewed mechanism authority and bounded actual-
 evidence are linked in docs/content/black-widow-seven-faces.md. Public admission
 remains closed. This later batch includes the reviewed exact-incarnation Quake
 mechanism; the preceding batch's unauthored status describes that earlier batch.
+
+Counterattack (08030) and Rapid Response (08031) add two actual Black Widow
+research rows: 634 rows, 23/34 Black Widow faces on base 29aa293f. The exact
+632-row prefix is retained. Printed authority is datasets/cards/cards.json;
+neither face prints starting counters. Current RR 1.8 attack step 6(a)/(b)
+places forced responses and retaliate before optional Counterattack, superseding
+the pre-1.5/1.6 Counterattack rulings. Rapid Response binds captured controller
+at defeat, the exact discard incarnation and ordinary ally entry before damage.
+The characteristic, receipt, timing, entry and durable restart tests now use
+the actual canonical rows. See docs/content/black-widow-final-response-rows.md.
+This packet changes no engine mechanism, product admission, setup or version.
+
+The combined Black Widow book contains 645 unique rows and all 34 printed faces.
+Its raw predecessor rows and incoming source row objects are retained; four
+prevention rows and the final two response rows complete the seven-face batch.
+Every row has independent authority review. Exact membership and starting-counter
+checks remain explicit. The product is not yet publicly admitted; focused source
+and combined evidence is recorded in `docs/content/black-widow-delivery-checkpoint.md`.

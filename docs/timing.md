@@ -464,6 +464,17 @@ occurrence's once-per-trigger ledger. Enemy attacks finish that forced tier befo
 opening their optional damage interrupt tier. Dealt and taken amounts remain
 separate: prevention at a later damage step does not rewrite damage dealt.
 
+Direct nonattack damage also schedules an optional interrupt window after forced
+replacement and Tough, before placement. Its transient `DirectDamagePrevention`
+receipt owns the remaining taken amount for one exact target incarnation. An
+accepted prevention effect changes that receipt immediately; nested damage cannot
+consume it, and a departed recipient cannot pass it to a reentered copy. All
+recipients of simultaneous direct damage finish replacement and optional windows
+before any of their damage is placed. Existing attack windows retain their owner.
+New optional answers change historical decision sequences; replay compatibility
+with ledgers that omitted those answers is not claimed. Wire and digest schemas
+are unchanged.
+
 Damage paid as a cost separates placement from defeat settlement. The placement
 child fixes the amount actually paid, then the cost owner pays the remaining
 simultaneous costs (`rr:cost.5`). Only that exact active owner may release the
