@@ -98,7 +98,8 @@ public static class RevealKeywords
 
     /// <summary>Schedule the actual keyword's interrupt and facedown deal.</summary>
     public static void ScheduleSurge(World world, Card card, int player,
-        List<GameEvent> events, Occurrence? origin = null, PendingAbility? ability = null)
+        List<GameEvent> events, Occurrence? origin = null, PendingAbility? ability = null,
+        string dealTrigger = "surge")
     {
         // rr:surge.1: "When Revealed: Deal yourself 1 facedown encounter card."
         // Engine choice: this child owns one distinct interrupt/response pair;
@@ -106,11 +107,11 @@ public static class RevealKeywords
         var owner = world.Agenda.Current;
         if (owner is null)
         {
-            bool dealt = Deal.EncounterCard(world, player, "surge", events) is not null;
+            bool dealt = Deal.EncounterCard(world, player, dealTrigger, events) is not null;
             CompleteKeyword(origin, ability, dealt);
             return;
         }
-        world.Agenda.Then(new PhaseStep(new SurgeKeywordOperation(origin, ability),
+        world.Agenda.Then(new PhaseStep(new SurgeKeywordOperation(origin, ability, dealTrigger),
             owner?.Round ?? 0, owner?.Number ?? 0, Subject: card.ObjectId, Seat: player));
     }
 

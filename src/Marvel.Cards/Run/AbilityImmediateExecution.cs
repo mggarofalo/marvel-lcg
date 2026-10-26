@@ -146,7 +146,8 @@ internal static class AbilityImmediateExecution
             || StateFields.Modified(world, source, "surge", world.Facts, world.Players) > 0
             || !context.GainedKeywords.Add("surge")) return false;
         RememberGainedSurge(world, source.ObjectId, context.Admission.Query.Occurrence);
-        RevealKeywords.ScheduleSurge(world, source, context.Admission.Query.Player, context.Events);
+        RevealKeywords.ScheduleSurge(world, source, context.Admission.Query.Player, context.Events,
+            dealTrigger: context.Trigger);
         return world.Agenda.Current is not null;
     }
 

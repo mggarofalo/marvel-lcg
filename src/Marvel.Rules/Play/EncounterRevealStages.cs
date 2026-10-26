@@ -12,7 +12,7 @@ internal static class EncounterRevealStages
         {
             case SurgeKeywordOperation.Condition:
                 var surge = step.Require<SurgeKeywordOperation>();
-                bool dealt = Deal.EncounterCard(world, step.Seat, "surge", events) is not null;
+                bool dealt = Deal.EncounterCard(world, step.Seat, surge.DealTrigger, events) is not null;
                 RevealKeywords.CompleteKeyword(surge.Origin, surge.Ability, dealt);
                 return true;
             case Steps.DealEncounterCards:
