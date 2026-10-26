@@ -6,7 +6,7 @@ namespace Marvel.Cards.Run;
 /// <summary>Compact action captions from public printed instruction structure, without forecasting resolution.</summary>
 internal static class AbilitySourceActionDescription
 {
-    internal static string? Caption(AbilityEffect effect) => effect switch
+    internal static string? Caption(AbilityEffect effect) => AbilityPrintedTextDescription.Caption(effect) ?? (effect switch
     {
         AbilityEffect.ChooseCard choice => Caption(choice.Effect),
         AbilityEffect.Power { Effect: AbilityEffect.AttackDamage damage } => Attack(damage.Amount),
@@ -14,7 +14,7 @@ internal static class AbilitySourceActionDescription
             { Binding: AbilityCardBinding.You }, Until: { } until } grant =>
             Duration(until) is { } duration ? $"Gain {grant.Trait} until {duration}" : null,
         _ => null,
-    };
+    });
 
     private static string? Attack(AbilityNumber amount) => amount switch
     {

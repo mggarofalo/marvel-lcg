@@ -135,6 +135,20 @@ internal static class AttackBoost
             Verb = "Boost",
         });
 
+        // Ruling 1ea208998735ef4b: amplify/constants precede faceup interrupts,
+        // which precede the star ability. Numeric cancellation leaves the star intact.
+        var receipt = new BoostIconCancellation(world, boost, activation.Id, facts);
+        world.Agenda.Then(new PhaseStep(new BoostFaceupOperation(activation.Enemy, activation.Attacking, receipt),
+            world.Agenda.Current?.Round ?? 0, 3, Subject: boost.ObjectId, Seat: activation.Player)
+        { OccurrenceId = world.Agenda.nextPlayerActionOccurrence--, ActivationId = activation.Id });
+    }
+
+    internal static void ResolveFaceup(World world, ICardFacts facts, IAttackCardAbilities abilities,
+        PhaseStep step, List<GameEvent> events)
+    {
+        var operation = step.Require<BoostFaceupOperation>();
+        var activation = AttackCompletion.Activating(world);
+        var boost = world.Cards[step.Subject];
         // rr:attack-enemy-activation.step.3.b and rr:boost-boost-icon.2 --
         // resolve the ability before its icons are applied or it is discarded.
         var occurrence = world.Agenda.Occurrence
@@ -149,7 +163,7 @@ internal static class AttackBoost
             // An ordinary authored choice is still scheduled after the flip;
             // move that child ahead first. A nested rules procedure has
             // already done this for itself and made its child current.
-            if (world.Agenda.Current is { What: Steps.FlipBoostCards })
+            if (world.Agenda.Current is { What: BoostFaceupOperation.Faceup })
             {
                 world.Agenda.BeforeResponses(owner, occurrence);
             }
@@ -157,24 +171,24 @@ internal static class AttackBoost
                 occurrence,
                 owner,
                 new PhaseStep(
-                    new BoostCompletionOperation(Enemy: activation.Enemy, Attacking: activation.Attacking),
+                    new BoostCompletionOperation(Enemy: activation.Enemy, Attacking: activation.Attacking) { Icons = operation.Icons },
                     world.Agenda.Current?.Round ?? 0,
                     3,
                     Subject: boost.ObjectId,
                     Seat: activation.Player
-                ));
+                ) { ActivationId = activation.Id });
             return;
         }
 
         FinishBoostCard(
             world, facts, abilities,
             new PhaseStep(
-                new BoostCompletionOperation(Enemy: activation.Enemy, Attacking: activation.Attacking),
+                new BoostCompletionOperation(Enemy: activation.Enemy, Attacking: activation.Attacking) { Icons = operation.Icons },
                 0,
                 3,
                 Subject: boost.ObjectId,
                 Seat: activation.Player
-            ),
+            ) { ActivationId = activation.Id },
             events);
     }
 
@@ -197,10 +211,8 @@ internal static class AttackBoost
 
         // rr:attack-enemy-activation.step.3.c -- count icons after the Boost
         // ability, because step 3b precedes this one. Amplify applies per card.
-        long icons = Characteristics.IsLost(world, boost, "boost_const")
-            ? 0
-            : StateFields.Modified(world, boost, "boost_const", facts, world.Players)
-                + MainScheme.Amplify(world, facts);
+        long icons = step.Require<BoostCompletionOperation>().Icons?.Contribution(world, facts)
+            ?? throw new RulesNotImplementedException("boost completion requires its exact faceup icon receipt");
         if (icons > 0)
         {
             world.Effects.Register(new ContinuousEffect(
@@ -243,7 +255,8 @@ internal static class AttackBoost
         World world, PhaseStep step, out EnemyActivation activation)
     {
         activation = world.Activation!;
-        return activation is not null && activation.Enemy == step.Require<BoostCompletionOperation>().Enemy
+        return activation is not null && activation.Id == step.ActivationId
+            && activation.Enemy == step.Require<BoostCompletionOperation>().Enemy
             && activation.Player == step.Seat && activation.Attacking == step.Require<BoostCompletionOperation>().Attacking
             && DeckTypes.IsInPlay(world.Cards[step.Require<BoostCompletionOperation>().Enemy].Area.Type);
     }

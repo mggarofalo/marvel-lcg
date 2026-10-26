@@ -27,7 +27,8 @@ internal static class AbilityEventThreatFacts
     private static bool HasLiveModifier(AbilityResolutionExecution execution, AbilityResolutionState cast) =>
         cast.World.Cards.Any(card => card.Ready && card.Owner == cast.Player
             && card.Area.Type is DeckType.UpgradesArea or DeckType.SupportsArea
-            && execution.program.On(card.FaceId).Any(candidate => HasModifier(candidate.Effect)));
+            && AbilityProgramQueries.ActiveOn(cast.World, execution.program, card)
+                .Any(candidate => HasModifier(candidate.Effect)));
 
     private static bool HasModifier(AbilityEffect effect) =>
         effect is AbilityEffect.ModifyPlayedEvent { Kind: "eventThreatRemoval" }

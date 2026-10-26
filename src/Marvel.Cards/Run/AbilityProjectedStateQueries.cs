@@ -181,6 +181,7 @@ internal static class AbilityProjectedStateQueries
             AbilityCardQuery.Enemies => CardKinds.IsEnemy(kind),
             AbilityCardQuery.Characters => CardKinds.IsCharacter(kind),
             AbilityCardQuery.Allies => kind == CardKind.Ally,
+            AbilityCardQuery.Supports => kind == CardKind.Support,
             AbilityCardQuery.HeroesAndAllies => kind is CardKind.Hero or CardKind.AlterEgo or CardKind.Ally,
             AbilityCardQuery.HeroAndAllyTargets => kind is CardKind.Hero or CardKind.Ally,
             _ => IsSchemeQuery(query) && kind == CardKind.EncounterSideScheme,

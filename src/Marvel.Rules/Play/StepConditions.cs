@@ -28,6 +28,7 @@ public static class StepConditions
         [GiveBoostCard] = ["WhenBoostCardGiven"],
         [DeclareDefender] = ["WhenDefenderDeclared"],
         [HeroDefenseTiming.Defends] = [HeroDefenseTiming.Defends],
+        [BoostFaceupOperation.Faceup] = [BoostFaceupOperation.Faceup],
         [FlipBoostCards] = ["WhenBoostCardsFlipped"],
         // Damage from an attack is imminent before this step applies. Whether
         // it was dealt is known only afterwards: Tough may prevent it, so the
@@ -86,7 +87,8 @@ public static class StepConditions
     /// </remarks>
     public static IReadOnlySet<string> EveryCondition { get; } =
         Conditions.Values.SelectMany(each => each).Concat(
-                // These are discovered while their occurrence applies rather
-                // than promised when its step is scheduled.
-                [DamageDealt, ThreatPlaced, VillainStepOneTiming.ThreatPlaced, SchemeEnds, BasicAttackEnds, BasicPowerTiming.ThwartEnds]).ToFrozenSet(StringComparer.Ordinal);
+                // These depend on the concrete occurrence rather than solely
+                // on its scheduled step name.
+                [DamageDealt, ThreatPlaced, VillainStepOneTiming.ThreatPlaced, SchemeEnds, BasicAttackEnds, BasicPowerTiming.ThwartEnds,
+                    BoostFaceupOperation.AttackFaceup]).ToFrozenSet(StringComparer.Ordinal);
 }

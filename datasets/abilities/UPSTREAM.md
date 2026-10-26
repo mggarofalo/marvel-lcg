@@ -4,7 +4,7 @@
 |---|---|
 | Kind | authored |
 | Product boundary | Core Set, Rise of Red Skull, Captain America and Wrecking Crew; Green Goblin and Ms. Marvel research rows remain publicly excluded |
-| Records | 567 printed card faces, including explicit empty rows |
+| Records | 569 printed card faces, including explicit empty rows |
 | Authorities | Generated `datasets/cards/`, vendored Rules Reference, expansion rulebooks and published rulings |
 | Gated by | Ability admission/lowering tests, complete-product admission, actual-card tests, campaign acceptance and executable Core behavioral transcripts |
 
@@ -167,3 +167,62 @@ The queried FAQ has no entry for these three faces. Actual full-book tests are
 `MsMarvelBrunoCardTests` and `MsMarvelStatusCardTests`. Public admission stays closed.
 
 Home by Dawn and Thomas Edison add two whole Ms. Marvel research faces (25 of 34; 567 total). Printed authority is `datasets/cards/cards.json`. Thomas follows the engaged player per vendored `ruling:3aba0c6abbd5c2ad`; tests cover foreign damage sources and live engagement. No public admission changes.
+
+Nova (05012) and Get Behind Me! (05013) add two Ms. Marvel research faces. Printed authority is datasets/cards/cards.json. MsMarvelDefenseCardTests exercises actual rows, energy payment, multiplayer cancellation, nested attack completion and Nova defeating its attacker (faq:05012). Energy Barrier, Preemptive Strike and Lockjaw remain unauthored pending dedicated engine support; see docs/content/research/ms-marvel-defense-basic-evidence.md. No public admission follows.
+
+
+Generation Why? (05026) adds one Ms. Marvel research face (28 of 34; 570 total).
+Authority is joined datasets/cards/cards.json and vendored
+ruling:e8654dd34b58be12, which fixes the ally/Persona-support count at initiation.
+The reviewed global support query and existing each-player discard instruction
+provide that quota; rr:player-deck.3 bounds each deck at its immediate reset.
+GenerationWhyCardTests exercises the actual full book and encounter lifecycle,
+printed starting threat and hazard, short-deck reset and no eligible cards.
+See docs/content/generation-why-evidence.md. Public admission stays closed.
+
+Melee (05030) adds one Ms. Marvel face (29 of 34; 571 total). Its two
+sentences share one attack while choosing the second enemy after the first
+settles. Printed authority is datasets/cards/cards.json; rulings e0333bc6316bd7f0,
+9aa6221cd0950fbb, f32c53356db718a6 and a43333f9f9d3634a establish Guard,
+villain stage identity, final responses and Embiggen behavior. StagedAttackTests
+and the actual full-book cases in StagedAttackReceiptTests and
+StagedAttackIndependentTests exercise this row. Public Ms. Marvel admission
+remains closed; native and hosted persistence proof remain separate.
+
+Energy Barrier (05017) adds one face (30 of 34 Ms. Marvel; 572 total).
+Its typed damage-taken trigger observes remaining damage after prevention,
+following faq:05017 and rr:prevent.1.1 while retaining distinct dealt amounts.
+The actual full book drives RemainingDamageInterruptTests. Three reflection
+counters and Uses disposal follow the printed dataset; arbitrary damage in
+either form qualifies, and the reflected damage is not an attack.
+
+Edison's Giant Robot (05028) adds one actual research face (31 of 34 Ms. Marvel;
+573 total). Printed authority is joined `datasets/cards/cards.json`; vendored
+`ruling:d1087a7e030d2fd9` confirms blanking applies to all players.
+`PrintedTextBlankingTests` uses the unmodified full book for typed mental payment,
+form restriction, multiplayer damage, suppression, expiry and reentry. The
+standalone timed self-blank opcode has independent bounded engine review; the
+actual row requires separate content review. Public admission stays closed.
+
+Harvest (05029) adds one face (32 of 34 Ms. Marvel; 574 total). Its printed
+When Revealed exhausts all Persona supports, heals for each actual exhaustion
+and gains surge only when none exhausted. The committed effect receipt differs
+from exhaustion costs and remains zero when every Persona is already exhausted.
+HarvestEffectReceiptTests uses the full book for normal and zero/surge reveals;
+synthetic continuation variants isolate the receipt. Public admission stays closed.
+
+Lockjaw (05018) adds one face (33 of 34 Ms. Marvel; 575 total). Joined printed
+text grants ordinary own-discard play during the player's turn, paying the
+printed resource cost. DiscardPlayDecisionTests uses the full book for actual
+permission, second-seat payment/discount and rejection-purity cases; synthetic
+entry variants remain isolated. Public Ms. Marvel admission remains closed.
+
+Preemptive Strike (05014) adds the final Ms. Marvel face (34 of 34; 576 total).
+The exact attack-only boost occurrence, villain actor and hero form implement
+the printed Hero Interrupt (defense). Numeric cancellation uses current modified
+icons and amplify, captures only icons actually cancelled, and leaves later
+Boost-star resolution intact. Vendored rulings 1ea208998735ef4b,
+33d8c914aa86d19f and 937d6ff4f970a1da govern ordering and cancellation.
+IndividualBoostCancellationTests uses the actual full book except for explicitly
+synthetic boost-star variants. Full inventory does not itself admit the product;
+whole-pack public setup, gameplay, restart and native evidence remain separate.

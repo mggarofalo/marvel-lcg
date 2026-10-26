@@ -102,7 +102,7 @@ internal static class AbilityPowerVillainProjection
     {
         if (state.UnprojectedStageEntry is { } existing) return existing;
         if (next is null) return null;
-        if (AbilityProgramQueries.On(cast.Context.Program, next).Any(ability =>
+        if (AbilityProgramQueries.ActiveOn(cast.World, cast.Context.Program, next).Any(ability =>
             ability.Trigger.Timing == AbilityType.Constant
             && !AbilityInactiveAttackConstant.IsInactive(ability, cast.World)))
         {
@@ -125,7 +125,7 @@ internal static class AbilityPowerVillainProjection
             formsMayChange: state.FormsMayChange,
             traceFirstPlayer: state.FirstPlayer))
         {
-            return AbilityProgramQueries.On(cast.Context.Program, next).Any(ability =>
+            return AbilityProgramQueries.ActiveOn(cast.World, cast.Context.Program, next).Any(ability =>
                 ability.Trigger.Timing == AbilityType.WhenRevealed)
                 ? $"villain stage '{next.FaceId}' has an unprojected When Revealed ability before a labelled-power continuation reads the board"
                 : null;

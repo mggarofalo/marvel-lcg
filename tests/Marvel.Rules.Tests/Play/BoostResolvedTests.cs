@@ -1,5 +1,6 @@
 using Marvel.Rules.Events;
 using Marvel.Rules.Play;
+using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
 using Marvel.Rules.Timing;
 using Marvel.Tests;
@@ -20,12 +21,16 @@ public sealed class BoostResolvedTests : AttackTestBase
         var facts = Printed(atk: 3, boost: icons);
         var world = Board(facts);
         Card enemy = world.TheCardIn(DeckType.VillainArea)!;
-        world.Agenda.Abandon();
-        Attack.Initiate(world, facts, new PhaseStep(new EnemyAttackOperation(), Round: 1, Number: 2, Subject: enemy.ObjectId, Seat: 0), []);
-        Attack.GiveAdditionalBoostCard(world, enemy, "test", []);
+        var firstBoost = world.AreaOf(DeckType.EncounterDeck).Cards[^1];
+        world.CreateCard("filler", firstBoost.Area);
+        World.MoveToTop(firstBoost, firstBoost.Area);
         Attack.GiveAdditionalBoostCard(world, enemy, "test", []);
         var events = new List<GameEvent>();
-        Attack.FlipBoostCards(world, facts, new NoCardAbilities(), events);
+        var abilities = new NoCardAbilities();
+        var defender = Sequence.Work(world, facts, abilities, events)!;
+        Assert.Equal(Question.Defender, defender.Asking);
+        Sequence.Answer(world, facts, abilities, defender, Decision.Decline, events);
+        Sequence.Finish(world, facts, abilities, events);
 
         BoostResolved[] contributions = events.OfType<BoostResolved>().ToArray();
         Assert.Equal(2, contributions.Length);
@@ -59,11 +64,12 @@ public sealed class BoostResolvedTests : AttackTestBase
         world.CreateCard("amplify", world.AreaOf(DeckType.SideSchemesArea));
         if (lost) world.Effects.Register(new ContinuousEffect(EffectSource.LastingEffect,
             Characteristics.LossOf("boost_const"), Affects: boost.ObjectId));
-        world.Agenda.Abandon();
-        Attack.Initiate(world, facts, new PhaseStep(new EnemyAttackOperation(), Round: 1, Number: 2, Subject: enemy.ObjectId, Seat: 0), []);
-        Attack.GiveAdditionalBoostCard(world, enemy, "test", []);
         var events = new List<GameEvent>();
-        Attack.FlipBoostCards(world, facts, new NoCardAbilities(), events);
+        var abilities = new NoCardAbilities();
+        var defender = Sequence.Work(world, facts, abilities, events)!;
+        Assert.Equal(Question.Defender, defender.Asking);
+        Sequence.Answer(world, facts, abilities, defender, Decision.Decline, events);
+        Sequence.Finish(world, facts, abilities, events);
         var resolved = Assert.Single(events.OfType<BoostResolved>());
         Assert.Equal(icons, resolved.Icons);
         Assert.Equal(strength, resolved.Strength);

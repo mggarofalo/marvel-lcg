@@ -17,5 +17,8 @@ public interface ICardPlacementAbilities
 
     /// <summary>Whether active printed text permits this player to play a stored card.</summary>
     bool CanPlayFromStorage(World world, Card card, int player);
+
+    /// <summary>Whether the card grants its owner ordinary play from their discard pile.</summary>
+    bool CanPlayFromDiscard(World world, Card card, int player);
 }
 #pragma warning restore CS1591

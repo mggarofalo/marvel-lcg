@@ -50,6 +50,7 @@ internal static class AbilityPublicInstructionDescription
     {
         AbilityCardSelection.Query { Kind: AbilityCardQuery.UpgradesYouControl } => "an upgrade you control",
         AbilityCardSelection.Query { Kind: AbilityCardQuery.SupportsYouControl } => "a support you control",
+        AbilityCardSelection.Query { Kind: AbilityCardQuery.Supports } => "a support in play",
         AbilityCardSelection.WithTrait
         {
             Cards: AbilityCardSelection.Query { Kind: AbilityCardQuery.UpgradesYouControl },

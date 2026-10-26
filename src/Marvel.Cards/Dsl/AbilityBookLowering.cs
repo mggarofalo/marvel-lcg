@@ -37,6 +37,7 @@ internal static class AbilityBookLowering
             SchemeDestinations = LowerSchemeDestinations(book),
         };
         AbilityProfileReferences.Validate(book, program.Profiles);
+        AbilityPrintedTextLowering.Validate(program);
         return program;
     }
 
@@ -60,6 +61,7 @@ internal static class AbilityBookLowering
         ordinals[ability.Card] = ordinal + 1;
         var location = new AbilityLocation(ability.Card, ordinal, "effect");
         var effect = LowerEffect(Syntax(ability.Effect), location);
+        AbilityStagedAttackLowering.ValidatePlacement(effect, location);
         var address = new AbilityEffectAddress(ability.Card, ordinal, "effect");
         Index(effect, address, effects);
         AbilityStoragePermissionLowering.Validate(ability, effect, location, effects

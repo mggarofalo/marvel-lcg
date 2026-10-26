@@ -38,7 +38,7 @@ internal sealed class AbilityResourceExecution
         var payment = AbilityCostPayment.Prepare(
             world, holder, player, ability.Cost, program, resourceAbilities,
             AbilityPaymentSelection.Capture([], []));
-        int ordinal = AbilityProgramQueries.On(program, holder)
+        int ordinal = AbilityProgramQueries.ActiveOn(world, program, holder)
             .Where(candidate => candidate.Trigger.Timing == AbilityType.Resource)
             .TakeWhile(candidate => candidate != ability).Count();
         var invocation = world.Agenda.Executions.Begin(entry.Occurrence,

@@ -204,12 +204,13 @@ internal static class AbilityEffectBindingAnalysis
         AbilityEffect.DiscardUntil discard => discard.Player == AbilityPlayer.ChosenPlayer,
         AbilityEffect.AttachCards attach => BindingCanChange(attach.Cards) || BindingCanChange(attach.Host),
         AbilityEffect.ChooseCardsToHand group => BindingCanChange(group.From),
+        AbilityEffect.AttackAnotherEnemy => false,
         AbilityEffect.ReleaseBeneath => false,
         AbilityEffect.StoreBeneath store => BindingCanChange(store.Cards) || BindingCanChange(store.Host),
         AbilityEffect.InitializeAuxiliaryDeck initialize => BindingCanChange(initialize.Cards),
         AbilityEffect.RevealAuxiliaryTop => false,
         AbilityEffect.Shuffle or AbilityEffect.Search => false,
-        AbilityEffect.DefineProfile or AbilityEffect.GainSurge or AbilityEffect.Fixed or AbilityEffect.Generate or AbilityEffect.AllowPlayBeneath or AbilityEffect.ReduceFirstAllyCost or AbilityEffect.DoubleResourceFor
+        AbilityEffect.DefineProfile or AbilityEffect.GainSurge or AbilityEffect.Fixed or AbilityEffect.Generate or AbilityEffect.AllowPlayBeneath or AbilityEffect.AllowPlayFromDiscard or AbilityEffect.ReduceFirstAllyCost or AbilityEffect.DoubleResourceFor
             or AbilityEffect.PreventDamageFrom or AbilityEffect.DelayedStun
             or AbilityEffect.ChooseTopForHand or AbilityEffect.ChooseDiscardToShuffle
             or AbilityEffect.DiscardHandWithResource

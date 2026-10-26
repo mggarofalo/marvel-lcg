@@ -28,9 +28,12 @@ The integrated Green Goblin candidate also has public admission for its exact
 57-face inventory, Risky Business and Mutagen Formula in Standard and Expert,
 and all four modular sets. Admission pins stage and scheme order, fixed sets,
 set-aside cards and physical encounter quantities. A missing or changed required
-face or recipe closes the whole product. Ms. Marvel remains excluded. This
-admission/setup increment does not establish whole-game, restart or native
-acceptance; those results belong to the integrated pack delivery evidence.
+face or recipe closes the whole product. The Ms. Marvel candidate also has public
+admission for all 34 printed faces and its exact published 40-card starter,
+obligation and nemesis set. Its public setup and characteristic action/restart
+slice are verified separately from whole-game and native acceptance; those
+results belong to the integrated pack delivery evidence. Neither candidate is
+claimed accepted by this admission increment.
 `datasets/setup/setup.json` supplies the recipes the runtime can start.
 `datasets/abilities/abilities.json` defines which printed faces have executable
 card text. Both datasets fail closed outside that boundary.
@@ -48,7 +51,8 @@ These datasets are authorities and research inputs. Their presence does not make
 a later product executable.
 
 The executable ability book contains the 209 Core Set, 181 Rise of Red Skull,
-35 Captain America and 60 Wrecking Crew faces. Product admission requires complete
+35 Captain America and 60 Wrecking Crew faces, plus the candidates' 57 Green
+Goblin and 34 Ms. Marvel faces (576 total). Product admission requires complete
 playable content and the verified published starter; physical packaging copy
 quantities are outside that requirement. Language support for a later card pattern
 does not admit that product.

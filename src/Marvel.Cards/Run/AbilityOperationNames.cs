@@ -39,6 +39,7 @@ internal static class AbilityOperationNames
 
     internal static string OperationName(this AbilityEffect effect) => effect switch
     {
+        AbilityEffect.AttackAnotherEnemy => "attackAnotherEnemy",
         AbilityEffect.ModifyPlayedEvent => "modifyPlayedEvent",
         AbilityEffect.Heal => "heal",
         AbilityEffect.SetHitPoints => "setHitPoints",
@@ -58,6 +59,7 @@ internal static class AbilityOperationNames
         AbilityEffect.DoubleResourceFor => "doubleResourceFor",
         AbilityEffect.ReduceFirstAllyCost => "reduceFirstAllyCost",
         AbilityEffect.AllowPlayBeneath => "allowPlayBeneath",
+        AbilityEffect.AllowPlayFromDiscard => "allowPlayFromDiscard",
         AbilityEffect.AttachCards => "attachCards",
         AbilityEffect.ReleaseBeneath => "releaseBeneath",
         AbilityEffect.ChooseCardsToHand => "chooseCardsToHand",
@@ -155,6 +157,7 @@ internal static class AbilityOperationNames
         {
             AbilityFixedInstruction.UseAttackForThwart => "useAttackForThwart",
             AbilityFixedInstruction.AdvanceMainScheme => "advanceMainScheme",
+            AbilityFixedInstruction.CancelBoostIcons => "cancelBoostIcons",
             AbilityFixedInstruction.CancelOccurrence => "cancelOccurrence",
             AbilityFixedInstruction.CancelWhenRevealed => "cancelWhenRevealed",
             AbilityFixedInstruction.AlsoAttackEachOtherHero => "alsoAttackEachOtherHero",

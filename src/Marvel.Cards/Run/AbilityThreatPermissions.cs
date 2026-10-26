@@ -14,7 +14,7 @@ internal static class AbilityThreatPermissions
         foreach (var card in world.Cards.Where(card =>
             card.ObjectId != ignoredSource && (projection?.InPlay(card) ?? DeckTypes.IsInPlay(card.Area.Type))))
         {
-            foreach (var ability in AbilityProgramQueries.On(program, card).Where(ability =>
+            foreach (var ability in AbilityProgramQueries.ActiveOn(world, program, card).Where(ability =>
                 ability.Trigger.Timing == AbilityType.Constant && HasProhibition(ability.Effect)))
             {
                 var bindings = new AbilityQueryContext(

@@ -39,6 +39,7 @@ public static class GameResolution
         var assessment = DecisionAssessment.Assess(game.Pending, input);
         if (!assessment.IsAccepted)
             throw new ArgumentException(assessment.Reason ?? assessment.Rejection.ToString(), nameof(input));
+        ValidateLiveCardPlay(game, input);
         game.world.ClearInformationSignals();
 
         // Rules questions and windows retain their sequence owner across phases.
@@ -53,6 +54,40 @@ public static class GameResolution
         }
 
         return ResolveDeclineOrVillain(game, input);
+    }
+
+    private static void ValidateLiveCardPlay(Game game, Decision input)
+    {
+        if (input.IsDecline || game.Phase != GamePhase.PlayerTurn || !game.IsRootPrompt) return;
+        var offer = game.Pending!.Affordances.First(option => option.Id == input.Affordance);
+        if (offer.Verb != CardPlay.Verb) return;
+
+        // A published offer records a past board. The engine chooses to reject
+        // an obsolete play before consuming information or committing any costs.
+        if (!CardPlayLegality.Permitted(game.world, game.facts, game.world.Seats[game.Active],
+                game.world.Cards[offer.AnchorId], input.Targets, game.world.CardPlayAbilities))
+            throw new ArgumentException("the offered card can no longer be played", nameof(input));
+
+        var seat = game.world.Seats[game.Active];
+        var card = game.world.Cards[offer.AnchorId];
+        var price = CardPayment.Price(game.world, game.facts, seat, card);
+        if (price is null || !ResourcePayment.Allows(price, input.Spent, input.Values, input.Allocated))
+            throw new ArgumentException("the offered payment no longer pays the card's current cost", nameof(input));
+
+        try
+        {
+            // Preparation only reads costs, eligibility and contributors. Keep it
+            // ahead of information clearing as well as exposure and cost commitment.
+            _ = CardPlayPayment.Prepare(game.world, new CardPlayInitiation(
+                game.facts, game.world.CardPlayAbilities, seat, card,
+                CardPayment.CostOf(game.world, game.facts, seat, card), input.Targets, input.Spent));
+        }
+        catch (RulesNotImplementedException rejected)
+        {
+            // A published answer whose live payment cannot be prepared is an
+            // invalid answer at this boundary; direct engine calls retain their contract.
+            throw new ArgumentException(rejected.Message, nameof(input), rejected);
+        }
     }
 
     private static Resolution ResolveDeclineOrVillain(Game game, Decision input)

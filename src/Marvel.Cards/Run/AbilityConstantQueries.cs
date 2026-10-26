@@ -36,7 +36,7 @@ internal sealed class AbilityConstantQueries
         if (!constantFaces.Contains(card.FaceId)) return [];
 
         var found = new List<ContinuousEffect>();
-        foreach (var ability in AbilityProgramQueries.On(program, card))
+        foreach (var ability in AbilityProgramQueries.ActiveOn(world, program, card))
         {
             if (ability.Trigger.Timing != AbilityType.Constant) continue;
 
@@ -151,6 +151,7 @@ internal sealed class AbilityConstantQueries
             case AbilityEffect.CardAction { Instruction: AbilityCardInstruction.PreventThreatRemoval or AbilityCardInstruction.PreventThwarting }:
             case AbilityEffect.DoubleResourceFor:
             case AbilityEffect.AllowPlayBeneath:
+            case AbilityEffect.AllowPlayFromDiscard:
             case AbilityEffect.Fixed { Instruction: AbilityFixedInstruction.RequireAllyDefender }:
             case AbilityEffect.PreventDamageFrom:
             case AbilityEffect.PreventDamageWhile:

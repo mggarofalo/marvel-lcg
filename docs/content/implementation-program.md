@@ -25,45 +25,57 @@ The existing Content Expansion module defines these **11 planning waves**. Range
 
 ## Current integration checkpoint
 
-PRs #446 through #449 are merged. Main is `bc7c91a5`; #449 passed all eleven
-CI checks at `aec3a3d3`, including both platform/native legs and the Windows
-package gate. It contains all 57 Goblin faces and seven Ms. Marvel faces,
-with independent review including Overconfidence and the expired boost fix.
+[PR #450](https://github.com/mggarofalo/marvel-lcg/pull/450) is merged at
+`d649560f`; all eleven CI jobs passed on its final candidate. It admits all
+57 Green Goblin faces, four scenario modes and four modular sets, and contains
+25 of 34 Ms. Marvel faces without admitting that incomplete hero pack. Ten
+complete solo Goblin games ended in defeat; four multiplayer games and
+pending-choice restart proofs also pass. A separate ordinary-action tactical
+policy now wins Risky Business Standard (seed 1, round 13, 139 decisions) and
+replays every observation exactly at `62649761`; that packet has independent
+review and is integrated. A Mutagen Standard victory is now also independently reviewed in the next
+candidate (fixed seed 3, legal custom Captain America Leadership deck, round 13,
+130 public decisions with exact replay). Environment placement review remains separate in MARVEL-732.
 
-Ms. Marvel's exact-event modifier mechanism, including indirect damage, printed
-removal caps and payment-dependent preflight, has independent review. The next
-candidate branch `feat/goblin-playable-delivery` adds reviewed public Goblin
-admission, Nakia/Suit, Aamir, resource/reprint rows and four ally/condition rows,
-including Bruno, Tackle and Concussive Blow, bringing its authored Ms. Marvel
-inventory to 25 of 34 faces after reviewed Home by Dawn and Thomas Edison.
-Ten complete public Goblin games cover
-all modes, defeats and most promotions, including two games that exposed and
-now prove MARVEL-726's reviewed Heroic Strike/Soldier continuation fix.
-Four additional public-session tests prove dependent-choice restart against
-uninterrupted events, fingerprints and RNG. Winning games, Expert Mutagen
-promotion, multiplayer complete games and selected native evidence remain open.
-Whole-pack acceptance remains open; no routine owner approval is required.
+The next candidate, `feat/ms-marvel-completion`, now has **all 34 Ms. Marvel
+faces and 576 total authored faces**. Every actual row and engine prerequisite
+has independent review, including final Preemptive Strike review `a9397e56`.
+Melee, Lockjaw and Preemptive Strike have native interaction proof; the source
+heading and boost-stage wording findings have targeted fixes. Robot's semantic
+contract is protocol 39. Corrected Core ally-entry behavior uses replay v25 with
+reviewed quarantine and named verification routes; no historical fact is rewritten.
 
-Bottom movement (724), distinct arrow payment (723), bounded stored-card
-retrieval (725), conditional status payment (729), and defeat-payment atomicity
-(731) have independent approval. The saved ordinary-price shape regression is
-corrected; actual Red Dagger rejection and retry are independently verified.
-Bruno, Tackle and Concussive Blow passed independent review, including actual
-second-seat retrieval, status-attack consequences and payment rejection/retry.
-Melee's sequential two-enemy attack (728) is in implementation.
-Generation Why?, Giant Robot and Harvest remain unauthored behind independently
-confirmed engine prerequisites MARVEL-733 (global frozen count), 734 (timed
-printed-text blanking), and 735 (committed effect-exhaustion count).
-The public multiplayer failure exposed an attached Spider-Tracer defeat
-observer; fix `30574a1e` passes all four original modes and has independent
-approval (730), retained in `c17e8341`. Environment display and receipt reflow are independently reviewed;
-specific visual acceptance is separate in MARVEL-732 with inspected captures.
-The full candidate Content run passed 5,030 tests at `1bc18fec`. The subsequent
-integration lane found a prohibited default interface method and two outdated
-Goblin discovery/research expectations. Corrections and later card integrations
-passed focused correction checks. Release and all 140 acceptance tests pass at
-`a18d4f81`; final combined CI remains pending. Canonical Plane records retain
-current revisions and distinguish prerequisites from complete playable products.
+Public Ms. Marvel admission at `5034a368` pins all faces and the verified 40-card
+starter, obligation and nemesis. Setup covers 1–4 seats across Core/RoRS modes;
+normal starter seed 3 exercises Teen Spirit, Big Hands and pending Morphogenetics
+through save/restart against an uninterrupted control. Setup 823 and focused
+Server 22 checks pass. Independent admission review (`d05c28ca`) passes
+268 Content and 27 Server checks. Seven fixed-seed public games complete with
+exact replay and query-purity checks: five solo Core/RoRS scenarios and two
+Ms. Marvel/Captain Marvel games, all honestly recorded as defeats. A natural
+Bruno retrieval choice also survives restart, rejects an invalid answer atomically,
+and matches uninterrupted continuation (`0999d19a`). A prior 33-face checkpoint passed all 5,260 Content checks; the
+integrated boost prerequisite passed all 1,098 Rules checks. These are scoped
+results, not final combined certification. Final whole-pack/platform gates and
+merge remain before Ms. Marvel acceptance.
+
+Risky Business Standard's independently reviewed winning proof is integrated,
+including exact replay and survival of the ally-entry correction. Mutagen
+Formula Standard now has a complete independently reviewed victory (`43563c33`),
+integrated with the Ms. Marvel candidate and awaiting its final combined gates. The canonical parent requires victory
+and defeat for each scenario plus an explicit difficulty/mode matrix; it does
+not separately require a victory at every difficulty. Existing complete defeats
+cover both scenarios in Standard and Expert. Bounded unsuccessful Expert and
+Mutagen strategy probes are recorded without changing the engine or presenting
+losses as victories.
+
+Thor's engagement prerequisite is isolated under MARVEL-741. Independent review
+`dd609c45` found interpreted transfers offer Thor's response before Quickstrike;
+correction `64448751` and independent review `67314c81` now prove the timing. The review also proves
+a real Core Hawkeye timing change against the base, so the next delivery needs
+replay v26 compatibility evidence. Thor is excluded from this Ms. Marvel candidate. Its next isolated candidate
+`feat/thor-pack-delivery` has the corrected engine; eleven actual faces are being
+authored and replay-v26 compatibility is a separate implementation/review packet.
 
 ## Delivery order and shared capability queue
 
@@ -93,13 +105,10 @@ The remaining delivery queue is:
    complete games including victories, characteristic pending-choice restart,
    multiplayer and native interactions. The Soldier continuation finding (726)
    is independently fixed and its original public failures now complete.
-2. Finish Ms. Marvel's shared prerequisites with independent review: distinct
-   arrow payment (723), bottom placement (724), bounded stored-card retrieval
-   (725). Author the dependent actual rows only after their mechanisms pass.
-3. Serialize the remaining nine Ms. Marvel faces into the ability book: signature
-   gaps, aspect/basic/reprints, obligation and nemesis. Every row needs printed
-   authority, relevant rulings and characteristic behavior evidence; catalog
-   presence alone does not implement a reprint.
+2. Finish combined Ms. Marvel public proof. All remaining engine prerequisites
+   and actual rows are independently reviewed; per-card implementation is complete.
+3. Complete meaningful pending-choice persistence and whole-game evidence for
+   the admitted candidate, preserving its per-face authority and review ledger.
 4. Admit the complete Ms. Marvel pack with verified starter, missing-face and
    wrong-recipe controls, public legal setup, characteristic action/restart and
    complete Core/RoRS games. Select native checks by new interaction class.

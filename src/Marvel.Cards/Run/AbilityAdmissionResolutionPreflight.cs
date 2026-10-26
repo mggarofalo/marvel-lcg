@@ -124,6 +124,7 @@ internal static class AbilityAdmissionResolutionPreflight
             var prior = cast.CaptureChosen();
             try
             {
+                AbilityExhaustionResultProjection.Validate([EffectBody(node)], cast.Reachability.PriorSteps);
                 var target = PowerPreflightTarget(EffectOf<AbilityEffect.Power>(node, cast), cast);
                 bool targetWillBind = target is null;
                 if (target is not null)

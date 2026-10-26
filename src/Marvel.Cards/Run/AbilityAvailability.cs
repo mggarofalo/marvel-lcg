@@ -14,6 +14,7 @@ internal static class AbilityAvailability
         World world, Card card, CompiledCardAbility ability, int abilityIndex,
         Occurrence? occurrence = null)
     {
+        if (PrintedText.IsBlanked(world, card)) return false;
         if (ability.Limit is { } limit
             && world.Effects.Active().Count(effect => effect.Card == card.ObjectId
                 && string.Equals(effect.Kind, Spent(card, ability, abilityIndex), StringComparison.Ordinal)) >= limit)

@@ -27,9 +27,28 @@ internal static class AbilityTriggerReader
         if (would && type != AbilityType.ForcedInterrupt)
             throw new AbilityException(
                 $"'{card}' uses would timing outside the supported forced-interrupt window");
+        string? condition = Event(trigger, card, type);
         return new AbilityTrigger(
-            Event(trigger, card, type), type, subject, actor, target,
-            Form(trigger, card), Also(trigger, card), Whose(trigger, card)) { Would = would };
+            condition, type, subject, actor, target,
+            Form(trigger, card), Also(trigger, card), Whose(trigger, card))
+        {
+            Would = would,
+            Damage = Damage(trigger, card, condition, type),
+        };
+    }
+
+    private static DamageTriggerCondition Damage(
+        JsonElement trigger, string card, string? condition, AbilityType type)
+    {
+        if (!trigger.TryGetProperty("damage", out var value)) return DamageTriggerCondition.Dealt;
+        if (condition != Steps.DamageWouldBeDealt || !AbilityTypes.IsInterrupt(type))
+            throw new AbilityException($"'{card}' qualifies damage outside a damage interrupt");
+        return value.ValueKind == JsonValueKind.String ? value.GetString() switch
+        {
+            "dealt" => DamageTriggerCondition.Dealt,
+            "taken" => DamageTriggerCondition.Taken,
+            _ => throw new AbilityException($"'{card}' damage qualifier must be 'dealt' or 'taken'"),
+        } : throw new AbilityException($"'{card}' damage qualifier must be a string");
     }
 
     private static string? TriggerSubject(

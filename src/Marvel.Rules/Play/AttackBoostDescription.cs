@@ -23,6 +23,17 @@ internal static class AttackBoostDescription
         area.Type == DeckType.BoostCardsDeck && area.Host == enemy.ObjectId && area.Cards.Count > 0
         || area.Type == DeckType.BoostingArea && area.Cards.Count > 0);
 
+    internal static string Faceup(World world, ICardFacts facts, PhaseStep step)
+    {
+        if (world.Agenda.Stage != Stage.Interrupts
+            || step.Operation is not BoostFaceupOperation { Attacking: true } faceup
+            || !faceup.Icons.IsCurrent(world)) return string.Empty;
+        long icons = faceup.Icons.Remaining;
+        string noun = icons == 1 ? "icon" : "icons";
+        return $" {EffectiveCards.Title(world.Cards[step.Subject], facts)} currently has {icons} uncancelled boost {noun}. "
+            + "Boost abilities and later effects can change the result.";
+    }
+
     internal static string Remaining(World world, ICardFacts facts, Card enemy, string step) =>
         IsUnresolved(world, facts, enemy, step)
             ? "Boosts and later effects are unresolved."

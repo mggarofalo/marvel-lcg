@@ -164,7 +164,7 @@ public static class CardPlayLegality
     private static bool PermittedLocation(World world, Seat seat, Card card, bool outOfPlayPermission) =>
         outOfPlayPermission
             ? card.Owner == seat.Index && !DeckTypes.IsInPlay(card.Area.Type)
-            : card.Area == seat.Hand || CardPlayOrigin.CanPlayEvent(world, card, seat.Index);
+            : CardPlayOrigin.CanPlay(world, card, seat.Index);
 
     private static bool IdentityPermits(World world, ICardFacts facts, Seat seat, Card card)
     {

@@ -49,6 +49,7 @@ internal static class AbilityPowerTrace
         AbilityEffect node, AbilityAdmissionScope cast, bool stateMayChange,
         bool bindingMayChange, AbilityPowerState reachability)
     {
+        AbilityExhaustionResultProjection.Validate([node], cast.Reachability.PriorSteps);
         AbilityProjectedDefeatWindows.ValidateContinuation(node, reachability, cast);
         // SuspendsPowerEffect rejects this simultaneous choice by shape. Do
         // not eagerly replay its children while computing a later sibling's

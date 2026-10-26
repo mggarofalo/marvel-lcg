@@ -283,7 +283,7 @@ public sealed class DiscardAndAllyLimitTests
             world, facts, new NoCardAbilities(), fourth, 0, "test", []);
 
         Assert.Equal(
-            [Steps.ChooseAllyForLimit, Steps.FinalizeAllyEntry],
+            [Steps.ChooseAllyForLimit, Steps.FinalizeAllyEntry, Steps.CardEntersPlay],
             world.Agenda.Outstanding.Select(step => step.What));
         Assert.Equal(DeckType.AlliesArea, fourth.Area.Type);
     }

@@ -16,7 +16,7 @@ internal static class AbilityCompletionSupport
             return;
         }
         if (effect is AbilityEffect.PutIntoPlay { AllyUnderYourControl: true }) return;
-        if (effect.OperationName() is  "draw" or "heal" or "setHitPoints" or "removeThreat" or "dealDamage" or "placeThreat"
+        if (effect.OperationName() is "cancelBoostIcons" or "draw" or "heal" or "setHitPoints" or "removeThreat" or "dealDamage" or "placeThreat"
             or "placeOnBottomOfDeck" or "moveThreat" or "exhaust" or "ready" or "moveActiveCounter" or "discard" or "changeForm" or "declareDefender" or "giveStatus" or "removeStatuses") return;
         throw new RulesNotImplementedException(
             $"'{source}' has no completed-result semantics for '{effect.OperationName()}'");

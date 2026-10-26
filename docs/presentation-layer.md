@@ -336,7 +336,7 @@ visibility configuration, durable sessions and shutdown behavior.
 The socket protocol uses source-generated JSON inside a 4-byte big-endian length
 frame. Frames are bounded. Unknown operations, unsupported protocol versions and
 unknown JSON members fail before they reach the engine. Both endpoints must use
-protocol 38. Setup and decisions replay under engine-replay-v24, with session
+protocol 39. Setup and decisions replay under engine-replay-v24, with session
 schema 7 retaining the exact ordered decks. Requests carry engine-authored
 commitments and explicit payment allocations; authorized responses include
 readable choices, active attack participants, attack completion events and
@@ -515,3 +515,13 @@ when false, preserving the spelling of ordinary costs. Protocol 37 peers are rej
 by the existing strict version boundary before gameplay; additive data is not assumed
 safe for a peer that disallows unknown members. The engine owns allocation and
 assessment. This contract does not admit Red Dagger or another expansion ability.
+
+Protocol 39 adds the engine-authored persistent operation `BlankPrintedText`,
+with `Target = Source`, `Until = EndOfPhase`, and no numeric amount or field.
+The admitted typed body blanks this card's printed text box until phase end.
+View retains the supplied operation and source; Godot formats them without
+interpreting card ids or printed prose. Resource costs and authored trigger roles
+remain separate semantic facts. Protocol 38 peers are rejected before gameplay
+because their persistent-effect vocabulary cannot explain the new operation.
+This presentation-only extension changes no session, replay, RNG, digest or
+dataset identity and does not admit Ms. Marvel publicly.

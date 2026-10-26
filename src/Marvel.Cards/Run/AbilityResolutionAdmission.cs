@@ -117,6 +117,7 @@ internal static class AbilityResolutionAdmission
     private static bool OtherPartialResolution(
         AbilityEffect node, AbilityAdmissionScope cast) => node.OperationName() switch
         {
+            "cancelBoostIcons" => cast.Occurrence.BoostIcons is { Remaining: > 0 } icons && icons.IsCurrent(cast.World),
             "inspectEncounterTop" => AbilityEncounterInspection.Cards(cast.World,
                 (AbilityEffect.InspectEncounterTop)node).Count > 0,
             "peekTop" => AbilityDeckPeek.Decks(cast.World).Count > 0,
@@ -225,6 +226,8 @@ internal static class AbilityResolutionAdmission
     private static AdmissionResolution LeafResolutionOf(
         AbilityEffect node, AbilityAdmissionScope cast) => node.OperationName() switch
         {
+            "cancelBoostIcons" => cast.Occurrence.BoostIcons is { Remaining: > 0 } icons && icons.IsCurrent(cast.World)
+                ? AdmissionResolution.Full : AdmissionResolution.None,
             "draw" => CombinedOutcomes(Seats(EffectOf<AbilityEffect.Draw>(node, cast).Players, cast).Select(player =>
                 ResolutionOfAmount(
                     cast.World.Seats[player].Deck.Cards.Count

@@ -48,6 +48,7 @@ public sealed class AbilityRunner : ICardAbilities
     public bool ObservesVillainStepOneCompletion(World world) => AbilityVillainPhaseTiming.Observed(world, program);
     public bool RequiresAllyPlayHistory(World world) => AbilityAllyPlayHistory.Required(world, program);
     public bool CanPlayFromStorage(World world, Card card, int player) => AbilityStoragePermission.CanPlay(world, program, card, player);
+    public bool CanPlayFromDiscard(World world, Card card, int player) => AbilityStoragePermission.CanPlayFromDiscard(world, program, card, player);
     public CardCounterPool? CounterPool(World world, Card card) => AbilityProgramQueries.CounterPool(world, program, card);
     public IReadOnlyList<ContinuousEffect> Constant(World world, Card card) => constantQueries.Constant(world, card);
     public string ResourcesGeneratedBy(World world, Card source, Card? payingFor) => AbilityProgramQueries.ResourcesGeneratedBy(world, program, source, payingFor);

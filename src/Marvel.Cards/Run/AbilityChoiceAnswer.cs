@@ -35,7 +35,7 @@ internal sealed class AbilityChoiceAnswer(
         if (operation == "makeTheCall") return ApplyMakeTheCall(choice);
         if (operation == "indirectDamage") return ApplyIndirectDamage(choice);
         if (operation == "attack") return ApplyCountedAttack((AbilityEffect.Power)choice);
-        return ApplyGeneric(choice);
+        return ApplyResumableEffectChoice(choice);
     }
 
     private List<Marvel.Rules.Events.GameEvent> ApplyStructural(AbilityEffect choice)
@@ -249,12 +249,15 @@ internal sealed class AbilityChoiceAnswer(
         return Continue();
     }
 
-    private List<Marvel.Rules.Events.GameEvent> ApplyGeneric(AbilityEffect choice)
+    private List<Marvel.Rules.Events.GameEvent> ApplyResumableEffectChoice(AbilityEffect choice)
     {
-        execution.ApplyStructuralDecision(
-            AbilityStructuralFlowExecution.AnswerGenericChoice(
-                execution.StructuralContext(cast), choice,
-                execution.ContinuationFacts(cast.Source, persisted, cast.Tier), input), cast);
+        if (choice is AbilityEffect.AttackAnotherEnemy staged)
+            AbilityStagedAttack.Answer(execution, cast, staged, input);
+        else
+            execution.ApplyStructuralDecision(
+                AbilityStructuralFlowExecution.AnswerGenericChoice(
+                    execution.StructuralContext(cast), choice,
+                    execution.ContinuationFacts(cast.Source, persisted, cast.Tier), input), cast);
         return cast.Suspended ? cast.Events : Continue();
     }
 

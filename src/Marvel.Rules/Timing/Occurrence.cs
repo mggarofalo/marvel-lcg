@@ -94,6 +94,14 @@ public sealed record Occurrence
     /// <summary>The imminent threat placement, when this occurrence is one.</summary>
     public State.ThreatPlacement? Threat { get; }
 
+    /// <summary>The imminent damage owned by this window, reconstructed during replay.</summary>
+    [JsonIgnore]
+    public Play.DamageReplacement? Damage { get; internal set; }
+
+    /// <summary>The exact numeric boost contribution at its faceup interrupt.</summary>
+    [JsonIgnore]
+    public Play.BoostIconCancellation? BoostIcons { get; internal set; }
+
     private readonly HashSet<(WindowKind Window, int Card, AbilityType Type, int Ordinal, State.Defeated? Defeat, State.Attacked? Attack, NativeAbilityKind Native, Occurrence? Threat, int EventPlay)> spent = [];
 
     private readonly Dictionary<int, int> completedEventPlays = [];

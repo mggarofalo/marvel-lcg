@@ -54,7 +54,7 @@
       "note": "Interrupt (defense): When you would take any amount of damage from an attack, prevent all of that damage. The attack-damage step carries rr:damage.step.1's imminent-damage condition, and the one-use replacement is consumed by that damage only.",
       "abilities": [
         {
-          "trigger": { "event": "WhenDamageWouldBeDealt", "timing": "Interrupt", "target": "you" },
+          "trigger": { "event": "WhenDamageWouldBeDealt", "damage": "taken", "timing": "Interrupt", "target": "you" },
           "labels": [ "defense" ],
           "when": { "isYourIdentity": "trigger.target" },
           "effect": { "preventDamage": "trigger.target" }
@@ -171,7 +171,7 @@
           }
         },
         {
-          "trigger": { "event": "WhenDamageWouldBeDealt", "timing": "Interrupt", "target": "you", "form": "hero" },
+          "trigger": { "event": "WhenDamageWouldBeDealt", "damage": "taken", "timing": "Interrupt", "target": "you", "form": "hero" },
           "when": { "isYourIdentity": "trigger.target" },
           "cost": { "discard": "this" },
           "effect": { "preventDamage": { "card": "trigger.target", "amount": 3 } }
@@ -1800,7 +1800,7 @@
       "note": "Hero Interrupt: cancel a revealed treachery's When Revealed effects, then make the villain attack the resolving player instead. The revealed card itself remains revealed under rr:cancel.4.",
       "abilities": [
         {
-          "trigger": { "event": "WhenCardRevealed", "timing": "Interrupt", "subject": "game", "form": "hero", "player": "trigger.player" },
+          "trigger": { "event": "WhenCardRevealed", "timing": "Interrupt", "subject": "game", "form": "hero" },
           "when": { "isKind": { "card": "trigger.subject", "kind": "treachery" } },
           "effect": { "seq": [ { "cancelWhenRevealed": "trigger.subject" }, { "enemyAttacks": { "enemies": { "query": "villain" } } } ] }
         }
@@ -13536,7 +13536,7 @@
       "abilities": [
         {
           "trigger": {
-            "event": "WhenDamageWouldBeDealt",
+            "event": "WhenDamageWouldBeDealt", "damage": "taken",
             "timing": "Interrupt",
             "target": "you"
           },
@@ -16426,7 +16426,7 @@
       "abilities": [
         {
           "trigger": {
-            "event": "WhenDamageWouldBeDealt",
+            "event": "WhenDamageWouldBeDealt", "damage": "taken",
             "timing": "Interrupt",
             "target": "you",
             "form": "hero"
@@ -17202,6 +17202,337 @@
                     }
                   },
                   "count": 2
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "05012",
+      "name": "Nova",
+      "note": "Printed Interrupt: when an enemy initiates an attack against you, spend an energy resource to deal 2 damage to that enemy. You names the attacked player, including an attack subsequently defended by an ally. No exhaust or form restriction is printed.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenAttackInitiated",
+            "timing": "Interrupt",
+            "actor": "enemy",
+            "player": "you"
+          },
+          "cost": {
+            "spend": "Y"
+          },
+          "effect": {
+            "dealDamage": {
+              "cards": "trigger.actor",
+              "amount": 2
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "05013",
+      "name": "Get Behind Me!",
+      "note": "Printed Hero Interrupt cancels a revealed treachery's When Revealed effects and makes the villain attack the resolving player. No restriction to the revealing player is printed; a different hero may interrupt. rr:cancel.4 leaves the revealed card itself unchanged.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "Interrupt",
+            "subject": "game",
+            "form": "hero"
+          },
+          "when": {
+            "isKind": {
+              "card": "trigger.subject",
+              "kind": "treachery"
+            }
+          },
+          "effect": {
+            "seq": [
+              {
+                "cancelWhenRevealed": "trigger.subject"
+              },
+              {
+                "enemyAttacks": {
+                  "enemies": {
+                    "query": "villain"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "05026",
+      "name": "Generation Why?",
+      "note": "Printed When Revealed counts every ally and Persona support in play, across all players. The discardTop each-player instruction evaluates the combined quota once at initiation, per ruling:e8654dd34b58be12; a player-deck reset stops further discards from that deck (rr:player-deck.3). Starting threat, hazard and boost icons are printed card facts.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "discardTop": {
+              "from": "yourDeck",
+              "player": "each",
+              "count": {
+                "add": [
+                  {
+                    "count": {
+                      "query": "allies"
+                    }
+                  },
+                  {
+                    "count": {
+                      "withTrait": {
+                        "cards": {
+                          "query": "supports"
+                        },
+                        "trait": "PERSONA"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "05030",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "attackableEnemies"
+              },
+              "effect": {
+                "attack": {
+                  "target": "chosen",
+                  "effect": {
+                    "seq": [
+                      {
+                        "dealAttackDamage": {
+                          "cards": "chosen",
+                          "amount": 3
+                        }
+                      },
+                      {
+                        "attackAnotherEnemy": {
+                          "amount": 3
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "05017",
+      "name": "Energy Barrier",
+      "note": "Printed Uses (3 reflection counters). Interrupt removes one reflection counter to prevent one damage to your identity and deal one damage to a chosen enemy. Any damage and either form qualify; this is not a defense ability. rr:uses-x-type discards the upgrade when its final counter is removed.",
+      "startingCounters": {
+        "type": "reflection",
+        "count": 3,
+        "uses": true
+      },
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenDamageWouldBeDealt",
+            "damage": "taken",
+            "timing": "Interrupt",
+            "target": "you"
+          },
+          "when": {
+            "isYourIdentity": "trigger.target"
+          },
+          "cost": {
+            "removeCounters": {
+              "card": "this",
+              "counter": "reflection",
+              "count": 1
+            }
+          },
+          "effect": {
+            "seq": [
+              {
+                "preventDamage": {
+                  "card": "trigger.target",
+                  "amount": 1
+                }
+              },
+              {
+                "chooseCard": {
+                  "from": {
+                    "query": "enemies"
+                  },
+                  "effect": {
+                    "dealDamage": {
+                      "cards": "chosen",
+                      "amount": 1
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "05028",
+      "name": "Edison's Giant Robot",
+      "note": "Printed damage prohibition applies to every source. Hero Action spends one mental resource and blanks the entire printed text box, including this action, until phase end for all players (ruling:d1087a7e030d2fd9). Traits, printed stats and boost icons remain. blankPrintedTextUntilEndOfPhase is an engine spelling for the printed instruction.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "preventDamageWhile": {
+              "card": "this",
+              "condition": {
+                "atLeast": {
+                  "value": 1,
+                  "count": 1
+                }
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "cost": {
+            "spend": "B"
+          },
+          "effect": {
+            "blankPrintedTextUntilEndOfPhase": "this"
+          }
+        }
+      ]
+    },
+    {
+      "card": "05029",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "exhaust": {
+                  "withTrait": {
+                    "cards": {
+                      "query": "supports"
+                    },
+                    "trait": "PERSONA"
+                  }
+                }
+              },
+              {
+                "heal": {
+                  "card": {
+                    "query": "villain"
+                  },
+                  "amount": {
+                    "result": "exhausted"
+                  }
+                }
+              },
+              {
+                "if": {
+                  "test": {
+                    "not": {
+                      "atLeast": {
+                        "value": {
+                          "result": "exhausted"
+                        },
+                        "count": 1
+                      }
+                    }
+                  },
+                  "then": {
+                    "gainSurge": 1
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "05018",
+      "name": "Lockjaw",
+      "note": "Printed permission allows ordinary play from the controlling player's own discard pile during their turn, with the printed resource cost and ordinary ally entry rules.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "allowPlayFromDiscard": "this"
+          }
+        }
+      ]
+    },
+    {
+      "card": "05014",
+      "name": "Preemptive Strike",
+      "note": "Printed Hero Interrupt (defense) on a villain attack boost faceup. Cancel the current numeric icons on that physical card, then deal that captured amount to the attacking villain. The star ability still resolves; cancellation does not borrow an enclosing attack during a scheme.",
+      "abilities": [
+        {
+          "labels": [
+            "Defense"
+          ],
+          "trigger": {
+            "event": "WhenAttackBoostCardTurnedFaceup",
+            "timing": "Interrupt",
+            "actor": "villain",
+            "form": "hero"
+          },
+          "effect": {
+            "then": {
+              "effect": {
+                "cancelBoostIcons": "trigger"
+              },
+              "then": {
+                "dealDamage": {
+                  "cards": "trigger.actor",
+                  "amount": {
+                    "result": "cancelledBoostIcons"
+                  }
                 }
               }
             }

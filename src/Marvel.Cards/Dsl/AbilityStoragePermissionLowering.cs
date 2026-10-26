@@ -10,12 +10,19 @@ internal static class AbilityStoragePermissionLowering
     internal static void Validate(CardAbility ability, AbilityEffect root, AbilityLocation location,
         IEnumerable<AbilityEffect> effects)
     {
-        if (!effects.Any(effect => effect is AbilityEffect.AllowPlayBeneath)) return;
-        bool direct = root is AbilityEffect.AllowPlayBeneath;
+        if (!effects.Any(effect => effect is AbilityEffect.AllowPlayBeneath or AbilityEffect.AllowPlayFromDiscard)) return;
+        bool direct = root is AbilityEffect.AllowPlayBeneath or AbilityEffect.AllowPlayFromDiscard;
         bool unconditional = ability.Trigger == new AbilityTrigger(null, AbilityType.Constant, "this")
             && ability is { When: null, Cost: null, Limit: null, Maximum: null, AnyPlayer: false };
         if (!direct || !unconditional)
-            throw location.Error("allowPlayBeneath requires a direct unconditional Constant ability");
+            throw location.Error("play permission requires a direct unconditional Constant ability");
+    }
+
+    internal static AbilityEffect.AllowPlayFromDiscard LowerDiscard(AbilityValue value, AbilityLocation location)
+    {
+        // The DSL chooses an explicit marker for the bounded self-ally permission.
+        FixedWord(value, location, "this");
+        return new();
     }
 
     internal static AbilityEffect.AllowPlayBeneath Lower(AbilityValue value, AbilityLocation location)

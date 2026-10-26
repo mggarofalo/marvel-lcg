@@ -247,7 +247,7 @@ internal sealed record AbilityResolutionState(
     public bool FinalPlayer { get; init; }
 
     /// <summary>The labelled player power whose occurrence is resolving.</summary>
-    public string? Power { get; init; }
+    public string? Power { get; set; }
 
     /// <summary>Every game element selected for this labelled power.</summary>
     public IReadOnlyList<Card> PowerTargets { get; set; } = [];
@@ -256,7 +256,7 @@ internal sealed record AbilityResolutionState(
         PowerTargets = targets;
 
     /// <summary>The card attributed as performer of the labelled power.</summary>
-    public Card? PowerActor { get; init; }
+    public Card? PowerActor { get; set; }
 
     /// <summary>The performer attributed by an ability-envelope label.</summary>
     public Card? AbilityActor { get; set; }
@@ -294,7 +294,7 @@ internal sealed record AbilityResolutionState(
         PersistedCrisisIgnoringThwarts.UnionWith(ordinals);
 
     /// <summary>A numeric result carried into this labelled power.</summary>
-    public long PowerAmount { get; init; } = -1;
+    public long PowerAmount { get; set; } = -1;
     internal int? ThwartActorUsingAttack { get; set; }
 
     /// <summary>The outer threat assignment this interrupt can prevent.</summary>

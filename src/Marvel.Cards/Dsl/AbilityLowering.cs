@@ -176,9 +176,9 @@ public static class AbilityLowering
     internal static string ResultName(AbilityValue value, AbilityLocation location)
     {
         string name = Text(value, location);
-        return name is "healed" or "discarded" or "found" or "energy" or "resourceTypes" or "schemesCleared"
+        return name is "exhausted" or "healed" or "discarded" or "found" or "energy" or "resourceTypes" or "schemesCleared"
             or "threatMoved" or "threatRemovedByMove" or "destinationForcedResponseTriggered"
-            or "treacheriesLookedAt" or "activationDamage" or "activationDamagePlaced" or "activationDamageToYou" or "activationThreat" or "activationMade" or "activationUndefended"
+            or "treacheriesLookedAt" or "activationDamage" or "activationDamagePlaced" or "activationDamageToYou" or "activationThreat" or "activationMade" or "activationUndefended" or "cancelledBoostIcons"
             ? name : throw location.Error($"'{name}' is not an authored resolution result");
     }
 }

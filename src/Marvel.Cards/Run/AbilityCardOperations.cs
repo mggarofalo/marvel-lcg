@@ -7,15 +7,16 @@ namespace Marvel.Cards.Run;
 /// <summary>Card mutations shared by cost commitment and effect execution.</summary>
 internal static class AbilityCardOperations
 {
-    internal static void Exhaust(Card target, string trigger, List<GameEvent> events)
+    internal static bool Exhaust(Card target, string trigger, List<GameEvent> events)
     {
-        if (!target.Ready) return;
+        if (!target.Ready) return false;
         target.Exhaust();
         events.Add(new FieldSet(target.ObjectId, "is_exhaust", 0, 1)
         {
             Trigger = trigger,
             Verb = "Exhaust",
         });
+        return true;
     }
 
     internal static void RemoveCounters(

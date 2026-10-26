@@ -1,0 +1,21 @@
+# Global support count prerequisite (MARVEL-733)
+
+Base: `a18d4f81`. Engine prerequisite for the printed `05026` Generation Why? effect in `datasets/cards/cards.json`; the actual ability-book row and public admission remain separate work.
+
+`{ "query": "supports" }` selects every effective support in play, independently of controller and play-area ownership, in physical card order. It supports existing trait filtering and numeric counts. The existing `discardTop` operation with `player: "each"` evaluates its numeric count once before traversing player decks, so one `add` expression combining global ally and Persona-support counts freezes the quota without a new snapshot language construct. Its player-deck boundary remains `rr:player-deck.3`: no further cards are discarded from the newly shuffled deck.
+
+`GlobalPersonaCountTests` uses a synthetic actual 05026 effect body. Its nine cases distinguish the two-player global count from resolver-local counting, exclude ordinary supports and out-of-play Personas, cover empty/short/exactly exhausted decks and zero count, distinguish ownership from location, verify eliminated recipients, and compare an unqueried control after query purity checks including RNG state and pending agenda state. A separate dynamic deck-count expression proves that the first deck changing cannot alter the second player's quota.
+
+The current deck-discard operation is synchronous and supplies no interleaved per-player discard response window. This packet does not add such a window or claim an intervening-reaction test. The count is fixed before the first discard and all immediate resets; later responses cannot cause it to be reread.
+
+Validation logs outside the repository: `C:/Users/mggar/Source/global-count-{regression,mutant,restored-build,restored,hooks}.log`. The focused regression filter includes the new cases, `DiscardCountAdmissionTests`, `DiscardedPrintedNumberTests`, `WreckingCardQueryTests`, `MutagenOrderedDiscardTests` and Ms. Marvel nemesis tests. A compiled resolver-local Supports query mutant fails the global count and query assertions; restoration uses `finally`, followed by a forced `-t:Rebuild` and the same regression filter. No generated dataset, ability book, setup, public admission or UI files change.
+
+## Independent prerequisite review
+
+Reviewed candidate `4f19872538c0e533a43dd1047e0206d383050f3a` against generated `05026` text and vendored `ruling:e8654dd34b58be12` (`datasets/rulings/rulings.json`, June 2023). That ruling fixes the count at initiation even if White Fox enters play after being discarded. The synchronous existing discard operation calculates once before any player deck changes; its present scheduling offers no intervening per-player response window. No additional snapshot primitive is needed for this operation.
+
+`GlobalSupportQueryReviewTests` adds four independently authored synthetic cases. They assert explicit physical card identities rather than reconstructing the implementation predicate: effective kind and Persona trait override printed facts across storage areas; faceup and facedown beneath cards plus hand/deck/discard/aside/removed Personas stay excluded; projected entry and departure update global membership across seats. The kind test also checks repeated-selector membership and removal. These are engine contracts, not public Ms. Marvel admission or a played 05026 journey.
+
+Independent validation: 59 focused content regressions passed. Three separately compiled negative controls each fail one review case: printed-kind lookup in the live query, omitted projected support entry, and omitted repeated-selector support membership. Every mutation restores source in `finally`; a forced Release `-t:Rebuild` and the same 59-case filter then pass. Logs: `C:/Users/mggar/Source/global-support-review-{regression,restored-build,restored}.log` and `global-support-review-mutant-{printed-kind,projected-entry,repeated-membership}.log`. Normal commit hooks supply architecture, complexity and source-length evidence in `C:/Users/mggar/Source/global-support-review-hooks.log`.
+
+Verdict: the prerequisite is accepted for subsequent 05026 authoring. The authoring, full encounter lifecycle and public admission remain separate work; this review changes no runtime implementation or datasets.

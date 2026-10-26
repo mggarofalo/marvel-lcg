@@ -24,6 +24,7 @@ internal static class AbilityEffectLowering
         var argument = node.Argument;
         return node.Kind switch
         {
+            "attackAnotherEnemy" => AbilityStagedAttackLowering.Lower(argument, child),
             "modifyPlayedEvent" => PlayedEventModifier(argument, child),
             "seq" => new AbilityEffect.Sequence(Effects(argument, child)),
             "and" => new AbilityEffect.Simultaneous(Effects(argument, child)),
@@ -68,6 +69,7 @@ internal static class AbilityEffectLowering
             "changeForm" => FormEffect(argument, child),
             "draw" => DrawEffect(argument, child),
             "allowPlayBeneath" => AbilityStoragePermissionLowering.Lower(argument, child),
+            "allowPlayFromDiscard" => AbilityStoragePermissionLowering.LowerDiscard(argument, child),
             "drawToHandSize" or "drawToPrintedHandSize" => new AbilityEffect.DrawToHandSize(
                 LowerPlayer(argument, child), node.Kind == "drawToPrintedHandSize"),
             "moveThreat" => AbilityThreatMovementLowering.Lower(argument, child),
@@ -78,6 +80,7 @@ internal static class AbilityEffectLowering
             "gainSurge" => new AbilityEffect.GainSurge(Integer(argument, child)),
             "useAttackForThwart" => FixedEffect(argument, child, "trigger", AbilityFixedInstruction.UseAttackForThwart),
             "advanceMainScheme" => FixedEffect(argument, child, "next", AbilityFixedInstruction.AdvanceMainScheme),
+            "cancelBoostIcons" => FixedEffect(argument, child, "trigger", AbilityFixedInstruction.CancelBoostIcons),
             "cancelOccurrence" => FixedEffect(argument, child, "trigger", AbilityFixedInstruction.CancelOccurrence),
             "cancelWhenRevealed" => FixedEffect(argument, child, "trigger.subject", AbilityFixedInstruction.CancelWhenRevealed),
             "alsoAttackEachOtherHero" => FixedEffect(argument, child, "this", AbilityFixedInstruction.AlsoAttackEachOtherHero),
@@ -105,6 +108,7 @@ internal static class AbilityEffectLowering
             "revealAuxiliaryTop" => new AbilityEffect.RevealAuxiliaryTop(AbilityAuxiliaryDeckLowering.Deck(argument, child)),
             "shuffle" => new AbilityEffect.Shuffle(SearchArea(argument, child)),
             "payOrEffect" or "payOrExhaust" => AbilityPaymentAlternativeLowering.PayAlternative(argument, child, node.Kind == "payOrExhaust"),
+            "blankPrintedTextUntilEndOfPhase" => AbilityPrintedTextLowering.Lower(argument, child),
             "grant" or "grantEach" or "grantUntil" => GrantEffect(argument, child, node.Kind == "grantEach", node.Kind == "grantUntil"),
             "grantCharactersWithTrait" => AbilityTraitGroupLowering.Lower(argument, child),
             "grantCharactersControlledBy" => GrantControlledEffect(argument, child),

@@ -22,7 +22,7 @@ internal static class AbilityResolutionLifecycle
         var occurrence = new Occurrence(
             0, [Steps.CardEntersPlay], Subject: card.ObjectId,
             Player: execution.ControllerOf(world, card));
-        execution.RunOrdered(execution.On(card).Where(ability =>
+        execution.RunOrdered(AbilityProgramQueries.ActiveOn(world, execution.program, card).Where(ability =>
             ability.Trigger.Timing == AbilityType.WhenRevealed
             && string.Equals(ability.Trigger.Event, Steps.CardEntersPlay, StringComparison.Ordinal)),
             ability => new AbilityResolutionState(
@@ -45,7 +45,7 @@ internal static class AbilityResolutionLifecycle
         {
             var occurrence = new Occurrence(0, ["WhenActivationCompleted"],
                 Actor: enemy.ObjectId, Player: result.Player);
-            execution.RunOrdered(execution.On(enemy).Where(ability =>
+            execution.RunOrdered(AbilityProgramQueries.ActiveOn(world, execution.program, enemy).Where(ability =>
                 ability.Trigger.Timing == AbilityType.ForcedResponse
                 && string.Equals(ability.Trigger.Event, "WhenActivationCompleted", StringComparison.Ordinal)),
                 ability => new AbilityResolutionState(world, enemy, occurrence, result.Player, events)
@@ -115,7 +115,8 @@ internal static class AbilityResolutionLifecycle
         return execution.ResumeContinuation(cast, source, transition);
     }
 
-    private static AbilityResolutionState CreateResumedState(AbilityResolutionExecution execution,
+    /// <summary>Restores invocation and active power facts for procedure and choice resumes.</summary>
+    internal static AbilityResolutionState CreateResumedState(AbilityResolutionExecution execution,
         World world, Card source, PhaseStep continuation, AbilityContinuationState resumed)
     {
         return execution.Resuming(
@@ -130,7 +131,7 @@ internal static class AbilityResolutionLifecycle
             ThwartActorUsingAttack = resumed.PowerExecution?.ThwartActorUsingAttack,
             EachPlayerFrame = resumed.Cursor.EachPlayerFrame,
             FinalPlayer = resumed.Cursor.FinalPlayer,
-            AbilityPlayer = StateOf(continuation)!.Invocation.AbilityPlayer,
+            AbilityPlayer = resumed.Invocation.AbilityPlayer,
             EventTrigger = resumed.Invocation.Trigger,
             GainedKeywords = resumed.Memory.SurgeGained
                 ? new HashSet<string>(["surge"], StringComparer.Ordinal)

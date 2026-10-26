@@ -108,6 +108,7 @@ internal static class AbilitySelectorLowering
         "upgradesAndSupportsYouControl" => AbilityCardQuery.UpgradesAndSupportsYouControl,
         "identitySpecificInYourHand" => AbilityCardQuery.IdentitySpecificInYourHand,
         "supportsYouControl" => AbilityCardQuery.SupportsYouControl,
+        "supports" => AbilityCardQuery.Supports,
         "charactersYouControl" => AbilityCardQuery.CharactersYouControl,
         "charactersYouControlExceptCost" => AbilityCardQuery.CharactersYouControlExceptCost,
         "upgradesYouControl" => AbilityCardQuery.UpgradesYouControl,

@@ -81,7 +81,8 @@ internal static class AbilityProjectedDefeatWindows
     }
 
     private static bool MissingAuthoredDefeat(Card subject, AbilityAdmissionScope cast) =>
-        cast.World.Facts.HasWhenDefeated(subject.FaceId)
-        && !AbilityProgramQueries.On(cast.Context.Program, subject).Any(ability =>
+        !PrintedText.IsBlanked(cast.World, subject)
+        && cast.World.Facts.HasWhenDefeated(subject.FaceId)
+        && !cast.Context.Program.On(subject.FaceId).Any(ability =>
             ability.Trigger.Timing == AbilityType.WhenDefeated);
 }

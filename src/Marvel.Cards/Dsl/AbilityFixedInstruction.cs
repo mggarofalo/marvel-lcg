@@ -12,6 +12,8 @@ public enum AbilityFixedInstruction
     UseAttackForThwart,
     /// <summary>Cancel the current occurrence.</summary>
     CancelOccurrence,
+    /// <summary>Cancel numeric icons on the exact faceup boost card.</summary>
+    CancelBoostIcons,
     /// <summary>Cancel the revealed card's When Revealed effects.</summary>
     CancelWhenRevealed,
     /// <summary>Also resolve the attack against each other hero.</summary>

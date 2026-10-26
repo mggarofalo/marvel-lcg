@@ -37,7 +37,7 @@ internal static class AbilityDamageProtectionTrace
         foreach (var attachment in DamageReplacementAttachments(
             cast, target, discarded, currentVillain))
         {
-            var replacement = AbilityProgramQueries.On(cast.Context.Program, attachment)
+            var replacement = AbilityProgramQueries.ActiveOn(cast.World, cast.Context.Program, attachment)
                 .FirstOrDefault(ability =>
                     ability.Trigger.Timing == AbilityType.ForcedInterrupt
                     && ContainsEffect(ability.Effect, "soakDamage"));
@@ -115,7 +115,7 @@ internal static class AbilityDamageProtectionTrace
         }
         if (AbilityTargetDamageProtection.Prevents(cast.World, cast.Context.Program, target,
             (owner, condition) => TraceTest(condition, cast.ForConstant(owner), discarded), discarded)) return false;
-        foreach (var ability in AbilityProgramQueries.On(cast.Context.Program, target).Where(ability =>
+        foreach (var ability in AbilityProgramQueries.ActiveOn(cast.World, cast.Context.Program, target).Where(ability =>
             ability.Trigger.Timing == AbilityType.Constant))
         {
             var constant = cast.ForConstant(target);

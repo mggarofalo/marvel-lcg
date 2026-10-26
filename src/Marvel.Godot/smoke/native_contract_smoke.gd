@@ -31,6 +31,9 @@ func _run() -> void:
     print("NATIVE_CONTRACT_STAGE ready " + contract)
     var passed := false
     match contract:
+        "lockjaw-discard": passed = await preload("res://smoke/native_lockjaw_contract.gd").run(self)
+        "melee-sequential": passed = await preload("res://smoke/native_melee_contract.gd").run(self)
+        "preemptive-strike": passed = await preload("res://smoke/native_preemptive_strike_contract.gd").run(self)
         "bruno-0", "bruno-1", "bruno-3": passed = await preload("res://smoke/native_bruno_contract.gd").run(self)
         "victory": passed = await _victory_contract()
         "lost-reply", "not-sent": passed = await _recovery_contract()
@@ -55,6 +58,7 @@ func _scene_ready() -> bool:
     if not witness.CanResolve(): return false
     if contract == "dense-table": return true
     if contract == "repeated-targets": return witness.HasRepeatedTargets()
+    if contract == "preemptive-strike": return witness.DecisionKind() == "Interrupt"
     return witness.DecisionKind() == "PlayerAction"
 
 func _stage_scene_attack() -> bool:

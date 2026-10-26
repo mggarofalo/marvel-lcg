@@ -155,6 +155,17 @@ and exit nonzero on failure. Owner acceptance remains separate from automation.
 
 ### Selecting additional native evidence
 
+`contract-preemptive-strike-100-reduced` runs in both native profiles at 100%,
+1920×1080, one player and reduced motion. It uses a prepared cross-pack scene
+with actual authored 05014 from the full ability book; it does not admit the
+Ms Marvel pack publicly. Real viewport input chooses the individual Rhino boost
+interrupt and pays one actual hand card. Native socket assertions verify one
+commitment, two reflected damage, zero remaining boost icons, two attack damage
+to the paying hero as defender, and completed attack/activation lifetimes.
+Rendered runs retain interrupt, payment and result PNGs. The faceup response's
+technical `WhenBoostCardTurnedFaceup` wording is a concrete semantic presentation
+finding; this component evidence does not certify that copy as understandable.
+
 Use scripted interaction checks as the default. Start headless for composition,
 commitment and observable results; use rendered checks and inspect their images
 when layout or rendering is at issue. Use manifest profiles for scale, motion,

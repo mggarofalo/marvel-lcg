@@ -43,6 +43,11 @@ internal static class AbilityImmediateExecution
             case AbilityFixedInstruction.CancelWhenRevealed:
                 CancelWhenRevealed(context);
                 return new(true, true);
+            case AbilityFixedInstruction.CancelBoostIcons:
+                long cancelled = (context.Admission.Query.Occurrence.BoostIcons
+                    ?? throw new RulesNotImplementedException("boost cancellation requires a faceup card occurrence"))
+                    .Cancel(world);
+                return new(true, cancelled > 0) { CancelledBoostIcons = cancelled };
             case AbilityFixedInstruction.CancelOccurrence:
                 if (world.Agenda.IsOutstanding(context.Admission.Query.Occurrence))
                     world.Agenda.Cancel(context.Admission.Query.Occurrence);
@@ -220,6 +225,14 @@ internal static class AbilityImmediateExecution
         if (!AbilityAdmission.LastingPeriodIsOpen(until, context.Admission))
             throw new RulesNotImplementedException(
                 $"'{context.Admission.Source.FaceId}' begins a lasting effect outside its named period");
+        if (kind == PrintedText.Blanked)
+        {
+            var ending = world.Effects.PreflightConstantsEnding(target, includeHostedCards: false);
+            using var departure = ending.Begin();
+            world.Effects.Register(PrintedText.UntilEndOfPhase(world, context.Admission.Source, target));
+            ending.Complete(context.Trigger, context.Events);
+            return;
+        }
         world.Effects.Register(new ContinuousEffect(EffectSource.LastingEffect, Kind: kind,
             Amount: resolveAmount(amount), Card: context.Admission.Source.ObjectId,
             Affects: target.ObjectId, Lasts: Duration.UntilEndOf(until)));

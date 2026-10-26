@@ -176,9 +176,9 @@ internal static class AbilityPlayerBindingAnalysis
         AbilityEffect.Shuffle shuffle => shuffle.Area == AbilitySearchArea.YourDeck,
         AbilityEffect.Search search => search.Areas.Contains(AbilitySearchArea.YourDeck),
         AbilityEffect.DefineProfile or AbilityEffect.GainSurge or AbilityEffect.Fixed or AbilityEffect.Generate
-            or AbilityEffect.AllowPlayBeneath or AbilityEffect.ReduceFirstAllyCost or AbilityEffect.DoubleResourceFor or AbilityEffect.PreventDamageFrom
+            or AbilityEffect.AllowPlayBeneath or AbilityEffect.AllowPlayFromDiscard or AbilityEffect.ReduceFirstAllyCost or AbilityEffect.DoubleResourceFor or AbilityEffect.PreventDamageFrom
             or AbilityEffect.DelayedStun
-            or AbilityEffect.ChooseTopForHand or AbilityEffect.ChooseDiscardToShuffle
+            or AbilityEffect.AttackAnotherEnemy or AbilityEffect.ChooseTopForHand or AbilityEffect.ChooseDiscardToShuffle
             or AbilityEffect.DiscardHandWithResource
             or AbilityEffect.RecoverDiscardedByResource or AbilityEffect.GrantTraitCharacters or AbilityEffect.ModifyPlayedEvent => false,
         _ => throw new InvalidOperationException(

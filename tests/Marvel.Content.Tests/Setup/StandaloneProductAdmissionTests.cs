@@ -12,7 +12,7 @@ public sealed class StandaloneProductAdmissionTests
     private static readonly string SetupJson = File.ReadAllText(RepositoryPaths.Dataset("setup", "setup.json"));
 
     public static IEnumerable<object[]> RequiredFaces() => Cards.Faces
-        .Where(face => Cards.Pack(face) is "cap" or "twc").Select(face => new object[] { face });
+        .Where(face => Cards.Pack(face) is "cap" or "twc" or "msm").Select(face => new object[] { face });
 
     public static IEnumerable<object[]> RequiredRecipes() => SetupCatalog.Parse(SetupJson).CampaignNames
         .Where(key => key.StartsWith("wrecking_crew_", StringComparison.Ordinal)).Select(key => new object[] { key });
@@ -25,6 +25,7 @@ public sealed class StandaloneProductAdmissionTests
         var setup = SetupCatalog.Parse(SetupJson);
         Assert.Equal(Cards.Pack(missing) != "cap", StandaloneProductAdmission.CaptainAmerica(setup, Cards, authored));
         Assert.Equal(Cards.Pack(missing) != "twc", StandaloneProductAdmission.WreckingCrew(setup, Cards, authored));
+        Assert.Equal(Cards.Pack(missing) != "msm", StandaloneProductAdmission.MsMarvel(setup, Cards, authored));
     }
 
     [Theory]

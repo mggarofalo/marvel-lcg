@@ -135,7 +135,7 @@ internal static class AbilityPowerProjection
             {
                 var placement = engagementChanges ?? new Dictionary<int, int>();
                 var constantCast = TraceConstantCast(cast, card, placement);
-                return AbilityProgramQueries.On(cast.Context.Program, card).Any(ability =>
+                return AbilityProgramQueries.ActiveOn(cast.World, cast.Context.Program, card).Any(ability =>
                     ability.Trigger.Timing == AbilityType.Constant
                     && ConstantCanRetargetVillain(
                         ability.Effect, current, next, constantCast, discarded,
@@ -206,7 +206,7 @@ internal static class AbilityPowerProjection
                 {
                     var constantCast = TraceConstantCast(
                         cast, source, engagementChanges);
-                    return AbilityProgramQueries.On(cast.Context.Program, source).Any(ability =>
+                    return AbilityProgramQueries.ActiveOn(cast.World, cast.Context.Program, source).Any(ability =>
                         ability.Trigger.Timing == AbilityType.Constant
                         && ConstantFieldCanDiffer(
                             ability.Effect, source, target, field,

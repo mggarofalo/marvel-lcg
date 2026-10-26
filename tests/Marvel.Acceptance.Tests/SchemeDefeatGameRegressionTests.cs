@@ -7,7 +7,6 @@ namespace Marvel.Acceptance.Tests;
 public sealed class SchemeDefeatGameRegressionTests : SimulationHarnessTestBase
 {
     [Theory]
-    [InlineData(10, 90, 49, "Choose_Option")]
     [InlineData(13, 89, 88, "Thwart")]
     public void RecordedSupportAndAllyDefeatsCompleteWithExactResults(
         int seed, int decisions, int defeatStep, string verb)

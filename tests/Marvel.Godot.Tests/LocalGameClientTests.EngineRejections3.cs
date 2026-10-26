@@ -239,6 +239,7 @@ public sealed class LocalGameClientEngineRejectionsTests : LocalGameClientTestBa
 
     [Theory]
     [InlineData(999, "local-open", "test-table", "unsupported_version")]
+    [InlineData(38, "local-open", "test-table", "unsupported_version")]
     [InlineData(EngineProtocol.Version, "other", "test-table", "invalid_response")]
     [InlineData(EngineProtocol.Version, "local-open", "other-game", "invalid_response")]
     public async Task OpenRejectsMismatchedResponseEnvelopes(int version, string requestId, string gameId, string expectedCode)

@@ -33,12 +33,12 @@ internal sealed class CardQueryEvaluator(
         AbilityCardQuery.UpgradesYouControl,
         AbilityCardQuery.AlliesYouControl,
     ];
-    private static readonly ImmutableArray<AbilityCardQuery> IdentityQueries =
+    private static readonly ImmutableArray<AbilityCardQuery> BoardQueries =
     [
         AbilityCardQuery.IdentitiesWithinPerPlayerLimit,
         AbilityCardQuery.HeroesAndAllies, AbilityCardQuery.HeroAndAllyTargets, AbilityCardQuery.Allies,
         AbilityCardQuery.Heroes, AbilityCardQuery.Identities,
-        AbilityCardQuery.Characters,
+        AbilityCardQuery.Characters, AbilityCardQuery.Supports,
     ];
 
     internal IReadOnlyList<Card> Evaluate(AbilityCardQuery query)
@@ -55,7 +55,7 @@ internal sealed class CardQueryEvaluator(
         if (ScenarioQueries.Contains(query)) return EvaluateScenario(query);
         if (EnemyQueries.Contains(query)) return EvaluateEnemies(query);
         if (ControlledQueries.Contains(query)) return EvaluateControlled(query);
-        if (IdentityQueries.Contains(query)) return EvaluateIdentities(query);
+        if (BoardQueries.Contains(query)) return EvaluateBoard(query);
         throw new InvalidOperationException("Unknown compiled card query");
     }
 
@@ -181,8 +181,11 @@ internal sealed class CardQueryEvaluator(
             .GetValueOrDefault("Class", string.Empty).Split(';')
             .Contains("Hero", StringComparer.Ordinal);
 
-    private IReadOnlyList<Card> EvaluateIdentities(AbilityCardQuery query) => query switch
+    private IReadOnlyList<Card> EvaluateBoard(AbilityCardQuery query) => query switch
     {
+        AbilityCardQuery.Supports =>
+            [.. cast.World.Cards.Where(card => DeckTypes.IsInPlay(card.Area.Type)
+                && EffectiveCards.Kind(card, cast.World.Facts) == CardKind.Support)],
         AbilityCardQuery.IdentitiesWithinPerPlayerLimit => IdentitiesWithinLimit(),
         // rr:indirect-damage.2 and rr:you-your.3 include alter-egos with HP.
         AbilityCardQuery.HeroesAndAllies =>
@@ -191,8 +194,8 @@ internal sealed class CardQueryEvaluator(
                 .SelectMany(area => area.Cards)],
         // rr:form-change-form.5 excludes alter-egos when printed text names heroes.
         AbilityCardQuery.HeroAndAllyTargets =>
-            [.. EvaluateIdentities(AbilityCardQuery.Heroes),
-             .. EvaluateIdentities(AbilityCardQuery.Allies)],
+            [.. EvaluateBoard(AbilityCardQuery.Heroes),
+             .. EvaluateBoard(AbilityCardQuery.Allies)],
         // rr:friendly and rr:upgrade.3.1 reach allies controlled by any player.
         AbilityCardQuery.Allies =>
             [.. cast.World.Areas.Where(area => area.Type == DeckType.AlliesArea)
@@ -208,7 +211,7 @@ internal sealed class CardQueryEvaluator(
              .. cast.World.Areas.Where(area => area.Type is DeckType.AlliesArea
                     or DeckType.VillainArea or DeckType.EngagedEnemiesArea)
                 .SelectMany(area => area.Cards)],
-        _ => throw new InvalidOperationException("Unknown identity card query"),
+        _ => throw new InvalidOperationException("Unknown board card query"),
     };
 
     private IEnumerable<Card> Identities() => cast.World.PlayerOrder

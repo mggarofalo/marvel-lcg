@@ -30,7 +30,7 @@ internal sealed class AbilityOfferQueries
         var found = new List<PendingAbility>();
         foreach (var card in Triggerable(world, player).ToList())
         {
-            var written = AbilityProgramQueries.On(program, card);
+            var written = AbilityProgramQueries.ActiveOn(world, program, card);
             for (int index = 0; index < written.Count; index++)
             {
                 var ability = written[index];
@@ -110,14 +110,14 @@ internal sealed class AbilityOfferQueries
     {
         ArgumentNullException.ThrowIfNull(world);
         return [.. ResourceAbilities(world, player).Where(source =>
-            AbilityProgramQueries.On(program, world.Cards[source.Effect]).Any(ability =>
+            AbilityProgramQueries.ActiveOn(world, program, world.Cards[source.Effect]).Any(ability =>
                 ability.Trigger.Timing == AbilityType.Resource
                 && string.Equals(ability.PrintedResources, source.Generates, StringComparison.Ordinal)))];
     }
 
     internal CompiledCardAbility? ResourceAbility(World world, int player, Card card)
     {
-        var written = AbilityProgramQueries.On(program, card);
+        var written = AbilityProgramQueries.ActiveOn(world, program, card);
         for (int index = 0; index < written.Count; index++)
         {
             var ability = written[index];
@@ -151,7 +151,7 @@ internal sealed class AbilityOfferQueries
             foreach (var card in area.Cards)
                 if (AbilityCardQueries.ControllerOf(world, card) == player
                     || card.Owner == World.Scenario
-                    || AbilityProgramQueries.On(program, card).Any(ability => ability.AnyPlayer))
+                    || AbilityProgramQueries.ActiveOn(world, program, card).Any(ability => ability.AnyPlayer))
                     yield return card;
 
         foreach (var card in world.Seats[player].Hand.Cards)

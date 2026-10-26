@@ -5,6 +5,42 @@ forced and optional attack-end responses and is zero without a completed attack.
 
 # The card DSL
 
+`blankPrintedTextUntilEndOfPhase: "this"` is an engine spelling for a standalone
+self-blank Action on a live nonpermanent minion. It suppresses the whole printed
+text box for every player until the phase scheduler expires the lasting effect.
+Traits, printed basic stats and icons outside the text box remain; independently
+created lasting effects and already-triggered continuations remain. The marker
+binds the in-play incarnation, so departure and reentry restore printed text.
+Compound shapes, other card kinds and permanent targets are unsupported. Preflight
+checks constant-ending consequences before costs. Actual 05028 admission to the
+ability book is gated by `PrintedTextBlankingTests` and the ability-data inventory;
+it does not admit the incomplete Ms. Marvel product.
+
+`WhenBoostCardTurnedFaceup` identifies one physical boost card during either an
+attack or a scheme. That same occurrence also carries
+`WhenAttackBoostCardTurnedFaceup` only when its own `BoostFaceupOperation.Attacking`
+is true. This engine-chosen alias does not describe attack initiation and does not
+borrow an enclosing or suspended attack. An attack-only villain trigger combines
+the alias with `actor: "villain"`; a Defense label alone does not restrict timing.
+Both descriptions share one interrupt/response window and cancellation receipt.
+
+`cancelBoostIcons: "trigger"` cancels the remaining numeric icons on the exact
+physical boost card in its faceup interrupt occurrence. Constants and amplify
+are included; its star ability still resolves, and icons gained by that later
+Boost ability are not cancelled (ruling `1ea208998735ef4b`). A zero or previously
+cancelled contribution cannot initiate this effect. The captured result is
+`{"result":"cancelledBoostIcons"}`. Admission projects this result only through
+a direct dependent `then` predecessor; an unbound or unsupported projection
+raises before costs. These instruction/result spellings are engine choices.
+
+`attackAnotherEnemy: { "amount": <positive constant> }` is the second sentence
+of one attack whose first sentence deals constant damage to its chosen enemy.
+It waits for the first damage and defeat procedures, then offers another legal
+enemy. The first physical enemy remains excluded across villain stage changes;
+a departed and reentered minion is a new copy. Both sentences retain one attack
+context and consume a whole-attack modifier once. Arbitrary choice-inside-power
+shapes remain unsupported. This spelling is an engine choice for Melee.
+
 `forEachDiscarded` uses the `eachTime` fields (`effect`, `when`, `then`) for an
 encounter-deck `discardTop`, but finishes that discard before traversing its own
 ordered physical receipt. `that` binds each discarded card, including after an
@@ -170,6 +206,17 @@ from it:
 ```
 
 `note` records authoring judgment. The runtime does not read it.
+
+Damage interrupts share `WhenDamageWouldBeDealt` and may qualify that condition
+with `"damage": "taken"` or `"damage": "dealt"`. The default is `dealt`.
+The field spelling and shared-window representation are engine choices.
+Under `rr:prevent.1.1`, prevention reduces damage taken while leaving damage
+dealt unchanged. A `taken` trigger therefore requires positive damage remaining
+after the recipient's pending prevention, both when offered and before costs.
+The qualifier describes the triggering condition independently of actor/target
+roles and the effect body. Only interrupt timing on this damage condition accepts
+the qualifier. Step-one mandatory soak replacements observe dealt damage and
+do not use `taken`.
 
 A printed variable basic power has an intrinsic base definition, for example:
 
@@ -1142,3 +1189,29 @@ reentered new copy. An ongoing ability may finish after its source leaves play. 
 choice; accepting an empty group does not undo costs. This operation suspends and
 resumes the ordinary ability continuation once. Its spelling and movement order
 (the submitted physical-id order) are engine choices.
+
+### Committed effect exhaustion
+
+`{ "result": "exhausted" }` is the number of ready-to-exhausted transitions
+committed by the latest `exhaust` effect in the current resolution. Each exhaust
+instruction replaces it, including with zero; later readying does not change it.
+The engine chooses this result name and replacement behavior. Exhaustion paid as
+a cost remains in the separate `cardsExhaustedForCost` receipt.
+
+Live resolution can consume this receipt after the exhaustion commits, including
+after nested choices. Area and labelled-power projections cannot produce it.
+They reject projected trees combining exhaustion and reads of this receipt,
+including exhaustion in prior sequence steps, before payment. The guard is
+conservative across branches and instruction order; it raises
+`RulesNotImplementedException` rather than substituting a live or zero receipt.
+Ordinary When Revealed exhaustion followed by healing or Surge resolves live.
+
+## Ordinary play from discard
+
+`{"allowPlayFromDiscard":"this"}` is a standalone, unconditional, cost-free
+Constant permission on an ally. It permits that physical card to be offered
+through ordinary play from its owner's own discard pile during that player's
+turn. It neither makes the discard pile a hand nor makes its cards resources.
+Printed cost, discounts, generators, uniqueness and mandatory ally-limit entry
+all use the ordinary play pipeline. The bounded permission has no `when`, cost,
+limit or maximum and does not generalize to other card kinds or another owner.

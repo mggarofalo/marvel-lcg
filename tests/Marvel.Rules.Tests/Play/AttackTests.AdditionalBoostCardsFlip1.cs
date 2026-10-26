@@ -20,12 +20,12 @@ public sealed class AttackAdditionalBoostCardsFlipTests : AttackTestBase
         var printed = Printed(atk: 2, boost: 0);
         var world = Board(printed);
         var villain = world.TheCardIn(DeckType.VillainArea)!;
-        world.Agenda.Abandon();
-        Attack.Initiate(world, printed, new PhaseStep(new EnemyAttackOperation(), Round: 1, Number: 2, Subject: villain.ObjectId, Seat: 0), []);
-        Attack.GiveAdditionalBoostCard(world, villain, "test", []);
+        var firstBoost = world.AreaOf(DeckType.EncounterDeck).Cards[^1];
+        world.CreateCard("filler", firstBoost.Area);
+        World.MoveToTop(firstBoost, firstBoost.Area);
         Attack.GiveAdditionalBoostCard(world, villain, "test", []);
         var abilities = new BoostOrderRecorder();
-        Attack.FlipBoostCards(world, printed, abilities, []);
+        ResolveAttack(world, printed, abilities, []);
         Assert.Equal(["boost", "filler"], abilities.Faces);
         Assert.Equal([0, 1], abilities.DiscardedBeforeResolution);
         Assert.Equal(2, world.AreaOf(DeckType.EncounterDiscardPile).Cards.Count);
@@ -40,14 +40,10 @@ public sealed class AttackAdditionalBoostCardsFlipTests : AttackTestBase
         var printed = Printed(atk: 3, boost: 0);
         var world = Board(printed);
         var villain = world.TheCardIn(DeckType.VillainArea)!;
-        world.Agenda.Abandon();
-        Attack.Initiate(world, printed, new PhaseStep(new EnemyAttackOperation(), Round: 1, Number: 2, Subject: villain.ObjectId, Seat: 0), []);
-        Attack.GiveAdditionalBoostCard(world, villain, "test", []);
-        Attack.FlipBoostCards(world, printed, new DamagingBoost(), []);
-        Attack.CalculateDamage(world, printed);
-        Attack.DealDamage(world, printed, []);
+        var events = new List<GameEvent>();
+        ResolveAttack(world, printed, new DamagingBoost(), events);
         Assert.Equal(5, world.Seats[0].IdentityCard.Damage);
-        Assert.Equal(3, world.Activation!.DamageDealt);
+        Assert.Equal(3, Assert.Single(events.OfType<AttackCompleted>()).DamageDealt);
     }
 
     [Rule("rr:attack-enemy-activation.step.3.b")]
@@ -61,16 +57,11 @@ public sealed class AttackAdditionalBoostCardsFlipTests : AttackTestBase
         var printed = Printed(atk: 2, boost: 0);
         var world = Board(printed);
         var villain = world.TheCardIn(DeckType.VillainArea)!;
-        world.Agenda.Abandon();
-        Attack.Initiate(world, printed, new PhaseStep(new EnemyAttackOperation(), Round: 1, Number: 2, Subject: villain.ObjectId, Seat: 0), []);
-        Attack.GiveAdditionalBoostCard(world, villain, "test", []);
         var boostEvents = new List<GameEvent>();
-        Attack.FlipBoostCards(world, printed, new IconChangingBoost(), boostEvents);
+        ResolveAttack(world, printed, new IconChangingBoost(), boostEvents);
         BoostResolved contribution = Assert.Single(boostEvents.OfType<BoostResolved>());
         Assert.Equal(2, contribution.Icons);
         Assert.Equal(4, contribution.Strength);
-        Attack.CalculateDamage(world, printed);
-        Attack.DealDamage(world, printed, []);
         Assert.Equal(4, world.Seats[0].IdentityCard.Damage);
     }
 
@@ -83,11 +74,8 @@ public sealed class AttackAdditionalBoostCardsFlipTests : AttackTestBase
         var world = Board(printed, players: 2);
         var villain = world.TheCardIn(DeckType.VillainArea)!;
         world.Seats[0].IdentityCard.TakeDamage(9);
-        world.Agenda.Abandon();
-        Attack.Initiate(world, printed, new PhaseStep(new EnemyAttackOperation(), Round: 1, Number: 2, Subject: villain.ObjectId, Seat: 0), []);
-        Attack.GiveAdditionalBoostCard(world, villain, "test", []);
         var boostEvents = new List<GameEvent>();
-        Attack.FlipBoostCards(world, printed, new DamagingBoost(), boostEvents);
+        ResolveAttack(world, printed, new DamagingBoost(), boostEvents);
         Assert.Empty(boostEvents.OfType<BoostResolved>());
         Assert.True(world.Seats[0].Eliminated);
         Assert.False(world.Seats[1].Eliminated);
@@ -284,4 +272,16 @@ public sealed class AttackAdditionalBoostCardsFlipTests : AttackTestBase
         Finish(world, printed);
         Assert.Equal(2, world.Seats[0].IdentityCard.Damage);
     }
+    private static void ResolveAttack(World world, ICardFacts facts, ICardAbilities abilities, List<GameEvent> events)
+    {
+        for (int i = 0; i < 10; i++)
+        {
+            var prompt = Sequence.Work(world, facts, abilities, events);
+            if (prompt is null) return;
+            Assert.Equal(Question.Defender, prompt.Asking);
+            Sequence.Answer(world, facts, abilities, prompt, Decision.Decline, events);
+        }
+        throw new InvalidOperationException("attack did not complete");
+    }
+
 }

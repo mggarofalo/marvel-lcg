@@ -142,6 +142,7 @@ internal static class AbilityRepeatedSelectorTrace
             AbilityCardQuery.Enemies => villain
                 || kind == CardKind.Minion,
             AbilityCardQuery.Minions => kind == CardKind.Minion,
+            AbilityCardQuery.Supports => kind == CardKind.Support,
             AbilityCardQuery.Characters => IsCharacter(villain, kind),
             AbilityCardQuery.AttackableEnemies => IsAttackableEnemy(
                 villain, kind, candidate, trace),

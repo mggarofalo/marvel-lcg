@@ -94,6 +94,7 @@ public static class Keywords
         // A facedown Drone keeps the player card's printed id for object and
         // digest identity, but none of that face's printed text is active.
         return !State.EffectiveCards.HasProfile(card)
+            && !PrintedText.IsBlanked(world, card)
             && facts.Attributes(card.FaceId).ContainsKey(Printed(keyword));
     }
 

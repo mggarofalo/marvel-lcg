@@ -62,7 +62,7 @@ internal static class AbilityWindowAdmission
 
     private static bool CanHostWindowAbility(World world, Card card)
     {
-        if (EffectiveCards.HasProfile(card)) return false;
+        if (EffectiveCards.HasProfile(card) || PrintedText.IsBlanked(world, card)) return false;
         bool playableEvent = CardPlayOrigin.CanPlayEvent(world, card, card.Owner);
         return DeckTypes.IsInPlay(card.Area.Type) || playableEvent;
     }
@@ -73,7 +73,7 @@ internal static class AbilityWindowAdmission
     {
         var (card, ability, controller, _) = candidate;
         // rr:when-completed-abilities.1: "When this scheme is completed..."
-        if (!TriggerMatchesCandidate(ability, card, occurrence)) return false;
+        if (!TriggerIsLive(world, ability, card, occurrence)) return false;
         occurrence = candidate.TriggeringThreat ?? occurrence;
         if (!Answers(program, world, candidate, occurrence, window,
                 ability.AnyPlayer ? controller : null)
@@ -94,6 +94,11 @@ internal static class AbilityWindowAdmission
     private static bool TriggerMatchesCandidate(CompiledCardAbility ability, Card card, Occurrence occurrence) =>
         TriggerMatches(ability, occurrence) && (ability.Trigger.Timing != AbilityType.WhenCompleted
             || occurrence.Is(MainSchemeCompletionOperation.Completed) && occurrence.Subject == card.ObjectId);
+
+    private static bool TriggerIsLive(World world, CompiledCardAbility ability, Card card, Occurrence occurrence) =>
+        TriggerMatchesCandidate(ability, card, occurrence)
+        && (ability.Trigger.Damage != DamageTriggerCondition.Taken
+            || DamageWindowEligibility.HasRemainingDamage(world, occurrence));
 
     private static AbilityAdmissionContext Context(
         AbilityProgram program, World world, Card card, Occurrence occurrence,

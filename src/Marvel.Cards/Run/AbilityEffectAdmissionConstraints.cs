@@ -89,6 +89,8 @@ internal static class AbilityEffectAdmissionConstraints
 
     internal static bool LastingPeriodIsOpen(
         AbilityEffect node, AbilityAdmissionScope cast) =>
+        (node is not AbilityEffect.GrantField { Field: PrintedText.Blanked }
+            || PrintedText.CanBeginBlank(cast.World, cast.Source)) &&
         LastingPeriodIsOpen(node switch
         {
             AbilityEffect.GrantField { Until: { } until } => until,

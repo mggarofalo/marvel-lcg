@@ -85,7 +85,7 @@ internal static class AbilityResolutionPreventionAndDefeat
             .Where(area => DeckTypes.IsInPlay(area.Type))
             .SelectMany(area => area.Cards)
             .ToList()
-            .SelectMany(card => execution.On(card)
+            .SelectMany(card => AbilityProgramQueries.ActiveOn(world, execution.program, card)
                 .Where(ability => execution.Answers(world, ability, card, what))
                 .Select(ability => (Card: card, Ability: ability)))
             .ToList(),

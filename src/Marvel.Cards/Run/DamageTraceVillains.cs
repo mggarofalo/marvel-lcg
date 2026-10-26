@@ -71,7 +71,7 @@ internal sealed class DamageTraceVillains(DamageTraceState state, AbilityAdmissi
 
     private void RefuseUntraceableVillainEntry(Card current, Card next)
     {
-        if (AbilityProgramQueries.On(cast.Context.Program, next).Any(ability =>
+        if (AbilityProgramQueries.ActiveOn(cast.World, cast.Context.Program, next).Any(ability =>
                 ability.Trigger.Timing == AbilityType.Constant
                 && !AbilityInactiveAttackConstant.IsInactive(ability, cast.World)))
         {
@@ -90,7 +90,7 @@ internal sealed class DamageTraceVillains(DamageTraceState state, AbilityAdmissi
             $"villain stage '{next.FaceId}' enters play before a "
             + "repeated continuation reads retargeting constant abilities, "
             + "which is not implemented");
-        if (AbilityProgramQueries.On(cast.Context.Program, next).Any(ability =>
+        if (AbilityProgramQueries.ActiveOn(cast.World, cast.Context.Program, next).Any(ability =>
                 ability.Trigger.Timing == AbilityType.WhenRevealed))
         {
             throw new RulesNotImplementedException(

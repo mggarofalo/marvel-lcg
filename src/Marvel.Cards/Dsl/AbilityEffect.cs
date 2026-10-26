@@ -12,6 +12,9 @@ public abstract record AbilityEffect
     /// <summary>Select up to a bounded number of physical out-of-play cards to add to your hand.</summary>
     public sealed record ChooseCardsToHand(AbilityCardSelection From, int Maximum) : AbilityEffect;
 
+    /// <summary>Select a distinct second enemy within the current attack, then deal constant damage.</summary>
+    public sealed record AttackAnotherEnemy(long Amount) : AbilityEffect;
+
     /// <summary>Return this host's stored cards to their owners, optionally removing the host.</summary>
     public sealed record ReleaseBeneath(bool RemoveHost, bool Rescue = false) : AbilityEffect;
 
@@ -88,6 +91,8 @@ public abstract record AbilityEffect
     public sealed record ChangeForm(AbilityPlayer Player, string Form) : AbilityEffect;
     /// <summary>Permit matching cards beneath the source to be played as if in hand.</summary>
     public sealed record AllowPlayBeneath(CardKind Kind, string Trait) : AbilityEffect;
+    /// <summary>Permit this ally to be played from its owner's discard during their turn.</summary>
+    public sealed record AllowPlayFromDiscard : AbilityEffect;
     /// <summary>Draw a fixed number of cards for the selected players.</summary>
     public sealed record Draw(AbilityPlayerSelection Players, int Count) : AbilityEffect;
     /// <summary>Draw to the player's modified or printed hand size.</summary>

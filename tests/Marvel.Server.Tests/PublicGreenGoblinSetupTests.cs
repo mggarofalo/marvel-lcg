@@ -14,7 +14,7 @@ public sealed class PublicGreenGoblinSetupTests
     private static readonly string[] Heroes = ["spider_man", "captain_marvel", "she_hulk", "iron_man"];
 
     [Fact]
-    public void SessionDiscoveryOffersEveryModeAndModularSetWithoutMsMarvel()
+    public void SessionDiscoveryOffersEveryModeAndModularSet()
     {
         var factory = DatasetGameFactory.Load(RepositoryPaths.Root);
         var response = new EngineHost(factory).Exchange(EngineRequest.ReadSetup("setup"));
@@ -28,7 +28,7 @@ public sealed class PublicGreenGoblinSetupTests
             Assert.Equal(["goblin_gimmicks"], choice.RecommendedModularSets);
         }
         Assert.All(Modulars, key => Assert.Contains(choices.ModularSets, choice => choice.Key == key));
-        Assert.DoesNotContain(choices.Heroes, choice => choice.Key == "ms_marvel");
+        Assert.Contains(choices.Heroes, choice => choice.Key == "ms_marvel");
     }
 
     [Fact]

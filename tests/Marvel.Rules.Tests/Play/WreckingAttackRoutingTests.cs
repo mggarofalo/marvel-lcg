@@ -18,13 +18,22 @@ public sealed class WreckingAttackRoutingTests
         var world = fixture.World;
         var owner = fixture.Groups[2];
         var boost = owner.Members[0];
-        World.MoveToTop(boost, world.AreaOf(DeckType.BoostingArea));
-        if (activationContinues)
-            world.Activation = new EnemyActivation(owner.Villain.ObjectId, 0, true);
         var events = new List<GameEvent>();
-        Attack.FinishBoostCard(world, world.Facts, world.AttackAbilities,
-            new PhaseStep(new BoostCompletionOperation(owner.Villain.ObjectId, true),
-                1, 3, Subject: boost.ObjectId, Seat: 0), events);
+        if (activationContinues)
+        {
+            world.Activation = new EnemyActivation(owner.Villain.ObjectId, 0, true);
+            World.MoveToTop(boost, world.AreaOf(DeckType.BoostCardsDeck,
+                owner.Villain.Area.PlayArea, host: owner.Villain.ObjectId));
+            Attack.FlipBoostCards(world, world.Facts, world.AttackAbilities, events);
+            Sequence.Finish(world, world.Facts, world.Abilities, events);
+        }
+        else
+        {
+            World.MoveToTop(boost, world.AreaOf(DeckType.BoostingArea));
+            Attack.FinishBoostCard(world, world.Facts, world.AttackAbilities,
+                new PhaseStep(new BoostCompletionOperation(owner.Villain.ObjectId, true),
+                    1, 3, Subject: boost.ObjectId, Seat: 0), events);
+        }
         Assert.Same(owner.Discard, boost.Area);
         Assert.Empty(fixture.Groups[0].Discard.Cards);
         Assert.Equal(Places.Reference(owner.Discard),

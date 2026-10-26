@@ -14,6 +14,7 @@ internal sealed record AbilityDamageAndThreatContext(
     long Incoming, IThreatCardAbilities ThreatAbilities)
 {
     internal Occurrence? PowerOccurrence { get; init; }
+    internal bool StagedAttack { get; init; }
     internal int? DamageActivationId { get; init; }
     internal ImmutableArray<Attacked> DeclaredAttackRecipients { get; init; }
     internal World World => Expressions.World;

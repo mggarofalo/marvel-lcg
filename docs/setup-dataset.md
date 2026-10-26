@@ -6,8 +6,8 @@ expansion is excluded from public discovery as a whole.
 
 `RuntimeProductAdmission` owns the closed accepted-product policy: Core Set,
 Rise of Red Skull, Captain America, Wrecking Crew and the complete Green Goblin
-integration candidate. Merely adding an authored ability or setup recipe does not admit another product. Unaccepted product-owned
-recipes are excluded; a retained accepted recipe that references an unavailable face
+and Ms. Marvel integration candidates. Merely adding an authored ability or setup
+recipe does not admit another product. Unaccepted product-owned recipes are excluded; a retained accepted recipe that references an unavailable face
 still fails validation. The same admitted face set controls discovery, research
 cards' runtime-support flags, deck assessment and game creation.
 
@@ -24,13 +24,18 @@ The file has 3 groups:
 | Group | Admitted rows | Declared rows |
 |---|---:|---:|
 | `campaigns` | 39 Core Set, Rise of Red Skull, Wrecking Crew and Green Goblin scenario/mode combinations | 39 |
-| `heroes` | 8 Core Set, Rise of Red Skull and Captain America starter decks | 9 |
+| `heroes` | 9 Core Set, Rise of Red Skull, Captain America and Ms. Marvel starter decks | 9 |
 | `encounter_sets` | 14 Core Set, Rise of Red Skull and Green Goblin fixed/modular sets | 14 |
 
-Ms. Marvel is a declared research hero. Her 40-card starter, obligation and
-nemesis set follow a pinned FFG divider; the runtime product gate excludes her
-recipe until complete pack acceptance. Four Green Goblin modular sets are
-also declared and admitted by the complete-product candidate policy: A Mess of Things contains 02037, 02038, 02039
+Ms. Marvel is admitted as a complete integration candidate. Her 40-card starter,
+obligation and nemesis set follow the pinned FFG divider in
+`datasets/rules-packs/mc05/UPSTREAM.md`. Admission requires all 34 printed faces
+and the exact recipe; any missing face or changed required composition closes
+the complete pack. Public setup covers one through four seats in Core and Rise
+of Red Skull scenarios, legal custom decks, and a pending Morphogenetics response
+across session restart. These checks do not establish whole-game or native acceptance.
+
+Four Green Goblin modular sets are also declared and admitted by the complete-product candidate policy: A Mess of Things contains 02037, 02038, 02039
 and two copies of 02040; Goblin Gimmicks contains two copies each of
 02033–02036; Power Drain contains one copy each of 02041–02045. Running Interference contains 02046, 02047, 02048 and two copies of 02049.
 All four sets require exact physical quantities and modular roles for admission.
