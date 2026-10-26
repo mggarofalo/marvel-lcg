@@ -16277,6 +16277,244 @@
           }
         }
       ]
+    },
+    {
+      "card": "05001a",
+      "name": "Ms. Marvel",
+      "note": "Printed Morphogenetics: recover the exact completed event from its owner discard after resolution (rr:event; ruling:7f69f006cddce07e). Attack, Thwart and Defense are traits (ruling:556ecad3abe55ce9). Off-turn return and replay follows ruling:b144656def387a1e.",
+      "abilities": [
+        {
+          "name": "Morphogenetics",
+          "trigger": {
+            "event": "WhenCardPlayed",
+            "timing": "Response",
+            "subject": "you",
+            "form": "hero"
+          },
+          "when": {
+            "and": [
+              {
+                "exists": "trigger.discardedEvent"
+              },
+              {
+                "or": [
+                  {
+                    "hasTrait": {
+                      "card": "trigger.subject",
+                      "trait": "ATTACK"
+                    }
+                  },
+                  {
+                    "hasTrait": {
+                      "card": "trigger.subject",
+                      "trait": "THWART"
+                    }
+                  },
+                  {
+                    "hasTrait": {
+                      "card": "trigger.subject",
+                      "trait": "DEFENSE"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "cost": {
+            "exhaust": "this"
+          },
+          "effect": {
+            "returnToHand": "trigger.discardedEvent"
+          }
+        }
+      ]
+    },
+    {
+      "card": "05001b",
+      "name": "Kamala Khan",
+      "note": "Printed Teen Spirit: discard from your deck until a Ms. Marvel identity-specific card, then add that exact card to hand. Once per round, without an exhaust cost. Deck exhaustion follows rr:player-deck.1 and rr:player-deck.3.",
+      "abilities": [
+        {
+          "name": "Teen Spirit",
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "alter-ego"
+          },
+          "limitPerRound": 1,
+          "effect": {
+            "discardUntil": {
+              "from": "yourDeck",
+              "set": "ms_marvel",
+              "then": "addToHand"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "05003",
+      "name": "Big Hands",
+      "note": "Printed Hero Action (attack): Deal 4 damage to an enemy. The attack body owns the printed attack label and normal attack permissions.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "attackableEnemies"
+              },
+              "effect": {
+                "attack": {
+                  "target": "chosen",
+                  "effect": {
+                    "dealAttackDamage": {
+                      "cards": "chosen",
+                      "amount": 4
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "05004",
+      "name": "Sneak By",
+      "note": "Printed Hero Action (thwart): Remove 3 threat from a scheme. The thwart body owns the printed thwart label.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "schemes"
+              },
+              "effect": {
+                "thwart": {
+                  "target": "chosen",
+                  "effect": {
+                    "removeThreat": {
+                      "scheme": "chosen",
+                      "amount": 3
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "05005",
+      "name": "Wiggle Room",
+      "note": "Printed Hero Interrupt (defense): When you would take any amount of damage, prevent 3 of that damage. Draw 1 card. The target is your identity; damage need not come from an attack. Current rr:defend-defense governs the defense label; ruling:b144656def387a1e allows recovered replay in the same damage window.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenDamageWouldBeDealt",
+            "timing": "Interrupt",
+            "target": "you",
+            "form": "hero"
+          },
+          "labels": [
+            "defense"
+          ],
+          "when": {
+            "isYourIdentity": "trigger.target"
+          },
+          "effect": {
+            "seq": [
+              {
+                "preventDamage": {
+                  "card": "trigger.target",
+                  "amount": 3
+                }
+              },
+              {
+                "draw": {
+                  "player": "you",
+                  "count": 1
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "05010",
+      "name": "Embiggen!",
+      "note": "Printed Hero Interrupt when you play the qualifying trait event: exhaust this upgrade to increase its damage by 2. WhenEventPlayInitiated is the engine timing choice after paid costs and before the event body (rr:initiating-abilities.step.6). Each instance is modified (rr:event.5; faq:05010); printed maxima still apply (ruling:88369b11361157e4).",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenEventPlayInitiated",
+            "timing": "Interrupt",
+            "subject": "you",
+            "form": "hero"
+          },
+          "when": {
+            "hasTrait": {
+              "card": "trigger.subject",
+              "trait": "ATTACK"
+            }
+          },
+          "cost": {
+            "exhaust": "this"
+          },
+          "effect": {
+            "modifyPlayedEvent": {
+              "quantity": "damage",
+              "amount": 2
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "05011",
+      "name": "Shrink",
+      "note": "Printed Hero Interrupt when you play the qualifying trait event: exhaust this upgrade to increase its threatRemoval by 2. WhenEventPlayInitiated is the engine timing choice after paid costs and before the event body (rr:initiating-abilities.step.6). Each instance is modified (rr:event.5; faq:05011); printed maxima still apply (ruling:88369b11361157e4).",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenEventPlayInitiated",
+            "timing": "Interrupt",
+            "subject": "you",
+            "form": "hero"
+          },
+          "when": {
+            "hasTrait": {
+              "card": "trigger.subject",
+              "trait": "THWART"
+            }
+          },
+          "cost": {
+            "exhaust": "this"
+          },
+          "effect": {
+            "modifyPlayedEvent": {
+              "quantity": "threatRemoval",
+              "amount": 2
+            }
+          }
+        }
+      ]
     }
   ]
 }

@@ -3,8 +3,8 @@
 | | |
 |---|---|
 | Kind | authored |
-| Product boundary | Core Set, Rise of Red Skull, Captain America and Wrecking Crew; Green Goblin research rows remain publicly excluded |
-| Records | 541 printed card faces, including explicit empty rows |
+| Product boundary | Core Set, Rise of Red Skull, Captain America and Wrecking Crew; Green Goblin and Ms. Marvel research rows remain publicly excluded |
+| Records | 548 printed card faces, including explicit empty rows |
 | Authorities | Generated `datasets/cards/`, vendored Rules Reference, expansion rulebooks and published rulings |
 | Gated by | Ability admission/lowering tests, complete-product admission, actual-card tests, campaign acceptance and executable Core behavioral transcripts |
 
@@ -110,3 +110,14 @@ form/Hysteria, attack/scheme, non-first-player engagement and source isolation.
 damage-placed receipt: existing activationDamage counts damage dealt, which differs
 from placed damage under rr:damage.3.2 and ruling:d855181a23d49683.
 Public admission remains closed. See docs/content/mutagen-final-face-evidence.md.
+
+Ms. Marvel adds seven research faces: 05001a/b, 05003–05005 and 05010–05011.
+Printed text comes from `datasets/cards/cards.json`. Morphogenetics uses the
+exact completed physical event in its owner discard (rulings
+`ruling:7f69f006cddce07e`, `ruling:556ecad3abe55ce9` and
+`ruling:b144656def387a1e`). Teen Spirit searches the identity-specific set,
+with the normal player-deck exhaustion boundary. Event modifiers use each
+instance (`rr:event.5`, `faq:05010`, `faq:05011`) and preserve printed caps
+(`ruling:88369b11361157e4`). `MsMarvelEventCardTests`,
+`MsMarvelIdentityEventTests` and `MsMarvelTeenSpiritTests` exercise these actual
+rows. This partial authoring keeps Ms. Marvel outside public admission.
