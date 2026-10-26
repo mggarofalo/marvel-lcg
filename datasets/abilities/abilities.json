@@ -14154,13 +14154,17 @@
       "abilities": [
         {
           "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
-          "effect": { "seq": [
-            { "enemyAttacks": { "enemies": { "titled": "Scorpion" } } },
-            { "if": {
-              "test": { "not": { "atLeast": { "value": { "result": "activationMade" }, "count": 1 } } },
-              "then": { "giveStatus": { "card": "you", "status": "stunned" } }
-            } }
-          ] }
+          "effect": { "if": {
+            "test": { "inForm": { "player": "you", "form": "hero" } },
+            "then": { "seq": [
+              { "enemyAttacks": { "enemies": { "titled": "Scorpion" } } },
+              { "if": {
+                "test": { "not": { "atLeast": { "value": { "result": "activationMade" }, "count": 1 } } },
+                "then": { "giveStatus": { "card": "you", "status": "stunned" } }
+              } }
+            ] },
+            "else": { "giveStatus": { "card": "you", "status": "stunned" } }
+          } }
         },
         {
           "trigger": { "event": "WhenCardRevealed", "timing": "Boost", "subject": "this" },

@@ -69,6 +69,25 @@ public sealed class GreenGoblinMessOfThingsTests
         Assert.True(Statuses.Has(world, world.Seats[0].IdentityCard, Statuses.Stunned));
     }
 
+    [Rule("rr:form-change-form.5")]
+    [Fact]
+    public void TailSweepStunsAlterEgoWithoutScorpionAttacking()
+    {
+        // "While a player is in alter-ego form, card abilities that interact with
+        // their hero do not interact with their identity."
+        // Tail Sweep says "Scorpion attacks your hero", so alter-ego receives no attack.
+        var world = Board("01001b");
+        world.CreateCard("02038", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+        var card = world.CreateCard("02040", world.AreaOf(DeckType.RevealingArea));
+        var runner = AuthoredCards.Runner();
+
+        runner.ExecuteReveal(world, card, 0);
+        Finish(world, runner);
+
+        Assert.Equal(0, world.Seats[0].IdentityCard.Damage);
+        Assert.True(Statuses.Has(world, world.Seats[0].IdentityCard, Statuses.Stunned));
+    }
+
     [Rule("rr:boost-boost-icon.2")]
     [Fact]
     public void TailSweepBoostStunsWithoutDependingOnDamage()
