@@ -12,32 +12,38 @@ namespace Marvel.Content.Tests.Play;
 
 public sealed class RemainingDamageReviewTests : CoreCardTestBase
 {
-    // Synthetic "would take" timing contract, using the engine's shared would-be-dealt key.
+    // Synthetic damage timing contracts, explicitly distinguishing dealt from taken.
     // Healing distinguishes the trigger condition from a prevention effect body.
-    private static AbilityRunner Runner(string timing = "Interrupt", string role = "target") => new(AbilityCatalog.Parse("""
+    private static AbilityRunner Runner(string timing = "Interrupt", string role = "target",
+        string damage = "taken") => new(AbilityCatalog.Parse("""
         {"cards":[{"card":"05017","abilities":[{
-          "trigger":{"event":"WhenDamageWouldBeDealt","timing":"TIMING","ROLE":"you"},
+          "trigger":{"event":"WhenDamageWouldBeDealt","damage":"DAMAGE","timing":"TIMING","ROLE":"you"},
           "cost":{"removeCounters":{"card":"this","counter":"reflection","count":1}},
           "effect":{"heal":{"card":"you","amount":1}}
         }]}]}
-        """.Replace("TIMING", timing, StringComparison.Ordinal).Replace("ROLE", role, StringComparison.Ordinal)));
+        """.Replace("TIMING", timing, StringComparison.Ordinal).Replace("ROLE", role, StringComparison.Ordinal)
+            .Replace("DAMAGE", damage, StringComparison.Ordinal)));
 
-    [Fact]
+    [Theory]
+    [InlineData("actor")]
+    [InlineData("target")]
     [Rule("rr:prevent.1.1")]
-    public void WouldDealOptionalTriggerStillExistsWhenOnlyTakenDamageIsPrevented()
+    public void WouldDealOptionalTriggerStillExistsWhenOnlyTakenDamageIsPrevented(string role)
     {
-        // Request-changes regression: prevention reduces "takes", but "dealt" is not reduced.
-        // Steps.DamageWouldBeDealt documents the dealer-side step-one family as the same step.
+        // rr:prevent.1.1: prevention reduces "takes", but "dealt" is not reduced.
+        // The qualifier describes damage, independently of actor/target matching.
         var world = Hero("01001a");
         var hero = world.Seats[0].IdentityCard;
         hero.TakeDamage(3);
         var target = world.CreateCard("01094", world.AreaOf(DeckType.VillainArea));
         var upgrade = Upgrade(world);
-        var runner = Runner(role: "actor");
+        var runner = Runner(role: role, damage: "dealt");
         world.Abilities = runner;
         world.Effects.Register(new(EffectSource.LastingEffect, "preventDamage", 1,
-            Affects: target.ObjectId, Lasts: Duration.NextUses(1)));
-        var replacement = DamagePlacement.Replace(world, new(hero, target, 1, "Review", "Damage"), []);
+            Affects: role == "actor" ? target.ObjectId : hero.ObjectId, Lasts: Duration.NextUses(1)));
+        var replacement = DamagePlacement.Replace(world,
+            role == "actor" ? new(hero, target, 1, "Review", "Damage")
+                : new(target, hero, 1, "Review", "Damage"), []);
         Assert.Equal(1, replacement.ResolvedAmount);
         var ability = Assert.Single(runner.Waiting(world, replacement.Execution.Occurrence, WindowKind.Interrupt));
         runner.ResolveWindow(world, replacement.Execution.Occurrence, ability, Decision.Take(upgrade.ObjectId));
@@ -90,7 +96,7 @@ public sealed class RemainingDamageReviewTests : CoreCardTestBase
         hero.TakeDamage(3);
         var source = world.CreateCard("01094", world.AreaOf(DeckType.VillainArea));
         var upgrade = Upgrade(world);
-        var runner = Runner("ForcedInterrupt");
+        var runner = Runner("ForcedInterrupt", damage: "dealt");
         world.Abilities = runner;
         world.Effects.Register(new(EffectSource.LastingEffect, "preventDamage", 1,
             Affects: hero.ObjectId, Lasts: Duration.NextUses(1)));

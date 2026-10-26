@@ -93,4 +93,10 @@ public sealed record AbilityTrigger(
 {
     /// <summary>Higher-priority forced interrupt to what would happen.</summary>
     public bool Would { get; init; }
+
+    /// <summary>
+    /// Engine-selected qualifier for the shared damage interrupt window.
+    /// Dealt is the default; rr:prevent.1.1 distinguishes damage taken from dealt.
+    /// </summary>
+    public DamageTriggerCondition Damage { get; init; }
 }

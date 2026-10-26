@@ -28,6 +28,7 @@ public sealed class RemainingDamageInterruptTests : CoreCardTestBase
             {
               "trigger": {
                 "event": "WhenDamageWouldBeDealt",
+                "damage": "taken",
                 "timing": "Interrupt",
                 "target": "you"
               },

@@ -108,3 +108,47 @@ or use a narrower prevention-body eligibility guard if the engine owner establis
 that interpretation from authority. Resolve this distinction before approving the
 general engine capability; this review does not accept the broad guard merely to
 admit Energy Barrier.
+
+## Trigger semantic correction
+
+The corrected contract adds the typed `DamageTriggerCondition` to an authored
+trigger. JSON `"damage": "taken"` observes the recipient's remaining damage;
+`"damage": "dealt"` and an omitted qualifier observe dealt damage. The spelling
+and shared-window representation are engine choices. The parser rejects unknown,
+null and nonstring values and qualifiers outside damage interrupt timing.
+Discovery and preflight gate only `Taken`, independently of the effect body or
+actor/target role. `rr:prevent.1.1` supplies the distinction. Existing unknown-
+amount synthetic occurrences retain their behavior. No placement, cost,
+continuation or attack-completion procedures change.
+
+The synthetic 05017 interpretation and the synthetic would-take healing cases
+now explicitly name `taken`. The would-deal regression has actor-side and
+target-side controls, both of which resolve the healing effect and pay the
+counter even with full recipient prevention. The mandatory step-one control
+explicitly observes `dealt`; prevention does not suppress that condition.
+
+The shared ability book is deliberately unchanged in this worker commit because
+the delivery lead owns its concurrent migration. Before integration, annotate
+the existing optional prevention triggers on 01003 Backflip, 01017 Cosmic Flight,
+03005 Shield Block and 05005 Wiggle Room with `"damage": "taken"`. Their printed
+conditions describe taking damage. Leave 01098 Armored Rhino Suit and 04065
+Crossbones' Armor as dealt-damage step-one soak replacements. No 05017 runtime
+row or public admission is added by this correction.
+
+The focused corrected suite passes 173 cases, including qualifier validation,
+remaining-damage eligibility, stale preflight atomicity, actual attack completion,
+ordinary prevention cards, indirect damage and forced replacements. Compiled
+mutations that restore the broad discovery gate or broad preflight gate each
+fail the two would-deal actor/target controls while six other review cases pass.
+Each source is restored byte-for-byte in `finally`, then a forced Release
+Rebuild precedes the restored suite. Logs outside the repository:
+
+- `C:/Users/mggar/Source/marvel736-qualifier-baseline.log`
+- `C:/Users/mggar/Source/marvel736-qualifier-dealt-mutant.log`
+- `C:/Users/mggar/Source/marvel736-qualifier-restore-build.log`
+- `C:/Users/mggar/Source/marvel736-qualifier-preflight-mutant.log`
+- `C:/Users/mggar/Source/marvel736-qualifier-preflight-restore-build.log`
+- `C:/Users/mggar/Source/marvel736-qualifier-final.log`
+
+This worker evidence does not certify the pending ability-book migration,
+integration-wide managed verification or independent re-review.

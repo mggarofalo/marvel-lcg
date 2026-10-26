@@ -179,6 +179,17 @@ from it:
 
 `note` records authoring judgment. The runtime does not read it.
 
+Damage interrupts share `WhenDamageWouldBeDealt` and may qualify that condition
+with `"damage": "taken"` or `"damage": "dealt"`. The default is `dealt`.
+The field spelling and shared-window representation are engine choices.
+Under `rr:prevent.1.1`, prevention reduces damage taken while leaving damage
+dealt unchanged. A `taken` trigger therefore requires positive damage remaining
+after the recipient's pending prevention, both when offered and before costs.
+The qualifier describes the triggering condition independently of actor/target
+roles and the effect body. Only interrupt timing on this damage condition accepts
+the qualifier. Step-one mandatory soak replacements observe dealt damage and
+do not use `taken`.
+
 A printed variable basic power has an intrinsic base definition, for example:
 
 ```json

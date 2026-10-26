@@ -97,8 +97,7 @@ internal static class AbilityWindowAdmission
 
     private static bool TriggerIsLive(World world, CompiledCardAbility ability, Card card, Occurrence occurrence) =>
         TriggerMatchesCandidate(ability, card, occurrence)
-        && (ability.Trigger.Event != Steps.DamageWouldBeDealt
-            || AbilityTypes.IsMandatory(ability.Trigger.Timing)
+        && (ability.Trigger.Damage != DamageTriggerCondition.Taken
             || DamageWindowEligibility.HasRemainingDamage(world, occurrence));
 
     private static AbilityAdmissionContext Context(
