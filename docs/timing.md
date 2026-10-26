@@ -429,6 +429,12 @@ agenda. Activation work explicitly deferred under `rr:activation.8` remains
 behind the current activation. This permits the current activation to finish
 without reporting the deferred ability as complete (`rr:activation.7`, `.8.2`).
 
+Before a procedure opens its response window, it moves its scheduled children
+ahead of that window even when they inherit the procedure's execution owner.
+Frames owned by another invocation retain their own completion ordering. This
+keeps a transferred minion's Quickstrike ahead of optional engagement responses
+while the containing interpreted placement remains suspended.
+
 Interrupt and response windows also depend on unfinished invocations for their
 exact occurrence. Their prerequisites include every outstanding descendant frame,
 even when a finished parent body waits for a child that schedules more work.

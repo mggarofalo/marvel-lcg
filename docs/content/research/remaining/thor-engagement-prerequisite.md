@@ -23,7 +23,7 @@ A same-seat instruction completes with zero movement and no engagement condition
 Discard-until first-player placement now uses this procedure as well.
 
 Quickstrike finishes before the optional engagement response for reveal and direct
-non-reveal entry. Interpreted transfer has the review finding below. Teamwork
+non-reveal entry. The interpreted-transfer correction is recorded below. Teamwork
 remains entry-specific. Existing ability
 limits retain phase reset ownership; no Thor-specific use counter was introduced.
 
@@ -89,7 +89,36 @@ Evidence outside the checkout, under `marvel-thor-engagement-evidence`:
 pending-frame evidence), and `review-baseline-hawkeye.log` (2 compiled failures
 on `7e352dbc`). No engine fix or final acceptance is claimed by this review.
 
-Remaining: interpreted-transfer timing fix and independent retest; engine replay
+## Interpreted transfer timing correction
+
+Correction checkout: `marvel-thor-transfer-fix`, based on review commit `dd609c45`.
+`Agenda.BeforeResponses` includes scheduled child frames inheriting the applying
+procedure's execution owner. The guard continues to exclude frames belonging to
+another invocation. The transfer's Quickstrike therefore completes before Thor's
+optional response without changing the retained card, entry conditions or reveal
+semantics. No ability data or public admission changes are included.
+
+The four independent review cases pass on the correction. Scheduler controls
+distinguish same-execution children from another invocation. A synthetic placement
+follow-up observes suspension through Quickstrike defense and Thor's response for
+both initial entry and transfer. Validation logs live outside the checkout in
+`marvel-thor-transfer-fix-evidence`:
+
+- Restored nonincremental full solution Release build: zero warnings/errors.
+- Full Content suite: 5,301 passing; full Rules suite: 1,100 passing.
+- Architecture suite: 129 passing.
+- Focused entry, review and suspension controls: 11 passing.
+- Compiled inherited-child exclusion mutant: killed by the same-execution control.
+- Compiled ownership-guard removal mutant: killed by the other-invocation control.
+- Both mutants restored before the full rebuild and final passing suites.
+
+Independent review remains required.
+
+The Core Hawkeye timing change identified above remains a replay compatibility
+change. This timing correction does not establish v25 compatibility or implement
+the separately required replay v26 decision and route proof.
+
+Remaining: independent timing retest; engine replay
 compatibility decision and route proof; complete Defender discard-until/cost composition;
 full Get Over Here event initiation/payment and stale-cost controls; replay/save
 coverage of engagement response suspension; full pack abilities/setup/admission.
