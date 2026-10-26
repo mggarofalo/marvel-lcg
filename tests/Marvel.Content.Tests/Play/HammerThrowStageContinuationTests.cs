@@ -64,11 +64,14 @@ public sealed class HammerThrowStageContinuationTests
     [InlineData("01095", "{\"discard\":{\"titled\":\"Mjolnir\"}}")]
     [InlineData("01107", "{\"discard\":{\"titled\":\"Mjolnir\"}}")]
     [InlineData("01095", "{\"dealDamage\":{\"cards\":\"you\",\"amount\":1}}")]
-    public void SourceChangingOrHealthChangingRevealIsRefusedBeforeDamage(string face, string effect)
+    public void NonterminalSourceChangingOrHealthChangingRevealIsRefusedBeforeDamage(string face, string effect)
     {
         var book = JsonNode.Parse(File.ReadAllText(RepositoryPaths.Dataset("abilities", "abilities.json")))!;
         book["cards"]!.AsArray().Single(row => row!["card"]!.GetValue<string>() == face)!
             ["abilities"]![0]!["effect"] = JsonNode.Parse(effect);
+        book["cards"]!.AsArray().Single(row => row!["card"]!.GetValue<string>() == "06005")!
+            ["abilities"]![0]!["effect"]!["chooseCard"]!["effect"]!["attack"]!["effect"]!["seq"]!
+            .AsArray().Add(JsonNode.Parse("""{"dealDamage":{"cards":"you","amount":1}}"""));
         var runner = new AbilityRunner(AbilityCatalog.Parse(book.ToJsonString()));
         var game = Prepare(runner, true);
         var action = Assert.Single(runner.Actions(game.World, 0), a => a.Card == game.Event.ObjectId);
@@ -82,11 +85,14 @@ public sealed class HammerThrowStageContinuationTests
     }
 
     [Fact]
-    public void SchemeDependentHealthIsRefusedBeforeDamage()
+    public void NonterminalSchemeDependentHealthIsRefusedBeforeDamage()
     {
         // Synthetic constant: revealing the named scheme changes a character's
         // health, so the public reveal's otherwise harmless shape is insufficient.
-        var runner = HammerThrowRecoveryPreflightTests.Runner(helmet: """
+        var runner = HammerThrowRecoveryPreflightTests.Runner(continuation: """
+            {"seq":[{"returnToHand":{"titled":"Mjolnir"}},
+            {"dealDamage":{"cards":"you","amount":1}}]}
+            """, helmet: """
             {"if":{"test":{"titleInPlay":"Breakin' & Takin'"},
             "then":{"grant":{"card":"you","keyword":"health","amount":5}}}}
             """);

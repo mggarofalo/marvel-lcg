@@ -10,6 +10,24 @@ namespace Marvel.Cards.Run;
 /// <summary>Separates an opaque stage reveal from a stable upgrade departure.</summary>
 internal static class AbilityStageEntryDependencies
 {
+    internal static bool CanFinishLive(AbilityEffect node, AbilityAdmissionScope cast,
+        bool terminal, IEnumerable<AbilityPowerState> paths)
+    {
+        if (!terminal || paths.Any(path => path.UnprojectedStageEntry is null)) return false;
+        if (node is not AbilityEffect.CardAction
+            { Instruction: AbilityCardInstruction.ReturnToHand,
+              Selection: AbilityCardSelection.Titled } returned) return false;
+        var cards = Every(returned.Selection, cast).ToArray();
+        if (cards.Length != 1 || cards[0].Owner != cast.Player
+            || EffectiveCards.Kind(cards[0], cast.World.Facts) != CardKind.Upgrade
+            || !DeckTypes.IsInPlay(cards[0].Area.Type)) return false;
+        // No later abstract state consumes this departure. The live instruction
+        // reselects after stage work, can find no card, and owns constant endings
+        // and their defeat settlement. No stage result or hidden pile is read.
+        cast.World.Effects.PreflightConstantsEnding(cards[0]);
+        return true;
+    }
+
     internal static bool PreservesReads(AbilityEffect node, AbilityPowerState state,
         AbilityAdmissionScope cast)
     {
