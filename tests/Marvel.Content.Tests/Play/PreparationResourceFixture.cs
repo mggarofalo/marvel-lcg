@@ -8,12 +8,11 @@ namespace Marvel.Content.Tests.Play;
 /// <summary>Actual 08007 interpretation with synthetic suspension support; no pack admission.</summary>
 internal static class PreparationResourceFixture
 {
-    internal static AbilityRunner Runner() => new(AbilityCatalog.Parse("""
+    internal static AbilityRunner Runner()
+    {
+        var local = AbilityCatalog.Parse("""
         {"cards":[
-          {"card":"08007","abilities":[{
-            "trigger":{"event":"WhenActionTriggered","timing":"Resource","subject":"game"},
-            "resourceRestriction":"preparationCard","printedResources":"G",
-            "cost":{"exhaust":"this"},"effect":{"generate":"G"}}]},
+          {"card":"08008","abilities":[]},
           {"card":"01030","abilities":[{
             "trigger":{"event":"WhenActionTriggered","timing":"Resource","subject":"game"},
             "cost":{"dealDamage":{"cards":"this","amount":2}},"effect":{"generate":"G"}}]},
@@ -21,7 +20,16 @@ internal static class PreparationResourceFixture
             "trigger":{"event":"WhenCardWouldBeDefeated","timing":"Interrupt","subject":"game"},
             "effect":{"draw":{"player":"you","count":1}}}]}
         ]}
-        """));
+        """);
+        // Only the absent Preparation is empty test-local data. Gauntlet is the actual row;
+        // synthetic damage-resource and interrupt rows isolate nested payment suspension.
+        var source = Marvel.Content.Tests.Cards.AuthoredCards.Book;
+        return new AbilityRunner(local with
+        {
+            Abilities = [.. source.On("08007"), .. local.Abilities],
+            Authored = local.Authored.Append("08007").ToHashSet(StringComparer.Ordinal),
+        });
+    }
 
     internal static (Game Game, World World, Card First, Card Second, Card Target) Board(
         bool hero = true, bool nested = false, string face = "08008")

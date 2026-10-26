@@ -20,7 +20,13 @@ public sealed class SafeHouseCostChoiceTests : ChoosingCardsTestBase
         }]}]}
         """;
 
-    internal static AbilityRunner Runner() => new(AbilityCatalog.Parse(Json));
+    internal static AbilityRunner Runner()
+    {
+        using var book = System.Text.Json.JsonDocument.Parse(Marvel.Content.Tests.Cards.AuthoredCards.Text);
+        var row = book.RootElement.GetProperty("cards").EnumerateArray()
+            .Single(card => card.GetProperty("card").GetString() == "08005");
+        return new(AbilityCatalog.Parse("{\"cards\":[" + row.GetRawText() + "]}"));
+    }
 
     [Theory]
     [InlineData(0)]

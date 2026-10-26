@@ -18904,6 +18904,185 @@
           }
         }
       ]
+    },
+    {
+      "card": "08001a",
+      "name": "Black Widow",
+      "note": "Widowmaker uses resolved Preparation abilities under RR 1.8 resolve.2 and current ruling:420bd5b1763b9506; fully canceled abilities do not resolve.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenPreparationAbilityResolved",
+            "timing": "Response",
+            "subject": "you"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "enemies"
+              },
+              "effect": {
+                "dealDamage": {
+                  "cards": "chosen",
+                  "amount": 1
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "08005",
+      "name": "Safe House #29",
+      "note": "The own-discard Preparation choice is paid before the arrow together with exhaustion; the exact selected card then enters hand.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "alter-ego"
+          },
+          "cost": {
+            "seq": [
+              {
+                "exhaust": "this"
+              },
+              {
+                "chooseFromDiscard": "PREPARATION"
+              }
+            ]
+          },
+          "effect": {
+            "addToHand": "chosen"
+          }
+        }
+      ]
+    },
+    {
+      "card": "08007",
+      "name": "Black Widow's Gauntlet",
+      "note": "The wild resource is restricted to a Preparation card or that card own ability cost; Resource has no form restriction.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Resource",
+            "subject": "game"
+          },
+          "resourceRestriction": "preparationCard",
+          "printedResources": "G",
+          "cost": {
+            "exhaust": "this"
+          },
+          "effect": {
+            "generate": "G"
+          }
+        }
+      ]
+    },
+    {
+      "card": "08009",
+      "name": "Synth-Suit",
+      "note": "The named Black Widow receives +1 DEF. The Hero Response uses resolve under ruling:420bd5b1763b9506, exhausts this upgrade and readies the named Black Widow.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "exists": {
+                  "titled": "Black Widow"
+                }
+              },
+              "then": {
+                "grant": {
+                  "card": {
+                    "titled": "Black Widow"
+                  },
+                  "keyword": "defense",
+                  "amount": 1
+                }
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenPreparationAbilityResolved",
+            "timing": "Response",
+            "subject": "you",
+            "form": "hero"
+          },
+          "cost": {
+            "exhaust": "this"
+          },
+          "effect": {
+            "ready": {
+              "titled": "Black Widow"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "08010",
+      "name": "Widow's Bite",
+      "note": "The entered minion can be engaged with any player. Discard is a cost; attack damage settles before stunning the retained in-play incarnation.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardEntersPlay",
+            "timing": "Response",
+            "subject": "game",
+            "form": "hero"
+          },
+          "when": {
+            "isKind": {
+              "card": "trigger.subject",
+              "kind": "minion"
+            }
+          },
+          "cost": {
+            "discard": "this"
+          },
+          "labels": [
+            "attack"
+          ],
+          "effect": {
+            "attack": {
+              "target": "trigger.subject",
+              "effect": {
+                "seq": [
+                  {
+                    "dealAttackDamage": {
+                      "cards": "chosen",
+                      "amount": 2
+                    }
+                  },
+                  {
+                    "if": {
+                      "test": {
+                        "isInPlay": "chosen"
+                      },
+                      "then": {
+                        "giveStatus": {
+                          "card": "chosen",
+                          "status": "stunned"
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ]
     }
   ]
 }

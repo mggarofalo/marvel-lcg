@@ -7,39 +7,10 @@ using Marvel.Tests;
 
 namespace Marvel.Content.Tests.Play;
 
-// Test-local printed interpretations; this does not admit the Black Widow product.
+// Actual printed rows with explicitly synthetic optional suspension probes; no public admission.
 internal sealed class PreparationPrintedFixture
 {
     internal CardCatalog Cards { get; } = CardCatalog.Parse(File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")));
-    private const string Rows = """
-        {"cards":[
-          {"card":"08010","abilities":[{
-            "trigger":{"event":"WhenCardEntersPlay","timing":"Response","subject":"game","form":"hero"},
-            "when":{"isKind":{"card":"trigger.subject","kind":"minion"}},
-            "cost":{"discard":"this"},"labels":["attack"],
-            "effect":{"attack":{"target":"trigger.subject","effect":{"seq":[
-              {"dealAttackDamage":{"cards":"chosen","amount":2}},
-              {"if":{"test":{"isInPlay":"chosen"},
-                "then":{"giveStatus":{"card":"chosen","status":"stunned"}}}}
-            ]}}}
-          }]},
-          {"card":"08001a","abilities":[{
-            "trigger":{"event":"WhenPreparationAbilityResolved","timing":"Response","subject":"you"},
-            "effect":{"chooseCard":{"from":{"query":"enemies"},"effect":{"dealDamage":{"cards":"chosen","amount":1}}}}
-          }]},
-          {"card":"08023","abilities":[{
-            "trigger":{"event":"WhenCardWouldBeDefeated","timing":"Interrupt","subject":"game"},
-            "effect":{"choose":{"options":[
-              {"giveStatus":{"card":"you","status":"confused"}},
-              {"giveStatus":{"card":"you","status":"stunned"}}
-            ]}}
-          }]},
-          {"card":"08009","abilities":[{
-            "trigger":{"event":"WhenPreparationAbilityResolved","timing":"Response","subject":"you","form":"hero"},
-            "cost":{"exhaust":"this"},"effect":{"ready":"you"}
-          }]}
-        ]}
-        """;
     internal AbilityRunner Runner { get; }
     internal World World { get; }
     internal Card Hero { get; }
@@ -52,22 +23,32 @@ internal sealed class PreparationPrintedFixture
     private static AbilityRunner CreateRunner(bool boardRead, string? interruptEffect, string? tail)
     {
         var root = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(RepositoryPaths.Dataset("abilities", "abilities.json")))!;
-        var rows = System.Text.Json.Nodes.JsonNode.Parse(Rows)!["cards"]!.AsArray();
+        var rows = root["cards"]!.AsArray();
+        var bite = rows.Single(row => row!["card"]!.GetValue<string>() == "08010")!;
+        // Synthetic defeat interrupt isolates suspension; the printed chain uses actual rows.
+        var observer = System.Text.Json.Nodes.JsonNode.Parse("""
+            {"card":"08023","abilities":[{
+              "trigger":{"event":"WhenCardWouldBeDefeated","timing":"Interrupt","subject":"game"},
+              "effect":{"choose":{"options":[
+                {"giveStatus":{"card":"you","status":"confused"}},
+                {"giveStatus":{"card":"you","status":"stunned"}}
+              ]}}
+            }]}
+            """)!;
+        rows.Add(observer);
         if (tail is not null)
-            rows[0]!["abilities"]![0]!["effect"]!["attack"]!["effect"]!["seq"]![1] =
+            bite["abilities"]![0]!["effect"]!["attack"]!["effect"]!["seq"]![1] =
                 System.Text.Json.Nodes.JsonNode.Parse(tail);
         if (boardRead)
-            rows[0]!["abilities"]![0]!["effect"]!["attack"]!["effect"]!["seq"]!.AsArray()
+            bite["abilities"]![0]!["effect"]!["attack"]!["effect"]!["seq"]!.AsArray()
                 .Add(System.Text.Json.Nodes.JsonNode.Parse("""{"dealDamage":{"cards":"you","amount":{"count":{"cardsIn":{"area":"encounterDeck"}}}}}"""));
         if (interruptEffect is not null)
-            rows[2]!["abilities"]![0]!["effect"] = System.Text.Json.Nodes.JsonNode.Parse(interruptEffect);
-        foreach (var row in rows)
-            root["cards"]!.AsArray().Add(row!.DeepClone());
+            observer["abilities"]![0]!["effect"] = System.Text.Json.Nodes.JsonNode.Parse(interruptEffect);
         return new AbilityRunner(AbilityCatalog.Parse(root.ToJsonString()));
     }
 
     internal PreparationPrintedFixture(string minion = "01167", bool reveal = false,
-        bool boardRead = false, string? interruptEffect = null, string? tail = null)
+        bool boardRead = false, string? interruptEffect = null, string? tail = null, int entrySeat = 0)
     {
         Runner = CreateRunner(boardRead, interruptEffect, tail);
         World = new World(Cards, 2, 12345) { Abilities = Runner };
@@ -89,7 +70,7 @@ internal sealed class PreparationPrintedFixture
         Minion = World.CreateCard(minion, World.AreaOf(DeckType.RevealingArea));
         if (reveal)
             World.Agenda.Add(new PhaseStep(new RevealStageOperation(RevealStageKind.RevealEncounterCard),
-                1, 2, Subject: Minion.ObjectId, Seat: 0));
-        else EncounterEntry.Schedule(World, EncounterEntryRequest.For(Minion, 0, new CardEntryPlacement()), new EffectCompletion(1, 1));
+                1, 2, Subject: Minion.ObjectId, Seat: entrySeat));
+        else EncounterEntry.Schedule(World, EncounterEntryRequest.For(Minion, entrySeat, new CardEntryPlacement()), new EffectCompletion(1, 1));
     }
 }

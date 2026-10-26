@@ -247,3 +247,16 @@ erratum, and ruling:2001c6705b63bf4f confirms private looking.
 `ThorHeimdallPrivacyTests` exercise the unmodified full book.
 See `docs/content/thor-valkyrie-heimdall-evidence.md`. Public admission remains
 closed; Lightning Strike remains unauthored pending its simultaneous target group.
+
+Black Widow identity/Preparation research adds five actual rows: Black Widow
+(08001a), Safe House #29 (08005), Black Widow's Gauntlet (08007), Synth-Suit
+(08009), and Widow's Bite (08010). Printed authority is datasets/cards/cards.json;
+RR 1.8 resolve and ruling:420bd5b1763b9506 require resolved abilities for
+Widowmaker and Synth-Suit. The 623 existing rows are unchanged; there are 628
+rows, including 17 of Black Widow's 34 playable faces. No new starting counter
+pools are printed on these five faces. BlackWidowPreparationCardTests,
+PreparationPrintedResolutionTests, PreparationContinuationIndependentTests,
+PreparationResourceTests/IndependentTests and SafeHouseCostChoiceTests/SuspensionTests
+exercise actual rows with explicitly labelled synthetic suspension support.
+Public Black Widow admission remains excluded pending complete pack delivery.
+See docs/content/black-widow-preparation-batch.md for evidence and limits.

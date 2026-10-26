@@ -170,14 +170,14 @@ public sealed class BlackWidowIdentitySearchTests
     }
 
     [Fact]
-    public void ThisBatchHasThreeRowsNoStartingCountersAndNoSafeHouseAdmission()
+    public void IdentitySearchRowsHaveNoStartingCountersAndPackRemainsIncomplete()
     {
         using var json = System.Text.Json.JsonDocument.Parse(AuthoredCards.Text);
         var rows = json.RootElement.GetProperty("cards").EnumerateArray()
             .Where(row => new[] { "08001b", "08002", "08011" }.Contains(row.GetProperty("card").GetString())).ToArray();
         Assert.Equal(3, rows.Length);
         Assert.All(rows, row => Assert.False(row.TryGetProperty("startingCounters", out _)));
-        Assert.DoesNotContain("08005", AuthoredCards.Book.Authored);
+        Assert.DoesNotContain("08004", AuthoredCards.Book.Authored);
     }
 
 }

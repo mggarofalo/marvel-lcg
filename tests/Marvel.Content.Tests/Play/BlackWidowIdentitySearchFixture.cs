@@ -16,7 +16,7 @@ internal static class BlackWidowIdentitySearchFixture
     internal static AbilityRunner Runner()
     {
         var book = JsonNode.Parse(AuthoredCards.Text)!;
-        foreach (string face in new[] { "08001a", "08017" })
+        foreach (string face in new[] { "08017" })
             book["cards"]!.AsArray().Add(JsonNode.Parse("{\"card\":\"" + face + "\",\"abilities\":[]}"));
         return new(AbilityCatalog.Parse(book.ToJsonString()));
     }

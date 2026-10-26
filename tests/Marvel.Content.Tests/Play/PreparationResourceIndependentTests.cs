@@ -69,12 +69,8 @@ public sealed class PreparationResourceIndependentTests
     private static (World World, AbilityRunner Runner, Card First, Card Second, Card Preparation, Card Unrelated)
         AbilityBoard(bool hero, string cost)
     {
-        var runner = new AbilityRunner(AbilityCatalog.Parse($$$$"""
+        var local = AbilityCatalog.Parse($$$$"""
             {"cards":[
-              {"card":"08007","abilities":[{
-                "trigger":{"event":"WhenActionTriggered","timing":"Resource","subject":"game"},
-                "resourceRestriction":"preparationCard","printedResources":"G",
-                "cost":{"exhaust":"this"},"effect":{"generate":"G"}}]},
               {"card":"08008","abilities":[{
                 "trigger":{"event":"WhenActionTriggered","timing":"Action","subject":"game"},
                 "cost":{"{{{{cost}}}}":"G"},"effect":{"draw":{"player":"you","count":1}}}]},
@@ -82,7 +78,13 @@ public sealed class PreparationResourceIndependentTests
                 "trigger":{"event":"WhenActionTriggered","timing":"Action","subject":"game"},
                 "cost":{"{{{{cost}}}}":"G"},"effect":{"draw":{"player":"you","count":1}}}]}
             ]}
-            """));
+            """);
+        var runner = new AbilityRunner(local with
+        {
+            Abilities = [.. Marvel.Content.Tests.Cards.AuthoredCards.Book.On("08007"),
+                .. local.Abilities],
+            Authored = local.Authored.Append("08007").ToHashSet(StringComparer.Ordinal),
+        });
         var facts = CardCatalog.Parse(File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")));
         var world = new World(facts, 1, 17);
         var seat = world.CreateSeat("p0");
