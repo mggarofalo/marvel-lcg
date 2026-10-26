@@ -216,3 +216,13 @@ text grants ordinary own-discard play during the player's turn, paying the
 printed resource cost. DiscardPlayDecisionTests uses the full book for actual
 permission, second-seat payment/discount and rejection-purity cases; synthetic
 entry variants remain isolated. Public Ms. Marvel admission remains closed.
+
+Preemptive Strike (05014) adds the final Ms. Marvel face (34 of 34; 576 total).
+The exact attack-only boost occurrence, villain actor and hero form implement
+the printed Hero Interrupt (defense). Numeric cancellation uses current modified
+icons and amplify, captures only icons actually cancelled, and leaves later
+Boost-star resolution intact. Vendored rulings 1ea208998735ef4b,
+33d8c914aa86d19f and 937d6ff4f970a1da govern ordering and cancellation.
+IndividualBoostCancellationTests uses the actual full book except for explicitly
+synthetic boost-star variants. Full inventory does not itself admit the product;
+whole-pack public setup, gameplay, restart and native evidence remain separate.

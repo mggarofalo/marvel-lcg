@@ -1,4 +1,5 @@
 using Marvel.Cards.Dsl;
+using Marvel.Content.Tests.Cards;
 using Marvel.Cards.Run;
 using Marvel.Rules.Events;
 using Marvel.Rules.Play;
@@ -10,10 +11,11 @@ using Xunit;
 
 namespace Marvel.Content.Tests.Play;
 
-/// <summary>Nonpublic characteristic 05014 interpretation, without content admission.</summary>
+/// <summary>Actual 05014 and isolated synthetic boost variants, without public pack admission.</summary>
 public sealed class IndividualBoostCancellationTests : CoreCardTestBase
 {
-    private static AbilityRunner Runner(string extra = "") => new(AbilityCatalog.Parse("""
+    private static AbilityRunner Runner(string extra = "") => extra.Length == 0
+        ? AuthoredCards.Runner() : new(AbilityCatalog.Parse("""
         {"cards":[{"card":"05014","abilities":[{
           "labels":["Defense"],
           "trigger":{"event":"WhenAttackBoostCardTurnedFaceup","timing":"Interrupt","actor":"villain","form":"hero"},

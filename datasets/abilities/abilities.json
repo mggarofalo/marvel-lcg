@@ -17506,6 +17506,39 @@
           }
         }
       ]
+    },
+    {
+      "card": "05014",
+      "name": "Preemptive Strike",
+      "note": "Printed Hero Interrupt (defense) on a villain attack boost faceup. Cancel the current numeric icons on that physical card, then deal that captured amount to the attacking villain. The star ability still resolves; cancellation does not borrow an enclosing attack during a scheme.",
+      "abilities": [
+        {
+          "labels": [
+            "Defense"
+          ],
+          "trigger": {
+            "event": "WhenAttackBoostCardTurnedFaceup",
+            "timing": "Interrupt",
+            "actor": "villain",
+            "form": "hero"
+          },
+          "effect": {
+            "then": {
+              "effect": {
+                "cancelBoostIcons": "trigger"
+              },
+              "then": {
+                "dealDamage": {
+                  "cards": "trigger.actor",
+                  "amount": {
+                    "result": "cancelledBoostIcons"
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
     }
   ]
 }
