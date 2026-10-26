@@ -14,6 +14,20 @@ answer must preserve the prompt, state, RNG and pending effects, including on re
 Challenge legal no-ops, ties, replacements, nested activations, departed targets
 and multiplayer ownership only where the mechanic makes them relevant.
 
+Check fixture card kinds, printed stats and resource encodings against the
+generated catalog before diagnosing a failure. Scenario setup and initial draws
+can change a prepared deck: assert the meaningful starting state after setup.
+For admission regressions, include an otherwise valid same-cost control so a
+missing offer cannot pass because the fixture was already ineligible. A mutant
+only proves the check when it compiles, fails for the intended behavior, and the
+restored revision passes that same check.
+
+Use the full encounter procedure when proving entry, surge and cleanup together;
+a direct placement or When Revealed call may deliberately omit later lifecycle
+steps. When extending a shared player/encounter operation, also run an existing
+playerless scenario setup. Evaluate resolving-player context only on paths whose
+printed instruction requires it.
+
 After authoring rows, run the ability-data tests as well as characteristic card
 tests. Reconcile explicit authored-face and starting-counter inventories with the
 printed facts, and keep unknown-card negative controls genuinely unauthored.
