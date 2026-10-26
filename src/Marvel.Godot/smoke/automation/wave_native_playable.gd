@@ -18,9 +18,9 @@ func _run() -> void:
     ui = Driver.new(main, render_viewport, _fail)
     if not await _open_public_game(): return
     if not await _assert_groups(): return
-    if not await _capture_checkpoint("wave-four-live-groups"): return
+    if not await _capture_clear_checkpoint("wave-four-live-groups"): return
     if not await _change_form_and_attack(): return
-    if not await _capture_checkpoint("wave-inactive-villain-attacked"): return
+    if not await _capture_clear_checkpoint("wave-inactive-villain-attacked"): return
     if not await _release_table_resources(): return
     print("UI_ACCEPTANCE_OK wave_native_playable CaptainAmerica WreckingCrew Standard")
     quit(0)
@@ -75,6 +75,27 @@ func _assert_groups() -> bool:
     titles.sort()
     return await ui.expect(func(): return titles == ["Bulldozer", "Piledriver", "Thunderball", "Wrecker"] and active == 1,
         "four named live villain groups and exactly one active villain")
+
+func _assert_timeline_clear_of_encounter_piles() -> bool:
+    var timeline := main.find_child("EventTimeline", true, false) as Control
+    if not await ui.expect(func(): return timeline != null and timeline.is_visible_in_tree(),
+        "live event timeline is visible"): return false
+    var piles: Array[Control] = []
+    for node in main.find_children("InspectPile*", "Button", true, false):
+        var button := node as Control
+        if button.is_visible_in_tree() and ("encounter deck" in button.accessibility_name or
+            "encounter discard" in button.accessibility_name):
+            piles.append(button)
+    if not await ui.expect(func(): return piles.size() == 8,
+        "four encounter decks and four encounter discards remain visible"): return false
+    for pile in piles:
+        if not await ui.expect(func(): return not timeline.get_global_rect().intersects(pile.get_global_rect()),
+            "timeline clears " + pile.accessibility_name): return false
+    return true
+
+func _capture_clear_checkpoint(name: String) -> bool:
+    if not await _assert_timeline_clear_of_encounter_piles(): return false
+    return await _capture_checkpoint(name)
 
 func _card(title: String) -> Control:
     var matches: Array[Control] = []

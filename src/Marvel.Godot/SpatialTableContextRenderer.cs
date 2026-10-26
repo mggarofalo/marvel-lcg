@@ -12,9 +12,14 @@ internal static class SpatialTableContextRenderer
     {
         if (world is null) return;
         result.RegisterContextualWorld(world);
-        EventActivitySurface.Add(surface, new Rect2(geometry.SourceTableau.Position.X,
-            geometry.Revealing.Position.Y, geometry.SourceTableau.Size.X,
-            geometry.SourceTableau.Position.Y - geometry.Revealing.Position.Y - 4));
+        // Four encounter groups use the entire far mat. Their timeline occupies
+        // the seam below the group piles, rather than the source-tableau column.
+        Rect2 activity = geometry.HasEncounterGroups
+            ? new Rect2(22, 360, geometry.Width - 44, 44)
+            : new Rect2(geometry.SourceTableau.Position.X,
+                geometry.Revealing.Position.Y, geometry.SourceTableau.Size.X,
+                geometry.SourceTableau.Position.Y - geometry.Revealing.Position.Y - 4);
+        EventActivitySurface.Add(surface, activity);
         Rect2 bounds = geometry.Context;
         var panel = new HBoxContainer { Name = "ContextualDecision", Position = bounds.Position,
             Size = bounds.Size, CustomMinimumSize = bounds.Size, MouseFilter = Control.MouseFilterEnum.Ignore,

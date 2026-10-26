@@ -60,9 +60,9 @@ internal sealed class EncounterGroupTableRenderer(
     {
         float width = (bounds.Size.X - 4) / 2;
         if (areas.FirstOrDefault(area => area.Id == group.Deck) is { } deck)
-            piles.RenderNamed(deck, new Rect2(bounds.Position.X, 320, width, 30), $"{group.Title} encounter deck");
+            piles.RenderNamed(deck, new Rect2(bounds.Position.X, 320, width, 40), $"{group.Title} encounter deck");
         if (areas.FirstOrDefault(area => area.Id == group.Discard) is { } discard)
-            piles.RenderNamed(discard, new Rect2(bounds.Position.X + width + 4, 320, width, 30),
+            piles.RenderNamed(discard, new Rect2(bounds.Position.X + width + 4, 320, width, 40),
                 $"{group.Title} encounter discard");
     }
 
