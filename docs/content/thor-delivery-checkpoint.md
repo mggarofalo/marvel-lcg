@@ -38,14 +38,16 @@ prerequisite regression evidence, not final combined Thor certification.
 
 ## Remaining dependencies
 
-- MARVEL-757 supplies an incarnation-aware in-play condition for Get Over Here.
-  Source `9ed19527` is in independent review. A defeated or departed target must
-  not be brought back; reentry of the same physical card is a different binding.
-- MARVEL-756 corrects overkill before Loki's recovery. Source `8265a038` passes
-  its author checks, but independent review demonstrates that primary and spill
-  recipients do not yet share all defeat-stage barriers. It is not accepted or
-  integrated. Excess damage reaching the villain before Loki heals does not
-  authorize completing the villain's defeat before Loki's would-defeat window.
+- MARVEL-757's incarnation-aware in-play condition is independently reviewed and
+  integrated through `d7fcbf70`; 42 focused combined checks pass. A defeated or
+  departed target must not be brought back; reentry is a different binding.
+- MARVEL-756's proposed overkill correction is rejected. Current `rr:overkill`
+  (1.8) requires actual defeat; the older Loki and simultaneous-overkill answers
+  do not govern. FFG's [1.8 explanation](https://www.fantasyflightgames.com/mission-updates/)
+  explicitly describes this change. Loki healing prevents spill. Neither
+  `8265a038` nor its shared-stage successor `90174f85` is integrated. Independent
+  current-rule regression evidence is being prepared; this is an authority/test
+  correction, not a request to change the engine to historical behavior.
 - MARVEL-758 addresses Hammer Throw's refusal of Loki's recovery interrupt in
   power preflight. Its implementation must preserve sound dependency analysis;
   passing a narrowly prepared board does not establish all legal pack play.

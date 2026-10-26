@@ -58,9 +58,11 @@ recipient/payment checks pass at 100% and 150%; captures were inspected. Public
 Thor admission remains closed. See the [checkpoint](thor-delivery-checkpoint.md)
 for exact revisions and evidence boundaries. Lightning Strike's selector and
 payment dependencies are integrated; its actual row remains to author. Get Over
-Here awaits independent review of the living-target guard (757). Loki awaits
-correct primary/spill defeat-stage ordering (756) and Hammer Throw recovery
-preflight (758). Three faces and complete public pack proof remain.
+Here's living-target guard (757) is independently reviewed and integrated through
+`d7fcbf70`. Loki's proposed overkill change (756) is rejected: RR 1.8 requires
+actual defeat and supersedes the older rulings used by that proposal. Current-rule
+regression evidence and Hammer Throw recovery preflight (758) remain. Three faces
+and complete public pack proof remain.
 
 The intermittent Linux drag assertion from an earlier CI run remains recorded
 in MARVEL-752. Its strict assertion now captures gesture geometry; focused

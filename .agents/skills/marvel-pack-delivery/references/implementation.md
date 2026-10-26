@@ -7,6 +7,16 @@ extend visibility-safe contracts when the UI lacks necessary meaning.
 
 ## Before bulk card authoring
 
+Before turning a ruling-based failing probe into an engine prerequisite, compare
+the ruling's `rrg_scope` and date with the current vendored Rules Reference.
+Read the current keyword/timing clause, including its changed definition; a
+historical official answer is not automatically the current behavior. If they
+conflict, inspect the official update explanation and the provenance graph before
+dispatching implementation. Record which authority governs and why. For example,
+RR 1.8 overkill requires actual defeat; pre-1.8 Loki and simultaneous-overkill
+answers must not be used to restore the superseded behavior. An assertion based
+on the older rule is a test finding, not evidence of an engine defect.
+
 Map each new mechanic to its engine prerequisite and test a characteristic card.
 Keep card DSL changes separate from engine mechanisms where practical. Confirm
 cost assessment, choices and mutations happen in the correct order: a rejected
