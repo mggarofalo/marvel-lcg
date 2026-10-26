@@ -112,6 +112,7 @@ internal sealed class AbilityExpressionEvaluation(
         AbilityCondition.ActivationIs activation => context.World.Activation is { } current && current.Attacking == activation.Attack,
         AbilityCondition.CardText text => TestCardText(text),
         AbilityCondition.IsKind kind => IsKind(kind),
+        AbilityCondition.IsInPlay inPlay => IsInPlay(inPlay.Card),
         AbilityCondition.IsEnemyAttacker attacker => selectors.Find(attacker.Card) is { } source
             && DeckTypes.IsInPlay(source.Area.Type)
             && context.World.Attack is { } attack && attack.Enemy == source.ObjectId,
@@ -121,6 +122,11 @@ internal sealed class AbilityExpressionEvaluation(
         AbilityCondition.IsYourIdentity identity => selectors.Find(identity.Card)?.ObjectId == context.World.Seats[AbilityCardQueries.Resolver(context.Bindings)].IdentityCard.ObjectId,
         _ => throw new InvalidOperationException("Unknown compiled condition"),
     };
+
+    // rr:in-play-and-out-of-play.4: abilities "can only target, cards that are in play".
+    // Find preserves the selected incarnation; retained out-of-play facts alone do not qualify.
+    private bool IsInPlay(AbilityCardSelection selection) =>
+        selectors.Find(selection) is { } current && DeckTypes.IsInPlay(current.Area.Type);
 
     private bool WasDefeatedByDamage(AbilityCardSelection selection)
     {

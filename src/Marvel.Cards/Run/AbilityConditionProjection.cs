@@ -18,6 +18,7 @@ internal static class AbilityConditionProjection
                     or AbilityCardTextProperty.Title,
             } text => text.Card,
             AbilityCondition.IsKind kind => kind.Card,
+            AbilityCondition.IsInPlay inPlay => inPlay.Card,
             _ => null,
         };
 
@@ -45,6 +46,7 @@ internal static class AbilityConditionProjection
                     StringComparison.Ordinal),
             AbilityCondition.IsKind kind =>
                 EffectiveCards.Kind(card, cast.World.Facts) == kind.Kind,
+            AbilityCondition.IsInPlay => true,
             _ => throw new InvalidOperationException(
                 "Unknown compiled test of an entered card"),
         };
@@ -99,6 +101,7 @@ internal static class AbilityConditionProjection
             AbilityCondition.AutomaticThwart thwart => ValueReadsVillain(thwart.Scheme, cast),
             AbilityCondition.CardText text => ValueReadsVillain(text.Card, cast),
             AbilityCondition.IsKind kind => ValueReadsVillain(kind.Card, cast),
+            AbilityCondition.IsInPlay inPlay => ValueReadsVillain(inPlay.Card, cast),
             AbilityCondition.IsEnemyAttacker attacker => ValueReadsVillain(attacker.Card, cast),
             AbilityCondition.WasDefeatedByDamage defeated => ValueReadsVillain(defeated.Card, cast),
             AbilityCondition.WasDefeated defeated => ValueReadsVillain(defeated.Card, cast),

@@ -254,6 +254,9 @@ internal sealed class VillainConditionTrace(
             AbilityCondition.IsKind kind => PotentialVillainSelector(kind.Card, cast)
                 || Find(kind.Card, cast) is { } card
                     && changes.Discarded.Contains(card.ObjectId),
+            AbilityCondition.IsInPlay inPlay => PotentialVillainSelector(inPlay.Card, cast)
+                || Find(inPlay.Card, cast) is { } selected
+                    && changes.Discarded.Contains(selected.ObjectId),
             AbilityCondition.AtLeast comparison => ComparisonCanChange(comparison, depth),
             _ => false,
         };

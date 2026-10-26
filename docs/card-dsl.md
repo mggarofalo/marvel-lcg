@@ -744,6 +744,13 @@ explicitly stops it.
 
 ## Constant effects
 
+`{"isInPlay":"chosen"}` asks whether the retained selected incarnation is
+currently in play. It is false after departure, including when the same physical
+card has reentered as a new incarnation. Retained out-of-play facts remain
+available to other conditions. A follow-up that engages an attacked enemy can
+combine this condition with its printed trait requirement before `putIntoPlay`.
+This condition also participates in projected entry and departure checks.
+
 Constant abilities describe values the engine reads from the current board.
 They do not run once and cache their answer. The interpreter evaluates their
 conditions against the same projected state used for legality and resolution.

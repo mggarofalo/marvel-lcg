@@ -42,6 +42,8 @@ public abstract record AbilityCondition
     public sealed record CardText(AbilityCardSelection Card, AbilityCardTextProperty Property, string Text) : AbilityCondition;
     /// <summary>The selected card has the specified kind.</summary>
     public sealed record IsKind(AbilityCardSelection Card, CardKind Kind) : AbilityCondition;
+    /// <summary>The selected current incarnation is in play.</summary>
+    public sealed record IsInPlay(AbilityCardSelection Card) : AbilityCondition;
     /// <summary>The occurrence defeated the selected card.</summary>
     public sealed record WasDefeatedByDamage(AbilityCardSelection Card) : AbilityCondition;
     /// <summary>Tests defeat in the invoking occurrence.</summary>

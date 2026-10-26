@@ -25,7 +25,7 @@ internal static class AbilityExpressionAreaDependencies
                 CollectSingularAreaDependencies(comparison.Value, cast, areas);
                 CollectSingularAreaDependencies(comparison.Count, cast, areas);
                 break;
-            case AbilityCondition.CardText or AbilityCondition.IsKind
+            case AbilityCondition.CardText or AbilityCondition.IsKind or AbilityCondition.IsInPlay
                 or AbilityCondition.IsEnemyAttacker or AbilityCondition.WasDefeatedByDamage
                 or AbilityCondition.WasDefeated:
                 CollectCardsInDependencies(CardReadBy(condition), cast, areas);
@@ -43,6 +43,7 @@ internal static class AbilityExpressionAreaDependencies
     {
         AbilityCondition.CardText text => text.Card,
         AbilityCondition.IsKind kind => kind.Card,
+        AbilityCondition.IsInPlay inPlay => inPlay.Card,
         AbilityCondition.IsEnemyAttacker attacker => attacker.Card,
         AbilityCondition.WasDefeatedByDamage defeated => defeated.Card,
         AbilityCondition.WasDefeated defeated => defeated.Card,

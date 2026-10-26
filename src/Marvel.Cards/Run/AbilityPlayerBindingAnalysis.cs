@@ -259,6 +259,7 @@ internal static class AbilityPlayerBindingAnalysis
         AbilityCondition.InForm form => form.Player == AbilityPlayer.You,
         AbilityCondition.CardText text => Contains(text.Card),
         AbilityCondition.IsKind kind => Contains(kind.Card),
+        AbilityCondition.IsInPlay inPlay => Contains(inPlay.Card),
         AbilityCondition.IsEnemyAttacker attacker => Contains(attacker.Card),
         AbilityCondition.WasDefeatedByDamage defeated => Contains(defeated.Card),
         AbilityCondition.WasDefeated defeated => Contains(defeated.Card),
