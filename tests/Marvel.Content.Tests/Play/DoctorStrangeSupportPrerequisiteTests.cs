@@ -85,7 +85,7 @@ public sealed class DoctorStrangeSupportPrerequisiteTests
     [Theory]
     [InlineData("09013", "{\"shuffleInto\":{\"cards\":\"this\",\"deck\":\"unknownOwnerDeck\"}}", "unknownOwnerDeck")]
     [InlineData("09039", "{\"reduceUpgradeCostOn\":{\"card\":\"this\",\"amount\":1}}", "reduceUpgradeCostOn")]
-    public void UnknownDestinationAndUnimplementedUpgradeOperationAreRejected(string face, string effect, string word)
+    public void UnknownDestinationAndUpgradeOperationSpellingsAreRejected(string face, string effect, string word)
     {
         var root = JsonNode.Parse("""{"card":"FACE","abilities":[{"trigger":{"timing":"Constant","subject":"this"},"effect":EFFECT}]}"""
             .Replace("FACE", face, StringComparison.Ordinal).Replace("EFFECT", effect, StringComparison.Ordinal))!;

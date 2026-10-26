@@ -99,7 +99,7 @@ internal static class GamePrompts
         // `Play@37, 45, 46, 47` against a hand held in the order
         // `42, 45, 37, 9, 47, 46`. Measured on one board, so it is the simplest
         // reading that fits rather than a rule anything states.
-        AddCardPlays(game, seat, options);
+        GameCardPlayOffers.Add(game, seat, options);
 
         // `rr:player-turn.4`: "use an ally card they control in play to attack
         // an enemy or thwart a scheme". `rr:ally.5` puts these outside the
@@ -138,17 +138,6 @@ internal static class GamePrompts
         AddIdentityPower(game, seat, options);
 
         return options;
-    }
-
-    private static void AddCardPlays(Game game, Seat seat, List<Affordance> options)
-    {
-        foreach (Card card in CardPlayOrigin.Candidates(game.world, seat.Index))
-        {
-            if (CardPayment.Price(game.world, game.facts, seat, card) is not { } price) continue;
-            var hosts = CardPlayLegality.LegalAttachmentTargets(
-                game.world, game.facts, seat, card, game.world.CardPlayAbilities);
-            if (hosts is not { Count: 0 }) options.Add(game.Priced(seat, card, price, hosts));
-        }
     }
 
     private static void AddAllyPowers(Game game, Seat seat, List<Affordance> options)

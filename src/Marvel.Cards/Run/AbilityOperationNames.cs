@@ -67,6 +67,7 @@ internal static class AbilityOperationNames
         AbilityEffect.DoubleResourceFor => "doubleResourceFor",
         AbilityEffect.ReduceSelfCostPerControlledTrait => "reduceSelfCostPerControlledTrait",
         AbilityEffect.ReduceSelfCostPerEngagedMinion => "reduceSelfCostPerEngagedMinion",
+        AbilityEffect.ReduceUpgradeCostOnThis => "reduceUpgradeCostOnThis",
         AbilityEffect.ReduceFirstAllyCost => "reduceFirstAllyCost",
         AbilityEffect.AllowPlayBeneath => "allowPlayBeneath",
         AbilityEffect.AllowPlayFromDiscard => "allowPlayFromDiscard",

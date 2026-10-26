@@ -70,7 +70,8 @@ public static class GameResolution
 
         var seat = game.world.Seats[game.Active];
         var card = game.world.Cards[offer.AnchorId];
-        var price = CardPayment.Price(game.world, game.facts, seat, card);
+        var price = CardPayment.Price(game.world, game.facts, seat, card,
+            game.world.CardPlayAbilities.AttachmentTargets(game.world, card) is null ? null : input.Targets.Single());
         if (price is null || !ResourcePayment.Allows(price, input.Spent, input.Values, input.Allocated))
             throw new ArgumentException("the offered payment no longer pays the card's current cost", nameof(input));
 
@@ -80,7 +81,7 @@ public static class GameResolution
             // ahead of information clearing as well as exposure and cost commitment.
             _ = CardPlayPayment.Prepare(game.world, new CardPlayInitiation(
                 game.facts, game.world.CardPlayAbilities, seat, card,
-                CardPayment.CostOf(game.world, game.facts, seat, card), input.Targets, input.Spent));
+                CardPayment.CostOf(game.world, game.facts, seat, card, input.Targets.SingleOrDefault()), input.Targets, input.Spent));
         }
         catch (RulesNotImplementedException rejected)
         {

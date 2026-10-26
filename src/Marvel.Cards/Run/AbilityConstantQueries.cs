@@ -105,6 +105,12 @@ internal sealed class AbilityConstantQueries
             case AbilityEffect.Fixed { Instruction: AbilityFixedInstruction.GainEnvironmentTraits }:
                 found.AddRange(EnvironmentTraitGrants.For(bindings.World, bindings.Source));
                 return true;
+            case AbilityEffect.ReduceUpgradeCostOnThis reduction:
+                found.Add(new ContinuousEffect(EffectSource.ConstantAbility,
+                    Kind: UpgradeHostCost.Reduction, Amount: reduction.Amount,
+                    Card: bindings.Source.ObjectId, Affects: bindings.Source.ObjectId,
+                    Lasts: Duration.WhileInPlay));
+                return true;
             case AbilityEffect.ReduceFirstAllyCost reduction:
                 found.Add(new ContinuousEffect(EffectSource.ConstantAbility,
                     Kind: AllyPlayHistory.Reduction, Amount: reduction.Amount,

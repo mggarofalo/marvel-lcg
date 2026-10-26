@@ -105,12 +105,26 @@ is named as an unknown-input control, not a claim that status choice is absent.
 See [owner-shuffle evidence](doctor-strange-owner-shuffle-prerequisite.md) and
 [status-host evidence](doctor-strange-status-host-prerequisite.md).
 
-Next packets: MARVEL-822 independently reviews exact upgrade-host pricing before
-ally Iron Man; MARVEL-819 then authors Clea, Night Nurse and Iron Man.
-MARVEL-823 authors the three remaining signature events and isolates demonstrated
-engine gaps. MARVEL-824 covers Iron Fist/Desperate Defense; MARVEL-825 covers the
-five obligation/nemesis faces. Public admission remains closed while thirteen
-playable faces are unauthored.
+Exact-host upgrade pricing source `e56ef1ff` and independent review `5631ac14`
+are integrated. Existing protocol-42 CostOption.Target carries target-specific
+prices; ordinary attachment prompt shapes remain unchanged. Source full Content
+6,956 and Rules 1,173 pass; independent focused review passes 72 cases and kills
+two additional compiled mutants. Combined Content checks pass 225 cases, full
+View passes 391 and full Decisions passes 50. Logs:
+`Source/evidence/strange-upgrade-host-{integration,view,decisions}.log`.
+See [upgrade-host evidence](doctor-strange-upgrade-host-cost-prerequisite.md).
+
+MARVEL-819 can now author Clea, Night Nurse and ally Iron Man. MARVEL-823's
+faithful signature-event probes demonstrate three additional prerequisites;
+none of its three rows was retained or admitted. Evidence `6e042c3d` and
+[the event gap record](doctor-strange-remaining-events.md) preserve the exact red
+cases and positive controls. MARVEL-826 supplies required scheme cost commitment,
+827 supplies simultaneous labelled-power continuation shared by Magic Blast and
+Astral Projection, and 828 retains authoritative reveal origin for Protective
+Ward. Separate implementation and review precede those actual rows.
+MARVEL-824 covers Iron Fist/Desperate Defense; MARVEL-825 covers the five
+obligation/nemesis faces. Public admission remains closed while thirteen playable
+faces are unauthored.
 
 Reviewed lifecycle source 3a20ae07 and review dd5b2f4a reuse player-owned additional
 deck/discard zones with exact physical binding, seeded shuffle, post-mulligan top

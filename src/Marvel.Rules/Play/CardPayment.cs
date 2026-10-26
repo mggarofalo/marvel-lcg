@@ -58,7 +58,7 @@ public static class CardPayment
     /// because pricing a card is not playing it.
     /// </remarks>
     public static AdjustedCardCost CostOf(
-        World world, ICardFacts facts, Seat seat, Card card)
+        World world, ICardFacts facts, Seat seat, Card card, int? attachmentHost = null)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
@@ -80,6 +80,7 @@ public static class CardPayment
 
         amount = Math.Max(0, amount - world.CardPlayAbilities.SelfPlayCostReduction(world, card, seat.Index));
         amount = AllyPlayHistory.AdjustCost(world, card, amount);
+        amount = UpgradeHostCost.Adjust(world, card, attachmentHost, amount);
         return new AdjustedCardCost(amount, modifiers);
     }
 
@@ -203,14 +204,15 @@ public static class CardPayment
     /// <param name="facts">The printed card data.</param>
     /// <param name="seat">Whose card.</param>
     /// <param name="card">The card in hand.</param>
-    public static CostOption? Price(World world, ICardFacts facts, Seat seat, Card card)
+    /// <param name="attachmentHost">The selected physical attachment host, when pricing one destination.</param>
+    public static CostOption? Price(World world, ICardFacts facts, Seat seat, Card card, int? attachmentHost = null)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
         ArgumentNullException.ThrowIfNull(seat);
         ArgumentNullException.ThrowIfNull(card);
 
-        if (!Permitted(world, facts, seat, card, abilities: world.CardPlayAbilities))
+        if (!Permitted(world, facts, seat, card, attachmentHost is { } host ? [host] : null, world.CardPlayAbilities))
         {
             return null;
         }
@@ -230,7 +232,13 @@ public static class CardPayment
             return null;
         }
 
-        long cost = CostOf(world, facts, seat, card).Amount;
+        if (attachmentHost is { } target)
+        {
+            var targets = CardPlayLegality.LegalAttachmentTargets(world, facts, seat, card, world.CardPlayAbilities);
+            if (targets is null || !targets.Contains(target)) return null;
+        }
+
+        long cost = CostOf(world, facts, seat, card, attachmentHost).Amount;
 
         // The card being played cannot also pay for itself: `rr:cost.3` spends
         // resources "by discarding cards from their hand", and this one is
@@ -250,7 +258,7 @@ public static class CardPayment
         return !Resources.Pays(pool, cost, Resources.Required(world, card, facts))
             ? null
             : new CostOption(
-                Target: card.ObjectId,
+                Target: attachmentHost ?? card.ObjectId,
                 Cost: cost.ToString(System.Globalization.CultureInfo.InvariantCulture),
                 Sources: sources);
     }

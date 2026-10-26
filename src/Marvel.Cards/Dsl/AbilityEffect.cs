@@ -156,6 +156,8 @@ public abstract record AbilityEffect
     public sealed record DoubleResourceFor(string Classification) : AbilityEffect;
     /// <summary>A constant discount for the first ally played globally each round.</summary>
     public sealed record ReduceFirstAllyCost(long Amount) : AbilityEffect;
+    /// <summary>Reduce each upgrade played onto this physical host.</summary>
+    public sealed record ReduceUpgradeCostOnThis(long Amount) : AbilityEffect;
     /// <summary>Reduce only this candidate's play cost for each minion engaged with its future controller.</summary>
     public sealed record ReduceSelfCostPerEngagedMinion(long Amount) : AbilityEffect;
     /// <summary>Reduce this candidate's play cost per controlled in-play card with a trait.</summary>
