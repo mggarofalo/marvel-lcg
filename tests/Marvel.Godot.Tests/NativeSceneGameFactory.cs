@@ -22,6 +22,7 @@ internal sealed class NativeSceneGameFactory(string contract) : IGameFactory, IS
 
     public SetupChoices DiscoverSetup() => discovery.DiscoverSetup();
     private Game? prepared;
+    internal Game PreparedGame => prepared!;
     internal Exception? Failure { get; private set; }
 
     internal Decision PreludeAnswer() => prepared!.Pending!.Cancellable
@@ -50,6 +51,7 @@ internal sealed class NativeSceneGameFactory(string contract) : IGameFactory, IS
         Assert.Equal(PublicDecisionKind.PlayerAction, game.Pending!.PublicKind);
         Assert.Equal(Outcome.Unfinished, scene.World.Result);
         Assert.Equal(0, game.Pending.Player);
+        if (contract == "preemptive-strike") PreemptiveStrikeNativeScene.Advance(game);
         prepared = game;
         return new(game, []);
     }
@@ -75,6 +77,7 @@ internal sealed class NativeSceneGameFactory(string contract) : IGameFactory, IS
     private void PrepareCards(CanonicalCoreScene scene, bool wakanda)
     {
         if (contract == "lockjaw-discard") LockjawNativeScene.Prepare(scene);
+        else if (contract == "preemptive-strike") PreemptiveStrikeNativeScene.Prepare(scene);
         else if (contract == "melee-sequential") MeleeNativeScene.Prepare(scene);
         else if (wakanda) PrepareWakanda(scene);
         else if (contract == "variable-payment") PrepareEnergyChannel(scene);

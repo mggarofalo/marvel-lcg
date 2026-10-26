@@ -34,6 +34,7 @@ internal sealed class NativeContractServer : IAsyncDisposable
     internal List<EngineResponse> Responses { get; } = [];
     internal Task Completion => serving;
     internal Exception? SceneFailure => factory.Failure;
+    internal Marvel.Rules.Play.Game PreparedGame => factory.PreparedGame;
 
     private async Task ServeAsync()
     {

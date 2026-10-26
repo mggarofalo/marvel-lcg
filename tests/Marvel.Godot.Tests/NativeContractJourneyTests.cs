@@ -81,6 +81,7 @@ public sealed class NativeContractJourneyTests
         VerifyCardChoices(contract, server, mutations);
         if (contract == "lockjaw-discard") LockjawNativeAssertions.Verify(server, mutations);
         if (contract == "melee-sequential") MeleeNativeAssertions.Verify(server, mutations);
+        if (contract == "preemptive-strike") PreemptiveStrikeNativeAssertions.Verify(server, mutations);
         if (contract.StartsWith("bruno-", StringComparison.Ordinal)) BrunoNativeAssertions.Verify(contract, server, mutations);
     }
 
