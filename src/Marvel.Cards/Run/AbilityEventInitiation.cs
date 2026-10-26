@@ -12,11 +12,12 @@ internal static class AbilityEventInitiation
         // The dedicated condition name is an engine choice; completion responses
         // remain on the containing card-play occurrence after event resolution.
         var occurrence = new Occurrence(0, [EventPlayTiming.Initiated],
-            Subject: cast.Source.ObjectId, Player: cast.Player);
+            Subject: cast.Source.ObjectId, Player: cast.Player)
+        { EventRemovesThreat = AbilityEventThreatFacts.RemovesThreat(execution, cast) };
         if (execution.Waiting(cast.World, occurrence, WindowKind.Interrupt).Count == 0)
             return null;
         return cast.World.Agenda.NowEventPlayInitiated(cast.World.Agenda.Current?.Round ?? 0,
-            cast.Source.ObjectId, cast.Player);
+            cast.Source.ObjectId, cast.Player, occurrence.EventRemovesThreat);
     }
 
     internal static void CompleteCancellation(AbilityResolutionExecution execution, AbilityResolutionState cast)

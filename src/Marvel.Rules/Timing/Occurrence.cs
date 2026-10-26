@@ -87,6 +87,10 @@ public sealed record Occurrence
     /// <summary>Stable facts about <see cref="Target"/>.</summary>
     public OccurrenceCard? TargetFacts { get; }
 
+    /// <summary>Whether the exact paid event's reachable body removes threat at initiation.</summary>
+    [JsonIgnore]
+    public bool? EventRemovesThreat { get; init; }
+
     /// <summary>The imminent threat placement, when this occurrence is one.</summary>
     public State.ThreatPlacement? Threat { get; }
 
