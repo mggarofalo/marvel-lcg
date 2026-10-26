@@ -1,5 +1,3 @@
-using System.Text.Json.Nodes;
-using Marvel.Cards.Dsl;
 using Marvel.Cards.Run;
 using Marvel.Content.Tests.Cards;
 using Marvel.Rules.Events;
@@ -10,7 +8,7 @@ using Xunit;
 
 namespace Marvel.Content.Tests.Play;
 
-/// <summary>Printed 09019 in a test-local book; no production admission.</summary>
+/// <summary>Actual authored 09019 on nonpublic boards; no public product admission.</summary>
 public sealed class NightNurseStatusHostTests
 {
     [Theory]
@@ -57,18 +55,7 @@ public sealed class NightNurseStatusHostTests
 
     internal static (World World, AbilityRunner Runner, Card Source) Board(int counters = 3, int controller = 0)
     {
-        const string row = """
-            {"card":"09019","startingCounters":{"type":"medical","count":3,"uses":true},"abilities":[{
-              "trigger":{"event":"WhenActionTriggered","timing":"Action","subject":"this"},
-              "cost":{"seq":[{"exhaust":"this"},{"removeCounters":{"card":"this","counter":"medical","count":1}}]},
-              "effect":{"chooseCard":{"from":{"query":"heroes"},"effect":{"and":[
-                {"heal":{"card":"chosen","amount":1}},
-                {"chooseCard":{"from":{"statusCardsOn":"chosen"},"effect":{"discard":"chosen"}}}
-              ]}}}}]}
-            """;
-        var book = JsonNode.Parse(AuthoredCards.Text)!;
-        book["cards"]!.AsArray().Add(JsonNode.Parse(row));
-        var runner = new AbilityRunner(AbilityCatalog.Parse(book.ToJsonString()));
+        var runner = AuthoredCards.Runner();
         var world = ThorActualFixture.Board("06001a", 2);
         world.Abilities = runner;
         var source = world.CreateCard("09019", world.AreaOf(DeckType.SupportsArea,

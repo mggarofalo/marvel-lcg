@@ -1605,6 +1605,16 @@ source receipt. Direct encounter-deck reveals and first-dealt encounter cards
 qualify; a direct reveal from a discard or separate area does not. The receipt
 is captured before staging movement and belongs to that one revelation.
 
+`{ "statusCardsOn": "chosen" }` selects physical status cards attached to the
+exact bound character. A nested `chooseCard` can discard one of those cards,
+including Tough; it does not select statuses on a different character.
+
+`{ "reduceUpgradeCostOnThis": 1 }` is a direct unconditional Constant that
+reduces an upgrade's play cost when its eligible attachment host is the exact
+physical source. Its amount is a positive integer, the modified cost is floored
+at zero, and the reduction does not consume a use. Ordinary active-constant
+rules govern its in-play lifetime and printed-text activity.
+
 ### Scheme choice before the arrow
 
 `cost: {"chooseScheme":"chosen"}` commits one current in-play main or side

@@ -9,7 +9,24 @@ that accepted baseline. The reviewed 38-commit Strange stack now ends at
 `22d67804` (pre-rebase head `4d95d05c`). Earlier hashes below name the revisions
 actually tested and remain evidence references. No source packets were dropped.
 
-Latest integration: 672 authored rows, 27 of the 40 Strange faces. Exact printed-set
+Latest integration candidate: 675 authored rows, 30 of the 40 Strange faces.
+Clea, Night Nurse and ally Iron Man source `a2714257` and independent content
+review `be3bc369` are combined with owner-discard source `43c0b046`, elimination
+reset repair `a6bb7ddd` and independent closure `7cdb2e23`. All 672 predecessor
+ability objects are retained unchanged. Public admission stays closed.
+
+The remaining ten faces are 09003, 09004, 09007, 09014, 09015, and 09027–09031.
+The three signature events now have reviewed prerequisites: reveal origin
+`530f156e`, simultaneous powers and Magic Blast stage repair `00f23ff2`, and
+Astral pre-arrow target/payment/inspection continuation `1abb96a2`. Their combined
+Content check passes 1,178 cases. The sole book writer is authoring the three
+events and matching Core reveal-origin restrictions. A separate engine packet
+handles Physical Toll's next-event price. Setup/starter admission, complete-game
+and fresh-host proof, Invocation client meaning and native verification remain
+explicit downstream work. The thirteen-ruling authority refresh has a separate
+catalog repair/re-review; harvesting alone does not settle behavioral coverage.
+
+Earlier integration evidence follows. Exact printed-set
 search source `4261d57f` and review `f7e59a6c` are integrated at `36628a0b`; its
 combined search checks pass 40 cases. Four response-event rows from `4953b480`
 and independent event review `de7310c9` now accompany the complete healing-cost

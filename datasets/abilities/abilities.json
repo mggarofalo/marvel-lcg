@@ -20747,6 +20747,102 @@
           }
         }
       ]
+    },
+    {
+      "card": "09013",
+      "name": "Clea",
+      "note": "Printed 09013 optional defeat Interrupt shuffles this physical ally into her owner's deck. Research content; no public admission.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardDefeated",
+            "timing": "Interrupt",
+            "subject": "this"
+          },
+          "effect": {
+            "shuffleInto": {
+              "cards": "this",
+              "deck": "ownerDeck"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "09019",
+      "name": "The Night Nurse",
+      "note": "Printed 09019 Uses (3 medical counters). Exhaust and remove one counter to heal one damage from a chosen hero and discard exactly one physical status on that hero, resolving each possible independent effect (rr:and.1; faq:09019 includes Tough). Research content; no public admission.",
+      "startingCounters": {
+        "type": "medical",
+        "count": 3,
+        "uses": true
+      },
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this"
+          },
+          "cost": {
+            "seq": [
+              {
+                "exhaust": "this"
+              },
+              {
+                "removeCounters": {
+                  "card": "this",
+                  "counter": "medical",
+                  "count": 1
+                }
+              }
+            ]
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "heroes"
+              },
+              "effect": {
+                "and": [
+                  {
+                    "heal": {
+                      "card": "chosen",
+                      "amount": 1
+                    }
+                  },
+                  {
+                    "chooseCard": {
+                      "from": {
+                        "statusCardsOn": "chosen"
+                      },
+                      "effect": {
+                        "discard": "chosen"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "09039",
+      "name": "Iron Man",
+      "note": "Printed 09039 Leadership ally Tony Stark reduces the cost to play each upgrade on this exact physical ally by one. The engine floors the modified cost at zero. Research content; no public admission.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "reduceUpgradeCostOnThis": 1
+          }
+        }
+      ]
     }
   ]
 }

@@ -9,7 +9,7 @@ using Xunit;
 
 namespace Marvel.Content.Tests.Play;
 
-/// <summary>Executable boundaries for proposed rows kept outside the admitted book.</summary>
+/// <summary>Actual Clea defeat and explicitly synthetic alternative-program boundaries.</summary>
 public sealed class DoctorStrangeSupportPrerequisiteTests
 {
     [Theory]
@@ -20,11 +20,7 @@ public sealed class DoctorStrangeSupportPrerequisiteTests
     public void CleaOwnerCompositionUsesPhysicalOwnerDeckAndSurvivesDefeat(bool accept, bool foreignControl)
     {
         var world = ThorActualFixture.Board("06001a", 2);
-        var runner = Runner("""
-            {"card":"09013","abilities":[{
-              "trigger":{"event":"WhenCardDefeated","timing":"Interrupt","subject":"this"},
-              "effect":{"shuffleInto":{"cards":"this","deck":"ownerDeck"}}}]}
-            """);
+        var runner = AuthoredCards.Runner();
         world.Abilities = runner;
         var source = world.CreateCard("09013", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(foreignControl ? 1 : 0), cardOwner: 0));
         var events = new List<GameEvent>();
@@ -96,9 +92,7 @@ public sealed class DoctorStrangeSupportPrerequisiteTests
 
     private static AbilityRunner Runner(string row)
     {
-        var root = JsonNode.Parse(AuthoredCards.Text)!;
-        root["cards"]!.AsArray().Add(JsonNode.Parse(row));
-        return new(AbilityCatalog.Parse(root.ToJsonString()));
+        // Deliberately alternate effects replace the production row only in this synthetic fixture.
+        return DoctorStrangeAbilityFixture.WithReplacements(new JsonArray(JsonNode.Parse(row)));
     }
 }
-

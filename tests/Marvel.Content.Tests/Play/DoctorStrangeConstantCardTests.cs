@@ -130,11 +130,11 @@ public sealed class DoctorStrangeConstantCardTests : CoreCardTestBase
     {
         using var book = JsonDocument.Parse(AuthoredCards.Text);
         var rows = book.RootElement.GetProperty("cards").EnumerateArray().ToArray();
-        Assert.Equal(672, rows.Length);
+        Assert.Equal(675, rows.Length);
         string[] added = ["09009", "09011", "09026"];
         Assert.Equal(added, rows.Skip(651).Take(3).Select(r => r.GetProperty("card").GetString()));
         Assert.All(rows.Skip(651).Take(3), row => Assert.False(row.TryGetProperty("startingCounters", out _)));
-        Assert.Equal(27, AuthoredCards.Book.Authored.Count(face => face.StartsWith("09", StringComparison.Ordinal)));
+        Assert.Equal(30, AuthoredCards.Book.Authored.Count(face => face.StartsWith("09", StringComparison.Ordinal)));
     }
 
     [Fact]

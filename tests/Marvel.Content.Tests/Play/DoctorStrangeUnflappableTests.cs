@@ -13,15 +13,15 @@ namespace Marvel.Content.Tests.Play;
 public sealed class DoctorStrangeUnflappableTests
 {
     [Fact]
-    public void InventoryAppendsOnlyUnflappableAndKeepsBlockedFacesUnauthored()
+    public void InventoryKeepsUnflappableAtItsReviewedPosition()
     {
         using var document = JsonDocument.Parse(AuthoredCards.Text);
         var rows = document.RootElement.GetProperty("cards").EnumerateArray().ToArray();
-        Assert.Equal(672, rows.Length);
-        Assert.Equal("09020", rows[^1].GetProperty("card").GetString());
-        Assert.False(rows[^1].TryGetProperty("startingCounters", out _));
-        Assert.Equal(27, AuthoredCards.Book.Authored.Count(face => face.StartsWith("09", StringComparison.Ordinal)));
-        string[] blocked = ["09013", "09019", "09039"];
+        Assert.Equal(675, rows.Length);
+        Assert.Equal("09020", rows[671].GetProperty("card").GetString());
+        Assert.False(rows[671].TryGetProperty("startingCounters", out _));
+        Assert.Equal(30, AuthoredCards.Book.Authored.Count(face => face.StartsWith("09", StringComparison.Ordinal)));
+        string[] blocked = ["09003", "09004", "09007"];
         Assert.All(blocked, face => Assert.DoesNotContain(face, AuthoredCards.Book.Authored));
     }
 
