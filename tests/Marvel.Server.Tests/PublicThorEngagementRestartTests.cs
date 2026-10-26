@@ -36,6 +36,18 @@ public sealed class PublicThorEngagementRestartTests : EngineHostTestBase
         Assert.DoesNotContain(Hand(current, 0), card => card.Id == defender);
         int beforeDraw = Hand(current, 0).Count;
         var copied = StoredSessionJson.Read(StoredSessionJson.Write(Assert.Single(store.Load())));
+        // Capture the durable RNG receipts, pending prompt and complete decision
+        // trace before probing. The fresh host below is the unprobed control.
+        string beforeQueries = StoredSessionJson.Write(copied);
+        for (int index = 0; index < 3; index++)
+        {
+            var queried = host.Exchange(EngineRequest.SyncGame("probe-" + index, "thor-public", opened.Capability!));
+            Assert.Null(queried.Error);
+            Assert.Equal(current.Revision, queried.Revision);
+            Assert.Equal(JsonSerializer.Serialize(PromptRecord.From(current.Prompt)),
+                JsonSerializer.Serialize(PromptRecord.From(queried.Prompt!)));
+            Assert.Equal(beforeQueries, StoredSessionJson.Write(Assert.Single(store.Load())));
+        }
         var restoredStore = new MemorySessionStore();
         Assert.Null(restoredStore.Commit(copied));
         var restarted = new EngineHost(DatasetGameFactory.Load(RepositoryPaths.Root), store: restoredStore);
