@@ -55,3 +55,38 @@ Normal pre-commit architecture, complexity and file-length hooks run at commit.
 
 Independent review and integrated broad verification belong to the delivery lead.
 This packet does not establish public Black Widow readiness or whole-pack acceptance.
+
+## Independent review of e7151e96
+
+Approved for this nine-face nonpublic packet. The reviewer separately read the
+generated printed faces, the vendored reprint records, RR 1.8 defeat responsibility,
+Uses, Guard, delayed-effect and incarnation clauses, and the applicable Nick Fury
+and Power of Justice rulings. All nine faces and the seven original player-card
+printings were queried in the vendored MarvelCDB FAQ and have no entries. The
+historical Nick Fury blanking answer supports retention of the created effect;
+RR 1.8 delayed-effect and leaves-play definitions govern current timing and copy
+identity. This is not a claim to have tested Beguiled or overpayment.
+
+Independent JSON decoding compared both the semantic objects and exact raw row
+text: the original 611-row prefix is unchanged, and the appended nine IDs and
+their order match this inventory. Raw quantities are 2 each for 08014–08016,
+1 each for 08019–08022 and 08027, and 2 for 08028. Player reprints map respectively
+to 01062, 01063, 01064, 01084, 01088, 01089 and 01090. Printed traits, resource
+symbols, limits, Uses, Guard, acceleration and numeric boosts match the authored
+interpretation; the encounter faces have distinct printed authority.
+
+No behavioral defect was found. The 08015 authoring note incorrectly described
+all controlled characters despite its identity-only implementation and tests;
+the note now states the current rule. Independent coverage adds all four defeat
+sources with the support controlled by seat 1, and checks the answering seat for
+both controllers. This distinguishes hardcoded first-player resolution from the
+support controller's actual entitlement.
+
+The source's 58 focused checks passed independently. The reviewed packet passes
+62 checks, including 26 Black Widow cases, using the same filter above. Logs are
+`C:/Users/mggar/Source/widow-a-review-{inventory,focused,final}.log`.
+The intermediate `widow-a-review-extended.log` records one added-fixture failure:
+the seat-1 event initially retained seat 0 in its explicit PendingAbility; its
+resolver now matches the event controller. Source Surveillance mutant and restored
+build/test logs were inspected and confirm the two intended assertion failures
+and restored 58-test pass. Integration and broader verification remain separate.

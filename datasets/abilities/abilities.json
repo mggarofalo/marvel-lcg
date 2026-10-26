@@ -18602,7 +18602,7 @@
     {
       "card": "08015",
       "name": "Interrogation Room",
-      "note": "After a character controlled by this support's controller defeats a minion, its response exhausts the support and removes 1 threat from a chosen scheme.",
+      "note": "After this support's controller's identity defeats a minion, including through an event or identity-extension ability, its response exhausts the support and removes 1 threat from a chosen scheme. An ally's defeat does not qualify (rr:you-your.6, .12, .15).",
       "abilities": [
         {
           "trigger": {
