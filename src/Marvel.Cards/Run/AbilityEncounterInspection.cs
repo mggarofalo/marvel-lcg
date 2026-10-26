@@ -33,8 +33,16 @@ internal static class AbilityEncounterInspection
     {
         // rr:look-looked-at.1: looked-at cards remain part of their deck. The
         // pending decision admits no intervening game action before acknowledgement.
-        cast.Results[effect.Result] = Cards(cast.World, effect)
-            .Count(card => cast.World.Facts.Kind(card.FaceId) == CardKind.Treachery);
+        var cards = Cards(cast.World, effect);
+        // rr:boost-boost-icon.1: "A star icon is not itself considered a boost icon".
+        // The catalog's numeric Boost attribute excludes stars and ability text.
+        cast.Results[effect.Result] = effect.Result switch
+        {
+            "treacheriesLookedAt" => cards.Count(card => cast.World.Facts.Kind(card.FaceId) == CardKind.Treachery),
+            "boostIconsLookedAt" => cards.Sum(card =>
+                cast.World.Facts.PrintedValue(card.FaceId, "Boost", cast.World.Players)),
+            _ => throw new InvalidOperationException("Unknown compiled inspection result"),
+        };
         cast.ResolveEffect();
     }
 }

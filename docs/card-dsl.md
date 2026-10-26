@@ -529,7 +529,11 @@ The villain and main-scheme decks expose their current in-play top stages.
 shows up to the requested number of encounter deck cards, in top-to-bottom
 order, without moving, revealing, shuffling or replenishing them. Its single
 acknowledgement retains the treachery count as `result: "treacheriesLookedAt"`
-for subsequent effects. Only the acting seat receives those prompt context
+for subsequent effects. Alternatively, `result: "boostIconsLookedAt"` retains
+the sum of printed numeric boost icons on those inspected cards; star icons and
+boost ability text contribute nothing. The result is recorded on acknowledgement,
+and admission does not inspect hidden printed values to predict it.
+Only the acting seat receives those prompt context
 faces; acknowledgement revokes that visibility. The pending decision excludes
 intervening game actions. This inspection does not support pre-then completion.
 

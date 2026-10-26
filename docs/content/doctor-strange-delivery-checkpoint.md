@@ -1,8 +1,8 @@
 # Doctor Strange delivery checkpoint
 
 Canonical parent: MARVEL-565. The [40-face handoff](research/remaining/doctor-strange-implementation-handoff.md)
-defines complete scope. This branch contains nonpublic prerequisites, not admitted
-Doctor Strange content.
+defines complete scope. This branch contains nonpublic prerequisites and authored
+rows; Doctor Strange is not publicly admitted.
 
 Latest integration: 671 authored rows, 26 of the 40 Strange faces. Exact printed-set
 search source `4261d57f` and review `f7e59a6c` are integrated at `36628a0b`; its
@@ -22,7 +22,7 @@ classes pass after correction. No behavioral assertions were removed. Logs:
 The merged sequence assessor receives costs already expanded by
 `AbilityPaymentRules.Payable`, preserving Invocation pricing while flattening
 nested costs into the complete payment context. Images/Vapors and Crimson
-prerequisite review are accepted but await integration. Public admission remains
+are integrated with their independent reviews. Public admission remains
 closed until the complete pack and its integration evidence are ready.
 
 Images/Vapors production source `06fcca2a` and independent review `706fa8bf`
@@ -72,10 +72,20 @@ areas are not inferred to be Invocations. The complete integrated View lane pass
 MARVEL-817 remains open for choice/cost/source explanations and native proof;
 this partial acceptance is not complete UI or product acceptance.
 
-Next active packets: MARVEL-818 extends private inspection with the exact numeric
-boost receipt required by Astral Projection; MARVEL-819 authors remaining
-ally/support rows and isolates demonstrated engine prerequisites. Public admission
-remains closed while fourteen playable faces are still unauthored.
+Astral inspection source `50404772` and independent review `cb3f8744` are
+integrated. The private inspection receipt counts printed boost icons, excluding
+stars, while preserving the selected scheme and hidden-card visibility. The
+complete integrated View lane passes 391 cases and the affected Content selection
+passes 41 cases. Logs: `Source/evidence/strange-astral-integration-view.log` and
+`Source/evidence/strange-astral-integration.log`. See
+[inspection evidence](doctor-strange-inspection-boost-prerequisite.md).
+The actual 09003 row remains to be authored.
+
+Next packets: MARVEL-819 has independently reviewed Unflappable ready for
+integration; MARVEL-820 repairs eliminated-owner routing before Clea;
+MARVEL-821 implements bound physical-status selection before Night Nurse;
+MARVEL-822 supplies exact upgrade-host pricing before ally Iron Man.
+Public admission remains closed while fourteen playable faces are unauthored.
 
 Reviewed lifecycle source 3a20ae07 and review dd5b2f4a reuse player-owned additional
 deck/discard zones with exact physical binding, seeded shuffle, post-mulligan top

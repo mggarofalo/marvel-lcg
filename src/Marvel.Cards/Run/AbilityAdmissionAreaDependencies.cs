@@ -231,6 +231,9 @@ internal static class AbilityAdmissionAreaDependencies
                 or AbilityEffect.PreventDamageFrom or AbilityEffect.DelayedStun
                 or AbilityEffect.DealEncounterCards or AbilityEffect.EngageTopAsMinion
                 or AbilityEffect.DiscardUntil or AbilityEffect.ShuffleInto
+                // Inspection reads the deck only at its own prompt; admission
+                // neither binds a hidden top card nor predicts its numeric result.
+                or AbilityEffect.InspectEncounterTop
                 or AbilityEffect.ChooseTopForHand
                 or AbilityEffect.ChooseDiscardToShuffle
                 or AbilityEffect.DiscardHandWithResource
