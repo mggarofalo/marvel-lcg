@@ -10,11 +10,16 @@ namespace Marvel.Content.Tests.Play;
 public sealed class SafeHouseCostSuspensionTests : ChoosingCardsTestBase
 {
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
+    [InlineData("unchanged", false)]
+    [InlineData("hand", false)]
+    [InlineData("hand-and-back", false)]
+    [InlineData("play-and-back", false)]
+    [InlineData("unchanged", true)]
+    [InlineData("source-hand", false)]
+    [InlineData("source-reentry", false)]
     [Rule("rr:initiating-abilities.step.5")]
     [Rule("rr:initiating-abilities.step.7")]
-    public void RecoveryWaitsForPaymentAndRetainsTheSelectedPhysicalIncarnation(bool reentered)
+    public void RecoveryWaitsForPaymentAndRetainsTheSelectedPhysicalIncarnation(string movement, bool nested)
     {
         // "Pay the cost(s)" precedes the ability resolving. Printed 08005's
         // "that card" retains the exact copy chosen on the cost side of the arrow.
@@ -36,20 +41,44 @@ public sealed class SafeHouseCostSuspensionTests : ChoosingCardsTestBase
         Assert.Same(discard, chosen.Area);
         Assert.Same(discard, other.Area);
         ally.TakeDamage(-2);
-        int incarnation = chosen.Incarnation;
-        if (reentered)
+        MoveDuringPayment(world, source, chosen, discard, movement);
+        if (nested)
         {
-            World.MoveToTop(chosen, world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(1), cardOwner: 1));
-            World.MoveToTop(chosen, discard);
-            Assert.NotEqual(incarnation, chosen.Incarnation);
+            // A distinct accepted action must not overwrite the suspended cost receipt.
+            var nestedSource = world.CreateCard("08005", source.Area);
+            var nestedResult = runner.ExecuteAction(world, new PlayerAction(
+                new PendingAbility(nestedSource.ObjectId, AbilityType.Action, 1), [], [other.ObjectId]));
+            Assert.True(nestedResult.IsComplete);
+            Assert.False(nestedSource.Ready);
+            Assert.Same(world.Seats[1].Hand, other.Area);
         }
         var events = new List<GameEvent>();
         Assert.Null(Sequence.Work(world, Cards, runner, events));
         Assert.DoesNotContain(events, entry => entry.Verb == "Exhaust");
-        Assert.False(source.Ready);
-        Assert.Same(reentered ? discard : world.Seats[1].Hand, chosen.Area);
-        Assert.Same(discard, other.Area);
+        Assert.Equal(movement.StartsWith("source", StringComparison.Ordinal), source.Ready);
+        Assert.Same(movement == "play-and-back" ? discard : world.Seats[1].Hand, chosen.Area);
+        Assert.Same(nested ? world.Seats[1].Hand : discard, other.Area);
         Assert.DoesNotContain(world.Agenda.Outstanding, step => step.Operation is AbilityContinuationAgendaOperation);
+    }
+
+    private static void MoveDuringPayment(World world, Card source, Card chosen, Area discard, string movement)
+    {
+        if (movement.StartsWith("source", StringComparison.Ordinal))
+        {
+            int sourceIncarnation = source.Incarnation;
+            var area = source.Area;
+            World.MoveToTop(source, world.Seats[1].Hand);
+            if (movement == "source-reentry") World.MoveToTop(source, area);
+            Assert.Equal(movement == "source-reentry", sourceIncarnation != source.Incarnation);
+            return;
+        }
+        if (movement == "unchanged") return;
+        int incarnation = chosen.Incarnation;
+        World.MoveToTop(chosen, movement == "play-and-back"
+            ? world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(1), cardOwner: 1)
+            : world.Seats[1].Hand);
+        if (movement != "hand") World.MoveToTop(chosen, discard);
+        Assert.Equal(movement == "play-and-back", incarnation != chosen.Incarnation);
     }
 
     private sealed class ExhaustHealthInterruption(Card source, Card ally) : NoCardAbilities

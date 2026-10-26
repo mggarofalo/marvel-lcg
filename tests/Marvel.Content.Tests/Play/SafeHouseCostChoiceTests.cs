@@ -174,4 +174,25 @@ public sealed class SafeHouseCostChoiceTests : ChoosingCardsTestBase
     }
 
     private static AbilityRunner RunnerFor(string json) => new(AbilityCatalog.Parse(json));
+
+    [Theory]
+    [InlineData(0, "01001a")]
+    [InlineData(1, "01010a")]
+    [Rule("rr:ability.8")]
+    [Rule("rr:ability.13")]
+    public void OnlyTheControllerInAlterEgoCanInitiate(int seat, string heroFace)
+    {
+        // "The player who controls the card ... determines whether or not to use"
+        // it; an Alter-Ego trigger requires the player to be "in the specified form."
+        var world = Deal("spider_man", "captain_marvel");
+        var runner = Runner();
+        world.Abilities = runner;
+        var source = world.CreateCard("08005", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(seat), cardOwner: seat));
+        world.CreateCard("08017", world.AreaOf(DeckType.DiscardPile, PlayArea.Of(seat), cardOwner: seat));
+        Assert.Contains(runner.Actions(world, seat), action => action.Card == source.ObjectId);
+        Assert.DoesNotContain(runner.Actions(world, 1 - seat), action => action.Card == source.ObjectId);
+        world.Seats[seat].IdentityCard.TurnTo(heroFace);
+        Assert.DoesNotContain(runner.Actions(world, seat), action => action.Card == source.ObjectId);
+        Assert.True(source.Ready);
+    }
 }
