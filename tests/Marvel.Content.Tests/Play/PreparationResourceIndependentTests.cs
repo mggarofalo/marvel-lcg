@@ -36,6 +36,9 @@ public sealed class PreparationResourceIndependentTests
         Assert.True(second.Ready);
         Assert.Single(world.Seats[0].Hand.Cards);
         Assert.Equal(deck - 1, world.Seats[0].Deck.Cards.Count);
+        // A resolved Preparation publishes its completion receipt through the agenda.
+        // This synthetic board has no response to that receipt.
+        Assert.Null(Sequence.Work(world, world.Facts, runner, []));
         Assert.False(world.Agenda.IsBusy);
     }
 
