@@ -45,11 +45,30 @@ Specials explicitly raise after committed costs; this does not invent their
 effects. Source mutation and full-regression scope are recorded in the
 [Spell Mastery evidence](doctor-strange-spell-mastery.md).
 
-Next: Master of the Mystic Arts on the same captured-card mechanism, including
-combined payment, intermediate reveal/recycle and return of the original physical
-card. Independent response-event authoring continues in MARVEL-803. Remaining
-production rows, other Invocations, whole-pack admission, save/UI contracts and
-complete pack proof remain open.
+Natural Talent and Wong top-discard source `bc5e1b2f` and review `7ed7ec4a`
+are integrated as `cd05bfd9` and `eb6b17a9`. The typed top query rejects
+unbound lookalikes and ambiguous decks without consuming randomness. Actual Wong
+under another player's control heals its controller's identity while referring
+to the game's Invocation deck; review covers that distinction and phase limits.
+
+Master source `b3b566af` and review `fc93062f` are integrated with the two
+subsequent admission repairs: exact bound self-discard (`d242e47a`, reviewed in
+`b801bb88`) and direct empty scheme choice (`bf51629a`, reviewed in `71c7a798`).
+The latter independently passes 996 affected Content cases and 19 lifecycle/
+authority cases. It preserves whole-ability admission and dependent completion;
+it does not supply Vapors status replacement or generic empty-choice behavior.
+Combined integration at `05cb51c2` passes all 122 selected Invocation, Master,
+Spell Mastery, Covert Ops, Black Panther and next-Special tests. Evidence:
+`Source/evidence/strange-integrated-master-top-discard.log`.
+
+Next: MARVEL-808 authors actual identity, Wong, Master and Winds rows against
+these reviewed mechanics. MARVEL-809 implements the separate Vapors status
+replacement prerequisite. MARVEL-803's four response events await independent
+acceptance of MARVEL-804's full-healing-cost repair; the unchanged previously
+supported mixed damage/healing regression is a required gate, not an unsupported
+boundary waiver. Remaining production rows, other Invocations, whole-pack
+admission, save/UI contracts and complete pack proof remain open. The integrated
+book still has 654 rows and nine of the 40 Strange faces.
 
 Combined integration at `e9584f11` passes 89 focused Content checks covering
 Spell Mastery, actual Strange rows, both printed-prerequisite spellings,
