@@ -42,3 +42,37 @@ External logs under `C:/Users/mggar/Source/`: `robot-actual-focused.log`,
 `robot-actual-restored-build.log` and `robot-actual-restored.log`.
 Independent actual-row content review remains required. Ms. Marvel public admission
 stays closed; the remaining unauthored faces are 05014, 05018 and 05029.
+
+## Independent actual-face review
+
+Reviewed `daff354e98eb64052298e2268f0e156cd4e77386` in the isolated
+`marvel-robot-05028-review` worktree. Raw generated `05028` text and vendored
+`ruling:d1087a7e030d2fd9` agree with the authored damage prohibition, mental
+cost, Hero Action form restriction, whole-box blanking, shared effect and phase
+expiry. Existing tests distinguish both seats, energy refusal, actual damage
+prevention, phase expiry and leaving/reentering play. The independent
+`RobotActualReviewTests` adds a wild-resource payment through `Game.Resolve`;
+it checks payment discard, enabled damage and removal of the blanked action.
+
+Production finding: the actual `Game.Pending` action has a null `Description`.
+The engine does not explain blanking or its phase duration. An executable probe
+requiring the words `blank` and `phase` fails on null; the other ten focused
+checks pass. `AbilityAffordanceDescription` delegates to
+`AbilityEffectDescription.Summary` and `AbilitySourceActionDescription.Caption`,
+which have no case for the lowered blanking grant. View's `AffordancePresenter`
+passes the description through. The generic persistent-effect formatter also
+represents that grant using the internal `printedTextBlanked` field; it is not
+a readable description of the operation. Add the semantic explanation at the
+engine owner and verify its projection before claiming player-facing readiness.
+No production fix is included in this review.
+
+The failing probe and its source are preserved outside the repository at
+`C:/Users/mggar/Source/robot-actual-independent-probe.log` and
+`C:/Users/mggar/Source/robot-actual-independent-probe.cs`. The committed regressions retain the passing wild payment and the failing semantic expectations for the owning correction. Restored focused verification is recorded
+in `C:/Users/mggar/Source/robot-actual-independent-restored.log`.
+
+Verdict: printed behavior content is accepted for this bounded face. Player-facing
+semantic proof remains blocked on the concrete missing description. No full
+suite, native UI, public Ms. Marvel admission or hosted persistence claim is made.
+
+Request changes: the committed offer regression requires a readable blanking description and phase duration, plus action and commitment captions. The committed persistent-action regression rejects disclosure of the internal numeric field while requiring a nonempty action body. These are intentionally red review evidence pending the lead-owned production correction.
