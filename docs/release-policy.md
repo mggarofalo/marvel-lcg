@@ -70,6 +70,13 @@ v19/v20/v21 sources retain explicitly named v23 routes that verify every origina
 gameplay fact and reject divergent histories. Protocol 37, schema 7, RNG and digest
 identities are unchanged; internal continuations are rebuilt from decisions.
 
+The frozen Expert campaign also contains a divergent Backflip history: at
+Crossbones attempt 4, unit 31 decision 3, the corrected prevention consumption
+allows Hydra Mercenary's two damage instead of carrying prevention from the
+preceding attack. Its complete aggregate remains quarantined unchanged on
+restore and import; the unaffected initial Absorbing Man attempt can still
+upgrade independently. See [save-content-upgrades.md](save-content-upgrades.md).
+
 Replay v22 completes nested reveals, including minion Quickstrike, before the
 parent reveal continues. This changes recorded event and decision boundaries;
 v21 saves require named source admission and full exact replay verification.

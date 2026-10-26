@@ -44,6 +44,15 @@ played attempt, not a compatible complete campaign aggregate. A newly recorded,
 authentic compatible predecessor campaign aggregate is still required for positive
 full-campaign upgrade acceptance. No frozen expected gameplay value is rewritten.
 
+The frozen Expert campaign is also quarantined unchanged under v23. Its journal
+entry 13 (Crossbones attempt 4) first differs at unit 31 decision 3: two Backflip
+prevention registrations are consumed together by the preceding defended
+Crossbones attack. The original history leaves one registration to erase Hydra
+Mercenary's subsequent two damage; the corrected runtime reduces the hero from
+7 to 5 hit points. Restore and import reject the aggregate before publication.
+The unaffected initial Absorbing Man attempt still upgrades exactly and permits
+both recovery and decline; this is not full-campaign upgrade acceptance.
+
 Replay v21 moves retaliation into the forced after-attack response window and
 corrects zero-damage retaliation. The actual predecessor Black Panther/Rhino trace
 in `tests/Marvel.Acceptance.Tests/Fixtures/retaliate-predecessor-91098022.jsonl.gz`
