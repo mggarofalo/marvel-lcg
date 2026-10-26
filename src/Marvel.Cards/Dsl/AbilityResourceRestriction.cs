@@ -16,6 +16,7 @@ internal static class AbilityResourceRestriction
         {
             "arrowEvent" => ResourceRestriction.ArrowEvent,
             "aspectCard" => ResourceRestriction.AspectCard,
+            "event" => ResourceRestriction.Event,
             _ => throw new AbilityException("unknown resourceRestriction"),
         };
     }
