@@ -25,3 +25,19 @@ The survivor removes Invulnerability's explicit `form: hero` restriction. This i
 Raw logs remain outside the repository: `C:/Users/mggar/Source/thor-utility-restored-build.log`, `thor-utility-restored-tests.log`, `thor-utility-mutants.json`, and individual `thor-mutant-*.log` files. The earlier 45-test run preceded the added Mansion payment/limit case; final restored verification is the 46-test run above.
 
 No whole-pack, public setup, native UI or Linux coverage is claimed by this packet. Independent review follows authoring.
+
+## Independent utility review
+
+Reviewed candidate: `b5a7df2c`. The review branch starts at that exact revision and retains only `ThorUtilityIndependentTests.cs` and this evidence addition. Verdict: no correctness finding in the four authored utility faces within this nonpublic research scope. The printed rows, complete-book lowering and existing author tests were inspected; public admission and whole-pack readiness are outside this verdict.
+
+Three independent behavioral controls add evidence beyond the author's cases:
+
+- A real mental payment for Enhanced Physique precedes a Second Wind paid with energy and physical. Only Second Wind's own receipt determines its four-point healing; the earlier mental payment supplies no bonus.
+- Enhanced Physique is played and used twice before its last physical counter pays Second Wind. The source is discarded before the identity choice. A rejected source-as-target answer preserves card digest, RNG words/index and pending work. Valid retry heals the other player's alter-ego by four; repeated pre-payment generator queries and that invalid retry produce the same final digest, RNG and pending work as an unprobed control.
+- A second-seat Mansion controller owns the choice and selects the first seat. Only the selected seat draws; the support exhausts and has no foreign-controller action.
+
+The first review run exposed a test-fixture assumption: leaving play resets the discarded source's ready flag. The test instead checks its meaningful behavior, absence from resource offers. This was not an engine defect.
+
+Independent actual-book negative controls were executed serially: replacing Second Wind's mental condition with physical fails both independent healing cases (two failures, expected damage 3 versus actual 2); replacing Mansion's chosen player with its controller fails the non-first-seat draw case. Both data mutations were restored byte-for-byte in `finally`; no mutation is retained.
+
+Final restored Windows Release evidence: nonincremental Content test-project build passed with zero warnings/errors; the focused filter covering `ThorUtilityIndependentTests`, `ThorUtilityEventTests`, `ThorUtilitySupportTests` and `Marvel.Content.Tests.Cards.AbilityData` passed **49/49** (16 utility behavior cases and 33 ability-data cases). Logs outside the repository: `C:/Users/mggar/Source/thor-utility-review-restored-build.log`, `thor-utility-review-restored-tests.log`, `thor-utility-review-mutants.json`, and `thor-utility-review-mutant-*.log`. Tool restoration used the repository manifest. No broad suite, native UI or Linux certification is claimed by this review.
