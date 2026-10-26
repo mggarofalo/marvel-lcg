@@ -112,13 +112,32 @@ both initial entry and transfer. Validation logs live outside the checkout in
 - Compiled ownership-guard removal mutant: killed by the other-invocation control.
 - Both mutants restored before the full rebuild and final passing suites.
 
-Independent review remains required.
+## Independent timing correction review
+
+Reviewed `64448751` in isolated checkout `marvel-thor-transfer-independent`.
+The same-execution allowance preserves the separate-invocation guard and the
+scheduled-frame identity filter. The original direct/interpreted transfer,
+retained-state, no-entry/no-reveal and Core Hawkeye cases pass independently.
+`ThorEngagementContinuationReviewTests` adds four synthetic cases: initial entry
+and transfer, each with a declined response or an accepted response that suspends
+for a nested choice. Every prompt retains unfinished placement text; Quickstrike
+defense and damage precede the optional response; declining draws nothing;
+accepting draws exactly two; following text completes exactly once.
+
+Independent evidence under `marvel-thor-transfer-independent-evidence`:
+`content-focused.log` (79 passing), `continuation-review.log` (4 passing),
+`rules-focused.log` (143 passing), and `architecture.log`.
+The author-owned compiled guard mutants were inspected as supporting evidence;
+this review changes no engine source, ability book, admission or version files.
+Verdict: approve the timing correction for the claimed optional engagement
+response paths. This does not certify every synthetic simultaneous forced
+engagement response or admit a new card or pack.
 
 The Core Hawkeye timing change identified above remains a replay compatibility
 change. This timing correction does not establish v25 compatibility or implement
 the separately required replay v26 decision and route proof.
 
-Remaining: independent timing retest; engine replay
+Remaining: engine replay
 compatibility decision and route proof; complete Defender discard-until/cost composition;
 full Get Over Here event initiation/payment and stale-cost controls; replay/save
 coverage of engagement response suspension; full pack abilities/setup/admission.
