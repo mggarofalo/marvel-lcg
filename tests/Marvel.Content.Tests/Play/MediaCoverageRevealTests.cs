@@ -186,11 +186,13 @@ public sealed class MediaCoverageRevealTests
         """;
 
     [Fact]
+    [Rule("rr:alteration-effect")]
+    [Rule("rr:simultaneous-resolution")]
     public void SelectedAbilityFinishesItsCopiesBeforeAnotherAbilityIsChosen()
     {
         // rr:simultaneous-resolution orders effects sharing a bold trigger.
-        // Engine interpretation under review: the selected ability finishes its additional
-        // resolutions before selecting another ability on the same revealed card.
+        // rr:alteration-effect: "The additional modifier is resolved simultaneously with any ability".
+        // Additional resolutions modify that selected ability before the next ability is selected.
         var f = Create(effect: ChoiceEffect, extra: """
         ,{"trigger":{"event":"WhenCardRevealed","timing":"WhenRevealed","subject":"this"},
           "effect":{"chooseCard":{"from":{"query":"identities"},
