@@ -13,21 +13,30 @@ namespace Marvel.Content.Tests.Play;
 public sealed class HammerThrowRecoveryPreflightTests
 {
     [Theory]
-    [InlineData("01186")]
-    [InlineData("01101")]
+    [InlineData("01186", false)]
+    [InlineData("01101", false)]
+    [InlineData("01186", true)]
+    [InlineData("01101", true)]
     [Rule("rr:damage.step.6")]
     [Rule("rr:damage.step.9")]
-    public void ActualHammerThrowFinishesRecoveryAndReturnsHammerBeforeDefeatResponse(string top)
+    [Rule("rr:overkill.1")]
+    public void ActualHammerThrowFinishesRecoveryAndReturnsHammerBeforeDefeatResponse(string top, bool enhanced)
     {
-        // Printed 06005/06028 and ruling 8fe224a8f1e012b2: overkill is applied
-        // before determining whether Loki revives. The synthetic board keeps
-        // Thor outside public product admission.
+        // rr:overkill.1 requires the excess damage to defeat the minion. Printed
+        // 06005/06028 + FAQ erratum recover Loki before that determination.
+        // The synthetic board keeps Thor outside public product admission.
         var world = ThorActualFixture.Board("06001a");
         var runner = Runner();
         world.Abilities = runner;
         var loki = world.CreateCard("06028", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+        var attachment = enhanced ? world.CreateCard("01163",
+            world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), loki.ObjectId)) : null;
         var hammer = world.CreateCard("06009", world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), cardOwner: 0));
         var hall = world.CreateCard("06017", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
+        world.CreateCard("06010", world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), cardOwner: 0));
+        world.CreateCard("05023", world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), world.Seats[0].IdentityCard.ObjectId, cardOwner: 0));
+        world.Effects.Register(new ContinuousEffect(EffectSource.LastingEffect, "health", 1,
+            Affects: world.Seats[0].IdentityCard.ObjectId));
         var discarded = world.CreateCard(top, world.AreaOf(DeckType.EncounterDeck));
         var card = world.CreateCard("06005", world.Seats[0].Hand);
         var first = world.CreateCard("01090", world.Seats[0].Hand);
@@ -43,10 +52,13 @@ public sealed class HammerThrowRecoveryPreflightTests
         Sequence.Answer(world, world.Facts, runner, target, Decision.Take(loki.ObjectId), events);
         var response = Sequence.Work(world, world.Facts, runner, events);
         Assert.Same(world.Seats[0].Hand, hammer.Area);
-        Assert.Equal(4, world.TheCardIn(DeckType.VillainArea)!.Damage);
+        Assert.Equal(top == "01186" ? 0 : enhanced ? 1 : 4, world.TheCardIn(DeckType.VillainArea)!.Damage);
+        Assert.Equal(23, DamagePlacement.Health(world, world.Facts, world.Seats[0].IdentityCard));
         Assert.Equal(DeckType.EncounterDiscardPile, discarded.Area.Type);
         Assert.Equal(top == "01186" ? DeckType.EngagedEnemiesArea : DeckType.EncounterDiscardPile, loki.Area.Type);
         Assert.Equal(0, loki.Damage);
+        if (attachment is not null)
+            Assert.Equal(top == "01186" ? DeckType.UpgradesArea : DeckType.EncounterDiscardPile, attachment.Area.Type);
         Assert.Equal(2, StateFields.Modified(world, world.Seats[0].IdentityCard, "attack", world.Facts, world.Players));
         if (top == "01186") Assert.Null(response);
         else
@@ -64,11 +76,13 @@ public sealed class HammerThrowRecoveryPreflightTests
     [Theory]
     [InlineData("health")]
     [InlineData("hosted")]
-    [InlineData("lastingHealth")]
-    public void RecoveryRefusesHealthDependenciesOrHostedCardsBeforeTargetMutation(string dependency)
+    public void RecoveryRefusesRelevantHealthDependenciesOrDefeatInterruptBeforeTargetMutation(string dependency)
     {
         var world = ThorActualFixture.Board("06001a");
-        var runner = Runner();
+        var runner = Runner(helmet: dependency == "health" ? """
+            {"if":{"test":{"atLeast":{"value":{"damageOn":{"titled":"Loki"}},"count":1}},
+            "then":{"grant":{"card":"you","keyword":"health","amount":5}}}}
+            """ : null);
         world.Abilities = runner;
         var loki = world.CreateCard("06028", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
         var hammer = world.CreateCard("06009", world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), cardOwner: 0));
@@ -76,9 +90,6 @@ public sealed class HammerThrowRecoveryPreflightTests
             world.CreateCard("01185", world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), loki.ObjectId));
         else if (dependency == "health")
             world.CreateCard("06010", world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), cardOwner: 0));
-        else
-            world.Effects.Register(new ContinuousEffect(EffectSource.LastingEffect, "health", 1,
-                Affects: world.Seats[0].IdentityCard.ObjectId));
         var card = world.CreateCard("06005", world.Seats[0].Hand);
         var first = world.CreateCard("01090", world.Seats[0].Hand);
         var second = world.CreateCard("01003", world.Seats[0].Hand);
@@ -123,10 +134,13 @@ public sealed class HammerThrowRecoveryPreflightTests
         Assert.Equal(DeckType.UpgradesArea, hammer.Area.Type);
     }
 
-    private static AbilityRunner Runner(string? continuation = null)
+    internal static AbilityRunner Runner(string? continuation = null, string? helmet = null)
     {
         var book = JsonNode.Parse(File.ReadAllText(RepositoryPaths.Dataset("abilities", "abilities.json")))!;
         book["cards"]!.AsArray().Add(JsonNode.Parse(Loki));
+        if (helmet is not null)
+            book["cards"]!.AsArray().Single(row => row!["card"]!.GetValue<string>() == "06010")!
+                ["abilities"]![0]!["effect"] = JsonNode.Parse(helmet);
         if (continuation is not null)
         {
             var hammer = book["cards"]!.AsArray().Single(row => row!["card"]!.GetValue<string>() == "06005")!;
@@ -140,7 +154,7 @@ public sealed class HammerThrowRecoveryPreflightTests
         {
           "card": "06028",
           "name": "Loki",
-          "note": "Printed 06028 and mandatory Forced Interrupt erratum in datasets/marvelcdb-faq/faq.json. The physical top discard is tested after discard and any deck reset; treachery heals all damage on this Loki incarnation instead of defeat. Rulings 8fe224a8f1e012b2 and c55100b5139ab3a5 preserve overkill before healing and deny defeat credit when Loki heals. Receipt syntax is an engine choice.",
+          "note": "Printed 06028 and mandatory Forced Interrupt erratum in datasets/marvelcdb-faq/faq.json. The physical top discard is tested after discard and any deck reset; treachery heals all damage on this Loki incarnation instead of defeat. Rules Reference 1.8 overkill requires actual defeat. Receipt syntax is an engine choice.",
           "abilities": [
             {
               "trigger": {

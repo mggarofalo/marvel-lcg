@@ -22,5 +22,6 @@ internal readonly record struct AbilityPowerState(
     internal string? UnprojectedStageEntry { get; init; }
     internal bool DefeatWindowDeferred { get; init; }
     internal bool RecoveryWindowDeferred { get; init; }
+    internal int? RecoverySubject { get; init; }
     internal bool EncounterCardsChanged { get; init; }
 }

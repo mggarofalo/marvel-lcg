@@ -121,6 +121,7 @@ internal static class AbilityPowerAlternatives
         && left.EncounterCardsChanged == right.EncounterCardsChanged
         && left.DefeatWindowDeferred == right.DefeatWindowDeferred
         && left.RecoveryWindowDeferred == right.RecoveryWindowDeferred
+        && left.RecoverySubject == right.RecoverySubject
         && left.UnprojectedStageEntry == right.UnprojectedStageEntry;
 
     private static bool SameEncounterOrder(int[]? left, int[]? right) =>
