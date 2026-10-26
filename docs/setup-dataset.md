@@ -254,9 +254,11 @@ The runtime does not currently accept:
 A request that needs one of these surfaces fails at setup or card registration.
 It must not produce a partial board.
 
-Mutagen Formula declares Standard and Expert research recipes with 26 encounter
-cards, the selected I/II or II/III villain pair, and two physical double-sided
-main schemes. Goblin Gimmicks is the one-module recommendation. Actual authored
-setup and stage-II reveal run through the production dealer at 1–4 players in
-`MutagenFormulaSetupTests`. Fourteen encounter faces remain unauthored; Green
-Goblin remains excluded from public discovery and game creation.
+Mutagen Formula declares Standard and Expert recipes with 26 encounter cards,
+the selected I/II or II/III villain pair, and two physical double-sided main
+schemes. Goblin Gimmicks is the one-module recommendation. Authored setup and
+stage-II reveal run through the production dealer at one through four players
+in `MutagenFormulaSetupTests`. The complete Green Goblin candidate supplies all
+57 printed faces and admits both scenarios and all four modular sets through
+the public setup contract. Whole-game, restart and native acceptance remain
+separate from these admission and setup checks.
