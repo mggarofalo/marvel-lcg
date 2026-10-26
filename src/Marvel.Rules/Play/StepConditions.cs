@@ -89,6 +89,6 @@ public static class StepConditions
         Conditions.Values.SelectMany(each => each).Concat(
                 // These depend on the concrete occurrence rather than solely
                 // on its scheduled step name.
-                [BasicPowerTiming.HeroAttackInitiated, BasicPowerTiming.HeroUseInitiated, DamageDealt, ThreatPlaced, MinionEngagement.Engaged, VillainStepOneTiming.ThreatPlaced, SchemeEnds, BasicAttackEnds, BasicPowerTiming.ThwartEnds,
+                [PreparationAbilityResolvedOperation.Condition, BasicPowerTiming.HeroAttackInitiated, BasicPowerTiming.HeroUseInitiated, DamageDealt, ThreatPlaced, MinionEngagement.Engaged, VillainStepOneTiming.ThreatPlaced, SchemeEnds, BasicAttackEnds, BasicPowerTiming.ThwartEnds,
                     BoostFaceupOperation.AttackFaceup]).ToFrozenSet(StringComparer.Ordinal);
 }

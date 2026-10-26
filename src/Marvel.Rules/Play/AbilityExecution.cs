@@ -36,6 +36,7 @@ public sealed class AbilityExecution
     internal AbilityExecutionState State { get; set; } = AbilityExecutionState.Running;
     internal bool DeferredActivation { get; set; }
     internal AbilityResponseBoundary? ResponseBoundary { get; set; }
+    internal ResolvedPreparationAbility? Preparation { get; set; }
     internal bool ReadyToComplete => State == AbilityExecutionState.Completing
         && Frames.Count == 0 && Children.Count == 0 && CompletionObligations.Count == 0;
     internal bool WaitsNow => !DeferredActivation && State != AbilityExecutionState.Abandoned

@@ -196,6 +196,7 @@ public sealed class AbilityExecutions
     internal PhaseStep Register(PhaseStep step, AbilityExecution? continuation)
     {
         var owner = continuation ?? Active ?? procedureOwner;
+        while (owner is { IsComplete: true }) owner = owner.Parent;
         if (owner is null) return step;
         RequireOwned(owner);
         long[] dependencies = continuation is null ? [] : [.. AbilityOwnedWork.Segment(owner)];
@@ -258,20 +259,21 @@ public sealed class AbilityExecutions
         if (step.ExecutionOwner is { } execution)
         {
             execution.Frames.Remove(step.FrameId);
-            CompleteOwnedInvocation(execution);
+            CompleteOwnedInvocation(execution, step);
         }
     }
 
-    private void CompleteOwnedInvocation(AbilityExecution invocation)
+    private void CompleteOwnedInvocation(AbilityExecution invocation, PhaseStep? removing = null)
     {
         if (!invocation.ReadyToComplete) return;
         invocation.State = AbilityExecutionState.Complete;
         if (invocation.Resolution is { } ability) invocation.Occurrence.Resolution.Complete(ability);
         invocations.Remove(invocation);
+        PreparationAbilityCompletion.Complete(agenda, invocation, removing);
         if (invocation.Parent is { } parent)
         {
             parent.Children.Remove(invocation);
-            CompleteOwnedInvocation(parent);
+            CompleteOwnedInvocation(parent, removing);
         }
     }
 

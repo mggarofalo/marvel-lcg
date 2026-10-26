@@ -15,6 +15,10 @@ namespace Marvel.Rules.Timing;
 /// <param name="Controller">The card's controller when the occurrence began.</param>
 public sealed record OccurrenceCard(int Card, CardKind Kind, int Owner, int Controller)
 {
+    /// <summary>Completed Preparation ability retaining this source snapshot.</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public Play.ResolvedPreparationAbility? PreparationAbility { get; init; }
+
     /// <summary>The public temporary title captured before that identity ends.</summary>
     public string? EffectiveTitle { get; init; }
     /// <summary>Whether the participant was a villain.</summary>

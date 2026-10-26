@@ -28,6 +28,9 @@ internal static class AbilityTriggerReader
             throw new AbilityException(
                 $"'{card}' uses would timing outside the supported forced-interrupt window");
         string? condition = Event(trigger, card, type);
+        if (condition == PreparationAbilityResolvedOperation.Condition
+            && type is not (AbilityType.Response or AbilityType.ForcedResponse))
+            throw new AbilityException($"'{card}' requires response timing after Preparation resolution");
         return new AbilityTrigger(
             condition, type, subject, actor, target,
             Form(trigger, card), Also(trigger, card), Whose(trigger, card))

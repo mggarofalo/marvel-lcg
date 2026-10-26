@@ -175,6 +175,7 @@ internal sealed record AbilityResolutionState(
             else World.Agenda.Executions.Resume(Execution);
             executionEntered = true;
         }
+        PreparationAbilityCompletion.Track(World, Execution!, Source, AbilityPlayer);
         if (Execution?.IsBatch == true) resolutionAbility = null;
         else Occurrence.Resolution.Begin(resolutionAbility.Value);
     }

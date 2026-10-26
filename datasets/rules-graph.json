@@ -32,6 +32,23 @@
     }
   },
   "card_clarifications": {
+    "ruling:420bd5b1763b9506": {
+      "ruling_hash": "sha256:d70101036c168ba7943b1b0ae0a92d294b2045b6887338f667bccda656e933ec",
+      "cards": {
+        "08001a": "sha256:ff1c51ee077f81c243160ac7bbde3fad7b32c38fafd6e8ca3a7db8a5d3ace0be",
+        "08009": "sha256:f46fb9c0e51bcd98748dee59c45aaaac9a5b355bd9cd915b7b918f47c5497c98"
+      },
+      "references": [
+        "rr:resolve.2",
+        "rr:resolve.5",
+        "rr:resolve.7",
+        "rr:response.3"
+      ],
+      "supersedes": {
+        "ruling:a693e5ba5379e414": "sha256:9d377aed6652ffc0217f8aeeee34ae7193306ef043ca73a29c7522630a5b8949"
+      },
+      "why": "The February 2026 clarification applies resolve to both Widowmaker and Synth-Suit. RR 1.8 resolve requires at least one applied effect and excludes constant abilities and fully canceled abilities; the earlier trigger-based stunned Attacrobatics answer does not govern this updated wording."
+    },
     "ruling:6e301a347a5392fb": {
       "ruling_hash": "sha256:977ce34c0da6d47efbe36667b0ee71d9e56802b0db6f90472090774fba575dbe",
       "cards": {
