@@ -79,7 +79,7 @@ public sealed class PlayedCampaignReplayUpgradeTests
             string bytes = SessionSaveJson.Write(original);
             var route = Assert.IsType<SessionContentUpgrade>(factory.ContentUpgrade(original.Compatibility));
             var candidate = route.Verify(original, setup => ReplayContractUpgradeTests.Open(factory, setup));
-            Assert.Equal("engine-replay-v26", candidate.Compatibility.ReplayContract);
+            Assert.Equal("engine-replay-v27", candidate.Compatibility.ReplayContract);
             Assert.Equal(bytes, SessionSaveJson.Write(candidate with { Compatibility = original.Compatibility }));
             Assert.Equal(bytes, SessionSaveJson.Write(original));
             _ = SessionReplay.Verify(candidate, factory.Compatibility,

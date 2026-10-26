@@ -5,7 +5,7 @@ namespace Marvel.Server.Tests;
 
 public sealed class AllyEntryReplayRouteTests
 {
-    private static readonly string[] OtherDestinations = ["engine-replay-v24", "engine-replay-v26"];
+    private static readonly string[] OtherDestinations = ["engine-replay-v24", "engine-replay-v26", "engine-replay-v27"];
 
     [Theory]
     [InlineData("engine-replay-v19", SessionReplayUpgrade.CoreRorsV19ToV25)]

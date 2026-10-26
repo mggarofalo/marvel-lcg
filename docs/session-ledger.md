@@ -696,7 +696,13 @@ Campaign schema 1 and protocol 37 are strict compatibility boundaries. No
 migration invents missing campaign meaning. Complete content admission is
 required before the host advertises a campaign or starts its first attempt.
 
-The current replay identity is `engine-replay-v26`. Minion Quickstrike completes
+The current replay identity is `engine-replay-v27`. Dynamic lasting amounts follow
+current game state, and captured actors cannot follow a reentered incarnation.
+V26 saves have no named source admission and remain unchanged. Explicit frozen
+v19/v20/v21 routes verify every original fact before changing metadata. Protocol
+41 and save schema 7 apply.
+
+Replay v26 minion Quickstrike completes
 before optional engagement and entry responses, changing real Core Hawkeye/Vulture
 traces from v25. V25 sources have no named admission and remain quarantined
 unchanged. Frozen v19/v20/v21 sources retain explicit v26 routes, verifying every

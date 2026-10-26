@@ -41,6 +41,7 @@ public sealed class EngagementReplayRouteTests
     [InlineData("engine-replay-v24", SessionReplayUpgrade.CoreRorsV19ToV24)]
     [InlineData("engine-replay-v25", SessionReplayUpgrade.CoreRorsV19ToV25)]
     [InlineData("engine-replay-v26", SessionReplayUpgrade.CoreRorsV19ToV26)]
+    [InlineData("engine-replay-v27", SessionReplayUpgrade.CoreRorsV19ToV27)]
     public void FrozenDestinationsRetainTheirNamedRoutesAndOriginalFacts(
         string destination, SessionReplayUpgrade route)
     {

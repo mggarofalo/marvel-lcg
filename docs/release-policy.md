@@ -71,10 +71,16 @@ independent identities do:
 |---|---:|---|
 | Engine protocol | `41` | A request, response, affordance, event or descriptor change is not understood by the prior endpoint. |
 | Session schema | `7` | The strict persisted JSON shape changes. |
-| Engine replay contract | `engine-replay-v26` | The same setup and decision trace may resolve differently. |
+| Engine replay contract | `engine-replay-v27` | The same setup and decision trace may resolve differently. |
 | RNG contract | `mt19937-iso-cxx` | The seeded random stream changes. |
 | State digest | `state-digest-v3` | The canonical hidden-state serialization changes. |
 | Runtime datasets | Three SHA-256 values | Any byte in `cards.json`, `setup.json` or `abilities.json` changes. |
+
+Replay v27 evaluates dynamic lasting amounts against current state and preserves
+captured actor incarnation across suspended responses. These corrections can change
+accepted Core/RoRS outcomes. V26 saves have no named source admission; original
+saves remain unchanged. Explicit frozen v19/v20/v21 routes verify every historical
+fact before changing compatibility metadata. Protocol 41 and save schema 7 apply.
 
 Replay v26 completes minion Quickstrike before optional engagement and entry
 responses. Real Core Hawkeye and Vulture can therefore reach the same optional

@@ -27,9 +27,9 @@ all 36 release checks. Logs are `widow-boost-combined-{content,server}.log` and
 `widow-protocol41-identity-{server,desktop,release}.log` under the external evidence directory.
 This does not claim a full green Server rerun after the correction.
 
-The current book has **628 rows and 17/34 Black Widow faces**: 08001a, 08001b,
+The current book has **632 rows and 21/34 Black Widow faces**: 08001a, 08001b,
 08002, 08005, 08007, 08009, 08010, 08011, 08014, 08015, 08016, 08019,
-08020, 08021, 08022, 08027 and 08028.
+08020, 08021, 08022, 08023, 08025, 08026, 08027, 08028 and 08029.
 
 | Scope | Reviewed evidence | Integrated state |
 |---|---|---|
@@ -77,7 +77,8 @@ integration failures and corrected 75-check run remain in external evidence.
 
 ## Remaining face authoring order
 
-The seventeen integrated faces plus the following 17 faces account for all 34.
+The following packet ledger covers the original 17-face remainder. Four of those
+faces (08023, 08025, 08026 and 08029) are now integrated, leaving 13 of 34.
 These are work packets, not claims that existing primitives compose correctly.
 Only one worker writes the ability book at a time; mechanism probes may use
 explicitly test-local rows while a different packet is reviewed.
@@ -113,3 +114,29 @@ that legal-play example. Correcting live lasting modifiers also affects accepted
 Ultron/Berserk Mutate behavior and requires replay version 27 before integration
 acceptance. Quake's captured actor-incarnation fix is independently reviewed
 before authoring its row. Neither packet is accepted by this checkpoint.
+
+
+## Reviewed live effects and actor binding
+
+The four-face packet `c5e13668` / `27a00397` is integrated together with
+live-lasting source `2691f473` and independent review `e9e67eac`. Quake's
+engine prerequisite `5ae4efdf` / `02bb23ef` is also integrated; its actual row
+is still absent. The combined focused Content run passes **155/155** in
+`widow-21face-integrated.log`. The existing 269-check and five durable results
+above describe the earlier 17-face integration, not a repeated full suite.
+
+Replay identity is **engine-replay-v27**, protocol **41**, save schema **7**.
+Live amounts change accepted Ultron/Berserk Mutate behavior; actor incarnation
+also changes a stale actor's eligibility. Named v19/v20/v21 Core/RoRS upgrade
+routes retain every original fact and verify strict replay before changing only
+compatibility. Existing named routes remain explicit; arbitrary v26 saves are
+not silently relabeled. No archived save bytes were edited. Integrated history,
+played campaign, route, live restart and identity checks pass **44/44** in
+`widow-v27-history.log`. Independent identity review remains required.
+
+The Taskmaster reviewer used ordinary Combat Training for legal cross-seat
+controlled-upgrade evidence, and verified live trait/engagement counts, semantic
+View contributions, source departure/expiry and fresh-host persistence. Two
+compiled mutants distinguished stale amounts and inherent-only traits. The
+review added tests only and found no production defect. Quake's separate review
+keeps the synthetic reentry limitation explicit in its own evidence document.

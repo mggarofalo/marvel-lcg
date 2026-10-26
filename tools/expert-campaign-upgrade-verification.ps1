@@ -1,6 +1,6 @@
 function Assert-ExpertCampaignUpgrade {
     param([string]$Published, [string]$CurrentDirectory, [string]$Choice,
-        [string]$ReplayContract = 'engine-replay-v26')
+        [string]$ReplayContract = 'engine-replay-v27')
     $id = '5721469c84d13a3550fd6d2f3950f301'
     $original = Read-CampaignGeneration "$Published/campaigns/$id"
     $current = Read-CampaignGeneration $CurrentDirectory
