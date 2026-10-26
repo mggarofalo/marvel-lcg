@@ -9,13 +9,22 @@ namespace Marvel.Cards.Run;
 
 internal static class AbilityResourceIconDiscard
 {
-    internal static bool HasCards(AbilityStructuralContext context) => Cards(context).Count > 0;
+    internal static int Required(AbilityStructuralContext context, AbilityEffect.DiscardResourceIcons discard) =>
+        checked((int)Math.Min(Math.Max(0, context.Admission().Evaluator().Amount(discard.Count)),
+            Cards(context, discard).Sum(card => Icons(context, discard, card))));
 
     internal static Prompt Describe(AbilityStructuralContext context, AbilityEffect.DiscardResourceIcons discard)
     {
         var request = Request(context, discard);
-        string description = $"Discard hand cards providing {discard.Count} printed resource icon(s). "
-            + "If your hand has fewer icons, discard all cards with icons. Other cards stay in hand.";
+        string types = discard.Resources.Length == 0 ? "of any type" : "of type " + string.Join(" or ",
+            discard.Resources.Select(type => type switch
+            {
+                Resources.Mental => "mental", Resources.Physical => "physical",
+                Resources.Energy => "energy", Resources.Wild => "wild",
+                _ => throw new InvalidOperationException("Unknown printed resource type"),
+            }));
+        string description = $"Discard a minimal group of hand cards providing {Required(context, discard)} printed resource icon(s) {types}. "
+            + "If your hand has fewer eligible icons, discard all cards with eligible icons. Other cards stay in hand.";
         return new(context.Player, Question.Element, TimingPriority.Untimed, Steps.TurnAction,
             $"{context.SourceFace}: discard printed resources", false,
             [new Affordance(context.Expressions.Source.ObjectId, AbilityStructuralExecution.ChooseVerb,
@@ -37,32 +46,40 @@ internal static class AbilityResourceIconDiscard
             ? new Unsupported("select a minimal group of hand cards satisfying the printed resource discard")
             : new DiscardSelectedHandCardsCommand([.. answer.Targets]);
 
-    private static List<Card> Cards(AbilityStructuralContext context) =>
-        [.. context.Expressions.World.Seats[context.Player].Hand.Cards.Where(card => Icons(context, card) > 0)];
+    private static List<Card> Cards(AbilityStructuralContext context, AbilityEffect.DiscardResourceIcons discard) =>
+        [.. context.Expressions.World.Seats[context.Player].Hand.Cards.Where(card => Icons(context, discard, card) > 0)];
 
-    private static int Icons(AbilityStructuralContext context, Card card) =>
-        Resources.GeneratedBy(card.FaceId, context.Expressions.World.Facts).Length;
+    private static int Icons(AbilityStructuralContext context, AbilityEffect.DiscardResourceIcons discard, Card card) =>
+        // rr:wild-resource.3: "wild resources cannot be interpreted as any of the other resource types."
+        Resources.GeneratedBy(card.FaceId, context.Expressions.World.Facts)
+            .Count(icon => discard.Resources.Length == 0 || discard.Resources.Contains(icon));
 
     private static TargetRequest Request(AbilityStructuralContext context, AbilityEffect.DiscardResourceIcons discard)
     {
-        var cards = Cards(context);
-        int required = Math.Min(discard.Count, cards.Sum(card => Icons(context, card)));
+        var cards = Cards(context, discard);
+        int required = Required(context, discard);
         var groups = new List<IReadOnlyList<int>>();
-        for (int first = 0; first < cards.Count; first++)
+        var selected = new List<int>();
+        AddGroups(0, 0, int.MaxValue);
+        void AddGroups(int start, int total, int smallest)
         {
-            int firstIcons = Icons(context, cards[first]);
-            if (firstIcons >= required) groups.Add([cards[first].ObjectId]);
-            else for (int second = first + 1; second < cards.Count; second++)
+            if (total >= required)
             {
-                int secondIcons = Icons(context, cards[second]);
-                if (secondIcons < required && firstIcons + secondIcons >= required)
-                    groups.Add([cards[first].ObjectId, cards[second].ObjectId]);
+                if (total - smallest < required) groups.Add([.. selected]);
+                return;
+            }
+            for (int index = start; index < cards.Count; index++)
+            {
+                int icons = Icons(context, discard, cards[index]);
+                selected.Add(cards[index].ObjectId);
+                AddGroups(index + 1, total + icons, Math.Min(smallest, icons));
+                selected.RemoveAt(selected.Count - 1);
             }
         }
-        return new TargetRequest([.. cards.Select(card => card.ObjectId)], 1, Math.Min(2, cards.Count), Groups: groups)
+        return new TargetRequest([.. cards.Select(card => card.ObjectId)], 1, cards.Count, Groups: groups)
         {
             Details = cards.ToDictionary(card => card.ObjectId,
-                card => $"{Icons(context, card)} printed resource icon(s); discard this card."),
+                card => $"{Icons(context, discard, card)} eligible printed resource icon(s); discard this card."),
         };
     }
 }

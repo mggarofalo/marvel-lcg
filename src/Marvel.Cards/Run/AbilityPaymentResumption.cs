@@ -17,6 +17,8 @@ internal static class AbilityPaymentResumption
             return false;
         }
         cast.PendingPayment = null;
-        return true;
+        if (!payment.Cancelled) return true;
+        AbilityEventInitiation.CompleteCancellation(execution, cast);
+        return false;
     }
 }

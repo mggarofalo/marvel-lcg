@@ -6,11 +6,15 @@ namespace Marvel.Rules.Play;
 /// <summary>State owned by the Lifecycle procedure.</summary>
 public sealed record LifecycleOperation(LifecycleKind Kind) : AgendaOperation
 {
+    /// <summary>The exact paid-event initiation, when this lifecycle belongs to one.</summary>
+    public EventPlayInitiation? EventInitiation { get; init; }
+
     /// <inheritdoc/>
     public override string What => Kind switch
     {
         LifecycleKind.CardPlayed => Steps.CardPlayed,
         LifecycleKind.EventPlayed => Steps.EventPlayed,
+        LifecycleKind.EventPlayInitiated => EventPlayTiming.Initiated,
         LifecycleKind.CardEntersPlay => Steps.CardEntersPlay,
         LifecycleKind.FormChanged => Steps.FormChanged,
         LifecycleKind.BasicRecoveryUsed => BasicPowerTiming.RecoveryUsed,

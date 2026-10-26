@@ -10,8 +10,11 @@ internal static class RevealOrderPrompt
         World world, ICardFacts facts, PhaseStep step)
     {
         var card = world.Cards[step.Subject];
-        var handles = step.Require<RevealAbilityOperation>().Candidates ?? [];
-        var abilities = step.Require<RevealAbilityOperation>().Abilities ?? [];
+        var operation = step.Require<RevealAbilityOperation>();
+        var distinct = (operation.Abilities ?? []).Select((ability, index) => (ability, index))
+            .DistinctBy(entry => entry.ability).ToList();
+        var handles = distinct.Select(entry => (operation.Candidates ?? [])[entry.index]).ToList();
+        var abilities = distinct.Select(entry => entry.ability).ToList();
         if (handles.Count != abilities.Count || handles.Count < 2)
         {
             throw new InvalidOperationException("reveal ordering has no simultaneous abilities");

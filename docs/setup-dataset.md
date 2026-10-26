@@ -25,20 +25,22 @@ The file has 3 groups:
 |---|---:|---:|
 | `campaigns` | 35 Core Set, Rise of Red Skull and Wrecking Crew scenario/mode combinations | 37 |
 | `heroes` | 8 Core Set, Rise of Red Skull and Captain America starter decks | 9 |
-| `encounter_sets` | 10 Core Set and Rise of Red Skull fixed/modular sets | 12 |
+| `encounter_sets` | 10 Core Set and Rise of Red Skull fixed/modular sets | 14 |
 
 Ms. Marvel is a declared research hero. Her 40-card starter, obligation and
 nemesis set follow a pinned FFG divider; the runtime product gate excludes her
-recipe until complete pack acceptance. A Mess of Things is a declared research
-modular set containing 02037, 02038, 02039 and two copies of 02040. The Green
-Goblin product remains outside runtime admission, so this recipe is excluded
-from public discovery even when all its faces have authored abilities.
+recipe until complete pack acceptance. Four Green Goblin modular sets are
+also declared research recipes: A Mess of Things contains 02037, 02038, 02039
+and two copies of 02040; Goblin Gimmicks contains two copies each of
+02033–02036; Power Drain contains one copy each of 02041–02045. The Green
+Goblin product remains outside runtime admission, so these recipes are excluded
+from public discovery even when all their faces have authored abilities.
 
 Risky Business declares Standard and Expert research recipes: eighteen scenario
 encounter cards, the selected Norman I/II or II/III stage pair, two physical main
 schemes, and Criminal Enterprise/State of Madness set aside as one physical card.
 The normal recipe recommends one Goblin Gimmicks modular set (02033–02036, two
-copies each). Goblin Gimmicks has composition data but lacks authored abilities.
+copies each). Goblin Gimmicks has authored research abilities and composition data.
 `RiskyBusinessSetupTests` exercises the production dealer and authored setup
 with one chosen Core modular set at one through four players in both modes.
 This nonpublic evidence does not admit Green Goblin or prove complete gameplay.

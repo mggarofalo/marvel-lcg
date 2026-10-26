@@ -4,6 +4,10 @@ namespace Marvel.Cards.Run;
 internal sealed class AbilityInitiationPayment(
     AbilityEventPayment? eventPayment, AbilityCostPayment arrowPayment) : AbilityPaymentPlan
 {
+    private bool initiationOpened;
+    private Marvel.Rules.Play.EventPlayInitiation? initiation;
+    internal override bool Cancelled => initiation?.Cancelled == true;
+
     internal override bool Commit(AbilityResolutionExecution execution, AbilityResolutionState cast)
     {
         if (eventPayment is not null)
@@ -17,6 +21,17 @@ internal sealed class AbilityInitiationPayment(
         }
         execution.ApplyPayment(
             arrowPayment.Commit(cast.Execution!, execution.cardPlayAbilities, cast.Trigger, cast.Events), cast);
-        return !cast.Suspended;
+        if (cast.Suspended) return false;
+        if (eventPayment is not null && !initiationOpened)
+        {
+            initiationOpened = true;
+            initiation = AbilityEventInitiation.Open(execution, cast);
+            if (initiation is not null)
+            {
+                cast.Suspend();
+                return false;
+            }
+        }
+        return true;
     }
 }

@@ -1,3 +1,4 @@
+using Marvel.Content.Tests.Cards;
 using Marvel.Cards.Dsl;
 using Marvel.Cards.Run;
 using Marvel.Rules.Play;
@@ -8,7 +9,7 @@ using Xunit;
 
 namespace Marvel.Content.Tests.Play;
 
-/// <summary>Test-local Power Drain shapes prove prerequisites without admitting the module.</summary>
+/// <summary>Receipt prerequisites and actual Pulse behavior outside public module admission.</summary>
 public sealed class PowerDrainReceiptTests
 {
     [Theory]
@@ -58,6 +59,7 @@ public sealed class PowerDrainReceiptTests
         Assert.Equal(DeckType.EngagedEnemiesArea, electro.Area.Type);
         Assert.Equal(PlayArea.Of(1), electro.Area.PlayArea);
         Assert.NotEqual(DeckType.EngagedEnemiesArea, outsider.Area.Type);
+        Assert.Single(deck.Cards);
         Assert.Empty(world.AreaOf(DeckType.DealtEncounterCardsDeck, PlayArea.Of(1)).Cards);
         Assert.Empty(world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)).Cards);
     }
@@ -78,12 +80,7 @@ public sealed class PowerDrainReceiptTests
         Assert.NotEqual(DeckType.EngagedEnemiesArea, outsider.Area.Type);
     }
 
-    private static AbilityRunner PulseRunner() => RevealRunner("02043", """
-        {"seq":[{"discardTop":{"from":"encounterDeck","count":7}},
-          {"recruitDiscarded":"02042"},
-          {"if":{"test":{"atLeast":{"value":{"result":"found"},"count":1}},
-            "else":{"gainSurge":1}}}]}
-        """);
+    private static AbilityRunner PulseRunner() => AuthoredCards.Runner();
 
     [Fact]
     public void ReceiptSurvivesNestedChoicesBeforeRecruitment()

@@ -51,6 +51,7 @@ public static class StepConditions
         // windows rather than one pair per description of the moment.
         [CardPlayed] = [CardPlayed, CardEntersPlay],
         [EventPlayed] = [CardPlayed],
+        [EventPlayTiming.Initiated] = [EventPlayTiming.Initiated],
         [CardEntersPlay] = [CardEntersPlay],
         [FormChanged] = [FormChanged],
         [PlayerTurnTiming.Ends] = [PlayerTurnTiming.Ends],

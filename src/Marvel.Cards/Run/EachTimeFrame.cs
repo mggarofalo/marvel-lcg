@@ -6,4 +6,7 @@ using Marvel.Rules.Prompts;
 using Marvel.Rules.Play;
 
 namespace Marvel.Cards.Run;
-internal sealed record EachTimeFrame(long Next, long Count, int? DiscardedCard) : AbilityStructuralFrame;
+internal sealed record EachTimeFrame(long Next, long Count, int? DiscardedCard) : AbilityStructuralFrame
+{
+    internal ImmutableArray<int> Receipt { get; init; }
+}

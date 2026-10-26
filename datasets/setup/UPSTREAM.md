@@ -32,7 +32,7 @@ Rise of Red Skull printed faces before exposing its runtime recipes.
 - every named encounter or modular set is defined;
 - every scenario has valid main schemes and villain stages;
 - every hero has two identity faces, an obligation, and a nemesis set;
-- the declared products contain 37 authored modes, 9 heroes, and 12 sets;
+- the declared products contain 37 authored modes, 9 heroes, and 14 sets;
 - required encounter sets remain fixed when optional modular sets change;
 - the header counts match the file.
 
@@ -79,3 +79,14 @@ eight encounter cards. This composition record does not implement those cards.
 The normal Expert convention adds the Expert set alongside Standard.
 `RiskyBusinessSetupTests` checks exact recipes, 1–4-player production deals with
 one supported chosen modular set, authored setup and continued public exclusion.
+
+Power Drain is a Green Goblin research modular recipe with five distinct faces
+and five physical cards (02041–02045), one each, from the generated printed set
+facts and pinned MarvelSDB `gob_encounter.json` quantities. Its outside-Core
+adjudication and `PowerDrainSetupTests` gate composition and public exclusion.
+
+Running Interference is a Green Goblin research modular recipe: 02046–02048
+have one copy each and 02049 has two, five physical cards and four distinct
+faces. Generated printed set facts and the pinned MarvelSDB
+`gob_encounter.json` above supply membership and quantities.
+`RunningInterferenceSetupTests` gates composition and public exclusion.

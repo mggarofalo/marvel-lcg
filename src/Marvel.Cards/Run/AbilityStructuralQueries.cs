@@ -235,8 +235,11 @@ internal static class AbilityStructuralQueries
         AbilityAdmissionContext admission, HashSet<AbilityEffect> evidence)
     {
         long count = repeated.Count - repeated.Current - 1;
-        var future = context.Expressions.World.AreaOf(DeckType.EncounterDeck).Cards
-            .Reverse().Take((int)Math.Min(count, int.MaxValue)).ToList();
+        var future = repeated.Receipt.IsDefault
+            ? context.Expressions.World.AreaOf(DeckType.EncounterDeck).Cards
+                .Reverse().Take((int)Math.Min(count, int.MaxValue)).ToList()
+            : repeated.Receipt.Skip(checked((int)repeated.Current + 1))
+                .Select(id => context.Expressions.World.Cards[id]).ToList();
         if (future.Count < count)
             return false;
 

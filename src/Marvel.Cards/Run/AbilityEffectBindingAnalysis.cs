@@ -200,6 +200,7 @@ internal static class AbilityEffectBindingAnalysis
     private static bool NoBindingChange(AbilityEffect effect) => effect switch
     {
         AbilityEffect.DiscardHandCards discard => BindingCanChange(discard.Count),
+        AbilityEffect.DiscardResourceIcons discard => BindingCanChange(discard.Count),
         AbilityEffect.DiscardUntil discard => discard.Player == AbilityPlayer.ChosenPlayer,
         AbilityEffect.AttachCards attach => BindingCanChange(attach.Cards) || BindingCanChange(attach.Host),
         AbilityEffect.ReleaseBeneath => false,
@@ -210,7 +211,7 @@ internal static class AbilityEffectBindingAnalysis
         AbilityEffect.DefineProfile or AbilityEffect.GainSurge or AbilityEffect.Fixed or AbilityEffect.Generate or AbilityEffect.AllowPlayBeneath or AbilityEffect.ReduceFirstAllyCost or AbilityEffect.DoubleResourceFor
             or AbilityEffect.PreventDamageFrom or AbilityEffect.DelayedStun
             or AbilityEffect.ChooseTopForHand or AbilityEffect.ChooseDiscardToShuffle
-            or AbilityEffect.DiscardHandWithResource or AbilityEffect.DiscardResourceIcons
+            or AbilityEffect.DiscardHandWithResource
             or AbilityEffect.RecoverDiscardedByResource or AbilityEffect.RecruitDiscarded or AbilityEffect.GrantTraitCharacters => false,
         _ => throw new InvalidOperationException("Unknown compiled effect in player-binding analysis"),
     };

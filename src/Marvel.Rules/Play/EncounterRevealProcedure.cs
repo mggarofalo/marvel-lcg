@@ -201,7 +201,9 @@ internal static class EncounterRevealProcedure
         {
             var keyword = RevealKeywords.KeywordAbilities(world, facts, card, player);
             var printed = abilities.WhenRevealedAbilities(world, card, player);
-            var simultaneous = keyword.Concat(printed).ToList();
+            int copies = RevealRepetitions.Copies(world, player);
+            var simultaneous = keyword.Concat(printed)
+                .SelectMany(ability => Enumerable.Repeat(ability, copies)).ToList();
             if (simultaneous.Count > 1)
             {
                 if (EffectiveCards.Kind(card, facts) == CardKind.Treachery)
@@ -209,11 +211,13 @@ internal static class EncounterRevealProcedure
                     occurrence.Resolution.BeginCard(card.ObjectId, simultaneous);
                 }
                 var handles = simultaneous
-                    .Select((_, index) => 1_000_000 + index)
+                    .Select((_, index) => 1_000_000 + index / copies)
                     .ToList();
                 world.Agenda.ThenContinuation(new PhaseStep(
                     new RevealAbilityOperation(
-                        RevealAbilityKind.ChooseRevealAbility,
+                        simultaneous.Distinct().Count() > 1
+                            ? RevealAbilityKind.ChooseRevealAbility
+                            : RevealAbilityKind.ResumeRevealAbility,
                         Abilities: simultaneous,
                         Candidates: handles,
                         Origin: occurrence

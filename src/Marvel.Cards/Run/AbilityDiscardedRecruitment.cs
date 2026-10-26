@@ -11,7 +11,11 @@ internal static class AbilityDiscardedRecruitment
     internal static AbilityDeckAndRevealResult Run(
         AbilityEffect.RecruitDiscarded effect, AbilityDeckAndRevealContext context)
     {
-        var matches = context.Discarded.Where(card => card.FaceId == effect.Face).Distinct().ToArray();
+        var matches = effect.Trait is { } trait
+            ? context.Discarded.Where(card => context.World.Facts.Kind(card.FaceId) == CardKind.Minion
+                && context.World.Facts.PrintedTraits(card.FaceId).Contains(trait, StringComparer.Ordinal))
+                .Take(1).ToArray()
+            : context.Discarded.Where(card => card.FaceId == effect.Face).Distinct().ToArray();
         if (matches.Length > 1)
             throw new RulesNotImplementedException(
                 $"'{context.Source.FaceId}' recruits multiple discarded copies of '{effect.Face}'");

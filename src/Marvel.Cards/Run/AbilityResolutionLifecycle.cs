@@ -214,6 +214,17 @@ internal static class AbilityResolutionLifecycle
         DiscardForResumedEachTime discard)
     {
         execution.RestoreContinuationCursor(cast, discard.State);
+        var discarded = execution.EachTimeDiscard(cast, discard.Frame);
+        if (discarded is not null) cast.BindAlteration(discarded);
+        return AbilityContinuations.AfterEachTimeDiscard(
+            execution.StructuralContext(cast), discard, discarded);
+    }
+
+    internal static Card? EachTimeDiscard(
+        this AbilityResolutionExecution execution, AbilityResolutionState cast, EachTimeFrame frame)
+    {
+        if (!frame.Receipt.IsDefault)
+            return cast.World.Cards[frame.Receipt[checked((int)frame.Next)]];
         int before = cast.Discarded.Count;
         var one = new AbilityEffect.DiscardTop(
             AbilitySearchArea.EncounterDeck, Players: null,
@@ -223,10 +234,7 @@ internal static class AbilityResolutionLifecycle
             throw new InvalidOperationException(
                 "The card-state owner refused discardTop");
         }
-        var discarded = cast.Discarded.Skip(before).SingleOrDefault();
-        if (discarded is not null) cast.BindAlteration(discarded);
-        return AbilityContinuations.AfterEachTimeDiscard(
-            execution.StructuralContext(cast), discard, discarded);
+        return cast.Discarded.Skip(before).SingleOrDefault();
     }
 
     internal static void RestoreContinuationCursor(this AbilityResolutionExecution execution,

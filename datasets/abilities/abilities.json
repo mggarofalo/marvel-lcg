@@ -15103,6 +15103,327 @@
       "name": "Corporate Acquisition",
       "note": "Printed 02005b: if this stage is completed, the players lose. rr:main-scheme-main-scheme-deck.2.1 is resolved by Threat.Completed when the main scheme deck is empty. Printed escalation, starting threat, target threat and hazard icon are generic card facts.",
       "abilities": []
+    },
+    {
+      "card": "02041",
+      "name": "Power Drain",
+      "note": "Printed 02041 When Defeated resolves before leaving play (rr:when-defeated-abilities.2.1; ruling:a9007ff3a4727a80). Each player discards printed hand resources equal to numeric boost icons in the physical two-card discard receipt; stars add nothing (rr:boost-boost-icon.1). Starting threat and acceleration are printed engine-owned facts.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardDefeated",
+            "timing": "WhenDefeated",
+            "subject": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "discardTop": {
+                  "from": "encounterDeck",
+                  "count": 2
+                }
+              },
+              {
+                "eachPlayer": {
+                  "order": "playerOrder",
+                  "effect": {
+                    "discardResourceIcons": {
+                      "printedBoostIconsDiscarded": "game"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "02042",
+      "name": "Electro",
+      "note": "After Electro attacks the player, including ally defense (vendored MarvelCDB FAQ 02042), discard one encounter card and deal that many numeric boost icons as indirect damage to that player. The completed activation supplies player context; attack damage is not required. Boost discards exactly three.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenAttackEnds",
+            "timing": "ForcedResponse",
+            "actor": "this",
+            "player": "trigger.player"
+          },
+          "effect": {
+            "seq": [
+              {
+                "discardTop": {
+                  "from": "encounterDeck",
+                  "count": 1
+                }
+              },
+              {
+                "indirectDamage": {
+                  "among": {
+                    "query": "charactersYouControl"
+                  },
+                  "amount": {
+                    "printedBoostIconsDiscarded": "game"
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "Boost",
+            "subject": "this"
+          },
+          "effect": {
+            "discardTop": {
+              "from": "encounterDeck",
+              "count": 3
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "02043",
+      "name": "Electromagnetic Pulse",
+      "note": "Recruit only the physical Electro discarded by this seven-card effect, including after an encounter-deck reset; an Electro elsewhere does not suppress surge. Put into play does not reveal him (rr:when-revealed-abilities.2). Boost discards three.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "discardTop": {
+                  "from": "encounterDeck",
+                  "count": 7
+                }
+              },
+              {
+                "recruitDiscarded": "02042"
+              },
+              {
+                "if": {
+                  "test": {
+                    "atLeast": {
+                      "value": {
+                        "result": "found"
+                      },
+                      "count": 1
+                    }
+                  },
+                  "else": {
+                    "gainSurge": 1
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "Boost",
+            "subject": "this"
+          },
+          "effect": {
+            "discardTop": {
+              "from": "encounterDeck",
+              "count": 3
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "02044",
+      "name": "Lightning Bolt",
+      "note": "Discard two encounter cards, then the resolving player assigns indirect damage equal to their numeric boost icons, excluding stars. Zero icons deal no damage. Boost discards three.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "discardTop": {
+                  "from": "encounterDeck",
+                  "count": 2
+                }
+              },
+              {
+                "indirectDamage": {
+                  "among": {
+                    "query": "charactersYouControl"
+                  },
+                  "amount": {
+                    "printedBoostIconsDiscarded": "game"
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "Boost",
+            "subject": "this"
+          },
+          "effect": {
+            "discardTop": {
+              "from": "encounterDeck",
+              "count": 3
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "02045",
+      "name": "Shock Therapy",
+      "note": "Discard one encounter card per player, then heal the villain by the numeric boost icons in that physical receipt. Healing zero or an undamaged villain adds no effect or surge. Boost discards three.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "discardTop": {
+                  "from": "encounterDeck",
+                  "count": {
+                    "perPlayer": 1
+                  }
+                }
+              },
+              {
+                "heal": {
+                  "card": {
+                    "query": "villain"
+                  },
+                  "amount": {
+                    "printedBoostIconsDiscarded": "game"
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "Boost",
+            "subject": "this"
+          },
+          "effect": {
+            "discardTop": {
+              "from": "encounterDeck",
+              "count": 3
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "02046",
+      "name": "Running Interference",
+      "note": "Each player in player order chooses to spend mental and physical resources or place two threat on this scheme. Printed crisis and starting threat are engine-owned facts. Choice/payment spelling is an engine choice.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "eachPlayer": {
+              "order": "playerOrder",
+              "effect": {
+                "payOrEffect": {
+                  "resources": "BR",
+                  "otherwise": {
+                    "placeThreat": {
+                      "scheme": "this",
+                      "amount": 2
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "02047",
+      "name": "Tombstone",
+      "note": "After the completed attack, require actual damage to the attacked identity, not damage dealt before prevention or damage to an ally. Discard one printed mental or physical hand resource if able; wild cannot substitute outside payment (rr:wild-resource.3).",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenAttackEnds",
+            "timing": "ForcedResponse",
+            "actor": "this",
+            "player": "trigger.player"
+          },
+          "when": {
+            "attackDamagedYou": "you"
+          },
+          "effect": {
+            "discardResourceIcons": {
+              "count": 1,
+              "resources": "BR"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "02049",
+      "name": "Media Coverage",
+      "note": "Attach to the revealing identity in either form. Each live copy adds one resolution to each When Revealed ability revealed by that player; cancellation suppresses all copies (faq:02049). Villain promotion is not a player reveal (ruling:c516c82788ea8d77). Its controller may spend mental in alter-ego to discard it. Modifier spelling is an engine choice.",
+      "attachTo": "you",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant"
+          },
+          "effect": {
+            "grant": {
+              "card": "attachedTo",
+              "keyword": "additionalWhenRevealed",
+              "amount": 1
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "game",
+            "form": "alter-ego"
+          },
+          "cost": {
+            "spend": "B"
+          },
+          "effect": {
+            "discard": "this"
+          }
+        }
+      ]
     }
   ]
 }

@@ -119,7 +119,8 @@ internal static class RevealProcedure
 
         var pending = step.Require<RevealAbilityOperation>().Abilities ?? [];
         var handles = step.Require<RevealAbilityOperation>().Candidates ?? [];
-        if (pending.Count > 1)
+        int repeatedIndex = RepeatedIndex(step.Require<RevealAbilityOperation>(), pending);
+        if (pending.Distinct().Count() > 1 && repeatedIndex < 0)
         {
             DefeatProcedure.ScheduleProcedureChoice(world, step with
             {
@@ -133,9 +134,10 @@ internal static class RevealProcedure
             return;
         }
 
-        if (pending.Count == 1)
+        if (pending.Count > 0)
         {
-            var next = pending[0];
+            int nextIndex = repeatedIndex >= 0 ? repeatedIndex : 0;
+            var next = pending[nextIndex];
             var containingOccurrence = world.Agenda.Occurrence
                 ?? throw new InvalidOperationException(
                     "reveal continuation has no containing occurrence");
@@ -146,8 +148,8 @@ internal static class RevealProcedure
                 Operation = step.Require<RevealAbilityOperation>() with
                 {
                     Kind = RevealAbilityKind.ResumeRevealAbility,
-                    Abilities = [],
-                    Candidates = [],
+                    Abilities = pending.Where((_, index) => index != nextIndex).ToList(),
+                    Candidates = handles.Where((_, index) => index != nextIndex).ToList(),
                     Completed = new PendingAbility(next.Card, next.Type, step.Seat, next.Ordinal)
                 },
                 OccurrenceId = null
@@ -159,6 +161,9 @@ internal static class RevealProcedure
             world, world.Cards[step.Subject], step.Seat, step,
             occurrence, events, beforeResponses: false);
     }
+
+    private static int RepeatedIndex(RevealAbilityOperation operation, IReadOnlyList<PendingAbility> pending) =>
+        operation.Completed is { } completed ? pending.ToList().IndexOf(completed) : -1;
 
     private static void ResolveOneRevealAbility(
         World world, ICardFacts facts, IRevealCardAbilities abilities, PhaseStep step,

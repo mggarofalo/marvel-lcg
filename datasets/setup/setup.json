@@ -3104,10 +3104,32 @@
   "contract": "docs/setup-dataset.md",
   "counts": {
     "campaigns": 37,
-    "encounter_sets": 12,
+    "encounter_sets": 14,
     "heroes": 9
   },
   "encounter_sets": {
+    "running_interference": {
+      "name": "Running Interference",
+      "role": "modular",
+      "encounters": [
+        "02046",
+        "02047",
+        "02048",
+        "02049",
+        "02049"
+      ]
+    },
+    "power_drain": {
+      "name": "Power Drain",
+      "role": "modular",
+      "encounters": [
+        "02041",
+        "02042",
+        "02043",
+        "02044",
+        "02045"
+      ]
+    },
     "a_mess_of_things": {
       "role": "modular",
       "encounters": [

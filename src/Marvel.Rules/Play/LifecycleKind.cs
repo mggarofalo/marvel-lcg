@@ -13,4 +13,6 @@ public enum LifecycleKind
     FormChanged,
     /// <summary>Completed basic recovery.</summary>
     BasicRecoveryUsed,
+    /// <summary>A paid event is about to resolve its effects.</summary>
+    EventPlayInitiated,
 }

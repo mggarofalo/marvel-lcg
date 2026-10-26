@@ -5,6 +5,13 @@ forced and optional attack-end responses and is zero without a completed attack.
 
 # The card DSL
 
+`forEachDiscarded` uses the `eachTime` fields (`effect`, `when`, `then`) for an
+encounter-deck `discardTop`, but finishes that discard before traversing its own
+ordered physical receipt. `that` binds each discarded card, including after an
+immediate deck reset or a suspended child choice. Nested discards do not join this
+receipt. This spelling and shared traversal representation are engine choices;
+printed "each time" timing continues to use `eachTime`.
+
 `result: "activationUndefended"` counts completed undefended enemy attacks in the
 most recent scheduled activation collection. Completion captures the final
 defender before attack-end responses; prevented damage still counts, while
@@ -788,9 +795,14 @@ re-running their printed host selection.
 
 `floorDiv` takes a numeric `value` and a positive integer `divisor`, returning
 mathematical floor division. Stall Tactics uses complete pairs of delay counters.
-`discardResourceIcons: 1` or `2` asks the resolving player to discard a minimal
-hand-card group containing that many printed icons, or all available icons when
-fewer exist. It does not generate resources or permit resource abilities.
+`discardResourceIcons: <number expression>` asks the resolving player to discard
+a minimal hand-card group containing that many printed icons, or all available
+eligible icons when fewer exist. Zero skips the choice. The object form
+`{ "count": <number expression>, "resources": "BR" }` restricts eligible icons
+to mental or physical; resource letters use the existing `B`, `Y`, `R`, `G`
+encoding. Omitted `resources` permits any type. This effect does not generate
+resources or permit resource abilities. Wild remains its own printed type
+(`rr:wild-resource.3`) and does not satisfy a mental or physical restriction.
 `cardsYouControl` selects in-play controlled player cards; `discardable` filters
 identity/main-scheme and permanent restrictions. `otherEnvironments` selects live
 environments other than the triggering occurrence's subject.
@@ -1055,3 +1067,10 @@ occurrence only while it remains in the playing owner's discard pile and that
 owner is the resolving player. It binds nothing before discard or after removal
 from the game. This engine-selected binding supports post-resolution recovery
 without selecting a different copy of the same printed card.
+
+`recruitDiscarded: {"trait":"GOBLIN"}` puts the first physical discarded minion
+with that printed trait into play engaged with the resolving player. Receipt order
+is discard order, including after the encounter deck resets; current discard-pile
+membership is not the selection. The string form continues to require at most one
+physical match for its named face. Putting the card into play does not reveal it.
+The object spelling and printed-trait filter are engine choices.

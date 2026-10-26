@@ -50,7 +50,7 @@ internal static class AbilityStructuralExecution
             AbilityEffect.ChooseTopForHand top => ChooseTopForHand(context, top),
             AbilityEffect.DiscardHandCards discard => AbilitySelectedHandDiscard.Count(context, discard) > 0
                 ? AskFor(context, discard) : new Complete(context.Frames),
-            AbilityEffect.DiscardResourceIcons discard => AbilityResourceIconDiscard.HasCards(context)
+            AbilityEffect.DiscardResourceIcons discard => AbilityResourceIconDiscard.Required(context, discard) > 0
                 ? AskFor(context, discard) : new Complete(context.Frames),
             AbilityEffect.ChooseDiscardToShuffle discard => AskFor(context, discard),
             AbilityEffect.ThwartGroup group when group.Selection is AbilityThwartSelection.Different or AbilityThwartSelection.Distributed =>

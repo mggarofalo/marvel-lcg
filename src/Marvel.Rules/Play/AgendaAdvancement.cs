@@ -146,6 +146,8 @@ public static class AgendaAdvancement
             throw new InvalidOperationException("the occurrence is not on the agenda");
         }
 
+        if (agenda.items[at].Step.Operation is LifecycleOperation { EventInitiation: { } initiation })
+            initiation.Cancel();
         if (agenda.items[at].Step.Operation is ThreatPlacementOperation threat)
             threat.Completion.Complete(threat.Part, 0);
         if (agenda.items[at].Step.Operation is EncounterEntryOperation entry && !entry.Completion.IsComplete)

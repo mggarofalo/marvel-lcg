@@ -42,7 +42,11 @@ public abstract record AbilityEffect
     /// <summary>Repeat an effect according to a numeric expression.</summary>
     public sealed record ForEach(AbilityNumber Count, AbilityEffect Effect) : AbilityEffect;
     /// <summary>Resolve a follow-up for each matching result of the preceding effect.</summary>
-    public sealed record EachTime(AbilityEffect Effect, AbilityCondition When, AbilityEffect Then) : AbilityEffect;
+    public sealed record EachTime(AbilityEffect Effect, AbilityCondition When, AbilityEffect Then) : AbilityEffect
+    {
+        /// <summary>Finish the discard before traversing its ordered physical receipt.</summary>
+        public bool AfterDiscard { get; init; }
+    }
     /// <summary>A player chooses among authored effect options.</summary>
     public sealed record Choose(ImmutableArray<AbilityEffect> Options, ImmutableArray<string> Descriptions) : AbilityEffect;
     /// <summary>A player selects a card before resolving the effect with that binding.</summary>
@@ -178,8 +182,12 @@ public abstract record AbilityEffect
     public sealed record ShuffleInto(AbilityCardSelection Cards, AbilitySearchArea Deck) : AbilityEffect;
     /// <summary>Search ordered areas for a printed face and reveal it.</summary>
     public sealed record Search(string Face, ImmutableArray<AbilitySearchArea> Areas) : AbilityEffect;
-    /// <summary>Put the exact matching discarded minion into play engaged with the resolver.</summary>
-    public sealed record RecruitDiscarded(string Face) : AbilityEffect;
+    /// <summary>Put a matching physical discarded minion into play engaged with the resolver.</summary>
+    public sealed record RecruitDiscarded(string? Face) : AbilityEffect
+    {
+        /// <summary>Select the first discarded minion with this printed trait.</summary>
+        public string? Trait { get; init; }
+    }
     /// <summary>Put a selected card into play by its printed destination or engaged with the resolver.</summary>
     public sealed record PutIntoPlay(AbilityCardSelection Card, bool PrintedDestination) : AbilityEffect
     {
@@ -200,8 +208,12 @@ public abstract record AbilityEffect
         /// <summary>Whether selected cards must have different printed titles.</summary>
         public bool DifferentTitles { get; init; } = true;
     }
-    /// <summary>Discard hand cards providing one or two printed resource icons, as far as possible.</summary>
-    public sealed record DiscardResourceIcons(int Count) : AbilityEffect;
+    /// <summary>Discard a minimal hand-card group providing the requested printed icons, as far as possible.</summary>
+    public sealed record DiscardResourceIcons(AbilityNumber Count) : AbilityEffect
+    {
+        /// <summary>Eligible printed resource types; empty means any type.</summary>
+        public string Resources { get; init; } = "";
+    }
     /// <summary>Choose a counted set of cards from your hand to discard.</summary>
     public sealed record DiscardHandCards(AbilityNumber Count) : AbilityEffect;
     /// <summary>Place named counters on a card.</summary>

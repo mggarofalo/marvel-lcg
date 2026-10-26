@@ -51,6 +51,7 @@ internal static class AbilityAdmissionAreaDependencies
         typeof(AbilityEffect.GrantControlledCharacters),
         typeof(AbilityEffect.DiscardAtRandom), typeof(AbilityEffect.DiscardTop),
         typeof(AbilityEffect.ReduceNextCardCost), typeof(AbilityEffect.DiscardHandCards),
+        typeof(AbilityEffect.DiscardResourceIcons),
     ];
 
     // This engine-owned preflight collects dependencies of singular lookups,
@@ -205,6 +206,7 @@ internal static class AbilityAdmissionAreaDependencies
             AbilityEffect.PreventDamage damage => damage.Amount,
             AbilityEffect.GrantControlledCharacters grant => grant.Amount,
             AbilityEffect.DiscardHandCards discard => discard.Count,
+            AbilityEffect.DiscardResourceIcons discard => discard.Count,
             AbilityEffect.DiscardAtRandom discard => discard.Count,
             AbilityEffect.DiscardTop discard => discard.Count,
             AbilityEffect.ReduceNextCardCost reduction => reduction.Amount,
@@ -225,7 +227,7 @@ internal static class AbilityAdmissionAreaDependencies
                 or AbilityEffect.DealEncounterCards or AbilityEffect.EngageTopAsMinion
                 or AbilityEffect.DiscardUntil or AbilityEffect.ShuffleInto
                 or AbilityEffect.ChooseTopForHand
-                or AbilityEffect.ChooseDiscardToShuffle or AbilityEffect.DiscardResourceIcons
+                or AbilityEffect.ChooseDiscardToShuffle
                 or AbilityEffect.DiscardHandWithResource
                 or AbilityEffect.RecoverDiscardedByResource or AbilityEffect.RecruitDiscarded
                 or AbilityEffect.ActivateEnemies or AbilityEffect.GrantTraitCharacters => true,

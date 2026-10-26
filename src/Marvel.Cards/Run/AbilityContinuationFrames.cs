@@ -162,7 +162,8 @@ internal static class AbilityContinuationFrames
         SimultaneousFrame simultaneous => new SimultaneousContinuationFrame((AbilityEffect.Simultaneous)parent, simultaneous.Remaining),
         DependentFrame dependent => new DependentContinuationFrame((AbilityEffect.Dependent)parent, dependent.Predecessor, dependent.Outcome),
         ForEachFrame repeated => new ForEachContinuationFrame((AbilityEffect.ForEach)parent, repeated.Next - 1, repeated.Count),
-        EachTimeFrame repeated => new EachTimeContinuationFrame((AbilityEffect.EachTime)parent, repeated.Next - 1, repeated.Count),
+        EachTimeFrame repeated => new EachTimeContinuationFrame((AbilityEffect.EachTime)parent, repeated.Next - 1, repeated.Count)
+            { Receipt = repeated.Receipt },
         EachPlayerFrame => new EachPlayerContinuationFrame(state.Cursor.EachPlayerFrame && !state.Cursor.FinalPlayer),
         _ => null,
     };

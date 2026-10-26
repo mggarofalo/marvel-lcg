@@ -208,28 +208,28 @@ internal static class AbilityStructuralFlowExecution
 
     internal static AbilityStructuralTransition EachTimeStart(
         AbilityStructuralContext context, AbilityEffect.EachTime repeated, long from,
-        long? persistedCount = null)
+        long? persistedCount = null, ImmutableArray<int> receipt = default)
     {
         if (repeated.Effect is not AbilityEffect.DiscardTop
             { From: AbilitySearchArea.EncounterDeck, Players: null } discard)
             return new Unsupported(
                 $"'{context.SourceFace}' uses each-time around an unsupported preceding effect");
 
-        long requested = persistedCount ?? Amount(discard.Count, context);
+        long requested = receipt.IsDefault ? persistedCount ?? Amount(discard.Count, context) : receipt.Length;
         if (requested < 0)
             return new Rejected("'eachTime' needs a non-negative discard count");
         if (requested == 0)
             return new Complete(context.Frames);
 
         long count = requested;
-        if (persistedCount is null)
+        if (persistedCount is null && receipt.IsDefault)
         {
             var deck = context.Expressions.World.AreaOf(DeckType.EncounterDeck);
             var pile = context.Expressions.World.AreaOf(DeckType.EncounterDiscardPile);
             long available = deck.Cards.Count > 0 ? deck.Cards.Count : pile.Cards.Count;
             count = Math.Min(requested, available);
         }
-        return NextEachTime(context, repeated, new EachTimeFrame(from, count, null),
+        return NextEachTime(context, repeated, new EachTimeFrame(from, count, null) { Receipt = receipt },
             new AbilityStructuralObservation(false));
     }
 
