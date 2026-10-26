@@ -6,7 +6,7 @@ using Xunit;
 
 namespace Marvel.Content.Tests.Play;
 
-public sealed class ThorSearchCardTests(ITestOutputHelper output)
+public sealed class ThorSearchCardTests
 {
     [Theory]
     [InlineData(false)]
@@ -21,11 +21,13 @@ public sealed class ThorSearchCardTests(ITestOutputHelper output)
         var foreign = world.CreateCard("06009", world.Seats[1].Deck);
         var inPlay = world.CreateCard("06009", world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(1), cardOwner: 1));
         var action = Assert.Single(runner.Actions(world, 0), a => a.Card == seat.IdentityCard.ObjectId);
-        output.WriteLine("WORTHY OFFER: " + runner.Describe(world, action).DisplayLabel + " | " + runner.Describe(world, action).Description);
+        AssertWorthyOffer(runner.Describe(world, action));
         long before = world.Random.Generator.WordsConsumed;
         runner.ExecuteAction(world, new PlayerAction(action, [], []));
         var prompt = Sequence.Work(world, world.Facts, runner, [])!;
-        output.WriteLine("WORTHY PROMPT: " + prompt.DisplayQuestion + " | " + prompt.Description);
+        Assert.Equal("Odinson: choose the Mjolnir upgrade to add to your hand", prompt.DisplayQuestion);
+        Assert.Contains("shuffle your deck", prompt.Description);
+        Assert.All(prompt.Affordances, offer => Assert.Equal("Add Mjolnir to your hand", offer.CommitLabel));
         Assert.Equal(new[] { deckCopy.ObjectId, discardCopy.ObjectId }.Order(), prompt.Affordances.Select(a => a.AnchorId).Order());
         Assert.DoesNotContain(prompt.Affordances, a => a.AnchorId == foreign.ObjectId || a.AnchorId == inPlay.ObjectId);
         var chosen = discard ? discardCopy : deckCopy;
@@ -42,6 +44,14 @@ public sealed class ThorSearchCardTests(ITestOutputHelper output)
         Assert.Contains(runner.Actions(world, 0), a => a.Card == seat.IdentityCard.ObjectId);
     }
 
+    private static void AssertWorthyOffer(Affordance offer)
+    {
+        Assert.Equal("Search your deck and discard pile for the Mjolnir upgrade and add it to your hand", offer.DisplayLabel);
+        Assert.Equal(offer.DisplayLabel, offer.CommitLabel);
+        Assert.Contains("Choose a matching card if available, then shuffle your deck", offer.Description);
+        Assert.Null(offer.Targets);
+    }
+
     [Fact]
     public void MissingMjolnirStillShufflesAndConsumesUse()
     {
@@ -50,7 +60,7 @@ public sealed class ThorSearchCardTests(ITestOutputHelper output)
         var seat = world.Seats[0];
         world.CreateCard("06009", seat.Hand);
         var action = Assert.Single(runner.Actions(world, 0), a => a.Card == seat.IdentityCard.ObjectId);
-        output.WriteLine("WORTHY OFFER: " + runner.Describe(world, action).DisplayLabel + " | " + runner.Describe(world, action).Description);
+        AssertWorthyOffer(runner.Describe(world, action));
         long before = world.Random.Generator.WordsConsumed;
         runner.ExecuteAction(world, new PlayerAction(action, [], []));
         Sequence.Finish(world, world.Facts, runner, []);

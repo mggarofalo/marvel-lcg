@@ -17552,44 +17552,47 @@
             "event": "WhenActionTriggered"
           },
           "effect": {
-            "seq": [
-              {
-                "if": {
-                  "test": {
-                    "exists": {
-                      "cardsIn": {
-                        "areas": [
-                          "yourDeck",
-                          "yourDiscardPile"
-                        ],
-                        "title": "Mjolnir",
-                        "kind": "Upgrade"
-                      }
-                    }
-                  },
-                  "then": {
-                    "chooseCard": {
-                      "from": {
-                        "cardsIn": {
-                          "areas": [
-                            "yourDeck",
-                            "yourDiscardPile"
-                          ],
-                          "title": "Mjolnir",
-                          "kind": "Upgrade"
-                        }
-                      },
-                      "effect": {
-                        "returnOwnedToHand": "chosen"
-                      }
-                    }
+            "if": {
+              "test": {
+                "exists": {
+                  "cardsIn": {
+                    "areas": [
+                      "yourDeck",
+                      "yourDiscardPile"
+                    ],
+                    "title": "Mjolnir",
+                    "kind": "Upgrade"
                   }
                 }
               },
-              {
+              "then": {
+                "chooseCard": {
+                  "from": {
+                    "cardsIn": {
+                      "areas": [
+                        "yourDeck",
+                        "yourDiscardPile"
+                      ],
+                      "title": "Mjolnir",
+                      "kind": "Upgrade"
+                    }
+                  },
+                  "effect": {
+                    "seq": [
+                      {
+                        "addToHand": "chosen"
+                      },
+                      {
+                        "shuffle": "yourDeck"
+                      }
+                    ]
+                  }
+                }
+              },
+              "else": {
                 "shuffle": "yourDeck"
               }
-            ]
+            }
           },
           "limitPerRound": 1
         }
