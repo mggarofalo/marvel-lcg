@@ -16,15 +16,26 @@ public sealed class GreenGoblinVictoryTests(ITestOutputHelper output)
     public void PublicSetupWinsWithExactDecisionReplay(string scenario, uint seed)
     {
         var factory = DatasetGameFactory.Load(RepositoryPaths.Root);
+        var starter = Assert.Single(factory.DiscoverDecks().Heroes, hero => hero.Key == "captain_america").Starter;
+        Assert.Equal(40, starter.Count);
+        Assert.True(factory.AssessDeck("captain_america", starter).IsValid);
+        Assert.False(Assert.Single(factory.DiscoverSetup().Scenarios, choice => choice.Key == scenario).Expert);
         var specification = new GameSpecification(scenario, ["captain_america"], null, seed);
         var game = factory.Create(specification).Game;
         var replay = factory.Create(specification).Game;
+        Assert.Equal("02001a", game.State.TheCardIn(DeckType.VillainArea)!.FaceId);
+        Assert.Equal("02004b", game.State.TheCardIn(DeckType.MainSchemesArea)!.FaceId);
+        Assert.Equal("03001b", Assert.Single(game.State.Seats).IdentityCard.FaceId);
         var policy = new GoblinTacticalPolicy(game.State.Facts);
+        var stages = new HashSet<string>(StringComparer.Ordinal);
         Assert.Equal(Observe(game), Observe(replay));
         while (game.Pending is not null)
         {
             Assert.True(policy.Answered < 2000, $"{scenario}: {game.Pending.Label}");
+            if (game.State.TheCardIn(DeckType.VillainArea) is { } villain) stages.Add(villain.FaceId);
+            var beforeAnswer = Observe(game);
             var answer = policy.Answer(game);
+            Assert.Equal(beforeAnswer, Observe(game));
             var identity = game.State.Seats[0].IdentityCard;
             output.WriteLine($"{policy.Answered}: r{game.Round} {identity.FaceId} dmg={identity.Damage}; "
                 + $"{game.Pending.Label}; {game.Pending.Affordances.FirstOrDefault(option => option.Id == answer.Affordance)?.Label ?? "decline"}; "
@@ -42,6 +53,7 @@ public sealed class GreenGoblinVictoryTests(ITestOutputHelper output)
         output.WriteLine($"{scenario}, seed={seed}: {game.State.Result}, round={game.Round}, "
             + $"decisions={policy.Answered}, recoveries={policy.Recoveries}, allyDefenses={policy.AllyDefenses}");
         Assert.Equal(Outcome.PlayersWin, game.State.Result);
+        Assert.Equal(["02001a", "02001b", "02002a", "02002b"], stages.Order());
         Assert.Equal(GamePhase.Over, game.Phase);
         Assert.Null(replay.Pending);
     }
