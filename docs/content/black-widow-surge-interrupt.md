@@ -63,3 +63,48 @@ byte-preserving compiled mutation above replaces it. Initial fixture failures
 minion placement for Sonic Boom) were corrected before the final restored run.
 No full managed suite, native UI journey, replay/transport journey or public
 Black Widow journey is claimed by this bounded packet.
+
+## Independent B7 review
+
+Reviewed source `2bc94fef14b686b5bef73d4ba7b9297de76dc335` against
+`f4105b82` in an isolated worktree. Raw `08033`, RR 1.8 `rr:surge.1` and
+`rr:surge.2`, the cancellation ruling, and the current vendored FAQ were checked.
+The typed child correctly isolates actual keyword resolution from initial reveal;
+printed ordering, cancellation, seat ownership, separately optional copies,
+encounter reset, full RNG/pending query purity and playerless setup have focused
+source coverage. The stable keyword ordinals are unchanged. No production card,
+setup, admission or version changes are part of this review.
+
+Independent `SurgeReplayReviewTests` adds four durable cases using the existing
+`IDurableGameFactory` seam: printed/gained surge crossed with accepting/declining
+the completed Preparation's Synth-Suit response. The test-local book and synthetic
+initial full `RevealEncounterCards` queue do not establish public Black Widow
+admission. Each case round-trips strict save JSON and restarts a fresh `EngineHost`
+both before the surge deal and at the Preparation completion receipt. It compares
+raw replay events, digest, all MT19937 state words/index/consumption, exact durable
+prompt, pending step coordinates/stage, phase and round. It verifies the extra
+card remains facedown through the receipt, both encounter cards finish their
+appropriate lifecycle, and a following gained-surge instruction cannot run before
+the child completes. The source passed all four cases; log
+`C:/Users/mggar/Source/bw-surge-review-tests.log`.
+
+**Compatibility finding:** `EncounterRevealStages` hardcodes `"surge"` for the
+new deal, including gained surge. The predecessor interpreter passes the originating
+ability trigger. Independent `SurgeHistoryReviewTests` exercises actual admitted
+Core `01104` with the production book through the complete encounter queue. It
+passes on genuine predecessor `f4105b82` and fails on reviewed source because the
+raw deal event changes from `"WhenCardRevealed"` to `"surge"`. Existing replay-v26
+histories can therefore diverge even with no Espionage present. This is a source
+provenance defect requiring correction before integration, rather than grounds to
+rewrite historical fixtures or unilaterally change versions. Evidence:
+`bw-surge-review-history-base.log` and `bw-surge-review-history-current.log` under
+`C:/Users/mggar/Source/`. The lead owns remediation and the final source-revision
+verification.
+
+Initial independent fixture failures (missing `Marvel.Content` import, unauthored
+reveal data, and a synthetic ability accidentally attached to Quickstrike Vulture)
+were corrected; they are not production findings. An exploratory metadata tuple
+expectation was also corrected against the predecessor: ordinary When Revealed
+results have no forced-ability association. No metadata regression is claimed.
+No full suite, native UI, public admission or complete historical-save matrix is
+claimed by this bounded review.
