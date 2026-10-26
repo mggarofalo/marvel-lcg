@@ -120,16 +120,19 @@ and public proof do not reenter the queue. The next delivery sequence is:
 1. Thor PR #452 is merged; MARVEL-563 and its twenty prerequisite children are
    Done. The reviewed 35 faces, verified starter and full CI acceptance are the
    regression baseline; see [Thor checkpoint](thor-delivery-checkpoint.md).
-2. Integrate Black Widow's independently reviewed engine and face packets on the
-   Thor squash merge. The [Black Widow checkpoint](black-widow-delivery-checkpoint.md)
-   identifies nine integrated faces, three pending review, and explicit remaining
-   capabilities. Complete all 34 faces before opening public admission.
-3. Prove complete Black Widow setup/custom decks, characteristic nested response
-   persistence, nemesis/obligation and representative complete games; select
-   native checks by changed interaction, certify the exact candidate, then merge.
-4. Continue Doctor Strange and Hulk using existing source-qualified starters and
-   research packets. First prove Invocation deck/identity-specific mechanisms;
-   serialize shared interpreter and ability-book changes and independently review.
+2. Black Widow PR #453 contains all 34 faces, verified starter, public admission,
+   reviewed complete games and native evidence. The independently reviewed setup
+   viewport repair is pushed at `cf175e56`; CI run `40404335331` is pending.
+   Merge only after the exact candidate passes. See the
+   [Black Widow checkpoint](black-widow-delivery-checkpoint.md).
+3. Doctor Strange is the next integrated candidate. Its
+   [checkpoint](doctor-strange-delivery-checkpoint.md) records authored faces,
+   accepted Invocation/inspection mechanisms and remaining card prerequisites.
+   Complete every face before public admission, then prove its verified starter,
+   characteristic actions, save/restart, complete games and new interaction UI.
+4. Continue Hulk from its source-qualified starter and research packet after the
+   current candidate. Serialize shared interpreter and ability-book changes;
+   independently review engine prerequisites and complete content.
 5. Advance the dependency groups and eleven-wave ledger above through Fear No
    Evil. Source-incomplete products retain their explicit acquisition gates;
    each completed product closes its own canonical parent with evidence.

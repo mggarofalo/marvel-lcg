@@ -20708,6 +20708,45 @@
           }
         }
       ]
+    },
+    {
+      "card": "09020",
+      "name": "Unflappable",
+      "note": "Printed 09020 permits any player control, max one per player. After the controller defends and takes no attack damage, optionally exhaust to draw one. Boost ability damage does not count (faq:09020); current RR 1.8 includes defense-labeled events. Research content; no public admission.",
+      "attachTo": {
+        "query": "identitiesWithinPerPlayerLimit"
+      },
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenAttackEnds",
+            "timing": "Response",
+            "actor": "enemy",
+            "target": "you"
+          },
+          "when": {
+            "and": [
+              {
+                "heroDefended": "you"
+              },
+              {
+                "not": {
+                  "attackDamagedYou": "you"
+                }
+              }
+            ]
+          },
+          "cost": {
+            "exhaust": "this"
+          },
+          "effect": {
+            "draw": {
+              "player": "you",
+              "count": 1
+            }
+          }
+        }
+      ]
     }
   ]
 }

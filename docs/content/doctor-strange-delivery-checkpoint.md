@@ -4,7 +4,7 @@ Canonical parent: MARVEL-565. The [40-face handoff](research/remaining/doctor-st
 defines complete scope. This branch contains nonpublic prerequisites and authored
 rows; Doctor Strange is not publicly admitted.
 
-Latest integration: 671 authored rows, 26 of the 40 Strange faces. Exact printed-set
+Latest integration: 672 authored rows, 27 of the 40 Strange faces. Exact printed-set
 search source `4261d57f` and review `f7e59a6c` are integrated at `36628a0b`; its
 combined search checks pass 40 cases. Four response-event rows from `4953b480`
 and independent event review `de7310c9` now accompany the complete healing-cost
@@ -81,11 +81,21 @@ passes 41 cases. Logs: `Source/evidence/strange-astral-integration-view.log` and
 [inspection evidence](doctor-strange-inspection-boost-prerequisite.md).
 The actual 09003 row remains to be authored.
 
-Next packets: MARVEL-819 has independently reviewed Unflappable ready for
-integration; MARVEL-820 repairs eliminated-owner routing before Clea;
-MARVEL-821 implements bound physical-status selection before Night Nurse;
+Unflappable 09020 source `f5d4ed51` and independent review `b90ea489` are
+integrated, preserving all 671 predecessor raw objects. The integrated Content
+selection passes 502 cases across Doctor Strange, Black Widow, Invocation,
+Counterattack and ability-data classes, with no failures/skips. Log:
+`Source/evidence/strange-unflappable-integration.log`. See
+[support/ally evidence](doctor-strange-support-ally-rows.md). The duplicated
+`Take(4)` in the earlier four-row inventory is simplified without changing its
+bounded face set or assertions.
+
+Next packets: MARVEL-820 repairs eliminated-owner routing before Clea;
+MARVEL-821 independently reviews physical-status selection before Night Nurse;
 MARVEL-822 supplies exact upgrade-host pricing before ally Iron Man.
-Public admission remains closed while fourteen playable faces are unauthored.
+Actual Astral Projection and the remaining event/nemesis programs follow their
+accepted prerequisites. Public admission remains closed while thirteen playable
+faces are unauthored.
 
 Reviewed lifecycle source 3a20ae07 and review dd5b2f4a reuse player-owned additional
 deck/discard zones with exact physical binding, seeded shuffle, post-mulligan top

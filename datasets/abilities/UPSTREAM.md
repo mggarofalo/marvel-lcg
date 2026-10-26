@@ -319,3 +319,5 @@ counters and change no engine capability, setup or public admission. Actual-book
 search, multiplayer ownership/form/round-end and both Invocation caller lifecycle
 tests gate these authored interpretations. Synthetic alternate effects remain
 explicit fixture replacements; duplicate admission remains strict.
+
+MARVEL-819 appends actual 09020 Unflappable only: 672 rows, 27/40 Doctor Strange faces. All 671 predecessor raw objects remain intact. Printed authority is datasets/cards/cards.json and faq:09020; current RR 1.8 includes defense-labeled events. No starting counters, engine changes or public admission. Clea, The Night Nurse and Iron Man ally remain unauthored pending the precisely bounded prerequisites in docs/content/doctor-strange-support-ally-rows.md.
