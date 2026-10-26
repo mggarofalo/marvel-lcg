@@ -5,6 +5,46 @@ worktree `C:/Users/mggar/Source/marvel-preemptive-review`, branch
 `review/preemptive-boost`, on 2026-10-26. Verdict: **changes required**.
 No authored ability-book row or public admission for 05014 is included.
 
+## Independent final review of attack-only faceup repair, 2026-10-26
+
+Reviewed `fb2e770a5a1f8405bfd5f990b2f12f23e3b241a3` in isolated worktree
+`C:/Users/mggar/Source/marvel-attack-boost-review`, branch
+`review/attack-boost-qualifier`. Verdict: **approved for the scoped engine
+prerequisite and synthetic interpretation**. The scheme-offer finding is resolved.
+This does not author or admit 05014.
+
+The raw joined 05014 text requires a hero interrupt while the villain attacks.
+The synthetic trigger now explicitly combines hero form, villain actor and the
+attack-only faceup alias. The alias derives directly from the concrete boost
+operation's `Attacking` value and shares the generic faceup occurrence, actor,
+physical boost-card target and cancellation receipt. Neither attack initiation
+nor an enclosing `world.Attack` qualifies it. The existing standalone scheme,
+synthetically suspended-attack scheme, minion and villain controls distinguish
+those boundaries. The nested scheme case is a scheduler isolation probe;
+printed Boost-requested activations remain sequential under `rr:activation.8`.
+Vendored rulings `1ea208998735ef4b`, `33d8c914aa86d19f` and
+`937d6ff4f970a1da` remain consistent with the unchanged cancellation lifecycle.
+
+The independent `AttackBoostFaceupIndependentReviewTests` observer has cost-free
+generic and attack-only faceup interrupts, plus an attack-initiation forced
+interrupt. Each faceup ability is offered once in the same occurrence; resolving
+one leaves exactly the other. The complete attack draws exactly three cards,
+including the single initiation draw, resolves one boost and completes once.
+The observer remains ready, so exhaustion cannot conceal duplicate offers.
+
+Independent Windows Release evidence outside the repository:
+
+- `C:/Users/mggar/Source/attack-boost-independent-content.log`: **23 pass**,
+  attack qualifier, independent cost-free observer, individual cancellation,
+  earlier cancellation review controls and rule-citation checks.
+- `C:/Users/mggar/Source/attack-boost-independent-rules.log`: **53 pass**,
+  all Rules Boost cases and rule-citation checks.
+
+The candidate's compiled scheme-alias mutant evidence remains recorded below.
+This review adds tests and evidence only; no production, ability-book or version
+edits. Full managed, native and cross-platform acceptance are outside this
+focused review; ordinary integration gates still apply.
+
 ## Attack-only faceup repair candidate, 2026-10-26
 
 The engine adds `WhenAttackBoostCardTurnedFaceup` to the same physical faceup
