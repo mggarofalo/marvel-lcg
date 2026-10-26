@@ -52,7 +52,7 @@ internal sealed class AbilityAreaMutationQuery(
     private bool? SimpleDirectChange(AbilityEffect effect)
     {
         string operation = effect.OperationName();
-        if (DeckOperationChange(operation) is { } deckChange) return deckChange;
+        if (DeckOperationChange(effect) is { } deckChange) return deckChange;
         if (operation is "discard" or "removeFromGame" or "returnToHand"
             or "returnOwnedToHand" or "addToHand" or "returnOwnedToDiscard"
             or "reveal" or "putIntoPlay")
@@ -71,11 +71,17 @@ internal sealed class AbilityAreaMutationQuery(
         return null;
     }
 
-    private bool? DeckOperationChange(string operation) => operation switch
+    private bool? DeckOperationChange(AbilityEffect effect) => effect.OperationName() switch
     {
+        // A bounded player discard can recover a card to hand or empty and reset
+        // its deck, moving the discard pile and dealing an encounter card.
+        "discardUntil" when effect is AbilityEffect.DiscardUntil { From: AbilitySearchArea.YourDeck } => Includes(
+            DeckType.PlayerDeck, DeckType.DiscardPile, DeckType.HandsArea,
+            DeckType.EncounterDeck, DeckType.EncounterDiscardPile,
+            DeckType.RevealingArea, DeckType.DealtEncounterCardsDeck),
         "revealFromVillainDeck" => queried.Count > 0,
         "moveActiveCounter" => queried.Contains(DeckType.VillainArea),
-        _ when DrawOperations.Contains(operation) =>
+        _ when DrawOperations.Contains(effect.OperationName()) =>
             Includes(DeckType.PlayerDeck, DeckType.HandsArea),
         // Engaging a player card can empty its deck and reset its discard pile;
         // that reset can also deal a card from the encounter deck.
@@ -83,7 +89,7 @@ internal sealed class AbilityAreaMutationQuery(
             DeckType.PlayerDeck, DeckType.DiscardPile, DeckType.EngagedEnemiesArea,
             DeckType.EncounterDeck, DeckType.EncounterDiscardPile,
             DeckType.RevealingArea, DeckType.DealtEncounterCardsDeck),
-        _ when EncounterDeckOperations.Contains(operation) => Includes(
+        _ when EncounterDeckOperations.Contains(effect.OperationName()) => Includes(
             DeckType.EncounterDeck, DeckType.EncounterDiscardPile,
             DeckType.RevealingArea, DeckType.DealtEncounterCardsDeck),
         _ => null,
