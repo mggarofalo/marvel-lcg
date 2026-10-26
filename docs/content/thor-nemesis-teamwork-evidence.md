@@ -1,5 +1,9 @@
 # Thor obligation, Frost Giant and Teamwork actual-card evidence
 
+The historical Loki overkill finding below is superseded by the
+[RR 1.8 adjudication](overkill-rr18-adjudication.md): actual defeat is required
+before spill. The three authored faces and their independent review remain valid.
+
 Candidate based on `415ca1f2`. Adds authored 06026 Odin’s Anger, 06029 Frost Giant and 06032 Teamwork without product admission. The book has 606 total faces, including 30 Thor faces before the separately reviewed Valkyrie/Heimdall packet. The narrow StepConditions inventory update registers the already implemented basic-use condition; the actual ability-data gate exposes its absence.
 
 Authority: generated `datasets/cards/cards.json` faces 06026/06029/06032, Rules Reference clauses cited in tests, and the repository’s existing bounded basic-use and delayed-effect mechanisms. Printed facts checked include Teamwork’s zero cost and energy resource, Frost Giant’s toughness, and distinct unique ally fixtures. Boost conditions are represented in the effect’s `if` because direct Boost execution does not inspect a triggered ability’s top-level `when`.

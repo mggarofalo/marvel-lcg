@@ -49,20 +49,21 @@ review MARVEL-732 remains a separate UI decision, not a content gate.
 
 Thor is the active pack. Its integration branch was rebuilt from merged main
 as `feat/thor-completion`; the old branch is retained as evidence.
-Candidate `8bcf3050` contains 32 independently reviewed Thor faces (608 total),
-including Valkyrie, Heimdall, Odin's Anger, Frost Giant and Teamwork. Reviewed
+Candidate `4e349723` contains all 35 independently reviewed Thor faces (611 total),
+including Lightning Strike, Get Over Here and Loki. Reviewed
 engine prerequisites include engagement, replay v26, typed variable payment,
 original ally-play receipts, private inspection, basic-use costs, simultaneous
 direct-damage barriers and exact causal-recipient meaning (protocol 40). Native
 recipient/payment checks pass at 100% and 150%; captures were inspected. Public
 Thor admission remains closed. See the [checkpoint](thor-delivery-checkpoint.md)
-for exact revisions and evidence boundaries. Lightning Strike's selector and
-payment dependencies are integrated; its actual row remains to author. Get Over
-Here's living-target guard (757) is independently reviewed and integrated through
-`d7fcbf70`. Loki's proposed overkill change (756) is rejected: RR 1.8 requires
-actual defeat and supersedes the older rulings used by that proposal. Current-rule
-regression evidence and Hammer Throw recovery preflight (758) remain. Three faces
-and complete public pack proof remain.
+for exact revisions and evidence boundaries. Living-target guard (757), selector,
+payment and Hammer Throw recovery preflight (758) are integrated. Loki's proposed
+overkill change (756) was rejected: RR 1.8 requires actual defeat and supersedes
+the older rulings used by that proposal. Current-rule actual-book evidence is
+integrated. The full Content suite passed 5,867 checks before the subsequent
+reviewed preflight integration; 73 combined Hammer/Loki checks pass afterward.
+Complete public pack proof remains. Black Widow's next bounded prerequisites and
+all 34 faces are mapped in its [executable handoff](research/remaining/black-widow-implementation-handoff.md).
 
 The intermittent Linux drag assertion from an earlier CI run remains recorded
 in MARVEL-752. Its strict assertion now captures gesture geometry; focused

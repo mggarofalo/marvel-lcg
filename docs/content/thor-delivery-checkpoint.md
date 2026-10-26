@@ -1,12 +1,12 @@
 # Thor delivery checkpoint
 
-MARVEL-563, integration `8bcf3050`, 2026-10-26. Thor remains outside public
+MARVEL-563, integration `4e349723`, 2026-10-26. Thor remains outside public
 admission. This record supplements the 35-face implementation handoff and does
 not replace complete pack acceptance.
 
-Thirty-two actual faces have independent review. The remaining faces are
-`06006` Lightning Strike, `06014` Get Over Here, and `06028` Loki. The authored
-book contains 608 faces. The verified starter source is retained in
+All 35 actual Thor faces have independent review. Lightning Strike and Get Over
+Here are integrated at `17ae7218`/`1c2a63a4`; Loki is authored at `ad1ec15a`
+and independently reviewed at `4e349723`. The book contains 611 faces. The verified starter source is retained in
 [thor-starter-source.md](research/remaining/thor-starter-source.md).
 
 Reviewed and integrated prerequisites include engagement timing, replay v26,
@@ -36,7 +36,7 @@ and reachable payment controls. See [defeat-recipient-context.md](defeat-recipie
 Earlier timing review includes 38 complete Core/Captain America games; this is
 prerequisite regression evidence, not final combined Thor certification.
 
-## Remaining dependencies
+## Completed dependencies and remaining pack proof
 
 - MARVEL-757's incarnation-aware in-play condition is independently reviewed and
   integrated through `d7fcbf70`; 42 focused combined checks pass. A defeated or
@@ -46,19 +46,26 @@ prerequisite regression evidence, not final combined Thor certification.
   do not govern. FFG's [1.8 explanation](https://www.fantasyflightgames.com/mission-updates/)
   explicitly describes this change. Loki healing prevents spill. Neither
   `8265a038` nor its shared-stage successor `90174f85` is integrated. Independent
-  current-rule regression evidence is being prepared; this is an authority/test
+  current-rule actual-book regression evidence is integrated; this is an authority/test
   correction, not a request to change the engine to historical behavior.
-- MARVEL-758 addresses Hammer Throw's refusal of Loki's recovery interrupt in
-  power preflight. Its implementation must preserve sound dependency analysis;
-  passing a narrowly prepared board does not establish all legal pack play.
+- MARVEL-758's Hammer Throw recovery preflight is independently reviewed and
+  integrated through `31953601`. It covers both Loki/Biomechanical ordering
+  choices, Helmet/Endurance and the relevant Core/Zola minion attachments.
+  Query/control tests include RNG and pending operations, not only card state.
+  The combined Hammer Throw/Loki/data/citation selection passes 73 checks at
+  `e8f57a49`. See [independent review](thor-hammer-recovery-independent-review.md).
 
 The historical Loki red log checks spill before advancing the sequence. It does
-not itself prove the reported post-resolution failure. New recovery and shared
-stage probes supply the distinguishing evidence; retain the original log without
+not itself prove the reported post-resolution failure. Current-rule actual-book
+probes supply the distinguishing evidence; retain the original log without
 relabeling it as a completed-resolution observation.
 
-After these dependencies, author and independently review the three remaining
-faces. Then verify the printed starter and complete public admission, legal
+The complete Content suite passes 5,867 tests at `33da5af3`, before the subsequent
+reviewed preflight integration. This is not a claim of final combined certification.
+Actual Loki independent review passes 48 selected checks after a restored
+nonincremental build; its row mutant fails all eight expanded cases.
+
+Next verify the printed starter and complete public admission, legal
 custom decks, whole public games, meaningful pending save/restart, relevant native
 interactions, and final integrated managed/platform/replay gates. Ordinary content
 acceptance is agent-owned; materially new UI needs inspected captures and a
