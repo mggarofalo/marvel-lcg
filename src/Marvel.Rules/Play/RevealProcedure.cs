@@ -12,23 +12,9 @@ internal static class RevealProcedure
     internal static Prompt? Apply(
         World world, ICardFacts facts, PhaseStep step, List<GameEvent> events)
     {
+        if (EncounterRevealStages.TryApply(world, facts, step, events)) return null;
         switch (step.What)
         {
-            case Steps.DealEncounterCards:
-                EncounterRevealProcedure.DealEncounterCards(world, facts, events);
-                break;
-            case Steps.RevealEncounterCards:
-                EncounterRevealProcedure.RevealNextEncounterCard(world, step);
-                break;
-            case Steps.RevealEncounterCard:
-                EncounterRevealProcedure.RevealEncounterCard(
-                    world, facts, world.RevealAbilities, world.Cards[step.Subject],
-                    step.Seat, step.Round, events);
-                break;
-            case Steps.DiscardRevealedTreachery:
-                EncounterRevealDiscard.Resolve(
-                    world, facts, step, events);
-                break;
             case Steps.ChooseAttachmentTarget:
                 return AttachmentTargetPrompt.Describe(world, facts, step);
             case Steps.ChooseRevealAbility:

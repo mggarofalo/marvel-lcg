@@ -87,14 +87,31 @@ public static class RevealKeywords
                 break;
 
             case Reveal.SurgeResolutionOrdinal:
-                bool dealt = Deal.EncounterCard(world, player, "surge", events) is not null;
-                CompleteKeyword(occurrence, ability, dealt);
+                ScheduleSurge(world, card, player, events, occurrence, ability);
                 break;
 
             default:
                 throw new RulesNotImplementedException(
                     $"keyword reveal ability ordinal {ability.Ordinal} is not implemented");
         }
+    }
+
+    /// <summary>Schedule the actual keyword's interrupt and facedown deal.</summary>
+    public static void ScheduleSurge(World world, Card card, int player,
+        List<GameEvent> events, Occurrence? origin = null, PendingAbility? ability = null)
+    {
+        // rr:surge.1: "When Revealed: Deal yourself 1 facedown encounter card."
+        // Engine choice: this child owns one distinct interrupt/response pair;
+        // the containing reveal resumes only after its deal and children finish.
+        var owner = world.Agenda.Current;
+        if (owner is null)
+        {
+            bool dealt = Deal.EncounterCard(world, player, "surge", events) is not null;
+            CompleteKeyword(origin, ability, dealt);
+            return;
+        }
+        world.Agenda.Then(new PhaseStep(new SurgeKeywordOperation(origin, ability),
+            owner?.Round ?? 0, owner?.Number ?? 0, Subject: card.ObjectId, Seat: player));
     }
 
     internal static void CompleteKeyword(

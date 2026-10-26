@@ -132,22 +132,22 @@ internal static class AbilityImmediateExecution
         }
         else
         {
-            GainSurge((AbilityEffect.GainSurge)effect, context);
+            return new(true, false) { ProcedureScheduled = GainSurge((AbilityEffect.GainSurge)effect, context) };
         }
         return new(true, false);
     }
 
-    private static void GainSurge(
+    private static bool GainSurge(
         AbilityEffect.GainSurge surge, AbilityImmediateContext context)
     {
         var world = context.Admission.World;
         var source = context.Admission.Source;
         if (surge.Instances <= 0
             || StateFields.Modified(world, source, "surge", world.Facts, world.Players) > 0
-            || !context.GainedKeywords.Add("surge")) return;
+            || !context.GainedKeywords.Add("surge")) return false;
         RememberGainedSurge(world, source.ObjectId, context.Admission.Query.Occurrence);
-        Deal.EncounterCard(
-            world, context.Admission.Query.Player, context.Trigger, context.Events);
+        RevealKeywords.ScheduleSurge(world, source, context.Admission.Query.Player, context.Events);
+        return world.Agenda.Current is not null;
     }
 
     private static AbilityImmediateResult RunGrantEffect(

@@ -204,7 +204,7 @@ internal static class EncounterRevealProcedure
             int copies = RevealRepetitions.Copies(world, player);
             var simultaneous = keyword.Concat(printed)
                 .SelectMany(ability => Enumerable.Repeat(ability, copies)).ToList();
-            if (simultaneous.Count > 1)
+            if (simultaneous.Count > 1 || keyword.Any(a => a.Ordinal == Reveal.SurgeResolutionOrdinal))
             {
                 if (EffectiveCards.Kind(card, facts) == CardKind.Treachery)
                 {

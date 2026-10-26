@@ -41,6 +41,7 @@ public static class StepConditions
         [EndAttack] = [AttackEnds],
         [DealEncounterCards] = ["WhenEncounterCardsDealt"],
         [RevealEncounterCard] = [CardRevealed],
+        [SurgeKeywordOperation.Condition] = [SurgeKeywordOperation.Condition],
         [TurnAction] = [TurnAction],
         [CardDefeated] = [CardDefeated],
         [CharacterAttacks] = [AttackInitiated],
