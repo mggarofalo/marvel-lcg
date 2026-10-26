@@ -138,6 +138,42 @@ public sealed class InvocationTopDiscardTests
     }
 
     [Fact]
+    public void AnUntypedFaceupInvocationLookalikeCannotDivertTheTypedDeckSelection()
+    {
+        // Synthetic additional piles do not establish the insert's five-card Invocation binding.
+        var (world, game, deck, wong, _) = Board(0);
+        var additional = world.CreateArea(DeckType.AdditionalDeck, 0, PlayArea.Of(0));
+        var lookalike = world.CreateCard("09036", additional);
+        lookalike.TurnFaceUp();
+        var top = deck.PublicTop!;
+        game.Resolve(Decision.Take(Action(game, wong).Id));
+        game.Resolve(Decision.Take(Assert.Single(game.Pending!.Affordances).Id));
+        Assert.Same(deck.Discard, top.Area);
+        Assert.Same(additional, lookalike.Area);
+        Assert.Single(additional.Cards);
+        Assert.False(wong.Ready);
+    }
+
+    [Fact]
+    public void AnUntypedFaceupInvocationLookalikeCannotProvideTheDiscardBranch()
+    {
+        // The same printed face in an ordinary additional pile is not a typed Invocation deck.
+        var world = new World(InvocationTopDiscardFixture.Cards, 1, 5489);
+        var seat = world.CreateSeat("p0");
+        seat.IdentityCard = world.CreateCard("01001b,01001a", seat.Hero);
+        var wong = world.CreateCard("09002", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+        var additional = world.CreateArea(DeckType.AdditionalDeck, 0, PlayArea.Of(0));
+        var lookalike = world.CreateCard("09036", additional);
+        lookalike.TurnFaceUp();
+        var runner = Runner();
+        string before = SpellMasteryFixture.Snapshot(world);
+        Assert.DoesNotContain(runner.Actions(world, 0), action => action.Card == wong.ObjectId);
+        Assert.Equal(before, SpellMasteryFixture.Snapshot(world));
+        seat.IdentityCard.TakeDamage(1);
+        Assert.Contains(runner.Actions(world, 0), action => action.Card == wong.ObjectId);
+    }
+
+    [Fact]
     public void AmbiguousTypedDecksFailClosedWithoutSelectingASeatOrChangingState()
     {
         // Synthetic ambiguity is outside legal unique-identity setup; the query must not pick the first deck.

@@ -65,3 +65,37 @@ engine evidence, not complete product or UI acceptance.
 Logs: `C:/Users/mggar/Source/strange-top-{extended,mutant-seat,mutant-ambiguity,restored-build,restored-tests,commit}.log`.
 The lead retains independent review and combined integration gates. No complete
 pack, cross-platform, save/replay or native-client acceptance is claimed.
+
+## Independent review
+
+Reviewed source `bc5e1b2f34d333b0be826c84d6ca6dc704008915` against
+`c1d692a3` in isolated branch `review/strange-top-discard`. Verdict: accept
+this bounded engine packet; no production correction identified. Review checked
+the generated 09001b/09002/01071 text, complete mc08 insert, ownership/control
+and you/your clauses, and `rr:choose-option.2`. The singular deck reference
+survives Wong's legal control transfer; his healing follows the controller.
+The public selection delegates to the established typed deck lifecycle instead
+of scanning card faces or generic additional areas.
+
+Two added adversarial tests distinguish an untyped additional pile containing
+a faceup actual Invocation: it cannot provide the discard branch without a
+typed deck, or divert selection from the unique typed deck in another seat.
+The no-deck negative control also proves Wong's damaged-identity heal remains
+available. No production files changed during review.
+
+Independent Release checks on the review branch:
+
+- Related Content filter (`InvocationTopDiscardTests`, `SpellMastery`,
+  `PhaseAbilityLimitTests`, `CoreLastingEffectCardsTests`): 50 passed,
+  including all 14 top-discard cases.
+- Rules filter `InvocationDeck`: 17 passed.
+- View filter `InvocationPrivacyReviewTests`: 1 passed, covering pregame
+  concealment, reveal, discard, recycle and hidden shuffle order for both seats.
+- `git diff --check`: passed.
+
+Logs live outside the repository at
+`C:/Users/mggar/Source/strange-top-discard-review-{extended,deck,privacy}.log`;
+the Content TRX is under `strange-top-discard-review-extended-results/`.
+These are focused managed engine and projection checks. Complete Strange pack,
+public admission, native interaction and cross-platform acceptance remain
+outside this review.
