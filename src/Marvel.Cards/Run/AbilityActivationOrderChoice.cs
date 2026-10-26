@@ -20,15 +20,19 @@ internal static class AbilityActivationOrderChoice
             throw new RulesNotImplementedException(
                 $"'{context.SourceFace}' cannot identify an attacked player for activation order");
         var attackedSeats = schedule.Targets.Select(target => target.Seat).Distinct().ToList();
-        // The engine chooses the first player for one table-wide order spanning
-        // attacked players; a single attacked player owns their own order.
-        int attackedPlayer = schedule.Targets.Length == enemies.Count && attackedSeats.Count == 1
+        // rr:activation.8.1: "If multiple activations are initiated this way,
+        // the first player decides the order in which they are resolved."
+        // This takes precedence while another enemy activation is active.
+        // Outside one, rr:activation.5 gives a single attacked player their order.
+        bool nested = context.Expressions.World.Activation is not null;
+        int attackedPlayer = !nested && schedule.Targets.Length == enemies.Count && attackedSeats.Count == 1
             ? attackedSeats[0] : context.Expressions.World.FirstPlayer;
         return new Prompt(attackedPlayer, Question.Order, TimingPriority.Untimed,
             Steps.CardRevealed, $"{context.SourceFace}: order enemy activations", false,
             [new Affordance(context.Expressions.Source.ObjectId, "Order", context.Expressions.Source.ObjectId,
                 attackedPlayer, "enemy activations",
-                new TargetRequest(ids, ids.Count, ids.Count, Rule: "rr:activation.5"))]);
+                new TargetRequest(ids, ids.Count, ids.Count,
+                    Rule: nested ? "rr:activation.8.1" : "rr:activation.5"))]);
     }
 
     internal static AbilityStructuralTransition AnswerActivationOrder(
