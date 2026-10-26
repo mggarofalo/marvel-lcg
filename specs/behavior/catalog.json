@@ -83637,6 +83637,28 @@
       ]
     },
     {
+      "id": "setup:encounter-set:power_drain",
+      "kind": "setup",
+      "title": "Power Drain",
+      "fingerprint": "sha256:2f332b84596a7af344552d721be80d45622793f819740ed1dfa5c1ef56904f27",
+      "scope": "encounter-set",
+      "disposition": "outside-core",
+      "obligations": [
+        {
+          "id": "behavior:setup:encounter-set:power_drain:power-drain-setup",
+          "summary": "The Power Drain record supplies its five distinct faces and five physical encounter cards.",
+          "disposition": "outside-core",
+          "reason": "This record requires the Green Goblin scenario pack, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
       "id": "setup:encounter-set:standard",
       "kind": "setup",
       "title": "Standard",

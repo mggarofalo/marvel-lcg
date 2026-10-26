@@ -79,3 +79,8 @@ eight encounter cards. This composition record does not implement those cards.
 The normal Expert convention adds the Expert set alongside Standard.
 `RiskyBusinessSetupTests` checks exact recipes, 1–4-player production deals with
 one supported chosen modular set, authored setup and continued public exclusion.
+
+Power Drain is a Green Goblin research modular recipe with five distinct faces
+and five physical cards (02041–02045), one each, from the generated printed set
+facts and pinned MarvelSDB `gob_encounter.json` quantities. Its outside-Core
+adjudication and `PowerDrainSetupTests` gate composition and public exclusion.

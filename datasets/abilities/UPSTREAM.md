@@ -4,7 +4,7 @@
 |---|---|
 | Kind | authored |
 | Product boundary | Core Set, Rise of Red Skull, Captain America and Wrecking Crew; Green Goblin research rows remain publicly excluded |
-| Records | 513 printed card faces, including explicit empty rows |
+| Records | 518 printed card faces, including explicit empty rows |
 | Authorities | Generated `datasets/cards/`, vendored Rules Reference, expansion rulebooks and published rulings |
 | Gated by | Ability admission/lowering tests, complete-product admission, actual-card tests, campaign acceptance and executable Core behavioral transcripts |
 
@@ -60,3 +60,10 @@ persistent facedown boosts and actual-healing receipts are exercised against the
 authored rows. The queried MarvelCDB FAQ has no entry for these four faces;
 vendored ruling `ruling:e6531edb529e342d` supports Pumpkin Bombs with ally defense.
 These rows do not admit Green Goblin publicly.
+
+Power Drain adds five authored research faces (02041–02045), one physical copy
+each. Actual-card tests cover defeat hand-resource selection, exact Electro
+recruitment, numeric boost receipts through exhaustion, indirect damage and
+healing. The vendored MarvelCDB FAQ for Electro requires its response after ally
+defense; ruling `ruling:a9007ff3a4727a80` confirms Power Drain resolves before
+leaving play. Other faces have no card FAQ entry. Green Goblin stays publicly excluded.
