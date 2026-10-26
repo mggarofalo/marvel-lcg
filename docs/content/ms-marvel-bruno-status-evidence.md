@@ -64,3 +64,39 @@ Verification on this packet:
 Independent card review and native grouped-interaction evidence follow in
 separate assignments. This packet makes no broad-suite, public-pack or native
 acceptance claim. No new unsupported whole-face gap was found.
+
+## Independent actual-card review
+
+Reviewed candidate `b5f9fb2e92ca2b03f1255be91e62148d4cac0ae6` against the three
+joined printed faces, RR1.8 target, stun, ownership and Retaliate clauses, and
+vendored Bruno/Tackle rulings. Both events unconditionally apply their status;
+their three damage requires physical payment. RR1.8 `rr:target.3.4` governs
+effective damage against already-statused or Stalwart enemies; the contradictory
+older Tackle ruling does not override the current rulebook. The candidate diff
+only appends 188 ability-book lines, preserving prior rows; independent inventory
+reconciliation confirms 565 distinct faces and 23 Ms. Marvel faces.
+
+`MsMarvelBrunoStatusIndependentTests` adds six actual-row checks. Bruno's
+non-first controller stores from their hand even when the physical owner is seat
+zero, and retrieves a foreign-owned stored card into the resolving controller's
+hand without changing its owner. Both suspended choices identify seat one.
+Status-only Tackle and Concussive Blow cause Retaliate despite dealing no damage;
+a stunned attacking hero instead spends the payment and loses stun without
+applying either the status or Retaliate. The existing actual-card and bounded
+retrieval checks cover both forms, zero through three selections, paid empty
+selections, malformed groups, facedown/out-of-play storage and departure cleanup.
+
+The independent compiled negative control replaces the retrieval destination
+with seat zero in `AbilityGroupRetrieval.Commit`. Five independent cases pass;
+the non-first retrieval case fails its exact destination assertion. The source
+is restored from saved bytes, verified unchanged, and rebuilt non-incrementally.
+The final focused Release run passes 69 checks, including the original 61,
+the six independent cases and two rule-citation checks. Logs outside the repo:
+`C:/Users/mggar/Source/ms-bruno-independent-mutant-seat-zero.log`,
+`ms-bruno-independent-restored-build.log` and
+`ms-bruno-independent-restored-tests.log`.
+
+Verdict: accepted for these three ordinary-action research rows and their engine
+behavior. No ability-book correction or additional whole-face prerequisite was
+found. This review does not establish public Ms. Marvel admission, native UI
+privacy/presentation acceptance, PrepareWindow integration or broad regression.
