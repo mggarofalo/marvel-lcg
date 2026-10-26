@@ -14,6 +14,11 @@ answer must preserve the prompt, state, RNG and pending effects, including on re
 Challenge legal no-ops, ties, replacements, nested activations, departed targets
 and multiplayer ownership only where the mechanic makes them relevant.
 
+After authoring rows, run the ability-data tests as well as characteristic card
+tests. Reconcile explicit authored-face and starting-counter inventories with the
+printed facts, and keep unknown-card negative controls genuinely unauthored.
+Do not permit an entire incomplete pack merely to satisfy a face-inventory gate.
+
 Capture causal facts when an effect needs them later. Current active villain,
 current defender or current board membership may no longer describe the attack
 that caused a continuation. Distinguish declared defense, completed attacks,
