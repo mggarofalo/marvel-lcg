@@ -83,3 +83,37 @@ Independent Release evidence, logs outside the repository at
 
 No production logic was changed. These results are focused evidence; integrated
 managed/platform gates remain the lead's responsibility.
+
+## Live-payment re-review at ac161c74
+
+Reviewed `ac161c74` in isolated worktree `marvel-lcg-payment-review` on
+2026-10-26. Verdict: **accept the bounded engine prerequisite**, including the
+live origin/payment rejection and shared entry corrections. Replay compatibility
+remains a separate integration gate owned by the lead; this verdict does not
+admit 05018, complete its pack, or establish native/product acceptance.
+
+Live revalidation checks the current price, selected generators and explicit
+allocation before clearing information. `CardPlayPayment.Prepare` and its
+`CardResourcePayment.Prepare` call only read board facts and retain local
+contributor snapshots: neither commits resource abilities, discards cards,
+consumes modifiers, opens executions nor schedules work. The resulting temporary
+payment is discarded; ordinary play prepares a fresh payment and commits it once.
+
+Independent Release evidence in
+`C:/Users/mggar/Source/lockjaw-payment-independent-focused.log`: 46 passed,
+covering discard permission/decision/rejection, storage permission, stored events
+and Quiver controls. Rejection cases include stale hand resources, exhausted
+generators, removed discounts and allocations invalidated by a newly reduced
+price; all preserve information, cards, full RNG state/word count, agenda,
+effects and pending identity, then accept a corrected retry. Paired hand/discard
+accepted-payment controls use a synthetic resource ability with exhaustion and
+one damage as costs: it pays once, the hand contributors discard once, an unused
+hand card stays, and the one-use discount is consumed on entry.
+
+An additional actual authored Core 01084 control plays Nick Fury as the fourth
+ally, completes the mandatory discard before his forced entry choice, chooses
+the printed draw-three effect once, and returns to a root prompt with exactly
+three added cards and no outstanding agenda. Existing paired synthetic entry and
+put-into-play controls also pass. No production source or ability-book content
+was changed and no new mutant was run in this re-review. These focused results
+do not replace the integrated managed/platform gates.
