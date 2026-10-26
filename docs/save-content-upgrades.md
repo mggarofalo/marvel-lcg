@@ -19,10 +19,14 @@ The baseline is embedded in the executable; a save cannot supply a new baseline
 or authorize its own migration.
 
 This is a conservative product policy, not a rule inferred from the tabletop.
-The current v26 delivery retains named routes from the exact frozen v19/v20/v21
-content triple to `engine-replay-v26`, plus frozen-content v26 additive upgrades.
-Every original recorded fact must verify; none is regenerated. V22, v23, v24 and v25
-have no named source admission and are quarantined unchanged. V26 completes
+The current v27 delivery retains named routes from the exact frozen v19/v20/v21
+content triple to `engine-replay-v27`, plus frozen-content v27 additive upgrades.
+Every original recorded fact must verify; none is regenerated. V22, v23, v24, v25
+and v26 have no named source admission and are quarantined unchanged. V27 evaluates
+dynamic lasting amounts against current state and preserves captured actor incarnation
+across suspended responses. These corrections can change accepted Core/RoRS outcomes.
+Protocol 41 and save schema 7 apply. Historical v26 routes remain exact v26
+destination routes. V26 completes
 minion Quickstrike before optional engagement and entry responses;
 real Core Hawkeye/Vulture traces can therefore change independently of content
 hashes. Historical v25 routes remain exact v25 destination routes. V25 emits one
