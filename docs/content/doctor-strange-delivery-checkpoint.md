@@ -53,6 +53,26 @@ independent review and setup repair closure `a058bf6d` are accepted. Public setu
 final pack certification remain open; MARVEL-834 tracks native continuation
 meaning and layout.
 
+The first broad integrated Content run at `54b9055a` reports 7,276 passes and
+52 failures of 7,328 cases (`strange-reviewed-full-content.log`). Forty-six
+failures share the cached Core transcript result; five explicit tests retain
+obsolete effect-target choices after status cancellation. Source `4b7d42cf`
+and independent review `732c578f` correct those transcripts under current RR
+status priority, preserving paid-cost, canceled-effect and successful-choice
+controls. Source `dcea2dc5` and independent review `660de932` repair the remaining
+fixture, which bypassed scheduler advancement after answering a choice. The
+supported path preserves chosen-player binding and stale-frame rejection.
+No production code changes are needed for these failures.
+
+Combined affected Content/corpus checks pass 172; the full integrated View lane
+passes 418, and strengthened independent continuation controls pass separately.
+Logs: `Source/evidence/strange-regression-closures-integrated.log`,
+`strange-regression-closures-full-view.log`, and
+`strange-continuation-independent-integrated-view.log`. Full Content rerun on
+the eventual public-admission candidate remains required. The full Rules lane
+at `54b9055a` passes 1,187 cases. Public setup source `d887173f` is implemented
+and in independent review; complete public-game work has started from that
+candidate. No complete-pack acceptance is implied.
 The three signature events have reviewed prerequisites: reveal origin
 `530f156e`, simultaneous powers and Magic Blast stage repair `00f23ff2`, and
 Astral pre-arrow target/payment/inspection continuation `1abb96a2`. Their combined

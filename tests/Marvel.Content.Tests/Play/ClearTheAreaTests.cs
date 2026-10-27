@@ -34,12 +34,27 @@ public sealed class ClearTheAreaTests
     }
 
     [Fact]
+    [Rule("rr:labeled-ability.6")]
+    [Rule("rr:cancel.2")]
+    [Rule("rr:cancel.3")]
     public void ConfusedCancelsRemovalAndItsConditionalDraw()
     {
+        // "The entire ability (except for its costs) is canceled."
+        // "If the effects of an event card are canceled, the card is still
+        // considered played, and it is discarded."
         var (game, world, card, scheme, top) = Begin(false, 1, confused: true);
-        Play(game, card, scheme);
+        int hand = world.Seats[0].Hand.Cards.Count;
+        var discard = world.AreaOf(DeckType.DiscardPile, PlayArea.Of(0));
+        int discarded = discard.Cards.Count;
+        Pay(game, card);
+        Assert.True(game.IsRootPrompt);
+        Assert.Equal(Question.TurnOption, game.Pending!.Asking);
+        Assert.Equal(DeckType.DiscardPile, card.Area.Type);
+        Assert.Equal(discarded + 2, discard.Cards.Count);
+        Assert.Equal(hand - 2, world.Seats[0].Hand.Cards.Count);
         Assert.Equal(1, scheme.Tokens["k_threat"]);
         Assert.DoesNotContain(top, world.Seats[0].Hand.Cards);
+        Assert.Equal(DeckType.PlayerDeck, top.Area.Type);
         Assert.False(Statuses.Has(world, world.Seats[0].IdentityCard, Statuses.Confused));
     }
 
@@ -52,14 +67,19 @@ public sealed class ClearTheAreaTests
 
     private static void Play(Game game, Card card, Card scheme)
     {
+        Pay(game, card);
+        var choice = Assert.Single(game.Pending!.Affordances, option => option.AnchorId == scheme.ObjectId);
+        game.Resolve(Decision.Take(choice.Id));
+    }
+
+    private static void Pay(Game game, Card card)
+    {
         var offer = Assert.Single(game.Pending!.Affordances, option => option.AnchorId == card.ObjectId);
         var cost = offer.CostOptions[0];
         var source = cost.Sources![0];
         var allocation = ResourcePayment.Allocate(cost, [source.Effect]);
         Assert.NotNull(allocation);
         game.Resolve(Decision.Take(offer.Id, [], [source.Effect], new Dictionary<string, long>(), allocation));
-        var choice = Assert.Single(game.Pending!.Affordances, option => option.AnchorId == scheme.ObjectId);
-        game.Resolve(Decision.Take(choice.Id));
     }
 
     private static (Game Game, World World, Card Event, Card Scheme, Card Top) Begin(

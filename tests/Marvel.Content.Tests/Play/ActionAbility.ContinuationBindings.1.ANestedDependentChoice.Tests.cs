@@ -238,13 +238,21 @@ public sealed class ActionAbilityContinuationBindingsANestedDependentChoiceTests
         Card? source = null;
         var(_, world) = Playing(board => source = InPlay(board, AuthoredCards.AuntMay), hero: true, heroes: ["spider_man", "captain_marvel"], abilities: runner);
         int held = world.Seats[1].Hand.Cards.Count;
+        int otherHeld = world.Seats[0].Hand.Cards.Count;
+        var drawn = world.Seats[1].Deck.Cards[^1];
         var action = Assert.Single(runner.Actions(world, 0), ability => ability.Card == source!.ObjectId);
         runner.ExecuteAction(world, new PlayerAction(action, [], []));
         var choice = Assert.Single(world.Agenda.Outstanding, step => step.What == Steps.ChooseOption);
-        runner.Chose(world, choice, Decision.Take(world.Seats[1].IdentityCard.ObjectId));
+        var prompt = Sequence.Work(world, CardCatalogData, runner, [])!;
+        Sequence.Answer(world, CardCatalogData, runner, prompt,
+            Decision.Take(world.Seats[1].IdentityCard.ObjectId), []);
+        Assert.NotEqual(choice, world.Agenda.Current);
         var attack = Assert.Single(world.Agenda.Outstanding, pending => pending.What == Steps.Attack);
         Statuses.Give(world, world.Cards[attack.Subject], Statuses.Stunned);
         Sequence.Work(world, CardCatalogData, runner, []);
         Assert.Equal(held + 1, world.Seats[1].Hand.Cards.Count);
+        Assert.Contains(drawn, world.Seats[1].Hand.Cards);
+        Assert.Equal(otherHeld, world.Seats[0].Hand.Cards.Count);
+        Assert.DoesNotContain(world.Agenda.Outstanding, step => step.What == Steps.ChooseOption);
     }
 }

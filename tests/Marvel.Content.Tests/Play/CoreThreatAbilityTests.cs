@@ -101,13 +101,17 @@ public sealed class CoreThreatAbilityTests
 
     [Rule("rr:confuse-confused.1")]
     [Rule("rr:initiating-abilities.step.5")]
+    [Rule("rr:cancel.2")]
+    [Rule("rr:cancel.3")]
     [Fact]
     public void ConfusionCancelsForJusticeAfterItsCostsArePaid()
     {
-        // "As the thwart is initiated, remove the confused status card to
-        // cancel the thwart." The event and its resources were already paid.
+        // "Only the effects are prevented from initiating, and do not resolve."
+        // "If the effects of an event card are canceled, the card is still
+        // considered played, and it is discarded." No effect target is requested.
         var world = Board(hero: true);
         var scheme = world.TheCardIn(DeckType.MainSchemesArea)!;
+        world.CreateCard("01087", world.Seats[0].Deck);
         scheme.PlaceTokens("k_threat", 5);
         var forJustice = world.CreateCard("01060", world.Seats[0].Hand);
         var genius = world.CreateCard("01089", world.Seats[0].Hand);
@@ -118,14 +122,12 @@ public sealed class CoreThreatAbilityTests
 
         var action = runner.Actions(world, 0).Single(ability => ability.Card == forJustice.ObjectId);
         runner.ExecuteAction(world, new PlayerAction(action, [genius.ObjectId], []));
-        var prompt = Sequence.Work(world, Cards, runner, [])!;
-        Sequence.Answer(world, Cards, runner, prompt, Decision.Take(scheme.ObjectId), []);
-        Sequence.Finish(world, Cards, runner, []);
+        Assert.Null(Sequence.Work(world, Cards, runner, []));
 
         Assert.False(Statuses.Has(world, hero, Statuses.Confused));
         Assert.Equal(5, scheme.Tokens["k_threat"]);
         Assert.Equal(DeckType.DiscardPile, forJustice.Area.Type);
-        Assert.DoesNotContain(genius, world.Seats[0].Hand.Cards);
+        Assert.Equal(DeckType.DiscardPile, genius.Area.Type);
     }
 
     private static Occurrence ThreatOccurrence(World world, ThreatCause cause, long amount)

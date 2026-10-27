@@ -14,11 +14,17 @@ internal static class InvocationInteractionFixture
 {
     internal static (World World, Game Game, InvocationDeck Deck, Card Master) Create(string face,
         bool syntheticNoDiscard = false, bool syntheticReturnOtherwise = false,
-        Action<AbilityRunner>? captureRunner = null)
+        Action<AbilityRunner>? captureRunner = null, string? syntheticSpecial = null)
     {
         var facts = CardCatalog.Parse(File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")));
         var book = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(
             RepositoryPaths.Dataset("abilities", "abilities.json")))!;
+        if (syntheticSpecial is not null)
+        {
+            // A synthetic Special exercises nested scheduling without claiming printed card behavior.
+            var row = book["cards"]!.AsArray().Single(item => item!["card"]!.GetValue<string>() == face)!;
+            row["abilities"]![0]!["effect"] = System.Text.Json.Nodes.JsonNode.Parse(syntheticSpecial);
+        }
         if (syntheticNoDiscard)
         {
             // Explicit synthetic control: retaining an Invocation does not imply self-discard.

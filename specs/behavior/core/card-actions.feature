@@ -328,11 +328,10 @@ Feature: Core card actions
       | card  | copy |
       | 01088 | 0    |
       | 01089 | 0    |
-    Then card 01094 copy 0 is offered by the pending action
+    Then no opportunity is pending
     And card 01088 copy 0 is in seat 1's discard pile
     And card 01089 copy 0 is in seat 1's discard pile
-    When seat 1 chooses card 01094 copy 0 for the pending action
-    Then card 01001a copy 0 has 0 stunned status cards
+    And card 01001a copy 0 has 0 stunned status cards
     And card 01094 copy 0 has 0 damage
     And card 01005 copy 0 is faceup on top of seat 1's discard pile
 
