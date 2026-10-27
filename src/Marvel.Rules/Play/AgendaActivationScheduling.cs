@@ -237,11 +237,13 @@ public static class AgendaActivationScheduling
         // Keep the current occurrence so its response window can resolve, and
         // keep the completion sentinel so the effect that initiated the
         // activation still receives its result and can resume.
+        var currentOccurrence = preserveCurrentOccurrence ? agenda.Occurrence : null;
         int first = preserveCurrentOccurrence ? 1 : 0;
         for (int index = agenda.items.Count - 1; index >= first; index--)
         {
             var item = agenda.items[index];
             if (item.Step.ActivationId == activationId
+                && (currentOccurrence is null || !ReferenceEquals(item.Occurrence, currentOccurrence))
                 && item.Step.What is not (Steps.CompleteAttackActivation
                     or Steps.CompleteSchemeActivation))
             {

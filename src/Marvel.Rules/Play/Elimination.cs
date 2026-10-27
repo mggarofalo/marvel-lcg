@@ -109,21 +109,7 @@ public static class Elimination
             }
         }
 
-        // Steps 3 and 4. Cards **in play** leave by ownership: one somebody
-        // else owns goes to *their* discard pile (step 3.3), one this player
-        // owns goes to theirs (step 4).
-        foreach (var area in Mine(world, player))
-        {
-            if (!DeckTypes.IsInPlay(area.Type))
-            {
-                continue;
-            }
-
-            foreach (var card in area.Cards.ToList())
-            {
-                Leave(world, facts, seat, card, trigger, events);
-            }
-        }
+        DepartCards(world, facts, seat, layout, player, trigger, events);
 
         // Step 5. "**Remove** the eliminated player's play area and each other
         // game element within it *(hand, deck, discard pile, cards in play, hit
@@ -171,6 +157,37 @@ public static class Elimination
             && (area.Host < 0
                 || world.Cards[area.Host].Area.PlayArea == PlayArea.Of(player)))];
 
+    private static void DepartCards(
+        World world, ICardFacts facts, Seat seat, EliminationLayout layout,
+        int player, string trigger, List<GameEvent> events)
+    {
+        // Step 3: foreign-owned cards in this play area use their owner's
+        // destination. Step 2 has already moved minions and their hosted cards.
+        foreach (int cardId in layout.Leaving)
+        {
+            var card = world.Cards[cardId];
+            if (card.Owner != player && card.Area.PlayArea == PlayArea.Of(player)
+                && DeckTypes.IsInPlay(card.Area.Type))
+                Leave(world, facts, seat, card, trigger, events);
+        }
+
+        // Step 4: "Place each card owned by the eliminated player in the
+        // eliminated player's discard pile." Ownership spans all play areas,
+        // including facedown hosted cards and cards transferred in step 2.
+        // rr:discard.4 preserves deck order by taking cards from the top.
+        // Area/pile order otherwise is the engine's deterministic choice.
+        var leaving = layout.Leaving.ToHashSet();
+        var owned = world.Areas.SelectMany(area =>
+            DeckTypes.IsConcealedPile(area.Type) ? area.Cards.Reverse() : area.Cards)
+            .Where(card => leaving.Contains(card.ObjectId) && card.Owner == player).ToList();
+        foreach (var card in owned)
+        {
+            if (card.Area.Type is not (DeckType.RemovedArea or DeckType.DiscardPile))
+                Leave(world, facts, seat, card, trigger, events);
+        }
+
+    }
+
     /// <summary>One card leaving an eliminated player's play area.</summary>
     private static void Leave(
         World world, ICardFacts facts, Seat seat, Card card, string trigger,
@@ -184,7 +201,8 @@ public static class Elimination
             return;
         }
 
-        if (StateFields.Modified(world, card, "permanent", facts, world.Players) > 0)
+        if (card.Owner != seat.IdentityCard.Owner
+            && StateFields.Modified(world, card, "permanent", facts, world.Players) > 0)
         {
             // `.1` and `.2`. A non-attachment permanent is removed from the
             // game; an attachment resolves its "attach to" text first, and that

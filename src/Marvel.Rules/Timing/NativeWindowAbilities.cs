@@ -13,6 +13,8 @@ internal sealed class NativeWindowAbilities(IWindowAbilities authored) : IWindow
     public bool ObservesPlayerTurnBeginning(World world) => authored.ObservesPlayerTurnBeginning(world);
     public bool ObservesVillainStepOneCompletion(World world) => authored.ObservesVillainStepOneCompletion(world);
 
+    /// <inheritdoc/>
+    public bool ObservesVillainPhaseBeginning(World world) => authored.ObservesVillainPhaseBeginning(world);
     public IReadOnlyList<PendingAbility> Waiting(World world, Occurrence occurrence, WindowKind window)
     {
         var printed = authored.Waiting(world, occurrence, window);

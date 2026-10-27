@@ -29,6 +29,11 @@ public sealed class DoctorStrangeCleaCardTests
         {
             Elimination.Eliminate(world, world.Facts, 1, "CleaOwner", []);
             Elimination.Eliminate(control, control.Facts, 1, "CleaOwner", []);
+            Assert.Equal(DeckType.RemovedArea, source.Area.Type);
+            Assert.Equal(DeckType.RemovedArea, expected.Area.Type);
+            // Synthetic late copies isolate absent-owner routing after normal cleanup.
+            source = Ally(world);
+            expected = Ally(control);
         }
         Assert.Equal(eliminated, world.Seats[1].Eliminated);
         Assert.Equal(DeckType.AlliesArea, source.Area.Type);

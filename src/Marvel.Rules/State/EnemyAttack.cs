@@ -68,6 +68,10 @@ public sealed record EnemyAttack(
     [System.Text.Json.Serialization.JsonIgnore]
     public Timing.ReceivedAttackDamagePlacements ReceivedDamage { get; init; } = new();
 
+    /// <summary>Damage-owned defeat facts retained before departure can finish the attack.</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    internal EnemyAttackDefeats Defeats { get; init; } = new();
+
     /// <summary>Captured physical retaliation recipients for the final shared response window.</summary>
     [System.Text.Json.Serialization.JsonIgnore]
     public RetaliationContext? Retaliation { get; init; }

@@ -16,13 +16,13 @@ public sealed class HulkObligationNemesisTests
     {
         using var book = JsonDocument.Parse(AuthoredCards.Text);
         var rows = book.RootElement.GetProperty("cards").EnumerateArray().ToArray();
-        Assert.Equal(718, rows.Length);
+        Assert.Equal(723, rows.Length);
         string[] expected = ["10025", "10026", "10027", "10028"];
         Assert.Equal(expected,
             rows.Skip(712).Take(4).Select(row => row.GetProperty("card").GetString()));
         Assert.All(rows.Skip(712).Take(4), row => Assert.False(row.TryGetProperty("startingCounters", out _)));
         Assert.Equal(33, AuthoredCards.Book.Authored.Count(id => id.StartsWith("10", StringComparison.Ordinal)));
-        Assert.DoesNotContain("90001", AuthoredCards.Book.Authored);
+        Assert.DoesNotContain("11001", AuthoredCards.Book.Authored);
     }
 
     [Theory]

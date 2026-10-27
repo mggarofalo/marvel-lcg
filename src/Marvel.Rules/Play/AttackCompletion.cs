@@ -82,13 +82,16 @@ internal static class AttackCompletion
         // rr:attack-enemy-activation.step.6.a places forced responses before optional
         // responses. The occurrence owns these fixed facts; its storage shape is ours.
         var completed = new CompletedEnemyAttack(
-            world.Activation?.Id ?? -1, attack.Defender, world.Activation?.DamageDealt ?? 0);
+            world.Activation?.Id ?? -1, attack.Defender, world.Activation?.DamageDealt ?? 0)
+        {
+            // rr:boost-boost-icon.3: boost-ability damage is not damage dealt by
+            // the activation. Only the exact attack-owned defeats qualify.
+            DefeatedCharacters = [.. attack.Defeats.Items],
+        };
         if (world.Agenda.Occurrence is { } occurrence)
         {
             occurrence.CompletedEnemyAttack = completed;
-            foreach (var placement in attack.ReceivedDamage)
-                occurrence.ReceivedAttackDamage.Record(placement);
-            if (attack.ReceivedDamage.Count > 0) occurrence.Also(Steps.DamageDealt);
+            AttackDamageReceipts.Publish(attack, occurrence);
         }
         if (world.Activation is { } activation)
             world.Activation = activation with { CompletedAttack = completed };

@@ -15,8 +15,8 @@ internal static class PhaseTransitionProcedure
         int start = events.Count;
         switch (step.What)
         {
-            case VillainStepOneTiming.Completed:
-                // Breakout 07001b observes completion, including prevented or replaced threat.
+            case VillainPhaseBeginning.Begins or VillainStepOneTiming.Completed:
+                // These boundary occurrences own their windows; their bodies change no state.
                 break;
             case Steps.PassFirstPlayerToken:
                 PassFirstPlayerToken(world);

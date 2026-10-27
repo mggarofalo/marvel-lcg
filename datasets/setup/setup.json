@@ -3203,7 +3203,7 @@
   "contract": "docs/setup-dataset.md",
   "counts": {
     "campaigns": 39,
-    "encounter_sets": 14,
+    "encounter_sets": 15,
     "heroes": 13
   },
   "encounter_sets": {
@@ -3369,6 +3369,19 @@
         "02035",
         "02036",
         "02036"
+      ]
+    },
+    "kree_fanatic": {
+      "name": "Kree Fanatic",
+      "role": "modular",
+      "encounters": [
+        "90001",
+        "90002",
+        "90003",
+        "90004",
+        "90004",
+        "90005",
+        "90005"
       ]
     }
   },

@@ -39,29 +39,31 @@ public sealed class TemporaryIdentityRegressionTests
 
     [Rule("rr:player-elimination.4")]
     [Fact]
-    public void EliminationTransfersTheDroneCopyAndKeepsItsFacingAndEnvironmentModifiers()
+    public void EliminationTransfersTheDroneThenDiscardsItsEliminatedOwnersPhysicalCard()
     {
-        // Engaged minions pass to the next player clockwise, remaining in play.
+        // Step 2 transfers engaged minions; step 4 then discards "each card owned"
+        // by the eliminated player, including their card acting as a Drone.
         var world = Board();
         var environment = world.CreateCard("01140", world.AreaOf(DeckType.EnvironmentArea));
         world.CreateCard("01142", world.AreaOf(DeckType.UpgradesArea, PlayArea.Villains, host: environment.ObjectId));
         world.CreateCard("01089", world.Seats[0].Deck);
         world.CreateCard("01089", world.Seats[0].Deck);
         var drone = Engage(world);
-        var copy = drone.InstanceState;
         drone.TakeDamage(1);
         Assert.Equal(2, DamagePlacement.Health(world, Cards, drone));
+        var events = new List<GameEvent>();
 
-        Elimination.Eliminate(world, Cards, 0, "test", []);
+        Elimination.Eliminate(world, Cards, 0, "test", events);
 
-        Assert.Equal(PlayArea.Of(1), drone.Area.PlayArea);
-        Assert.False(drone.FaceUp);
-        Assert.Same(copy, drone.InstanceState);
-        Assert.Equal(1, drone.Damage);
-        Assert.Equal(2, DamagePlacement.Health(world, Cards, drone));
-        Assert.Equal(2, StateFields.Modified(world, drone, "attack", Cards, world.Players));
+        Assert.Equal(DeckType.RemovedArea, drone.Area.Type);
+        Assert.Null(drone.InstanceState.Profile);
+        Assert.Equal(0, drone.Damage);
         Assert.Equal(0, drone.Owner);
-        Assert.Equal(World.Scenario, CardControl.ControllerOf(world, drone));
+        var moves = events.OfType<CardsMoved>()
+            .Where(move => move.Cards.Any(card => card.Card == drone.ObjectId)).ToArray();
+        Assert.Equal(["Engage", "Discard", "Eliminate"], moves.Select(move => move.Verb));
+        Assert.Equal(1, moves[0].To.Owner);
+
     }
 
     [Rule("rr:damage.step.8")]

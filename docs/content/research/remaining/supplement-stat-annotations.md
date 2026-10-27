@@ -53,3 +53,28 @@ complexity and file length. Their log is
 This review accepts acquisition-format preservation only. It does not import
 the Bullseye candidate, certify its source inventory, admit content, or establish
 runtime support.
+
+## Publication candidate and CI observation
+
+PR #460 initially tested `4ae4544dd9e1cf71e984c0865aa91583767aea82` in
+[run 40503336775](https://github.com/mggarofalo/marvel-lcg/actions/runs/40503336775).
+Windows platform testing failed one server test, `ConfiguredServerAnswersSetupAndCancellationStopsItCleanly`,
+at its ten-second readiness wait (`ProgramTests.cs:254`). The other 661 server
+tests passed. Managed correctness, Linux platform testing, all four native shards
+and Windows packaging passed; aggregate native checks rejected the failed platform
+result. The complete failed log is retained externally as
+`C:/Users/mggar/Source/evidence/supplement-pr460-ci-failure.log`.
+
+The publication branch is reconciled with accepted Ronan main `1677ebcd`.
+The server fixture and host implementation are unchanged between the original
+base and that main revision, where the final Ronan CI passed. This observation
+does not establish a cause for the timeout. No timeout, assertion or server
+implementation is changed to accommodate it. Final acceptance still requires a
+green combined candidate.
+
+On the reconciled main tree, all 38 ProgramTests passed, including the earlier
+readiness failure; all 11 extraction/correction tests passed and the offline
+card generator remained byte-identical. Logs are `supplement-current-main-server.log`,
+`supplement-current-main-extraction.log` and `supplement-current-main-generator.log`
+in the external evidence directory. The focused local run did not reproduce the
+CI timeout; it does not establish the cause or replace final combined CI.

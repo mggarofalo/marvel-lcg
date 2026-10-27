@@ -64,7 +64,10 @@ internal static class AbilityWindowAdmission
     {
         if (EffectiveCards.HasProfile(card) || PrintedText.IsBlanked(world, card)) return false;
         bool playableEvent = CardPlayOrigin.CanPlayEvent(world, card, card.Owner);
-        return DeckTypes.IsInPlay(card.Area.Type) || playableEvent;
+        // rr:in-play-and-out-of-play.10: "Facedown cards attached to in-play
+        // cards are out of play." Explicit event-play origins remain separate:
+        // hand cards need not be faceup to be played.
+        return DeckTypes.IsInPlay(card.Area.Type) && card.FaceUp || playableEvent;
     }
 
     private static bool IsWaitingCandidate(

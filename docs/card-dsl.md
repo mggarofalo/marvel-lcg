@@ -661,6 +661,18 @@ qualify; overkill dealt to the identity does. Damage dealt remains distinct from
 damage taken or prevented under `rr:damage.3.2`. `activationDamage` retains the
 activation's aggregate damage result.
 
+An `afterActivation` effect also receives `activationDefeatedCharacters`, the
+number of character defeats in that exact activation's immutable completed attack
+receipt. `CompletedEnemyAttack.DefeatedCharacters` retains the defeated card and
+incarnation before departure or player elimination. The count survives delayed
+choices in the ordinary result memory. It is zero for surviving or prevented
+recipients, schemes and canceled attacks. Boost-ability damage is explicitly not
+damage dealt by the activation (`rr:boost-boost-icon.3`); a scheme's own final
+step places threat (`rr:scheme-enemy-activation.step.3`). A queued activation
+has its own identity (`rr:activation.8`) and cannot contribute to this receipt.
+The result spelling and count projection are engine choices. This result is
+supplied to `afterActivation`, not aggregated across an `enemyAttacks` collection.
+
 `wasDefeatedByDamage` takes a card selector and tests whether the most recent
 direct damage node in this resolution defeated that exact card incarnation.
 The receipt survives suspended choices and the defeated card leaving play or

@@ -106,9 +106,9 @@ public sealed record Occurrence
     [JsonIgnore]
     public Play.DamageReplacement? Damage { get; internal set; }
 
-    /// <summary>Whether this exact imminent assignment is damage from an attack.</summary>
+    /// <summary>Whether this assignment or completed damage occurrence is damage from an attack.</summary>
     [JsonIgnore]
-    public bool DamageFromAttack { get; internal init; }
+    public bool DamageFromAttack { get; internal set; }
 
     /// <summary>The exact damage-taking assignment, reconstructed during replay.</summary>
     [JsonIgnore]
@@ -312,11 +312,11 @@ public sealed record Occurrence
     /// attack that killed the ally and the ally's death are one moment, and
     /// this is how the second half joins the first.
     /// </remarks>
-    /// <param name="what">The card, who did it, and how.</param>
-    public void Also(State.Defeated what)
+    /// <param name="what">The card, who did it, and how.</param><param name="deferResponse">Whether its response belongs to attack completion.</param>
+    public void Also(State.Defeated what, bool deferResponse = false)
     {
         defeats.Add(what);
-        Also(Play.Steps.CardDefeated);
+        if (!deferResponse) Also(Play.Steps.CardDefeated);
     }
 
     /// <summary>Whether the exact ability and triggering fact remain unused.</summary>

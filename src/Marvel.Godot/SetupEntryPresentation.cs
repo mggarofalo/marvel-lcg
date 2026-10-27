@@ -18,6 +18,7 @@ internal static class SetupEntryPresentation
         float side = Math.Max(16, (main.GetViewportRect().Size.X - width) / 2);
         main.pageScroll.OffsetLeft = side;
         main.pageScroll.OffsetRight = -side;
+        ConfigureFooter(main, side);
         main.setupPanel.SizeFlagsVertical = Control.SizeFlags.ShrinkBegin;
         main.setupGrid.SizeFlagsVertical = Control.SizeFlags.ShrinkBegin;
         main.joinFields.SizeFlagsVertical = Control.SizeFlags.ShrinkBegin;
@@ -50,7 +51,6 @@ internal static class SetupEntryPresentation
         fields.MoveChild(fields.GetNode<Control>("ConnectionGrid"), 4);
         fields.MoveChild(main.reloadSetup, 5);
         fields.MoveChild(main.seedHelp, 6);
-        fields.MoveChild(main.start, fields.GetChildCount() - 1);
         RefreshChoices(main);
         RefreshAdditionalSeats(main);
         foreach (Control control in fields.FindChildren("*", "Control", true, false).OfType<Control>())
@@ -61,6 +61,34 @@ internal static class SetupEntryPresentation
                 control.CustomMinimumSize = new Vector2(control.CustomMinimumSize.X,
                     Math.Max(44, VisualSystem.Controls(main.interfaceScale).MinimumHeight));
         }
+    }
+
+    private static void ConfigureFooter(Main main, float side)
+    {
+        PanelContainer footer = EnsureFooter(main);
+        footer.Visible = !main.joining;
+        main.start.AddThemeFontSizeOverride("font_size", Math.Max(16, Mathf.RoundToInt(12 + 8 * (int)main.interfaceScale / 100f)));
+        float height = Math.Max(64, VisualSystem.Controls(main.interfaceScale).MinimumHeight + 24);
+        footer.OffsetLeft = side;
+        footer.OffsetRight = -side;
+        footer.OffsetTop = -height - 16;
+        footer.OffsetBottom = -16;
+        main.pageScroll.OffsetBottom = main.joining ? -16 : -height - 24;
+    }
+
+    private static PanelContainer EnsureFooter(Main main)
+    {
+        if (main.GetNodeOrNull<PanelContainer>("SetupFooter") is { } existing) return existing;
+        var footer = new PanelContainer
+        {
+            Name = "SetupFooter", AnchorLeft = 0, AnchorRight = 1, AnchorTop = 1, AnchorBottom = 1,
+            ThemeTypeVariation = "SurfacePanel",
+        };
+        main.AddChild(footer);
+        main.start.Reparent(footer);
+        footer.Visible = main.setupPanel.Visible;
+        main.setupPanel.VisibilityChanged += () => footer.Visible = main.setupPanel.Visible && !main.joining;
+        return footer;
     }
 
     private static void RefreshAdditionalSeats(Main main)

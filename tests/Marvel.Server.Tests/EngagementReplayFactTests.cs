@@ -6,15 +6,23 @@ namespace Marvel.Server.Tests;
 public sealed class EngagementReplayFactTests
 {
     [Theory]
-    [InlineData("initial_rng")]
-    [InlineData("initial_events")]
-    [InlineData("initial_digest")]
-    [InlineData("decision_prompt")]
-    [InlineData("decision_events")]
-    [InlineData("decision_rng")]
-    [InlineData("decision_digest")]
-    [InlineData("current_prompt")]
-    public void V26AdmissionNeverReplacesAnOriginalRecordedFact(string fact)
+    [InlineData("engine-replay-v26", "initial_rng")]
+    [InlineData("engine-replay-v28", "initial_rng")]
+    [InlineData("engine-replay-v26", "initial_events")]
+    [InlineData("engine-replay-v28", "initial_events")]
+    [InlineData("engine-replay-v26", "initial_digest")]
+    [InlineData("engine-replay-v28", "initial_digest")]
+    [InlineData("engine-replay-v26", "decision_prompt")]
+    [InlineData("engine-replay-v28", "decision_prompt")]
+    [InlineData("engine-replay-v26", "decision_events")]
+    [InlineData("engine-replay-v28", "decision_events")]
+    [InlineData("engine-replay-v26", "decision_rng")]
+    [InlineData("engine-replay-v28", "decision_rng")]
+    [InlineData("engine-replay-v26", "decision_digest")]
+    [InlineData("engine-replay-v28", "decision_digest")]
+    [InlineData("engine-replay-v26", "current_prompt")]
+    [InlineData("engine-replay-v28", "current_prompt")]
+    public void NamedAdmissionNeverReplacesAnOriginalRecordedFact(string destination, string fact)
     {
         AdditiveContentUpgradeTests.WithAddedScenario((root, _) =>
         {
@@ -32,7 +40,8 @@ public sealed class EngagementReplayFactTests
                 _ => original with { Units = [unit with { Decisions = [Alter(step, fact, extraEvent), .. unit.Decisions.Skip(1)] }, .. original.Units.Skip(1)] },
             };
             string bytes = SessionSaveJson.Write(changed);
-            var route = Assert.IsType<SessionContentUpgrade>(factory.ContentUpgrade(changed.Compatibility));
+            var route = Assert.IsType<SessionContentUpgrade>(ReplayContractUpgradeTests.Admission(root, factory.Compatibility with
+                { ReplayContract = destination }).For(changed.Compatibility));
             Assert.Throws<ReplayDivergenceException>(() => route.Verify(changed,
                 setup => ReplayContractUpgradeTests.Open(factory, setup)));
             Assert.Equal(bytes, SessionSaveJson.Write(changed));

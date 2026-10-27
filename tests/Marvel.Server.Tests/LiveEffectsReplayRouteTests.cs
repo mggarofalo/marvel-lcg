@@ -6,17 +6,21 @@ namespace Marvel.Server.Tests;
 public sealed class LiveEffectsReplayRouteTests
 {
     [Theory]
-    [InlineData("engine-replay-v19", SessionReplayUpgrade.CoreRorsV19ToV27)]
-    [InlineData("engine-replay-v20", SessionReplayUpgrade.CoreRorsV20ToV27)]
-    [InlineData("engine-replay-v21", SessionReplayUpgrade.CoreRorsV21ToV27)]
-    public void V27RouteCannotPublishItsTraceAsV26(string sourceReplay, SessionReplayUpgrade route)
+    [InlineData("engine-replay-v19", SessionReplayUpgrade.CoreRorsV19ToV27, "engine-replay-v26")]
+    [InlineData("engine-replay-v19", SessionReplayUpgrade.CoreRorsV19ToV27, "engine-replay-v28")]
+    [InlineData("engine-replay-v20", SessionReplayUpgrade.CoreRorsV20ToV27, "engine-replay-v26")]
+    [InlineData("engine-replay-v20", SessionReplayUpgrade.CoreRorsV20ToV27, "engine-replay-v28")]
+    [InlineData("engine-replay-v21", SessionReplayUpgrade.CoreRorsV21ToV27, "engine-replay-v26")]
+    [InlineData("engine-replay-v21", SessionReplayUpgrade.CoreRorsV21ToV27, "engine-replay-v28")]
+    public void V27RouteCannotPublishItsTraceAsAnotherDestination(
+        string sourceReplay, SessionReplayUpgrade route, string destination)
     {
         AdditiveContentUpgradeTests.WithAddedScenario((root, _) =>
         {
             var (previous, factory) = ReplayContractUpgradeTests.Fixture(root);
             var original = Source(previous.Save, factory, sourceReplay);
             string bytes = SessionSaveJson.Write(original);
-            var target = factory.Compatibility with { ReplayContract = "engine-replay-v26" };
+            var target = factory.Compatibility with { ReplayContract = destination };
             bool opened = false;
             var failure = Assert.Throws<SessionCompatibilityException>(() =>
                 new SessionContentUpgrade(original.Compatibility, target, route).Verify(original, setup =>
@@ -42,7 +46,8 @@ public sealed class LiveEffectsReplayRouteTests
             var verified = Source(previous.Save, factory, sourceReplay);
             var original = verified with { Initial = verified.Initial with { RngWords = verified.Initial.RngWords + 1 } };
             string bytes = SessionSaveJson.Write(original);
-            var route = Assert.IsType<SessionContentUpgrade>(factory.ContentUpgrade(original.Compatibility));
+            var route = Assert.IsType<SessionContentUpgrade>(ReplayContractUpgradeTests.Admission(root, factory.Compatibility with
+                { ReplayContract = "engine-replay-v27" }).For(original.Compatibility));
             var failure = Assert.Throws<ReplayDivergenceException>(() =>
                 route.Verify(original, setup => ReplayContractUpgradeTests.Open(factory, setup)));
             Assert.Contains("rng", failure.Message, StringComparison.OrdinalIgnoreCase);
@@ -64,9 +69,11 @@ public sealed class LiveEffectsReplayRouteTests
             // Synthetic identity probes exercise admission, not historical gameplay evidence.
             var frozenSource = previous.Save.Compatibility with { ReplayContract = sourceReplay };
             var currentContentSource = factory.Compatibility with { ReplayContract = sourceReplay };
-            Assert.Equal("engine-replay-v27", factory.Compatibility.ReplayContract);
-            Assert.Null(factory.ContentUpgrade(frozenSource));
-            Assert.Null(factory.ContentUpgrade(currentContentSource));
+            Assert.Equal("engine-replay-v28", factory.Compatibility.ReplayContract);
+            var admission = ReplayContractUpgradeTests.Admission(root, factory.Compatibility with
+                { ReplayContract = "engine-replay-v27" });
+            Assert.Null(admission.For(frozenSource));
+            Assert.Null(admission.For(currentContentSource));
         });
     }
 

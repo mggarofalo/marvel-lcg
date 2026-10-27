@@ -17,12 +17,14 @@ public sealed class ExpertCampaignReplayUpgradeTests
     [Rule("rr:status-cards.2")]
     [Rule("rr:confuse-confused.5")]
     [Rule("rr:confuse-confused.7")]
-    public void ConfusedThwartDivergenceQuarantinesTheExpertCampaignWithoutChangingSourceFiles()
+    [Rule("rr:player-elimination.step.4")]
+    [Rule("rr:player-elimination.step.5")]
+    public void EliminationDivergenceQuarantinesTheExpertCampaignWithoutChangingSourceFiles()
     {
         WithFixture((published, factory) =>
         {
             string storage = Path.Combine(published, "campaigns");
-            var before = Snapshot(storage);
+            var before = Snapshot(published);
             using var access = JsonDocument.Parse(File.ReadAllText(Path.Combine(published, "access.json")));
             for (int restart = 0; restart < 2; restart++)
             {
@@ -40,8 +42,13 @@ public sealed class ExpertCampaignReplayUpgradeTests
                 var failure = Assert.Throws<ReplayDivergenceException>(() => route.Verify(original.Save,
                     factory.CampaignDefinition!, setup => ReplayContractUpgradeTests.Open(factory, setup),
                     factory.InspectCampaign));
-                if (restart == 0) AssertConfusedThwartCause(original.Save, factory);
-                Assert.Equal("unit 25 decision 0 events diverged: expected 3, got 6", failure.Message);
+                if (restart == 0)
+                {
+                    PlayedCampaignReplayUpgradeTests.AssertEliminationDivergence(
+                        original.Save.Attempts[0], factory, 28, 3, 65, 74, 9);
+                    AssertConfusedThwartCause(original.Save, factory);
+                }
+                Assert.Equal("unit 28 decision 3 events diverged: expected 65, got 74", failure.Message);
                 var host = new CampaignHost(factory, store, new MemorySessionStore());
                 Assert.Equal("campaign_not_found", host.Exchange(new(EngineProtocol.Version, "owner",
                     EngineProtocol.Campaign, access.RootElement.GetProperty("id").GetString()!,
@@ -50,7 +57,7 @@ public sealed class ExpertCampaignReplayUpgradeTests
                 Assert.Equal("session_not_found", host.Exchange(EngineRequest.SyncGame("game",
                     access.RootElement.GetProperty("game").GetString()!,
                     access.RootElement.GetProperty("capability").GetString()!)).Error?.Code);
-                Assert.Equal(before, Snapshot(storage));
+                Assert.Equal(before, Snapshot(published));
                 Assert.Equal(CampaignSaveJson.Canonical(original),
                     CampaignSaveJson.Canonical(Assert.Single(store.Load()).Campaign));
             }

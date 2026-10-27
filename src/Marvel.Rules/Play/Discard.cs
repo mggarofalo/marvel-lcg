@@ -182,7 +182,7 @@ public static class Discard
         // is no longer in the game". Elimination removes their discard pile.
         // Cards still in that owner's area follow elimination step 4 before step 5 removes them.
         if (card.Owner >= 0 && world.Seats[card.Owner].Eliminated
-            && card.Area.PlayArea != PlayArea.Of(card.Owner))
+            && world.GameAreaOf(PlayArea.Of(card.Owner)) is null)
             return world.AreaOf(DeckType.RemovedArea);
         if (InvocationDeck.ForCard(world, card) is { } invocation) return invocation.Discard;
         if (AuxiliaryDeck.UsesSideSchemeDiscard(world, card))

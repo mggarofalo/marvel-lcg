@@ -80,6 +80,11 @@ public sealed class SetupCatalog
                 .ToDictionary(item => item.Key, item => item.Value, StringComparer.Ordinal));
     }
 
+    /// <summary>Excludes a named product recipe even when its composition is malformed.</summary>
+    internal SetupCatalog WithoutEncounterSet(string name) => new(campaigns, heroes,
+        encounterSets.Where(item => item.Key != name)
+            .ToDictionary(item => item.Key, item => item.Value, StringComparer.Ordinal));
+
     private static T Get<T>(IReadOnlyDictionary<string, T> from, string name, string what)
     {
         ArgumentNullException.ThrowIfNull(name);
