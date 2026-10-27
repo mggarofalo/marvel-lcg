@@ -46,9 +46,10 @@ internal sealed class AreaProjectionState(AbilityAdmissionContext context)
 
     public long ModifiedOf(AbilityAdmissionContext current, Card card, string field)
     {
-        long value = StateFields.Modified(
+        var evaluation = CardValues.EvaluateRaw(
             current.World, card, field,
             current.World.Facts, current.World.Players);
+        long value = evaluation.CurrentValue;
         value += ProjectedConstantAdjustment(current, card, field);
         if (ProjectedPredicateInputsChanged(current)
             && new AbilityProjectedConstantQueries(this).MayModify(current, card, field))
@@ -58,9 +59,7 @@ internal sealed class AreaProjectionState(AbilityAdmissionContext context)
                 + $"a conditional constant '{field}' modifier on "
                 + $"'{card.FaceId}'; projecting that predicate is not implemented");
         }
-        value = AbilityAmounts.SaturatingSum(
-            value,
-            [Modifiers.GetValueOrDefault((card.ObjectId, field))]);
+        value = AddProjectedModifier(value, Modifiers.GetValueOrDefault((card.ObjectId, field)));
 
         string? printedModifier = field switch
         {
@@ -71,10 +70,25 @@ internal sealed class AreaProjectionState(AbilityAdmissionContext context)
         };
         if (printedModifier is null)
         {
-            return value;
+            return ApplyBounds(current, card, field, evaluation.BaseKind, value);
         }
-        return value + ProjectedAttachmentAdjustment(
-            current, card, printedModifier);
+        return ApplyBounds(current, card, field, evaluation.BaseKind, value + ProjectedAttachmentAdjustment(
+            current, card, printedModifier));
+    }
+
+    private static long AddProjectedModifier(long value, long modifier)
+    {
+        if (modifier > 0 && value > long.MaxValue - modifier) return long.MaxValue;
+        if (modifier < 0 && value < long.MinValue - modifier) return long.MinValue;
+        return value + modifier;
+    }
+
+    private long ApplyBounds(AbilityAdmissionContext current, Card card, string field,
+        CardValueBaseKind kind, long value)
+    {
+        var maximum = CardValues.Maximum(current.World, card, field, Departed);
+        value = CardValues.Floor(kind, value);
+        return maximum is null ? value : Math.Min(value, maximum.Amount);
     }
 
     private long ProjectedConstantAdjustment(

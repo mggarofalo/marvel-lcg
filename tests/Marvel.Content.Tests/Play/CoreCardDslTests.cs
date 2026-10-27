@@ -248,6 +248,7 @@ public sealed class CoreCardDslTests : CoreCardTestBase
         var action = Assert.Single(runner.Actions(world, 0), pending => pending.Card == split.ObjectId);
 
         runner.ExecuteAction(world, new PlayerAction(action, [.. payments.Select(card => card.ObjectId)], []));
+        Assert.Null(Sequence.Work(world, world.Facts, runner, []));
 
         Assert.Equal("01019b", world.Seats[0].IdentityCard.FaceId);
         Assert.Equal(6, world.Seats[0].Hand.Cards.Count);
