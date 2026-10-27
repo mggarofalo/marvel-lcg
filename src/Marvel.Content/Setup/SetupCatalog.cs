@@ -151,7 +151,16 @@ public sealed class SetupCatalog
         NemesisSetIcon: Text(element, "nemesis_set_icon"))
     {
         AspectRule = AspectRule(element),
+        InvocationDeck = ReadInvocationDeck(element),
     };
+
+    private static Marvel.Rules.Setup.InvocationDeckRecipe? ReadInvocationDeck(JsonElement element)
+    {
+        if (!element.TryGetProperty("invocation_deck", out _)) return null;
+        if (element.EnumerateObject().Count(property => property.NameEquals("invocation_deck")) != 1)
+            throw new JsonException("duplicate Invocation deck recipe");
+        return new(Strings(element, "invocation_deck"));
+    }
 
     private static Marvel.Rules.Setup.DeckAspectRule AspectRule(JsonElement element) =>
         !element.TryGetProperty("aspect_rule", out _) ? Marvel.Rules.Setup.DeckAspectRule.Standard

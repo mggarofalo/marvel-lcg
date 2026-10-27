@@ -22,6 +22,9 @@ public sealed record HeroSetup(
     IReadOnlyList<string> PlayerDeck,
     string NemesisSetIcon)
 {
+    /// <summary>The separate five-card Invocation deck, excluded from the player deck.</summary>
+    public Marvel.Rules.Setup.InvocationDeckRecipe? InvocationDeck { get; init; }
+
     /// <summary>Printed identity exception to ordinary aspect construction.</summary>
     public Marvel.Rules.Setup.DeckAspectRule AspectRule { get; init; }
 }

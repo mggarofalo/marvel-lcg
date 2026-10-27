@@ -20,6 +20,9 @@ internal static class HeroRecipeDeal
                     dealt.Add(new(spec, CreationSource.Nemesis, seat, hero.NemesisSetIcon));
             }
             AppendDeck(catalog, request, facts, dealt, hero, seat);
+            // Engine allocation choice: each seat's Invocations follow its ordinary deck.
+            if (hero.InvocationDeck is { } invocation)
+                Add(dealt, invocation.Cards, CreationSource.InvocationDeck, seat);
         }
     }
 
