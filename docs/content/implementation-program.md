@@ -1,6 +1,6 @@
 # Remaining content implementation program
 
-**Tracking:** Content Expansion module and [MARVEL-703](https://plane.wallingford.me/dev/projects/cd677658-41d9-4576-b055-5f2a726b3c85/issues/b26d754d-4e0e-486c-8a04-f0e9b968cdb2). **Planning baseline:** `b16183e2`, 2026-10-25. This is an execution queue, not evidence that a researched pack runs. The canonical product records are MARVEL-559–622. Captain America (560) and Wrecking Crew (562) are implemented and agent-accepted in [PR #439](https://github.com/mggarofalo/marvel-lcg/pull/439); the original remaining scope was **62**. Green Goblin (559) and Ms. Marvel (561) are now also merged and agent-accepted in [PR #451](https://github.com/mggarofalo/marvel-lcg/pull/451), leaving 60 canonical packs at that checkpoint. Thor (563) is now merged and agent-accepted in [PR #452](https://github.com/mggarofalo/marvel-lcg/pull/452), leaving 59 at that checkpoint. Black Widow (564) is now merged and agent-accepted in [PR #453](https://github.com/mggarofalo/marvel-lcg/pull/453), squash `ffb26f66`, leaving **58**. All eleven Thor jobs passed on `286d0d44` in run `40342273427`; the squash merge is `c14a045c`. Core and Rise of Red Skull are the accepted regression baseline. MARVEL-630 is Done and additive-content compatibility has been integrated; MARVEL-696's all-pack research is Done. Do not reopen either based on historical notes. The independent Wrecking Crew UI review MARVEL-694 and layout fix MARVEL-695 stay separate from this content queue.
+**Tracking:** Content Expansion module and [MARVEL-703](https://plane.wallingford.me/dev/projects/cd677658-41d9-4576-b055-5f2a726b3c85/issues/b26d754d-4e0e-486c-8a04-f0e9b968cdb2). **Planning baseline:** `b16183e2`, 2026-10-25. This is an execution queue, not evidence that a researched pack runs. The canonical product records are MARVEL-559–622. Captain America (560) and Wrecking Crew (562) are implemented and agent-accepted in [PR #439](https://github.com/mggarofalo/marvel-lcg/pull/439); the original remaining scope was **62**. Green Goblin (559) and Ms. Marvel (561) are now also merged and agent-accepted in [PR #451](https://github.com/mggarofalo/marvel-lcg/pull/451), leaving 60 canonical packs at that checkpoint. Thor (563) is now merged and agent-accepted in [PR #452](https://github.com/mggarofalo/marvel-lcg/pull/452), leaving 59 at that checkpoint. Black Widow (564) is now merged and agent-accepted in [PR #453](https://github.com/mggarofalo/marvel-lcg/pull/453) at `ffb26f66`, leaving **58**. All eleven CI jobs passed on `cf175e56` in run `40404335331`. Thor certification passed all eleven jobs on `286d0d44` in run `40342273427`; its squash merge is `c14a045c`. Core and Rise of Red Skull are the accepted regression baseline. MARVEL-630 is Done and additive-content compatibility has been integrated; MARVEL-696's all-pack research is Done. Do not reopen either based on historical notes. The independent Wrecking Crew UI review MARVEL-694 and layout fix MARVEL-695 stay separate from this content queue.
 
 The [research coverage ledger](research/remaining/README.md), its ten paired narrative/face-inventory packets, [source review](research/remaining/source-review.md), and [independent review](research/remaining/independent-review.md) supply MARVEL-563–622 handoffs. [Green Goblin](research/green-goblin-deep-research.md) and [Ms. Marvel](research/ms-marvel-deep-research.md) have their own deeper packets. Their examples are first slices; the canonical parent acceptance criteria still require every playable face and mode. The current source gaps are recorded below, without turning them into invented card behavior.
 
@@ -70,13 +70,24 @@ search. Rendered 100%/150% payment journeys pass. All eleven final managed/repla
 the PR is merged. The
 [checkpoint](thor-delivery-checkpoint.md) records exact evidence boundaries.
 
-Black Widow is merged and agent-accepted in [PR #453](https://github.com/mggarofalo/marvel-lcg/pull/453), squash `ffb26f66`, on 2026-10-26. Its 34 playable faces, verified starter, public/custom-deck admission, eight complete public games, reviewed native interactions and replay fixes are part of the accepted baseline. The [delivery checkpoint](black-widow-delivery-checkpoint.md) retains the evidence and historical boundaries. Replay v27 and protocol 41 are on main.
-
-Doctor Strange is the current public integration candidate in [PR #454](https://github.com/mggarofalo/marvel-lcg/pull/454). Its 40 faces and public gameplay evidence are implemented and independently reviewed, but acceptance remains pending required CI and merge. Current candidate `a1870412` corrects the platform job budget after the preceding Windows run passed its managed integration tests but reached the job deadline during hosted smoke startup. The [delivery checkpoint](https://github.com/mggarofalo/marvel-lcg/blob/a18704120888032f3f878f8d339ac0c180e6a5d2/docs/content/doctor-strange-delivery-checkpoint.md) on that PR records exact evidence. The separate UI review MARVEL-839 is prepared for the owner and is not a blanket content gate.
-
-Local nonpublic Hulk assembly proceeds from the frozen Strange candidate while CI runs. The complete scope remains 33 faces; public admission awaits complete reviewed coverage and Strange acceptance. The integration branch's `docs/content/hulk-delivery-checkpoint.md` is the current packet/evidence record. This local work does not increase the accepted-pack count.
-
-Ronan's official print-and-play source is pinned and visually checked in [the source record](research/remaining/ronan-source-pin.md), merged in PR #455. All five faces and seven physical copies are accounted for. This resolves source acquisition; actual implementation and proof remain pending.
+Black Widow's 34 faces and bounded prerequisites are mapped in its
+[executable handoff](research/remaining/black-widow-implementation-handoff.md).
+Black Widow is merged and agent-accepted with all 34 playable faces and
+645 total ability rows. All card packets and engine prerequisites have independent
+review. The verified starter and complete public admission are integrated; focused
+combined admission checks pass 11 Content and 11 Server cases. Eight complete
+public games have independent review, including natural Counterattack use.
+Reviewed native cost/consequence repairs pass combined Safe House and Preparation
+journeys; the final Godot managed suite passes 981 tests (the conditional native
+entry point is separately exercised). Historical replay audit exposed lost forced
+ability metadata after optional damage prevention; implementation 3c74dfd6 and
+independent review e088693d now preserve the owning receipt through damage and
+following effects. Strict historical rejection and compatible controls pass.
+PR #453 merged at `ffb26f66` after all eleven jobs passed on exact head
+`cf175e56` in run `40404335331`, including the independently reviewed setup
+viewport repair. Main now carries replay v27 and protocol 41; Doctor Strange
+protocol 42 remains on its unmerged integration branch. Doctor Strange's complete 40-face handoff and repaired
+pinned Invocation rules extract are integrated for the next engine slice.
 
 The intermittent Linux drag assertion from an earlier CI run remains recorded
 in MARVEL-752. Its strict assertion now captures gesture geometry; focused
@@ -86,7 +97,7 @@ product fix or relaxed assertion was substituted for evidence.
 ## Delivery order and shared capability queue
 
 Work through one integrated pack candidate at a time. Green Goblin, Ms. Marvel
-and Thor plus Black Widow are accepted; Doctor Strange is current, with local Hulk assembly proceeding during its CI. A source acquisition or narrowly owned review may run beside it when paths and integration capacity are independent. Within later waves, choose the first source-ready pack whose characteristic capability yields reusable proof; the table order is the default until evidence changes the dependency. Do not bulk author all cards or admit an incomplete pack to manufacture an early public journey. Before whole-pack admission, use nonpublic engine tests for characteristic mechanics. When complete, use the normal `DatasetGameFactory` and session/client path for setup, action, save and restart.
+Thor and Black Widow are accepted; Doctor Strange is current. A source acquisition or narrowly owned review may run beside it when paths and integration capacity are independent. Within later waves, choose the first source-ready pack whose characteristic capability yields reusable proof; the table order is the default until evidence changes the dependency. Do not bulk author all cards or admit an incomplete pack to manufacture an early public journey. Before whole-pack admission, use nonpublic engine tests for characteristic mechanics. When complete, use the normal `DatasetGameFactory` and session/client path for setup, action, save and restart.
 
 | Order | Shared capability and first proving pack | Required boundary/proof; later reuse |
 |---:|---|---|
@@ -110,16 +121,20 @@ and public proof do not reenter the queue. The next delivery sequence is:
 1. Thor PR #452 is merged; MARVEL-563 and its twenty prerequisite children are
    Done. The reviewed 35 faces, verified starter and full CI acceptance are the
    regression baseline; see [Thor checkpoint](thor-delivery-checkpoint.md).
-2. Integrate Black Widow's independently reviewed engine and face packets on the
-   Thor squash merge. The [Black Widow checkpoint](black-widow-delivery-checkpoint.md)
-   identifies nine integrated faces, three pending review, and explicit remaining
-   capabilities. Complete all 34 faces before opening public admission.
-3. Prove complete Black Widow setup/custom decks, characteristic nested response
-   persistence, nemesis/obligation and representative complete games; select
-   native checks by changed interaction, certify the exact candidate, then merge.
-4. Continue Doctor Strange and Hulk using existing source-qualified starters and
-   research packets. First prove Invocation deck/identity-specific mechanisms;
-   serialize shared interpreter and ability-book changes and independently review.
+2. Black Widow PR #453 contains all 34 faces, verified starter, public admission,
+   reviewed complete games and native evidence. The independently reviewed setup
+   viewport repair at `cf175e56` passed all eleven jobs in CI run `40404335331`.
+   PR #453 is merged at `ffb26f66`. See the
+   [Black Widow checkpoint](black-widow-delivery-checkpoint.md).
+3. Doctor Strange is the next integrated candidate. Its
+   [checkpoint](doctor-strange-delivery-checkpoint.md) records authored faces,
+   accepted Invocation/inspection mechanisms and remaining card prerequisites.
+   Complete every face before public admission, then prove its verified starter,
+   characteristic actions, save/restart, complete games and new interaction UI.
+4. Continue Hulk from its [33-face executable handoff](research/remaining/hulk-implementation-handoff.md),
+   source-qualified starter and research packet after the
+   current candidate. Serialize shared interpreter and ability-book changes;
+   independently review engine prerequisites and complete content.
 5. Advance the dependency groups and eleven-wave ledger above through Fear No
    Evil. Source-incomplete products retain their explicit acquisition gates;
    each completed product closes its own canonical parent with evidence.
@@ -162,3 +177,24 @@ The program record and canonical pack parents are the status authority; this fil
 
 After each merge or source repair, update the program record with exact revision, the one active parent, newly unblocked shared capability, reviewer/CI evidence, blocked source gates and the next executable packet. Update only the affected canonical parent/wave links and priority; do not create 62 generic duplicates or reparent the 64 existing records. Replan if a reviewed source/ruling changes a mechanic, a shared engine primitive fails its negative control, or final integrated checks reveal a cross-pack regression.
 
+
+## Certification and next-pack checkpoint — 2026-10-27
+
+Doctor Strange candidate `a1870412` passed all eleven CI jobs in run
+`40451138391`: managed correctness, both platform gates, four native journey
+shards, desktop packaging and the required native aggregates. The complete
+40-face pack is independently reviewed; PR #454 is ready for merge. The separate
+UI review MARVEL-839 remains an owner decision, not a content gate.
+
+Hulk's complete 33-face source and engine prerequisites are independently reviewed
+in local integration; the final book has 718 rows. Public setup/admission,
+complete games, restart/replay and proportionate native proof remain. The Hulk
+branch's delivery checkpoint records exact source/reviewer revisions. Local
+nonpublic work during Strange CI does not itself increase accepted-pack counts.
+
+Ronan's official seven-page source is pinned in
+[the merged source record](research/remaining/ronan-source-pin.md). Existing
+ranked selection and player-context operations suffice for the engagement move;
+no destination extension is needed. The separate villain-phase-start prerequisite
+MARVEL-854 is independently reviewed but not integrated. All five actual faces
+and public modular-set proof remain pending.
