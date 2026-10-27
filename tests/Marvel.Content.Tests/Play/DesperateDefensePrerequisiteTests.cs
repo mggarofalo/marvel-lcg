@@ -18,7 +18,7 @@ public sealed class DesperateDefensePrerequisiteTests
     [InlineData(1, 4, true, 1, true)]
     [Rule("rr:defend-defense.2")]
     [Rule("rr:delayed-effect.1")]
-    public void ActualTextCandidatePaysThenReadiesOnlyForZeroAttackDamage(
+    public void ActualCardPaysThenReadiesOnlyForZeroAttackDamage(
         int owner, int attack, bool boost, int damage, bool ready)
     {
         // Basic defense requires "exhausting their hero"; delayed effects resolve

@@ -86,3 +86,97 @@ complete-pack or public-product acceptance. Normal commit hooks are retained.
 Final bounded verification: **243 passed / 244 total**, with the sole failure
 being the preserved eliminated-owner decline finding above. Both inventory
 corrections pass. No assertions were removed to accommodate that failure.
+
+
+## Final defense, obligation and hosted Invocation rows
+
+Base `3df6bdf0`, branch `feat/strange-last-supports`, adds actual 09015 Desperate
+Defense, 09027 Physical Toll and 09029 Open the Dark Dimension. The book has 682
+rows and 37/40 Doctor Strange faces; 09028, 09030 and 09031 remain unauthored.
+All 679 predecessor raw objects, including their whitespace, remain unchanged.
+The complete predecessor prefix before the array closing delimiters is preserved
+byte for byte, SHA-256
+`b03718b04c8dde86d212820197abe739f56b9f0bc61d7364a4eb941c5b62bf37`.
+No engine, Runner, Agenda, generated card, setup or public admission code changes.
+
+Printed authority is the exact generated datasets/cards/cards.json records.
+Desperate Defense is a cost-one Hero Interrupt (defense) for your own defending
+hero. Its +2 DEF expires with that exact attack; the delayed ready tests actual
+damage from that attack and the original hero incarnation, respecting prevention
+and readiness prohibition. RR 1.8 defend-defense.2 and delayed-effect.1 govern;
+no current conflicting ruling was identified. The independently accepted
+prerequisite and review are linked in
+[the defense review](doctor-strange-desperate-defense-independent-review.md).
+
+Physical Toll follows the printed optional alter-ego flip and Stephen-only
+exhaust/remove choice, or a persistent +3 next-played-event increase. RR 1.8
+obligation.1/.4 binds the associated player, initiating-abilities.step.4 applies
+modifiers before payment, and event.2 preserves paid costs and event play despite
+canceled effects. Historical ruling 277ab401b1269ec7 distinguishes resolving an
+Invocation Special from playing an event; current printed Spell Mastery and event
+rules agree. Master of the Mystic Arts is itself played and consumes the increase.
+The [independent surcharge review](doctor-strange-physical-toll-review.md) supplies
+accepted prerequisite evidence. Source and paid-event receipts retain independent
+incarnations and cannot discard a reentered obligation.
+
+Open the Dark Dimension stores the exact physical top Invocation facedown. RR 1.8
+in-play-and-out-of-play.10 conceals hosted facedown cards; when-defeated-abilities.2.1
+returns and shuffles the card before host departure. Ordinary nondefeat departure
+uses discard cleanup under attach-to.1, including the Invocation deck's own
+immediate recycle if empty. The [hosted prerequisite and independent review](doctor-strange-hosted-invocation-prerequisite.md)
+cover exact ownership, separate discard preservation, multiple synthetic hosts,
+all-five-hosted return and seeded RNG. No card-specific FAQ entry supplies a
+contrary instruction. DSL spelling and receipt storage are engine choices.
+
+PhysicalTollFixture.Runner and DesperateDefensePrerequisiteFixture.Runner now load
+the canonical complete book. HostedInvocationFixture uses the canonical program
+for choice:false; choice:true explicitly replaces 09029 with its documented
+synthetic draw-choice continuation. The queued-attack independent defense test
+replaces only synthetic Armored Vest and uses canonical 09015, preserving the
+full original/queued-attack assertions and duplicate-row rejection. Existing
+behavioral assertions remain; inventory negatives use still-unauthored nemesis
+faces. All explicit authored-face inventories include the three new rows.
+
+HostedInvocationPrivacyTests now runs actual 09029 reveal and defeat through the
+scheduler instead of calling its primitives. It preserves four-policy assertions
+for hidden physical IDs, faces, locations, state, persistent metadata, event
+subjects and shuffled order, while keeping the public top readable. Actual
+nondefeat discard and recycle controls remain in the whole hosted classes.
+
+Verification logs are outside the repository, under C:/Users/mggar/Source/ with
+prefix strange-last-. The three actual-row lowered-program mutants reduce the
+DEF bonus from two to one, reduce the surcharge from three to two, and omit the
+When Defeated return. Each runs through the canonical book; exact results and
+restored verification follow below. Public setup, save/replay, native UI,
+complete-pack acceptance, full Content and cross-platform certification are not
+claimed by this packet.
+
+
+Final verification of this packet (Release, Windows, serialized PTY execution):
+
+- Actual-row mutants are killed: `strange-last-mutant-defense.log` fails four of
+  ten cases on the smaller DEF grant; `strange-last-mutant-toll.log` fails eight
+  of nine on the smaller quoted/paid surcharge; `strange-last-mutant-host.log`
+  fails two of three on wrong physical return/deck contents. These mutate only
+  interpreted JSON rows and run the lowered canonical programs, not engine source.
+- The exact original ability bytes are restored in a finally block. The subsequent
+  nonincremental Content build succeeds with zero warnings/errors:
+  `strange-last-restored-build.log`.
+- Whole affected Content classes plus Doctor Strange, Black Widow, defense,
+  cancellation, payment, obligation, Invocation, hosted/captive, ability-data and
+  citation controls execute 650 cases: 649 pass and one fails solely for missing
+  `invocationDeck` vocabulary documentation (`strange-last-restored-content.log`).
+  The documentation is then added; both whole ability-data classes pass all 33
+  cases (`strange-last-ability-data-final.log`, filter `FullyQualifiedName~AbilityData`).
+  No behavioral source changes follow the combined run. This is the recorded
+  combined result and doc-only repair, not a claim of a separate 650-case green run.
+- Whole hosted privacy/Invocation visibility and citation classes pass all 38
+  cases (`strange-last-restored-view.log`), including actual-row four-scope secrecy.
+- `strange-last-cards.log` confirms cards.json and search.json match the offline
+  generator. The initial test runs exposed stale authored inventories and unknown
+  face controls; those inventory-only repairs are included in the restored run.
+- Whole InvocationDeckTests, InvocationDeckBoundaryTests, ContinuousEffectTests,
+  CardPlayAnOmittedCostTests and citation checks pass all 52 cases
+  (`strange-last-rules.log`). Normal enabled commit-hook outcomes accompany the
+  final handoff. No full Content, full solution, native or platform certification
+  is implied.

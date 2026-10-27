@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 using Marvel.Cards.Run;
+using Marvel.Content.Tests.Cards;
 using Marvel.Rules.Events;
 using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
@@ -8,7 +9,7 @@ using Xunit;
 
 namespace Marvel.Content.Tests.Play;
 
-/// <summary>Test-local 09029 interpretation; no production row or product admission.</summary>
+/// <summary>Canonical 09029 with an explicit synthetic continuation-choice replacement.</summary>
 internal static class HostedInvocationFixture
 {
     internal static (World World, InvocationDeck Deck, Card Scheme, AbilityRunner Runner) Board(
@@ -24,7 +25,7 @@ internal static class HostedInvocationFixture
               {"trigger":{"event":"WhenCardDefeated","timing":"WhenDefeated","subject":"this"},
                "effect":RELEASE}]}
             """.Replace("RELEASE", release, StringComparison.Ordinal));
-        var runner = DoctorStrangeAbilityFixture.WithReplacements([row]);
+        var runner = choice ? DoctorStrangeAbilityFixture.WithReplacements([row]) : AuthoredCards.Runner();
         world.Abilities = runner;
         var scheme = world.CreateCard("09029", world.AreaOf(DeckType.EncounterDeck));
         return (world, deck, scheme, runner);

@@ -154,14 +154,6 @@ public sealed class DesperateDefenseIndependentReviewTests
               "cost":{"exhaust":"this"},
               "effect":{"enemyAttacks":{"enemies":{"query":"villain"}}}}]}
             """));
-        cards.Add(JsonNode.Parse("""
-            {"card":"09015","abilities":[{
-              "trigger":{"event":"WhenHeroDefends","timing":"Interrupt","subject":"you","form":"hero"},
-              "labels":["defense"],
-              "effect":{"seq":[
-                {"grantUntil":{"card":"you","keyword":"defense","amount":2,"until":"EndOfAttack"}},
-                {"readyUndamagedDefender":"you"}]}}]}
-            """));
         return new AbilityRunner(AbilityCatalog.Parse(book.ToJsonString()));
     }
 }

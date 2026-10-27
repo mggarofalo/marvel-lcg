@@ -21086,6 +21086,133 @@
           }
         }
       ]
+    },
+    {
+      "card": "09015",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenHeroDefends",
+            "timing": "Interrupt",
+            "subject": "you",
+            "form": "hero"
+          },
+          "labels": [
+            "defense"
+          ],
+          "effect": {
+            "seq": [
+              {
+                "grantUntil": {
+                  "card": "you",
+                  "keyword": "defense",
+                  "amount": 2,
+                  "until": "EndOfAttack"
+                }
+              },
+              {
+                "readyUndamagedDefender": "you"
+              }
+            ]
+          }
+        }
+      ],
+      "name": "Desperate Defense",
+      "note": "Printed Hero Interrupt (defense): +2 DEF for this attack; delayed ready tests damage from this exact attack on the original defending hero (rr:delayed-effect.1)."
+    },
+    {
+      "card": "09027",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "choose": {
+                  "descriptions": [
+                    "Change to alter-ego form",
+                    "Remain in your current form"
+                  ],
+                  "options": [
+                    {
+                      "changeForm": {
+                        "player": "you",
+                        "to": "alter-ego"
+                      }
+                    },
+                    {
+                      "seq": []
+                    }
+                  ]
+                }
+              },
+              {
+                "choose": {
+                  "descriptions": [
+                    "Exhaust Stephen Strange and remove Physical Toll from the game",
+                    "Your next event costs 3 additional resources; discard Physical Toll after that event"
+                  ],
+                  "options": [
+                    {
+                      "then": {
+                        "effect": {
+                          "exhaust": "yourAlterEgo"
+                        },
+                        "then": {
+                          "removeFromGame": "this"
+                        }
+                      }
+                    },
+                    {
+                      "increaseNextEventCost": 3
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "name": "Physical Toll",
+      "note": "Printed optional form change and Stephen Strange exhaustion/removal; the next played event costs three more and completes this exact obligation even if canceled (rr:event.2). Invocation Special resolution is not event play."
+    },
+    {
+      "card": "09029",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "storeBeneath": {
+              "cards": {
+                "query": "invocationTop"
+              },
+              "host": "this"
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenCardDefeated",
+            "timing": "WhenDefeated",
+            "subject": "this"
+          },
+          "effect": {
+            "releaseBeneath": {
+              "invocationDeck": "true"
+            }
+          }
+        }
+      ],
+      "name": "Open the Dark Dimension",
+      "note": "Printed facedown storage preserves the exact physical Invocation. When Defeated returns it before departure (rr:when-defeated-abilities.2.1); ordinary departure instead discards it."
     }
   ]
 }

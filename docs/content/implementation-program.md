@@ -131,7 +131,8 @@ and public proof do not reenter the queue. The next delivery sequence is:
    accepted Invocation/inspection mechanisms and remaining card prerequisites.
    Complete every face before public admission, then prove its verified starter,
    characteristic actions, save/restart, complete games and new interaction UI.
-4. Continue Hulk from its source-qualified starter and research packet after the
+4. Continue Hulk from its [33-face executable handoff](research/remaining/hulk-implementation-handoff.md),
+   source-qualified starter and research packet after the
    current candidate. Serialize shared interpreter and ability-book changes;
    independently review engine prerequisites and complete content.
 5. Advance the dependency groups and eleven-wave ledger above through Fear No

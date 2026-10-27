@@ -1,5 +1,3 @@
-using System.Text.Json.Nodes;
-using Marvel.Cards.Dsl;
 using Marvel.Cards.Run;
 using Marvel.Content.Tests.Cards;
 using Marvel.Rules.Events;
@@ -11,23 +9,10 @@ using Xunit;
 
 namespace Marvel.Content.Tests.Play;
 
-/// <summary>Synthetic actual-text 09015 candidate; this does not admit the card to the production book.</summary>
+/// <summary>Canonical Desperate Defense program in a nonpublic engine fixture.</summary>
 internal static class DesperateDefensePrerequisiteFixture
 {
-    internal static AbilityRunner Runner()
-    {
-        var book = JsonNode.Parse(AuthoredCards.Text)!;
-        book["cards"]!.AsArray().Add(JsonNode.Parse("""
-            {"card":"09015","abilities":[{
-              "trigger":{"event":"WhenHeroDefends","timing":"Interrupt","subject":"you","form":"hero"},
-              "labels":["defense"],
-              "effect":{"seq":[
-                {"grantUntil":{"card":"you","keyword":"defense","amount":2,"until":"EndOfAttack"}},
-                {"readyUndamagedDefender":"you"}
-              ]}}]}
-            """));
-        return new AbilityRunner(AbilityCatalog.Parse(book.ToJsonString()));
-    }
+    internal static AbilityRunner Runner() => AuthoredCards.Runner();
 
     internal static (World World, AbilityRunner Runner, Card Source, Card Payment, Card Enemy) Board(
         int owner = 0, int attack = 4, bool boost = false)

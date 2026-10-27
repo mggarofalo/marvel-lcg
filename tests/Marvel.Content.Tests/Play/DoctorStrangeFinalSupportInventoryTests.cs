@@ -15,9 +15,9 @@ public sealed class DoctorStrangeFinalSupportInventoryTests
     {
         using var document = JsonDocument.Parse(AuthoredCards.Text);
         var rows = document.RootElement.GetProperty("cards").EnumerateArray().ToArray();
-        Assert.Equal(679, rows.Length);
+        Assert.Equal(682, rows.Length);
         Assert.Equal(FinalFaces, rows.Skip(672).Take(3).Select(row => row.GetProperty("card").GetString()));
-        Assert.Equal(34, AuthoredCards.Book.Authored.Count(face => face.StartsWith("09", StringComparison.Ordinal)));
+        Assert.Equal(37, AuthoredCards.Book.Authored.Count(face => face.StartsWith("09", StringComparison.Ordinal)));
         Assert.False(rows[672].TryGetProperty("startingCounters", out _));
         Assert.False(rows[674].TryGetProperty("startingCounters", out _));
         var counters = rows[673].GetProperty("startingCounters");

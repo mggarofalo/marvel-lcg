@@ -1,4 +1,7 @@
 using Marvel.Content;
+using Marvel.Cards.Dsl;
+using Marvel.Cards.Run;
+using Marvel.Rules.Timing;
 using Marvel.Rules.Events;
 using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
@@ -27,15 +30,26 @@ public sealed class HostedInvocationPrivacyTests
         var aside = world.CreateArea(DeckType.AsideDeck, 1, PlayArea.Of(1));
         var cards = Enumerable.Range(32, 5).Select(id => world.CreateCard($"090{id}", aside)).ToArray();
         var deck = InvocationDeck.Initialize(world, 1, cards, "setup", []);
-        var game = Game.Begin(world, facts, new NoCardAbilities());
+        var runner = new AbilityRunner(AbilityCatalog.Parse(File.ReadAllText(
+            RepositoryPaths.Dataset("abilities", "abilities.json"))));
+        var game = Game.Begin(world, facts, runner);
         while (game.Phase == GamePhase.Mulligan)
             game.Resolve(Decision.Take(Assert.Single(game.Pending!.Affordances).Id));
-        var scheme = world.CreateCard("09029", world.AreaOf(DeckType.SideSchemesArea));
+        var scheme = world.CreateCard("09029", world.AreaOf(DeckType.RevealingArea, PlayArea.Of(0)));
         var top = deck.PublicTop!;
         var events = new List<GameEvent>();
-        BeneathCards.Place(world, top, scheme, false, "store", events);
+        world.Agenda.Add(new PhaseStep(new RevealStageOperation(RevealStageKind.RevealEncounterCard),
+            1, 1, Subject: scheme.ObjectId, Seat: 0));
+        Assert.Null(Sequence.Work(world, facts, runner, events));
+        Assert.Equal([top], BeneathCards.Of(world, scheme));
         AssertPrivacy(world, deck, top, events);
-        InvocationDeck.ShuffleFromBeneath(world, scheme, "return", events);
+        Threat.Remove(world, facts, world.ThreatAbilities,
+            new(scheme, scheme.Tokens["k_threat"], "test", "Remove_Threat", 0)
+                { RecordDefeatOn = new Occurrence(100, [], Player: 0) }, events);
+        Assert.Null(Sequence.Work(world, facts, runner, events));
+        Assert.Equal(DeckType.EncounterDiscardPile, scheme.Area.Type);
+        Assert.Same(deck.Deck, top.Area);
+        Assert.False(world.Agenda.IsBusy);
         AssertPrivacy(world, deck, null, events);
     }
 

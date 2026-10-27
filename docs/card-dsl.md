@@ -1649,8 +1649,8 @@ original obligation after that event resolves or its effects are canceled.
 The source's in-play incarnation and the paid event are captured independently.
 Invocation Special resolution pays an ability cost and never consumes it.
 The instruction spelling and effect/receipt keys are engine choices.
-The actual-text Physical Toll candidate remains test-local; this capability does
-not admit 09027 or Doctor Strange into public setup.
+The authored Physical Toll row uses this capability; Doctor Strange public setup
+remains closed.
 
 `readyUndamagedDefender: "you"` installs a delayed instruction during the
 resolving player's live committed hero-defense occurrence. It captures that
@@ -1661,3 +1661,13 @@ boost or ability damage does not disqualify the ready. Other activations cannot
 consume it; departure/reentry cannot transfer it to a new copy. Activation
 completion retires an unused registration. This fixed spelling and effect key
 are engine choices; it is not a general delayed-effect scripting interface.
+
+`releaseBeneath: {invocationDeck: "true"}` returns the exact stored physical
+Invocation cards to their bound Invocation draw pile and shuffles that pile once
+with the seeded RNG, leaving its separate discard pile untouched. It conceals
+the old public top and reveals the new top. The complete hosted set must belong
+to the same bound deck before any movement; this destination cannot combine
+with captive rescue or host removal. Open the Dark Dimension uses this during
+When Defeated before the scheme departs. Ordinary nondefeat host departure
+instead discards its stored card through the separate Invocation discard/recycle
+lifecycle. The destination spelling and exact-set validation are engine choices.

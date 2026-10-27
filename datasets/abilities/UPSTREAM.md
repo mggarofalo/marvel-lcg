@@ -343,3 +343,15 @@ Current RR 1.8 costs, AND, labeled powers and cancellation govern; the September
 behavior, preserved inventory and mutation evidence are recorded in
 [the signature event evidence](../../docs/content/doctor-strange-final-signature-events.md).
 No starting counters, setup, engine or complete-product public admission changes.
+
+
+The final reviewed support/defense packet appends Desperate Defense (09015),
+Physical Toll (09027), and Open the Dark Dimension (09029): 682 rows and 37/40
+Doctor Strange faces. All 679 predecessor raw objects remain byte-identical.
+Generated datasets/cards/cards.json supplies printed authority. Current RR 1.8
+obligation, event, defense, delayed-effect and When Defeated rules govern;
+ruling:277ab401b1269ec7 distinguishes Invocation resolution from event play.
+Accepted event-surcharge, exact-attack delayed-ready and hosted Invocation
+prerequisites supply execution. There are no starting counters or public product
+admission changes. Canonical fixture, secrecy, actual-row mutation and restored
+verification evidence is recorded in docs/content/doctor-strange-final-support-rows.md.

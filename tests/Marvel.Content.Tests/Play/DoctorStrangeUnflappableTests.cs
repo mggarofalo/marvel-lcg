@@ -17,11 +17,11 @@ public sealed class DoctorStrangeUnflappableTests
     {
         using var document = JsonDocument.Parse(AuthoredCards.Text);
         var rows = document.RootElement.GetProperty("cards").EnumerateArray().ToArray();
-        Assert.Equal(679, rows.Length);
+        Assert.Equal(682, rows.Length);
         Assert.Equal("09020", rows[671].GetProperty("card").GetString());
         Assert.False(rows[671].TryGetProperty("startingCounters", out _));
-        Assert.Equal(34, AuthoredCards.Book.Authored.Count(face => face.StartsWith("09", StringComparison.Ordinal)));
-        string[] blocked = ["09015", "09028"];
+        Assert.Equal(37, AuthoredCards.Book.Authored.Count(face => face.StartsWith("09", StringComparison.Ordinal)));
+        string[] blocked = ["09028", "09030"];
         Assert.All(blocked, face => Assert.DoesNotContain(face, AuthoredCards.Book.Authored));
     }
 

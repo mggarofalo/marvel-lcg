@@ -1,4 +1,4 @@
-using System.Text.Json.Nodes;
+using Marvel.Content.Tests.Cards;
 using Marvel.Cards.Run;
 using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
@@ -8,23 +8,10 @@ using Xunit;
 
 namespace Marvel.Content.Tests.Play;
 
-/// <summary>Actual-text candidate 09027 kept outside the production ability book.</summary>
+/// <summary>Canonical Physical Toll program in a nonpublic engine fixture.</summary>
 internal static class PhysicalTollFixture
 {
-    internal static AbilityRunner Runner() => DoctorStrangeAbilityFixture.WithReplacements(
-        [JsonNode.Parse("""
-        {"card":"09027","abilities":[{
-          "trigger":{"event":"WhenCardRevealed","timing":"WhenRevealed","subject":"this"},
-          "effect":{"seq":[
-            {"choose":{"descriptions":["Change to alter-ego form","Remain in your current form"],
-              "options":[{"changeForm":{"player":"you","to":"alter-ego"}},{"seq":[]}]}},
-            {"choose":{"descriptions":["Exhaust Stephen Strange and remove Physical Toll from the game",
-                "Your next event costs 3 additional resources; discard Physical Toll after that event"],
-              "options":[{"then":{"effect":{"exhaust":"yourAlterEgo"},"then":{"removeFromGame":"this"}}},
-                {"increaseNextEventCost":3}]}}
-          ]}
-        }]}
-        """)]);
+    internal static AbilityRunner Runner() => AuthoredCards.Runner();
 
     internal static (World World, AbilityRunner Runner, Card Source) Reveal(bool flip = false, bool remove = false)
     {

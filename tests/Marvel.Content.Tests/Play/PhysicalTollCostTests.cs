@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Marvel.Content.Tests.Play;
 
-/// <summary>Synthetic 09027 candidate with actual production event and Invocation programs.</summary>
+/// <summary>Canonical 09027 with production event and Invocation programs.</summary>
 public sealed class PhysicalTollCostTests
 {
     [Fact]

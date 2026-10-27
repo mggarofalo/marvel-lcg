@@ -9,13 +9,33 @@ that accepted baseline. The reviewed 38-commit Strange stack now ends at
 `22d67804` (pre-rebase head `4d95d05c`). Earlier hashes below name the revisions
 actually tested and remain evidence references. No source packets were dropped.
 
-Latest integration candidate: 679 authored rows, 34 of the 40 Strange faces.
+Latest integration candidate: 682 authored rows, 37 of the 40 Strange faces.
 Clea, Night Nurse and ally Iron Man source `a2714257` and independent content
 review `be3bc369` are combined with owner-discard source `43c0b046`, elimination
 reset repair `a6bb7ddd` and independent closure `7cdb2e23`. All 672 predecessor
 ability objects are retained unchanged. Public admission stays closed.
 
-The remaining six faces are 09015 and 09027–09031.
+The remaining three faces are 09028, 09030 and 09031. Actual Desperate Defense,
+Physical Toll and Open the Dark Dimension source `99d4b16e` and independent
+review `23dd5ada` are integrated, preserving all 679 predecessor raw objects.
+Canonical fixtures now exercise these production rows, including queued defense,
+named-player obligation routing and four-scope hosted Invocation privacy. The
+review adds five form/readiness/foreign-payment controls and kills a Toll
+exhaustion-target mutant. Its restored checks pass 429 Content, 38 View and 52
+Rules cases. Combined integration passes 435 Content cases, including all 33
+ability-data cases; the actual-row `invocationDeck` spelling is documented.
+The complete integrated View lane passes 405 cases. Logs are
+`strange-37-faces-integrated-content.log` and `strange-37-faces-full-view.log`
+under `Source/evidence/`.
+
+Baron Mordo and Thoughtcasting have passing test-local candidates. Thoughtcasting
+uses the exact selected card's printed cost, so no generic direct-discard receipt
+extension is needed. Their actual rows are being authored separately. Counterspell's
+printed independent cancellation/discard followed by dependent attachment discard
+reaches unsupported completed-result semantics; MARVEL-835 tracks its separate
+engine implementation and review. The candidate's four failing probes remain
+intact, outside the production book.
+
 The three signature events have reviewed prerequisites: reveal origin
 `530f156e`, simultaneous powers and Magic Blast stage repair `00f23ff2`, and
 Astral pre-arrow target/payment/inspection continuation `1abb96a2`. Their combined
@@ -30,8 +50,8 @@ Actual Iron Fist source `deb79660` and review `6065b8a7` are integrated. All 678
 predecessor raw rows are unchanged. Independent repeat-attack cases kill an
 unprinted once-per-round mutant that the original twelve cases did not detect;
 the restored review selection passes 272 cases. The separate Desperate Defense
-engine source `011e9bdb` and review `e57d23d` (MARVEL-833) are integrated; actual
-09015 remains to author. Its delayed ready uses the original hero and exact attack,
+engine source `011e9bdb` and review `e57d23d` (MARVEL-833) are integrated. Its
+delayed ready uses the original hero and exact attack,
 excluding separate boost damage. The review includes a genuinely queued second
 activation. The lead added the missing fixed-operation documentation and extracted
 queued-villain test preparation to satisfy normal complexity checks; all four
@@ -41,14 +61,26 @@ The combined signature-event, Iron Fist and defense candidate passes 408 Content
 checks and 20 Rules checks. Logs are `strange-events-iron-fist-defense-integrated.log`
 and `strange-undamaged-defense-integrated-rules.log` under `Source/evidence/`.
 The earlier signature-only integration passed 357 cases before the latter packets.
+The `~AbilityDataTests` filter used in several earlier focused selections does
+not match the split `AbilityData...Tests` classes. A separate `~AbilityData`
+run on the integrated 679-row candidate passes all 33 cases, including the exact
+face inventory and DSL vocabulary documentation gate. Its log is
+`strange-679-complete-ability-data.log`. Earlier focused counts are not claims
+that those 33 cases were selected; the 7,154-case full source run did include them.
 
 Physical Toll's next-event price and Invocation interaction meaning are independently
 reviewed and integrated at `4f1a5512`. Combined Content checks pass 1,060 cases;
-the complete View lane passes 405. Actual 09027 remains unauthored. Invocation
+the complete View lane passes 405. Invocation
 contract tests cover captured top, resource cost, ordinary discard versus exact
 Master return, hidden order and detached snapshots; native nested context and
-staged choices remain open. Setup/starter admission, complete-game and fresh-host
-proof also remain downstream work.
+staged choices remain open. Prepared native runs now reproduce the missing
+origin and pending completion consequence in the Seven Rings recipient prompt
+for both Spell Mastery and Master. MARVEL-834 tracks the narrow semantic-context
+repair and independent review. Inspected captures are under
+`Source/marvel-evidence/invocation-native/rendered7/` and `rendered8/`.
+The two paths pay and commit once, but the required nested-context assertions
+fail; later staging/result checks are not yet established. Setup/starter admission,
+complete-game and fresh-host proof also remain downstream work.
 
 The thirteen-ruling authority catalog repair `10c8cd84` was independently rechecked
 and integrated at `cfec0321`: 2,667 sources, 4,434 obligations and 685 executable

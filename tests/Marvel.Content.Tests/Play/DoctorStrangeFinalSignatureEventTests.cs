@@ -16,11 +16,11 @@ public sealed class DoctorStrangeFinalSignatureEventTests
     {
         using var book = JsonDocument.Parse(AuthoredCards.Text);
         var rows = book.RootElement.GetProperty("cards").EnumerateArray().ToArray();
-        Assert.Equal(679, rows.Length);
+        Assert.Equal(682, rows.Length);
         Assert.Equal(FinalFaces, rows.Skip(675).Take(3)
             .Select(row => row.GetProperty("card").GetString()));
         Assert.All(rows.Skip(675).Take(3), row => Assert.False(row.TryGetProperty("startingCounters", out _)));
-        Assert.Equal(34, AuthoredCards.Book.Authored.Count(face => face.StartsWith("09", StringComparison.Ordinal)));
+        Assert.Equal(37, AuthoredCards.Book.Authored.Count(face => face.StartsWith("09", StringComparison.Ordinal)));
         Assert.DoesNotContain("09028", AuthoredCards.Book.Authored);
     }
 

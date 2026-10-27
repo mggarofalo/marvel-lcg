@@ -45,15 +45,17 @@ Evidence (Release, Windows; logs outside the repository in C:/Users/mggar/Source
 - desperate-defense-review-mutant-readiness-both.log: distinguishing compiled mutant killed.
 - desperate-defense-review-restored-build.log: forced restored build.
 - desperate-defense-review-restored-tests.log: whole DesperateDefense, ExpertDefense,
-  HeroDefense, DoctorStrangeUnflappable, RuleCitation and AbilityDataTests classes.
+  HeroDefense, DoctorStrangeUnflappable and RuleCitation classes.
 - desperate-defense-review-rules.log: whole ContinuousEffectTests class.
 
-Remaining finding: docs/card-dsl.md does not document readyUndamagedDefender.
-The existing dataset-vocabulary documentation gate is included in AbilityDataTests;
-its passing result cannot establish documentation of an operation absent from the
-production book. Add the fixed spelling and narrow committed-defense, exact-attack,
-original-incarnation semantics before final integration. This is a documentation
-follow-up, not a demonstrated engine defect. Defense-labeled initiation is covered
+Integration follow-up resolved: `docs/card-dsl.md` now documents
+`readyUndamagedDefender`, including its fixed spelling, committed defense,
+exact attack and original hero incarnation.
+The original `~AbilityDataTests` filter did not match the split concrete classes;
+its passing result did not establish dataset-vocabulary coverage. The lead's
+integrated `~AbilityData` run passes all 33 cases on the 679-row candidate
+(`strange-679-complete-ability-data.log`). This closes the documentation and
+coverage follow-up, not an engine defect. Defense-labeled initiation is covered
 by the existing complete HeroDefense classes; a new 09015-specific labeled-defense
 transcript is not claimed. No full Content suite, public setup/save transcript,
 full suite, platform certification or native acceptance was run.
