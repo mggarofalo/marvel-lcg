@@ -11,8 +11,8 @@ public sealed class HulkFinalCardInventoryTests
     {
         using var book = JsonDocument.Parse(AuthoredCards.Text);
         var rows = book.RootElement.GetProperty("cards").EnumerateArray().ToArray();
-        Assert.Equal(718, rows.Length);
-        var appended = rows.Skip(716).ToArray();
+        Assert.Equal(719, rows.Length);
+        var appended = rows.Skip(716).Take(2).ToArray();
         Assert.Equal(["10015", "10029"], appended.Select(row => row.GetProperty("card").GetString()));
         Assert.All(appended, row => Assert.False(row.TryGetProperty("startingCounters", out _)));
         string[] identity = ["10001a", "10001b"];
@@ -21,6 +21,6 @@ public sealed class HulkFinalCardInventoryTests
         Assert.Equal(expected.Order(), AuthoredCards.Book.Authored.Where(id => id.StartsWith("10", StringComparison.Ordinal)).Order());
         Assert.Single(AuthoredCards.Book.On("10015"));
         Assert.Equal(2, AuthoredCards.Book.On("10029").Count());
-        Assert.DoesNotContain("90001", AuthoredCards.Book.Authored);
+        Assert.DoesNotContain("11001", AuthoredCards.Book.Authored);
     }
 }

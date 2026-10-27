@@ -11,7 +11,7 @@ using Xunit;
 
 namespace Marvel.Content.Tests.Play;
 
-/// <summary>Nonpublic composition proof; the reveal trigger substitutes only for isolated execution.</summary>
+/// <summary>Production Ronan phase body on nonpublic boards; synthetic Vulture isolates engagement hooks.</summary>
 public sealed class RonanSelectedEngagementTests : CoreCardTestBase
 {
     [Theory]
@@ -43,7 +43,7 @@ public sealed class RonanSelectedEngagementTests : CoreCardTestBase
         var retained = ronan.InstanceState;
         int incarnation = ronan.Incarnation;
         var runner = Runner();
-        runner.ExecuteReveal(world, ronan, 3);
+        Begin(world);
         var events = new List<GameEvent>();
         var prompt = Assert.IsType<Prompt>(Sequence.Work(world, Cards, runner, events));
         Assert.Equal(1, prompt.Player);
@@ -79,7 +79,7 @@ public sealed class RonanSelectedEngagementTests : CoreCardTestBase
         var ronan = Ronan(world, 2);
         var runner = Runner();
         string before = world.Digest().Canonical();
-        runner.ExecuteReveal(world, ronan, 0);
+        Begin(world);
         var events = new List<GameEvent>();
         Finish(world, runner, events);
         Assert.Equal(before, world.Digest().Canonical());
@@ -94,7 +94,7 @@ public sealed class RonanSelectedEngagementTests : CoreCardTestBase
         world.Seats[2].IdentityCard.TakeDamage(5);
         var ronan = Ronan(world, 3);
         var runner = Runner();
-        runner.ExecuteReveal(world, ronan, 0);
+        Begin(world);
         var events = new List<GameEvent>();
         Finish(world, runner, events);
         Assert.Equal(PlayArea.Of(2), ronan.Area.PlayArea);
@@ -113,7 +113,7 @@ public sealed class RonanSelectedEngagementTests : CoreCardTestBase
         world.Seats[2].IdentityCard.TakeDamage(4);
         var ronan = Ronan(world, 3);
         var runner = Runner();
-        runner.ExecuteReveal(world, ronan, 1);
+        Begin(world);
         var prompt = Assert.IsType<Prompt>(Sequence.Work(world, Cards, runner, []));
         Sequence.Answer(world, Cards, runner, prompt,
             Decision.Take(world.Seats[2].IdentityCard.ObjectId), []);
@@ -201,6 +201,7 @@ public sealed class RonanSelectedEngagementTests : CoreCardTestBase
 
     private static AbilityRunner Runner(string face = "90001")
     {
+        if (face == "90001") return AuthoredCards.Runner();
         var local = AbilityCatalog.Parse("""
         {"cards":[{"card":"90001","abilities":[{
           "trigger":{"event":"WhenCardRevealed","timing":"WhenRevealed","subject":"this"},
@@ -219,6 +220,9 @@ public sealed class RonanSelectedEngagementTests : CoreCardTestBase
             Authored = AuthoredCards.Book.Authored.Union(local.Authored).ToHashSet(StringComparer.Ordinal),
         });
     }
+
+    private static void Begin(World world) => world.Agenda.Add(new PhaseStep(
+        new PhaseTransitionOperation(PhaseTransitionKind.BeginVillainPhase), Round: 1, Number: 1, Index: -1));
 
     private static void Finish(World world, AbilityRunner runner, List<GameEvent> events)
     {

@@ -53,7 +53,7 @@ broader rerun. Normal commit-hook evidence is returned with the delivery handoff
 
 ## Remaining scope and next packet
 
-The production ability book still contains **718 rows and zero Ronan rows**.
+At this prerequisite checkpoint the production ability book contains **718 rows and zero Ronan rows**.
 All five actual faces `90001–90005` remain pending, accounting for seven physical
 copies. No production ability book, setup recipe or public admission changes are
 part of this checkpoint. Test-local bodies establish prerequisites; they do not
@@ -71,3 +71,9 @@ affected phase/engagement classes, with distinguishing negative controls for new
 decisions. Keep the incomplete modular set outside public admission. Later
 packets own `90002–90005`, exact encounter-set composition and public
 setup/save/restart evidence after complete admission.
+
+## Subsequent actual-face packet
+
+The [90001 authoring record](ronan-90001-authored.md) records the subsequent
+719-row candidate, actual phase/entry/status evidence and remaining review.
+The prerequisite evidence above remains tied to its stated revisions.

@@ -18,12 +18,12 @@ public sealed class DoctorStrangeNextFourCardTests
     {
         using var json = JsonDocument.Parse(AuthoredCards.Text);
         var rows = json.RootElement.GetProperty("cards").EnumerateArray().ToArray();
-        Assert.Equal(718, rows.Length);
+        Assert.Equal(719, rows.Length);
         Assert.Equal(AddedFaces,
             rows.Skip(667).Take(4).Select(row => row.GetProperty("card").GetString()));
         Assert.All(rows.Skip(667).Take(4), row => Assert.False(row.TryGetProperty("startingCounters", out _)));
         Assert.Equal(40, AuthoredCards.Book.Authored.Count(face => face.StartsWith("09", StringComparison.Ordinal)));
-        Assert.DoesNotContain("90001", AuthoredCards.Book.Authored);
+        Assert.DoesNotContain("11001", AuthoredCards.Book.Authored);
     }
 
     [Fact]

@@ -1,4 +1,4 @@
-using Marvel.Cards.Dsl;
+using Marvel.Content.Tests.Cards;
 using Marvel.Cards.Run;
 using Marvel.Rules.Events;
 using Marvel.Rules.Play;
@@ -9,7 +9,7 @@ using Xunit;
 
 namespace Marvel.Content.Tests.Play;
 
-/// <summary>Test-local 90001 phase body on the real scheduler; no modular admission.</summary>
+/// <summary>Production 90001 phase ability on the real scheduler; no modular admission.</summary>
 public sealed class RonanPhaseBeginningTests : CoreCardTestBase
 {
     [Theory]
@@ -58,17 +58,5 @@ public sealed class RonanPhaseBeginningTests : CoreCardTestBase
 
     }
 
-    private static AbilityRunner Runner() => new(AbilityCatalog.Parse("""
-        {"cards":[{"card":"90001","abilities":[{
-          "trigger":{"event":"WhenVillainPhaseBegins","timing":"ForcedInterrupt","subject":"game"},
-          "effect": {"chooseCard":{"chooser":"firstPlayer",
-          "from":{"minBy":{"of":{"query":"heroes"},"by":"remainingHealth"}},
-          "effect":{"eachPlayer":{"order":"playerOrder","effect":{"if":{
-            "test":{"and":[{"isYourIdentity":"chosen"},{"isInPlay":"chosen"},
-              {"inForm":{"player":"you","form":"hero"}}]},
-            "then":{"putIntoPlay":{"card":"this","where":"engagedWithYou"}}
-          }}}}
-        }}
-        }]}]}
-        """));
+    private static AbilityRunner Runner() => AuthoredCards.Runner();
 }

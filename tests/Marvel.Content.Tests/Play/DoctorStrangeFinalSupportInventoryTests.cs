@@ -15,7 +15,7 @@ public sealed class DoctorStrangeFinalSupportInventoryTests
     {
         using var document = JsonDocument.Parse(AuthoredCards.Text);
         var rows = document.RootElement.GetProperty("cards").EnumerateArray().ToArray();
-        Assert.Equal(718, rows.Length);
+        Assert.Equal(719, rows.Length);
         Assert.Equal(FinalFaces, rows.Skip(672).Take(3).Select(row => row.GetProperty("card").GetString()));
         Assert.Equal(40, AuthoredCards.Book.Authored.Count(face => face.StartsWith("09", StringComparison.Ordinal)));
         Assert.False(rows[672].TryGetProperty("startingCounters", out _));
@@ -24,7 +24,7 @@ public sealed class DoctorStrangeFinalSupportInventoryTests
         Assert.Equal("medical", counters.GetProperty("type").GetString());
         Assert.Equal(3, counters.GetProperty("count").GetInt32());
         Assert.True(counters.GetProperty("uses").GetBoolean());
-        Assert.DoesNotContain("90001", AuthoredCards.Book.Authored);
+        Assert.DoesNotContain("11001", AuthoredCards.Book.Authored);
     }
 
     [Fact]

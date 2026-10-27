@@ -171,9 +171,9 @@ public sealed class DoctorStrangeSearchCardTests
     {
         using var json = JsonDocument.Parse(AuthoredCards.Text);
         var rows = json.RootElement.GetProperty("cards").EnumerateArray().ToArray();
-        Assert.Equal(718, rows.Length);
+        Assert.Equal(719, rows.Length);
         Assert.Equal(SearchFaces, rows.Skip(659).Take(2).Select(r => r.GetProperty("card").GetString()));
         Assert.All(rows.Skip(659).Take(2), row => Assert.False(row.TryGetProperty("startingCounters", out _)));
-        Assert.DoesNotContain("90001", AuthoredCards.Book.Authored);
+        Assert.DoesNotContain("11001", AuthoredCards.Book.Authored);
     }
 }
