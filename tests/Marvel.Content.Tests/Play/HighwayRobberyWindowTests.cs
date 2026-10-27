@@ -28,7 +28,11 @@ public sealed class HighwayRobberyWindowTests
         runner.ExecuteReveal(world, scheme, 0);
         Assert.False(captured.FaceUp);
         Assert.Equal(scheme.ObjectId, captured.Area.Host);
-        if (eliminateOwner) Elimination.Eliminate(world, Cards, 1, "test", []);
+        if (eliminateOwner)
+        {
+            Elimination.Eliminate(world, Cards, 1, "test", []);
+            Assert.Equal(DeckType.RemovedArea, captured.Area.Type);
+        }
 
         Assert.Empty(runner.Waiting(world, Threat(world), WindowKind.Interrupt));
         Assert.Null(Offering.Work(world, runner, Threat(world), WindowKind.Interrupt, []));

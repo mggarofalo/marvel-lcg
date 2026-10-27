@@ -131,8 +131,31 @@ the existing v27 rejection boundary and frozen-source admission routes require
 integration review. Protocol, save schema, RNG and state-digest formats are
 unchanged.
 
-A separate elimination ownership finding remains: `rr:player-elimination.step.4`
-says "Place each card owned by the eliminated player in the eliminated player's
-discard pile." Current elimination visits the eliminated play area, leaving the
-owned captured card on Highway Robbery in the villain's play area. Fixing that
-ownership-wide cleanup and its projected counterpart is a separate packet.
+The elimination ownership repair follows the numbered steps literally. Step 2
+transfers minions and their hosted cards first; step 4 then discards every card
+owned by the eliminated player, including owned cards just transferred with a
+minion and facedown cards on Highway Robbery. Encounter-owned and surviving-player
+owned cards remain with transferred minions. No local ruling creates an exception
+to step 4; the boost retention clarification agrees with step 2 and the Power
+Stone permanent clarification does not decide this ownership case.
+
+Live elimination and ability projection share `EliminationLayout`, including
+ownership-wide departures. Existing discard piles are removed once without a
+redundant discard; already removed cards stay removed. Step 4 takes deck cards
+from the top (`rr:discard.4`); other pile order is an engine choice. Step 5 removes
+the resulting owner discard. The eliminated seat neither resets its deck nor
+consumes RNG. The same initiated ability still finishes.
+
+The four Core elimination transcript final states were compared against the
+parent revision. Only RemovedArea card indices differ (the complete canonical
+diff and field-by-field summary are in external evidence); every other final
+field is identical. Their pins now encode step 4 followed by step 5, including
+top-first deck discards. Logs and snapshots are
+`C:/Users/mggar/Source/evidence/elimination-owned-*`.
+
+Focused rules checks pass 35 tests; reverting ownership-wide membership kills
+both new placement cases. Focused content checks cover the actual Highway Robbery
+rows and same-ability completion. The exact four public-game cases and frozen
+source migration checks require rerunning on the integrated revision. This changes
+replay semantics within the pending replay-v28 candidate, with no RNG or digest
+format change.

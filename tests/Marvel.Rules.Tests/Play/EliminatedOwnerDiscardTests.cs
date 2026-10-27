@@ -30,9 +30,11 @@ public sealed class EliminatedOwnerDiscardTests
         // "until there is at least one card in the player's discard pile".
         // Ally limit: "choose and discard from play ally cards they control".
         var world = Board();
+        Elimination.Eliminate(world, world.Facts, ownerEliminated ? 1 : 2, "test", []);
+        // Synthetic post-elimination injection isolates routing when a spent
+        // owner is encountered; ordinary elimination cleans up existing cards.
         var chosen = world.CreateCard("ally",
             world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 1));
-        Elimination.Eliminate(world, world.Facts, ownerEliminated ? 1 : 2, "test", []);
         if (emptyOwnerDeck)
             World.MoveToTop(Assert.Single(world.Seats[1].Deck.Cards), world.Seats[1].Hand);
         Assert.Equal(1, chosen.Owner);
@@ -79,7 +81,7 @@ public sealed class EliminatedOwnerDiscardTests
     [Fact]
     [Rule("rr:ownership-and-control.7.2")]
     [Rule("rr:attach-to.1")]
-    public void RemovingAnEliminatedOwnersHostStillDiscardsAndDetachesAnActiveOwnersUpgrade()
+    public void EliminatingAnOwnersForeignControlledHostDiscardsAndDetachesAnActiveOwnersUpgrade()
     {
         // "If the game element ... leaves play, the attachment is discarded."
         // The host is "removed from the game if that player is no longer in the game".
@@ -88,10 +90,8 @@ public sealed class EliminatedOwnerDiscardTests
             world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 1));
         var attached = world.CreateCard("upgrade",
             world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), host.ObjectId, cardOwner: 2));
-        Elimination.Eliminate(world, world.Facts, 1, "test", []);
         var events = new List<GameEvent>();
-
-        Discard.Card(world, host, "test", events);
+        Elimination.Eliminate(world, world.Facts, 1, "test", events);
 
         Assert.Equal(DeckType.RemovedArea, host.Area.Type);
         Assert.Equal(DeckType.DiscardPile, attached.Area.Type);

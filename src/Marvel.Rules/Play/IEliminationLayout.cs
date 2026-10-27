@@ -19,6 +19,9 @@ public interface IEliminationLayout
     /// <summary>Present cards in area order, then pile order within each area.</summary>
     IEnumerable<int> Cards { get; }
 
+    /// <summary>The printed owner, independent of control and placement.</summary>
+    int Owner(int card);
+
     /// <summary>The card's current or projected placement.</summary>
     EliminationPlacement Placement(int card);
 
