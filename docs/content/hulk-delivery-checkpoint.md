@@ -2,7 +2,7 @@
 
 Canonical parent: MARVEL-566. Complete scope is the verified
 [33-face handoff](research/remaining/hulk-implementation-handoff.md).
-Current local assembly: **709 authored rows, 24/33 Hulk faces**. No public Hulk
+Current local assembly: **712 authored rows, 27/33 Hulk faces**. No public Hulk
 admission or full-pack acceptance. Ordinary content acceptance remains agent-owned.
 
 The branch starts from frozen Doctor Strange candidate `553869be`; PR454's final
@@ -27,6 +27,8 @@ any Hulk prerequisites.
 | Pricing-family layout | `7aa42043` (isolated remedy) | `38b271f2` | Six pricing variants extracted; no operation or JSON change |
 | Starter subset / 847 | `6e758f7d` | `3588d6ac` | Actual 10011–10014 and 10016–10019, eight faces |
 | Labelled activation / 847 | `b2f45d97`, repair `3a016518` | finding `633ce5fc`, closure `ca700082` | Original attack damage/defeat receipts across chosen enemy activation |
+| Support threat movement / 850 | `61d0973e` | `e1ae44f0` | Exact source-support threat storage and removal continuation |
+| Customization subset / 850 | `3c6bb5bc` | `546f42b8`, evidence closure `3b27745f` | Actual 10030–10032, three faces |
 | Thunderclap / 846 | `4dcd8afb` | `42111a07` | Actual 10005 bounded ordinary damage, one face |
 
 Packet documents preserve the authority, source/review evidence and limitations.
@@ -76,7 +78,17 @@ source. Sixteen starter integration conflicts were proved to differ only in whol
 the reviewed Thunderclap row. Pack slices and 90001 unknown controls remain intact.
 The combined inventory/Hulk/bounded-damage/ranked-choice run passed 314 cases;
 `hulk-24face-integration.log`. Source/review packet runs remain linked in their documents.
-This latest 709-row assembly has not yet received full-pack certification.
+The later 712-row combined book is also byte-identical to its reviewed source.
+Combined inventory/Hulk/activation/threat movement/bounded damage/ranked-choice
+checks pass411 (`hulk-27face-integration.log`). Before those card additions, the
+support prerequisite passed89 integrated cases plus6 independent review cases
+(`hulk-integrated-support-threat.log` and `hulk-integrated-support-review.log`).
+The customization THEN-mutation question is closed: an isolated serial run kills
+that mutation on the undamaged/exhausted ally while both damaged controls pass.
+The earlier survivor was contaminated by competing-process apphost locks and is
+excluded, not classified equivalent. Restored nonincremental build and all211
+source/review affected cases passed again; `3b27745f` records that correction.
+This latest assembly has not yet received full-pack certification.
 
 ## Remaining work
 
@@ -90,7 +102,12 @@ This latest 709-row assembly has not yet received full-pack certification.
   `hulk-integrated-toe-repair.log`. Actual-row authoring is the next dependent step.
 - MARVEL-849: actual obligation/nemesis10025–10028 (four faces), including full
   Clash reveal/cleanup using the reviewed ranked-attack primitive.
-- MARVEL-850: customization10030–10032 (three faces) are in bounded authoring from the reviewed 709-row book. Actual Beat Cop10029 is deferred behind a demonstrated engine gap: threat movement currently restricts both endpoints to schemes, excluding the printed support destination. A separate implementation/review pair owns that narrow prerequisite.
+- MARVEL-850: customization10030–10032 are reviewed and integrated. Beat Cop10029
+  remains absent, but the separate support-threat prerequisite is now independently
+  accepted and integrated. It preserves removed amounts, exact support identity and
+  live controller, and produces no scheme-placement windows for support storage.
+  Actual Beat Cop authoring must prove both printed actions and replace the temporary
+  test-local row injection without admitting duplicate rows.
 - MARVEL-851: verified public setup, characteristic actions, complete games,
   restart/replay and final combined regression/platform evidence after all33
   faces are ready.

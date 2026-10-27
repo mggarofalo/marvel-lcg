@@ -18,7 +18,7 @@ public sealed class DoctorStrangeNextFourCardTests
     {
         using var json = JsonDocument.Parse(AuthoredCards.Text);
         var rows = json.RootElement.GetProperty("cards").EnumerateArray().ToArray();
-        Assert.Equal(709, rows.Length);
+        Assert.Equal(712, rows.Length);
         Assert.Equal(AddedFaces,
             rows.Skip(667).Take(4).Select(row => row.GetProperty("card").GetString()));
         Assert.All(rows.Skip(667).Take(4), row => Assert.False(row.TryGetProperty("startingCounters", out _)));

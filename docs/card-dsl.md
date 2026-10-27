@@ -1180,6 +1180,13 @@ pool, optionally wrapped in `minBy` or `maxBy` with `by: "threat"`. Both pools
 are evaluated independently before identical source/destination pairs are
 excluded (`rr:move.1`). More than one legal ordered pair asks the first player
 to choose; one pair resolves directly and no legal pair completes without moving.
+A destination bound to `this` may also be the exact resolving source support in
+its controller's play area. This bounded non-scheme destination receives only
+actually removed `k_threat` tokens, after source defeat completes; it does not
+open scheme-placement windows (`rr:move.7`). Physical ownership does not change
+which controller can act. Other non-scheme destinations remain unsupported.
+The receipt's `Placed` amount means tokens received, including support storage.
+
 The engine chooses pair ordering by source and then destination object id.
 The exact offered incarnations survive suspension; leaving and reentering
 does not authorize a replacement endpoint. The existing move receipt owns the

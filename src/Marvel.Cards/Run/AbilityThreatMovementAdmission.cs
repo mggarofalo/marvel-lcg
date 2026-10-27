@@ -10,7 +10,7 @@ internal static class AbilityThreatMovementAdmission
     private static System.Collections.Immutable.ImmutableArray<AbilityThreatMovePair> Pairs(
         AbilityEffect.MoveThreat move, AbilityAdmissionScope cast) =>
         AbilityThreatMoveChoice.Pairs(Every(move.From, cast), Every(move.To, cast), cast.World,
-            move.All ? 1 : Amount(move.Amount, cast));
+            move.All ? 1 : Amount(move.Amount, cast), cast.Source, cast.Player);
     internal static AdmissionResolution Resolution(AbilityEffect.MoveThreat move, AbilityAdmissionScope cast) =>
         Pairs(move, cast).Select(pair => AbilityResolutionAdmission.ResolutionOfAmount(
             pair.From.Card.Tokens.GetValueOrDefault("k_threat"),

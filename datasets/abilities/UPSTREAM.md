@@ -410,3 +410,13 @@ Actual paid hero-action, multiplayer, suspension, purity and data-mutation
 proof is recorded in [the packet](../../docs/content/hulk-thunderclap-card.md).
 Toe to Toe 10015 remains absent. This row adds no starting counters, setup,
 public admission or engine source changes.
+
+
+## Hulk customization cards - MARVEL-850
+
+Actual research rows10030-10032 append to712 rows /27 of33 Hulk faces.
+All709 predecessor raw UTF-8 objects remain byte-identical. Printed authority
+is datasets/cards/cards.json, with current RR1.8 AND, defense and ownership
+rules. No starting counters, engine, setup or public-admission changes. Beat Cop
+10029 remains absent pending support-destination threat movement. See
+[the customization packet](../../docs/content/hulk-customization-cards.md).

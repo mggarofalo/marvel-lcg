@@ -11,14 +11,15 @@ namespace Marvel.Cards.Run;
 internal static class AbilityThreatMoveChoice
 {
     internal static ImmutableArray<AbilityThreatMovePair> Pairs(
-        IReadOnlyList<Card> sources, IReadOnlyList<Card> destinations, World world, long amount)
+        IReadOnlyList<Card> sources, IReadOnlyList<Card> destinations, World world, long amount, Card source, int player)
     {
         if (amount <= 0) return [];
         // rr:move.1: an element "cannot move to its same (current) placement".
         // Engine choice: object-id ordering gives every offered pair a deterministic handle.
         return [.. sources.Where(card => Scheme(card) && card.Tokens.GetValueOrDefault("k_threat") > 0
                 && world.ThreatAbilities.CanRemoveThreat(world, card)).OrderBy(card => card.ObjectId)
-            .SelectMany(from => destinations.Where(to => Scheme(to) && !ReferenceEquals(from, to))
+            .SelectMany(from => destinations.Where(to => ThreatMovement.IsSupportedDestination(world, to, source, player)
+                    && !ReferenceEquals(from, to))
                 .OrderBy(to => to.ObjectId).Select(to => new AbilityThreatMovePair(
                     new(from, from.Area.Id, from.Incarnation), new(to, to.Area.Id, to.Incarnation))))];
     }

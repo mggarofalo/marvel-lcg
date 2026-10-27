@@ -22118,6 +22118,94 @@
           }
         }
       ]
+    },
+    {
+      "card": "10030",
+      "name": "Inspiring Presence",
+      "note": "Printed 10030. The Avenger identity condition applies at play; healing and readying the same ally are independent AND effects.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "when": {
+            "hasTrait": {
+              "card": "you",
+              "trait": "AVENGER"
+            }
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "allies"
+              },
+              "effect": {
+                "and": [
+                  {
+                    "heal": {
+                      "card": "chosen",
+                      "amount": 1
+                    }
+                  },
+                  {
+                    "ready": "chosen"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "10031",
+      "name": "Electrostatic Armor",
+      "note": "Printed 10031. Any-player placement, maximum one per player. Completed hero defense responds against that occurrence’s actual attacker, independently of damage taken.",
+      "attachTo": {
+        "query": "identitiesWithinPerPlayerLimit"
+      },
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenAttackEnds",
+            "timing": "Response",
+            "actor": "enemy",
+            "target": "you"
+          },
+          "when": {
+            "heroDefended": "you"
+          },
+          "effect": {
+            "dealDamage": {
+              "cards": "trigger.actor",
+              "amount": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "10032",
+      "name": "Resourceful",
+      "note": "Printed 10032. Discard this upgrade as a resource cost to generate one wild; no exhaustion or form restriction.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Resource",
+            "subject": "this"
+          },
+          "cost": {
+            "discard": "this"
+          },
+          "effect": {
+            "generate": "G"
+          }
+        }
+      ]
     }
   ]
 }

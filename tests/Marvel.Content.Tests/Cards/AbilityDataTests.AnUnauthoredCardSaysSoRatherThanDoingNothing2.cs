@@ -81,8 +81,8 @@ public sealed class AbilityDataAnUnauthoredCardSaysSoRatherThanDoingNothingTests
     public void RevealingACardRunsItsWhenRevealedAndNotItsInterrupts()
     {
         // "When Revealed" *is* the occurrence, not a window around it. A card
-        // may carry both — an interrupt to a reveal is a different ability at a
-        // different tier — and matching on the condition alone would run it
+        // may carry both â€” an interrupt to a reveal is a different ability at a
+        // different tier â€” and matching on the condition alone would run it
         // here as well as in the window that is meant to offer it.
         var world = new World(Printed, players: 1);
         world.CreateSeat("p0");
@@ -109,7 +109,7 @@ public sealed class AbilityDataAnUnauthoredCardSaysSoRatherThanDoingNothingTests
         // "Players can only trigger interrupt abilities on cards they control
         // or on encounter cards", and any player may use the latter. So an
         // ability on a scenario-owned card has no controller, and one on a
-        // player's card belongs to that player — neither is something the card
+        // player's card belongs to that player â€” neither is something the card
         // data says, and neither is the seat that happens to be first.
         var world = new World(Printed, players: 2);
         world.CreateSeat("p0");
@@ -228,6 +228,7 @@ public sealed class AbilityDataAnUnauthoredCardSaysSoRatherThanDoingNothingTests
         permitted.UnionWith(["10002", "10003", "10006", "10007", "10008", "10009", "10010"]);
         permitted.UnionWith(["10011", "10012", "10013", "10014", "10016", "10017", "10018", "10019"]);
         permitted.UnionWith(["10020", "10021", "10022", "10023", "10024"]);
+        permitted.UnionWith(["10030", "10031", "10032"]);
         Assert.Equal(permitted.Order(StringComparer.Ordinal), AuthoredCards.Book.Authored.Order(StringComparer.Ordinal));
     }
 
