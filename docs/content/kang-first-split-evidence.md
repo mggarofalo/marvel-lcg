@@ -578,3 +578,15 @@ claim completion of Kang or permit public admission.
 Reviewed source `0da5cf8b3c3b2f006a4076000746dd2aaae4704a` against printed 11008b, 11013a/b, mc11 game-area rules and RR quickstrike. The nonpublic actual I split and II joins reach 4B with Captain America and Black Widow. A real set-aside Baron Zemo enters for the first player in hero form and quickstrikes for lethal damage. Elimination transfers Zemo to the survivor, but the survivor's physical nemesis stays set aside: `SearchNext` recalculates the eliminated-filtered player order and uses its prior numeric index, causing the subsequent search to be skipped. This violates 11013b's each-player search. The same fixture with nonlethal quickstrike passes. `KangCentralEliminationReviewTests` retains both observations and is intentionally red pending repair.
 
 Windows Release focused test (serial build, `MSBUILDDISABLENODEREUSE=1`) reports one passed control and one failed elimination case: `C:/Users/mggar/Source/evidence/kang-central-independent-control.log`. The source's reported nine focused/129 combined tests and mutation are not independent reruns. Reject this central continuation until repaired and independently retested. Dominion storage and final-victory behavior remain separate blockers for full Kang; neither is accepted here. No public admission, session replay, Linux, native or full-suite evidence is claimed.
+
+## Central continuation repair candidate
+
+The 4B continuation retains its initial player identities and order across each
+entry, then checks whether the next seat is eliminated before searching. The
+actual Captain America/Baron Zemo lethal and nonlethal cases both pass. A
+synthetic eliminated-seat flag during the quickstrike defender prompt keeps the
+future physical nemesis set aside and verifies that the pending seat is skipped;
+it isolates that decision because ordinary elimination also removes the set-aside
+card. Both paths shuffle once and finish their agenda.
+
+Windows Release: the focused three cases passed (`C:/Users/mggar/Source/evidence/kang-central-repair-focused.log`). A compiled mutation discarding the saved player order failed the lethal survivor case (`kang-central-repair-mutant.log`); a second mutation disabling the eliminated-seat check failed the synthetic control (`kang-central-repair-skip-mutant.log`). A nonincremental restored build passed (`kang-central-repair-restored-build.log`), followed by 132 Kang, uniqueness, WhenDefeated and DefeatStepSeven cases (`kang-central-repair-combined.log`). These are in-memory reconstruction and focused Windows evidence, not session replay, public admission, Linux, native or complete-suite evidence. Independent review remains required; Dominion storage and final-victory behavior remain separate blockers.

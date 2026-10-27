@@ -116,14 +116,14 @@ public static class KangCentral
             Reveal.EnterPlay(world, world.Facts, villain, events);
             ActivityBatches.Append(events, world.EncounterAbilities.ExecuteReveal(world, villain, step.Seat).Events);
         }
-        else SearchNext(world, step, op.Index, events);
+        else SearchNext(world, step, op, events);
         return null;
     }
 
-    private static void SearchNext(World world, PhaseStep step, int index, List<GameEvent> events)
+    private static void SearchNext(World world, PhaseStep step, KangCentralOperation operation, List<GameEvent> events)
     {
-        var players = world.PlayerOrder.ToArray();
-        if (index == players.Length)
+        var players = operation.Players ?? world.PlayerOrder.ToArray();
+        if (operation.Index == players.Count)
         {
             var deck = world.AreaOf(DeckType.EncounterDeck);
             world.Shuffle(deck);
@@ -131,9 +131,15 @@ public static class KangCentral
                 { Trigger = "11013b", Verb = "Shuffle" });
             return;
         }
-        int player = players[index];
+        int player = players[operation.Index];
+        var continuation = step with { Operation = operation with { Index = operation.Index + 1, Players = players } };
+        // rr:player-elimination.6: "Effects that refer to the players in the game ignore eliminated players".
+        if (world.Seats[player].Eliminated)
+        {
+            world.Agenda.Now(continuation);
+            return;
+        }
         var card = world.Seats[player].NemesisSet.Single(candidate => world.Facts.IsNemesisMinion(candidate.FaceId));
-        var continuation = step with { Operation = new KangCentralOperation(KangCentralPart.Nemeses, index + 1) };
         if (card.Area.Type is DeckType.EncounterDeck or DeckType.EncounterDiscardPile or DeckType.AsideDeck)
         {
             EncounterEntry.Schedule(world, EncounterEntryRequest.For(card, player, new CardEntryPlacement(Verb: "Put_Into_Play")),

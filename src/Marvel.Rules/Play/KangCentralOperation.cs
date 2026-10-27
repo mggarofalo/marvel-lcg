@@ -3,7 +3,7 @@ using Marvel.Rules.Timing;
 namespace Marvel.Rules.Play;
 
 /// <summary>One ordered part of Kang's central stage reveal.</summary>
-public sealed record KangCentralOperation(KangCentralPart Part, int Index = 0) : AgendaOperation
+public sealed record KangCentralOperation(KangCentralPart Part, int Index = 0, IReadOnlyList<int>? Players = null) : AgendaOperation
 {
     /// <inheritdoc/>
     public override string What => Part switch

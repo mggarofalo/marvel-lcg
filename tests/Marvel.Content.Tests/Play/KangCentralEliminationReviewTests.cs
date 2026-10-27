@@ -42,4 +42,27 @@ public sealed class KangCentralEliminationReviewTests : CoreCardTestBase
         Assert.Empty(world.Agenda.Outstanding);
     }
 
+    [Fact]
+    [Rule("rr:player-elimination.6")]
+    public void PendingEliminatedPlayerIsSkippedAfterFirstNemesisEntrySuspends()
+    {
+        // "Effects that refer to the players in the game ignore eliminated players".
+        // This synthetic eliminated-seat flag isolates a future seat during the actual quickstrike prompt.
+        var (world, events) = KangCentralTransitionTests.ReadyForLastBoundary(captain: true);
+        world.Seats[0].IdentityCard.TurnTo("03001a");
+        var futureNemesis = Assert.Single(world.Seats[1].NemesisSet, card => Cards.IsNemesisMinion(card.FaceId));
+        world.Agenda.Add(new PhaseStep(new PhaseTransitionOperation(PhaseTransitionKind.EndPlayerPhase), 3, 4));
+        var prompt = Assert.IsType<Prompt>(Sequence.Work(world, Cards, world.Abilities, events));
+        Assert.Equal(Question.Defender, prompt.Asking);
+        world.Seats[1].Eliminated = true;
+        Sequence.Answer(world, Cards, world.Abilities, prompt, Decision.Decline, events);
+        Sequence.Finish(world, Cards, world.Abilities, events);
+        Assert.True(world.Seats[1].Eliminated);
+        Assert.Equal(DeckType.AsideDeck, futureNemesis.Area.Type);
+        Assert.DoesNotContain(events.OfType<CardsMoved>(), move => move.Verb == "Put_Into_Play"
+            && move.Cards.Any(landing => landing.Card == futureNemesis.ObjectId));
+        Assert.Single(events.OfType<AreaReordered>(), item => item.Verb == "Shuffle" && item.Trigger == "11013b");
+        Assert.Empty(world.Agenda.Outstanding);
+    }
+
 }
