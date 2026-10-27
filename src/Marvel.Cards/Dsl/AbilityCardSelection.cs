@@ -12,6 +12,8 @@ public abstract record AbilityCardSelection
     public sealed record Bound(AbilityCardBinding Binding) : AbilityCardSelection;
     /// <summary>A named engine query.</summary>
     public sealed record Query(AbilityCardQuery Kind) : AbilityCardSelection;
+    /// <summary>Physical status cards on one currently bound character.</summary>
+    public sealed record StatusCardsOn(AbilityCardBinding Host) : AbilityCardSelection;
     /// <summary>A printed-title reference.</summary>
     public sealed record Titled(string Title) : AbilityCardSelection;
     /// <summary>Enemies carrying a named trait.</summary>
@@ -57,5 +59,7 @@ public abstract record AbilityCardSelection
         public bool AspectOnly { get; init; }
         /// <summary>Match one printed card classification.</summary>
         public string? CardClass { get; init; }
+        /// <summary>Match one exact printed catalog set.</summary>
+        public string? Set { get; init; }
     }
 }

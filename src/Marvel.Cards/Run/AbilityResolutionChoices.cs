@@ -18,7 +18,8 @@ internal static class AbilityResolutionChoices
         var cast = RestoreChoice(execution, world, step);
         var choice = AbilityContinuations.Choice(execution.program, cast.Source, cast.Tier,
             step.Index, step, execution.AdmissionContext(cast));
-        return execution.DescribeChoice(cast.Source, cast.Tier, step, choice, cast);
+        var prompt = execution.DescribeChoice(cast.Source, cast.Tier, step, choice, cast);
+        return prompt is null ? null : AbilityInvocationContinuationDescription.WithContext(execution, world, step, prompt);
     }
 
     internal static IReadOnlyList<GameEvent> Chose(
@@ -64,6 +65,7 @@ internal static class AbilityResolutionChoices
         this AbilityResolutionExecution execution, Card source, AbilityType? tier,
         PhaseStep? persisted, AbilityEffect choice, AbilityResolutionState cast)
     {
+        if (choice is AbilityEffect.ChooseStatusRecipients recipients) return AbilityStatusRecipients.Describe(execution.StructuralContext(cast), recipients);
         if (choice is AbilityEffect.AttackAnotherEnemy staged) return AbilityStagedAttack.Describe(cast, staged, execution.program);
         var structural = execution.StructuralContext(cast);
         string operation = choice.OperationName();

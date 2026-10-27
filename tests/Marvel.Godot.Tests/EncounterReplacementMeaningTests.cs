@@ -5,6 +5,7 @@ using Marvel.Decisions;
 using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
+using Marvel.Rules.Timing;
 using Marvel.Tests;
 using Marvel.View;
 using Xunit;
@@ -36,7 +37,9 @@ public sealed class EncounterReplacementMeaningTests
         Card current = world.CreateCard("01154", world.AreaOf(DeckType.DealtEncounterCardsDeck, PlayArea.Of(0)));
         world.CreateCard("01110", world.AreaOf(DeckType.EncounterDeck));
         Card replacement = world.CreateCard(replacementFace, world.AreaOf(DeckType.EncounterDeck));
-        world.Agenda.Add(new PhaseStep(new RevealStageOperation(RevealStageKind.RevealEncounterCard), Round: 1, Number: 4, Subject: current.ObjectId, Seat: 0));
+        world.Agenda.Add(new PhaseStep(new RevealStageOperation(RevealStageKind.RevealEncounterCard,
+            new EncounterRevealOrigin(current.ObjectId, Places.Reference(current.Area), Dealt: true)),
+            Round: 1, Number: 4, Subject: current.ObjectId, Seat: 0));
         Prompt prompt = Assert.IsType<Prompt>(Sequence.Work(world, cards, runner, []));
         IVisibilityPolicy visibility = restricted ? new RestrictedVisibilityPolicy(0) : new PermissiveVisibilityPolicy();
         VisibleResult visible = WorldProjection.For(world, prompt, [], visibility.Authorize(null, 2));

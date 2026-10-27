@@ -20,5 +20,8 @@ public enum SetupSlot
     /// <c>rr:permanent.2</c> and <c>rr:setup-keyword.1</c>.
     /// </summary>
     SetAside,
+
+    /// <summary>Set aside for binding to Doctor Strange's separate Invocation deck.</summary>
+    InvocationDeck,
 #pragma warning restore CS1591, SA1602
 }

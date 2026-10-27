@@ -21,6 +21,8 @@ internal sealed class AbilityDamageProjection
         this.resourceAbilities = resourceAbilities;
     }
 
+    internal AbilityQueryProjection? Projection { get; init; }
+
     internal DamageProjection PreviewDamageReplacement(
         World world, Card target, Card source, long amount)
     {
@@ -31,7 +33,7 @@ internal sealed class AbilityDamageProjection
         var occurrence = new Occurrence(
             0, [Steps.DamageWouldBeDealt], Subject: target.ObjectId, Player: target.Owner);
         var candidates = AbilityWindowAdmission.Waiting(
-                program, world, occurrence, WindowKind.Interrupt, resourceAbilities)
+                program, world, occurrence, WindowKind.Interrupt, resourceAbilities, Projection)
             .Where(candidate => candidate.Ability.Trigger.Timing == AbilityType.ForcedInterrupt)
             .ToList();
         DamageProjection? native = GreenGoblinDamageReplacement.Preview(world, target, amount);
@@ -47,7 +49,7 @@ internal sealed class AbilityDamageProjection
             {
                 long threshold = AbilityDamageProtectionTrace.SoakDiscardThreshold(ability.Effect);
                 bool discarded = threshold > 0
-                    && AbilityRepeatedStatusTrace.SaturatingSum(card.Damage, [amount]) >= threshold;
+                    && AbilityRepeatedStatusTrace.SaturatingSum((Projection?.Quantities(card) ?? card.InstanceState).Damage, [amount]) >= threshold;
                 return new DamageProjection(
                     0,
                     $"{name} takes the damage instead"

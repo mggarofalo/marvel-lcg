@@ -114,6 +114,23 @@ exposed divergence needs explicit rejection, unchanged archive/no-publication
 proof and a compatible nonempty control; it is not permission to retrofit the
 archive or relax event comparison. Separately prove the corrected current card.
 
+For shared-rule changes, run whole affected test classes where practical rather
+than a handpicked method list that can miss an older supported interaction. When
+a failure is called pre-existing, compare with the genuine pre-feature revision;
+an intermediate commit already containing the feature does not establish that.
+Preserve the old valid control and fix a demonstrated regression instead of
+relabeling it an unsupported boundary.
+
+A cost preview must account for the facts that earlier supported cost steps can
+change before later legality checks: quantities, active sources, ownership and
+area membership where relevant. Reuse engine-owned evaluation and payment order.
+Use a failing interaction and a valid same-cost control to bound the repair;
+do not build a second general interpreter or silently publish an invalid offer.
+An unimplemented reached interaction must raise explicitly. Distinguish rejected
+input, which must preserve its supported decision state, from an explicitly
+documented unsupported execution boundary after committed costs; do not invent
+rollback guarantees that the engine contract does not provide.
+
 ## Public integration
 
 Exercise the production factory/session path, not only direct world construction.

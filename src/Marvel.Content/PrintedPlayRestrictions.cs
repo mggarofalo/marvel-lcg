@@ -20,15 +20,18 @@ internal static class PrintedPlayRestrictions
 
     internal static string? IdentityTrait(string printed)
     {
-        const string prefix = "Play only if your identity has the ";
+        string[] prefixes = ["Play only if your identity has the ", "Play only if you have the "];
         const string suffix = " trait";
         foreach (string sentence in printed.Split(['.', '\n']))
         {
             string text = sentence.Trim();
-            if (text.StartsWith(prefix, StringComparison.Ordinal)
-                && text.EndsWith(suffix, StringComparison.Ordinal)
-                && text.Length > prefix.Length + suffix.Length)
-                return CardCatalog.TraitKey(text[prefix.Length..^suffix.Length].ToUpperInvariant());
+            foreach (string prefix in prefixes)
+            {
+                if (text.StartsWith(prefix, StringComparison.Ordinal)
+                    && text.EndsWith(suffix, StringComparison.Ordinal)
+                    && text.Length > prefix.Length + suffix.Length)
+                    return CardCatalog.TraitKey(text[prefix.Length..^suffix.Length].ToUpperInvariant());
+            }
         }
         return null;
     }

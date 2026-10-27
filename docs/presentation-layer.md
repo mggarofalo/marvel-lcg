@@ -245,6 +245,9 @@ track a card through a shuffle.
 
 Prompts and events pass through the same visibility scope as the snapshot. A
 hidden event cannot restore a face or object id removed from the descriptor.
+An engine-captured public reveal retains its historical face and occurrence id
+even when the final descriptor conceals that card again; this event-local grant
+does not authorize its current location, later movement or concealed ordering.
 
 The table's passive pending situation names the primary answering seat and a
 typed public decision purpose. Its causal references are limited to already
@@ -336,7 +339,7 @@ visibility configuration, durable sessions and shutdown behavior.
 The socket protocol uses source-generated JSON inside a 4-byte big-endian length
 frame. Frames are bounded. Unknown operations, unsupported protocol versions and
 unknown JSON members fail before they reach the engine. Both endpoints must use
-protocol 41. Setup and decisions replay under engine-replay-v26, with session
+protocol 42. Setup and decisions replay under engine-replay-v27, with session
 schema 7 retaining the exact ordered decks. Requests carry engine-authored
 commitments and explicit payment allocations; authorized responses include
 readable choices, active attack participants, attack completion events and

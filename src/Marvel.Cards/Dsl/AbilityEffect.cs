@@ -9,17 +9,33 @@ public abstract record AbilityEffect
 {
     private AbilityEffect() { }
 
+    /// <summary>Resolve the Special of the exact Invocation captured before payment.</summary>
+    public sealed record ResolveInvocation : AbilityEffect;
+
+    /// <summary>Place this Invocation in its own discard pile and refresh its public top.</summary>
+    public sealed record DiscardInvocation : AbilityEffect;
+
+    /// <summary>Return the captured physical Invocation after its Special completes.</summary>
+    public sealed record ReturnInvocation : AbilityEffect;
+
     /// <summary>Increase only the current basic use, optionally from its selected ally receipt.</summary>
     public sealed record BoostBasicUse(int Amount, bool MatchingAlly = false) : AbilityEffect;
 
     /// <summary>Select up to a bounded number of physical out-of-play cards to add to your hand.</summary>
     public sealed record ChooseCardsToHand(AbilityCardSelection From, int Maximum) : AbilityEffect;
 
+    /// <summary>Select one bounded distinct group before giving each character a status.</summary>
+    public sealed record ChooseStatusRecipients(AbilityCardSelection From, string Status, int Maximum) : AbilityEffect;
+
     /// <summary>Select a distinct second enemy within the current attack, then deal constant damage.</summary>
     public sealed record AttackAnotherEnemy(long Amount) : AbilityEffect;
 
     /// <summary>Return this host's stored cards to their owners, optionally removing the host.</summary>
-    public sealed record ReleaseBeneath(bool RemoveHost, bool Rescue = false) : AbilityEffect;
+    public sealed record ReleaseBeneath(bool RemoveHost, bool Rescue = false) : AbilityEffect
+    {
+        /// <summary>Shuffle the stored physical Invocations into their bound deck.</summary>
+        public bool InvocationDeck { get; init; }
+    }
 
     /// <summary>Attach selected encounter attachments to a specified host.</summary>
     public sealed record AttachCards(AbilityCardSelection Cards, AbilityCardSelection Host) : AbilityEffect;
@@ -90,6 +106,9 @@ public abstract record AbilityEffect
     /// <summary>Assign indirect damage among eligible characters.</summary>
     public sealed record IndirectDamage(AbilityCardSelection Among, AbilityNumber Amount) : AbilityEffect;
     /// <summary>Give a supported status to every selected card.</summary>
+    public sealed record ReplaceStatus(AbilityCardSelection Card, string Status) : AbilityEffect;
+
+    /// <summary>Gives a status to selected characters.</summary>
     public sealed record GiveStatus(AbilityCardSelection Cards, string Status) : AbilityEffect;
 
     /// <summary>Remove every selected status kind from selected in-play characters.</summary>
@@ -137,6 +156,8 @@ public abstract record AbilityEffect
     public sealed record DoubleResourceFor(string Classification) : AbilityEffect;
     /// <summary>A constant discount for the first ally played globally each round.</summary>
     public sealed record ReduceFirstAllyCost(long Amount) : AbilityEffect;
+    /// <summary>Reduce each upgrade played onto this physical host.</summary>
+    public sealed record ReduceUpgradeCostOnThis(long Amount) : AbilityEffect;
     /// <summary>Reduce only this candidate's play cost for each minion engaged with its future controller.</summary>
     public sealed record ReduceSelfCostPerEngagedMinion(long Amount) : AbilityEffect;
     /// <summary>Reduce this candidate's play cost per controlled in-play card with a trait.</summary>
@@ -202,7 +223,7 @@ public abstract record AbilityEffect
         public string? Set { get; init; }
     }
     /// <summary>Move selected cards into a deck and shuffle it.</summary>
-    public sealed record ShuffleInto(AbilityCardSelection Cards, AbilitySearchArea Deck) : AbilityEffect;
+    public sealed record ShuffleInto(AbilityCardSelection Cards, AbilityShuffleDestination Deck) : AbilityEffect;
     /// <summary>Search ordered areas for a printed face and reveal it.</summary>
     public sealed record Search(string Face, ImmutableArray<AbilitySearchArea> Areas) : AbilityEffect;
     /// <summary>Put a matching physical discarded minion into play engaged with the resolver.</summary>
@@ -249,6 +270,9 @@ public abstract record AbilityEffect
     public sealed record DiscardHandWithResource(char Resource) : AbilityEffect;
     /// <summary>Recover cards discarded this way with a printed resource.</summary>
     public sealed record RecoverDiscardedByResource(char Resource) : AbilityEffect;
+    /// <summary>Increase your next event cost, then discard this source after that event.</summary>
+    public sealed record IncreaseNextEventCost(long Amount) : AbilityEffect;
+
     /// <summary>Reduce the next card cost paid by a player.</summary>
     public sealed record ReduceNextCardCost(AbilityPlayer Player, AbilityNumber Amount) : AbilityEffect
     {

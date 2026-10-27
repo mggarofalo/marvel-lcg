@@ -64,9 +64,9 @@ internal sealed class AbilityAreaMutationQuery(
             return SearchAreaTypes(effect, context).Any(queried.Contains)
                 || queried.Contains(DeckType.RevealingArea);
         if (operation == "shuffleInto")
-            return Includes(
-                DeckType.EncounterDeck, DeckType.EncounterDiscardPile,
-                DeckType.AsideDeck);
+            return effect is AbilityEffect.ShuffleInto { Deck: AbilityShuffleDestination.OwnerDeck } ownerShuffle
+                ? SelectedCardMoves(ownerShuffle.Cards, DeckType.PlayerDeck, DeckType.RemovedArea)
+                : Includes(DeckType.EncounterDeck, DeckType.EncounterDiscardPile, DeckType.AsideDeck);
         if (HandPaymentOperations.Contains(operation))
             return Includes(DeckType.HandsArea, DeckType.DiscardPile);
         return null;

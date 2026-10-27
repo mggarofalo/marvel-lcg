@@ -24,6 +24,20 @@ internal static class AbilityPaymentRules
     /// </remarks>
     internal static bool Payable(
         World world, Card card, int player, AbilityCost? cost,
+        AbilityProgram program, IResourceCardAbilities resourceAbilities, AbilityCost? completeCost = null)
+    {
+        if (AbilityInvocationPayment.Contains(cost)
+            && AbilityInvocationPayment.Top(world, player) is null)
+            return false;
+        cost = AbilityInvocationPayment.Expand(world, player, cost);
+        return cost is AbilityCost.Heal healing
+            ? new AbilityHealingCostAvailability(world, card, player, program, resourceAbilities)
+                .CanPay(healing, completeCost: completeCost ?? cost)
+            : ExpandedCostPayable(world, card, player, cost, program, resourceAbilities);
+    }
+
+    private static bool ExpandedCostPayable(
+        World world, Card card, int player, AbilityCost? cost,
         AbilityProgram program, IResourceCardAbilities resourceAbilities) =>
         cost switch
         {
@@ -34,10 +48,10 @@ internal static class AbilityPaymentRules
             AbilityCost.DiscardTop discard => AbilityDeckCosts.CanDiscard(world, player, discard),
             // Hidden deck identities cannot establish whether this uncertain cost succeeds.
             AbilityCost.DiscardUntilMinionEngaged or AbilityCost.DealEncounterToYou => player >= 0 && AbilityDeckCosts.EncounterAvailable(world) > 0,
-            AbilityCost.Sequence sequence => SequencePayable(
+            AbilityCost.Sequence sequence => AbilitySequenceCostAvailability.CanPay(
                 world, card, player, sequence, program, resourceAbilities),
-            AbilityCost.ExhaustTitled named => NamedAbilityCost.Target(world, player, named.Title)?.Ready == true,
-            AbilityCost.Exhaust exhaust => CostTarget(world, card, player, exhaust.Card)?.Ready == true,
+            AbilityCost.ExhaustTitled or AbilityCost.Exhaust =>
+                AbilityExhaustionCostAvailability.CanPay(world, card, player, cost),
             AbilityCost.ConsumeCampaignCard consume => CostTarget(world, card, player, consume.Card) is { } reward
                 && AbilityPhysicalPayment.CanConsumeCampaign(world, card, reward),
             AbilityCost.Discard discard => CostTarget(world, card, player, discard.Card) is not null,
@@ -70,13 +84,11 @@ internal static class AbilityPaymentRules
             // generated is not read at all. So the question is a count and not
             // a sum, and a card with no printed `RES` pays it.
             AbilityCost.RandomDiscardFromHand random => AbilityRandomHandCost.CanPay(world, card, player, random),
+            AbilityCost.ChooseScheme => AbilitySchemeChoice.Candidates(world, card, player).Count > 0,
             AbilityCost.ChooseFromDiscard choice => AbilityCostSelection.DiscardCandidates(world, player, choice).Count > 0,
             AbilityCost.DiscardFromHand discard => AbilityCostSelection.HandCandidates(world, card, player).Count
                 >= AbilityCostSelection.Range(discard.Range, int.MaxValue).Min,
-            AbilityCost.ExhaustChosen exhaust => AbilityCostSelection.Choices(world, player, exhaust)
-                .Count(card => card.Ready) >= AbilityCostSelection.Range(exhaust.Range, int.MaxValue).Min,
-
-            AbilityCost.Heal heal => CostTarget(world, card, player, heal.Card) is { Damage: > 0 },
+            AbilityCost.ExhaustChosen => AbilityExhaustionCostAvailability.CanPay(world, card, player, cost),
 
             AbilityCost.Damage damage => CostTarget(
                     world, card, player, damage.Card) is { } takingTarget
@@ -108,55 +120,12 @@ internal static class AbilityPaymentRules
         _ => false,
     };
 
-    internal static bool SequencePayable(
-        World world, Card card, int player, AbilityCost.Sequence cost,
-        AbilityProgram program, IResourceCardAbilities resourceAbilities)
-    {
-        var steps = cost.Costs;
-        if (!PhysicalCostsPayable(world, card, player, cost))
-        {
-            return false;
-        }
-
-        var spends = steps.OfType<AbilityCost.Spend>().ToList();
-        if (spends.Count > 0)
-        {
-            if (player < 0)
-            {
-                throw new RulesNotImplementedException(
-                    $"'{card.FaceId}' has simultaneous resource costs and is offered to "
-                    + "every player, so there is no hand to price them against");
-            }
-
-            bool printed = spends.All(step => step.PrintedOnly);
-            if (!printed && spends.Any(step => step.PrintedOnly))
-            {
-                throw new RulesNotImplementedException(
-                    $"'{card.FaceId}' mixes printed and ordinary simultaneous "
-                    + "resource costs, whose allocation is not implemented");
-            }
-
-            var price = AbilityPaymentPricing.Price(world, card, player, cost, resourceAbilities)!;
-            if (ResourcePayment.Allocate(price, price.Generators.Select(source => source.Effect).ToArray()) is null)
-                return false;
-        }
-
-        return steps.Where(step => step is not (AbilityCost.Spend or AbilityCost.RemoveCounters))
-            .All(step => Payable(
-                world, card, player, step, program, resourceAbilities));
-    }
-
     private static bool ResourcePayable(World world, Card card, int player,
         AbilityCost.Spend spend, IResourceCardAbilities resourceAbilities)
     {
         var price = AbilityPaymentPricing.Price(world, card, player, spend, resourceAbilities)!;
         return ResourcePayment.Allocate(price, price.Generators.Select(source => source.Effect).ToArray()) is not null;
     }
-
-    private static bool PhysicalCostsPayable(World world, Card card, int player, AbilityCost.Sequence cost) =>
-        AbilityRandomHandCost.CanPayTogether(world, card, player, cost.Costs)
-        && CounterCostsPayable(world, card, player, cost)
-        && AbilityDeckCosts.CanPayTogether(world, player, cost.Costs);
 
     internal static bool CounterCostsPayable(
         World world, Card card, int player, AbilityCost? cost)
@@ -233,6 +202,8 @@ internal static class AbilityPaymentRules
             return true;
         }
 
+        ability = ability with { Cost = AbilityInvocationPayment.Expand(world, player, ability.Cost) };
+
         AttachedUpgradeCostBound.Validate(world, card, player, ability.Cost, []);
         if (!Resources.HasPlayableCost(card.FaceId, world.Facts))
         {
@@ -263,7 +234,7 @@ internal static class AbilityPaymentRules
 
     internal static bool EventPaysResources(World world, Card card, AbilityCost? cost) =>
         EffectiveCards.Kind(card, world.Facts) == CardKind.Event
-        && (cost is AbilityCost.SpendEnergy
+        && (AbilityInvocationPayment.Contains(cost) || cost is AbilityCost.SpendEnergy
             || ResourceRequirement(cost, card).Length + GenericResourceAmount(cost) > 0);
 
     internal static int GenericResourceAmount(AbilityCost? cost) => cost switch

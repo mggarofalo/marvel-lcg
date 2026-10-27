@@ -120,7 +120,7 @@ public sealed class StagedAttackEdgeTests
             InPlay(board, "01092");
         }, hero: true, abilities: runner);
         StagedAttackSafetyTests.Pay(game, world, source!);
-        game.Resolve(Decision.Take(minion!.ObjectId));
+        Assert.True(game.IsRootPrompt);
         Assert.False(Statuses.Has(world, world.Seats[0].IdentityCard, Statuses.Stunned));
         Assert.Equal(0, minion!.Damage);
         Assert.Equal(0, world.TheCardIn(DeckType.VillainArea)!.Damage);

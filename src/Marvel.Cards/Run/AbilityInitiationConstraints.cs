@@ -75,7 +75,9 @@ internal static class AbilityInitiationConstraints
             foreach (var effect in effects)
             {
                 cast.SetContinuation(outerContinuation || effects.Count > 1);
-                if (!CanInitiate(effect, cast))
+                // rr:and.1: "Resolve as much of each effect as possible."
+                if (!AbilityIndependentStatusChoice.IsEmpty(effect, cast)
+                    && !CanInitiate(effect, cast))
                 {
                     return false;
                 }
@@ -110,6 +112,7 @@ internal static class AbilityInitiationConstraints
 
     internal static bool CanInitiateLeaf(AbilityEffect node, AbilityAdmissionScope cast) => node.OperationName() switch
     {
+        "resolveInvocation" => AbilityInvocationPayment.Top(cast.World, cast.Player) is not null,
         "resolveSpecials" when cast.HasContinuation =>
             throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' continues after ordered Special abilities, "

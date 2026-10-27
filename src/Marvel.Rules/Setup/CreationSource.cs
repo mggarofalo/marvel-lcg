@@ -38,4 +38,7 @@ public enum CreationSource
 
     /// <summary>A named encounter set.</summary>
     EncounterSet,
+
+    /// <summary>The identity-owned separate five-card Invocation deck.</summary>
+    InvocationDeck,
 }

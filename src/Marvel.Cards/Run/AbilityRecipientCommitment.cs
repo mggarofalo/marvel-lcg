@@ -15,6 +15,13 @@ internal static class AbilityRecipientCommitment
     internal static bool Resume(AbilityResolutionExecution execution,
         AbilityResolutionState cast, CompiledCardAbility ability)
     {
+        if (ability.Cost is AbilityCost.ChooseScheme)
+        {
+            // The exact cost binding is restored by the existing continuation.
+            // The power owns partial resolution if that incarnation has departed.
+            execution.Run(ability, cast);
+            return true;
+        }
         if (AbilityCostSelection.DiscardChoice(ability.Cost) is not null)
         {
             // rr:ability: resolve as much as possible. A chosen cost card that

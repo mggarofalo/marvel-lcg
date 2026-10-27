@@ -13,6 +13,10 @@ internal static class AbilityCostSelection
     // discard or exhaust cost asks the payer to choose.
     internal static TargetRequest? Ask(World world, Card source, int player, AbilityCost? cost)
     {
+        if (cost is AbilityCost.ChooseScheme)
+            return new TargetRequest([.. AbilitySchemeChoice.Candidates(world, source, player).Select(card => card.ObjectId)], 1, 1);
+        if (cost is AbilityCost.InvocationTop)
+            return new TargetRequest(AbilityInvocationPayment.Top(world, player) is { } top ? [top.ObjectId] : [], 1, 1);
         if (cost is AbilityCost.Sequence sequence)
         {
             return sequence.Costs.Select(step => Ask(world, source, player, step))
@@ -48,6 +52,9 @@ internal static class AbilityCostSelection
         [.. world.Areas.Where(area => area.Type == DeckType.DiscardPile && area.PlayArea == PlayArea.Of(player))
             .SelectMany(area => area.Cards)
             .Where(card => card.Owner == player && Traits.Has(world, card, choice.Trait, world.Facts))];
+
+    internal static bool BindsChosen(AbilityCost? cost) =>
+        cost is AbilityCost.ChooseScheme || DiscardChoice(cost) is not null;
 
     internal static AbilityCost.ChooseFromDiscard? DiscardChoice(AbilityCost? cost) => cost switch
     {
@@ -101,15 +108,19 @@ internal static class AbilityCostSelection
     /// affordance, so resolution raises before changing state rather than
     /// choosing an outcome on the player's behalf.
     /// </remarks>
-    internal static string? CounterKeyForRemoval(Card card, string type, long count)
+    internal static string? CounterKeyForRemoval(Card card, string type, long count) =>
+        CounterKeyForRemoval(card.InstanceState, type, count, card.FaceId);
+
+    internal static string? CounterKeyForRemoval(
+        CardInstanceState state, string type, long count, string faceId)
     {
         if (!string.Equals(type, "allPurpose", StringComparison.Ordinal))
         {
             string typed = "c_" + type;
-            return card.Tokens.GetValueOrDefault(typed) >= count ? typed : null;
+            return state.Tokens.GetValueOrDefault(typed) >= count ? typed : null;
         }
 
-        string[] pools = [.. card.Tokens
+        string[] pools = [.. state.Tokens
             .Where(pair => pair.Value > 0
                 && pair.Key.StartsWith("c_", StringComparison.Ordinal))
             .Select(pair => pair.Key)
@@ -117,10 +128,10 @@ internal static class AbilityCostSelection
         return pools.Length switch
         {
             0 => null,
-            1 when card.Tokens[pools[0]] >= count => pools[0],
+            1 when state.Tokens[pools[0]] >= count => pools[0],
             1 => null,
             _ => throw new RulesNotImplementedException(
-                $"'{card.FaceId}' must choose which all-purpose counter to remove"),
+                $"'{faceId}' must choose which all-purpose counter to remove"),
         };
     }
 

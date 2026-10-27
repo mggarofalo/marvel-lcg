@@ -23,6 +23,7 @@ internal static class AbilityOperationNames
         AbilityCost.Spend { DistinctTypes: true } => "spendDistinct",
         AbilityCost.Spend { Generic: > 0 } => "spendAny",
         AbilityCost.Spend spend => spend.PrintedOnly ? "spendPrinted" : "spend",
+        AbilityCost.InvocationTop => "invocationTop",
         AbilityCost.SpendEnergy => "spendEnergyX",
         AbilityCost.RandomDiscardFromHand => "discardRandomFromHand",
         AbilityCost.DiscardFromHand discard => discard.Range switch
@@ -33,6 +34,7 @@ internal static class AbilityOperationNames
             _ => throw new InvalidOperationException("Unknown discard cost range"),
         },
         AbilityCost.ChooseFromDiscard => "chooseFromDiscard",
+        AbilityCost.ChooseScheme => "chooseScheme",
         AbilityCost.ExhaustChosen => "exhaustChosen",
         AbilityCost.Heal => "heal",
         AbilityCost.Damage damage => damage.MustTakeAll ? "takeDamage" : "dealDamage",
@@ -41,6 +43,9 @@ internal static class AbilityOperationNames
 
     internal static string OperationName(this AbilityEffect effect) => effect switch
     {
+        AbilityEffect.DiscardInvocation => "discardInvocation",
+        AbilityEffect.ResolveInvocation => "resolveInvocation",
+        AbilityEffect.ReturnInvocation => "returnInvocation",
         AbilityEffect.AttackAnotherEnemy => "attackAnotherEnemy",
         AbilityEffect.BoostBasicUse => "boostBasicUse",
         AbilityEffect.ModifyPlayedEvent => "modifyPlayedEvent",
@@ -49,6 +54,7 @@ internal static class AbilityOperationNames
         AbilityEffect.Damage => "dealDamage",
         AbilityEffect.AttackDamage => "dealAttackDamage",
         AbilityEffect.IndirectDamage => "indirectDamage",
+        AbilityEffect.ReplaceStatus => "replaceStatus",
         AbilityEffect.GiveStatus => "giveStatus",
         AbilityEffect.RemoveStatuses => "removeStatuses",
         AbilityEffect.ChangeForm => "changeForm",
@@ -62,11 +68,13 @@ internal static class AbilityOperationNames
         AbilityEffect.DoubleResourceFor => "doubleResourceFor",
         AbilityEffect.ReduceSelfCostPerControlledTrait => "reduceSelfCostPerControlledTrait",
         AbilityEffect.ReduceSelfCostPerEngagedMinion => "reduceSelfCostPerEngagedMinion",
+        AbilityEffect.ReduceUpgradeCostOnThis => "reduceUpgradeCostOnThis",
         AbilityEffect.ReduceFirstAllyCost => "reduceFirstAllyCost",
         AbilityEffect.AllowPlayBeneath => "allowPlayBeneath",
         AbilityEffect.AllowPlayFromDiscard => "allowPlayFromDiscard",
         AbilityEffect.AttachCards => "attachCards",
         AbilityEffect.ReleaseBeneath => "releaseBeneath",
+        AbilityEffect.ChooseStatusRecipients => "chooseStatusRecipients",
         AbilityEffect.ChooseCardsToHand => "chooseCardsToHand",
         AbilityEffect.StoreBeneath => "storeBeneath",
         AbilityEffect.InitializeAuxiliaryDeck => "initializeAuxiliaryDeck",
@@ -101,6 +109,7 @@ internal static class AbilityOperationNames
         AbilityEffect.RemoveCounters => "removeCounters",
         AbilityEffect.DiscardHandWithResource => "discardHandWithResource",
         AbilityEffect.RecoverDiscardedByResource => "recoverDiscardedByResource",
+        AbilityEffect.IncreaseNextEventCost => "increaseNextEventCost",
         AbilityEffect.ReduceNextCardCost => "reduceNextCardCost",
         AbilityEffect.Sequence => "seq",
         AbilityEffect.Simultaneous => "and",
@@ -162,6 +171,7 @@ internal static class AbilityOperationNames
         AbilityEffect.Fixed instruction => instruction.Instruction switch
         {
             AbilityFixedInstruction.UseAttackForThwart => "useAttackForThwart",
+            AbilityFixedInstruction.ReadyUndamagedDefender => "readyUndamagedDefender",
             AbilityFixedInstruction.AdvanceMainScheme => "advanceMainScheme",
             AbilityFixedInstruction.CancelBoostAbility => "cancelBoostAbility",
             AbilityFixedInstruction.CancelBoostIcons => "cancelBoostIcons",

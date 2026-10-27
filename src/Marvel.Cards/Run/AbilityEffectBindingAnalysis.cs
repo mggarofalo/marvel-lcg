@@ -39,7 +39,7 @@ internal static class AbilityEffectBindingAnalysis
         typeof(AbilityEffect.CardAction), typeof(AbilityEffect.Heal), typeof(AbilityEffect.SetHitPoints),
         typeof(AbilityEffect.Damage), typeof(AbilityEffect.AttackDamage),
         typeof(AbilityEffect.MoveThreat), typeof(AbilityEffect.MoveDamage), typeof(AbilityEffect.IndirectDamage),
-        typeof(AbilityEffect.GiveStatus), typeof(AbilityEffect.RemoveStatuses),
+        typeof(AbilityEffect.ReplaceStatus), typeof(AbilityEffect.GiveStatus), typeof(AbilityEffect.RemoveStatuses),
     ];
     private static readonly ImmutableArray<Type> ThreatAndGrantTypes =
     [
@@ -138,6 +138,7 @@ internal static class AbilityEffectBindingAnalysis
         AbilityEffect.MoveThreat move => BindingCanChange(move.From) || BindingCanChange(move.To) || BindingCanChange(move.Amount),
         AbilityEffect.MoveDamage move => BindingCanChange(move.From) || BindingCanChange(move.To) || BindingCanChange(move.Amount),
         AbilityEffect.IndirectDamage damage => BindingCanChange(damage.Among) || BindingCanChange(damage.Amount),
+        AbilityEffect.ReplaceStatus status => BindingCanChange(status.Card),
         AbilityEffect.GiveStatus status => BindingCanChange(status.Cards),
         AbilityEffect.RemoveStatuses status => BindingCanChange(status.Cards),
         _ => throw new InvalidOperationException("Unknown basic card binding effect"),
@@ -209,12 +210,14 @@ internal static class AbilityEffectBindingAnalysis
         AbilityEffect.StoreBeneath store => BindingCanChange(store.Cards) || BindingCanChange(store.Host),
         AbilityEffect.InitializeAuxiliaryDeck initialize => BindingCanChange(initialize.Cards),
         AbilityEffect.RevealAuxiliaryTop => false,
+        // This instruction always addresses its physical source, regardless of a prior choice.
+        AbilityEffect.DiscardInvocation => false,
         AbilityEffect.Shuffle or AbilityEffect.Search => false,
         AbilityEffect.DefineProfile or AbilityEffect.GainSurge or AbilityEffect.Fixed or AbilityEffect.Generate or AbilityEffect.AllowPlayBeneath or AbilityEffect.AllowPlayFromDiscard or AbilityEffect.ReduceSelfCostPerEngagedMinion or AbilityEffect.ReduceSelfCostPerControlledTrait or AbilityEffect.ReduceFirstAllyCost or AbilityEffect.DoubleResourceFor
             or AbilityEffect.PreventDamageFrom or AbilityEffect.DelayedStun
             or AbilityEffect.ChooseTopForHand or AbilityEffect.ChooseDiscardToShuffle
             or AbilityEffect.DiscardHandWithResource
-            or AbilityEffect.RecoverDiscardedByResource or AbilityEffect.RecruitDiscarded or AbilityEffect.GrantTraitCharacters or AbilityEffect.ModifyPlayedEvent or AbilityEffect.BoostBasicUse => false,
+            or AbilityEffect.RecoverDiscardedByResource or AbilityEffect.RecruitDiscarded or AbilityEffect.GrantTraitCharacters or AbilityEffect.ModifyPlayedEvent or AbilityEffect.BoostBasicUse or AbilityEffect.IncreaseNextEventCost => false,
         _ => throw new InvalidOperationException("Unknown compiled effect in player-binding analysis"),
     };
 

@@ -8,6 +8,20 @@ internal static class AbilityResolutionCardState
 {
     internal static bool TryRunCardState(this AbilityResolutionExecution execution, AbilityEffect effect, AbilityResolutionState cast)
     {
+        if (effect is AbilityEffect.ReturnInvocation)
+        {
+            AbilityInvocationPayment.Return(cast);
+            cast.ResolveEffect();
+            return true;
+        }
+        if (effect is AbilityEffect.DiscardInvocation)
+        {
+            var deck = cast.World.Seats[cast.Player].InvocationDeck
+                ?? throw new RulesNotImplementedException("no resolving player Invocation deck");
+            deck.DiscardTop(cast.Source, cast.Trigger, cast.Events);
+            cast.ResolveEffect();
+            return true;
+        }
         var result = new AbilityCardStateResult();
         bool handled = AbilityCardStateExecution.TryRun(effect, new AbilityCardStateContext(
             cast.ExpressionContext(), cast.Trigger, cast.Events,

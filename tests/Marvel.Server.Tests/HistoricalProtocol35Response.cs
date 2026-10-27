@@ -14,14 +14,7 @@ internal static class HistoricalProtocol35Response
         if (response["version"]?.GetValue<int>() != 35)
             throw new InvalidDataException("the historical comparison requires protocol 35");
         if (response["world"] is JsonObject world)
-        {
-            if (world.ContainsKey("encounter_groups"))
-                throw new InvalidDataException("protocol 35 did not describe encounter groups");
-            // These pinned Core/RoRS fixtures predate the multi-villain descriptor.
-            // Normalize only the parsed comparison copy; archive bytes, gameplay
-            // proofs, and the production decoder's required-field checks are unchanged.
-            world.Add("encounter_groups", new JsonArray());
-        }
+            NormalizeWorld(world);
         if (response["prompt"]?["affordances"] is JsonArray affordances)
         {
             foreach (JsonObject affordance in affordances.OfType<JsonObject>())
@@ -34,5 +27,20 @@ internal static class HistoricalProtocol35Response
             }
         }
         return EngineJson.ReadResponse(Encoding.UTF8.GetBytes(response.ToJsonString()));
+    }
+
+    private static void NormalizeWorld(JsonObject world)
+    {
+        if (world.ContainsKey("encounter_groups"))
+            throw new InvalidDataException("protocol 35 did not describe encounter groups");
+        if (world.ContainsKey("invocation_decks"))
+            throw new InvalidDataException("protocol 35 did not describe Invocation decks");
+        // These pinned Core/RoRS fixtures predate the multi-villain descriptor.
+        // Normalize only the parsed comparison copy; archive bytes, gameplay
+        // proofs, and the production decoder's required-field checks are unchanged.
+        world.Add("encounter_groups", new JsonArray());
+        // Protocol 42 represents the absence of typed Invocation piles as an
+        // empty list. These Core/RoRS fixtures have no such auxiliary piles.
+        world.Add("invocation_decks", new JsonArray());
     }
 }

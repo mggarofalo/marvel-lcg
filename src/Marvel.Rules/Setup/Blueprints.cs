@@ -156,6 +156,7 @@ public static class Blueprints
         CreationSource.Villain => SetupSlot.Villain,
         CreationSource.Encounter or CreationSource.EncounterSet => SetupSlot.Encounter,
         CreationSource.ScenarioSetAside => SetupSlot.SetAside,
+        CreationSource.InvocationDeck => SetupSlot.InvocationDeck,
         _ => throw new ArgumentOutOfRangeException(nameof(source)),
     };
 }

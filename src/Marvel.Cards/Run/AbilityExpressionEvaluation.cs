@@ -82,7 +82,7 @@ internal sealed class AbilityExpressionEvaluation(
         {
             AbilityCardNumberProperty.Threat => context.Bindings.Quantities(card).Tokens.GetValueOrDefault("k_threat"),
             AbilityCardNumberProperty.Damage => context.Bindings.Quantities(card).Damage,
-            AbilityCardNumberProperty.RemainingHealth => Math.Max(0, DamagePlacement.Health(context.World, context.World.Facts, card) - card.Damage),
+            AbilityCardNumberProperty.RemainingHealth => Math.Max(0, DamagePlacement.Health(context.World, context.World.Facts, card) - context.Bindings.Quantities(card).Damage),
             AbilityCardNumberProperty.StartingHealth => StartingHealth(card),
             _ => throw new InvalidOperationException("Unknown compiled card number"),
         };
@@ -162,6 +162,7 @@ internal sealed class AbilityExpressionEvaluation(
 
     private bool TestFact(AbilityConditionFact fact) => fact switch
     {
+        AbilityConditionFact.RevealedFromEncounterDeck => RevealedFromEncounterDeck(),
         AbilityConditionFact.DamageFromAttack => context.Occurrence.DamageFromAttack,
         AbilityConditionFact.InAttackChain => context.World.Agenda.Current?.AttackOrigin is not null,
         AbilityConditionFact.FinalStep => context.FinalStep,
@@ -181,6 +182,12 @@ internal sealed class AbilityExpressionEvaluation(
             && string.Equals(defeat.How, "Consequential_Damage", StringComparison.Ordinal),
         _ => throw new InvalidOperationException("Unknown compiled condition fact"),
     };
+
+    private bool RevealedFromEncounterDeck()
+    {
+        return context.Occurrence.RevealOrigin is { FromEncounterDeck: true } origin
+            && origin.Card == context.Occurrence.Subject && context.Occurrence.Is(Steps.CardRevealed);
+    }
 
     private bool AttackDamagedIdentity() => context.World.FinishedAttack is { } completed
             && completed.Enemy == context.Occurrence.Actor
@@ -219,7 +226,7 @@ internal sealed class AbilityExpressionEvaluation(
     internal static long CounterCount(Card card, string type) =>
         CounterCount(card.InstanceState, type);
 
-    private static long CounterCount(CardInstanceState card, string type) =>
+    internal static long CounterCount(CardInstanceState card, string type) =>
         string.Equals(type, "allPurpose", StringComparison.Ordinal)
             ? card.Tokens
                 .Where(pair => pair.Key.StartsWith("c_", StringComparison.Ordinal))

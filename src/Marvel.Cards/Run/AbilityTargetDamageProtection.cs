@@ -9,7 +9,8 @@ namespace Marvel.Cards.Run;
 internal static class AbilityTargetDamageProtection
 {
     internal static bool Prevents(World world, AbilityProgram program, Card target,
-        Func<Card, AbilityCondition, bool>? trace = null, IReadOnlySet<int>? excluded = null)
+        Func<Card, AbilityCondition, bool>? trace = null, IReadOnlySet<int>? excluded = null,
+        AbilityQueryProjection? projection = null)
     {
         foreach (var owner in world.Cards.Where(card => DeckTypes.IsInPlay(card.Area.Type)
                      && excluded?.Contains(card.ObjectId) != true))
@@ -18,7 +19,7 @@ internal static class AbilityTargetDamageProtection
                 .Where(ability => ability.Trigger.Timing == AbilityType.Constant).ToArray();
             if (constants.Length == 0) continue;
             var bindings = new AbilityQueryContext(world, owner, new Occurrence(0, []),
-                AbilityCardQueries.ControllerOf(world, owner), owner.Incarnation, null, null, null, []);
+                AbilityCardQueries.ControllerOf(world, owner), owner.Incarnation, null, null, null, []) { Projection = projection };
             var selectors = new AbilitySelectorEvaluation(bindings, null, program);
             var expressions = new AbilityExpressionEvaluation(new AbilityExpressionContext(bindings,
                 ImmutableDictionary<string, long>.Empty, [], string.Empty, -1, false, null), selectors);

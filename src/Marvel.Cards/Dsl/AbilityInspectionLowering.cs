@@ -16,7 +16,8 @@ internal static class AbilityInspectionLowering
             AbilitySelectorLowering.Required(fields, "count", location), location.Child("count")));
         string result = AbilityLowering.Text(
             AbilitySelectorLowering.Required(fields, "result", location), location.Child("result"));
-        if (result != "treacheriesLookedAt") throw location.Child("result").Error("expected treacheriesLookedAt");
+        if (result is not ("treacheriesLookedAt" or "boostIconsLookedAt"))
+            throw location.Child("result").Error("expected treacheriesLookedAt or boostIconsLookedAt");
         return new(count, result);
     }
 }

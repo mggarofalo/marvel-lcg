@@ -16,8 +16,12 @@ internal static class AbilityBeneathLowering
 
     internal static AbilityEffect.ReleaseBeneath Release(AbilityValue value, AbilityLocation location)
     {
-        var fields = Fields(value, location, "removeHost", "rescue");
-        return new(Boolean(fields, "removeHost", location), Boolean(fields, "rescue", location));
+        var fields = Fields(value, location, "removeHost", "rescue", "invocationDeck");
+        bool invocation = Boolean(fields, "invocationDeck", location);
+        bool rescue = Boolean(fields, "rescue", location);
+        bool remove = Boolean(fields, "removeHost", location);
+        if (invocation && (rescue || remove)) throw location.Error("Invocation return cannot rescue or remove its host");
+        return new(remove, rescue) { InvocationDeck = invocation };
     }
 
     internal static AbilityEffect.StoreBeneath Store(AbilityValue value, AbilityLocation location)

@@ -20,8 +20,10 @@ internal static class AbilitySpecialSequenceExecution
         // No effect-legality filter removes an unresolved upgrade from that sequence.
         if (command.Card is { } id)
             cast.World.Agenda.Then(new PhaseStep(new AbilityContinuationAgendaOperation(AbilityContinuationStage.Special)
-                { FinalSpecial = command.FinalStep }, round, 1, Subject: id, Seat: cast.Player, Plan: true));
+                { FinalSpecial = command.FinalStep && !command.Invocation }, round, 1, Subject: id, Seat: cast.Player, Plan: true));
         if (command.FinalStep) Clear(cast);
+        // The parent resumes only after the owned Special procedure finishes.
+        if (command.Invocation) cast.CompletedOutcome = AbilityStructuralOutcome.Full;
         var capture = execution.Capture(cast, cast.AbilityOrdinal) with
         {
             Reason = command.FinalStep ? AbilityResumeReason.EffectProcedure : AbilityResumeReason.RepeatSpecial,

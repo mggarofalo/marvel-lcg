@@ -5,6 +5,24 @@ forced and optional attack-end responses and is zero without a completed attack.
 
 # The card DSL
 
+`invocationTop: "you"` captures the resolving player's exact public typed
+Invocation top and adds its printed resource cost to the ability payment.
+`resolveInvocation: "you"` resolves that captured physical card's Special through
+the existing Special scheduler. `discardInvocation: "this"` sends the resolving
+Invocation to its own discard, immediately revealing or recycling its typed deck.
+`returnInvocation: "you"` returns the captured physical copy faceup after the
+Special procedure completes, including its intermediate discard/reveal/reset.
+These spellings are engine choices. Production Doctor Strange rows use them on
+nonpublic research boards; complete pack admission remains separate.
+
+`statusCards` selects physical statuses on live characters. `replaceStatus` takes
+`card: "chosen"` and a fixed `status` of `tough`, `stunned`, or `confused`.
+The destination must differ from the selected kind and obey the host's status
+limits and restrictions. A nested three-option `choose` filters illegal kinds;
+an independent empty replacement sentence does not suppress Invocation self-discard.
+Replacement emits `Replace_Status`, rather than `Give_Status`. These vocabulary
+spellings are engine choices, used by production Vapors on nonpublic boards.
+
 `defeatedAllyInYourDiscardPile: "you"` selects the exact physical ally from the
 current defeat receipt when its captured controller was the resolving player,
 its incarnation has not reentered play, and it is currently in that player's
@@ -488,10 +506,10 @@ placeAtRandom placeCounters placeThreat power powerAmount powerTargets cardsDisc
 preventDamage preventDamageFrom preventDamageWhile preventThreat
 preventThreatRemoval printedResourceCountDiscarded putIntoPlay
 recoverDiscardedByResource reduceNextCardCost remainingHealth removeCounters
-removeFromGame removeThreat replaceThreatWithDamage requireAllyDefender
+removeFromGame removeThreat replaceStatus replaceThreatWithDamage requireAllyDefender
 resolveSpecials returnOwnedToHand returnToHand revealTop scheme schemes search
 shuffle shuffleInto sideSchemes soakDamage sourceKind sourceTrait spend
-spendEnergyX startingCounters takeDamage then threatCause thwartDifferentSchemes thwartSchemes
+spendEnergyX startingCounters statusCards takeDamage then threatCause thwartDifferentSchemes thwartSchemes
 thwartableSchemes titleInPlay titled tokensOn topEncounterDiscardBoostPlusOne
 undefendedAttack until upgradesAndSupportsYouControl
 upgradesYouControl wasDefeated withStatus withTrait within withoutAnotherCopyAttached
@@ -511,7 +529,11 @@ The villain and main-scheme decks expose their current in-play top stages.
 shows up to the requested number of encounter deck cards, in top-to-bottom
 order, without moving, revealing, shuffling or replenishing them. Its single
 acknowledgement retains the treachery count as `result: "treacheriesLookedAt"`
-for subsequent effects. Only the acting seat receives those prompt context
+for subsequent effects. Alternatively, `result: "boostIconsLookedAt"` retains
+the sum of printed numeric boost icons on those inspected cards; star icons and
+boost ability text contribute nothing. The result is recorded on acknowledgement,
+and admission does not inspect hidden printed values to predict it.
+Only the acting seat receives those prompt context
 faces; acknowledgement revokes that visibility. The pending decision excludes
 intervening game actions. This inspection does not support pre-then completion.
 
@@ -977,7 +999,9 @@ from card names.
 
 The condition discardedWithTrait tests whether a card discarded by the current resolution has the named printed trait. It reads the discard receipt, including cards that have subsequently moved, rather than searching the current discard pile.
 
-The `cardsIn` filter `cardSet` matches the canonical printed card-set identifier, independently of class or title.
+The `cardsIn` filter `set` matches the canonical printed card-set identifier, independently of class or title.
+The separate `cardSet` condition tests one selected card's printed set; `cardSet`
+is not a `cardsIn` filter.
 `useAttackForThwart: "trigger"` is an interrupt instruction attached to the exact
 initiated thwart. It substitutes the acting character's ATK for THW and uses ATK
 consequential icons for an ally. It does not grant permission to initiate a
@@ -1511,3 +1535,139 @@ qualify; boost ability damage, nested nonattack damage and damage costs do not
 borrow an enclosing attack. The spelling and occurrence marker are engine choices.
 Backflip combines this condition with its identity target and remaining damage.
 A defense label alone does not impose it (`rr:defend-defense.4.8`).
+
+`query: "invocationTop"` selects only the public physical top of the unique
+initialized typed Invocation deck, independently of the resolving player.
+Natural Talent and Wong say **the** Invocation deck; Wong's separate heal uses
+**your identity** and follows his controller. Before public exposure or without
+a top, the query selects no card. Multiple initialized typed decks on a
+synthetic research board raise `RulesNotImplementedException` rather than
+selecting a seat. This spelling and ambiguity policy are engine choices.
+An explicit `discard` uses ordinary discard routing, separate Invocation
+recycling and top disclosure. This primitive creates no Special execution path
+or public pack admission.
+
+### Exact printed-set search
+
+`cardsIn` accepts optional `set: "doctor_strange"`. This engine-chosen spelling
+compares the current face catalog set exactly with ordinal case sensitivity,
+using the existing `ICardFacts.EncounterSet` metadata port. It combines with all
+other search filters and never broadens the named areas. `top` bounds the physical
+search range before set or other criteria apply. Omitting `set` retains existing
+search behavior. This prerequisite does not author Mystical Studies or admit the
+Doctor Strange product.
+
+### Independent enemy selection and self-discard
+
+An independent `chooseCard(enemies)` sentence with a sequential body of
+`giveStatus(chosen)` and positive constant ordinary `dealDamage(chosen)` can be
+empty while another sentence still resolves. This bounded engine composition
+uses the complete body to determine eligible enemies; it adds no fallback enemy
+and does not create status or damage when none is eligible. Attack damage,
+ignore-Tough damage, computed quantities, nested choices and dependent `then`
+predecessors retain their existing admission gates. Whole-ability target and
+partial-effect checks still apply, and costs do not supply a valid target.
+
+Current RR 1.8 `rr:target.2`, `.3.4`, `.3.7` and `rr:ability.4` govern this
+sentence boundary. Rulings `8883bc6b0af1c9b8` (May 2024) and
+`8c9c9d30f4c01189` (November 2023) agree: the choose sentence limits itself,
+and an Invocation's independent self-discard supplies a valid target. The older
+pre-1.5 Vapors answer `5bafad5aafa9093b` is superseded on that question.
+Test-local printed Crimson (09032) plus synthetic damage prohibition proves
+Spell Mastery and Master of the Mystic Arts payment, discard, top disclosure,
+recycling and exact physical return; this prerequisite authors no ability-book
+row and admits no product.
+
+### Bounded distinct status recipients
+
+`chooseStatusRecipients` accepts `from`, a fixed `status` and positive `maximum`.
+It uses the ordinary bounded distinct `TargetRequest` and ability continuation:
+the resolving player confirms one complete subset of zero through the maximum
+before any character receives a status card. Candidates are in-play characters
+that can receive the status according to `Statuses.Count` and `Statuses.Limit`,
+including enemies. No candidates skips this instruction; independent later
+instructions still resolve. Zero selected supplies no successful effect.
+The engine chooses this spelling and physical-id commit order. Candidate
+consequences, resolving seat, source and optional count are engine-authored prompt
+facts. Unsupported dependent/projection compositions retain explicit refusal.
+
+This prerequisite tests actual printed Seven Rings of Raggadorr (09034) through
+Spell Mastery and Master of the Mystic Arts with a test-local Special. It authors
+no production row and admits no product. Before public delivery, View/Decisions/
+Protocol must preserve the complete-subset prompt, source/cost context and
+independent Invocation discard/return consequence; native grouped staging,
+unstaging, explicit zero confirmation, multiplayer authority, stale answers and
+visible result comprehension remain downstream acceptance obligations. Engine
+tests do not certify those contracts or native interactions.
+
+`revealedFromEncounterDeck: "trigger"` tests the triggering revelation's exact
+source receipt. Direct encounter-deck reveals and first-dealt encounter cards
+qualify; a direct reveal from a discard or separate area does not. The receipt
+is captured before staging movement and belongs to that one revelation.
+
+`{ "statusCardsOn": "chosen" }` selects physical status cards attached to the
+exact bound character. A nested `chooseCard` can discard one of those cards,
+including Tough; it does not select statuses on a different character.
+
+`{ "reduceUpgradeCostOnThis": 1 }` is a direct unconditional Constant that
+reduces an upgrade's play cost when its eligible attachment host is the exact
+physical source. Its amount is a positive integer, the modified cost is floored
+at zero, and the reduction does not consume a use. Ordinary active-constant
+rules govern its in-play lifetime and printed-text activity.
+
+### Scheme choice before the arrow
+
+`cost: {"chooseScheme":"chosen"}` commits one current in-play main or side
+scheme before any printed resource payment or labelled effect cancellation.
+The bounded shape is a standalone cost on an Action with only the `thwart`
+label and an outer `thwart` power targeting `chosen`. Compound costs and other
+envelopes fail during lowering. It uses the existing scheme relation rather
+than a renderer interpretation of card text.
+
+The action describes exactly one mandatory target and the choice as a cost.
+Missing, duplicate and non-scheme answers fail before payment. The selected
+physical area/incarnation becomes the existing `chosen` continuation binding;
+subsequent instructions do not reopen a recipient choice. Confusion still pays
+the choice and event price before replacing the thwart. This capability does
+not itself add support for simultaneous effects within a power.
+
+This cost admits constant removal from `chosen`, independent draws for `you`,
+and sequences of those instructions. It also admits the complete Astral
+Projection shape: a two-effect `and` pairing removal of 3 threat from `chosen`
+with `inspectEncounterTop` of 1 card into `boostIconsLookedAt`, followed by
+removal of that numeric result from `chosen`. Both authored pair orders are
+recognized. Other body shapes fail during lowering. If payment suspends and the
+chosen area/incarnation departs, both removals apply nothing while the private
+inspection still completes. Independent drawing likewise survives departure
+through the ordinary labelled thwart lifecycle. Confusion cancels the complete
+effect after costs.
+
+`increaseNextEventCost: <positive integer>` is a bounded obligation instruction.
+Its source must be in the resolving player's obligations area. It increases that
+player's next played event cost, with no phase expiration, and discards the
+original obligation after that event resolves or its effects are canceled.
+The source's in-play incarnation and the paid event are captured independently.
+Invocation Special resolution pays an ability cost and never consumes it.
+The instruction spelling and effect/receipt keys are engine choices.
+The authored Physical Toll row uses this capability; Doctor Strange public setup
+remains closed.
+
+`readyUndamagedDefender: "you"` installs a delayed instruction during the
+resolving player's live committed hero-defense occurrence. It captures that
+physical hero's incarnation and the exact attack activation in `World.Effects`.
+At that attack's end, before responses, it readies the same in-play hero only
+if the attack placed no damage on that hero and readiness is permitted. Separate
+boost or ability damage does not disqualify the ready. Other activations cannot
+consume it; departure/reentry cannot transfer it to a new copy. Activation
+completion retires an unused registration. This fixed spelling and effect key
+are engine choices; it is not a general delayed-effect scripting interface.
+
+`releaseBeneath: {invocationDeck: "true"}` returns the exact stored physical
+Invocation cards to their bound Invocation draw pile and shuffles that pile once
+with the seeded RNG, leaving its separate discard pile untouched. It conceals
+the old public top and reveals the new top. The complete hosted set must belong
+to the same bound deck before any movement; this destination cannot combine
+with captive rescue or host removal. Open the Dark Dimension uses this during
+When Defeated before the scheme departs. Ordinary nondefeat host departure
+instead discards its stored card through the separate Invocation discard/recycle
+lifecycle. The destination spelling and exact-set validation are engine choices.

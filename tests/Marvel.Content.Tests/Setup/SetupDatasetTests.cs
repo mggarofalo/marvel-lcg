@@ -46,7 +46,7 @@ public sealed class SetupDatasetTests
     private static readonly string[] CardLists =
     [
         "encounters", "schemes", "set_aside", "villain",
-        "hero", "hero_deck", "nemesis_set", "obligations", "player_deck",
+        "hero", "hero_deck", "nemesis_set", "obligations", "player_deck", "invocation_deck",
     ];
 
     [Fact]

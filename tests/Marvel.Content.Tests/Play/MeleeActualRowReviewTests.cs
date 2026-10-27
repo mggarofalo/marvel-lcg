@@ -54,7 +54,8 @@ public sealed class MeleeActualRowReviewTests
         var offer = Assert.Single(game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
         Assert.Equal("3", Assert.Single(offer.Costs!).Cost);
         game.Resolve(PaidDecision.Take(offer, [payment!.ObjectId, secondPayment!.ObjectId]));
-        game.Resolve(Decision.Take(villain.ObjectId));
+        if (stunned) Assert.True(game.IsRootPrompt);
+        else game.Resolve(Decision.Take(villain.ObjectId));
         Assert.Equal(stunned ? 0 : 3, villain.Damage);
         Assert.False(Statuses.Has(world, world.Seats[0].IdentityCard, Statuses.Stunned));
         Assert.Equal(DeckType.DiscardPile, source!.Area.Type);

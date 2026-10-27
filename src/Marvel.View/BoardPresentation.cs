@@ -37,6 +37,9 @@ public sealed record BoardPresentation(IReadOnlyList<BoardAreaPresentation> Area
     {
         ArgumentNullException.ThrowIfNull(world);
         var players = world.Players.ToDictionary(player => player.Seat);
+        var invocationTitles = world.InvocationDecks.SelectMany(deck => new[]
+            { (deck.Deck, "INVOCATION DECK"), (deck.Discard, "INVOCATION DISCARD") })
+            .ToDictionary(pair => pair.Item1, pair => pair.Item2);
         var asideOrdinals = world.Areas
             .Where(area => area.Zone == nameof(DeckType.AsideDeck))
             .GroupBy(area => area.Owner)
@@ -48,7 +51,8 @@ public sealed record BoardPresentation(IReadOnlyList<BoardAreaPresentation> Area
                 .Select(area => Present(
                 area,
                 players,
-                asideOrdinals.GetValueOrDefault(area.Id, -1)))]);
+                asideOrdinals.GetValueOrDefault(area.Id, -1),
+                invocationTitles.GetValueOrDefault(area.Id)))]);
         BoardPlayerPresentation[] seats =
             [.. world.Players.Select(player => new BoardPlayerPresentation(
                 player.Seat, player.Name))];
@@ -132,20 +136,21 @@ public sealed record BoardPresentation(IReadOnlyList<BoardAreaPresentation> Area
     private static BoardAreaPresentation Present(
         AreaDescriptor area,
         Dictionary<int, PlayerDescriptor> players,
-        int asideOrdinal)
+        int asideOrdinal,
+        string? invocationTitle)
     {
         string owner = players.TryGetValue(area.Owner, out PlayerDescriptor? player)
             ? player.Name
             : area.Owner < 0 ? "Scenario" : $"Seat {area.Owner}";
         // These labels are a client choice. The tabletop rules define the zone,
         // not the diagnostic wording that distinguishes it from set-aside cards.
-        string title = area.Zone switch
+        string title = invocationTitle ?? (area.Zone switch
         {
             "VillainDeck" => "UPCOMING VILLAIN STAGES",
             "AsideDeck" when asideOrdinal == 1 => $"{owner.ToUpperInvariant()}'S NEMESIS SET",
             "AsideDeck" => $"{owner.ToUpperInvariant()}'S SET-ASIDE AREA",
             _ => BoardCardPresentationFactory.Humanize(area.Zone, trimArea: true).ToUpperInvariant(),
-        };
+        });
         string context = area.Zone == "VillainDeck"
             ? "Out of play · enters after the current stage"
             : area.Owner < 0 ? "Scenario" : owner;

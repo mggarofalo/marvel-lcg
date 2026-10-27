@@ -28,21 +28,23 @@ internal static class AbilityCardOperations
                 $"'{card.FaceId}' has fewer than {count} {type} counters");
         RemovePhysicalCounters(world, card, type, count, key, trigger, events);
 
-        if (AbilityExpressionEvaluation.CounterCount(card, "allPurpose") == 0
-            && !Characteristics.IsLost(world, card, "uses")
-            && pools.CounterPool(world, card)?.Uses == true)
+        if (CounterRemovalDeparts(world, pools.CounterPool(world, card), card, card.InstanceState))
         {
             if (!VictoryDisplay.ToVictoryDisplay(world, world.Facts, card, trigger, events))
                 Discard.Card(world, card, trigger, events);
         }
     }
 
+    internal static bool CounterRemovalDeparts(
+        World world, CardCounterPool? pool, Card card, CardInstanceState quantities) =>
+        AbilityExpressionEvaluation.CounterCount(quantities, "allPurpose") == 0
+        && !Characteristics.IsLost(world, card, "uses")
+        && pool?.Uses == true;
+
     private static void RemovePhysicalCounters(World world, Card card, string type,
         long count, string key, string trigger, List<GameEvent> events)
     {
-        if (card.FaceId is ("02006a" or "02006b")
-            && (card.FaceId == "02006a" && type == "infamy"
-                || card.FaceId == "02006b" && type == "madness"))
+        if (GreenGoblinTransition.HandlesCounterRemoval(card, type))
         {
             GreenGoblinTransition.RemoveCounters(world, card, type, count, trigger, events);
             return;

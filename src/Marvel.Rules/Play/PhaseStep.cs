@@ -61,7 +61,8 @@ public readonly record struct PhaseStep(
             Steps.RevealEncounterCard => new Occurrence(id, EncounterEntry.WillEnter(world, world.Cards[Subject],
                 EncounterRevealExposure.RevealingPlayer(world, world.Cards[Subject], Seat))
                 ? [Steps.CardRevealed, Steps.CardEntersPlay] : Conditions, Subject,
-                EncounterRevealExposure.RevealingPlayer(world, world.Cards[Subject], Seat)),
+                EncounterRevealExposure.RevealingPlayer(world, world.Cards[Subject], Seat))
+            { RevealOrigin = Require<RevealStageOperation>().Origin },
             Steps.PlaceThreat => VillainPhaseThreat(id, world, facts),
             Steps.SchemeThreat => SchemeThreat(id, world, facts),
             Steps.PlaceThreatEffect when Operation is ThreatPlacementOperation { Placement: { } placement } =>

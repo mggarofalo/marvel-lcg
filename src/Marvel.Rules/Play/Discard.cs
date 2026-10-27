@@ -134,13 +134,7 @@ public static class Discard
 
         constantsEnding.Complete(trigger, events);
 
-        // `rr:player-deck.4`: a deck that emptied beside an empty discard pile
-        // "does not reset until there is at least one card in the player's
-        // discard pile, **then** the player deals themself one facedown
-        // encounter card". This is *then* -- a card has just landed there.
-        if (card.Owner >= 0) PlayerDeck.Reset(world, card.Owner, events);
-        if (pile.Type == DeckType.SideSchemeDiscardPile)
-            AuxiliaryDeck.ResetSideSchemes(world, trigger, events);
+        ResetAfterDiscard(world, card, pile, trigger, events);
 
         if (host >= 0)
         {
@@ -162,9 +156,35 @@ public static class Discard
         }
     }
 
+    private static void ResetAfterDiscard(
+        World world, State.Card card, Area pile, string trigger, List<GameEvent> events)
+    {
+        if (pile.Type == DeckType.RemovedArea) return;
+        // rr:player-elimination.step.5: "Eliminated players no longer participate
+        // in the game." Step 4 still discards their cards before step 5 removes
+        // the areas, without refreshing a deck or dealing an encounter penalty.
+        if (card.Owner >= 0 && world.Seats[card.Owner].Eliminated) return;
+        // `rr:player-deck.4`: a deck that emptied beside an empty discard pile
+        // "does not reset until there is at least one card in the player's
+        // discard pile, **then** the player deals themself one facedown
+        // encounter card". A separate Invocation discard has no such penalty.
+        var invocation = InvocationDeck.ForCard(world, card);
+        if (invocation is not null) invocation.RefreshTop(trigger, events);
+        else if (card.Owner >= 0) PlayerDeck.Reset(world, card.Owner, events);
+        if (pile.Type == DeckType.SideSchemeDiscardPile)
+            AuxiliaryDeck.ResetSideSchemes(world, trigger, events);
+    }
+
     private static Area DiscardPile(World world, State.Card card)
     {
         if (card.Area.Type == DeckType.StatusArea) return world.AreaOf(DeckType.RemovedArea);
+        // rr:ownership-and-control.7.2: "removed from the game if that player
+        // is no longer in the game". Elimination removes their discard pile.
+        // Cards still in that owner's area follow elimination step 4 before step 5 removes them.
+        if (card.Owner >= 0 && world.Seats[card.Owner].Eliminated
+            && card.Area.PlayArea != PlayArea.Of(card.Owner))
+            return world.AreaOf(DeckType.RemovedArea);
+        if (InvocationDeck.ForCard(world, card) is { } invocation) return invocation.Discard;
         if (AuxiliaryDeck.UsesSideSchemeDiscard(world, card))
             return world.AreaOf(DeckType.SideSchemeDiscardPile);
         if (card.Owner < 0) return world.EncounterTopology is { } topology

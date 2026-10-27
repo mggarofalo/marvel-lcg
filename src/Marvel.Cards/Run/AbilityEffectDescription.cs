@@ -13,13 +13,18 @@ internal static class AbilityEffectDescription
     {
         AbilityEffect.Fixed { Instruction: AbilityFixedInstruction.UseAttackForThwart } =>
             "Use ATK instead of THW for this thwart, including ally consequential damage",
+        AbilityEffect.Fixed { Instruction: AbilityFixedInstruction.ReadyUndamagedDefender } =>
+            "At the end of this attack, ready your defending hero if it took no damage from that attack",
         AbilityEffect.BoostBasicUse { MatchingAlly: true } => "Add the exhausted ally's matching modified power to this basic use only; no ally consequential damage",
         AbilityEffect.BoostBasicUse bonus => $"Add {bonus.Amount} ATK for this basic attack only",
         AbilityEffect.ModifyPlayedEvent modifier =>
             $"Increase each {(modifier.Kind == "eventDamage" ? "damage" : "threat removal")} instance of this event by {modifier.Amount} until this play finishes",
+        AbilityEffect.IncreaseNextEventCost increase => $"Your next event costs {increase.Amount} additional resources; discard this obligation after that event",
+        AbilityEffect.ResolveInvocation => "Resolve your captured Invocation top Special",
         AbilityEffect.ChooseCard choice => ChoiceSummary(choice),
         AbilityEffect.Draw draw => DrawSummary(draw),
         AbilityEffect.GiveStatus status => StatusAction(status.Status),
+        AbilityEffect.ReplaceStatus status => $"Replace with {status.Status}",
         AbilityEffect.RemoveStatuses => "Remove status cards",
         AbilityEffect.Power power => Summary(power.Effect),
         AbilityEffect.Sequence sequence when sequence.Effects.Length == 1 =>
@@ -79,6 +84,7 @@ internal static class AbilityEffectDescription
         AbilityEffect.Fixed { Instruction: AbilityFixedInstruction.CancelWhenRevealed } =>
             "cancel the revealed treachery's When Revealed effects",
         AbilityEffect.GiveStatus status => StatusAction(status.Status),
+        AbilityEffect.ReplaceStatus status => $"Replace with {status.Status}",
         AbilityEffect.RemoveStatuses => "Remove status cards",
         AbilityEffect.AttackDamage => "attack",
         AbilityEffect.Damage => "deal damage to",
@@ -112,6 +118,7 @@ internal static class AbilityEffectDescription
 
     private static string Noun(AbilityCardSelection selection) => selection switch
     {
+        AbilityCardSelection.Query { Kind: AbilityCardQuery.InvocationTop } => "public Invocation top",
         AbilityCardSelection.Query { Kind: AbilityCardQuery.OtherVillainSideSchemes } => "each other villain's side scheme",
         AbilityCardSelection.Query { Kind: AbilityCardQuery.ActiveVillainSideScheme } => "active villain's side scheme",
         AbilityCardSelection.Query { Kind: AbilityCardQuery.VillainOfAttachedScheme } => "villain corresponding to the attached scheme",
@@ -119,6 +126,7 @@ internal static class AbilityEffectDescription
             "villain whose side scheme has the least threat",
         AbilityCardSelection.Query { Kind: AbilityCardQuery.VillainsWithMostSchemeThreat } =>
             "villain whose side scheme has the most threat",
+        AbilityCardSelection.StatusCardsOn statuses => $"status card on {Noun(new AbilityCardSelection.Bound(statuses.Host))}",
         AbilityCardSelection.Discardable discardable => Noun(discardable.Cards),
         AbilityCardSelection.WithTrait trait => $"{(trait.Exclude ? "non-" : "")}{trait.Trait} {Noun(trait.Cards)}",
         AbilityCardSelection.WithStatus status => $"{status.Status} {Noun(status.Cards)}",

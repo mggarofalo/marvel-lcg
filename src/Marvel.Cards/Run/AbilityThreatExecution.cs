@@ -54,6 +54,10 @@ internal static class AbilityThreatExecution
         AbilityDamageAndThreatContext context, AbilityDamageAndThreatState state, long multiplier = 1)
     {
         state.SchemesCleared = 0;
+        // rr:ability.1: abilities "only interact with cards that are in play".
+        // rr:leaves-play.1: the reentered scheme is "a new copy of the card".
+        if (AbilitySchemeCostBinding.HasDeparted(context.Program, context.Source.FaceId,
+            removal, context.Expressions.Bindings)) return AbilityStructuralOutcome.None;
         if (removal.Assigned) return AbilityThreatDistribution.Remove(context, state);
         var schemes = Every(removal.Schemes, context);
         if (schemes.Count == 0) throw new RulesNotImplementedException(

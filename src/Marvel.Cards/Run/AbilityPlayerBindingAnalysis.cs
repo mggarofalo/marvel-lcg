@@ -21,8 +21,8 @@ internal static class AbilityPlayerBindingAnalysis
     internal static bool Contains(AbilityCost? cost) => cost switch
     {
         null => false,
-        AbilityCost.ReturnSourceToHand => false,
-        AbilityCost.ChooseFromDiscard => true,
+        AbilityCost.ReturnSourceToHand or AbilityCost.ChooseScheme => false,
+        AbilityCost.ChooseFromDiscard or AbilityCost.InvocationTop => true,
         AbilityCost.DiscardTop discard => discard.From == AbilitySearchArea.YourDeck,
         AbilityCost.DiscardUntilMinionEngaged or AbilityCost.DealEncounterToYou or AbilityCost.RandomDiscardFromHand => true,
         AbilityCost.Sequence sequence => sequence.Costs.Any(Contains),
@@ -99,6 +99,7 @@ internal static class AbilityPlayerBindingAnalysis
         AbilityEffect.MoveThreat move => Contains(move.From) || Contains(move.To) || Contains(move.Amount),
         AbilityEffect.MoveDamage move => Contains(move.From) || Contains(move.To) || Contains(move.Amount),
         AbilityEffect.IndirectDamage damage => Contains(damage.Among) || Contains(damage.Amount),
+        AbilityEffect.ReplaceStatus status => Contains(status.Card),
         AbilityEffect.GiveStatus status => Contains(status.Cards),
         AbilityEffect.RemoveStatuses status => Contains(status.Cards),
         _ => throw new InvalidOperationException("Unknown basic-card player-binding effect"),
@@ -141,7 +142,7 @@ internal static class AbilityPlayerBindingAnalysis
         AbilityEffect.DiscardTop discard => discard.From == AbilitySearchArea.YourDeck
             || discard.Players is { } players && Contains(players) || Contains(discard.Count),
         AbilityEffect.ShuffleInto shuffle =>
-            Contains(shuffle.Cards) || shuffle.Deck == AbilitySearchArea.YourDeck,
+            Contains(shuffle.Cards) || shuffle.Deck == AbilityShuffleDestination.YourDeck,
         AbilityEffect.PutIntoPlay entering =>
             entering is { PrintedDestination: false, FirstPlayer: false } || Contains(entering.Card),
         AbilityEffect.PlaceCounters counters => Contains(counters.Card) || Contains(counters.Count),
@@ -164,20 +165,21 @@ internal static class AbilityPlayerBindingAnalysis
 
     private static bool ContainsOther(AbilityEffect effect) => effect switch
     {
+        AbilityEffect.ResolveInvocation or AbilityEffect.DiscardInvocation or AbilityEffect.ReturnInvocation => true,
         AbilityEffect.DiscardHandCards => true,
         AbilityEffect.DiscardResourceIcons => true,
         AbilityEffect.RecruitDiscarded => true,
         AbilityEffect.DiscardUntil discard => discard.Player == AbilityPlayer.You,
         AbilityEffect.AttachCards attach => Contains(attach.Cards) || Contains(attach.Host),
         AbilityEffect.ChooseCardsToHand group => Contains(group.From),
-        AbilityEffect.ReleaseBeneath => false,
+        AbilityEffect.ReleaseBeneath or AbilityEffect.IncreaseNextEventCost => false,
         AbilityEffect.StoreBeneath store => Contains(store.Cards) || Contains(store.Host),
         AbilityEffect.InitializeAuxiliaryDeck initialize => Contains(initialize.Cards),
         AbilityEffect.RevealAuxiliaryTop => false,
         AbilityEffect.Shuffle shuffle => shuffle.Area == AbilitySearchArea.YourDeck,
         AbilityEffect.Search search => search.Areas.Contains(AbilitySearchArea.YourDeck),
         AbilityEffect.DefineProfile or AbilityEffect.GainSurge or AbilityEffect.Fixed or AbilityEffect.Generate
-            or AbilityEffect.AllowPlayBeneath or AbilityEffect.AllowPlayFromDiscard or AbilityEffect.ReduceSelfCostPerEngagedMinion or AbilityEffect.ReduceSelfCostPerControlledTrait or AbilityEffect.ReduceFirstAllyCost or AbilityEffect.DoubleResourceFor or AbilityEffect.PreventDamageFrom
+            or AbilityEffect.AllowPlayBeneath or AbilityEffect.AllowPlayFromDiscard or AbilityEffect.ReduceSelfCostPerEngagedMinion or AbilityEffect.ReduceSelfCostPerControlledTrait or AbilityEffect.ReduceFirstAllyCost or AbilityEffect.ReduceUpgradeCostOnThis or AbilityEffect.DoubleResourceFor or AbilityEffect.PreventDamageFrom
             or AbilityEffect.DelayedStun
             or AbilityEffect.AttackAnotherEnemy or AbilityEffect.ChooseTopForHand or AbilityEffect.ChooseDiscardToShuffle
             or AbilityEffect.DiscardHandWithResource
@@ -208,6 +210,7 @@ internal static class AbilityPlayerBindingAnalysis
             or AbilityCardQuery.CharactersYouControlExceptCost
             or AbilityCardQuery.UpgradesYouControl or AbilityCardQuery.AlliesYouControl
            ,
+        AbilityCardSelection.StatusCardsOn statuses => Contains(new AbilityCardSelection.Bound(statuses.Host)),
         AbilityCardSelection.WithTrait trait => Contains(trait.Cards),
         AbilityCardSelection.WithStatus status => Contains(status.Cards),
         AbilityCardSelection.FaceDown trait => Contains(trait.Cards),

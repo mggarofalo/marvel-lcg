@@ -6,7 +6,7 @@ expansion is excluded from public discovery as a whole.
 
 `RuntimeProductAdmission` owns the closed accepted-product policy: Core Set,
 Rise of Red Skull, Captain America, Wrecking Crew and the complete Green Goblin,
-Ms. Marvel, Thor and Black Widow integration candidates. Merely adding an authored ability or setup
+Ms. Marvel, Thor, Black Widow and Doctor Strange integration candidates. Merely adding an authored ability or setup
 recipe does not admit another product. Unaccepted product-owned recipes are excluded; a retained accepted recipe that references an unavailable face
 still fails validation. The same admitted face set controls discovery, research
 cards' runtime-support flags, deck assessment and game creation.
@@ -24,7 +24,7 @@ The file has 3 groups:
 | Group | Admitted rows | Declared rows |
 |---|---:|---:|
 | `campaigns` | 39 Core Set, Rise of Red Skull, Wrecking Crew and Green Goblin scenario/mode combinations | 39 |
-| `heroes` | 11 Core Set, Rise of Red Skull, Captain America, Ms. Marvel, Thor and Black Widow starter decks | 11 |
+| `heroes` | 12 Core Set, Rise of Red Skull, Captain America, Ms. Marvel, Thor, Black Widow and Doctor Strange starter decks | 12 |
 | `encounter_sets` | 14 Core Set, Rise of Red Skull and Green Goblin fixed/modular sets | 14 |
 
 Ms. Marvel is admitted as a complete integration candidate. Her 40-card starter,
@@ -277,10 +277,6 @@ Extra customization cards 06031–06034 are admitted but absent from the starter
 This candidate remains on hold for independent Loki and Hammer Throw preflight
 review; setup evidence does not establish whole-game or native acceptance.
 
-Black Widow has a declared research recipe from the pinned mc07 divider: 40
-player cards, one separate obligation and five nemesis cards. Public admission
-remains closed until the complete pack and its engine prerequisites are verified.
-
 
 Black Widow is admitted as a complete integration candidate. All 34 printed faces
 (08001a/b and 08002–08033) and the exact 40-card divider starter, obligation
@@ -291,3 +287,17 @@ seats in Core and Rise of Red Skull, custom-deck ownership, all four extra cards
 and Natasha's pending Preparation-play response across strict JSON save and a
 fresh host. Admission and these focused journeys do not establish complete-game,
 native or platform acceptance.
+
+
+Doctor Strange has candidate public admission for all 40 printed faces
+(09001a/b and 09002-09039). The pinned mc08 divider in
+`datasets/rules-packs/mc08/UPSTREAM.md` supplies 15 signature, 17 Protection and
+8 Basic cards, a separate obligation, five nemesis cards and five Invocations.
+The typed Invocation recipe has one each of 09032-09036, outside the ordinary
+40-card deck. Missing any required face or changing the pinned recipe closes
+the entire product. Extra cards 09037-09039 remain outside the starter and enter
+legal custom decks at printed copy limits. Discovery now has twelve heroes,
+39 scenario/mode recipes and fourteen encounter sets. Public setup and focused
+action evidence are recorded in `docs/content/doctor-strange-public-admission.md`;
+complete-game, fresh-host replay and final combined acceptance belong to the
+separate MARVEL-838 packet.

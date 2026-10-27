@@ -174,15 +174,11 @@ internal sealed class DamageConsequencePreview(World world, ICardFacts facts, Ca
     {
         if (taken > 0)
         {
-            ContinuousEffect? prevention = world.Effects.Active().FirstOrDefault(effect =>
-                string.Equals(effect.Kind, "preventDamage", StringComparison.Ordinal)
-                && effect.Affects == target.ObjectId);
-            if (prevention is not null)
+            foreach (var prevention in DamagePrevention.Active(world, target))
             {
-                long prevented = prevention.Amount <= 0
-                    ? taken.Value
-                    : Math.Min(taken.Value, prevention.Amount);
-                taken -= prevented;
+                long after = DamagePrevention.After(taken.Value, prevention.Amount);
+                long prevented = taken.Value - after;
+                taken = after;
                 string sourceName = prevention.Card is { } card
                     ? facts.Title(world.Cards[card].FaceId)
                     : "An active effect";

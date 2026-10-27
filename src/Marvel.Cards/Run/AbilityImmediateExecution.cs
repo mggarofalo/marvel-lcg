@@ -12,6 +12,7 @@ internal static class AbilityImmediateExecution
     {
         return effect switch
         {
+            AbilityEffect.IncreaseNextEventCost increase => IncreaseEventCost(increase, context),
             AbilityEffect.BoostBasicUse bonus => BoostBasicUse(bonus, context),
             AbilityEffect.ModifyPlayedEvent modifier => AbilityPlayedEventModifier.Run(modifier, context),
             AbilityEffect.Fixed fixedEffect => RunFixed(fixedEffect, context),
@@ -28,6 +29,13 @@ internal static class AbilityImmediateExecution
                 RunDelayedEffect(effect, context),
             _ => new(false, false),
         };
+    }
+
+    private static AbilityImmediateResult IncreaseEventCost(AbilityEffect.IncreaseNextEventCost increase, AbilityImmediateContext context)
+    {
+        NextEventCost.Register(context.Admission.World, context.Admission.Source,
+            context.Admission.Query.Player, increase.Amount);
+        return new(true, true);
     }
 
     private static AbilityImmediateResult BoostBasicUse(AbilityEffect.BoostBasicUse bonus, AbilityImmediateContext context)
@@ -59,9 +67,8 @@ internal static class AbilityImmediateExecution
                 CancelWhenRevealed(context);
                 return new(true, true);
             case AbilityFixedInstruction.CancelOccurrence:
-                if (world.Agenda.IsOutstanding(context.Admission.Query.Occurrence))
-                    world.Agenda.Cancel(context.Admission.Query.Occurrence);
-                return new(true, true);
+                return new(true, AbilityOccurrenceCancellation.Cancel(
+                    world, context.Admission.Query.Occurrence));
             case AbilityFixedInstruction.PlaceAccelerationToken:
                 EncounterDeck.PlaceAccelerationToken(world, context.Trigger, context.Events);
                 return new(true, false);

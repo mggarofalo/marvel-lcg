@@ -29,7 +29,8 @@ internal static class AbilityEncounterReveal
             Verb = "Reveal",
         });
         int player = context.Player >= 0 ? context.Player : context.World.FirstPlayer;
-        return new AbilityRevealRequest(card.ObjectId, player);
+        return new AbilityRevealRequest(card.ObjectId, player,
+            new Marvel.Rules.Timing.EncounterRevealOrigin(card.ObjectId, Places.Reference(from)));
     }
 
 }

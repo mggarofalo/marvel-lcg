@@ -31,8 +31,8 @@ internal static class AbilityAffordanceDescription
             AnchorId: ability.Card,
             AnchorPlayer: ability.Player,
             Label: found.Name,
-            Targets: recipients ?? AbilityCostSelection.Ask(world, card, ability.Player, found.Cost),
-            Costs: price is null ? null : [price], Description: Description(found.Effect, contextual))
+            Targets: recipients ?? AdmittedCostTargets(execution, world, card, found, ability.Player),
+            Costs: price is null ? null : [price], Description: Description(execution, world, ability.Player, found.Effect, contextual))
         {
             Timing = found.Trigger.Timing,
             ContextCardIds = ability.TriggeringWouldDefeat is { } imminent ? [imminent]
@@ -45,6 +45,18 @@ internal static class AbilityAffordanceDescription
             DirectRecipientCommit = CanCommitRecipient(recipients, EffectiveCards.Kind(card, world.Facts), found.Trigger.Timing),
             CostDescription = AbilityCostDescription.Summary(world, card, ability.Player, found.Cost),
         };
+    }
+
+    private static TargetRequest? AdmittedCostTargets(AbilityResolutionExecution execution,
+        World world, Card card, CompiledCardAbility ability, int player)
+    {
+        var targets = AbilityCostSelection.Ask(world, card, player, ability.Cost);
+        if (ability.Cost is not AbilityCost.ChooseScheme || targets is null) return targets;
+        // rr:target.2: initiation requires a valid target. Reuse the same
+        // chosen-scheme admission as execution, including status cancellation.
+        return targets with { Legal = [.. targets.Legal.Where(id =>
+            execution.offerQueries.ActionAdmission(world, card, ability, player,
+                world.Windows.Current?.Occurrence, [id]) is not null)] };
     }
 
     private static string? Caption(World world, CompiledCardAbility found,
@@ -66,9 +78,12 @@ internal static class AbilityAffordanceDescription
             ? $"{caption ?? name} after {defeat.Title ?? EffectiveCards.Title(world.Cards[defeat.Card], world.Facts)} is defeated"
             : caption;
 
-    private static string? Description(AbilityEffect effect, string? contextual) => contextual is not null
-        ? contextual + ". Damage prevention and interrupts can change the result."
-        : AbilityEffectDescription.Summary(effect) ?? AbilitySourceActionDescription.Caption(effect);
+    private static string? Description(AbilityResolutionExecution execution, World world,
+        int player, AbilityEffect effect, string? contextual) =>
+        AbilityInvocationDescription.Summary(execution, world, player, effect)
+        ?? (contextual is not null
+            ? contextual + ". Damage prevention and interrupts can change the result."
+            : AbilityEffectDescription.Summary(effect) ?? AbilitySourceActionDescription.Caption(effect));
 
     private static bool CanCommitRecipient(TargetRequest? recipients, CardKind kind, AbilityType timing) =>
         recipients is not null && (kind != CardKind.Event

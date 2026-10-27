@@ -68,7 +68,7 @@
       "abilities": [
         {
           "trigger": { "event": "WhenCardRevealed", "timing": "Interrupt", "subject": "game", "form": "hero", "player": "trigger.player" },
-          "when": { "isKind": { "card": "trigger.subject", "kind": "treachery" } },
+          "when": {"and": [{ "isKind": { "card": "trigger.subject", "kind": "treachery" } }, {"revealedFromEncounterDeck": "trigger"}]},
           "effect": { "cancelWhenRevealed": "trigger.subject" }
         }
       ]
@@ -246,6 +246,7 @@
       "abilities": [
         {
           "trigger": { "event": "WhenCardRevealed", "timing": "Interrupt", "subject": "game", "player": "trigger.player" },
+          "when": {"revealedFromEncounterDeck": "trigger"},
           "cost": { "seq": [
             { "exhaust": "this" },
             { "spend": "B" }
@@ -19876,6 +19877,1518 @@
                 }
               }
             ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "09017",
+      "name": "The Power of Protection",
+      "note": "This card generates one wild resource normally and doubles that output while paying for a Protection card.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "doubleResourceFor": "Protection"
+          }
+        }
+      ]
+    },
+    {
+      "card": "09018",
+      "name": "Med Team",
+      "note": "Uses 3 medical counters is a printed keyword. Its Action exhausts the support and removes one counter to heal 2 damage from a friendly character.",
+      "startingCounters": {
+        "type": "medical",
+        "count": 3,
+        "uses": true
+      },
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this"
+          },
+          "cost": {
+            "seq": [
+              {
+                "exhaust": "this"
+              },
+              {
+                "removeCounters": {
+                  "card": "this",
+                  "counter": "medical",
+                  "count": 1
+                }
+              }
+            ]
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "heroesAndAllies"
+              },
+              "effect": {
+                "heal": {
+                  "card": "chosen",
+                  "amount": 2
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "09022",
+      "name": "Energy",
+      "note": "This resource card has no ability. Its two printed energy resources are read from datasets/cards by the resource rules.",
+      "abilities": []
+    },
+    {
+      "card": "09023",
+      "name": "Genius",
+      "note": "This resource card has no ability. Its two printed mental resources are read from datasets/cards by the resource rules.",
+      "abilities": []
+    },
+    {
+      "card": "09024",
+      "name": "Strength",
+      "note": "This resource card has no ability. Its two printed physical resources are read from datasets/cards by the resource rules.",
+      "abilities": []
+    },
+    {
+      "card": "09025",
+      "name": "Avengers Mansion",
+      "note": "The action exhausts the support, chooses a player through that player's identity, and has that player draw 1 card.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this"
+          },
+          "cost": {
+            "exhaust": "this"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "identities"
+              },
+              "effect": {
+                "draw": {
+                  "player": "chosenPlayer",
+                  "count": 1
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "09009",
+      "name": "Cloak of Levitation",
+      "note": "Printed 09009: the constant grants Aerial to you in both forms; the Hero Action exhausts this card to ready Doctor Strange. Research content, outside complete-product admission.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "grant": {
+              "card": "you",
+              "trait": "AERIAL"
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "cost": {
+            "exhaust": "this"
+          },
+          "effect": {
+            "ready": {
+              "titled": "Doctor Strange"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "09011",
+      "name": "The Eye of Agamotto",
+      "note": "Printed 09011: Hero Resource, exhaust this source to generate one wild resource. Research content, outside complete-product admission.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Resource",
+            "subject": "this",
+            "form": "hero"
+          },
+          "cost": {
+            "exhaust": "this"
+          },
+          "printedResources": "G",
+          "effect": {
+            "generate": "G"
+          }
+        }
+      ]
+    },
+    {
+      "card": "09026",
+      "name": "The Sorcerer Supreme",
+      "note": "Printed 09026: current Mystic identity play prerequisite is read by the printed-card contract. The hand-size constant applies only in hero form. Research content, outside complete-product admission.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "inForm": {
+                  "player": "you",
+                  "form": "hero"
+                }
+              },
+              "then": {
+                "grant": {
+                  "card": "you",
+                  "keyword": "hand_size",
+                  "amount": 1
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "09001a",
+      "name": "Doctor Strange",
+      "note": "Printed Spell Mastery exhausts this hero and pays the captured Invocation cost. The initialized typed Invocation deck is supplied by the insert lifecycle; this row does not admit the incomplete product.",
+      "abilities": [
+        {
+          "name": "Spell Mastery",
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "cost": {
+            "seq": [
+              {
+                "exhaust": "this"
+              },
+              {
+                "invocationTop": "you"
+              }
+            ]
+          },
+          "effect": {
+            "resolveInvocation": "you"
+          }
+        }
+      ]
+    },
+    {
+      "card": "09001b",
+      "name": "Stephen Strange",
+      "note": "Printed Natural Talent discards the public top of the unique typed Invocation deck once per phase. Beginning with the separate deck is owned by the insert lifecycle.",
+      "abilities": [
+        {
+          "name": "Natural Talent",
+          "limitPerPhase": 1,
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "alter-ego"
+          },
+          "effect": {
+            "discard": {
+              "query": "invocationTop"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "09002",
+      "name": "Wong",
+      "note": "Printed exhaust cost precedes the choice. Your identity follows the controller; the Invocation deck denotes the unique typed deck even after control changes.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this"
+          },
+          "cost": {
+            "exhaust": "this"
+          },
+          "effect": {
+            "choose": {
+              "descriptions": [
+                "Heal 1 damage from your identity",
+                "Discard the top Invocation"
+              ],
+              "options": [
+                {
+                  "heal": {
+                    "card": "you",
+                    "amount": 1
+                  }
+                },
+                {
+                  "discard": {
+                    "query": "invocationTop"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "09005",
+      "name": "Master of the Mystic Arts",
+      "note": "Printed Hero Action pays the event cost and the captured Invocation printed cost. Per ruling:b07d53e12625ab23, resolve its Special including discard/reveal/reset before returning that same physical card faceup.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "cost": {
+            "invocationTop": "you"
+          },
+          "effect": {
+            "then": {
+              "effect": {
+                "resolveInvocation": "you"
+              },
+              "then": {
+                "returnInvocation": "you"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "09036",
+      "name": "Winds of Watoomb",
+      "note": "Printed Special draws from the ordinary player deck, then discards this physical Invocation through its separate typed lifecycle. It is resolved only by an explicit Special instruction.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Special",
+            "subject": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "draw": {
+                  "player": "you",
+                  "count": 3
+                }
+              },
+              {
+                "discardInvocation": "this"
+              }
+            ]
+          }
+        }
+      ]
+    }
+,
+    {
+      "card": "09008",
+      "name": "Sanctum Sanctorum",
+      "note": "Printed 09008: exhaust in alter-ego, shuffle one physical Spell from your own discard before the independent draw. Current rr:target.2.3 permits the draw with no Spell when the player deck is nonempty. Research content; no complete-product admission.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "alter-ego"
+          },
+          "cost": {
+            "exhaust": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "if": {
+                  "test": {
+                    "exists": {
+                      "cardsIn": {
+                        "area": "yourDiscardPile",
+                        "trait": "SPELL"
+                      }
+                    }
+                  },
+                  "then": {
+                    "chooseCard": {
+                      "from": {
+                        "cardsIn": {
+                          "area": "yourDiscardPile",
+                          "trait": "SPELL"
+                        }
+                      },
+                      "effect": {
+                        "shuffleInto": {
+                          "cards": "chosen",
+                          "deck": "yourDeck"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "draw": {
+                  "player": "you",
+                  "count": 1
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "09012",
+      "name": "Brother Voodoo",
+      "note": "Printed 09012: the entry response chooses an exact Event among the top five cards of the controller player deck, then shuffles that entire deck even with no match. The top bound precedes printed-kind filtering. Research content; no complete-product admission.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardEntersPlay",
+            "timing": "Response",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "exists": {
+                  "cardsIn": {
+                    "area": "yourDeck",
+                    "top": 5,
+                    "kind": "Event"
+                  }
+                }
+              },
+              "then": {
+                "chooseCard": {
+                  "from": {
+                    "cardsIn": {
+                      "area": "yourDeck",
+                      "top": 5,
+                      "kind": "Event"
+                    }
+                  },
+                  "effect": {
+                    "seq": [
+                      {
+                        "addToHand": "chosen"
+                      },
+                      {
+                        "shuffle": "yourDeck"
+                      }
+                    ]
+                  }
+                }
+              },
+              "else": {
+                "shuffle": "yourDeck"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "09016",
+      "name": "Momentum Shift",
+      "note": "Printed Hero Action (attack). Healing two is a full cost under rr:initiating-abilities.step.5; it precedes the attack damage.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "labels": [
+            "attack"
+          ],
+          "cost": {
+            "heal": {
+              "card": "you",
+              "amount": 2
+            }
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "attackableEnemies"
+              },
+              "effect": {
+                "attack": {
+                  "target": "chosen",
+                  "effect": {
+                    "dealAttackDamage": {
+                      "cards": "chosen",
+                      "amount": 2
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "09021",
+      "name": "Warning",
+      "note": "Printed Interrupt on any hero taking damage; no controller-form or attack restriction. Prevention affects only the pending damage instance.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenDamageWouldBeDealt",
+            "damage": "taken",
+            "timing": "Interrupt",
+            "target": "hero"
+          },
+          "effect": {
+            "preventDamage": {
+              "card": "trigger.target",
+              "amount": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "09037",
+      "name": "Skilled Strike",
+      "note": "Printed Interrupt on your hero making a basic attack. The engine-owned basic-attack occurrence follows exhaustion and binds the modifier to that attack.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenHeroBasicAttackInitiated",
+            "timing": "Interrupt",
+            "actor": "you"
+          },
+          "effect": {
+            "boostBasicUse": 2
+          }
+        }
+      ]
+    },
+    {
+      "card": "09038",
+      "name": "Foiled!",
+      "note": "Printed Interrupt on one physical boost card turning faceup during a scheme activation. Cancel numeric icons only; the star ability remains. Trigger, condition and instruction spellings are engine choices.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenBoostCardTurnedFaceup",
+            "timing": "Interrupt",
+            "subject": "game"
+          },
+          "when": {
+            "activationIs": "scheme"
+          },
+          "effect": {
+            "cancelBoostIcons": "trigger"
+          }
+        }
+      ]
+    },
+    {
+      "card": "09033",
+      "name": "Images of Ikonn",
+      "note": "Printed Special confuses the villain and removes four threat from a chosen scheme, then independently discards this physical Invocation. Ineffective main effects do not suppress its self-discard. Research content; no complete-product admission.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Special",
+            "subject": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "giveStatus": {
+                  "card": {
+                    "query": "villain"
+                  },
+                  "status": "confused"
+                }
+              },
+              {
+                "chooseCard": {
+                  "from": {
+                    "query": "schemes"
+                  },
+                  "effect": {
+                    "removeThreat": {
+                      "scheme": "chosen",
+                      "amount": 4
+                    }
+                  }
+                }
+              },
+              {
+                "discardInvocation": "this"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "09035",
+      "name": "Vapors of Valtorr",
+      "note": "Printed Special replaces the chosen physical status with a different legal kind on the same character, then independently discards this physical Invocation. Replacement is not giving a status. Research content; no complete-product admission.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Special",
+            "subject": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "chooseCard": {
+                  "from": {
+                    "query": "statusCards"
+                  },
+                  "effect": {
+                    "choose": {
+                      "descriptions": [
+                        "Replace with tough",
+                        "Replace with stunned",
+                        "Replace with confused"
+                      ],
+                      "options": [
+                        {
+                          "replaceStatus": {
+                            "card": "chosen",
+                            "status": "tough"
+                          }
+                        },
+                        {
+                          "replaceStatus": {
+                            "card": "chosen",
+                            "status": "stunned"
+                          }
+                        },
+                        {
+                          "replaceStatus": {
+                            "card": "chosen",
+                            "status": "confused"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              },
+              {
+                "discardInvocation": "this"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "09006",
+      "name": "Mystical Studies",
+      "note": "Printed alter-ego search uses the exact Doctor Strange set in your deck and discard; the searched deck is shuffled even without a match. Research content; no complete-product admission.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "alter-ego"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "exists": {
+                  "cardsIn": {
+                    "areas": [
+                      "yourDeck",
+                      "yourDiscardPile"
+                    ],
+                    "set": "doctor_strange"
+                  }
+                }
+              },
+              "then": {
+                "chooseCard": {
+                  "from": {
+                    "cardsIn": {
+                      "areas": [
+                        "yourDeck",
+                        "yourDiscardPile"
+                      ],
+                      "set": "doctor_strange"
+                    }
+                  },
+                  "effect": {
+                    "seq": [
+                      {
+                        "addToHand": "chosen"
+                      },
+                      {
+                        "shuffle": "yourDeck"
+                      }
+                    ]
+                  }
+                }
+              },
+              "else": {
+                "shuffle": "yourDeck"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "09010",
+      "name": "Magical Enhancements",
+      "note": "Printed play-under-control instruction uses the existing identity attachment contract. The current controller hero receives all three bonuses; mandatory round-end discard also applies in alter-ego. Research content; no complete-product admission.",
+      "attachTo": {
+        "query": "identities"
+      },
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "grant": {
+                  "card": "yourHero",
+                  "keyword": "thwart",
+                  "amount": 1
+                }
+              },
+              {
+                "grant": {
+                  "card": "yourHero",
+                  "keyword": "attack",
+                  "amount": 1
+                }
+              },
+              {
+                "grant": {
+                  "card": "yourHero",
+                  "keyword": "defense",
+                  "amount": 1
+                }
+              }
+            ]
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenRoundEnds",
+            "timing": "ForcedInterrupt",
+            "subject": "game"
+          },
+          "effect": {
+            "discard": "this"
+          }
+        }
+      ]
+    },
+    {
+      "card": "09032",
+      "name": "Crimson Bands of Cyttorak",
+      "note": "Printed enemy sentence gives Stun and seven ordinary damage to the chosen enemy; independent self-discard resolves even without an effective enemy. Research content; no complete-product admission.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Special",
+            "subject": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "chooseCard": {
+                  "from": {
+                    "query": "enemies"
+                  },
+                  "effect": {
+                    "seq": [
+                      {
+                        "giveStatus": {
+                          "card": "chosen",
+                          "status": "stunned"
+                        }
+                      },
+                      {
+                        "dealDamage": {
+                          "cards": "chosen",
+                          "amount": 7
+                        }
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                "discardInvocation": "this"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "09034",
+      "name": "Seven Rings of Raggadorr",
+      "note": "Printed Special gives up to three distinct characters Tough, including enemies; an explicit empty selection still independently discards this physical Invocation. Research content; no complete-product admission.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Special",
+            "subject": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "chooseStatusRecipients": {
+                  "from": {
+                    "query": "characters"
+                  },
+                  "status": "tough",
+                  "maximum": 3
+                }
+              },
+              {
+                "discardInvocation": "this"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "09020",
+      "name": "Unflappable",
+      "note": "Printed 09020 permits any player control, max one per player. After the controller defends and takes no attack damage, optionally exhaust to draw one. Boost ability damage does not count (faq:09020); current RR 1.8 includes defense-labeled events. Research content; no public admission.",
+      "attachTo": {
+        "query": "identitiesWithinPerPlayerLimit"
+      },
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenAttackEnds",
+            "timing": "Response",
+            "actor": "enemy",
+            "target": "you"
+          },
+          "when": {
+            "and": [
+              {
+                "heroDefended": "you"
+              },
+              {
+                "not": {
+                  "attackDamagedYou": "you"
+                }
+              }
+            ]
+          },
+          "cost": {
+            "exhaust": "this"
+          },
+          "effect": {
+            "draw": {
+              "player": "you",
+              "count": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "09013",
+      "name": "Clea",
+      "note": "Printed 09013 optional defeat Interrupt shuffles this physical ally into her owner's deck. Research content; no public admission.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardDefeated",
+            "timing": "Interrupt",
+            "subject": "this"
+          },
+          "effect": {
+            "shuffleInto": {
+              "cards": "this",
+              "deck": "ownerDeck"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "09019",
+      "name": "The Night Nurse",
+      "note": "Printed 09019 Uses (3 medical counters). Exhaust and remove one counter to heal one damage from a chosen hero and discard exactly one physical status on that hero, resolving each possible independent effect (rr:and.1; faq:09019 includes Tough). Research content; no public admission.",
+      "startingCounters": {
+        "type": "medical",
+        "count": 3,
+        "uses": true
+      },
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this"
+          },
+          "cost": {
+            "seq": [
+              {
+                "exhaust": "this"
+              },
+              {
+                "removeCounters": {
+                  "card": "this",
+                  "counter": "medical",
+                  "count": 1
+                }
+              }
+            ]
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "heroes"
+              },
+              "effect": {
+                "and": [
+                  {
+                    "heal": {
+                      "card": "chosen",
+                      "amount": 1
+                    }
+                  },
+                  {
+                    "chooseCard": {
+                      "from": {
+                        "statusCardsOn": "chosen"
+                      },
+                      "effect": {
+                        "discard": "chosen"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "09039",
+      "name": "Iron Man",
+      "note": "Printed 09039 Leadership ally Tony Stark reduces the cost to play each upgrade on this exact physical ally by one. The engine floors the modified cost at zero. Research content; no public admission.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "reduceUpgradeCostOnThis": 1
+          }
+        }
+      ]
+    },
+    {
+      "card": "09003",
+      "name": "Astral Projection",
+      "note": "Printed choose-scheme arrow cost precedes the labelled thwart. Independent removal and private encounter-top inspection resolve in the chosen order, then the numeric boost-icon receipt removes additional threat from that exact scheme incarnation.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "labels": [
+            "thwart"
+          ],
+          "cost": {
+            "chooseScheme": "chosen"
+          },
+          "effect": {
+            "thwart": {
+              "target": "chosen",
+              "effect": {
+                "seq": [
+                  {
+                    "and": [
+                      {
+                        "removeThreat": {
+                          "scheme": "chosen",
+                          "amount": 3
+                        }
+                      },
+                      {
+                        "inspectEncounterTop": {
+                          "count": 1,
+                          "result": "boostIconsLookedAt"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "removeThreat": {
+                      "scheme": "chosen",
+                      "amount": {
+                        "result": "boostIconsLookedAt"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "09004",
+      "name": "Magic Blast",
+      "note": "Printed Hero Action (attack). The chosen exact enemy takes 5 damage and the player discards their top card. The discard receipt tests presence, not icon count (ruling 59bea1238c870653); wild applies every branch. The energy 2 is a separate damage instance (e4ea1bf855e41aac). Deck reset precedes event discard (d1f9f33e3ae4ba2f).",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "attackableEnemies"
+              },
+              "effect": {
+                "attack": {
+                  "target": "chosen",
+                  "effect": {
+                    "seq": [
+                      {
+                        "and": [
+                          {
+                            "dealAttackDamage": {
+                              "cards": "chosen",
+                              "amount": 5
+                            }
+                          },
+                          {
+                            "discardTop": {
+                              "from": "yourDeck",
+                              "count": 1
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "if": {
+                          "test": {
+                            "or": [
+                              {
+                                "discardedWithResource": "R"
+                              },
+                              {
+                                "discardedWithResource": "G"
+                              }
+                            ]
+                          },
+                          "then": {
+                            "giveStatus": {
+                              "card": "chosen",
+                              "status": "stunned"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "if": {
+                          "test": {
+                            "or": [
+                              {
+                                "discardedWithResource": "Y"
+                              },
+                              {
+                                "discardedWithResource": "G"
+                              }
+                            ]
+                          },
+                          "then": {
+                            "dealAttackDamage": {
+                              "cards": "chosen",
+                              "amount": 2
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "if": {
+                          "test": {
+                            "or": [
+                              {
+                                "discardedWithResource": "B"
+                              },
+                              {
+                                "discardedWithResource": "G"
+                              }
+                            ]
+                          },
+                          "then": {
+                            "giveStatus": {
+                              "card": "chosen",
+                              "status": "confused"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "09007",
+      "name": "Protective Ward",
+      "note": "Printed Hero Interrupt permits another player's treachery reveal and cancels all effects, including keywords, while revelation and discard remain (rr:cancel.4). The encounter-origin receipt includes first-dealt cards from any source, but excludes direct separate-zone reveals (ruling:7075a85e02f2203e).",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "Interrupt",
+            "subject": "game",
+            "form": "hero"
+          },
+          "when": {
+            "and": [
+              {
+                "isKind": {
+                  "card": "trigger.subject",
+                  "kind": "treachery"
+                }
+              },
+              {
+                "revealedFromEncounterDeck": "trigger"
+              }
+            ]
+          },
+          "effect": {
+            "seq": [
+              {
+                "cancelOccurrence": "trigger"
+              },
+              {
+                "discard": "trigger.subject"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "09014",
+      "name": "Iron Fist",
+      "note": "Corrected printed Interrupt (faq:09014). Ordinary entry counters do not discard this ally at zero. Stun and damage affect the exact attacked enemy before basic attack damage; rr:consequential-damage.2.2 explicitly describes lethal interruption.",
+      "startingCounters": {
+        "type": "mystic",
+        "count": 2,
+        "uses": false
+      },
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenAttackInitiated",
+            "timing": "Interrupt",
+            "actor": "this",
+            "target": "enemy"
+          },
+          "cost": {
+            "removeCounters": {
+              "card": "this",
+              "counter": "mystic",
+              "count": 1
+            }
+          },
+          "effect": {
+            "and": [
+              {
+                "giveStatus": {
+                  "card": "trigger.target",
+                  "status": "stunned"
+                }
+              },
+              {
+                "dealDamage": {
+                  "cards": "trigger.target",
+                  "amount": 1
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "09015",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenHeroDefends",
+            "timing": "Interrupt",
+            "subject": "you",
+            "form": "hero"
+          },
+          "labels": [
+            "defense"
+          ],
+          "effect": {
+            "seq": [
+              {
+                "grantUntil": {
+                  "card": "you",
+                  "keyword": "defense",
+                  "amount": 2,
+                  "until": "EndOfAttack"
+                }
+              },
+              {
+                "readyUndamagedDefender": "you"
+              }
+            ]
+          }
+        }
+      ],
+      "name": "Desperate Defense",
+      "note": "Printed Hero Interrupt (defense): +2 DEF for this attack; delayed ready tests damage from this exact attack on the original defending hero (rr:delayed-effect.1)."
+    },
+    {
+      "card": "09027",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "choose": {
+                  "descriptions": [
+                    "Change to alter-ego form",
+                    "Remain in your current form"
+                  ],
+                  "options": [
+                    {
+                      "changeForm": {
+                        "player": "you",
+                        "to": "alter-ego"
+                      }
+                    },
+                    {
+                      "seq": []
+                    }
+                  ]
+                }
+              },
+              {
+                "choose": {
+                  "descriptions": [
+                    "Exhaust Stephen Strange and remove Physical Toll from the game",
+                    "Your next event costs 3 additional resources; discard Physical Toll after that event"
+                  ],
+                  "options": [
+                    {
+                      "then": {
+                        "effect": {
+                          "exhaust": "yourAlterEgo"
+                        },
+                        "then": {
+                          "removeFromGame": "this"
+                        }
+                      }
+                    },
+                    {
+                      "increaseNextEventCost": 3
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "name": "Physical Toll",
+      "note": "Printed optional form change and Stephen Strange exhaustion/removal; the next played event costs three more and completes this exact obligation even if canceled (rr:event.2). Invocation Special resolution is not event play."
+    },
+    {
+      "card": "09029",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "storeBeneath": {
+              "cards": {
+                "query": "invocationTop"
+              },
+              "host": "this"
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenCardDefeated",
+            "timing": "WhenDefeated",
+            "subject": "this"
+          },
+          "effect": {
+            "releaseBeneath": {
+              "invocationDeck": "true"
+            }
+          }
+        }
+      ],
+      "name": "Open the Dark Dimension",
+      "note": "Printed facedown storage preserves the exact physical Invocation. When Defeated returns it before departure (rr:when-defeated-abilities.2.1); ordinary departure instead discards it."
+    },
+    {
+      "card": "09028",
+      "name": "Baron Mordo",
+      "note": "WhenAttackInitiated follows rr:attack-enemy-activation.5. Only this exact top-card discard supplies printed resources; wild applies all three independent effects.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenAttackInitiated",
+            "timing": "ForcedInterrupt",
+            "actor": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "discardTop": {
+                  "from": "yourDeck",
+                  "count": 1
+                }
+              },
+              {
+                "if": {
+                  "test": {
+                    "or": [
+                      {
+                        "discardedWithResource": "R"
+                      },
+                      {
+                        "discardedWithResource": "G"
+                      }
+                    ]
+                  },
+                  "then": {
+                    "giveStatus": {
+                      "card": "you",
+                      "status": "stunned"
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "test": {
+                    "or": [
+                      {
+                        "discardedWithResource": "Y"
+                      },
+                      {
+                        "discardedWithResource": "G"
+                      }
+                    ]
+                  },
+                  "then": {
+                    "dealDamage": {
+                      "cards": "you",
+                      "amount": 2
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "test": {
+                    "or": [
+                      {
+                        "discardedWithResource": "B"
+                      },
+                      {
+                        "discardedWithResource": "G"
+                      }
+                    ]
+                  },
+                  "then": {
+                    "giveStatus": {
+                      "card": "you",
+                      "status": "confused"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "09031",
+      "name": "Thoughtcasting",
+      "note": "The resolving player chooses a highest-cost card from their own hand. The chosen physical card remains bound after discard, supplying its printed cost in either form (rr:printed).",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "maxBy": {
+                  "of": {
+                    "cardsIn": {
+                      "area": "yourHand"
+                    }
+                  },
+                  "by": "cost"
+                }
+              },
+              "effect": {
+                "seq": [
+                  {
+                    "discard": "chosen"
+                  },
+                  {
+                    "if": {
+                      "test": {
+                        "inForm": {
+                          "player": "you",
+                          "form": "hero"
+                        }
+                      },
+                      "then": {
+                        "dealDamage": {
+                          "cards": "you",
+                          "amount": {
+                            "sumPrintedCost": "chosen"
+                          }
+                        }
+                      },
+                      "else": {
+                        "placeThreat": {
+                          "scheme": {
+                            "query": "mainScheme"
+                          },
+                          "amount": {
+                            "sumPrintedCost": "chosen"
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "09030",
+      "name": "Counterspell",
+      "note": "Hero-only attachment, with a form-independent Forced Interrupt for the attached identity. Independent cancellation and event discard precede dependent self-discard (rr:and.1-.2, rr:then.1-.2). rr:event.2 retains paid costs; rr:status-cards.2 gives stun priority.",
+      "attachTo": "yourHero",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenEventPlayInitiated",
+            "timing": "ForcedInterrupt",
+            "subject": "you"
+          },
+          "effect": {
+            "then": {
+              "effect": {
+                "and": [
+                  {
+                    "cancelOccurrence": "trigger"
+                  },
+                  {
+                    "discard": "trigger.subject"
+                  }
+                ]
+              },
+              "then": {
+                "discard": "this"
+              }
+            }
           }
         }
       ]

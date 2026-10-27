@@ -51,6 +51,7 @@ public static class WorldSetup
 
         Setup.PlayerCountRules.Validate(seats.Count);
 
+        Setup.InvocationSetup.Validate(blueprints, seats.Count);
         RefuseUnsupportedKinds(facts, blueprints);
         if (options.EncounterGroups is { } encounterGroups)
             EncounterSetupValidation.Validate(encounterGroups, blueprints, facts);
@@ -133,6 +134,10 @@ public static class WorldSetup
 
         ShuffleEncounterDecks(world);
 
+        // Engine choice: separate Invocation shuffles follow all ordinary decks,
+        // in seat order, before scenario abilities or opening hands.
+        Setup.InvocationSetup.Bind(world, blueprints, happened);
+
         world.ScenarioSetup = new ScenarioSetup();
         world.ScenarioSetup.Advance(world, happened, happened.Count);
 
@@ -182,6 +187,7 @@ public static class WorldSetup
         SetupSlot.MainScheme => mainSchemeDeck,
         SetupSlot.Villain => villainDeck,
         SetupSlot.Encounter => encounterDeck,
+        SetupSlot.InvocationDeck => world.AreaOf(DeckType.AsideDeck, PlayArea.Of(blueprint.Seat), cardOwner: blueprint.Seat),
         SetupSlot.SetAside => blueprint.Seat >= 0
             ? world.Seats[blueprint.Seat].SetAside
             : world.AreaOf(DeckType.AsideDeck),

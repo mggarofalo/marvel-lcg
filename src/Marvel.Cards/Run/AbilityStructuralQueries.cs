@@ -53,7 +53,8 @@ internal static class AbilityStructuralQueries
                 $"'{context.SourceFace}' did not offer card {answer.Affordance} to choose");
         return new RunChoice(
             choice.Effect, new ChoiceFrame(null, selected.ObjectId), selected,
-            BindsPlayerSelection: true, Admission(evidence));
+            BindsPlayerSelection: true, Admission(evidence))
+        { RestoreOuterBinding = AbilityIndependentStatusChoice.IsRemovalChoice(choice) };
     }
 
     /// <summary>Whether one listed option may be chosen and leaves its suffix resolvable.</summary>
@@ -120,7 +121,11 @@ internal static class AbilityStructuralQueries
                 && !AbilityChoiceAnalysis.ActiveChoices(choice.Effect, selected).Any()
                     ? AbilityResolutionAdmission.ResolutionOf(choice.Effect, selected)
                     : null;
-            var outcomes = AbilityAdmission.BindingCandidates(
+            bool localStatus = AbilityIndependentStatusChoice.IsRemovalChoice(choice);
+            if (localStatus) selected = context.Admission();
+            var outcomes = localStatus
+                ? new BindingCandidateState(selected.Query.Chosen is { } host ? [host] : [], selected.Query.Chosen is null)
+                : AbilityAdmission.BindingCandidates(
                 choice.Effect, selected,
                 new BindingCandidateState([candidate], false));
             var after = selected.WithReachability(selected.Reachability with
@@ -129,7 +134,8 @@ internal static class AbilityStructuralQueries
                 FilteringContinuationOption = true,
             });
             return ContinuationCanResolve(
-                context, continuation, outcomes, after, pending, evidence);
+                context, localStatus ? AbilityIndependentStatusChoice.ContinuationWithoutIndependentHeal(choice, continuation) : continuation,
+                outcomes, after, pending, evidence);
         }).ToList();
     }
 

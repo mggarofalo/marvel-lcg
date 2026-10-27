@@ -14,8 +14,10 @@ namespace Marvel.Server.Tests;
 public sealed class ExpertCampaignReplayUpgradeTests
 {
     [Fact]
-    [Rule("rr:damage.step.3")]
-    public void DirectDamageWindowDivergenceQuarantinesTheExpertCampaignWithoutChangingSourceFiles()
+    [Rule("rr:status-cards.2")]
+    [Rule("rr:confuse-confused.5")]
+    [Rule("rr:confuse-confused.7")]
+    public void ConfusedThwartDivergenceQuarantinesTheExpertCampaignWithoutChangingSourceFiles()
     {
         WithFixture((published, factory) =>
         {
@@ -38,8 +40,8 @@ public sealed class ExpertCampaignReplayUpgradeTests
                 var failure = Assert.Throws<ReplayDivergenceException>(() => route.Verify(original.Save,
                     factory.CampaignDefinition!, setup => ReplayContractUpgradeTests.Open(factory, setup),
                     factory.InspectCampaign));
-                Assert.Equal("unit 28 decision 1 events diverged: expected 4, got 1", failure.Message);
-                if (restart == 0) AssertDirectDamageCause(original.Save, factory);
+                if (restart == 0) AssertConfusedThwartCause(original.Save, factory);
+                Assert.Equal("unit 25 decision 0 events diverged: expected 3, got 6", failure.Message);
                 var host = new CampaignHost(factory, store, new MemorySessionStore());
                 Assert.Equal("campaign_not_found", host.Exchange(new(EngineProtocol.Version, "owner",
                     EngineProtocol.Campaign, access.RootElement.GetProperty("id").GetString()!,
@@ -104,28 +106,58 @@ public sealed class ExpertCampaignReplayUpgradeTests
         });
     }
 
-    private static void AssertDirectDamageCause(CampaignSave campaign, DatasetGameFactory factory)
+    private static void AssertConfusedThwartCause(CampaignSave campaign, DatasetGameFactory factory)
     {
-        var proof = campaign.Journal[13].Proof!;
+        var proof = campaign.Journal[4].Proof!;
         Assert.Equal("crossbones", proof.Setup.Scenario);
-        Assert.Equal(4, proof.Setup.Campaign!.Attempt);
-        var game = FrozenReplayPrefixAssertions.Before(proof, factory, 28, 1);
-        var step = proof.Units[28].Decisions[1];
-        Assert.Equal("Great Responsibility", step.Decision.Selector.Label);
-        // Damage step 3: abilities that trigger "when [character] would take any amount of damage...".
-        // This compatibility probe uses the frozen unscoped Backflip book, not current authored content.
+        Assert.Equal(1, proof.Setup.Campaign!.Attempt);
+        var game = FrozenReplayPrefixAssertions.Before(proof, factory, 25, 0);
+        var step = proof.Units[25].Decisions[0];
+        Assert.Equal("For Justice!", step.Decision.Selector.Label);
+        Assert.Equal(25, step.Decision.Selector.AnchorId);
+        Assert.Empty(step.Decision.Targets);
+        Assert.Equal(42, Assert.Single(step.Decision.Resources));
+        var world = game.State;
+        Assert.Equal("01060", world.Cards[25].FaceId);
+        Assert.Equal("01088", world.Cards[42].FaceId);
+        var confused = Assert.Single(Statuses.On(world, world.Seats[0].IdentityCard, Statuses.Confused));
+        Assert.Equal(99, confused.ObjectId);
+        var threats = world.Cards.Select(card => card.Tokens.GetValueOrDefault("k_threat")).ToArray();
+        long rng = world.Random.Generator.WordsConsumed;
+        // "Status card abilities have timing priority over all conflicting triggered abilities."
+        // "Costs associated with the thwart attempt ... must still be paid."
+        // The engine chooses to settle this replacement before an effect-target prompt.
         var result = game.Resolve(step.Decision.Resolve(game.Pending!));
-        Assert.Equal(step.Events[0].GetRawText(), JournalJson.Event(Assert.Single(result.Events)).GetRawText());
-        Assert.Equal(6, CardValues.RemainingHealth(game.State, game.State.Seats[0].IdentityCard, game.State.Facts));
-        Assert.Equal("WhenDamageWouldBeDealt", game.Pending!.Trigger);
-        Assert.Collection(game.Pending.Affordances, action => Assert.Equal(9, action.AnchorId),
-            action => Assert.Equal(10, action.AnchorId));
-        Assert.All(game.Pending.Affordances, action => Assert.Equal("Backflip", action.Verb));
-        Assert.False(game.State.Agenda.Occurrence!.DamageFromAttack);
-        var continued = game.Resolve(Decision.Decline);
-        var expectedDamage = Assert.Single(step.Events, happened => happened.GetProperty("kind").GetString() == "FieldSet");
-        Assert.Contains(continued.Events.Select(JournalJson.Event), happened => happened.GetRawText() == expectedDamage.GetRawText());
-        Assert.Equal(5, CardValues.RemainingHealth(game.State, game.State.Seats[0].IdentityCard, game.State.Facts));
+        var events = result.Events.Select(JournalJson.Event).ToArray();
+        Assert.Equal(6, events.Length);
+        Assert.Equal(step.Events.Select(item => item.GetRawText()), events.Take(3).Select(item => item.GetRawText()));
+        Assert.Equal("StatusArea", events[3].GetProperty("from").GetProperty("zone").GetString());
+        Assert.Equal("RemovedArea", events[3].GetProperty("to").GetProperty("zone").GetString());
+        Assert.Equal(99, Assert.Single(events[3].GetProperty("cards").EnumerateArray()).GetProperty("card").GetInt32());
+        Assert.Equal("confused", events[3].GetProperty("trigger").GetString());
+        Assert.Equal("CardDetached", events[4].GetProperty("kind").GetString());
+        Assert.Equal(99, events[4].GetProperty("card").GetInt32());
+        Assert.Equal(1, events[4].GetProperty("host").GetInt32());
+        Assert.Equal(25, Assert.Single(events[5].GetProperty("cards").EnumerateArray()).GetProperty("card").GetInt32());
+        Assert.Equal("DiscardPile", events[5].GetProperty("to").GetProperty("zone").GetString());
+        Assert.Equal(DeckType.DiscardPile, world.Cards[25].Area.Type);
+        Assert.Equal(DeckType.DiscardPile, world.Cards[42].Area.Type);
+        Assert.False(Statuses.Has(world, world.Seats[0].IdentityCard, Statuses.Confused));
+        // "That character is not considered to have thwarted or schemed."
+        Assert.Equal(threats, world.Cards.Select(card => card.Tokens.GetValueOrDefault("k_threat")));
+        Assert.Equal(rng, world.Random.Generator.WordsConsumed);
+        Assert.Equal("WhenPlayerInTurn", game.Pending!.Trigger);
+
+        // Synthetic causal control: remove only confusion from a second verified prefix.
+        // This is not a replay upgrade and does not advance the rejected historical choice.
+        var control = FrozenReplayPrefixAssertions.Before(proof, factory, 25, 0);
+        var status = Assert.Single(Statuses.On(control.State, control.State.Seats[0].IdentityCard, Statuses.Confused));
+        World.MoveToTop(status, control.State.AreaOf(DeckType.RemovedArea));
+        var continued = control.Resolve(step.Decision.Resolve(control.Pending!));
+        JournalReplay.RequireEvents(step.Events, continued.Events, "unconfused control payment");
+        JournalReplay.RequirePrompt(proof.Units[25].Decisions[1].Prompt, control.Pending!, "unconfused control target");
+        Assert.Equal(DeckType.RevealingArea, control.State.Cards[25].Area.Type);
+        Assert.Equal(DeckType.DiscardPile, control.State.Cards[42].Area.Type);
     }
 
     private static string[] Snapshot(string directory) => Directory.GetFiles(directory, "*", SearchOption.AllDirectories)

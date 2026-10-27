@@ -79,7 +79,7 @@ internal sealed class AbilityEventPayment
 
         string generated = GeneratedResources(sources.Generators, paying);
         var requirements = EventPaymentRequirements.Create(
-            world, card, adjusted, ability.Cost, energy);
+            world, card, adjusted, AbilityInvocationPayment.Expand(world, player, ability.Cost), energy);
         ValidateGeneratedPayment(generated, requirements);
 
         var assigned = allocations;
@@ -203,6 +203,7 @@ internal sealed class AbilityEventPayment
             world.Effects.Register(new ContinuousEffect(
                 EffectSource.LastingEffect, Kind: "paid:" + resource,
                 Card: card.ObjectId, Affects: card.ObjectId, Lasts: new Duration(Uses: 1)));
+        NextEventCost.Reserve(world, card, adjusted);
         CardPayment.UseCostModifiers(world, adjusted);
         // rr:initiating-abilities.step.6: the event is played after its costs are paid.
         if (occurrence.Is(Steps.TurnAction)) occurrence.Also(Steps.CardPlayed);

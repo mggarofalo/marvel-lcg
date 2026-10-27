@@ -117,13 +117,10 @@ public sealed class SpiderManCardsTests : SpiderManCardTestBase
     [Fact]
     public void StunCancelsSwingingWebKickAfterItsCostsArePaid()
     {
-        // "As the attack is initiated, remove the stunned status card to
-        // cancel the attack." An event's attack is "considered to be performed
-        // by that player's identity", so the hero's stun cancels Swinging Web
-        // Kick. Initiation is after the event's costs are paid. Canceling only
-        // Canceling ability effects leaves their costs paid; if an event's
-        // effects are canceled, it is still played and discarded. Thus the
-        // resources remain spent and the event enters its owner's discard.
+        // "Only the effects are prevented from initiating, and do not resolve."
+        // "If the effects of an event card are canceled, the card is still
+        // considered played, and it is discarded." Stun replaces the attack
+        // after payment, so the canceled effect requests no enemy target.
         var world = Deal(hero: true);
         var runner = AuthoredCards.Runner();
         world.Abilities = runner;
@@ -137,10 +134,7 @@ public sealed class SpiderManCardsTests : SpiderManCardTestBase
 
         var action = Assert.Single(runner.Actions(world, 0));
         runner.ExecuteAction(world, new PlayerAction(action, [genius.ObjectId, energy.ObjectId], []));
-        var prompt = Sequence.Work(world, Cards, runner, [])!;
-        Assert.Contains("Stunned cancels this attack", Assert.Single(prompt.Affordances).Description);
-        Sequence.Answer(world, Cards, runner, prompt, Decision.Take(villain.ObjectId), []);
-        Sequence.Finish(world, Cards, runner, []);
+        Assert.Null(Sequence.Work(world, Cards, runner, []));
 
         Assert.False(Statuses.Has(world, hero, Statuses.Stunned));
         Assert.Equal(0, villain.Damage);

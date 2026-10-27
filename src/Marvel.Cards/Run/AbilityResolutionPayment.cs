@@ -15,6 +15,7 @@ internal static class AbilityResolutionPayment
             Rules.Play.Discard.Card(cast.World, card, CardPlay.Verb, cast.Events);
             ConsumePaymentMarkers(cast.World, card);
             AbilityPlayedEventModifier.Complete(cast.World, card);
+            NextEventCost.Complete(cast.World, card, cast.Events);
             cast.Occurrence.CompleteEventPlay(card.ObjectId);
 
             if (playedInWindow)

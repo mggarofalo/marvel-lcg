@@ -23,7 +23,16 @@ internal sealed class CounterattackReceiptFixture
     internal CounterattackReceiptFixture(bool villain = false, string? additionalRow = null)
     {
         var book = JsonNode.Parse(AuthoredCards.Text)!;
-        if (additionalRow is not null) book["cards"]!.AsArray().Add(JsonNode.Parse(additionalRow));
+        if (additionalRow is not null)
+        {
+            // This explicitly synthetic marker replaces an actual row only in this fixture.
+            var replacement = JsonNode.Parse(additionalRow)!;
+            var rows = book["cards"]!.AsArray();
+            var existing = rows.SingleOrDefault(row => row!["card"]!.GetValue<string>()
+                == replacement["card"]!.GetValue<string>());
+            if (existing is not null) rows.Remove(existing);
+            rows.Add(replacement);
+        }
         Runner = new(AbilityCatalog.Parse(book.ToJsonString()));
         World.Abilities = Runner;
         Counter = World.CreateCard("08030",

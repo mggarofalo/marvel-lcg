@@ -24,9 +24,9 @@ internal sealed class AbilitySelectorEvaluation(
             {
                 Kind:
             AbilityCardQuery.Villain or AbilityCardQuery.MainScheme or AbilityCardQuery.YourAsideMinion
-            or AbilityCardQuery.YourAsideSideScheme or AbilityCardQuery.ActiveVillainSideScheme or AbilityCardQuery.VillainOfAttachedScheme
+            or AbilityCardQuery.InvocationTop or AbilityCardQuery.YourAsideSideScheme or AbilityCardQuery.ActiveVillainSideScheme or AbilityCardQuery.VillainOfAttachedScheme
             } query)
-            return AbilityCardQueries.Cards(query.Kind, context).SingleOrDefault();
+            return FindQuery(query);
         if (selector is AbilityCardSelection.Last last)
         {
             if (admitSingularArea is not null && !admitSingularArea(AbilitySelectionAreaReads.For(last)))
@@ -38,6 +38,13 @@ internal sealed class AbilitySelectorEvaluation(
             return AbilityDefeatedAllySelection.Find(context);
         throw new RulesNotImplementedException(
             $"'{context.Source.FaceId}' uses a selector whose single-card resolution is not implemented");
+    }
+
+    private Card? FindQuery(AbilityCardSelection.Query query)
+    {
+        if (query.Kind == AbilityCardQuery.InvocationTop && admitSingularArea is not null
+            && !admitSingularArea(AbilitySelectionAreaReads.For(query))) return null;
+        return Every(query).SingleOrDefault();
     }
 
     private Card? FindInAreas(AbilityCardSelection.InAreas areas)
@@ -78,6 +85,7 @@ internal sealed class AbilitySelectorEvaluation(
     {
         AbilityCardSelection.FirstAvailable fallback => fallback.Options.Select(Every).FirstOrDefault(cards => cards.Count > 0) ?? [],
         AbilityCardSelection.Bound bound => AbilityCardQueries.Named(bound.Binding, context) is { } card ? [card] : [],
+        AbilityCardSelection.StatusCardsOn statuses => StatusCardsOn(statuses.Host),
         AbilityCardSelection.Query query => AbilityCardQueries.Cards(query.Kind, context, program),
         AbilityCardSelection.DefeatedAllyInYourDiscardPile => AbilityDefeatedAllySelection.Every(context),
         AbilityCardSelection.Titled titled => AbilityCardQueries.ReferencedByTitle(titled.Title, context),
@@ -107,6 +115,18 @@ internal sealed class AbilitySelectorEvaluation(
         AbilityCardSelection.InAreas areas => CardsIn(areas),
         _ => throw new InvalidOperationException("Unknown compiled card selection"),
     };
+
+    private IReadOnlyList<Card> StatusCardsOn(AbilityCardBinding binding)
+    {
+        var host = AbilityCardQueries.Named(binding, context);
+        if (host is null || !DeckTypes.IsInPlay(host.Area.Type)
+            || !CardKinds.IsCharacter(EffectiveCards.Kind(host, context.World.Facts))) return [];
+        // rr:status-cards: a physical status is placed "on that character".
+        // Stable object-id ordering is an engine choice, never an automatic answer.
+        return [.. context.World.Areas.Where(area => area.Type == DeckType.StatusArea
+                && area.Host == host.ObjectId).SelectMany(area => area.Cards)
+            .OrderBy(card => card.ObjectId)];
+    }
 
     private IReadOnlyList<Card> FilterEvery(AbilityCardSelection selector) => selector switch
     {
@@ -152,6 +172,8 @@ internal sealed class AbilitySelectorEvaluation(
         if (selection.Areas.Any(area => area is AbilitySearchArea.YourDeck or AbilitySearchArea.EncounterDeck))
             information.Add(InformationKind.Search);
         return [.. selection.Areas.SelectMany(area => SearchRange(area, selection.Top))
+            .Where(card => selection.Set is null || string.Equals(selection.Set,
+                context.World.Facts.EncounterSet(card.FaceId), StringComparison.Ordinal))
             .Where(card => !selection.AspectOnly || IsAspect(card))
             .Where(card => selection.CardClass is null || string.Equals(selection.CardClass,
                 context.World.Facts.Attributes(card.FaceId).GetValueOrDefault("Class"), StringComparison.Ordinal))
@@ -199,7 +221,7 @@ internal sealed class AbilitySelectorEvaluation(
             AbilityCardRank.Cost => context.World.Facts.PrintedValue(card.FaceId, "Cost", context.World.Players),
             AbilityCardRank.Attack => StateFields.Modified(context.World, card, "attack", context.World.Facts, context.World.Players),
             AbilityCardRank.PrintedHealth => EffectiveCards.BaseValue(card, context.World.Facts, "HP", context.World.Players),
-            AbilityCardRank.RemainingHealth => CardValues.RemainingHealth(context.World, card, context.World.Facts),
+            AbilityCardRank.RemainingHealth => Math.Max(0, DamagePlacement.Health(context.World, context.World.Facts, card) - context.Quantities(card).Damage),
             _ => throw new InvalidOperationException("Unknown compiled card rank"),
         };
         long extreme = selection.Maximum ? among.Max(Rank) : among.Min(Rank);
@@ -231,6 +253,7 @@ internal sealed class AbilitySelectorEvaluation(
 
     private bool ExplicitlySelectsOutOfPlayCard(AbilityCardSelection selector, Card target) => selector switch
     {
+        AbilityCardSelection.Query { Kind: AbilityCardQuery.InvocationTop } => Every(selector).Contains(target),
         AbilityCardSelection.InAreas areas => CardsIn(areas).Any(card => card.ObjectId == target.ObjectId),
         AbilityCardSelection.WithTrait trait => ExplicitlySelectsOutOfPlayCard(trait.Cards, target),
         AbilityCardSelection.WithStatus => false,

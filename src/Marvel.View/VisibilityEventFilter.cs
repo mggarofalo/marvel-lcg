@@ -14,7 +14,11 @@ internal static class VisibilityEventFilter
         foreach (GameEvent happened in events)
         {
             GameEvent? safe = Filter(happened, addressable, readable);
-            if (safe is not null) filtered.Add(KeepMetadata(safe, readable));
+            if (safe is null) continue;
+            HashSet<int> eventReadable = safe is CardsFlipped { PublicFaces: { } faces }
+                ? [.. readable, .. faces.Keys] : readable;
+            safe = KeepMetadata(safe, eventReadable);
+            filtered.Add(safe is CardsFlipped flip ? flip with { PublicFaces = null } : safe);
         }
 
         return filtered;
@@ -143,8 +147,5 @@ internal static class VisibilityEventFilter
     }
 
     private static CardsFlipped? KeepFlipped(CardsFlipped flipped, HashSet<int> visible)
-    {
-        var cards = flipped.Cards.Where(visible.Contains).ToList();
-        return cards.Count == 0 ? null : flipped with { Cards = cards };
-    }
+        => PublicRevealProjection.Keep(flipped, visible);
 }

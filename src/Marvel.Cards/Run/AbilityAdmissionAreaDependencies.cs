@@ -61,6 +61,11 @@ internal static class AbilityAdmissionAreaDependencies
         AbilityEffect? effect, AbilityAdmissionContext context, HashSet<DeckType> areas)
     {
         if (effect is null) return;
+        if (effect is AbilityEffect.ResolveInvocation or AbilityEffect.DiscardInvocation or AbilityEffect.ReturnInvocation)
+        {
+            areas.Add(DeckType.AdditionalDeck);
+            return;
+        }
         Type type = effect.GetType();
         if (OrderedContainerTypes.Contains(type))
             CollectOrderedContainer(effect, context, areas);
@@ -218,7 +223,7 @@ internal static class AbilityAdmissionAreaDependencies
     private static bool HasNoAreaDependencies(AbilityEffect effect) =>
         effect switch
         {
-            AbilityEffect.AttackAnotherEnemy or AbilityEffect.GiveStatus or AbilityEffect.RemoveStatuses or AbilityEffect.ChangeForm or AbilityEffect.Draw
+            AbilityEffect.ReplaceStatus or AbilityEffect.AttackAnotherEnemy or AbilityEffect.GiveStatus or AbilityEffect.RemoveStatuses or AbilityEffect.ChangeForm or AbilityEffect.Draw
                 or AbilityEffect.DrawToHandSize or AbilityEffect.GainSurge
                 or AbilityEffect.Fixed or AbilityEffect.Generate
                 or AbilityEffect.InitializeAuxiliaryDeck or AbilityEffect.RevealAuxiliaryTop
@@ -226,11 +231,14 @@ internal static class AbilityAdmissionAreaDependencies
                 or AbilityEffect.PreventDamageFrom or AbilityEffect.DelayedStun
                 or AbilityEffect.DealEncounterCards or AbilityEffect.EngageTopAsMinion
                 or AbilityEffect.DiscardUntil or AbilityEffect.ShuffleInto
+                // Inspection reads the deck only at its own prompt; admission
+                // neither binds a hidden top card nor predicts its numeric result.
+                or AbilityEffect.InspectEncounterTop
                 or AbilityEffect.ChooseTopForHand
                 or AbilityEffect.ChooseDiscardToShuffle
                 or AbilityEffect.DiscardHandWithResource
                 or AbilityEffect.RecoverDiscardedByResource or AbilityEffect.RecruitDiscarded
-                or AbilityEffect.ActivateEnemies or AbilityEffect.GrantTraitCharacters or AbilityEffect.ModifyPlayedEvent or AbilityEffect.BoostBasicUse => true,
+                or AbilityEffect.ActivateEnemies or AbilityEffect.GrantTraitCharacters or AbilityEffect.ModifyPlayedEvent or AbilityEffect.BoostBasicUse or AbilityEffect.IncreaseNextEventCost => true,
             _ => false,
         };
 

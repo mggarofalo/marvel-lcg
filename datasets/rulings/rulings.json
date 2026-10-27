@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "harvested": "2026-08-31",
+  "harvested": "2026-10-26",
   "source": "https://hallofheroeslcg.com",
   "rulings": [
     {
@@ -552,6 +552,19 @@
       "hash": "sha256:f4f880324a229c4297c494d316bf3897cdad67936e1d53df98ccb232596d43a9"
     },
     {
+      "id": "ruling:0a7e7b33c1e95fa3",
+      "question": "I have rules question for Marvel Champions where I think the rules contradict themselves? But I\u2019m not sure. So, the section about costs and that you can split payment between multiple costs of one card has an example, how you can do that, which implies to me, that costs before an arrow are counted as costs for the event. However, the FAQ has an entry for Make the Call stating, that you can use Power of Aspect cards to pay for allies of that aspect, because make the call says to pay the printed costs of an ally in a discard and that would mean I pay the costs of that ally. So what is it? The question came up, because of Echos Photographic Reflexes. Could I lower the total cost of Make the Call by 2 with it? Or since it is not part of the cost, but cost for the ally, I can\u2019t? How do other similar cards interact with it?",
+      "answer": "An event card\u2019s resource cost and ability cost are both considered costs of playing the card, such that resources can be split between them as outlined in the Rules Reference. The ruling for Make the Call outlines that its ability cost involves paying the cost of the chosen ally, and that a Power Of card takes into account that ally\u2019s aspect when generating resources for that cost. Photographic Reflexes is a bit similar to a Power Of card in this way, where it reduces the overall cost of playing Make the Call, including the resources paid via its ability cost on the chosen ally.",
+      "source": "Alex Werner (FFG Game Rules Specialist)",
+      "via": "hallofheroeslcg.com/latest-ffg-rulings-post-rrg-1-7/",
+      "rrg_scope": "1.7-1.8",
+      "observed": "2026-08",
+      "section": "March, 2026",
+      "cards": [],
+      "kind": "rules",
+      "hash": "sha256:ea0ae43d450a48ca0b56a0ecf8cd1ff3c312a228c068f397a3b765e0a1483e20"
+    },
+    {
       "id": "ruling:0acffe2425e3585b",
       "question": "If I use pre-emptive strike or attacrobatics to deal damage to an attacking Wrecking Crew member that has one health left, then kill them with that interrupt damage, does that attack still go through? I would assume it wouldn\u2019t because the interrupt kills them as the boost is turned up. I\u2019m also wondering if a future interrupt card can do this for minions, and kill them before the damage is dealt",
       "answer": "If you interrupt an enemy attack to deal damage to that enemy, and the damage is sufficient to defeat that enemy, then that enemy leaves play immediately without resolving the rest of its attack. This is true for villains and minions alike.",
@@ -771,6 +784,19 @@
       "cards": [],
       "kind": "rules",
       "hash": "sha256:7546c76efecbf4224da507732031d8ef427a4a1149bea736a2c664c8eee5f840"
+    },
+    {
+      "id": "ruling:0e81e8420f565f88",
+      "question": "The Rogue Hero and the Rogue Protection Ally have nearly identical text regarding gaining traits until the end of the round from a character she \u2018Touches\u2019 via their respective mechanisms. There are contradictory rulings regarding what this text means. Regarding the Hero: \u201CRogue\u2019s \u201CSkin Contact\u201D ability is a lasting effect. When she attaches Touched to a character with this ability, she will gain that character\u2019s Traits until the end of the round, even if that character leaves play or if Touched is moved to another character that same round\u201D but regarding the Ally \u201CNo. Rogue\u2019s ability constantly checks for the traits and printed stats of the chosen character. If the character leaves play, her ability doesn\u2019t have a reference point and won\u2019t give her a bonus.\u201D Can you please help me understand if these two characters printed Abilities really work differently with such similar wording?",
+      "answer": "Both the hero Rogue and the ally Rogue have abilities that create lasting effects, which have some similarities with constant abilities, but it was wrong for us to state that the Rogue ally was specifically one of them. The rules for lasting effects state that they update whenever the game state updates, which means that either Rogue gaining another character\u2019s Traits, or the ally Rogue gaining another character\u2019s THW/ATK, will change based on the game state over time. If a Rogue targeted a character whose traits changed, or THW/ATK changed, the Rogue targeting them would reflect those changes; and if the targeted character left play, the Rogue targeting them would no longer have the gained attributes.",
+      "source": "Alex Werner (FFG Game Rules Specialist)",
+      "via": "hallofheroeslcg.com/latest-ffg-rulings-post-rrg-1-7/",
+      "rrg_scope": "1.7-1.8",
+      "observed": "2026-10",
+      "section": "March, 2026",
+      "cards": [],
+      "kind": "rules",
+      "hash": "sha256:f03bc16c85002aa164ce9e88d07917e591086baf07e92a487c552b5490e38445"
     },
     {
       "id": "ruling:0e978ae1cc77dc8c",
@@ -3286,6 +3312,19 @@
       "hash": "sha256:586e3e9cc132886367b19f7e43616bc4104ed45dab515ae920cb0887e098aa3c"
     },
     {
+      "id": "ruling:3afe400fe54de60a",
+      "question": "When Luke Cage looses a tough and takes 1 unpreventable damage is he still able to trigger cards like unflappable because he hasn\u2019t been damaged by the attack itself.",
+      "answer": "Yes. Unflappable is specifically checking if your defending hero took damage from the attacker\u2019s attack damage, which tough would prevent. If you took damage from a separate ability, such as Luke Cage\u2019s Forced Response or a boost ability, that would not prevent Unflappable from triggering.",
+      "source": "Alex Werner (FFG Game Rules Specialist)",
+      "via": "hallofheroeslcg.com/latest-ffg-rulings-post-rrg-1-7/",
+      "rrg_scope": "1.7-1.8",
+      "observed": "2026-08",
+      "section": "March, 2026",
+      "cards": [],
+      "kind": "rules",
+      "hash": "sha256:190d1959e603ae19f44b2f87f9fef64af8bd7ac62baed94e6fa7fff447abb841"
+    },
+    {
       "id": "ruling:3b07d611edbfcd53",
       "question": "If you defeat a stage of Klaw and Immortal Klaw is in play, will the next stage still get the \u002B10 hit points?",
       "answer": "Yes. So long as Immortal Klaw is in play, Klaw will get \u002B10 hit points. When you advance to Klaw II, you will set his hit points and then add 10 for the side scheme.",
@@ -4874,6 +4913,19 @@
       "hash": "sha256:3e4a5c7fc653e519c7f18f8401dd3824149a63da447db49d2ccc047f33fd73ca"
     },
     {
+      "id": "ruling:54c5c3949c0791ab",
+      "question": "I have some questions about the new her Elektra and the triggering of boost cards. A) If Elektra gets a facedown boost card (with Acrobatic Prowess for ex.), and then flips to alter-ego form and uses her basic recovery power; does she flip the boost to increase the recovery? B) What is the exact timing when Elektra defends against a villain attack (in particular if the villain boost card is \u201CNinja Vanish\u201D): The RRG 1.8 ATTACK (ENEMY ACTIVATION) says 1. Give boost card to the villain 2. Declare Elektra the defender (villainous forced interrupt triggers giving her a boost card) 3. Flip the enemy\u2019s boost cards But I have no clue when Elektra should flip her boost card(s); before or after the villain ? Does she trigger \u201CNinja Vanish\u201D (given by the villain) before the end of the attack? C) If the villain Venom places facedown boost card on the hero Elektra, does she use that boost card when she uses a basic power?",
+      "answer": "Yes, if Elektra has a boost card while in Alter-Ego form and makes a basic recovery, she resolves that boost card for that activation. If Elektra defends an enemy attack, she will be given a boost card when she\u2019s declared defender, and then she will turn that boost card faceup during the same step that the villain\u2019s boost cards are turned faceup. (Resolving boost cards this way can be done in any order.) No, the boost cards that Venom places on an identity are distinct from the boost cards Elektra is given via cards in her kit; Elektra cannot use boost cards placed on her by Venom.",
+      "source": "Alex Werner (FFG Game Rules Specialist)",
+      "via": "hallofheroeslcg.com/latest-ffg-rulings-post-rrg-1-7/",
+      "rrg_scope": "1.7-1.8",
+      "observed": "2026-09",
+      "section": "March, 2026",
+      "cards": [],
+      "kind": "rules",
+      "hash": "sha256:f592604f3876b022be5ae6129fddaefe038358660279ede27dea044f91f2ffd1"
+    },
+    {
       "id": "ruling:54fcaebb6f606325",
       "question": "What happens if I use Defender of the Nine Realms and discard to the end of the encounter deck without revealing a minion?",
       "answer": "If you discard through the entire encounter deck and find no minion with Defender of the Nine Realms, then the rest of the effect fizzles and the event is discarded. You must shuffle the encounter deck discard pile back into the encounter deck and place an acceleration token on the main scheme.",
@@ -6285,6 +6337,19 @@
       "hash": "sha256:267b7cd84dcff5f607336419a5cbb8caad9416a4167ac3550462c1f31df51153"
     },
     {
+      "id": "ruling:6b756402a689cade",
+      "question": "If Surge is now to be treated like a true When Revealed ability, how does it now react to other abilities which specifically trigger the \u201CWhen Revealed\u201D ability on a card? For example, in Fear No Evil there is a treachery card called A Change Of Venue with the boost ability \u2018Resolve this card\u2019s \u201CWhen Revealed\u201D ability\u2019. This card has a regular When Revealed ability and the Surge keyword. My understanding of the revised Surge definition now suggests the boost ability could trigger Surge as the When Revealed ability \u2013 which appears to be a sharp increase in difficulty for the card. In addition, is there is an order in which we should now reveal multiple When Revealed abilities on one encounter card. For example, with Surge and a traditional When Revealed ability, can we trigger them in an order of our choosing due to them now sharing the exact same timing? Or should we start at the top of the card and read downwards?",
+      "answer": "To start, the update to the \u201CSurge\u201D keyword in RR 1.8 states that it is a type of \u201CWhen Revealed\u201D ability; as a keyword, it is shorthand for that longer ability. As such, an ability that targets a card\u2019s \u201CWhen Revealed\u201D ability would also include the \u201CSurge\u201D keyword if on that card. It\u2019s still the case that playing Enhanced Spider-Sense cancels the treachery\u2019s \u201CWhen Revealed\u201D ability (following the bold header) as well as its \u201CSurge\u201D keyword, if it has one. In regards to Change of Venue, we\u2019ve discussed the implications above and determined that triggering both its \u201CSurge\u201D and other \u201CWhen Revealed\u201D ability while it was a Boost card would skew its balance. We are now planning to errata Change of Venue and similar encounter cards, with wording akin to \u201CBoost: Resolve this card\u2019s non-surge \u201CWhen Revealed\u201D ability.\u201D This should maintain the cards\u2019 intended resolutions while also keeping true to the 1.8 updates. Surge, Incite, and \u201CWhen Revealed\u201D abilities each share the same timing, which allows players to resolve them in any order.",
+      "source": "Alex Werner (FFG Game Rules Specialist)",
+      "via": "hallofheroeslcg.com/latest-ffg-rulings-post-rrg-1-7/",
+      "rrg_scope": "1.7-1.8",
+      "observed": "2026-09",
+      "section": "March, 2026",
+      "cards": [],
+      "kind": "rules",
+      "hash": "sha256:c88c5209f3ddba6b7b7e11ca32f867f2d7ea9cb0b335e6759bfd6228974db321"
+    },
+    {
       "id": "ruling:6b8365c68f3f5759",
       "question": "25 \u2013 So, defense-labeled abilities seem to be settling into a good place, I just want to confirm: \u201Ccannot defend\u201D means you cannot play a defense-labeled ability during an attack, is that correct? So that means that Vision in Intangible form cannot play Side Step during a villain attack, including against Crossbones\u2019 Machine Gun (which triggers after the attack initiates). I will note that the ally defend section says that another character \u201Ccannot defend\u201D, but we are allowed to play defense-labeled abilities because it\u2019s explicitly allowed. It seems like that \u201Ccannot defend\u201D is somehow different from Intangible\u2019s \u201Ccannot defend\u201D so perhaps it needs reworded.",
       "answer": "While Vision is in Intangible mass form, he cannot become the defender of an attack and he cannot play defense-labeled events, even if doing so would not cause him to become the defender of an attack.",
@@ -6545,6 +6610,19 @@
       "cards": [],
       "kind": "rules",
       "hash": "sha256:a3ce6a8a7a2b3361f3aa696a3e9a64babfec2d6dcc0e39c534231756b01a94d6"
+    },
+    {
+      "id": "ruling:7075a85e02f2203e",
+      "question": "An early ruling stated that \u201Cencounter cards can be thought of as being \u201Cfrom the encounter deck\u201D, even if the method of which they were dealt to you was not directly from the encounter deck (such as in Mysterio\u2019s scenario)\u201D. A more recent ruling said that \u201CBlack Widow can be triggered when a card is revealed from the encounter deck, and neither Wheel of Genres nor Alert Level are cards that are revealed from the encounter deck.\u201D Do Tracksuit Minions revealed due to the Forced Response from under Tracksuit Mafia result in a chain-reaction that reveals each tucked minion under Tracksuit Mafia, as if they were \u2018revealed from the encounter deck\u2019?",
+      "answer": "No. The Forced Response on Tracksuit Mafia is specifically revealing a card from a game zone separate from the encounter deck; it does not create a chain reaction with itself, and an ability like Black Widow\u2019s would not cancel this reveal. One way to differentiate these reveals is to determine if the revealed encounter card was first dealt to the player, which is not the case for Tracksuit Mafia, Wheel of Genres, or Alert Level, but is the case for cards in the Mysterio scenario that are drawn or discarded from the player\u2019s deck.",
+      "source": "Alex Werner (FFG Game Rules Specialist)",
+      "via": "hallofheroeslcg.com/latest-ffg-rulings-post-rrg-1-7/",
+      "rrg_scope": "1.7-1.8",
+      "observed": "2026-09",
+      "section": "March, 2026",
+      "cards": [],
+      "kind": "rules",
+      "hash": "sha256:2f33c800298828b5fded7f90645fd92c5f07af0ee16bd93535208cb2084e91cc"
     },
     {
       "id": "ruling:70aa2b0555476d35",
@@ -7431,6 +7509,19 @@
       "cards": [],
       "kind": "rules",
       "hash": "sha256:24fa045c43acbd02657db704584bd0eafa92995eabac6a51e57f70265ae86ef8"
+    },
+    {
+      "id": "ruling:8030652dc5113609",
+      "question": "I have a question about Kingpin, Echo\u2019s nemesis. Some cards says that Kingpin cannot take damage: Master Manipulator and Kingpin\u2019s Henchman. Since he is not Elite, he can be controlled by the player (with \u201CRedemption\u201D or \u201CKarma\u201D for example). Is it valid? Is it intended to control a minion that cannot take damage?",
+      "answer": "Correct, the Kingpin ally can be taken control of via Karma or Redemption, and other cards in Echo\u2019s Nemesis set can prevent him from taking damage.",
+      "source": "Alex Werner (FFG Game Rules Specialist)",
+      "via": "hallofheroeslcg.com/latest-ffg-rulings-post-rrg-1-7/",
+      "rrg_scope": "1.7-1.8",
+      "observed": "2026-09",
+      "section": "March, 2026",
+      "cards": [],
+      "kind": "rules",
+      "hash": "sha256:f9a50cd4409ed86a8517bc76a1c1470694fa82140f8eb8083a73b16656c53779"
     },
     {
       "id": "ruling:805b3f9b199ca68b",
@@ -8463,6 +8554,19 @@
       "hash": "sha256:05e12be4625db289dcd9e3049bbdcac3a4e38934e6f5cdbe1c5ce12ea41c1550"
     },
     {
+      "id": "ruling:9196106259a1f1a4",
+      "question": "I have some questions to clarify the concept of \u201Cexactly defend\u201D: * If a hero perfoms a basic defense, is it possible to use an \u201CEnergy Barrier\u201D to exactly defend (preventing 1 damage)? * When Luke Cage perfoms a basic defense, is it possible to use \u201CMetal Bracer\u201D to exactly defend (reducing 1 damage)? * For Hercules, is it possible to use \u201CHerc\u2019s Helm\u201D to exactly defend (reducing 1 dealt damage)? * Since there are multiple ways to become the defender of an attack, is a basic defense required to exactly defend?",
+      "answer": "If a card ability requires a hero to \u201Cexactly defend\u201D an attack, the defender\u2019s modified DEF must equal the attacker\u2019s modified ATK for that attack; damage prevention/reduction effects cannot be used to meet this requirement. So no, the cards listed would not cause a hero to exactly defend.",
+      "source": "Alex Werner (FFG Game Rules Specialist)",
+      "via": "hallofheroeslcg.com/latest-ffg-rulings-post-rrg-1-7/",
+      "rrg_scope": "1.7-1.8",
+      "observed": "2026-09",
+      "section": "March, 2026",
+      "cards": [],
+      "kind": "rules",
+      "hash": "sha256:822b4f6f0cc4ab55f121e9cb28d4ce28e1a62a513789c71ca35a3193cdbd0f27"
+    },
+    {
       "id": "ruling:91af48d6b34ac91f",
       "question": "I\u2019m a bit confused by what you mean by the Forced Response taking \u201Cprecedence\u201D. Clea and Regroup are both interrupts: When [the ally] is defeated. Which should come in timing priority before Operation Zero Tolerance\u2019s Forced Response: After an enemy attacks and defeats an ally. Are you meaning something other than the forced response having timing priority? Does the scheme find the ally wherever they end up, and put them under the scheme, and so ends up taking \u201Cprecedence\u201D by being the last ability resolved?",
       "answer": "The short of it is that Operation Zero Tolerance doesn\u2019t care where the ally is when it triggers, whether that ally is in your discard pile, hand, or deck. The Forced Response\u2019s trigger of \u201Cafter an enemy attacks and defeats an ally\u201D would happen after that ally has left play, which is a part of being defeated. OZT needs to be able to find that ally in the discard pile (or other out-of-play area) to function at all.",
@@ -8656,6 +8760,19 @@
       "cards": [],
       "kind": "rules",
       "hash": "sha256:706aa0cbaabd20eeebb47604a3761fadde23e6e300a213d1c0fe5f7cdb195f22"
+    },
+    {
+      "id": "ruling:95f5bab9a8a768fd",
+      "question": "Could you please clarify what the last line in Shadow Of The Past means? Shadow Of The Past says \u201CIf your nemesis minion does not enter the game this way, this card gains Surge.\u201D What does entering the game mean? Does it mean entering play? Or, if the unique rule blocks the nemesis minion from entering play, would the nemesis minion entering the encounter deck discard pile satisfy \u201Centering the game\u201D? As far as I can tell, set aside cards are already in an \u201Cout-of-play GAME area\u201D. So in theory the nemesis minion is already in the game from the beginning. There has been some discussion on when Shadow Of The Past surges and when the unique rule deals a facedown encounter card where this text can be very important. In other words, if the villain shares the same title/subtitle as your nemesis minion, do you end up with one or two facedown encounter cards?",
+      "answer": "If you reveal Shadow of the Past while your nemesis minion is set-aside and cannot enter play because of the uniqueness rule, you would place your nemesis minion in the encounter deck discard pile and deal yourself one encounter card, then discard Shadow of the Past without giving it surge. We maintain that this is how we want Shadow to be resolved in practice. Whether the nemesis changing from the set-aside area to a discard pile qualifies as it \u201Centering the game\u201D, or if Shadow warrants a wording change, is still to be determined.",
+      "source": "Alex Werner (FFG Game Rules Specialist)",
+      "via": "hallofheroeslcg.com/latest-ffg-rulings-post-rrg-1-7/",
+      "rrg_scope": "1.7-1.8",
+      "observed": "2026-09",
+      "section": "March, 2026",
+      "cards": [],
+      "kind": "rules",
+      "hash": "sha256:9eb687efd45d19410c2f4877c4525b25ebda2aa6c2974061758273f73eb5b6c3"
     },
     {
       "id": "ruling:965ad06e4059d294",
@@ -9679,6 +9796,19 @@
       "cards": [],
       "kind": "rules",
       "hash": "sha256:ca69c7c142148db719fa7effc89941cbfef70b81bffa4d5c907056c5ea1fa655"
+    },
+    {
+      "id": "ruling:a956304c470dac6c",
+      "question": "Regarding the change in 1.7 on uniqueness and the outcomes when you reveal Shadow of the past. The rule says on Unique Icon says : \u201CA non-villain card in an out-of-play state that matches a card in play cannot enter play. If the out-of-play card is: A non-villain encounter card, it is discarded and any effects of it entering play are ignored. If it was being revealed, any effects of it being revealed are ignored and the player revealing it is dealt a facedown encounter card.\u201D When revealing Shadow of the Past and the nemesis cannot enter plays since a vilain is already in play that match the nemesis (same title, same subtitle) if we follow the card instructions and the 1.7 rule, the card gains surge AND we have a dealt encounter card. This seems like an indirect buff to Shadow of the past and feel like it\u2019s not intended. Can you clarify if I (and other people on a french discord) interpreted correctly the new rules ?",
+      "answer": "If you reveal Shadow of the Past while your nemesis minion is set-aside and cannot enter play because of the uniqueness rule, you would place your nemesis minion in the encounter deck discard pile and deal yourself one encounter card, then discard Shadow of the Past without giving it surge. We maintain that this is how we want Shadow to be resolved in practice. Whether the nemesis changing from the set-aside area to a discard pile qualifies as it \u201Centering the game\u201D, or if Shadow warrants a wording change, is still to be determined.",
+      "source": "Alex Werner (FFG Game Rules Specialist)",
+      "via": "hallofheroeslcg.com/latest-ffg-rulings-post-rrg-1-7/",
+      "rrg_scope": "1.7-1.8",
+      "observed": "2026-09",
+      "section": "March, 2026",
+      "cards": [],
+      "kind": "rules",
+      "hash": "sha256:8a7d00119d4da162d35ddd1b87fd1ae32b7de362e806771f36bca8fe6d5a320b"
     },
     {
       "id": "ruling:a9a9f031c76ac326",
@@ -11357,6 +11487,19 @@
       "hash": "sha256:f214f65940cff774d020eb68a8474ea602d89b4273e3aad597d64d702763b682"
     },
     {
+      "id": "ruling:c7901bd3e9f887e9",
+      "question": "On the new Iron Fist hero, the text say \u201Cheal 1 damage\u201D, but from who? any character?",
+      "answer": "Hero Iron Fist\u2019s Forced Response ability heals damage from specifically himself.",
+      "source": "Alex Werner (FFG Game Rules Specialist)",
+      "via": "hallofheroeslcg.com/latest-ffg-rulings-post-rrg-1-7/",
+      "rrg_scope": "1.7-1.8",
+      "observed": "2026-09",
+      "section": "March, 2026",
+      "cards": [],
+      "kind": "rules",
+      "hash": "sha256:27376ef0f85f4fdf2124e418d6602c4741889209674a949455f8555aa9576605"
+    },
+    {
       "id": "ruling:c8268c2138f6c809",
       "question": "I\u2019ve seen a ruling that preventing damage with a card like side step which has the same timing as a tough status card would have priority and the tough would remain. Trying to understand. So is there a difference between damage \u201Creducing\u201D effects and damage \u201Cpreventing\u201D effects. Groot\u2019s hero ability would now function that he would lose his growth counters while tough when taking damage and would hurt him alot \uD83D\uDE26 Trying to understand if the goal is to have damage \u201Creducing\u201D effects like the vision hero in intangible form where he reduces all damage from attacks by 2 as a constant ability or the victor mancha ally that reduces damage from attacks by 1 also as a constant ability in that your reducing the damage that would have been dealt and the tough never receives it so the tough remains. VS \u201CPreventing\u201D effects like \u201Cside step\u201D and \u201Cshield block\u201D that would directly compete with Tough.",
       "answer": "I will do my best to address your questions. Note, some of the rulings we made recently are no longer accurate, and we plan to address many of them in our next rules reference update. The following notes are our current rulings on this subject. First, status cards like \u201CTough\u201D should have priority over constant effects and interrupts. This means that if Groot was Tough and was dealt damage, \u201CTough\u201D would get discarded before any growth counters were removed. This also means that Tough would have priority over the text on Side Step and Shield Block\u2014Tough would get discarded first, before interrupts could resolve. Let me know if you have other questions in light of this information.",
@@ -11368,6 +11511,19 @@
       "cards": [],
       "kind": "rules",
       "hash": "sha256:0e949116e4828ef6ccb9d073fa6b85e7a0be3a3f3ea100fff26d825d2d3cff06"
+    },
+    {
+      "id": "ruling:c82f28717ddc2679",
+      "question": "Following up on your explanation about Metal Bracer and dealt/taken damage: quote: \u201CReducing and preventing damage are generally synonymous\u201D. How am I supposed to know when \u201Creduce\u201D means \u201Cprevent\u201D and when it is not? To my eyes, reducing and preventing damage are not synonymous \u2013 \u201Cprevent\u201D has a specific definition in MC context: reduce taken damage (not dealt damage) \u2013 \u201Creduce\u201D is a generic term, meaning decreasing a value Also it is possible to reduce to 0 dealt damage, for example using a basic defense. This is important for cards with a \u201Cif there is dealt damage\u201D condition like Overconfidence or Klaw\u2019s Vengeance. How Metal Bracer is intended to work with Overconfidence or Klaw\u2019s Vengeance ? I\u2019m convinced that Metal Bracer should have been worded like Aerial Evacuation using \u201Cprevent\u201D instead of \u201Creduce\u201D, in order to work as intended with Clarity of Purpose.",
+      "answer": "Metal Bracer interrupts when damage would be dealt to Luke Cage, which can potentially reduce the damage dealt to 0. If Overconfidence or Klaw\u2019s Vengeance causes the villain to attack, Metal Bracers can reduce the damage dealt by that attack, which can result in 0 damage dealt.",
+      "source": "Alex Werner (FFG Game Rules Specialist)",
+      "via": "hallofheroeslcg.com/latest-ffg-rulings-post-rrg-1-7/",
+      "rrg_scope": "1.7-1.8",
+      "observed": "2026-08",
+      "section": "March, 2026",
+      "cards": [],
+      "kind": "rules",
+      "hash": "sha256:439e3cf77a4c2265ed3f2ca43b7a56b2812b0ef2dd7fd0679fbe304c618b4efd"
     },
     {
       "id": "ruling:c88f246c4aeedc70",
@@ -12096,6 +12252,19 @@
       "cards": [],
       "kind": "rules",
       "hash": "sha256:6b7b26024d6a14594989b5aee6cc1a3227473760e892fd0848d6f036dbbce9c1"
+    },
+    {
+      "id": "ruling:d7c29493c75f9d8a",
+      "question": "1) Can you please confirm my understanding about the Hero Action of the 1B side of the Kingpin scenario main scheme (\u201CThe King\u2019s Gambit\u201D)? The text of the ability is as follows: Hero Action: Remove 5 threat from here (4 threat instead in expert mode). Shuffle the encounter discard pile into the encounter deck, then discard cards from the top of the encounter deck until a minion is discarded and reveal that minion. I note the following: (a) None of this ability text includes a cost; the entire ability is effect text. (b) There is no explicit limit to how often is can be triggered From this my understanding of how it works is that: i) In the player phase, I can use this ability as many times as I want as long as it has a valid target. A valid target for the ability would be any amount of threat on the main scheme OR any number of cards in the encounter discard pile. ii) If I choose to use the ability in a situation where I have less than 5 threat on the main scheme (less than 4 in expert mode) OR zero cards in the encounter discard pile, I would not resolve the post-\u201Cthen\u201D text to discard until I reveal a minion. Is this interpretation correct? 2) While looking up the entry for \u201CThen\u201D in order to come to this conclusion, I noticed that it uses the term \u201Cfully resolve\u201D, which I found to be a bit hard to reconcile with the definition for \u201Cresolve\u201D (as it relates to abilities) in the new Resolve section. The new section does not define \u201Cfully resolve\u201D and the term \u201Cresolve\u201D itself only tells you you have to do one or more of the effects, not all.",
+      "answer": "The ability on The King\u2019s Gambit 1B can be triggered an unlimited number of times during the player phase, and is resolved by \u201Cdoing as much as you can\u201D when triggered, removing as much threat as you are able up to the indicated amount, and shuffling the encounter discard pile with the encounter deck to then discard a minion. This ability can be triggered so long as there is threat on the scheme and/or cards in the encounter deck; even if there were zero cards in the encounter discard, you could still shuffle the encounter deck and satisfy that part of the ability. We hear your notes about the \u201CThen\u201D entry and will discuss further if we want to make adjustments to its entry in the future.",
+      "source": "Alex Werner (FFG Game Rules Specialist)",
+      "via": "hallofheroeslcg.com/latest-ffg-rulings-post-rrg-1-7/",
+      "rrg_scope": "1.7-1.8",
+      "observed": "2026-09",
+      "section": "March, 2026",
+      "cards": [],
+      "kind": "rules",
+      "hash": "sha256:b238a372f236cb553d7384d500bc0a8172c3922158004c88adc66f24f2172545"
     },
     {
       "id": "ruling:d7dcff2da6228c89",

@@ -67,6 +67,8 @@ public sealed class PresentationSourcePolicyTests
             "Marvel.Rules.Events.CardsCreated.Cards",
             "Marvel.Rules.Events.CardsFlipped.Cards",
             "Marvel.Rules.Events.CardsFlipped.FaceUp",
+            // Event-local engine disclosure authority; no live concealed-state access.
+            "Marvel.Rules.Events.CardsFlipped.PublicFaces",
             "Marvel.Rules.Events.CardsMoved.Cards",
             "Marvel.Rules.Events.CardsMoved.From",
             "Marvel.Rules.Events.CardsMoved.To",
@@ -124,6 +126,8 @@ public sealed class PresentationSourcePolicyTests
             "Marvel.Rules.Play.Game.ChangeForm",
             "Marvel.Rules.Play.Game.EndPhaseVerb",
             "Marvel.Rules.Play.Game.ResolveMulligans",
+            "Marvel.Rules.Play.InvocationDeck.Deck",
+            "Marvel.Rules.Play.InvocationDeck.Discard",
             "Marvel.Rules.Play.Outcome.PlayersLose",
             "Marvel.Rules.Play.Outcome.PlayersWin",
             "Marvel.Rules.Play.Outcome.Unfinished",
@@ -369,6 +373,8 @@ public sealed class PresentationSourcePolicyTests
             "Marvel.Rules.State.PrintedStatValue.Value",
             "Marvel.Rules.State.Seat.Eliminated",
             "Marvel.Rules.State.Seat.Index",
+            // Typed auxiliary-pile identity only; no concealed card access.
+            "Marvel.Rules.State.Seat.InvocationDeck",
             "Marvel.Rules.State.Seat.Name",
             "Marvel.Rules.State.StateFields.For(Marvel.Rules.State.Card, Marvel.Rules.State.ICardFacts, int, bool, bool, bool, Marvel.Rules.State.World?)",
             "Marvel.Rules.State.Traits.Of(Marvel.Rules.State.World, Marvel.Rules.State.Card, Marvel.Rules.State.ICardFacts)",

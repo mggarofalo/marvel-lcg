@@ -170,7 +170,7 @@ and client integration. Serialize shared book/agenda/authority edits with Widow.
 |---|---|---|
 | `09001a` | Doctor Strange | **P D1**: top-only Special, exact cost plus exhaust; zero-cost Winds still exhausts; failed payment leaves all state unchanged. No event-play trigger. |
 | `09001b` | Stephen Strange | **P D1**: setup five, Natural Talent top-discard once per phase; form changes do not reset use, phase transitions do; no player-deck discard. |
-| `09002` | Wong | **P D1/C**: exhaust once for either one identity heal or Invocation top discard; at full health, discard branch remains available. Foreign seat's deck excluded. |
+| `09002` | Wong | **P D1/C**: exhaust once for either one controller-identity heal or the game's typed Invocation top discard; at full health, discard branch remains available. Under foreign control, "your identity" follows the controller but "the Invocation deck" remains Strange's bound deck (reviewed in `doctor-strange-top-discard-evidence.md`). |
 | `09003` | Astral Projection | **C D3**: chosen scheme loses 3 plus printed numeric boost count; star is not numeric; encounter top stays in place and only authorized viewer sees it. |
 | `09004` | Magic Blast | **C D3**: 5 then discard player-deck top; physical/energy/mental/wild branches, separate energy 2-damage instance, departed enemy not retargeted. Final player-deck card resets before event cleanup (`d1f9f33e3ae4ba2f`, `e4ea1bf855e41aac`). |
 | `09005` | Master of the Mystic Arts | **P D1**: pay event and printed Invocation costs together; Special discards, exposes/recycles, then same physical card returns to top. No hero exhaustion cost. |
@@ -284,20 +284,17 @@ item. Conventional cards do not acquire a generic owner gate.
 
 ## Blocking questions and next action
 
-No unresolved game-design question blocks D1. Two concrete authority tasks precede
-its executable assertions: restore the omitted Invocation extract from the pinned
-local PDF, and record the inspected ruling supersessions in the rules graph.
-Neither needs a new primary-source hunt or another full-pack research issue.
-The exact local PDF input location was not established in this bounded pass;
-use the existing harvester configuration/source manifest, verifying its hash.
-The handling of dynamic Invocation cost modifiers and out-of-play Special
-continuation is an implementation probe, not permission to guess card rules.
+The complete pinned Invocation extract and the reviewed current-ruling graph are
+integrated. MARVEL-794 supplies the reviewed nonpublic typed deck lifecycle;
+MARVEL-796 supplies the three scoped ruling relationships. No source acquisition
+question blocks the next D1 slice. Implement normal Spell Mastery and actual Winds
+Special resolution first, then Master with captured-card discard, intermediate
+reveal/recycle and exact return. Dynamic top costs and suspended Special execution
+remain implementation obligations, not permission to infer card behavior.
 
-Plane inspected on 2026-10-26: MARVEL-565
-`e2c1acfd-5962-40d0-89c9-bb2b5a18e376`, Backlog/medium; comments and links
-empty; no children found in the bounded all-issue ID/parent inventory. Its only
-recorded blocker is MARVEL-630, currently Done. Preserve that historical relation;
-it is no longer an unresolved prerequisite. This document supplies the next
-bounded engine packet, while whole-pack acceptance remains open.
+The canonical parent is MARVEL-565 (`e2c1acfd-5962-40d0-89c9-bb2b5a18e376`).
+The historical MARVEL-630 blocker is Done. Whole-pack admission, all 40 faces and
+native auxiliary-deck interaction remain open; the foundation alone is not playable
+Doctor Strange content.
 
 Independent source integration review (2026-10-26): the delivery lead verified the relocated official PDF has the existing7,181,027-byte/SHA-256 pin and inspected its rendered first page against all three new section paragraphs. Separate five-card setup, faceup top, dedicated discard and penalty-free empty-deck recycling are preserved; no named subclauses were invented. The source repair changes no playable admission. Full62-PDF library check remains unavailable locally; existing offline snapshot integrity and source-preservation gates apply.

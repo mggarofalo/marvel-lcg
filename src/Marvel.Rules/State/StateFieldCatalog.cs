@@ -214,6 +214,7 @@ public static class StateFieldCatalog
     /// <param name="field">The field name, as this class spells it.</param>
     public static bool IsModifiable(string field) =>
         PrintedFrom.ContainsKey(field)
+        || field is "cannot_be_stunned" or "cannot_be_confused" or "cannot_be_tough"
         || field is  "health" or "ally_limit" or "attack_consequential_damage"
         or Marvel.Rules.Play.VillainAttackRestrictions.OtherVillains
         or Play.BasicAttackCosts.DiscardField or Play.ThwartPermissions.ProhibitedField

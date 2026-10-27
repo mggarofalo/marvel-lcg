@@ -38,6 +38,10 @@ internal static class AbilityPowerSuspension
         bool bindingMayChange = false, PowerReachability? reachability = null, bool terminal = true)
     {
         if (AbilityStagedAttackLowering.IsBody(node) || node is AbilityEffect.AttackAnotherEnemy) return false;
+        // The observation's receipt can feed the bounded chosen-recipient tail.
+        // Arbitrary later deck reads would need an additional state projection.
+        if (AbilityPowerSimultaneousSupport.ContainsPair(node)
+            && !AbilityPowerSimultaneousSupport.SupportsBody(node)) return true;
         var state = reachability ?? AbilityPowerStateFactory.Initial(cast);
         // Enumerate every supported path before accepting a suspension answer;
         // unsupported is a missing calculation, never an absent legal option.
@@ -45,18 +49,32 @@ internal static class AbilityPowerSuspension
         if (AbilityPowerContinuationDependencies.IsIndependent(node)) return false;
         if (AbilityStageEntryDependencies.CanFinishLive(node, cast, terminal, paths)) return false;
         foreach (var path in paths) AbilityProjectedDefeatWindows.ValidateContinuation(node, path, cast);
-        return (node.OperationName() == "and" && OrderedEffects(node).Skip(1).Any())
-            || IsChoice(node)
-            || node.OperationName() is "eachPlayer" or "attack" or "thwart" or "thwartSchemes"
-                or "placeThreat" or "enemyAttacks" or "enemySchemes"
-                or "revealFromVillainDeck" or "reveal" or "revealTop" or "revealAuxiliaryTop"
-                or "search" or "discardUntil"
+        // This closed tail reads only the retained discard receipt and chosen
+        // reference. Its fixed damage/status instructions resolve on the live
+        // board after stage reveal; no later admission decision consumes a
+        // predicted stage result. The damage procedure owns reveal suspension.
+        // rr:and: independent effects resolve simultaneously. The structural
+        // order prompt retains the active power; only these bounded pairs have
+        // an observation that cannot alter the mutation's recipient or amount.
+        var mutation = AbilityPowerSimultaneousSupport.SuspensionMutation(node);
+        if (mutation is not null)
+            return paths.Any(path => SuspendsPowerEffect(mutation, cast,
+                stateMayChange, bindingMayChange, path, terminal: false));
+        return HasIntrinsicSuspension(node)
             || paths.SelectMany(path => PowerSuspensionChildren(
                 node, cast, stateMayChange, bindingMayChange, path)).Any(child =>
                 SuspendsPowerEffect(
                     child.Node, cast, child.StateMayChange, child.BindingMayChange,
                     child.Reachability, IsTerminalChild(node, child.Node, terminal)));
     }
+
+    private static bool HasIntrinsicSuspension(AbilityEffect node) =>
+        (node.OperationName() == "and" && OrderedEffects(node).Skip(1).Any())
+            || IsChoice(node)
+            || node.OperationName() is "eachPlayer" or "attack" or "thwart" or "thwartSchemes"
+                or "placeThreat" or "enemyAttacks" or "enemySchemes"
+                or "revealFromVillainDeck" or "reveal" or "revealTop" or "revealAuxiliaryTop"
+                or "search" or "discardUntil";
 
     private static bool IsTerminalChild(AbilityEffect parent, AbilityEffect child, bool terminal) => terminal && parent switch
     {

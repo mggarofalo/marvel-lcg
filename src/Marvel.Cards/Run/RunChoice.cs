@@ -9,4 +9,7 @@ namespace Marvel.Cards.Run;
 internal sealed record RunChoice(
     AbilityEffect Effect, ChoiceFrame Frame, Card? Selection,
     bool BindsPlayerSelection,
-    AbilityAdmissionResult Admission) : AbilityStructuralTransition;
+    AbilityAdmissionResult Admission) : AbilityStructuralTransition
+{
+    internal bool RestoreOuterBinding { get; init; }
+}

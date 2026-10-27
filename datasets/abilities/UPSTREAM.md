@@ -4,7 +4,7 @@
 |---|---|
 | Kind | authored |
 | Product boundary | Core Set, Rise of Red Skull, Captain America and Wrecking Crew; Green Goblin and Ms. Marvel research rows remain publicly excluded |
-| Records | 595 printed card faces, including explicit empty rows |
+| Records | 658 printed card faces, including explicit empty rows |
 | Authorities | Generated `datasets/cards/`, vendored Rules Reference, expansion rulebooks and published rulings |
 | Gated by | Ability admission/lowering tests, complete-product admission, actual-card tests, campaign acceptance and executable Core behavioral transcripts |
 
@@ -296,3 +296,74 @@ prevention rows and the final two response rows complete the seven-face batch.
 Every row has independent authority review. Exact membership and starting-counter
 checks remain explicit. The product is not yet publicly admitted; focused source
 and combined evidence is recorded in `docs/content/black-widow-delivery-checkpoint.md`.
+
+Doctor Strange reprint research adds six faces (MARVEL-799): 09017 The Power of
+Protection, 09018 Med Team, 09022 Energy, 09023 Genius, 09024 Strength and
+09025 Avengers Mansion. Their generated printed rules, attributes and traits
+match the Core printings exactly. Actual-row payment, counter lifecycle, target
+and non-first-player recipient tests gate these interpretations. See
+[the reprint evidence](../../docs/content/doctor-strange-reprints-evidence.md).
+Doctor Strange remains outside complete-product public admission.
+
+Doctor Strange constant/resource research adds 09009, 09011 and 09026 (MARVEL-801). The preceding 651 raw row objects remain intact; 9/40 faces are authored. Printed authority is datasets/cards/cards.json; no starting counters or public admission changes. See docs/content/doctor-strange-constants-evidence.md.
+
+Doctor Strange response-event research adds 09016, 09021, 09037 and 09038 (MARVEL-803), preserving the preceding 654 raw row objects. There are 13/40 authored faces; public admission remains closed. See docs/content/doctor-strange-response-events-evidence.md.
+Doctor Strange's next four actual rows (MARVEL-810/813) append 09006 Mystical
+Studies, 09010 Magical Enhancements, 09032 Crimson Bands of Cyttorak and 09034
+Seven Rings of Raggadorr. There are 671 authored rows and 26/40 Strange faces.
+All 667 predecessor raw objects remain byte-identical. Printed authority is
+`datasets/cards/cards.json`; current RR 1.8 search, control, forced, target and
+status clauses govern, with the current-compatible Invocation rulings recorded
+in `docs/content/doctor-strange-next-four-rows.md`. The rows add no starting
+counters and change no engine capability, setup or public admission. Actual-book
+search, multiplayer ownership/form/round-end and both Invocation caller lifecycle
+tests gate these authored interpretations. Synthetic alternate effects remain
+explicit fixture replacements; duplicate admission remains strict.
+
+MARVEL-819 appends actual 09020 Unflappable only: 672 rows, 27/40 Doctor Strange faces. All 671 predecessor raw objects remain intact. Printed authority is datasets/cards/cards.json and faq:09020; current RR 1.8 includes defense-labeled events. No starting counters, engine changes or public admission. Clea, The Night Nurse and Iron Man ally remain unauthored pending the precisely bounded prerequisites in docs/content/doctor-strange-support-ally-rows.md.
+
+
+MARVEL-819 final support packet appends Clea (09013), The Night Nurse (09019)
+and Leadership ally Iron Man (09039): 675 rows, 30/40 Doctor Strange faces.
+All 672 predecessor raw objects remain intact. Printed authority is generated
+datasets/cards/cards.json; faq:09019 confirms mandatory Tough removal. Current
+RR 1.8 ownership, interrupt, AND and initiation rules govern these programs.
+The accepted owner-deck, physical status-host and exact upgrade-host pricing
+prerequisites supply their execution. Actual-row evidence and inventory gates
+are recorded in docs/content/doctor-strange-final-support-rows.md. This authors
+research content only; setup and public product admission remain unchanged.
+
+MARVEL-823 appends Astral Projection (09003), Magic Blast (09004) and Protective
+Ward (09007): 678 rows, 33/40 Doctor Strange faces. All 673 predecessor row
+objects outside Core 01004/01075 retain their raw text. Those two Core rows add
+only the scoped encounter-reveal origin condition; their other programs remain
+unchanged. Generated datasets/cards/cards.json supplies printed authority.
+Current RR 1.8 costs, AND, labeled powers and cancellation govern; the September
+14, 2026 ruling 7075a85e02f2203e governs encounter-origin eligibility. Actual-row
+behavior, preserved inventory and mutation evidence are recorded in
+[the signature event evidence](../../docs/content/doctor-strange-final-signature-events.md).
+No starting counters, setup, engine or complete-product public admission changes.
+
+
+The final reviewed support/defense packet appends Desperate Defense (09015),
+Physical Toll (09027), and Open the Dark Dimension (09029): 682 rows and 37/40
+Doctor Strange faces. All 679 predecessor raw objects remain byte-identical.
+Generated datasets/cards/cards.json supplies printed authority. Current RR 1.8
+obligation, event, defense, delayed-effect and When Defeated rules govern;
+ruling:277ab401b1269ec7 distinguishes Invocation resolution from event play.
+Accepted event-surcharge, exact-attack delayed-ready and hosted Invocation
+prerequisites supply execution. There are no starting counters or public product
+admission changes. Canonical fixture, secrecy, actual-row mutation and restored
+verification evidence is recorded in docs/content/doctor-strange-final-support-rows.md.
+
+Baron Mordo (09028) and Thoughtcasting (09031) append two actual research rows: 684 rows and 39/40 Doctor Strange faces. All 682 predecessor raw objects remain byte-identical. Generated datasets/cards/cards.json supplies printed authority; RR 1.8 attack initiation, printed values, resolving-player choice and deck reset govern. The exact discard receipt supplies Mordo resource branches; Thoughtcasting retains the chosen physical card across discard and reads its printed cost. No starting counters, engine, setup or public admission changes. Counterspell (09030) remains a test-local candidate pending MARVEL-835. Actual-row evidence is recorded in docs/content/doctor-strange-mordo-thoughtcasting.md.
+
+Counterspell (09030) appends the final actual Doctor Strange research face:
+685 rows and all 40 printed faces. All 684 predecessor raw objects remain
+byte-identical. Generated datasets/cards/cards.json supplies printed authority;
+current RR 1.8 event, AND, Then and status priority rules govern. The hero-only
+attachment has a form-independent Forced Interrupt for its attached player.
+Cancellation and event discard are independent; attachment discard depends on
+both completing. No starting counters, engine, setup or public admission changes.
+Canonical and explicitly synthetic fixture evidence is recorded in
+[the Counterspell actual-row packet](../../docs/content/doctor-strange-counterspell-row.md).

@@ -123,6 +123,8 @@ internal static class AbilityBindingReachability
     internal static BindingCandidateState ChooseCardBindingCandidatesAfter(
         AbilityEffect node, AbilityAdmissionScope cast, BindingCandidateState before)
     {
+        // Physical-status removal uses a local component choice; the host remains bound.
+        if (AbilityIndependentStatusChoice.IsRemovalChoice(node)) return before;
         var prior = cast.CaptureChosen();
         var priorSelection = cast.CapturePlayerSelection();
         var possible = new List<Card>();

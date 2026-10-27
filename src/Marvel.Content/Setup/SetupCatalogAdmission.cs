@@ -22,7 +22,8 @@ public static class SetupCatalogAdmission
             HeroSetup hero = setup.Hero(name);
             if (hero.Hero.Count != 1) throw new ArgumentException($"hero '{name}' requires one identity");
             ValidateFaces(hero.Hero.Concat(hero.HeroDeck).Concat(hero.PlayerDeck)
-                .Concat(hero.Obligations).Concat(hero.NemesisSet), cards, authored);
+                .Concat(hero.Obligations).Concat(hero.NemesisSet)
+                .Concat(hero.InvocationDeck?.Cards ?? []), cards, authored);
             _ = IdentityFaces.StartingSpec(hero.Hero[0], cards);
             _ = PlayerDeckAdmission.Admit(new PlayerDeckRecipe([.. hero.HeroDeck, .. hero.PlayerDeck]), hero.HeroDeck, 0, cards, hero.Hero[0], hero.AspectRule);
         }

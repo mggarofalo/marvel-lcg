@@ -17,9 +17,20 @@ namespace Marvel.Cards.Run;
 
 internal static class AbilityCardStateAdmission
 {
+    internal static AdmissionResolution? StatusResolutionOf(
+        AbilityEffect node, AbilityAdmissionScope cast) => node.OperationName() switch
+        {
+            "replaceStatus" => AbilityStatusReplacement.CanReplace((AbilityEffect.ReplaceStatus)node, cast)
+                ? AdmissionResolution.Full : AdmissionResolution.None,
+            "removeStatuses" => AbilityStatusRemoval.Candidates((AbilityEffect.RemoveStatuses)node, cast).Count > 0
+                ? AdmissionResolution.Full : AdmissionResolution.None,
+            _ => null,
+        };
+
     internal static bool? CardStatePartialResolution(
         AbilityEffect node, AbilityAdmissionScope cast) => node.OperationName() switch
         {
+            "replaceStatus" => AbilityStatusReplacement.CanReplace((AbilityEffect.ReplaceStatus)node, cast),
             "removeStatuses" => AbilityStatusRemoval.Candidates((AbilityEffect.RemoveStatuses)node, cast).Count > 0,
             "moveActiveCounter" => AbilityActiveCounterExecution.CanMove(node, cast),
             "removeFromGame" => Find(EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast) is { } card

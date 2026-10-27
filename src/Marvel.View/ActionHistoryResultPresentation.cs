@@ -4,7 +4,7 @@ using Marvel.Rules.Play;
 
 namespace Marvel.View;
 
-/// <summary>Formats action results without restoring concealed historical identities.</summary>
+/// <summary>Formats action results and explicit historical public reveals without restoring concealed state.</summary>
 internal static class ActionHistoryResultPresentation
 {
     /// <summary>
@@ -31,6 +31,27 @@ internal static class ActionHistoryResultPresentation
         ArgumentNullException.ThrowIfNull(action);
         ArgumentNullException.ThrowIfNull(events);
         ArgumentNullException.ThrowIfNull(world);
+        if (discardsOnly) return MoveDetails(action, events, world, true);
+        var details = new List<string>();
+        var segment = new List<GameEvent>();
+        foreach (GameEvent happened in events)
+        {
+            if (PublicRevealProjection.HistoryReveal(happened) is not { } reveal)
+            {
+                segment.Add(happened);
+                continue;
+            }
+            details.AddRange(MoveDetails(action, segment, world, false));
+            segment.Clear();
+            details.Add(EventFlipPresentation.Summary(reveal, world));
+        }
+        details.AddRange(MoveDetails(action, segment, world, false));
+        return details.ToArray();
+    }
+
+    private static string[] MoveDetails(
+        ActionHistoryFacts action, IReadOnlyList<GameEvent> events, WorldDescriptor world, bool discardsOnly)
+    {
         CardsMoved[] results = EffectMoves(action, events, discardsOnly);
         return CombineMoves(results).Select(moved => EventMovementPresentation.IsEffectHandGain(moved)
             ? HistoryHandGainSummary(moved, world)

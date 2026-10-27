@@ -66,6 +66,7 @@ internal static class AbilityAdmission
             var candidate = scope.ForReachability(scope.Reachability);
             candidate.ChooseSelection(card);
             if (AbilityConditionalCardChoice.HasEffect(EffectBody(choice), candidate)
+                && AbilityIndependentStatusChoice.HasLegalOption(EffectBody(choice), candidate)
                 && TargetLegalityOf(EffectBody(choice), candidate) != TargetLegality.Invalid)
             {
                 legal.Add(card);
@@ -223,6 +224,13 @@ internal static class AbilityAdmission
         {
             PreflightDependentOutcomesAfterMutation(steps[step], scope);
         }
+        // An independent sentence with no eligible choice does not prevent a
+        // later effect from resolving. Target legality is still checked for
+        // the complete ability, so an ineffective choice cannot admit itself.
+        if (AbilityIndependentCardChoice.IsEmptyThreatChoice(steps[step], scope)
+            || AbilityIndependentStatusChoice.IsEmpty(steps[step], scope)
+            || AbilityIndependentEnemyChoice.IsEmpty(steps[step], scope))
+            return true;
         return CanInitiate(steps[step], scope)
             && (step + 1 == steps.Count
                 || AbilityChoiceStability.ChoicesHaveStableAreaContinuation(

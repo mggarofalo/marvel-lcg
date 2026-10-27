@@ -51,7 +51,10 @@ internal static class AbilityPowerTrace
     {
         AbilityExhaustionResultProjection.Validate([node], cast.Reachability.PriorSteps);
         AbilityProjectedDefeatWindows.ValidateContinuation(node, reachability, cast);
-        // SuspendsPowerEffect rejects this simultaneous choice by shape. Do
+        if (AbilityPowerSimultaneousSupport.Mutation(node) is { } mutation)
+            return PowerStateAfter(mutation, cast, stateMayChange,
+                bindingMayChange, reachability);
+        // Unrecognised simultaneous shapes remain unsupported. Do
         // not eagerly replay its children while computing a later sibling's
         // abstract state; each replay would invent another damage instance.
         if (node.OperationName() == "and" && OrderedEffects(node).Skip(1).Any())

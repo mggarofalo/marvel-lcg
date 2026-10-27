@@ -9,6 +9,7 @@ internal static class AbilityInPlayCardQuery
 {
     internal static void CollectAreas(AbilityCardSelection selector, HashSet<DeckType> areas)
     {
+        if (selector is AbilityCardSelection.StatusCardsOn) areas.Add(DeckType.StatusArea);
         if (selector is AbilityCardSelection.Query { Kind: AbilityCardQuery.CardsInPlay })
             areas.UnionWith(Enum.GetValues<DeckType>().Where(DeckTypes.IsInPlay));
     }

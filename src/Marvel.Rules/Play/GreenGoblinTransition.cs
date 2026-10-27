@@ -6,6 +6,11 @@ namespace Marvel.Rules.Play;
 /// <summary>Risky Business counter exhaustion and physical villain form changes.</summary>
 public static class GreenGoblinTransition
 {
+    /// <summary>Whether this native counter operation owns removal from the active face.</summary>
+    public static bool HandlesCounterRemoval(Card card, string counter) =>
+        card.FaceId == "02006a" && counter == "infamy"
+        || card.FaceId == "02006b" && counter == "madness";
+
     /// <summary>Remove available infamy or madness and change both faces at zero.</summary>
     public static long RemoveCounters(
         World world, Card environment, string counter, long amount,

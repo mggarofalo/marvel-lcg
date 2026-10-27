@@ -21,6 +21,7 @@ internal sealed class AbilityCostPreparation
     private readonly int incarnation;
     private readonly AbilityPaymentSelection selection;
     private Marvel.Rules.Prompts.CostOption? resourcePrice;
+    private AbilityCost? completeCost;
     private readonly ImmutableArray<Step>.Builder ordered =
         ImmutableArray.CreateBuilder<Step>();
 
@@ -43,6 +44,8 @@ internal sealed class AbilityCostPreparation
 
     internal AbilityCostPayment Build(AbilityCost? cost)
     {
+        cost = AbilityInvocationPayment.Expand(world, player, cost);
+        completeCost = cost;
         AttachedUpgradeCostBound.Validate(world, source, player, cost, paying);
         var price = AbilityPaymentPricing.Price(world, source, player, cost, resourceAbilities);
         // Engine choice: a standalone discard-source arrow cannot consume resource generators.
@@ -72,8 +75,8 @@ internal sealed class AbilityCostPreparation
     private void PrepareSteps(AbilityCost? component)
     {
         new AbilityPaymentValidation(world, source, player, program, resourceAbilities)
-            .Validate(component, paying, selected, variables);
-        if (component is null or AbilityCost.ChooseFromDiscard) return;
+            .Validate(component, paying, selected, variables, completeCost);
+        if (component is null or AbilityCost.ChooseFromDiscard or AbilityCost.ChooseScheme) return;
         if (component is AbilityCost.Sequence sequence)
         {
             PrepareSequence(sequence);
@@ -93,12 +96,11 @@ internal sealed class AbilityCostPreparation
 
     private void PrepareSequence(AbilityCost.Sequence sequence)
     {
-        var components = Flatten(sequence).ToArray();
+        var components = AbilityCostOrder.Flatten(sequence).ToArray();
         // Engine choice: establish the taken-damage amount before other physical
         // payment. rr:cost.12 requires that "all of that damage was taken."
         // Defeat settlement waits until the combined costs have been committed.
-        foreach (var taking in components.OfType<AbilityCost.Damage>()
-                     .Where(damage => damage.MustTakeAll))
+        foreach (var taking in components.Where(AbilityCostOrder.IsTaking))
             PrepareSteps(taking);
         var spends = components.OfType<AbilityCost.Spend>().ToList();
         if (!resourcesPaidByEvent && spends.Count > 0)
@@ -109,16 +111,6 @@ internal sealed class AbilityCostPreparation
                      step is not (AbilityCost.Spend
                          or AbilityCost.Damage { MustTakeAll: true })))
             PrepareSteps(remaining);
-    }
-
-    private static IEnumerable<AbilityCost> Flatten(AbilityCost cost)
-    {
-        if (cost is AbilityCost.Sequence sequence)
-        {
-            foreach (var child in sequence.Costs)
-                foreach (var component in Flatten(child)) yield return component;
-        }
-        else yield return cost;
     }
 
     private void PrepareResource(AbilityCost component)

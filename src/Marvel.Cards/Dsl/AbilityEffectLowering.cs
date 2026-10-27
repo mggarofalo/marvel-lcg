@@ -25,6 +25,9 @@ internal static class AbilityEffectLowering
         var argument = node.Argument;
         return node.Kind switch
         {
+            "discardInvocation" => InvocationDiscard(argument, child),
+            "resolveInvocation" => InvocationEffect(argument, child),
+            "returnInvocation" => InvocationReturn(argument, child),
             "attackAnotherEnemy" => AbilityStagedAttackLowering.Lower(argument, child),
             "boostBasicUse" => argument is AbilityValue.Word { Value: "exhaustedAllyPower" }
                 ? new AbilityEffect.BoostBasicUse(0, MatchingAlly: true)
@@ -68,7 +71,9 @@ internal static class AbilityEffectLowering
             "dealAttackDamage" => AttackDamageEffect(argument, child),
             "moveDamage" or "moveAttackDamage" => MoveDamageEffect(argument, child, node.Kind == "moveAttackDamage"),
             "indirectDamage" => IndirectEffect(argument, child),
-            "giveStatus" => StatusEffect(argument, child),
+            "replaceStatus" => AbilityStatusLowering.Replacement(argument, child),
+            "chooseStatusRecipients" => AbilityStatusLowering.Recipients(argument, child),
+            "giveStatus" => AbilityStatusLowering.Given(argument, child),
             "removeStatuses" => AbilityStatusRemovalLowering.Lower(argument, child),
             "changeForm" => FormEffect(argument, child),
             "draw" => DrawEffect(argument, child),
@@ -83,6 +88,7 @@ internal static class AbilityEffectLowering
             "preventDamage" => PreventDamageEffect(argument, child),
             "gainSurge" => new AbilityEffect.GainSurge(Integer(argument, child)),
             "useAttackForThwart" => FixedEffect(argument, child, "trigger", AbilityFixedInstruction.UseAttackForThwart),
+            "readyUndamagedDefender" => FixedEffect(argument, child, "you", AbilityFixedInstruction.ReadyUndamagedDefender),
             "advanceMainScheme" => FixedEffect(argument, child, "next", AbilityFixedInstruction.AdvanceMainScheme),
             "cancelBoostAbility" => FixedEffect(argument, child, "trigger", AbilityFixedInstruction.CancelBoostAbility),
             "cancelBoostIcons" => FixedEffect(argument, child, "trigger", AbilityFixedInstruction.CancelBoostIcons),
@@ -106,6 +112,7 @@ internal static class AbilityEffectLowering
             "requireAttackedPlayerAllyDefender" => FixedEffect(argument, child, "attack", AbilityFixedInstruction.RequireAttackedPlayerAllyDefender),
             "generate" => new AbilityEffect.Generate(ResourceString(argument, child)),
             "doubleResourceFor" => new AbilityEffect.DoubleResourceFor(Text(argument, child)),
+            "reduceUpgradeCostOnThis" => new AbilityEffect.ReduceUpgradeCostOnThis(PositiveInteger(argument, child)),
             "reduceSelfCostPerEngagedMinion" => new AbilityEffect.ReduceSelfCostPerEngagedMinion(PositiveInteger(argument, child)),
             "reduceSelfCostPerControlledTrait" => AbilitySelfPlayCostLowering.LowerControlledTrait(argument, child),
             "reduceFirstAllyCost" => new AbilityEffect.ReduceFirstAllyCost(PositiveInteger(argument, child)),
@@ -142,6 +149,7 @@ internal static class AbilityEffectLowering
             "discardHandWithResource" => new AbilityEffect.DiscardHandWithResource(Resource(argument, child)),
             "recoverDiscardedByResource" => new AbilityEffect.RecoverDiscardedByResource(Resource(argument, child)),
             "recruitDiscarded" => AbilityDiscardedRecruitmentLowering.Lower(argument, child),
+            "increaseNextEventCost" => new AbilityEffect.IncreaseNextEventCost(PositiveInteger(argument, child)),
             "reduceNextCardCost" => ReduceCostEffect(argument, child),
             "attack" => PowerEffect(argument, child, AbilityPowerKind.Attack),
             "defense" => PowerEffect(argument, child, AbilityPowerKind.Defense),
@@ -195,17 +203,6 @@ internal static class AbilityEffectLowering
 
     internal static AbilityEffect.IndirectDamage IndirectEffect(AbilityValue value, AbilityLocation location) =>
         AbilityDamageLowering.IndirectEffect(value, location);
-
-    internal static AbilityEffect.GiveStatus StatusEffect(AbilityValue value, AbilityLocation location)
-    {
-        var fields = Fields(value, location, "card", "status");
-        string status = Text(Required(fields, "status", location), location.Child("status"));
-        if (status is not (Statuses.Tough or Statuses.Stunned or Statuses.Confused))
-        {
-            throw location.Child("status").Error($"'{status}' is not a supported status");
-        }
-        return new(Selected(fields, "card", location), status);
-    }
 
     internal static AbilityEffect.ChangeForm FormEffect(AbilityValue value, AbilityLocation location)
     {
@@ -292,5 +289,20 @@ internal static class AbilityEffectLowering
         return new(instruction);
     }
 
+    private static AbilityEffect.ResolveInvocation InvocationEffect(AbilityValue value, AbilityLocation location)
+    {
+        FixedWord(value, location, "you");
+        return new();
+    }
+    private static AbilityEffect.DiscardInvocation InvocationDiscard(AbilityValue value, AbilityLocation location)
+    {
+        FixedWord(value, location, "this");
+        return new();
+    }
+    private static AbilityEffect.ReturnInvocation InvocationReturn(AbilityValue value, AbilityLocation location)
+    {
+        FixedWord(value, location, "you");
+        return new();
+    }
 }
 

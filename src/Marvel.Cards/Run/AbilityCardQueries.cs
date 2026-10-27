@@ -226,10 +226,11 @@ internal static class AbilityCardQueries
         return set;
     }
 
-    /// <summary>The one card of a kind in the player's set-aside pile.</summary>
+    /// <summary>The requested nemesis role remaining in the player's set-aside pile.</summary>
     internal static Card? Aside(AbilityQueryContext cast, CardKind kind) =>
         cast.World.Seats[cast.Player].Nemesis.Cards
-            .FirstOrDefault(card => EffectiveCards.Kind(card, cast.World.Facts) == kind);
+            .FirstOrDefault(card => EffectiveCards.Kind(card, cast.World.Facts) == kind
+                && (kind != CardKind.Minion || cast.World.Facts.IsNemesisMinion(card.FaceId)));
 
     /// <summary>
     /// Which player is resolving this ability, or a refusal.

@@ -149,14 +149,19 @@ public sealed class ClientCompositionTests
         }
     }
 
-    private static Task ServeOneAsync(TcpListener listener) => Task.Run(() =>
+    private static Task ServeOneAsync(TcpListener listener)
     {
-        using TcpClient accepted = listener.AcceptTcpClient();
-        new SocketEngineServer(
+        // Fixture initialization completes before the client starts its bounded exchange.
+        var server = new SocketEngineServer(
             new EngineHost(DatasetGameFactory.Load(RepositoryPaths.Root)),
             IPAddress.Loopback,
-            port: 0).Serve(accepted);
-    });
+            port: 0);
+        return Task.Run(() =>
+        {
+            using TcpClient accepted = listener.AcceptTcpClient();
+            server.Serve(accepted);
+        });
+    }
 
     private static Task ServeResponseAsync(TcpListener listener, byte[] response) =>
         Task.Run(() =>

@@ -102,6 +102,10 @@ public sealed class CardCatalog : ICardFacts
     public string EncounterSet(string faceId) => Find(faceId).Set;
 
     /// <inheritdoc />
+    public bool IsNemesisMinion(string faceId) =>
+        NemesisMinionCatalog.Contains(Find(faceId), cards.Values);
+
+    /// <inheritdoc />
     /// <remarks>
     /// Read from the printed <c>Form</c> attribute, which the card data carries
     /// as a structured field on exactly the nine faces that print the keyword.

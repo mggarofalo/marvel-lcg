@@ -117,9 +117,9 @@ jobs:
     needs: changes
     if: ${{ needs.changes.outputs.run == 'true' }}
     runs-on: ${{ matrix.os }}
-    # Routine integration and hosted smoke checks share this bounded job budget.
-    # Certification also includes the complete scale matrix and rendered acceptance.
-    timeout-minutes: ${{ inputs.exhaustive && 90 || 60 }}
+    # Reserve time for hosted checks after managed integration.
+    # Individual smoke processes retain their own deadlines.
+    timeout-minutes: 90
     strategy:
       fail-fast: false
       matrix:
@@ -266,7 +266,7 @@ jobs:
           grep -q 'name: marvel-diagnostics' <<<"$compose"
           [[ $(docker image inspect --format '{{index .Config.Labels "org.opencontainers.image.version"}}' "$image") == 0.1.0-dev.0 ]]
           docker run --rm --entrypoint dotnet "$image" Marvel.Server.Host.dll --version |
-            grep -F 'v0.1.0-dev.0 · engine engine-replay-v27 · protocol 41 · save 7'
+            grep -F 'v0.1.0-dev.0 · engine engine-replay-v27 · protocol 42 · save 7'
           docker volume create "$volume" >/dev/null
           docker volume create "$diagnostics" >/dev/null
           docker run --detach --name "$container" \

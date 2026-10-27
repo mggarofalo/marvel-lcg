@@ -25,7 +25,7 @@ public sealed class EngineHostAuthoredSetupChoicesTests : EngineHostTestBase
         Assert.Null(response.World);
         Assert.Empty(response.Events);
         SetupChoices choices = Assert.IsType<SetupChoices>(response.Setup);
-        Assert.Equal(["captain_america", "ms_marvel", "spider_man", "captain_marvel", "she_hulk", "iron_man", "black_panther", "hawkeye", "spider_woman", "black_widow", "thor"], choices.Heroes.Select(choice => choice.Key));
+        Assert.Equal(["captain_america", "ms_marvel", "spider_man", "captain_marvel", "she_hulk", "iron_man", "black_panther", "hawkeye", "spider_woman", "black_widow", "thor", "doctor_strange"], choices.Heroes.Select(choice => choice.Key));
         Assert.Equal("Captain America", choices.Heroes[0].Name);
         Assert.Equal([
             "rhino", "rhino_expert", "klaw", "klaw_expert",
@@ -238,6 +238,7 @@ public sealed class EngineHostAuthoredSetupChoicesTests : EngineHostTestBase
     [InlineData(38)]
     [InlineData(39)]
     [InlineData(40)]
+    [InlineData(41)]
     public void UnsupportedVersionIsRejectedBeforeItCanOpenAGame(int version)
     {
         // The protocol includes active attack context. Older endpoints are
@@ -245,7 +246,7 @@ public sealed class EngineHostAuthoredSetupChoicesTests : EngineHostTestBase
         var factory = new UnusedFactory();
         var host = new EngineHost(factory);
         var rejected = host.Exchange(new EngineRequest(version, "old-client", EngineProtocol.Open, "game", Game: new GameSpecification("rhino", ["spider_man"], null, 1)));
-        Assert.Equal(41, EngineProtocol.Version);
+        Assert.Equal(42, EngineProtocol.Version);
         Assert.Equal(EngineProtocol.Version, rejected.Version);
         Assert.Equal("unsupported_version", rejected.Error?.Code);
         Assert.Equal(0, factory.Calls);

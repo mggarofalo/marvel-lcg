@@ -14,6 +14,9 @@ public sealed record WorldDescriptor(
     IReadOnlyList<GameAreaDescriptor> GameAreas,
     Outcome Outcome)
 {
+    /// <summary>Typed public auxiliary piles, without concealed card identities or order.</summary>
+    public IReadOnlyList<InvocationDeckDescriptor> InvocationDecks { get; init; } = [];
+
     /// <summary>Visibility-filtered independent encounter ownership and active-counter facts.</summary>
     public IReadOnlyList<EncounterGroupDescriptor> EncounterGroups { get; init; } = [];
 

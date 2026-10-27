@@ -118,6 +118,7 @@ internal static class AbilityResolutionAdmission
         AbilityEffect node, AbilityAdmissionScope cast) => node.OperationName() switch
         {
             "inspectDiscardOrderEncounterTop" => EncounterRouting.Deck(cast.World).Cards.Count > 0,
+            "cancelOccurrence" => AbilityOccurrenceCancellation.CanResolve(cast.World, cast.Occurrence),
             "cancelBoostAbility" => cast.Occurrence.BoostAbility is { } boost && boost.CanCancel(cast.World),
             "cancelBoostIcons" => cast.Occurrence.BoostIcons is { Remaining: > 0 } icons && icons.IsCurrent(cast.World),
             "inspectEncounterTop" => AbilityEncounterInspection.Cards(cast.World,
@@ -131,13 +132,14 @@ internal static class AbilityResolutionAdmission
             "requireAttackedPlayerAllyDefender" => cast.World.Attack is not null
                 && cast.World.Activation is { Attacking: true, Id: >= 0 },
             "replaceThreatWithDamage" => cast.Occurrence.Threat is { Remaining: > 0 },
+            "increaseNextEventCost" => NextEventCost.CanRegister(cast.World, cast.Source, cast.Context.Query.Player),
             "grantCharactersControlledBy" or "grantCharactersWithTrait" or "reduceNextCardCost" => true,
 
             // Target availability is the only state-dependent precondition
             // these currently expressible effects carry. Their own resolver
             // performs any further rule-specific work.
+            "chooseStatusRecipients" => AbilityStatusRecipients.Candidates((AbilityEffect.ChooseStatusRecipients)node, cast.Context).Count > 0,
             "generate" or "soakDamage" or "preventDamage" or "cancelWhenRevealed"
-                or "cancelOccurrence"
                 or "dealEncounterCards" or "dealEncounterCard"
                 or "revealFromVillainDeck" or "revealTop" or "reveal" or "placeAtRandom"
                 or "returnToHand" or "discardUntil" or "recoverDiscardedByResource" or "recruitDiscarded"
@@ -170,7 +172,7 @@ internal static class AbilityResolutionAdmission
     {
         if (node.OperationName() is "choose" or "chooseCard" or "indirectDamage"
             or "resolveSpecials" or "payOrExhaust" or "chooseTopForHand" or "peekTop" or "inspectEncounterTop" or "inspectDiscardOrderEncounterTop"
-            or "discardHandCards" or "discardResourceIcons" or "chooseCardsToHand" or "chooseDiscardToShuffle" or "distributeThreat" or "thwartDifferentSchemes" or "makeTheCall"
+            or "discardHandCards" or "discardResourceIcons" or "chooseStatusRecipients" or "chooseCardsToHand" or "chooseDiscardToShuffle" or "distributeThreat" or "thwartDifferentSchemes" or "makeTheCall"
             or "legalPractice" or "payOrEffect")
         {
             throw new RulesNotImplementedException(
@@ -178,7 +180,11 @@ internal static class AbilityResolutionAdmission
                 + "suspends for a player choice");
         }
 
-        return StructuralResolutionOf(node, cast) ?? CardResolutionOf(node, cast) ?? LeafResolutionOf(node, cast);
+        return StructuralResolutionOf(node, cast)
+            ?? StatusResolutionOf(node, cast)
+            ?? AbilityCardResolutionAdmission.ResolutionOf(node, cast)
+            ?? AbilityInvocationPayment.ResolutionOf(node, cast)
+            ?? LeafResolutionOf(node, cast);
     }
 
     private static AdmissionResolution? StructuralResolutionOf(
@@ -197,37 +203,11 @@ internal static class AbilityResolutionAdmission
             _ => null,
         };
 
-    private static AdmissionResolution? CardResolutionOf(
-        AbilityEffect node, AbilityAdmissionScope cast) => node.OperationName() switch
-        {
-            "moveActiveCounter" => AbilityActiveCounterExecution.CanMove(node, cast)
-                ? AdmissionResolution.Full : AdmissionResolution.None,
-            "putIntoPlay" when node is AbilityEffect.PutIntoPlay { AllyUnderYourControl: true } entry =>
-                AbilityAllyEntry.HasTarget(entry, cast) ? AdmissionResolution.Full : AdmissionResolution.None,
-            "placeOnBottomOfDeck" => AbilityDeckBottomMovement.Resolution(
-                ((AbilityEffect.CardAction)node).Selection, cast),
-            "exhaust" => ResolutionOfCards(
-                Every(EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast), card => card.Ready),
-            "ready" => ResolutionOfCards(
-                Every(EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast), card => !card.Ready
-                    && AbilityProgramQueries.CanReady(cast.World, cast.Context.Program, card)),
-            "declareDefender" => Find(EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast) is { } declared
-                && Attack.CanDeclareByAbility(
-                    cast.World, cast.World.Facts, declared,
-                    ReplaceableDefenseDefender(cast))
-                    ? AdmissionResolution.Full
-                    : AdmissionResolution.None,
-            "discard" => EffectOf<AbilityEffect.CardAction>(node, cast).Selection is var discardTarget
-                && Find(discardTarget, cast) is { } discarded
-                && CanRemoveByEffect(discardTarget, cast, discarded)
-                    ? AdmissionResolution.Full
-                    : AdmissionResolution.None,
-            _ => null,
-        };
-
     private static AdmissionResolution LeafResolutionOf(
         AbilityEffect node, AbilityAdmissionScope cast) => node.OperationName() switch
         {
+            "cancelOccurrence" => AbilityOccurrenceCancellation.CanResolve(cast.World, cast.Occurrence)
+                ? AdmissionResolution.Full : AdmissionResolution.None,
             "cancelBoostAbility" => cast.Occurrence.BoostAbility is { } boost && boost.CanCancel(cast.World)
                 ? AdmissionResolution.Full : AdmissionResolution.None,
             "cancelBoostIcons" => cast.Occurrence.BoostIcons is { Remaining: > 0 } icons && icons.IsCurrent(cast.World)
@@ -238,8 +218,6 @@ internal static class AbilityResolutionAdmission
                     + cast.World.AreaOf(
                         DeckType.DiscardPile, PlayArea.Of(player)).Cards.Count,
                     EffectOf<AbilityEffect.Draw>(node, cast).Count))),
-            "removeStatuses" => AbilityStatusRemoval.Candidates((AbilityEffect.RemoveStatuses)node, cast).Count > 0
-                ? AdmissionResolution.Full : AdmissionResolution.None,
             "heal" => ResolutionOfAmount(
                 Find(EffectOf<AbilityEffect.Heal>(node, cast).Card, cast)?.Damage ?? 0,
                 Amount(EffectOf<AbilityEffect.Heal>(node, cast).Amount, cast)),

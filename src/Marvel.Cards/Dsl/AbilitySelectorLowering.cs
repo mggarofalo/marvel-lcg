@@ -45,6 +45,9 @@ internal static class AbilitySelectorLowering
         return node.Kind switch
         {
             "query" => new AbilityCardSelection.Query(Query(Text(node.Argument, child), child)),
+            "statusCardsOn" => SelectCards(node.Argument, child) is AbilityCardSelection.Bound host
+                ? new AbilityCardSelection.StatusCardsOn(host.Binding)
+                : throw child.Error("expected a card binding for the status host"),
             "titled" => new AbilityCardSelection.Titled(Text(node.Argument, child)),
             "enemiesWithTrait" => new AbilityCardSelection.EnemiesWithTrait(Text(node.Argument, child)),
             "withTrait" => WithTrait(node.Argument, child),
@@ -97,6 +100,8 @@ internal static class AbilitySelectorLowering
         "attachmentsOnVillain" => AbilityCardQuery.AttachmentsOnVillain,
         "attachmentsOnThis" => AbilityCardQuery.AttachmentsOnThis,
         "beneathThis" => AbilityCardQuery.BeneathThis,
+        "invocationTop" => AbilityCardQuery.InvocationTop,
+        "statusCards" => AbilityCardQuery.StatusCards,
         "heroesAndAllies" => AbilityCardQuery.HeroesAndAllies,
         "heroAndAllyTargets" => AbilityCardQuery.HeroAndAllyTargets,
         "sideSchemes" => AbilityCardQuery.SideSchemes,
@@ -200,7 +205,7 @@ internal static class AbilitySelectorLowering
 
     internal static AbilityCardSelection.InAreas InAreas(AbilityValue value, AbilityLocation location)
     {
-        var fields = Fields(value, location, "area", "areas", "kind", "trait", "title", "top", "aspectOnly", "cardClass");
+        var fields = Fields(value, location, "area", "areas", "kind", "trait", "title", "top", "aspectOnly", "cardClass", "set");
         if (fields.ContainsKey("area") == fields.ContainsKey("areas"))
         {
             throw location.Error("expected exactly one of 'area' and 'areas'");

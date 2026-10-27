@@ -16,9 +16,8 @@ public static class DamageWindowEligibility
         // faq:05017: "After you resolve the first one, there is no more damage
         // left to trigger the other ones." Reading prevention does not spend it
         // or rewrite the dealt amount retained by the damage procedure.
-        foreach (var effect in world.Effects.Active())
-            if (effect.Kind == "preventDamage" && effect.Affects == damage.Target.ObjectId)
-                remaining = Math.Max(0, remaining - (effect.Amount <= 0 ? remaining : effect.Amount));
+        foreach (var effect in DamagePrevention.Active(world, damage.Target))
+            remaining = DamagePrevention.After(remaining, effect.Amount);
         return remaining > 0;
     }
 }

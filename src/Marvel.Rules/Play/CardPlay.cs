@@ -156,7 +156,7 @@ public static class CardPlay
         // Steps 3 and 4. Determine the cost and apply modifiers. The same
         // operation prices the affordance, so what was offered and what is
         // charged cannot disagree.
-        var adjusted = CostOf(world, facts, seat, card);
+        var adjusted = CardPayment.CostOf(world, facts, seat, card, targets is { Count: 1 } ? targets[0] : null);
 
         // Step 5. Pay it -- "if this step is reached and the cost(s) cannot be
         // paid, **abort this process without paying any costs**", so the whole
@@ -215,7 +215,7 @@ public static class CardPlay
                 $"card {card.ObjectId} ('{card.FaceId}') cannot use this play permission");
         }
 
-        var adjusted = CostOf(world, facts, seat, card);
+        var adjusted = CardPayment.CostOf(world, facts, seat, card, targets is { Count: 1 } ? targets[0] : null);
         CardPlayPayment.Play(world,
             new CardPlayInitiation(facts, abilities, seat, card, adjusted, [.. targets ?? []], [.. paying]), events);
     }

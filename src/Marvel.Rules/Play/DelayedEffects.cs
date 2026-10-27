@@ -102,6 +102,10 @@ public static class DelayedEffects
     {
         switch (effect.Kind)
         {
+            case UndamagedDefenseReady.Kind:
+                UndamagedDefenseReady.Resolve(world, effect, condition, events);
+                break;
+
             case DiscardFromPlay:
                 Discard(world, effect, condition, events);
                 break;

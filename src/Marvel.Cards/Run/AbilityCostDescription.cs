@@ -11,6 +11,7 @@ internal static class AbilityCostDescription
     internal static string? Summary(World world, Card source, int player, AbilityCost? cost)
     {
         if (cost is null) return null;
+        if (cost is AbilityCost.InvocationTop) return AbilityInvocationDescription.Cost(world, player);
         if (cost is AbilityCost.Sequence sequence)
         {
             string[] parts = [.. sequence.Costs.Select(step => Summary(world, source, player, step))
@@ -49,6 +50,7 @@ internal static class AbilityCostDescription
     {
         AbilityCost.RandomDiscardFromHand discard => $"Discard {discard.Count} card(s) at random from your hand",
         AbilityCost.DiscardFromHand discard => $"Discard {Range(discard.Range)} cards from your hand",
+        AbilityCost.ChooseScheme => "Choose one scheme before paying for the thwart",
         AbilityCost.ChooseFromDiscard choice => $"Choose one {choice.Trait} card in your discard pile",
         AbilityCost.ExhaustChosen exhaust => $"Exhaust {Range(exhaust.Range)} {exhaust.Trait + (exhaust.Trait is null ? "" : " ")}{Relation(exhaust.From)}",
         _ => throw new RulesNotImplementedException($"Cost description for {cost.GetType().Name}"),

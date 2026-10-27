@@ -7,6 +7,9 @@ public abstract record AbilityCost
 {
     private AbilityCost() { }
 
+    /// <summary>Pay the current public Invocation top and bind that physical card.</summary>
+    public sealed record InvocationTop : AbilityCost;
+
     /// <summary>Costs paid together in authored order, subject to engine atomicity rules.</summary>
     public sealed record Sequence(ImmutableArray<AbilityCost> Costs) : AbilityCost;
     /// <summary>Exhaust the source or resolving identity.</summary>
@@ -56,6 +59,8 @@ public abstract record AbilityCost
     }
     /// <summary>Choose one trait-filtered physical card in your discard pile before payment.</summary>
     public sealed record ChooseFromDiscard(string Trait) : AbilityCost;
+    /// <summary>Choose one in-play scheme before paying for a thwart event.</summary>
+    public sealed record ChooseScheme : AbilityCost;
     /// <summary>Heal a positive amount of damage from the cost's card.</summary>
     public sealed record Heal(AbilityCostCard Card, long Amount) : AbilityCost;
     /// <summary>Deal damage, or require that all of it be taken to pay the cost.</summary>

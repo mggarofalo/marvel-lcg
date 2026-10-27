@@ -39,6 +39,14 @@ public interface ICardFacts
     /// <param name="faceId">A printed card id.</param>
     string EncounterSet(string faceId) => string.Empty;
 
+    /// <summary>Whether this face is a nemesis minion of its complete printed set.</summary>
+    /// <remarks>
+    /// rr:nemesis-encounter-set.3.1 uses printed parenthetical designation when
+    /// the set contains multiple minions. Catalogs inspect the complete set,
+    /// independently of the cards remaining set aside. Missing facts grant no role.
+    /// </remarks>
+    bool IsNemesisMinion(string faceId) => false;
+
     /// <summary>The printed traits, upper-cased as the digest spells them.</summary>
     /// <param name="faceId">A printed card id.</param>
     IReadOnlyList<string> Traits(string faceId);

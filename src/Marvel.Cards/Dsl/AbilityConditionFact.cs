@@ -28,4 +28,6 @@ public enum AbilityConditionFact
     DefeatedByConsequentialDamage,
     /// <summary>The invoking window owns imminent damage from an attack.</summary>
     DamageFromAttack,
+    /// <summary>The triggering revelation is from the encounter deck or a dealt queue.</summary>
+    RevealedFromEncounterDeck,
 }
