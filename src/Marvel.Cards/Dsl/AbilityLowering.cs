@@ -179,7 +179,7 @@ public static class AbilityLowering
         string name = Text(value, location);
         return name is "exhausted" or "healed" or "discarded" or "found" or "energy" or "resourceTypes" or "schemesCleared"
             or "threatMoved" or "threatRemovedByMove" or "destinationForcedResponseTriggered"
-            or "treacheriesLookedAt" or "boostIconsLookedAt" or "activationDamage" or "activationDamagePlaced" or "activationDamageToYou" or "activationThreat" or "activationMade" or "activationUndefended" or "cancelledBoostIcons"
+            or "treacheriesLookedAt" or "boostIconsLookedAt" or "activationDamage" or "activationDamagePlaced" or "activationDamageToYou" or "activationThreat" or "activationMade" or "activationDefeatedCharacters" or "activationUndefended" or "cancelledBoostIcons"
             ? name : throw location.Error($"'{name}' is not an authored resolution result");
     }
 }
