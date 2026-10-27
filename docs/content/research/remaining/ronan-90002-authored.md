@@ -62,7 +62,53 @@ preserved. Baseline ability-book SHA-256:
 Candidate ability-book SHA-256:
 `e9dab33c11d889586167f0b451a8168d8cba60fe8a622ef9ecd570ad56d10850`.
 
-Independent content review remains separate. Whole Ronan completion still needs
+Independent review of source revision
+`bf06a7c34e56544c6eb7468aa1ad0f4988e79a16` accepts actual 90002 for this
+bounded content scope. The printed text, current RR 1.8 clauses above, exact
+recipient/incarnation matching, actual-book entry and friendly-defeat behavior
+agree. An independent byte comparison confirms the complete 721-row raw prefix,
+722-row total, UTF-8/LF and candidate hash recorded above. No production row was
+changed by review.
+
+Coverage provenance matters: `RonanRemainingFixture` uses the unmodified
+production book. `RonanJudgeProbeFixture` with a null `triggerEvent` retains the
+actual 90002 row while replacing 01008 with synthetic observers and optionally
+replacing other specified cards. Its explicit `triggerEvent` variants replace
+90002 with synthetic alternatives; `RonanJudgeCompositionProbeTests` therefore
+does not establish actual-row coverage. Default-fixture defeat, prevention,
+boost-damage, nested-nonattack and foreign-ownership tests do exercise actual
+90002, with their observer and replacement-card limitations as described.
+
+The independent `RonanJudgeProductionBookReviewTests` adds four cases with the
+unmodified production book: boost entry followed by a lethal or surviving foreign
+defending ally in that same activation; two simultaneous indirect defeats adding
+four threat, followed by another nonlethal attack adding none; and an enemy's
+nonattack damage defeating a foreign ally without adding threat. These are
+prepared nonpublic boards; the last case calls the real damage procedure
+directly. The indirect attack is marked indirect through the engine test seam.
+Neither case is a public scenario transcript. All attacks assert completed
+attack events and drained continuations. Existing ordinary reveal and boost
+cleanup, cross-controller ally, foreign hero elimination and foreign ally plus
+alter-ego overkill cases also passed independently.
+
+The first added-test run passed three cases and failed the indirect fixture's
+starting-health assertion: Black Cat has two printed HP. Using the distinct
+three-HP Mockingbird fixes that fixture without changing production behavior.
+The focused source selection plus all four added cases then passed 63/63.
+A valid, compiled actual-row mutant removing `alsoHappened: WhenCardDefeated`
+failed two added checks: the surviving boost-activation ally incorrectly added
+two threat, and the following nonlethal attack incorrectly raised four threat
+to six. Exact original bytes were restored, a non-incremental Release build
+passed, and the complete same selection passed 63/63 again. Normal commit hooks
+remain enabled. Independent evidence outside the repository:
+
+- `C:/Users/mggar/Source/evidence/ronan-90002-independent-new.log`
+- `C:/Users/mggar/Source/evidence/ronan-90002-independent-focused.log`
+- `C:/Users/mggar/Source/evidence/ronan-90002-independent-mutant.log`
+- `C:/Users/mggar/Source/evidence/ronan-90002-independent-restored-build.log`
+- `C:/Users/mggar/Source/evidence/ronan-90002-independent-restored.log`
+
+Whole Ronan completion still needs
 actual 90004 after its independent engine prerequisite, complete modular setup
 and public admission, combined inventory/behavior checks, public gameplay and
 save/replay evidence. The attack-defeat prerequisite's 08031 timing replay
