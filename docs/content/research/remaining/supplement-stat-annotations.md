@@ -22,3 +22,34 @@ Logs: `C:/Users/mggar/Source/evidence/supplement-annotations-*.log`.
 The initial test access attempt failed compilation before execution; it is not
 mutation evidence. No dataset, printed text, setup or ability row is changed.
 Independent review is required before integration.
+
+## Independent review
+
+Reviewed commit `8cf73d300bb53c7961cb2fba6455573941366e34` in a separate,
+detached worktree on 2026-10-27. **Verdict: accept this tooling repair.** No
+blocking finding remains for the supplemental full-card path.
+
+The file reader delegates to the same pure reader exercised by the tests, and
+the returned cards retain strings and typed values rather than document-owned
+JSON elements. The existing annotation reader preserves arbitrary attribute
+keys, including attachment modifier keys, symbolic values and explicit
+`per_player: false`; its ordinal dictionary keeps generated ordering stable.
+Numeric attributes, linked-card handling, correction-row merging and dropped
+cards retain their existing paths. This change does not add annotation merging
+to correction rows.
+
+Friend access keeps the extractor types internal. The explicit assembly alias
+also keeps its linked `Marvel.Tests.RepositoryPaths` out of the test project's
+unqualified lookup. A fresh Release build of the complete content test assembly
+and its 11 focused extraction/correction tests passed independently. The offline
+generator check independently confirmed byte-identical cards.json and
+search.json; the worktree remained clean after both runs. Evidence is in
+`C:/Users/mggar/Source/evidence/supplement-annotations-independent-tests.log` and
+`supplement-annotations-independent-check.log` in the same directory.
+Independent pre-commit gates also passed: all 66 architecture-policy cases,
+complexity and file length. Their log is
+`C:/Users/mggar/Source/evidence/supplement-annotations-independent-hooks.log`.
+
+This review accepts acquisition-format preservation only. It does not import
+the Bullseye candidate, certify its source inventory, admit content, or establish
+runtime support.
