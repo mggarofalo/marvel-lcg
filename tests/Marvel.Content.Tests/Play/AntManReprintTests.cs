@@ -19,11 +19,12 @@ public sealed class AntManReprintTests : CoreCardTestBase
         var rows = book.RootElement.GetProperty("cards").EnumerateArray().ToArray();
         string[] faces = ["12019", "12021", "12022", "12023"];
         Assert.Equal(AuthoredCards.ExpectedFaceCount, rows.Length);
-        Assert.Equal(faces, rows.Skip(723).Select(row => row.GetProperty("card").GetString()));
-        Assert.Equal(faces.Order(), AuthoredCards.Book.Authored.Where(face => face.StartsWith("12", StringComparison.Ordinal)).Order());
+        Assert.Equal(faces, rows.Skip(723).Take(4).Select(row => row.GetProperty("card").GetString()));
+        string[] allFaces = ["12012", "12018", "12019", "12021", "12022", "12023"];
+        Assert.Equal(allFaces, AuthoredCards.Book.Authored.Where(face => face.StartsWith("12", StringComparison.Ordinal)).Order());
         Assert.DoesNotContain("12020", AuthoredCards.Book.Authored);
         Assert.DoesNotContain("12001a", AuthoredCards.Book.Authored);
-        Assert.All(rows.Skip(724), row => Assert.Empty(row.GetProperty("abilities").EnumerateArray()));
+        Assert.All(rows.Skip(724).Take(3), row => Assert.Empty(row.GetProperty("abilities").EnumerateArray()));
     }
 
     [Theory]

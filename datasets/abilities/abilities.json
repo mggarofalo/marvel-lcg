@@ -22866,6 +22866,32 @@
       "name": "Strength",
       "note": "This resource card has no ability. Its two printed physical resources are read from datasets/cards by the resource rules.",
       "abilities": []
+    },
+    {
+      "card": "12012",
+      "name": "Giant-Man",
+      "note": "Giant-Man gets +2 ATK while his current remaining hit points are at least 3. The conditional grant spelling is an engine choice.",
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant", "subject": "this" },
+          "effect": { "if": {
+            "test": { "atLeast": { "value": { "remainingHealth": "this" }, "count": 3 } },
+            "then": { "grant": { "card": "this", "keyword": "attack", "amount": 2 } }
+          } }
+        }
+      ]
+    },
+    {
+      "card": "12018",
+      "name": "Reinforced Suit",
+      "note": "Attach to an ally, maximum one per ally. The attached ally gets +2 hit points.",
+      "attachTo": { "withoutAnotherCopyAttached": { "query": "allies" } },
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant", "subject": "this" },
+          "effect": { "grant": { "card": "attachedTo", "keyword": "health", "amount": 2 } }
+        }
+      ]
     }
   ]
 }
