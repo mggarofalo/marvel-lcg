@@ -38,7 +38,7 @@ static func _second_choice(smoke, villain: int) -> bool:
     return await smoke.ui.expect(func(): return smoke.witness.Revision() == 3 and smoke.witness.DecisionKind() == "PlayerAction",
         "second explicit commitment completes Melee and returns to the player turn")
 
-static func _choose_enemy(smoke, anchor: int, revision: int) -> bool:
+static func _choose_enemy(smoke, anchor: int, revision: int, commit_deadline_ms: int = -1) -> bool:
     var choices: Array = smoke.ui.named("Affordance%d" % anchor).all()
     if choices.size() == 1:
         if not await smoke.ui.click(smoke.ui.Locator.control(choices[0])): return false
@@ -48,7 +48,7 @@ static func _choose_enemy(smoke, anchor: int, revision: int) -> bool:
         if commit == null or commit.disabled: return false
         if not await smoke.ui.click(smoke.ui.Locator.control(commit)): return false
         return await smoke.ui.expect(func(): return smoke.witness.Revision() == revision + 1,
-            "one explicit local Melee target commitment advances exactly one revision")
+            "one explicit local Melee target commitment advances exactly one revision", commit_deadline_ms)
     var action = smoke._attached(smoke._attached_name(anchor, "Action"))
     if action == null:
         smoke._fail("Melee enemy lacks an explicit attached choice: %d" % anchor)
@@ -56,7 +56,7 @@ static func _choose_enemy(smoke, anchor: int, revision: int) -> bool:
     if smoke.witness.Revision() != revision: return false
     if not await smoke._pointer_activate_attached(action): return false
     return await smoke.ui.expect(func(): return smoke.witness.Revision() == revision + 1,
-        "one explicit Melee target commitment advances exactly one revision")
+        "one explicit Melee target commitment advances exactly one revision", commit_deadline_ms)
 
 static func _capture(smoke) -> void:
     print("MELEE_PREPARED_CROSS_PACK second-choice explicit revision=2")
