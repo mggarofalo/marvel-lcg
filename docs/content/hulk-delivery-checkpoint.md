@@ -206,3 +206,8 @@ processes have a 180-second bound and these two manifest entries a 210-second
 outer bound. Exact revision, costs, effects and commitment counts remain required.
 Both rendered cases pass locally in `C:/Users/mggar/Source/evidence/hulk-transport-budget-native/`.
 Final CI must still certify the candidate.
+
+Final certification: all eleven CI jobs passed on `0edf7c9a` in run
+`40474550732`. PR #458 merged as `f256e30b41749ecf569ad6252e9b023201a0289b`
+on 2026-10-27. The complete Hulk pack is agent-accepted; parent MARVEL-566 and
+its twelve implementation/proof children are closed with that evidence.

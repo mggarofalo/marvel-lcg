@@ -8,7 +8,7 @@ using Xunit;
 
 namespace Marvel.Content.Tests.Play;
 
-/// <summary>Independent synthetic capability probes; no production Clea admission.</summary>
+/// <summary>Independent synthetic probes of owner-relative shuffle routing.</summary>
 public sealed class OwnerDeckShuffleReviewTests
 {
     [Fact]
@@ -34,7 +34,14 @@ public sealed class OwnerDeckShuffleReviewTests
     {
         // rr:ownership-and-control.7.2: "removed from the game if that player is no longer in the game".
         var (world, runner, source) = Board();
-        if (eliminated) Elimination.Eliminate(world, world.Facts, 1, "Review", []);
+        if (eliminated)
+        {
+            Elimination.Eliminate(world, world.Facts, 1, "Review", []);
+            Assert.Equal(DeckType.RemovedArea, source.Area.Type);
+            // Introduce a synthetic late source to exercise routing to an absent owner.
+            source = world.CreateCard("09013", world.CreateArea(
+                DeckType.AlliesArea, cardOwner: 1, playArea: PlayArea.Of(0)));
+        }
         Assert.Equal(eliminated, world.Seats[1].Eliminated);
         Assert.Equal(DeckType.AlliesArea, source.Area.Type);
         Assert.Equal(eliminated ? 0 : 12, world.Seats[1].Deck.Cards.Count);
