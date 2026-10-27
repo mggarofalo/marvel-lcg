@@ -35,6 +35,10 @@ static func _costs(smoke, damage: bool) -> bool:
     if "Exhaust Beat Cop" not in copy or (damage and "Discard Beat Cop" not in copy):
         smoke._fail("staged actual Beat Cop must explain its exhaustion and discard costs: " + copy)
         return false
+    var effect := "Current damage: 3 before prevention/replacement" if damage else "move 1 threat onto this card from"
+    if effect not in copy:
+        smoke._fail("staged Beat Cop must explain its supplied known effect: " + copy)
+        return false
     return true
 
 static func _commit_action(smoke) -> bool:
@@ -51,6 +55,9 @@ static func _target(smoke, damage: bool) -> bool:
     if target < 0:
         smoke._fail("missing prepared exact Beat Cop target")
         return false
+    var effect := "Current damage: 3 before prevention/replacement" if damage else "move 1 threat onto this card from"
+    if not await smoke.ui.expect(func(): return effect in smoke._visible_text(smoke.main),
+        "paid Beat Cop target choice retains the supplied known effect"): return false
     if not await _capture(smoke, "target-choice"): return false
     if not await preload("res://smoke/native_melee_contract.gd")._choose_enemy(smoke, target, 1): return false
     return await smoke.ui.expect(func(): return smoke.witness.Revision() == 2 and smoke.witness.DecisionKind() == "PlayerAction",
