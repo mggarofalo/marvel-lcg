@@ -59,3 +59,37 @@ Commands use `dotnet build tests/Marvel.Content.Tests/Marvel.Content.Tests.cspro
 The mutation filter selects the characteristic near-miss test alone. No broad
 suite, native interaction, production card authoring or whole-pack acceptance is
 claimed. Independent engine review follows this packet.
+
+## Independent engine review
+
+Reviewed source `74c1d59aebe084ba7b0a099821d61dcafb4ff960` against the stated
+base. Verdict: accepted for this nonpublic engine capability; no production
+defect found. Independently read printed 12015 and fixture faces 01002, 01011,
+01091, current RR 1.8 player-deck/discard clauses, and the cited September 2023
+ruling. The historical ruling agrees with the current clauses governing these
+assertions. The vendored FAQ contains no entry for 12015.
+
+Review adds a labeled synthetic kind-only case: Black Cat qualifies without an
+Avenger trait, Avengers Mansion is discarded first, and the next ally remains
+in the deck. The suspended following choice is queried three times through its
+actual continuation; card digest, complete RNG state and consumption, pending
+prompt identity and agenda remain unchanged. Resumption matches an unprobed
+control's full events, serialized prompt offers, digest, RNG and pending agenda.
+These tests supplement the existing seat-1, conjunctive near-miss, exact-copy,
+ordered-batch and exhaustion cases without changing production code or data.
+
+External evidence under `C:/Users/mggar/Source/`:
+
+- `player-discard-until-independent-verified-build.log`: non-incremental Release
+  build, zero warnings/errors.
+- `player-discard-until-independent-verified-focused.log`: all 33 cases pass,
+  using the same focused class filter listed above.
+- `player-discard-until-independent-focused.log`: preserved first review failure
+  in a new cross-game prompt assertion; nested collections compare by reference.
+  The assertion now compares serialized observable offers.
+- `player-discard-until-independent-final-build.log`: preserved review compile
+  failure from an ambiguous serializer method group, corrected with lambdas.
+- `player-discard-until-independent-hooks.log`: normal review commit hooks.
+
+No independent mutation run, broad suite, native interaction, discard response
+window, production 12015 admission or complete pack acceptance is claimed.

@@ -15,7 +15,7 @@ public sealed class CallForAidMatchingTests
         {"discardUntil":{"from":"yourDeck","kind":"ally","trait":"AVENGER","then":"addToHand"}}
         """;
 
-    private static AbilityRunner Runner(bool choice = false) => new(AbilityCatalog.Parse("""
+    private static AbilityRunner Runner(bool choice = false, bool kindOnly = false) => new(AbilityCatalog.Parse("""
         {"cards":[{"card":"12015","abilities":[{
           "trigger":{"event":"WhenActionTriggered","timing":"Action","subject":"this","form":"hero"},
           "effect":EFFECT
@@ -24,7 +24,26 @@ public sealed class CallForAidMatchingTests
             ? "{\"seq\":[" + Discard + ", {\"choose\":{\"options\":["
                 + "{\"draw\":{\"player\":\"you\",\"count\":1}},"
                 + "{\"draw\":{\"player\":\"you\",\"count\":2}}]}}]}"
-            : Discard, StringComparison.Ordinal)));
+            : Discard, StringComparison.Ordinal).Replace(kindOnly ? ",\"trait\":\"AVENGER\"" : "UNUSED",
+                "", StringComparison.Ordinal)));
+
+    [Fact]
+    public void SyntheticKindOnlyMatcherAcceptsANonAvengerAllyAndStopsBeforeTheNextAlly()
+    {
+        // Synthetic kind-only composition exercises the optional trait vocabulary.
+        var (game, world) = Prepared(kindOnly: true);
+        var seat = world.Seats[1];
+        var expectedDeck = seat.Deck.Cards.Take(2).ToArray();
+        var match = seat.Deck.Cards[^2];
+        Assert.Equal("01002", match.FaceId);
+        Assert.DoesNotContain("AVENGER", world.Facts.Traits(match.FaceId));
+        var resolution = game.Resolve(Decision.Take(Action(game, world)));
+        Assert.Same(seat.Hand, match.Area);
+        Assert.Equal(expectedDeck, seat.Deck.Cards);
+        Assert.DoesNotContain(resolution.Events.OfType<AreaReordered>(), item => item.Verb == "Shuffle");
+        var batch = Assert.Single(resolution.Events.OfType<ActivityCompleted>(), item => item.Verb == "Discard");
+        Assert.Equal(2, batch.Participants[0].Count);
+    }
 
     [Fact]
     [Rule("rr:discard.4")]
@@ -109,6 +128,23 @@ public sealed class CallForAidMatchingTests
         var controlFirst = controlGame.Resolve(Decision.Take(controlAction));
         Assert.Equal(1, game.Pending!.Player);
         Assert.Equal(2, game.Pending.Affordances.Count);
+        var suspendedDigest = world.Digest().Canonical();
+        var suspendedRandom = world.Random.Generator.GetState();
+        long suspendedWords = world.Random.Generator.WordsConsumed;
+        var suspendedPrompt = game.Pending;
+        var suspendedAgenda = world.Agenda.Outstanding.ToArray();
+        for (int query = 0; query < 3; query++)
+        {
+            var preview = ((AbilityRunner)world.Abilities).Choosing(world, world.Agenda.Current!.Value);
+            Assert.Equal(suspendedPrompt.Affordances, preview!.Affordances);
+            Assert.Equal(1, preview.Player);
+        }
+        Assert.Equal(suspendedDigest, world.Digest().Canonical());
+        Assert.Equal(suspendedRandom.Words, world.Random.Generator.GetState().Words);
+        Assert.Equal(suspendedRandom.Index, world.Random.Generator.GetState().Index);
+        Assert.Equal(suspendedWords, world.Random.Generator.WordsConsumed);
+        Assert.Same(suspendedPrompt, game.Pending);
+        Assert.Equal(suspendedAgenda, world.Agenda.Outstanding);
         Assert.Equal(DeckType.HandsArea, world.Cards.Single(card => card.FaceId == "01011"
             && card.Owner == 1 && card.Area.Type == DeckType.HandsArea).Area.Type);
         int handBefore = world.Seats[1].Hand.Cards.Count;
@@ -118,6 +154,13 @@ public sealed class CallForAidMatchingTests
         Assert.Equal(handBefore + 2, world.Seats[1].Hand.Cards.Count);
         Assert.Equal(control.Digest().Canonical(), world.Digest().Canonical());
         Assert.Equal(control.Random.Generator.GetState().Words, world.Random.Generator.GetState().Words);
+        Assert.Equal(control.Random.Generator.GetState().Index, world.Random.Generator.GetState().Index);
+        Assert.Equal(control.Random.Generator.WordsConsumed, world.Random.Generator.WordsConsumed);
+        Assert.Equal(controlGame.Pending!.Asking, game.Pending!.Asking);
+        Assert.Equal(controlGame.Pending.Player, game.Pending.Player);
+        Assert.Equal(controlGame.Pending.Affordances.Select(offer => System.Text.Json.JsonSerializer.Serialize(offer)),
+            game.Pending.Affordances.Select(offer => System.Text.Json.JsonSerializer.Serialize(offer)));
+        Assert.Equal(control.Agenda.Outstanding, world.Agenda.Outstanding);
         Assert.Equal(controlFirst.Events.Select(EventJson.Write), first.Events.Select(EventJson.Write));
         Assert.Equal(controlSecond.Events.Select(EventJson.Write), second.Events.Select(EventJson.Write));
     }
@@ -138,7 +181,8 @@ public sealed class CallForAidMatchingTests
     private static int Action(Game game, World world) => Assert.Single(game.Pending!.Affordances,
         offer => offer.AnchorId == world.Cards.Single(card => card.FaceId == "12015").ObjectId).Id;
 
-    private static (Game Game, World World) Prepared(bool exhaust = false, bool matchLast = false, bool choice = false) =>
+    private static (Game Game, World World) Prepared(
+        bool exhaust = false, bool matchLast = false, bool choice = false, bool kindOnly = false) =>
         Playing(board =>
         {
             var seat = board.Seats[1];
@@ -152,5 +196,5 @@ public sealed class CallForAidMatchingTests
             board.CreateCard("01002", seat.Deck); // Ally, without Avenger.
             board.CreateCard("01091", seat.Deck); // Avenger, without ally.
             board.CreateCard("12015", seat.Hand);
-        }, heroes: ["spider_man", "captain_marvel"], abilities: Runner(choice));
+        }, heroes: ["spider_man", "captain_marvel"], abilities: Runner(choice, kindOnly));
 }
