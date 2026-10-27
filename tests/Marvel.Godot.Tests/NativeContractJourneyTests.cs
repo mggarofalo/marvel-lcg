@@ -20,12 +20,13 @@ public sealed class NativeContractJourneyTests
         string directory = Path.Combine(Path.GetTempPath(), "marvel-native-contract-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(directory);
         await using var server = new NativeContractServer(contract, directory);
+        bool rendered = Environment.GetEnvironmentVariable("MARVEL_NATIVE_RENDERED") == "true";
         var start = new ProcessStartInfo(Environment.GetEnvironmentVariable("GODOT_BIN")!)
         {
             UseShellExecute = false, CreateNoWindow = true,
             RedirectStandardOutput = true, RedirectStandardError = true,
         };
-        foreach (string argument in new[] { Environment.GetEnvironmentVariable("MARVEL_NATIVE_RENDERED") == "true" ? "--minimized" : "--headless", "--audio-driver", "Dummy", "--path",
+        foreach (string argument in new[] { rendered ? "--minimized" : "--headless", "--audio-driver", "Dummy", "--path",
             Path.Combine(RepositoryPaths.Root, "src", "Marvel.Godot"), "--script", "res://smoke/native_contract_smoke.gd" })
             start.ArgumentList.Add(argument);
         start.Environment["MARVEL_ENGINE_ENDPOINT"] = server.Endpoint;
@@ -34,7 +35,7 @@ public sealed class NativeContractJourneyTests
         Task<string> output = process.StandardOutput.ReadToEndAsync(TestContext.Current.CancellationToken);
         Task<string> error = process.StandardError.ReadToEndAsync(TestContext.Current.CancellationToken);
         using var deadline = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
-        deadline.CancelAfter(TimeSpan.FromSeconds(80));
+        deadline.CancelAfter(TimeSpan.FromSeconds(rendered ? 180 : 80));
         string log;
         try
         {

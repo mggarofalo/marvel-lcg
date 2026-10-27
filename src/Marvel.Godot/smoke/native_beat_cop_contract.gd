@@ -1,6 +1,6 @@
 extends RefCounted
 
-const COMMIT_TIMEOUT_MS := 10000
+const COMMIT_TIMEOUT_MS := 35000
 
 # Prepared actual 10029 component scenes. Damage starts ready with three stored threat;
 # no ready helper or gameplay mutation occurs after Start game.

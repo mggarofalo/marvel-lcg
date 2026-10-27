@@ -197,3 +197,12 @@ exact revision, effect and cost assertions. The shared target helper defaults
 remain unchanged for other journeys. Both rendered 100% Beat Cop cases pass in
 `C:/Users/mggar/Source/evidence/hulk-ci-commit-wait-native/`; the next CI run
 must certify the final candidate. The timeout is not treated as a passed run.
+
+Run `40471095277` again exceeded the commitment wait on Windows software
+rendering: the accepted resolve took 10346 ms and open took 13771 ms. This is
+failed certification. Beat Cop remote waits now allow 35 seconds, covering the
+existing 30-second socket exchange deadline and UI settlement. Rendered contract
+processes have a 180-second bound and these two manifest entries a 210-second
+outer bound. Exact revision, costs, effects and commitment counts remain required.
+Both rendered cases pass locally in `C:/Users/mggar/Source/evidence/hulk-transport-budget-native/`.
+Final CI must still certify the candidate.
