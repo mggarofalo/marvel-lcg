@@ -307,9 +307,10 @@ The progress is calculated locally from the authorized offer, with no new wire f
 A direct damage choice may describe its current source threat when that exact
 source incarnation is faceup in play. After the admitted two-step exhaust-source
 and discard-source cost, the same choice uses the retained exhausted source state,
-not the cleared discard-pile counters. The source must remain in its discard pile
-and its incarnation must still match. Other departures, cost sequences, concealed
-sources and dynamic selectors do not acquire a known-amount description through
+not the cleared current counters. Continuation memory retains whether the source
+was faceup in play when its quantities were bound. The incarnation must still
+match; legitimate deck recycling does not erase that already-public quantity.
+Hidden-origin bindings, other cost sequences and dynamic selectors do not acquire a known-amount description through
 this policy. The amount precedes prevention/replacement and later effects can
 change it. This engine presentation policy does not change effect evaluation.
 

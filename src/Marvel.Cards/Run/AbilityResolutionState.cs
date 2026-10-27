@@ -207,6 +207,8 @@ internal sealed record AbilityResolutionState(
     private AbilityResolutionBindings Bindings { get; } = new(World, Source);
 
     public CardInstanceState CaptureSourceState() => Bindings.CaptureSourceState();
+    public bool SourceWasPublicInPlay => Bindings.SourceWasPublicInPlay;
+    public void RestoreSourcePublicState(bool wasPublic) => Bindings.RestoreSourcePublicState(wasPublic);
     public void RestoreSourceState(CardInstanceState? restored) => Bindings.RestoreSourceState(restored);
     public Card? Chosen => Bindings.Chosen;
     public Card? PlayerSelection => Bindings.PlayerSelection;

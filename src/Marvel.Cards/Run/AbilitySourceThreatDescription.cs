@@ -23,12 +23,12 @@ internal static class AbilitySourceThreatDescription
                 Property: AbilityCardNumberProperty.Threat }) return false;
         var source = context.Expressions.Source;
         var bindings = context.Expressions.Bindings;
-        if (!bindings.SourceBindingIsCurrent(source) || !source.FaceUp) return false;
-        if (DeckTypes.IsInPlay(source.Area.Type)) return true;
+        if (!bindings.SourceBindingIsCurrent(source)) return false;
+        if (DeckTypes.IsInPlay(source.Area.Type)) return source.FaceUp;
         // Engine choice: last-known quantities are publishable only for the exact
         // direct choice whose admitted costs exhausted and discarded its public source.
         // Other departures, selectors and cost sequences remain undescribed.
-        return source.Area.Type == DeckType.DiscardPile && source.HasEnteredPlay
+        return bindings.SourceWasPublicInPlay && source.HasEnteredPlay
             && !bindings.SourceState.Ready
             && context.Program.On(context.AbilityFace).Any(ability =>
                 ReferenceEquals(ability.Effect, choice) && ability.Cost is AbilityCost.Sequence

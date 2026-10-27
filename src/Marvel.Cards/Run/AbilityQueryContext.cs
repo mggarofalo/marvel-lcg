@@ -22,6 +22,7 @@ internal sealed record AbilityQueryContext(
     internal Defeated? Defeat => TriggeringDefeat ?? Occurrence.Defeat;
 
     internal CardInstanceState SourceState { get; init; } = Source.InstanceState;
+    internal bool SourceWasPublicInPlay { get; init; } = Source.FaceUp && DeckTypes.IsInPlay(Source.Area.Type);
 
     internal AbilityQueryProjection? Projection { get; init; }
 

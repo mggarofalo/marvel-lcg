@@ -46,19 +46,27 @@ public sealed class BeatCopSourceMeaningTests
     }
 
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void ActualActionsAndPaidTargetRetainSuppliedKnownEffectsInDraft(bool restricted)
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    [InlineData(true, true)]
+    public void ActualActionsAndPaidTargetRetainSuppliedKnownEffectsInDraft(bool restricted, bool emptyDeck)
     {
         var catalog = CardCatalog.Parse(File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")));
         var runner = new AbilityRunner(AbilityCatalog.Parse(File.ReadAllText(RepositoryPaths.Dataset("abilities", "abilities.json"))));
         var world = new World(catalog, 1, seed: 7) { Abilities = runner };
         var seat = world.CreateSeat("P0");
         seat.IdentityCard = world.CreateCard("10001a", seat.Hero);
-        world.CreateCard("01088", seat.Deck);
-        world.CreateCard("01089", seat.Deck);
+        // rr:player-deck.4 permits an empty deck beside an empty discard pile.
+        // Its first discard resets the deck immediately; captured public damage stays known.
+        if (!emptyDeck)
+        {
+            world.CreateCard("01088", seat.Deck);
+            world.CreateCard("01089", seat.Deck);
+        }
         world.CreateCard("01094", world.AreaOf(DeckType.VillainArea));
         world.CreateCard("01097b", world.AreaOf(DeckType.MainSchemesArea)).PlaceTokens("k_threat", 4);
+        world.CreateCard("01154", world.AreaOf(DeckType.EncounterDeck));
         world.CreateCard("01154", world.AreaOf(DeckType.EncounterDeck));
         var enemy = world.CreateCard("01131", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
         var cop = world.CreateCard("10029", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
@@ -77,6 +85,7 @@ public sealed class BeatCopSourceMeaningTests
         runner.ExecuteAction(world, new PlayerAction(actions.Single(a => a.Ordinal == 1), [], []));
         var prompt = Assert.IsType<Prompt>(Sequence.Work(world, catalog, runner, []));
         Assert.Equal(0, cop.Tokens["k_threat"]);
+        Assert.Equal(emptyDeck ? DeckType.PlayerDeck : DeckType.DiscardPile, cop.Area.Type);
         string continuation = Summary(world, prompt, enemy.ObjectId, restricted);
         Assert.Contains("Current damage: 3 before prevention/replacement", continuation);
         Assert.Contains("Later effects may change it", continuation);

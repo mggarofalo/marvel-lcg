@@ -16,6 +16,6 @@ internal static class AbilityContinuationRestoration
             state.Invocation.Source.Incarnation, memory.Chosen,
             state.Invocation.AbilityActor >= 0 ? At(state.Invocation.AbilityActor) : null,
             memory.CrisisIgnoringThwarts, memory.SourceState)
-        { ExhaustedForCost = memory.ExhaustedForCost };
+        { ExhaustedForCost = memory.ExhaustedForCost, SourceWasPublicInPlay = memory.SourceWasPublicInPlay };
     }
 }

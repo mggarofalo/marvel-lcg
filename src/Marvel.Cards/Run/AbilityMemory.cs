@@ -11,4 +11,6 @@ internal sealed record AbilityMemory(ImmutableDictionary<string, long> Results,
 {
     internal System.Collections.Immutable.ImmutableArray<(int Card, int Incarnation)> DamageDefeats { get; init; } = [];
     internal ImmutableHashSet<int> ExhaustedForCost { get; init; } = [];
+    // Engine-owned provenance of retained quantities, independent of the card's current zone.
+    internal bool SourceWasPublicInPlay { get; init; }
 }

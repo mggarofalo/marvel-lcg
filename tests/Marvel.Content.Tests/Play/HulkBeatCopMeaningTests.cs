@@ -65,6 +65,26 @@ public sealed class HulkBeatCopMeaningTests
     }
 
     [Theory]
+    [InlineData(DeckType.PlayerDeck)]
+    [InlineData(DeckType.DiscardPile)]
+    public void HiddenOriginCannotAcquirePublicRetainedQuantityProvenance(DeckType zone)
+    {
+        // Synthetic disclosure control: an unsolicited description query must not
+        // treat an exhausted concealed copy as a previously public paid source.
+        var f = new HulkFinalCardsFixture();
+        var source = f.Support();
+        f.Minion("01131");
+        World.MoveToTop(source, f.World.AreaOf(zone, PlayArea.Of(1), cardOwner: 1));
+        source.TurnFaceDown();
+        source.Exhaust();
+        source.PlaceTokens("k_threat", 7);
+        var offer = f.Runner.Describe(f.World,
+            new(source.ObjectId, Marvel.Rules.Timing.AbilityType.Action, 1, Ordinal: 1));
+        Assert.DoesNotContain("Current damage", offer.Description ?? "");
+        Assert.DoesNotContain("7", offer.Description ?? "");
+    }
+
+    [Theory]
     [InlineData("{ \"tokensOn\": \"this\" }", true)]
     [InlineData("{ \"tokensOn\": \"chosen\" }", false)]
     [InlineData("{ \"count\": { \"cardsIn\": { \"area\": \"yourDeck\", \"kind\": \"Upgrade\" } } }", false)]
