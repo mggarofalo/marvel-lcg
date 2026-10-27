@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="Marvel.Content.Tests" />
     <!-- One copy, linked. See tests/Shared/RepositoryPaths.cs. -->
     <Compile Include="../../tests/Shared/RepositoryPaths.cs" Link="RepositoryPaths.cs" />
   </ItemGroup>
