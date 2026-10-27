@@ -20,23 +20,7 @@ internal static class AbilityDiscardIterationExecution
         AbilityEffect.EachTime repeated, AbilityResolutionState cast, long from, long? count)
     {
         bool outerContinuation = cast.HasContinuation;
-        var transition = AbilityStructuralFlowExecution.EachTimeStart(
-            execution.StructuralContext(cast), repeated, from, count);
-        ImmutableArray<int> receipt = default;
-        if (repeated.AfterDiscard)
-        {
-            if (transition is not DiscardEachTime)
-            {
-                execution.ApplyStructuralCompletion(transition, cast);
-                return;
-            }
-            int before = cast.Discarded.Count;
-            if (!execution.TryRunCardState(repeated.Effect, cast))
-                throw new InvalidOperationException("The card-state owner refused discardTop");
-            receipt = [.. cast.Discarded.Skip(before).Select(card => card.ObjectId)];
-            transition = AbilityStructuralFlowExecution.EachTimeStart(
-                execution.StructuralContext(cast), repeated, from, count, receipt);
-        }
+        var transition = execution.StartEachTime(repeated, cast, from, count);
         while (transition is DiscardEachTime discard)
         {
             var discarded = execution.EachTimeDiscard(cast, discard.Frame);
@@ -58,11 +42,26 @@ internal static class AbilityDiscardIterationExecution
             transition = AbilityStructuralFlowExecution.NextEachTime(
                 execution.StructuralContext(cast), repeated, frame,
                 observation);
-            if (cast.Suspended)
+            if (cast.Suspended || cast.World.IsOver)
                 return;
         }
         execution.ApplyStructuralCompletion(transition, cast);
         cast.SetContinuation(outerContinuation);
+    }
+
+    private static AbilityStructuralTransition StartEachTime(this AbilityResolutionExecution execution,
+        AbilityEffect.EachTime repeated, AbilityResolutionState cast, long from, long? count)
+    {
+        var transition = AbilityStructuralFlowExecution.EachTimeStart(
+            execution.StructuralContext(cast), repeated, from, count);
+        if (!repeated.AfterDiscard || transition is not DiscardEachTime)
+            return transition;
+        int before = cast.Discarded.Count;
+        if (!execution.TryRunCardState(repeated.Effect, cast))
+            throw new InvalidOperationException("The card-state owner refused discardTop");
+        ImmutableArray<int> receipt = [.. cast.Discarded.Skip(before).Select(card => card.ObjectId)];
+        return AbilityStructuralFlowExecution.EachTimeStart(
+            execution.StructuralContext(cast), repeated, from, count, receipt);
     }
 
 }

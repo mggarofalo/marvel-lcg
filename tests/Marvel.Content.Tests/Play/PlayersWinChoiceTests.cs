@@ -13,10 +13,12 @@ namespace Marvel.Content.Tests.Play;
 public sealed class PlayersWinChoiceTests : CoreCardTestBase
 {
     [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
+    [InlineData(true, false)]
+    [InlineData(false, false)]
+    [InlineData(true, true)]
+    [InlineData(false, true)]
     [Rule("rr:winning-the-game.1")]
-    public void AnsweredChoiceStopsRemainingEffectsOnVictory(bool win)
+    public void AnsweredChoiceStopsRemainingEffectsOnVictory(bool win, bool nested)
     {
         // "Some scenarios have alternate win or loss conditions. If these conditions
         // are met, the players win or lose accordingly."
@@ -31,12 +33,17 @@ public sealed class PlayersWinChoiceTests : CoreCardTestBase
         string json = """
             {"cards":[{"card":"01083","abilities":[{
               "trigger":{"event":"WhenCardDefeated","timing":"WhenDefeated","subject":"this"},
-              "effect":{"seq":[{"choose":{"options":[
+              "effect": EFFECT
+            }]}]}
+            """;
+        string body = """
+            {"seq":[{"choose":{"options":[
                 {"placeThreat":{"scheme":{"query":"mainScheme"},"amount":1}},
                 {"placeThreat":{"scheme":{"query":"mainScheme"},"amount":2}}
               ]}},{ MIDDLE },{"exhaust":"this"}]}
-            }]}]}
             """.Replace("MIDDLE", middle, StringComparison.Ordinal);
+        string effect = nested ? "{\"seq\":[" + body + ",{\"exhaust\":\"you\"}]}" : body;
+        json = json.Replace("EFFECT", effect, StringComparison.Ordinal);
         world.Abilities = new AbilityRunner(AbilityCatalog.Parse(json));
         var events = new List<GameEvent>();
         Agendas.Happening(world);
@@ -47,10 +54,18 @@ public sealed class PlayersWinChoiceTests : CoreCardTestBase
         Sequence.Answer(world, Cards, world.Abilities, prompt, Decision.Take(0), events);
         if (world.IsOver) Assert.True(ally.Ready);
         Sequence.Finish(world, Cards, world.Abilities, events);
+        AssertOutcome(world, ally, scheme, events, win, nested);
+    }
+
+    private static void AssertOutcome(World world, Card ally, Card scheme,
+        List<GameEvent> events, bool win, bool nested)
+    {
         Assert.Equal(win ? Outcome.PlayersWin : Outcome.Unfinished, world.Result);
         Assert.Equal(win ? 1 : 2, scheme.Tokens.GetValueOrDefault("k_threat"));
         var exhaustions = events.OfType<FieldSet>().Where(change => change.Card == ally.ObjectId && change.Verb == "Exhaust").ToArray();
         Assert.Equal(win ? 0 : 1, exhaustions.Length);
+        Assert.Equal(nested && !win ? 1 : 0, events.OfType<FieldSet>().Count(change =>
+            change.Card == world.Seats[0].IdentityCard.ObjectId && change.Verb == "Exhaust"));
         Assert.Equal(win ? DeckType.AlliesArea : DeckType.DiscardPile, ally.Area.Type);
         Assert.Empty(world.Agenda.Outstanding);
     }
