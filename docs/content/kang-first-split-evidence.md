@@ -510,3 +510,30 @@ membership-change, co-due delayed work, simultaneous departure and last-area
 boundaries remain explicit unsupported cases, not accepted implementations. No
 central 4A continuation, complete scenario admission, public replay, native,
 Linux or full managed suite is claimed.
+
+## Nemesis association prerequisite
+
+The proposed setup-owned association retains the physical cards dealt in each
+seat's `SetupSlot.Nemesis`, independently of their current area. The cards remain
+scenario-owned. The ordered setup blueprints reconstruct this association; no
+digest or session format is changed. `NemesisAssociationTests` prepares two
+actual hero recipes, checks their printed nemesis roles, moves one minion into
+the encounter deck and the other into its discard pile, and compares the
+physical associations with a separately dealt world. This is reconstruction
+from setup, not a session replay test.
+
+The existing Shadow of the Past query searches only the cards currently in a
+seat's nemesis pile. `ICardFacts.IsNemesisMinion` recognizes a minion's printed
+role, but does not associate it with a seat. Once a minion moves to the shared
+encounter deck or discard pile, the area and scenario ownership do not identify
+the identity that brought it. The content setup's authored set association is
+validated before blueprints are made; the blueprint's nemesis slot and seat are
+the setup facts available to retain. This prerequisite does not depend on a
+hero-specific lookup or reinterpret card ownership.
+
+**Evidence:** On base `61e5e4a1`, the focused test passed, then a compiled registration-omission mutant failed on the empty association. After restoring registration, a nonincremental Release build and the full setup test group passed (1,423 tests). The expanded focused test also passes after moving matching physical cards in separately dealt worlds through the encounter deck, discard, and engaged enemy area; digest, RNG state, and pending-work observations match. Logs are in `Source/evidence/nemesis-association/`. This is setup reconstruction, not session replay or proof of the central transition. Independent review and broader CI remain pending. The next packet must retain the exact phase owner through
+the central join and separate 4A and 4B reveal continuations, schedule ordinary
+non-reveal entry for each found nemesis minion, and shuffle the encounter deck
+once after the searches. It must preflight missing or incompatible physical
+counterparts and stored Dominions before mutation, preserve the 2B acceleration
+tokens, and retain the existing membership and phase-end guards.
