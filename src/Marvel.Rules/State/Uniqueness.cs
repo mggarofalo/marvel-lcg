@@ -68,6 +68,36 @@ public static class Uniqueness
         return left.Qualifiers.Overlaps(right.All) || right.Qualifiers.Overlaps(left.All);
     }
 
+    /// <summary>Matching in-play pairs that must be reconciled when two game areas combine.</summary>
+    public static IReadOnlyList<(Card Left, Card Right)> ConflictsAfterJoin(
+        World world, ICardFacts facts, GameArea source, GameArea destination)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(source);
+        ArgumentNullException.ThrowIfNull(destination);
+        if (!world.GameAreas.Contains(source) || !world.GameAreas.Contains(destination))
+            throw new ArgumentException("both game areas must belong to this world");
+        if (ReferenceEquals(source, destination)) return [];
+
+        // pack:mc11:rules-clarifications: "When players combine game areas, they
+        // must discard copies of unique cards until only one of each remains in
+        // that game area." Pair identity uses the same printed matching rule as
+        // entry legality. This query neither joins areas nor chooses a discard.
+        var cards = world.Cards.Where(card => DeckTypes.IsInPlay(card.Area.Type)
+            && (ReferenceEquals(Places.GameAreaOf(world, card), source)
+                || ReferenceEquals(Places.GameAreaOf(world, card), destination)))
+            .OrderBy(card => card.ObjectId).ToArray();
+        var conflicts = new List<(Card Left, Card Right)>();
+        // Engine choice: physical object-id order makes the proposed conflicts
+        // deterministic without relying on GameArea's unordered membership set.
+        for (int left = 0; left < cards.Length; left++)
+            for (int right = left + 1; right < cards.Length; right++)
+                if (Matches(facts, cards[left], cards[right]))
+                    conflicts.Add((cards[left], cards[right]));
+        return conflicts;
+    }
+
     /// <summary>Whether a printed card carries the unique icon.</summary>
     public static bool IsUnique(ICardFacts facts, IReadOnlyList<string> faces) =>
         faces.Any(face => facts.Attributes(face).ContainsKey("Unique"));
