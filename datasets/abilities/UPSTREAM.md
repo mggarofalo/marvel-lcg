@@ -453,3 +453,16 @@ govern the bounded batch and immediate empty-deck reset. The September 2023
 discard ruling agrees with those current rules. No new engine, starting-counter,
 setup or public-admission changes. Discard-from-deck response windows remain
 outside this capability. See [the packet](../../docs/content/ant-man-call-for-aid.md).
+
+## Power Gloves - MARVEL-569 / MARVEL-872
+
+Actual research row 12017 appends to 733 rows / ten of 35 Ant-Man faces.
+All 732 predecessor raw UTF-8 objects remain byte-identical and LF. Printed
+authority is `datasets/cards/cards.json`; RR 1.8 attachment, control, response,
+attack/thwart completion and consequential damage rules govern. The independently
+reviewed MARVEL-872 mechanism supplies general ally thwart completion. Actual-row
+tests include paid attachment, maximum per host, controller/owner distinctions,
+optional response and lethal consequential ordering. Explicit synthetic nested
+response fixtures retain their separate mechanism purpose. No engine, setup,
+starting-counter or public-admission changes. Evidence is recorded in
+[the packet](../../docs/content/ant-man-power-gloves.md).

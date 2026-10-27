@@ -22934,6 +22934,22 @@
           "effect": { "discardUntil": { "from": "yourDeck", "kind": "ally", "trait": "AVENGER", "then": "addToHand" } }
         }
       ]
+    },
+    {
+      "card": "12017",
+      "name": "Power Gloves",
+      "note": "Attach to an Avenger ally, maximum one per ally. After that exact ally attacks or thwarts, its controller may deal 1 damage to an enemy. Trigger and selector spellings are engine choices.",
+      "attachTo": { "withoutAnotherCopyAttached": { "withTrait": { "cards": { "query": "allies" }, "trait": "AVENGER" } } },
+      "abilities": [
+        {
+          "trigger": { "event": "WhenAttackEnds", "timing": "Response", "actor": "attachedTo" },
+          "effect": { "chooseCard": { "from": { "query": "enemies" }, "effect": { "dealDamage": { "cards": "chosen", "amount": 1 } } } }
+        },
+        {
+          "trigger": { "event": "WhenThwartEnds", "timing": "Response", "actor": "attachedTo" },
+          "effect": { "chooseCard": { "from": { "query": "enemies" }, "effect": { "dealDamage": { "cards": "chosen", "amount": 1 } } } }
+        }
+      ]
     }
   ]
 }

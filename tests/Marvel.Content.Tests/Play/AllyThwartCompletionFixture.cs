@@ -9,7 +9,7 @@ using Xunit;
 
 namespace Marvel.Content.Tests.Play;
 
-/// <summary>Test-local Power Gloves and a synthetic ally Action (thwart); no product admission.</summary>
+/// <summary>Actual Power Gloves and a synthetic ally Action (thwart); nested response variant is synthetic.</summary>
 internal sealed class AllyThwartCompletionFixture
 {
     internal World World { get; }
@@ -23,22 +23,22 @@ internal sealed class AllyThwartCompletionFixture
     {
         var book = JsonNode.Parse(AuthoredCards.Text)!;
         var rows = book["cards"]!.AsArray();
-        // Printed 12017: "After attached ally attacks or thwarts, deal 1 damage to an enemy."
-        // The trigger and selector spellings are engine choices.
-        var response = """
-            {"chooseCard":{"from":{"query":"enemies"},"effect":{
-              "dealDamage":{"cards":"chosen","amount":1}
-            }}}
-            """;
+        // Ordinary cases retain the actual Power Gloves row. Only this explicitly
+        // synthetic variant inserts a preceding nested choice into each response.
         if (nestedResponse)
-            response = """{"seq":[{"choose":{"options":[{"draw":{"player":"you","count":1}},{"draw":{"player":"you","count":2}}]}},""" + response + "]}";
-        rows.Add(JsonNode.Parse($$$$"""
-            {"card":"12017","attachTo":{"withoutAnotherCopyAttached":{"withTrait":{
-              "cards":{"query":"allies"},"trait":"AVENGER"}}},"abilities":[
-              {"trigger":{"event":"WhenAttackEnds","timing":"Response","actor":"attachedTo"},"effect":{{{{response}}}}},
-              {"trigger":{"event":"WhenThwartEnds","timing":"Response","actor":"attachedTo"},"effect":{{{{response}}}}}
-            ]}
-            """));
+        {
+            var gloves = rows.Single(row => row!["card"]!.GetValue<string>() == "12017")!;
+            foreach (var ability in gloves["abilities"]!.AsArray())
+            {
+                var printedEffect = ability!["effect"]!.DeepClone();
+                ability["effect"] = new JsonObject
+                {
+                    ["seq"] = new JsonArray(
+                        JsonNode.Parse("""{"choose":{"options":[{"draw":{"player":"you","count":1}},{"draw":{"player":"you","count":2}}]}}"""),
+                        printedEffect)
+                };
+            }
+        }
         rows.Remove(rows.Single(row => row!["card"]!.GetValue<string>() == "01068"));
         const string thwart = """
             {"thwart":{"target":{"query":"mainScheme"},"effect":{

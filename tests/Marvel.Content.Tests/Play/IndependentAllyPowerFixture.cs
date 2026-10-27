@@ -39,6 +39,7 @@ internal sealed class IndependentAllyPowerFixture
             }]}
             """));
         // This attachment is synthetic: its host performs the nested thwart.
+        rows.Remove(rows.Single(row => row!["card"]!.GetValue<string>() == "12017"));
         string response = nestedThwart
             ? """{"thwart":{"target":{"query":"mainScheme"},"effect":{"removeThreat":{"scheme":"chosen","amount":1}}}}"""
             : """{"draw":{"player":"you","count":1}}""";
