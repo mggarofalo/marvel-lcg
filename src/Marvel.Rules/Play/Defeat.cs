@@ -134,6 +134,11 @@ public static class Defeat
                 world.Agenda.KangSplit.FinalizeDefeat(world, card, trigger, events);
                 return false;
             }
+            if (KangPhaseTransitions.IsSecondStage(card))
+            {
+                world.Agenda.KangTransitions.FinalizeDefeat(world, card, trigger, events);
+                return false;
+            }
             if (world.EncounterTopology is not null)
                 return EncounterVillainDefeat.Apply(world, card, trigger, events);
             VictoryDisplay.VillainStage(world, facts, card, trigger, events);

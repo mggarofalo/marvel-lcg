@@ -4,7 +4,7 @@ using Marvel.Rules.Timing;
 namespace Marvel.Rules.Play;
 
 /// <summary>Game-owned captures for Kang's delayed, phase-ending departures.</summary>
-/// <remarks>Prepared nonpublic capability; printed defeat admission is a separate connection.</remarks>
+/// <remarks>Nonpublic capability; complete scenario admission remains closed.</remarks>
 public sealed class KangPhaseTransitions
 {
     private readonly List<KangDeparture> pending = [];
@@ -20,7 +20,7 @@ public sealed class KangPhaseTransitions
             throw new ArgumentException("the departure must belong to this game");
         if (boundary is not (PhaseTransitionKind.EndPlayerPhase or PhaseTransitionKind.EndVillainPhase))
             throw new ArgumentException("a Kang departure requires a phase-ending boundary");
-        if (defeated.FaceId is not ("11002" or "11003" or "11004" or "11005"))
+        if (!IsSecondStage(defeated))
             throw new ArgumentException("this departure requires a stage-II Kang");
         GameArea source = Places.GameAreaOf(world, defeated)
             ?? throw new ArgumentException("the departing Kang has no local game area");
@@ -35,6 +35,42 @@ public sealed class KangPhaseTransitions
         return departure;
     }
 
+    /// <summary>Whether a face uses Kang II's scenario departure policy.</summary>
+    public static bool IsSecondStage(Card card) => card.FaceId is
+        "11002" or "11003" or "11004" or "11005" or "11035" or "11036" or "11037" or "11038";
+
+    /// <summary>Resolves the actual own When Defeated removal and retains its next phase ending.</summary>
+    public void CaptureDefeat(World world, Card card, Defeated? defeated, List<Marvel.Rules.Events.GameEvent> events)
+    {
+        if (defeated is null || defeated.Card != card.ObjectId || defeated.Incarnation != card.Incarnation
+            || !IsSecondStage(card) || !DeckTypes.IsInPlay(card.Area.Type))
+            throw new RulesNotImplementedException("Kang II capture requires its exact own defeat");
+        int index = card.FaceId switch
+        {
+            "11002" or "11035" => 0, "11003" or "11036" => 1,
+            "11004" or "11037" => 2, _ => 3,
+        };
+        var source = Places.GameAreaOf(world, card);
+        var scheme = world.Cards.SingleOrDefault(candidate => candidate.FaceId == $"{11009 + index}b"
+            && candidate.Area.Type == DeckType.MainSchemesArea
+            && ReferenceEquals(Places.GameAreaOf(world, candidate), source))
+            ?? throw new RulesNotImplementedException("Kang II defeat requires its matching local stage 3B");
+        // 11002-11005/11035-11038: remove the named scheme, then join at phase end.
+        // Engine choice: bind to the next actual ending, including defeats during
+        // phase-end interrupts, rather than inferring phase from another villain.
+        var capture = CaptureJoin(world, card, -1, PhaseTransitionKind.EndPlayerPhase);
+        pending[pending.IndexOf(capture)] = capture with { NextPhase = true };
+        KangFirstSplit.Remove(world, scheme, card.FaceId, events);
+    }
+
+    internal void FinalizeDefeat(World world, Card card, string trigger, List<Marvel.Rules.Events.GameEvent> events)
+    {
+        if (!pending.Any(item => item.Defeated.Card == card.ObjectId && item.Defeated.Incarnation == card.Incarnation))
+            throw new RulesNotImplementedException("Kang II defeat requires its authored delayed join ability");
+        // pack:mc11:rules-clarifications: attachments/statuses do not transfer to Kang III.
+        KangFirstSplit.Remove(world, card, trigger, events);
+    }
+
     internal void Preflight(World world, PhaseStep owner)
     {
         var ready = Ready(owner);
@@ -42,7 +78,7 @@ public sealed class KangPhaseTransitions
         if (ready.Length != 1)
             throw new RulesNotImplementedException("simultaneous Kang phase-end departures require ordering");
         RequireGroup(ready[0]);
-        string[] conditions = ready[0].Boundary == PhaseTransitionKind.EndPlayerPhase
+        string[] conditions = owner.Require<PhaseTransitionOperation>().Kind == PhaseTransitionKind.EndPlayerPhase
             ? [PhaseEnd.PlayerPhaseEnds] : [PhaseEnd.VillainPhaseEnds, PhaseEnd.RoundEnds];
         // The prepared controller has no accepted ordering policy for co-due
         // delayed work. Refuse before PhaseEnd expires or consumes any effect.
@@ -58,7 +94,8 @@ public sealed class KangPhaseTransitions
     }
 
     private KangDeparture[] Ready(PhaseStep owner) => owner.Operation is PhaseTransitionOperation phase
-        ? pending.Where(item => item.Round == owner.Round && item.Boundary == phase.Kind).ToArray() : [];
+        && phase.Kind is PhaseTransitionKind.EndPlayerPhase or PhaseTransitionKind.EndVillainPhase
+        ? pending.Where(item => item.NextPhase || item.Round == owner.Round && item.Boundary == phase.Kind).ToArray() : [];
 
     internal void Begin(World world, PhaseStep owner)
     {

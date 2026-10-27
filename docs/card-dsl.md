@@ -1794,3 +1794,10 @@ the retained phase-owned controller. Calling a reveal instruction without that
 controller raises. No production card rows or product admission are added by
 these spellings. See `content/kang-first-split-evidence.md` for exact scope,
 seeded assignment policy and remaining scenario boundaries.
+
+`captureKangStageTwoDefeat: "this"` connects the matching physical Kang II's
+own When Defeated resolution to removal of its local 3B and a pending whole-group
+join at the next actual phase-ending operation. This scenario instruction's name
+and binding are engine choices. It is available for test overlays only; no
+production card row or scenario admission is added. See
+`content/kang-first-split-evidence.md` for evidence and boundaries.

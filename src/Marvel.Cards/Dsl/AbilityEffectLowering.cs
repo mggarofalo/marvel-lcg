@@ -91,6 +91,7 @@ internal static class AbilityEffectLowering
             "gainSurge" => new AbilityEffect.GainSurge(Integer(argument, child)),
             "useAttackForThwart" => FixedEffect(argument, child, "trigger", AbilityFixedInstruction.UseAttackForThwart),
             "readyUndamagedDefender" => FixedEffect(argument, child, "you", AbilityFixedInstruction.ReadyUndamagedDefender),
+            "captureKangStageTwoDefeat" => FixedEffect(argument, child, "this", AbilityFixedInstruction.CaptureKangStageTwoDefeat),
             "captureKangStageOneDefeat" => FixedEffect(argument, child, "this", AbilityFixedInstruction.CaptureKangStageOneDefeat),
             "splitKangStageTwo" => FixedEffect(argument, child, "this", AbilityFixedInstruction.SplitKangStageTwo),
             "createKangGameArea" => FixedEffect(argument, child, "this", AbilityFixedInstruction.CreateKangGameArea),

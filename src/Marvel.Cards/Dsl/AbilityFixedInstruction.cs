@@ -8,6 +8,8 @@ public enum AbilityFixedInstruction
 {
     /// <summary>Scenario-owned captureKangStageOneDefeat instruction.</summary>
     CaptureKangStageOneDefeat,
+    /// <summary>Scenario-owned captureKangStageTwoDefeat instruction.</summary>
+    CaptureKangStageTwoDefeat,
     /// <summary>Scenario-owned splitKangStageTwo instruction.</summary>
     SplitKangStageTwo,
     /// <summary>Scenario-owned createKangGameArea instruction.</summary>

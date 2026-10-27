@@ -439,3 +439,38 @@ nonpublic two-seat stage-I defeat/first-split slice and its explicit unsupported
 completion boundary. This does not accept stage-II defeat/reunion implementation,
 complete Kang admission, public replay, whole-game, native or Linux behavior.
 No production changes or scope extension were made in this review closure.
+
+## Actual stage-II defeat and delayed reunion
+
+Implementation base `c03804d4c2e2f5325fe1464c82c8bae60dfc8124`. Nonpublic
+actual-card overlays connect all four Standard and Expert Kang II faces through
+the normal own When Defeated tier. The matching local 3B is removed during that
+ability; finalization removes the defeated incarnation and its attachments and
+statuses without sequential promotion or victory. The captured group waits for
+the next actual phase-ending operation, preserving the existing membership,
+co-due delayed-work, simultaneous-departure and last-area refusal boundaries.
+
+RR `rr:interrupt.3` places phase-end interrupts before the ending resolves and
+`rr:delayed-effect.1` places delayed effects immediately after their specified
+point and before responses. Consequently a capture during such an interrupt is
+intended to join at that same ending; this specific nested interrupt path has
+not been separately exercised. Reconstruction starts with an actual I defeat and
+split, then II defeat, and compares card digest, topology, pending departures,
+agenda, complete RNG state and concrete event JSON at decision boundaries in two
+independent worlds. It is not session save/replay evidence.
+
+Windows evidence outside the repository: `C:/Users/mggar/Source/kang-stage-two-final-combined.log`
+and `kang-stage-two-restored-combined.log` each report 115 passing Kang,
+uniqueness, WhenDefeated and DefeatStepSeven cases. `kang-stage-two-mutant.log`
+records a compiling mutant omitting local scheme removal, killed by all eight
+Standard/Expert cases; the source was restored and force rebuilt, as recorded in
+`kang-stage-two-restored-build.log`, before the restored combined run. The
+observer fixture was corrected before these runs. Independent review remains
+required; no central 4A continuation, unsupported player-count expansion,
+production admission, UI, public replay, full managed or Linux evidence is
+claimed.
+
+The normal commit hook initially rejected the reunion fixture's mixed setup and
+row-authoring method at CCN 11. Extracting ability-overlay construction into a
+separate helper preserves setup and row order. The affected stage-II suite passes
+12 cases after extraction (`C:/Users/mggar/Source/kang-stage-two-fixture-focused.log`).
