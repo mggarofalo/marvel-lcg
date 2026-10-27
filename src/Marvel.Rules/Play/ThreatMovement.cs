@@ -32,7 +32,7 @@ public static class ThreatMovement
         var request = operation.Request;
         if (operation.PlacementPending)
         {
-            Place(world, operation);
+            Place(world, operation, events);
             return;
         }
         // rr:move.1-.2: "cannot move to its same (current) placement";
@@ -55,11 +55,16 @@ public static class ThreatMovement
         operation.Receipt.Removed = removal.Removed;
     }
 
-    private static void Place(World world, ThreatMovementOperation operation)
+    private static void Place(World world, ThreatMovementOperation operation, List<GameEvent> events)
     {
         var request = operation.Request;
         if (operation.Receipt.Removed == 0 || request.To is not { } to
-            || !LiveScheme(world, to, request.ToIncarnation)) return;
+            || !LiveDestination(world, request)) return;
+        if (to.Area.Type == DeckType.SupportsArea)
+        {
+            StoreOnSupport(to, operation, events);
+            return;
+        }
         var completion = Threat.Schedule(world, new([to], request.Source,
             operation.Receipt.Removed, ThreatCause.CardAbility, request.Trigger, request.Player)
             { Movement = operation.Receipt });
@@ -70,11 +75,38 @@ public static class ThreatMovement
         request.From is { } from && request.To is { } to
         && !ReferenceEquals(from, to)
         && LiveScheme(world, from, request.FromIncarnation)
-        && LiveScheme(world, to, request.ToIncarnation);
+        && LiveDestination(world, request);
+
+    /// <summary>The supported destination shapes: a scheme, or the resolving controller's own source support.</summary>
+    /// <remarks>Engine boundary: arbitrary non-scheme destinations and support-to-scheme moves are unsupported.</remarks>
+    public static bool IsSupportedDestination(World world, Card destination, Card? source, int player) =>
+        destination.Area.Type is DeckType.MainSchemesArea or DeckType.SideSchemesArea
+        || ReferenceEquals(destination, source) && destination.Area.Type == DeckType.SupportsArea
+            && destination.Area.PlayArea.Player == player
+            && world.Facts.Kind(destination.FaceId) == CardKind.Support;
+
+    private static bool LiveDestination(World world, ThreatMoveRequest request) =>
+        request.To is { } to && Live(world, to, request.ToIncarnation)
+        && IsSupportedDestination(world, to, request.Source, request.Player);
+
+    private static void StoreOnSupport(Card support, ThreatMovementOperation operation, List<GameEvent> events)
+    {
+        // rr:move.7: "If threat is moved to a scheme" it is considered placed there.
+        // A support stores the moved tokens without a scheme placement occurrence.
+        long before = support.Tokens.GetValueOrDefault("k_threat");
+        long amount = operation.Receipt.Removed;
+        support.PlaceTokens("k_threat", amount);
+        events.Add(new FieldSet(support.ObjectId, "k_threat", before, before + amount)
+        { Trigger = operation.Request.Trigger, Verb = "Move_Threat" });
+        operation.Receipt.Store(amount);
+    }
 
     private static bool LiveScheme(World world, Card card, int incarnation) =>
+        Live(world, card, incarnation)
+        && card.Area.Type is DeckType.MainSchemesArea or DeckType.SideSchemesArea;
+
+    private static bool Live(World world, Card card, int incarnation) =>
         card.Incarnation == incarnation &&
         card.ObjectId >= 0 && card.ObjectId < world.Cards.Count
-        && ReferenceEquals(world.Cards[card.ObjectId], card)
-        && card.Area.Type is DeckType.MainSchemesArea or DeckType.SideSchemesArea;
+        && ReferenceEquals(world.Cards[card.ObjectId], card);
 }

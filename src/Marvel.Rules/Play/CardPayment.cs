@@ -142,6 +142,7 @@ public static class CardPayment
 
         foreach (var card in seat.Hand.Cards)
         {
+            if (!resourceAbilities.CanUseHandResources(world, card)) continue;
             string generates = resourceAbilities.ResourcesGeneratedBy(world, card, payingFor);
             if (generates.Length > 0)
             {

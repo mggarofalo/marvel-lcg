@@ -9,7 +9,7 @@ internal static class AbilityResolutionThreatMovement
     {
         var pairs = AbilityThreatMoveChoice.Pairs(execution.Every(move.From, cast),
             execution.Every(move.To, cast), cast.World,
-            move.All ? 1 : execution.Amount(move.Amount, cast));
+            move.All ? 1 : execution.Amount(move.Amount, cast), cast.Source, cast.Player);
         if (pairs.Length > 1)
         {
             cast.ThreatMovePairs = pairs;

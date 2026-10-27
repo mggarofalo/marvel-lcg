@@ -93,6 +93,7 @@ internal static class AbilityResolutionRestoration
         cast.RestoreCrisisIgnoringThwarts(state.CrisisIgnoringThwarts);
         cast.RestoreSourceIncarnation(state.SourceIncarnation);
         cast.RestoreSourceState(state.SourceState);
+        cast.RestoreSourcePublicState(state.SourceWasPublicInPlay);
         if (state.Chosen is { } chosen)
             cast.RestorePersistedSelection(
                 cast.World.Cards[chosen.ObjectId], chosen.AreaId, chosen.Incarnation,

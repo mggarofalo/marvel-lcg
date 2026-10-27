@@ -71,7 +71,7 @@ public sealed class BlackWidowBurnNoticeTests
     {
         using var book = System.Text.Json.JsonDocument.Parse(AuthoredCards.Text);
         var rows = book.RootElement.GetProperty("cards").EnumerateArray().ToArray();
-        Assert.Equal(685, rows.Length);
+        Assert.Equal(718, rows.Length);
         string[] added = ["08023", "08025", "08026", "08029"];
         Assert.Equal(added,
             rows.Skip(628).Take(4).Select(row => row.GetProperty("card").GetString()));
@@ -87,5 +87,3 @@ public sealed class BlackWidowBurnNoticeTests
     private static void Answer(World world, Prompt prompt, int id) =>
         Sequence.Answer(world, world.Facts, world.Abilities, prompt, Decision.Take(id), []);
 }
-
-

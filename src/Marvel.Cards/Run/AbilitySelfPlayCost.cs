@@ -26,12 +26,12 @@ internal static class AbilitySelfPlayCost
     private static long ReductionFor(World world, AbilityEffect effect, int player) => effect switch
     {
         // Printed 06011: "for each minion engaged with you."
-        AbilityEffect.ReduceSelfCostPerEngagedMinion discount => checked(discount.Amount * world.Areas
+        AbilityPricingEffect.ReduceSelfCostPerEngagedMinion discount => checked(discount.Amount * world.Areas
                     .Where(area => area.Type == DeckType.EngagedEnemiesArea && area.PlayArea == PlayArea.Of(player))
                     .SelectMany(area => area.Cards)
                     .LongCount(minion => EffectiveCards.Kind(minion, world.Facts) == CardKind.Minion)),
         // Printed 08002: "for each Preparation card you control." No card-kind restriction.
-        AbilityEffect.ReduceSelfCostPerControlledTrait discount => checked(discount.Amount * world.Cards
+        AbilityPricingEffect.ReduceSelfCostPerControlledTrait discount => checked(discount.Amount * world.Cards
             .LongCount(controlled => DeckTypes.IsInPlay(controlled.Area.Type)
                 && CardControl.ControllerOf(world, controlled) == player
                 && Traits.Has(world, controlled, discount.Trait, world.Facts))),

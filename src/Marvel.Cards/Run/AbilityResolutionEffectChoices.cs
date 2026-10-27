@@ -271,7 +271,8 @@ internal static class AbilityResolutionEffectChoices
             new AbilityMemory(cast.Results.ToImmutableDictionary(StringComparer.Ordinal),
                 [.. cast.Discarded.Select(card => card.ObjectId)], binding, crisis,
                 cast.CaptureSourceState(), cast.GainedKeywords.Contains("surge"))
-            { ExhaustedForCost = cast.ExhaustedForCost.ToImmutableHashSet(), DamageDefeats = cast.DamageDefeats })
+            { ExhaustedForCost = cast.ExhaustedForCost.ToImmutableHashSet(), DamageDefeats = cast.DamageDefeats,
+                SourceWasPublicInPlay = cast.SourceWasPublicInPlay })
         { Execution = cast.Execution, ThreatMovePairs = cast.ThreatMovePairs, ThreatMove = cast.PendingThreatMove, ThreatMoveRequested = cast.ThreatMoveRequested, Completion = cast.PendingCompletion, DamageCompletion = cast.PendingDamageCompletion,
             CompletedOutcome = cast.CompletedOutcome, Payment = cast.PendingPayment, DamageReplacement = cast.DamageReplacement,
             PowerExecution = cast.PowerExecution is { } power

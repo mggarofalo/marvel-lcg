@@ -16,7 +16,7 @@ public sealed class PublicMsMarvelSetupTests : EngineHostTestBase
         var factory = DatasetGameFactory.Load(RepositoryPaths.Root);
         var discovery = new EngineHost(factory).Exchange(EngineRequest.ReadSetup("setup"));
         Assert.Null(discovery.Error);
-        Assert.Equal(12, discovery.Setup!.Heroes.Count);
+        Assert.Equal(13, discovery.Setup!.Heroes.Count);
         Assert.Contains(discovery.Setup.Heroes, hero => hero.Key == "ms_marvel");
         var hero = factory.DiscoverDecks().Heroes.Single(hero => hero.Key == "ms_marvel");
         Assert.Equal(40, hero.Starter.Count);

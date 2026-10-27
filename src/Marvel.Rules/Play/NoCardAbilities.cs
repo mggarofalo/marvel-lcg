@@ -61,6 +61,9 @@ public class NoCardAbilities : ICardAbilities
     public virtual Card? SchemeDestination(World world, Card enemy) => world.TheCardIn(DeckType.MainSchemesArea);
 
     /// <inheritdoc/>
+    public virtual bool CanUseHandResources(World world, Card source) => true;
+
+    /// <inheritdoc/>
     public virtual string ResourcesGeneratedBy(World world, Card source, Card? payingFor) =>
         EffectiveCards.HasProfile(source) ? string.Empty : Resources.GeneratedBy(source.FaceId, world.Facts);
 

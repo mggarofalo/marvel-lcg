@@ -18,6 +18,9 @@ public static class ResourceSourceEligibility
                 && Traits.Has(world, target, "PREPARATION", facts),
             ResourceRestriction.Event => target is not null
                 && EffectiveCards.Kind(target, facts) == CardKind.Event,
+            ResourceRestriction.AttackEvent => target is not null
+                && EffectiveCards.Kind(target, facts) == CardKind.Event
+                && Traits.Has(world, target, "ATTACK", facts),
             ResourceRestriction.ArrowEvent => target is not null
                 && EffectiveCards.Kind(target, facts) == CardKind.Event
                 && Traits.Of(world, target, facts).Contains("ARROW", StringComparer.Ordinal),

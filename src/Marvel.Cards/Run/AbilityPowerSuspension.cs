@@ -37,7 +37,10 @@ internal static class AbilityPowerSuspension
         AbilityEffect node, AbilityAdmissionScope cast, bool stateMayChange = false,
         bool bindingMayChange = false, PowerReachability? reachability = null, bool terminal = true)
     {
-        if (AbilityStagedAttackLowering.IsBody(node) || node is AbilityEffect.AttackAnotherEnemy) return false;
+        // The enemy activation resolves through the ordinary rules procedure. Its
+        // continuation retains the power and exact chosen incarnation; fixed damage
+        // reads the settled live board without projecting the enemy's attack.
+        if (HasRetainedBody(node)) return false;
         // The observation's receipt can feed the bounded chosen-recipient tail.
         // Arbitrary later deck reads would need an additional state projection.
         if (AbilityPowerSimultaneousSupport.ContainsPair(node)
@@ -67,6 +70,10 @@ internal static class AbilityPowerSuspension
                     child.Node, cast, child.StateMayChange, child.BindingMayChange,
                     child.Reachability, IsTerminalChild(node, child.Node, terminal)));
     }
+
+    private static bool HasRetainedBody(AbilityEffect node) =>
+        AbilityStagedAttackLowering.IsBody(node) || node is AbilityEffect.AttackAnotherEnemy
+            || AbilityPowerActivationSupport.SupportsBody(node);
 
     private static bool HasIntrinsicSuspension(AbilityEffect node) =>
         (node.OperationName() == "and" && OrderedEffects(node).Skip(1).Any())

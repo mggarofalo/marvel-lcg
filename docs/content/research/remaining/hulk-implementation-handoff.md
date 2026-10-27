@@ -1,11 +1,12 @@
 # Hulk executable handoff — MARVEL-566
 
-Prepared against **`95e3ae8a`**, the committed Doctor Strange engine candidate,
-2026-10-26. This is a next-pack execution plan: Hulk has no authored rows or
-public admission at this revision. Doctor Strange remains the sole integration
-candidate. Rebase and recheck the cited mechanisms after its acceptance before
-starting Hulk. The canonical pack record remains MARVEL-566; this document adds
-implementation detail without changing its acceptance criteria.
+Research baseline: **`95e3ae8a`**, 2026-10-26. The current executable state and
+source/reviewer revisions are in the [delivery checkpoint](../../hulk-delivery-checkpoint.md).
+Local nonpublic Hulk authoring and reviewed prerequisite integration proceed from
+the frozen Doctor Strange candidate during its CI run. Public Hulk admission
+follows complete pack coverage and Doctor Strange acceptance. The canonical
+pack record remains MARVEL-566; this handoff supplies authority and face scope,
+while the delivery checkpoint supersedes historical sequencing and gap claims.
 
 ## Complete playable scope and sources
 
@@ -137,7 +138,8 @@ AspectCard, Event and PreparationCard, with no AttackEvent case. Extend this
 existing restriction owner for Martial Prowess rather than permitting all
 events. Reuse `RestrictedResourceTests.cs`, `RestrictedResourceAdmissionTests.cs`
 and `PreparationResourceIndependentTests.cs` as regression controls. Prove use
-for Drop Kick and Hulk Smash; reject a thwart event, basic attack and unrelated
+for Drop Kick and Crushing Blow; reject Hulk Smash (it has only the Superpower
+trait), a thwart event, basic attack and unrelated
 ability cost. Resourceful and Banner's Laboratory remain ordinary resource
 ability authoring. Q3 separately inspects printed hand-source eligibility for
 Limitless Strength, including switching form while payment is pending.

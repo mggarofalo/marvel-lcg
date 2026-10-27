@@ -13,4 +13,6 @@ public enum ResourceRestriction
     Event,
     /// <summary>A Preparation card's resource or ability cost, as printed on Black Widow's Gauntlet.</summary>
     PreparationCard,
+    /// <summary>An Attack event, as printed on Martial Prowess.</summary>
+    AttackEvent,
 }

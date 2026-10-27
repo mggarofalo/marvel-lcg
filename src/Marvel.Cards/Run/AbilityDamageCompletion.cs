@@ -22,7 +22,7 @@ internal sealed class AbilityDamageCompletion(Occurrence occurrence)
 
     internal System.Collections.Immutable.ImmutableArray<(int Card, int Incarnation)> Defeats =>
         // Engine choice: retain settled defeat identities for ordinary and staged
-        // attacks alike. Recipient snapshots are only needed for staged aftermath.
+        // attacks alike. Recipient snapshots retain staged and resumed aftermath.
         [.. DirectResults().Where(item => item.Result.Outcome == Damage.Outcome.Defeated)
             .Select(item => (item.Result.Target, item.Result.TargetIncarnation))
             .Concat(attacks.SelectMany(item => item.Result.Execution.Occurrence.Defeats)
@@ -54,7 +54,7 @@ internal sealed class AbilityDamageCompletion(Occurrence occurrence)
         // rr:attack-player-ability-type.5: "attacked each of those enemies".
         // Snapshot facts survive defeat and departure; settlement supplies damage taken.
         if (published || item.Recipient is not { } recipient) return;
-        var attack = item.Occurrence ?? throw new InvalidOperationException("A staged recipient has no attack occurrence.");
+        var attack = item.Occurrence ?? throw new InvalidOperationException("A retained recipient has no attack occurrence.");
         attack.Also(recipient with { DamageTaken = item.Result.Taken });
         if (item.Result.Taken > 0) attack.Also(Steps.DamageDealt);
     }

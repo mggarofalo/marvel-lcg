@@ -1,5 +1,6 @@
 using Marvel.Cards.Dsl;
 using Marvel.Rules.Prompts;
+using Marvel.Rules.Play;
 using Marvel.Rules.State;
 using Marvel.Rules.Timing;
 
@@ -32,7 +33,7 @@ internal static class AbilityAffordanceDescription
             AnchorPlayer: ability.Player,
             Label: found.Name,
             Targets: recipients ?? AdmittedCostTargets(execution, world, card, found, ability.Player),
-            Costs: price is null ? null : [price], Description: Description(execution, world, ability.Player, found.Effect, contextual))
+            Costs: price is null ? null : [price], Description: Description(execution, world, card, ability.Player, found.Effect, contextual))
         {
             Timing = found.Trigger.Timing,
             ContextCardIds = ability.TriggeringWouldDefeat is { } imminent ? [imminent]
@@ -78,9 +79,12 @@ internal static class AbilityAffordanceDescription
             ? $"{caption ?? name} after {defeat.Title ?? EffectiveCards.Title(world.Cards[defeat.Card], world.Facts)} is defeated"
             : caption;
 
-    private static string? Description(AbilityResolutionExecution execution, World world,
+    private static string? Description(AbilityResolutionExecution execution, World world, Card source,
         int player, AbilityEffect effect, string? contextual) =>
-        AbilityInvocationDescription.Summary(execution, world, player, effect)
+        AbilitySourceThreatDescription.Summary(execution.StructuralContext(
+            new AbilityResolutionState(world, source, new Occurrence(0, [Steps.TurnAction],
+                Subject: source.ObjectId, Player: player), player, [])), effect)
+        ?? AbilityInvocationDescription.Summary(execution, world, player, effect)
         ?? (contextual is not null
             ? contextual + ". Damage prevention and interrupts can change the result."
             : AbilityEffectDescription.Summary(effect) ?? AbilitySourceActionDescription.Caption(effect));
@@ -95,7 +99,7 @@ internal static class AbilityAffordanceDescription
     // Do not descend into conditional, optional or power-cancellable branches.
     private static bool StartsWithTargetSelection(AbilityEffect effect) => effect switch
     {
-        AbilityEffect.ChooseCard => true,
+        AbilityEffect.ChooseCard or AbilityEffect.Damage { Maximum: not null } => true,
         AbilityEffect.Sequence { Effects.Length: 1 } sequence =>
             StartsWithTargetSelection(sequence.Effects[0]),
         _ => false,

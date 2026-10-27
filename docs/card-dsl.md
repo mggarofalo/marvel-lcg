@@ -5,6 +5,19 @@ forced and optional attack-end responses and is zero without a completed attack.
 
 # The card DSL
 
+`handResourceForm: "hero"` is card-level metadata restricting the printed hand
+resource source to its owner's current hero form. The engine chooses this spelling;
+only `hero` is admitted, and the face must have a complete authored `abilities`
+list (which may be empty). It is not a Resource ability and grants no activated
+source. Offers, feasibility and commit validation use the same live form query.
+The resource capability exposes source eligibility separately from generated
+quantity; every selected hand contributor is validated before payment begins and
+again when it commits after any generator suspension. A sufficient aggregate or
+zero price does not permit an individually restricted source.
+Printed `RES` facts and nonpayment printed-icon counting remain unchanged. This
+capability does not itself admit Limitless Strength or the Hulk product.
+
+
 `invocationTop: "you"` captures the resolving player's exact public typed
 Invocation top and adds its printed resource cost to the ability payment.
 `resolveInvocation: "you"` resolves that captured physical card's Special through
@@ -439,6 +452,13 @@ sole legal target without a prompt; multiple targets ask the first player.
 `you`, the original resolving player, and continuation bindings retain their
 meanings. Omission uses the resolving player and retains explicit target selection.
 Other chooser values are rejected.
+`enemyAttacks` accepts `chooseEnemy: "firstPlayer"` to select exactly one
+enemy from its selector, rather than activating the complete pool. A single
+candidate proceeds without a selection prompt; multiple candidates ask the first
+player under `rr:first-player.1`. The selection preserves the outer `chosen`
+character binding. This spelling is an engine choice; `enemySchemes`, dynamic
+collections and other chooser values reject it. Omission retains activation of
+every candidate and the existing activation-order rules.
 `isEnemyAttacker` accepts a singular card selector and tests whether that in-play
 card is the current enemy attack's attacker. It does not use the active-villain
 counter or a completed attack. Stage-transition projection refuses this condition
@@ -1160,6 +1180,13 @@ pool, optionally wrapped in `minBy` or `maxBy` with `by: "threat"`. Both pools
 are evaluated independently before identical source/destination pairs are
 excluded (`rr:move.1`). More than one legal ordered pair asks the first player
 to choose; one pair resolves directly and no legal pair completes without moving.
+A destination bound to `this` may also be the exact resolving source support in
+its controller's play area. This bounded non-scheme destination receives only
+actually removed `k_threat` tokens, after source defeat completes; it does not
+open scheme-placement windows (`rr:move.7`). Physical ownership does not change
+which controller can act. Other non-scheme destinations remain unsupported.
+The receipt's `Placed` amount means tokens received, including support storage.
+
 The engine chooses pair ordering by source and then destination object id.
 The exact offered incarnations survive suspension; leaving and reentering
 does not authorize a replacement endpoint. The existing move receipt owns the
@@ -1671,3 +1698,77 @@ with captive rescue or host removal. Open the Dark Dimension uses this during
 When Defeated before the scheme departs. Ordinary nondefeat host departure
 instead discards its stored card through the separate Invocation discard/recycle
 lifecycle. The destination spelling and exact-set validation are engine choices.
+
+### Adjusted printed-price resource restriction
+
+An action ability may declare `"printedCostResource": "R"`. This bounded
+interpretation represents Crushing Blow's physical-only spending restriction:
+every resource **spent toward the adjusted printed event price** must be physical.
+Wild resources can be declared physical. Unused generated icons are overpayment,
+and additional arrow costs retain their own requirements. Discounts, including a
+reduction to zero, apply before the repeated physical requirement is constructed.
+The spelling and current physical-only admission are repository choices. Pricing,
+resource feasibility and committed allocation share the existing payment owners.
+No Hulk production row or public admission is supplied by this prerequisite.
+
+Resource abilities additionally admit `"resourceRestriction": "attackEvent"`.
+This means an event with the **Attack trait**, matching Martial Prowess's printed
+`[[Attack]]` restriction. It does not mean any event used during a basic attack:
+Hulk Smash has the Superpower trait and cannot consume this restricted resource.
+
+`dealDamage` optionally accepts a positive integer `maximum` for one complete
+bounded group of distinct recipients from `cards`. This form requires positive
+constant ordinary damage and rejects the `attack` marker. A single target request
+accepts zero through the available maximum; choosing zero deals no damage.
+Initiation still requires a valid target that can be affected (`rr:target.2`,
+`rr:target.3.7`), after live event damage modifiers. Tough and prevention retain
+validity (`rr:target.3.6`). The complete chosen group enters the existing
+simultaneous direct-damage pipeline, retaining its prevention, placement and
+defeat barriers. It creates no attack and does not invoke Guard, stun or
+Retaliate. Labelled powers with this additional choice remain unsupported.
+
+The motivating printed authority is `datasets/cards/cards.json`, `10005`:
+“Choose up to 3 different enemies. Deal 3 damage to each of them.” The existing
+`chooseCard` binds a single recipient; `chooseStatusRecipients` only gives
+statuses; counted `attack` admits only simultaneous `dealAttackDamage`. None
+expresses a bounded chosen group for ordinary damage. `dealDamage` already
+resolves plural selections through `SimultaneousDirectDamage`; `maximum` adds
+the missing selection boundary without adding a second damage procedure.
+
+Zero is admitted by the printed “up to” range as an effect choice, not a cost:
+`rr:cost.9` imposes its minimum of one only on costs. This is the interpretation
+of that printed range; `rr:choose-game-element.3.1` separately prohibits repeats,
+and `rr:target.2` still requires at least one valid target at initiation.
+A zero group has no successful damage, so dependent instructions use the ordinary
+empty damage completion. No Thunderclap-specific timing ruling is present in the
+vendored FAQ corpus; current RR 1.8 target and damage clauses govern this support.
+
+Descriptions of `dealDamage.maximum` explain the later bounded selection and
+damage to chosen recipients. A candidate is not promised damage or a committed
+HP result before that selection, including within player choices and options.
+Direct unbounded instructions retain their existing public damage previews.
+
+### Enemy activation within a labeled attack
+
+A labeled power body may contain the bounded sequence
+`enemyAttacks(enemies: chosen)` followed by fixed `dealAttackDamage(cards: chosen)`.
+The ordinary enemy activation procedure owns defense, boosts and timing windows;
+the existing power continuation retains the original attack occurrence, performer,
+modifier lifetime and exact chosen incarnation. Following damage is independent
+of whether stun replaced the enemy attack. Stun on the performing identity still
+cancels the whole labeled ability after costs (`rr:labeled-ability.6`).
+
+This shape is an engine admission choice motivated by printed Toe to Toe (`10015`)
+and its vendored FAQ. Current RR 1.8 `rr:stun-stunned.6` and `.7` still replace the
+enemy attack, consistent with that FAQ; the printed text has no `then` prerequisite.
+Other activation/recipient selectors and board-dependent followups retain their
+existing unsupported gates. Synthetic tests do not admit a production Hulk row.
+
+The classified resumed body passes its retained occurrence through
+`AttackDamageRequest.Origin`, so the ordinary damage procedure records its own
+defeats on that attack. The enemy activation retains the separate defeat of a
+defending ally. `Origin` is an existing Rules execution field exposed to ability
+callers for this causal ownership; a null value uses the current occurrence.
+Its accessibility is an engine API choice and adds no persisted or wire field.
+Actual authored Chase Them Down (`01052`) observes the lethal followup and removes
+two threat, while the enemy activation's ally defeat does not satisfy it.

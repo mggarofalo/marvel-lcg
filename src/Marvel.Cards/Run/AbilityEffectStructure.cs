@@ -54,7 +54,7 @@ internal static class AbilityEffectStructure
         AbilityEffect.GrantField grant => grant.Amount,
         AbilityEffect.DefineBaseValue definition => definition.Value,
         AbilityEffect.GrantControlledCharacters grant => grant.Amount,
-        AbilityEffect.ReduceNextCardCost reduction => reduction.Amount,
+        AbilityPricingEffect.ReduceNextCardCost reduction => reduction.Amount,
         _ => null,
     };
 

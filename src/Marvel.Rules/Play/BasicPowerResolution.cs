@@ -145,7 +145,8 @@ public static class BasicPowerResolution
 
         DamageAttacks.Resolve(world, facts,
             new AttackDamageRequest(attacker, source, world.Cards[attack.Enemy], amount, attack.Trigger, AttackVerb, Retaliate: false)
-            { Basic = attack.Amount < 0 && attack.Source < 0 }, events);
+            { Basic = attack.Amount < 0 && attack.Source < 0,
+                GrantedOverkill = occurrence.BasicUse?.Overkill == true }, events);
 
         if (temporaryOverkill is not null)
         {

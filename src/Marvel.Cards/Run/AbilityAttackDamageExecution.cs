@@ -43,11 +43,18 @@ internal static class AbilityAttackDamageExecution
         bool suspended = false;
         foreach (var target in AbilityDamageAndThreatExecution.DamageTargets(damage.Cards, context))
         {
-            var recipient = context.StagedAttack ? Attacked.Capture(target, context.World.Facts) : null;
+            // A resumed power can run on its ability-origin frame after an enemy
+            // activation. The retained attack owns its damage procedure, defeat
+            // facts and settled recipient throughout that suspension.
+            bool retained = context.ActivationAttack && context.PowerOccurrence is { } power
+                && !ReferenceEquals(power, context.World.Agenda.Occurrence);
+            var recipient = context.StagedAttack || retained
+                ? Attacked.Capture(target, context.World.Facts) : null;
             if (context.PowerOccurrence?.Retaliation is { } retaliation)
                 context.PowerOccurrence.Retaliation = retaliation.Include(target, context.World.Facts);
-            var damaged = DamageAttacks.Attack(context.World, context.World.Facts, attacker, context.Source, target,
-                amount, context.Trigger, "Attack", context.Events, retaliate: false);
+            var damaged = DamageAttacks.Resolve(context.World, context.World.Facts,
+                new AttackDamageRequest(attacker, context.Source, target, amount, context.Trigger, "Attack", Retaliate: false)
+                { Origin = retained ? context.PowerOccurrence : null }, context.Events);
             state.Attacked.Add(target);
             (state.Damage ??= new(context.Occurrence)).Add(damaged, amount, recipient, context.PowerOccurrence);
             suspended |= !damaged.IsComplete;

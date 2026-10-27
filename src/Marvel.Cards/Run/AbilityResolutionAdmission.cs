@@ -94,6 +94,8 @@ internal static class AbilityResolutionAdmission
             "indirectDamage" => HasPartialResolutionTargets(node, cast)
                 && AbilityEventModifiers.DamageAmount(cast.World, cast.Source,
                     Amount(EffectOf<AbilityEffect.IndirectDamage>(node, cast).Amount, cast)) > 0,
+            "dealDamage" when node is AbilityEffect.Damage { Maximum: not null } group =>
+                AbilityDamageRecipients.Candidates(group, cast.Context).Count > 0,
             "dealDamage" => HasPartialResolutionTargets(node, cast)
                 && Amount(EffectOf<AbilityEffect.Damage>(node, cast).Amount, cast) > 0,
             "dealAttackDamage" => HasPartialResolutionTargets(node, cast)

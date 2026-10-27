@@ -56,6 +56,9 @@ public sealed record CardAbility(
     bool AnyPlayer = false, IReadOnlyList<string>? Labels = null,
     string PrintedResources = "", AbilityMaximum? Maximum = null)
 {
+    /// <summary>Every resource spent toward the adjusted printed price must have this type.</summary>
+    public char? PrintedCostResource { get; init; }
+
     /// <summary>The period of the per-instance use limit.</summary>
     public AbilityLimitPeriod LimitPeriod { get; init; }
 

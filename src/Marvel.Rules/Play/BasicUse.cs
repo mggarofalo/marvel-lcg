@@ -18,6 +18,16 @@ public sealed class BasicUse(int actor, int incarnation, string field = "attack"
     /// <summary>Additional power for only this occurrence.</summary>
     public long Bonus { get; private set; }
 
+    /// <summary>Whether this exact attack gained overkill.</summary>
+    public bool Overkill { get; private set; }
+
+    /// <summary>Grant overkill to this occurrence without changing the character.</summary>
+    public void GrantOverkill()
+    {
+        if (Field != "attack") throw new InvalidOperationException("overkill requires a basic attack");
+        Overkill = true;
+    }
+
     /// <summary>Add a checked positive modifier to this exact use.</summary>
     public void Increase(long amount)
     {

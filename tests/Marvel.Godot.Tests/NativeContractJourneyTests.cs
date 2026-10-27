@@ -20,12 +20,13 @@ public sealed class NativeContractJourneyTests
         string directory = Path.Combine(Path.GetTempPath(), "marvel-native-contract-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(directory);
         await using var server = new NativeContractServer(contract, directory);
+        bool rendered = Environment.GetEnvironmentVariable("MARVEL_NATIVE_RENDERED") == "true";
         var start = new ProcessStartInfo(Environment.GetEnvironmentVariable("GODOT_BIN")!)
         {
             UseShellExecute = false, CreateNoWindow = true,
             RedirectStandardOutput = true, RedirectStandardError = true,
         };
-        foreach (string argument in new[] { Environment.GetEnvironmentVariable("MARVEL_NATIVE_RENDERED") == "true" ? "--minimized" : "--headless", "--audio-driver", "Dummy", "--path",
+        foreach (string argument in new[] { rendered ? "--minimized" : "--headless", "--audio-driver", "Dummy", "--path",
             Path.Combine(RepositoryPaths.Root, "src", "Marvel.Godot"), "--script", "res://smoke/native_contract_smoke.gd" })
             start.ArgumentList.Add(argument);
         start.Environment["MARVEL_ENGINE_ENDPOINT"] = server.Endpoint;
@@ -34,7 +35,7 @@ public sealed class NativeContractJourneyTests
         Task<string> output = process.StandardOutput.ReadToEndAsync(TestContext.Current.CancellationToken);
         Task<string> error = process.StandardError.ReadToEndAsync(TestContext.Current.CancellationToken);
         using var deadline = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
-        deadline.CancelAfter(TimeSpan.FromSeconds(80));
+        deadline.CancelAfter(TimeSpan.FromSeconds(rendered ? 180 : 80));
         string log;
         try
         {
@@ -67,6 +68,7 @@ public sealed class NativeContractJourneyTests
         {
             "dense-table" => 0,
             "melee-sequential" => 3,
+            "beat-cop-move" or "beat-cop-damage" => 2,
             "heimdall-order" => 4,
             "widow-preparation" => 3,
             "end-phase" or "card-look" or "bruno-0" or "bruno-1" or "bruno-3" => 2,
@@ -86,6 +88,7 @@ public sealed class NativeContractJourneyTests
 
     private static void VerifyAbilityContracts(string contract, NativeContractServer server, EngineRequest[] mutations)
     {
+        if (contract.StartsWith("beat-cop-", StringComparison.Ordinal)) BeatCopNativeAssertions.Verify(contract, server, mutations);
         if (contract.StartsWith("widow-", StringComparison.Ordinal)) WidowNativeAssertions.Verify(contract, server, mutations);
         if (contract == "lockjaw-discard") LockjawNativeAssertions.Verify(server, mutations);
         if (contract == "melee-sequential") MeleeNativeAssertions.Verify(server, mutations);

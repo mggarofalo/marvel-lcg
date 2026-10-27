@@ -32,6 +32,8 @@ internal static class AbilityResolutionDamageAndThreat
             cast.ImminentThreat, cast.ResolutionAbility, cast.Incoming, execution.threatAbilities)
         {
             PowerOccurrence = cast.PowerExecution?.Occurrence,
+            ActivationAttack = cast.PowerExecution is { } power
+                && AbilityPowerActivationSupport.SupportsBody(power.Decoded.Body),
             StagedAttack = cast.PowerExecution is { ExcludedEnemyStages.IsEmpty: false },
             DamageActivationId = cast.DamageOrigin?.AccountingId(cast.World),
             DeclaredAttackRecipients = cast.PowerExecution?.Continuation.DeclaredRecipients ?? default,

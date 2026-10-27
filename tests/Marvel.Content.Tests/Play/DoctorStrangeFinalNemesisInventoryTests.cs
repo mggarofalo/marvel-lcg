@@ -14,16 +14,16 @@ public sealed class DoctorStrangeFinalNemesisInventoryTests
     {
         using var book = JsonDocument.Parse(AuthoredCards.Text);
         var rows = book.RootElement.GetProperty("cards").EnumerateArray().ToArray();
-        Assert.Equal(685, rows.Length);
-        Assert.Equal(FinalFaces, rows.Skip(682).Select(row => row.GetProperty("card").GetString()));
-        Assert.All(rows.Skip(682), row => Assert.False(row.TryGetProperty("startingCounters", out _)));
+        Assert.Equal(718, rows.Length);
+        Assert.Equal(FinalFaces, rows.Skip(682).Take(3).Select(row => row.GetProperty("card").GetString()));
+        Assert.All(rows.Skip(682).Take(3), row => Assert.False(row.TryGetProperty("startingCounters", out _)));
         using var printed = JsonDocument.Parse(File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")));
         var faces = printed.RootElement.GetProperty("cards").EnumerateArray()
             .Select(row => row.GetProperty("card_id").GetString()!)
             .Where(face => face.StartsWith("09", StringComparison.Ordinal)).Order().ToArray();
         Assert.Equal(40, faces.Length);
         Assert.Equal(faces, AuthoredCards.Book.Authored.Where(face => face.StartsWith("09", StringComparison.Ordinal)).Order());
-        Assert.DoesNotContain("10002", AuthoredCards.Book.Authored);
+        Assert.DoesNotContain("90001", AuthoredCards.Book.Authored);
         using var snapshot = JsonDocument.Parse(File.ReadAllText(RepositoryPaths.Dataset("marvelsdb", "pack", "drs_encounter.json")));
         foreach (string face in FinalFaces)
         {

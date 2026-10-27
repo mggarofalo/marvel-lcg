@@ -46,11 +46,11 @@ public sealed class DeckAssessmentTests
     public void ResearchCardsCannotBeAdmittedByPreviewOrGameCreation()
     {
         var factory = DatasetGameFactory.Load(RepositoryPaths.Root);
-        string[] draft = [.. Starter(), "10001a"];
+        string[] draft = [.. Starter(), "12001a"];
         var preview = factory.AssessDeck("spider_man", draft);
         Assert.False(preview.IsValid);
         Assert.Null(preview.Size);
-        Assert.Contains(preview.Diagnostics, item => item.Code == "unsupported-face" && item.Face == "10001a");
+        Assert.Contains(preview.Diagnostics, item => item.Code == "unsupported-face" && item.Face == "12001a");
         Assert.Throws<ArgumentException>(() => factory.Create(
             new GameSpecification("rhino", ["spider_man"], [], 17, PlayerDecks: [new(draft)])));
     }

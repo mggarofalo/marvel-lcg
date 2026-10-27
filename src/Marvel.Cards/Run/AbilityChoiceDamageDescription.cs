@@ -9,13 +9,15 @@ namespace Marvel.Cards.Run;
 internal static class AbilityChoiceDamageDescription
 {
     internal static string? Description(AbilityStructuralContext context, AbilityEffect.ChooseCard choice, Card card) =>
-        ProjectedDamage(context, choice.Effect, publicPath: AbilityPublicChoicePath.AllowsAmount(context, choice)) is { } projection ? DescribeDamage(context, projection, card) : null;
+        ProjectedDamage(context, choice.Effect, publicPath: AbilityPublicChoicePath.AllowsAmount(context, choice)) is { } projection ? DescribeDamage(context, choice, projection, card) : null;
 
-    private static string DescribeDamage(AbilityStructuralContext context,
-        (AbilityNumber Amount, bool IsAttack, bool Overkill, bool PublicPath) projection, Card card)
+    private static string DescribeDamage(AbilityStructuralContext context, AbilityEffect.ChooseCard choice,
+        (AbilityNumber Amount, bool IsAttack, bool Overkill, bool PublicPath, int? Maximum) projection, Card card)
     {
         var world = context.Expressions.World;
         string title = EffectiveCards.Title(card, world.Facts);
+        if (projection.Maximum is { } maximum)
+            return $"{title} · {AbilityBoundedDamageDescription.Instruction(projection.Amount, maximum)}";
         Card attacker = context.AbilityActor
             ?? world.Seats[AbilityCardQueries.Resolver(context.Expressions.Bindings)].IdentityCard;
         if (projection.IsAttack
@@ -29,20 +31,22 @@ internal static class AbilityChoiceDamageDescription
             ? Damage.PreviewAttack(world, world.Facts, attacker, context.Expressions.Source, card,
                 amount, projection.Overkill)
             : Damage.PreviewDamage(world, world.Facts, context.Expressions.Source, card, amount);
-        return $"{title} · {CurrentAmount(projection.Amount, amount, projection.IsAttack, projection.PublicPath)}{consequence}";
+        return $"{title} · {CurrentAmount(context, choice, projection.Amount, amount, projection.IsAttack, projection.PublicPath)}{consequence}";
     }
 
-    private static string CurrentAmount(AbilityNumber instruction, long amount, bool attack, bool publicPath)
+    private static string CurrentAmount(AbilityStructuralContext context, AbilityEffect.ChooseCard choice,
+        AbilityNumber instruction, long amount, bool attack, bool publicPath)
     {
         // Describe an uncapped quantity only when its expression is public.
         // A capped HP preview is not permission to expose a concealed count.
-        if (!publicPath || !AbilityPublicAmounts.IsCurrentStep(instruction)) return string.Empty;
+        if (!publicPath || !(AbilityPublicAmounts.IsCurrentStep(instruction)
+            || AbilitySourceThreatDescription.AllowsAmount(context, choice, instruction))) return string.Empty;
         string kind = attack ? "attack damage" : "damage";
         return $"Current {kind}: {amount} before prevention/replacement. "
             + "Later effects may change it. ";
     }
 
-    private static (AbilityNumber Amount, bool IsAttack, bool Overkill, bool PublicPath)? ProjectedDamage(
+    private static (AbilityNumber Amount, bool IsAttack, bool Overkill, bool PublicPath, int? Maximum)? ProjectedDamage(
         AbilityStructuralContext context, AbilityEffect? effect, bool attack = false, bool publicPath = true)
     {
         if (effect is AbilityEffect.Power { Kind: AbilityPowerKind.Attack } power)
@@ -56,8 +60,8 @@ internal static class AbilityChoiceDamageDescription
             return ProjectedDamage(context, sequence.Effects.FirstOrDefault(), attack, publicPath);
         return effect switch
         {
-            AbilityEffect.AttackDamage damage => (damage.Amount, true, damage.Overkill, publicPath),
-            AbilityEffect.Damage damage => (damage.Amount, attack, false, publicPath),
+            AbilityEffect.AttackDamage damage => (damage.Amount, true, damage.Overkill, publicPath, null),
+            AbilityEffect.Damage damage => (damage.Amount, attack, false, publicPath, damage.Maximum),
             _ => null,
         };
     }

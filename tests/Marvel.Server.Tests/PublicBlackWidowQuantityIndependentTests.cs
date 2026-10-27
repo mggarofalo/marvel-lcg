@@ -21,7 +21,7 @@ public sealed class PublicBlackWidowQuantityIndependentTests
         Assert.Equal([0], quantities["08001a"]);
         Assert.Equal([0], quantities["08001b"]);
         Assert.Equal([0], quantities["01002"]);
-        Assert.False(quantities.ContainsKey("10024"));
+        Assert.False(quantities.ContainsKey("12024"));
         Assert.All(hero.Signature, face => Assert.False(quantities.ContainsKey(face)));
 
         // Espionage is a Basic extra, outside the pinned printed starter.

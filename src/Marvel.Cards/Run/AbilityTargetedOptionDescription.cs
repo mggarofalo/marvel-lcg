@@ -10,6 +10,9 @@ internal static class AbilityTargetedOptionDescription
     {
         AbilityEffect.ChooseCard { Effect: AbilityEffect.RemoveThreat threat } choice
             when AbilityPublicAmounts.IsFixed(threat.Amount) => Describe(context, choice, threat.Amount, "Remove", "threat"),
+        AbilityEffect.ChooseCard { Effect: AbilityEffect.Damage { Maximum: { } maximum } damage } =>
+            (AbilityBoundedDamageDescription.Label(maximum),
+                AbilityBoundedDamageDescription.Instruction(damage.Amount, maximum)),
         AbilityEffect.ChooseCard { Effect: AbilityEffect.Damage damage } choice
             when AbilityPublicAmounts.IsFixed(damage.Amount) => Describe(context, choice, damage.Amount, "Deal", "damage"),
         _ => null,

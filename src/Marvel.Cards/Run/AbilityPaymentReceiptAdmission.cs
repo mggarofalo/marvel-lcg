@@ -21,7 +21,7 @@ internal static class AbilityPaymentReceiptAdmission
         string generated = string.Concat(price.Generators.Select(source => source.Generates));
         foreach (string receipt in Receipts(generated, cost))
         {
-            if (!Resources.Pays(receipt, cost, string.Concat(price.Rule ?? []))) continue;
+            if (!Resources.PaysDeclared(receipt, cost, string.Concat(price.Rule ?? []))) continue;
             var result = AbilityDiscardReceiptAdmission.Admit(ability, WithReceipt(context, receipt), selected);
             if (result is not null) return result;
         }

@@ -21392,6 +21392,1095 @@
           }
         }
       ]
+    },
+    {
+      "card": "10001a",
+      "name": "Hulk",
+      "note": "Printed 10001a Enraged. The entire current hand is selected for discard in the forced-interrupt tier of its controller’s turn end.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "ForcedInterrupt",
+            "event": "WhenPlayerTurnEnds",
+            "subject": "you",
+            "form": "hero"
+          },
+          "effect": {
+            "discardHandCards": {
+              "count": {
+                "cardsIn": {
+                  "area": "yourHand"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "10001b",
+      "name": "Bruce Banner",
+      "note": "Printed 10001b Experimental Research. Draw precedes the selected discard; the action is limited once per round.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Action",
+            "event": "WhenActionTriggered",
+            "subject": "this",
+            "form": "alter-ego"
+          },
+          "limitPerRound": 1,
+          "effect": {
+            "seq": [
+              {
+                "draw": {
+                  "player": "you",
+                  "count": 1
+                }
+              },
+              {
+                "discardHandCards": 1
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "10004",
+      "name": "Sub-Orbital Leap",
+      "note": "Printed 10004. Enhancement requires physical resources actually paid and no other declared type. ruling:5bbba476a198a90c clarifies the same Hulk physical-only enhancement at zero adjusted price: no physical payment does not qualify. Unused generated icons are not paid (rr:cost.4.1).",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Action",
+            "event": "WhenActionTriggered",
+            "subject": "this",
+            "form": "hero"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "thwartableSchemes"
+              },
+              "effect": {
+                "thwart": {
+                  "target": "chosen",
+                  "effect": {
+                    "if": {
+                      "test": {
+                        "and": [
+                          {
+                            "paidWithResource": "R"
+                          },
+                          {
+                            "not": {
+                              "paidWithResource": "B"
+                            }
+                          },
+                          {
+                            "not": {
+                              "paidWithResource": "Y"
+                            }
+                          },
+                          {
+                            "not": {
+                              "paidWithResource": "G"
+                            }
+                          }
+                        ]
+                      },
+                      "then": {
+                        "removeThreat": {
+                          "scheme": "chosen",
+                          "amount": 5
+                        }
+                      },
+                      "else": {
+                        "removeThreat": {
+                          "scheme": "chosen",
+                          "amount": 3
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "10020",
+      "name": "Energy",
+      "note": "This resource card has no ability. Its two printed energy resources are read from datasets/cards by the resource rules.",
+      "abilities": []
+    },
+    {
+      "card": "10021",
+      "name": "Genius",
+      "note": "This resource card has no ability. Its two printed mental resources are read from datasets/cards by the resource rules.",
+      "abilities": []
+    },
+    {
+      "card": "10022",
+      "name": "Strength",
+      "note": "This resource card has no ability. Its two printed physical resources are read from datasets/cards by the resource rules.",
+      "abilities": []
+    },
+    {
+      "card": "10023",
+      "name": "Avengers Mansion",
+      "note": "The action exhausts the support, chooses a player through that player's identity, and has that player draw 1 card.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this" },
+          "cost": { "exhaust": "this" },
+          "effect": { "chooseCard": { "from": { "query": "identities" }, "effect": { "draw": { "player": "chosenPlayer", "count": 1 } } } }
+        }
+      ]
+    },
+    {
+      "card": "10024",
+      "name": "Helicarrier",
+      "note": "The Action exhausts Helicarrier and chooses a player through that player's identity. A one-use lasting effect reduces the next card that player successfully plays this phase by 1; pricing an offer does not consume it, and an unused reduction expires at the end of the player phase.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this" },
+          "cost": { "exhaust": "this" },
+          "effect": { "chooseCard": { "from": { "query": "identities" }, "effect": { "reduceNextCardCost": { "player": "chosenPlayer", "amount": 1 } } } }
+        }
+      ]
+    },
+    {
+      "card": "10002",
+      "name": "Crushing Blow",
+      "note": "Executable interpretation of joined datasets/cards/cards.json; nonpublic Hulk research. Physical restriction follows adjusted printed price; ruling:5bbba476a198a90c permits zero price without physical payment.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Action",
+            "event": "WhenActionTriggered",
+            "subject": "this",
+            "form": "hero"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "attackableEnemies"
+              },
+              "effect": {
+                "attack": {
+                  "target": "chosen",
+                  "effect": {
+                    "dealAttackDamage": {
+                      "cards": "chosen",
+                      "amount": {
+                        "modified": {
+                          "card": "you",
+                          "field": "attack"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "printedCostResource": "R"
+        }
+      ]
+    },
+    {
+      "card": "10003",
+      "name": "Hulk Smash",
+      "note": "Executable interpretation of joined datasets/cards/cards.json; nonpublic Hulk research. +10 and overkill belong to the exact basic attack. Nonempty physical-only payment follows the inference from ruling:5bbba476a198a90c on Unstoppable Force; rr:cost.4.1 excludes unused generation.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Interrupt",
+            "event": "WhenHeroBasicAttackInitiated",
+            "actor": "you",
+            "form": "hero",
+            "player": "you"
+          },
+          "effect": {
+            "seq": [
+              {
+                "boostBasicUse": 10
+              },
+              {
+                "if": {
+                  "test": {
+                    "and": [
+                      {
+                        "paidWithResource": "R"
+                      },
+                      {
+                        "not": {
+                          "paidWithResource": "B"
+                        }
+                      },
+                      {
+                        "not": {
+                          "paidWithResource": "Y"
+                        }
+                      },
+                      {
+                        "not": {
+                          "paidWithResource": "G"
+                        }
+                      }
+                    ]
+                  },
+                  "then": {
+                    "boostBasicUse": "overkill"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "10006",
+      "name": "Unstoppable Force",
+      "note": "Executable interpretation of joined datasets/cards/cards.json; nonpublic Hulk research. Ready and conditional draw are independent sentences, without then. ruling:5bbba476a198a90c directly excludes draw at zero adjusted price.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Action",
+            "event": "WhenActionTriggered",
+            "subject": "this",
+            "form": "hero"
+          },
+          "effect": {
+            "seq": [
+              {
+                "ready": {
+                  "titled": "Hulk"
+                }
+              },
+              {
+                "if": {
+                  "test": {
+                    "and": [
+                      {
+                        "paidWithResource": "R"
+                      },
+                      {
+                        "not": {
+                          "paidWithResource": "B"
+                        }
+                      },
+                      {
+                        "not": {
+                          "paidWithResource": "Y"
+                        }
+                      },
+                      {
+                        "not": {
+                          "paidWithResource": "G"
+                        }
+                      }
+                    ]
+                  },
+                  "then": {
+                    "draw": {
+                      "player": "you",
+                      "count": 1
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "10007",
+      "name": "Limitless Strength",
+      "note": "Executable interpretation of joined datasets/cards/cards.json; nonpublic Hulk research. Printed RRR remain printed facts; explicit hand-source eligibility requires its owner to be in hero form.",
+      "handResourceForm": "hero",
+      "abilities": []
+    },
+    {
+      "card": "10008",
+      "name": "Banner's Laboratory",
+      "note": "Executable interpretation of joined datasets/cards/cards.json; nonpublic Hulk research. Named Bruce Banner alone gains REC; its controller generates mental only in alter-ego form.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "exists": {
+                  "titled": "Bruce Banner"
+                }
+              },
+              "then": {
+                "grant": {
+                  "card": {
+                    "titled": "Bruce Banner"
+                  },
+                  "keyword": "recover",
+                  "amount": 2
+                }
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "timing": "Resource",
+            "event": "WhenActionTriggered",
+            "subject": "this",
+            "form": "alter-ego"
+          },
+          "cost": {
+            "exhaust": "this"
+          },
+          "effect": {
+            "generate": "B"
+          }
+        }
+      ]
+    },
+    {
+      "card": "10009",
+      "name": "Boundless Rage",
+      "note": "Executable interpretation of joined datasets/cards/cards.json; nonpublic Hulk research. Printed hero-only play is catalog metadata. Named Hulk gains ATK; controller form change discards this physical upgrade after the change in either form.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "exists": {
+                  "titled": "Hulk"
+                }
+              },
+              "then": {
+                "grant": {
+                  "card": {
+                    "titled": "Hulk"
+                  },
+                  "keyword": "attack",
+                  "amount": 1
+                }
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "timing": "ForcedResponse",
+            "event": "WhenFormChanged",
+            "subject": "you",
+            "player": "you"
+          },
+          "effect": {
+            "discard": "this"
+          }
+        }
+      ]
+    },
+    {
+      "card": "10010",
+      "name": "Immovable Object",
+      "note": "Executable interpretation of joined datasets/cards/cards.json; nonpublic Hulk research. You refers to its controller identity in either form; named Hulk alone gains retaliate.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "grant": {
+                  "card": "you",
+                  "keyword": "health",
+                  "amount": 4
+                }
+              },
+              {
+                "if": {
+                  "test": {
+                    "exists": {
+                      "titled": "Hulk"
+                    }
+                  },
+                  "then": {
+                    "grant": {
+                      "card": {
+                        "titled": "Hulk"
+                      },
+                      "keyword": "retaliate",
+                      "amount": 1
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "10011",
+      "name": "Brawn",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenAttackEnds",
+            "timing": "Response",
+            "actor": "this"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "thwartableSchemes"
+              },
+              "effect": {
+                "removeThreat": {
+                  "scheme": "chosen",
+                  "amount": 1
+                }
+              }
+            }
+          }
+        }
+      ],
+      "note": "Printed authority: datasets/cards/cards.json 10011. DSL event and selector spellings are engine choices."
+    },
+    {
+      "card": "10012",
+      "name": "Sentry",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardEntersPlay",
+            "timing": "ForcedResponse",
+            "subject": "this"
+          },
+          "effect": {
+            "dealEncounterCards": {
+              "player": "you",
+              "count": 1
+            }
+          }
+        }
+      ],
+      "note": "Printed authority: datasets/cards/cards.json 10012. DSL event and selector spellings are engine choices."
+    },
+    {
+      "card": "10013",
+      "name": "She-Hulk",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "grant": {
+              "card": "this",
+              "keyword": "attack",
+              "amount": {
+                "damageOn": "this"
+              }
+            }
+          }
+        }
+      ],
+      "note": "Printed authority: datasets/cards/cards.json 10013. DSL event and selector spellings are engine choices."
+    },
+    {
+      "card": "10014",
+      "name": "Drop Kick",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "attackableEnemies"
+              },
+              "effect": {
+                "attack": {
+                  "target": "chosen",
+                  "effect": {
+                    "seq": [
+                      {
+                        "dealAttackDamage": {
+                          "cards": "chosen",
+                          "amount": 4
+                        }
+                      },
+                      {
+                        "if": {
+                          "test": {
+                            "and": [
+                              {
+                                "paidWithResource": "R"
+                              },
+                              {
+                                "not": {
+                                  "paidWithResource": "B"
+                                }
+                              },
+                              {
+                                "not": {
+                                  "paidWithResource": "Y"
+                                }
+                              },
+                              {
+                                "not": {
+                                  "paidWithResource": "G"
+                                }
+                              }
+                            ]
+                          },
+                          "then": {
+                            "seq": [
+                              {
+                                "giveStatus": {
+                                  "card": "chosen",
+                                  "status": "stunned"
+                                }
+                              },
+                              {
+                                "draw": {
+                                  "player": "you",
+                                  "count": 1
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "note": "Printed authority: datasets/cards/cards.json 10014. DSL event and selector spellings are engine choices."
+    },
+    {
+      "card": "10016",
+      "name": "\"You'll Pay for That!\"",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenAttackEnds",
+            "timing": "Response",
+            "actor": "villain",
+            "player": "you",
+            "form": "hero"
+          },
+          "when": {"atLeast": {"value": {"receivedAttackDamage": "game"}, "count": 1}},
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "thwartableSchemes"
+              },
+              "effect": {
+                "thwart": {
+                  "target": "chosen",
+                  "effect": {
+                    "removeThreat": {
+                      "scheme": "chosen",
+                      "amount": {
+                        "receivedAttackDamage": "game"
+                      },
+                      "maximum": 5
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "note": "Printed authority: datasets/cards/cards.json 10016. DSL event and selector spellings are engine choices."
+    },
+    {
+      "card": "10017",
+      "name": "The Power of Aggression",
+      "note": "Printed authority: datasets/cards/cards.json 10017. DSL event and selector spellings are engine choices.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "doubleResourceFor": "Aggression"
+          }
+        }
+      ]
+    },
+    {
+      "card": "10018",
+      "name": "Martial Prowess",
+      "attachTo": {
+        "query": "identitiesWithinPerPlayerLimit"
+      },
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Resource",
+            "subject": "this"
+          },
+          "cost": {
+            "exhaust": "this"
+          },
+          "resourceRestriction": "attackEvent",
+          "effect": {
+            "generate": "R"
+          }
+        }
+      ],
+      "note": "Printed authority: datasets/cards/cards.json 10018. DSL event and selector spellings are engine choices."
+    },
+    {
+      "card": "10019",
+      "name": "To the Rescue!",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "thwartableSchemes"
+              },
+              "effect": {
+                "thwart": {
+                  "target": "chosen",
+                  "effect": {
+                    "removeThreat": {
+                      "scheme": "chosen",
+                      "amount": 2
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "note": "Printed authority: datasets/cards/cards.json 10019. DSL event and selector spellings are engine choices."
+    },
+    {
+      "card": "10005",
+      "name": "Thunderclap",
+      "note": "Printed authority: datasets/cards/cards.json 10005. DSL event, query and maximum spellings are engine choices. Nonpublic Hulk research; ordinary damage is not an attack.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "effect": {
+            "dealDamage": {
+              "cards": {
+                "query": "enemies"
+              },
+              "amount": 3,
+              "maximum": 3
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "10030",
+      "name": "Inspiring Presence",
+      "note": "Printed 10030. The Avenger identity condition applies at play; healing and readying the same ally are independent AND effects.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "when": {
+            "hasTrait": {
+              "card": "you",
+              "trait": "AVENGER"
+            }
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "allies"
+              },
+              "effect": {
+                "and": [
+                  {
+                    "heal": {
+                      "card": "chosen",
+                      "amount": 1
+                    }
+                  },
+                  {
+                    "ready": "chosen"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "10031",
+      "name": "Electrostatic Armor",
+      "note": "Printed 10031. Any-player placement, maximum one per player. Completed hero defense responds against that occurrence’s actual attacker, independently of damage taken.",
+      "attachTo": {
+        "query": "identitiesWithinPerPlayerLimit"
+      },
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenAttackEnds",
+            "timing": "Response",
+            "actor": "enemy",
+            "target": "you"
+          },
+          "when": {
+            "heroDefended": "you"
+          },
+          "effect": {
+            "dealDamage": {
+              "cards": "trigger.actor",
+              "amount": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "10032",
+      "name": "Resourceful",
+      "note": "Printed 10032. Discard this upgrade as a resource cost to generate one wild; no exhaustion or form restriction.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Resource",
+            "subject": "this"
+          },
+          "cost": {
+            "discard": "this"
+          },
+          "effect": {
+            "generate": "G"
+          }
+        }
+      ]
+    },
+    {
+      "card": "10025",
+      "name": "Inner Demons",
+      "note": "Corrected printed text removes Then. Mandatory form change precedes the resulting-form branch; discard as many of two hand cards as available, or exhaust Hulk. Normal GiveTo routes to Bruce Banner.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "if": {
+                  "test": {
+                    "inForm": {
+                      "player": "you",
+                      "form": "hero"
+                    }
+                  },
+                  "then": {
+                    "changeForm": {
+                      "player": "you",
+                      "to": "alter-ego"
+                    }
+                  },
+                  "else": {
+                    "changeForm": {
+                      "player": "you",
+                      "to": "hero"
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "test": {
+                    "inForm": {
+                      "player": "you",
+                      "form": "alter-ego"
+                    }
+                  },
+                  "then": {
+                    "discardHandCards": 2
+                  },
+                  "else": {
+                    "exhaust": "yourHero"
+                  }
+                }
+              },
+              {
+                "discard": "this"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "10026",
+      "name": "Abomination",
+      "note": "After the completed attack, discard the attacked player deck top; a printed physical resource causes two damage. Wild is only wild outside payment (rr:wild-resource.3).",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenAttackEnds",
+            "timing": "ForcedResponse",
+            "actor": "this",
+            "player": "trigger.player"
+          },
+          "effect": {
+            "seq": [
+              {
+                "discardTop": {
+                  "from": "yourDeck",
+                  "count": 1
+                }
+              },
+              {
+                "if": {
+                  "test": {
+                    "discardedWithResource": "R"
+                  },
+                  "then": {
+                    "dealDamage": {
+                      "cards": "you",
+                      "amount": 2
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "10027",
+      "name": "Total Destruction",
+      "note": "Printed starting threat 2 per player and hazard icon use ordinary entry. Abomination anywhere in play prohibits removal from this scheme.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "exists": {
+                  "titled": "Abomination"
+                }
+              },
+              "then": {
+                "preventThreatRemoval": "this"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "10028",
+      "name": "Clash Of The Titans",
+      "note": "Highest current ATK enemy attacks the highest current ATK hero or ally. First player decides each tie; the chosen character remains the exact attack target. Surge follows only if no attack is made.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "otherwise": {
+              "effect": {
+                "chooseCard": {
+                  "chooser": "firstPlayer",
+                  "from": {
+                    "maxBy": {
+                      "of": {
+                        "query": "heroAndAllyTargets"
+                      },
+                      "by": "attack"
+                    }
+                  },
+                  "effect": {
+                    "enemyAttacks": {
+                      "enemies": {
+                        "maxBy": {
+                          "of": {
+                            "query": "enemies"
+                          },
+                          "by": "attack"
+                        }
+                      },
+                      "against": "chosen",
+                      "chooseEnemy": "firstPlayer"
+                    }
+                  }
+                }
+              },
+              "otherwise": {
+                "gainSurge": 1
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "10015",
+      "name": "Toe to Toe",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "attackableEnemies"
+              },
+              "effect": {
+                "attack": {
+                  "target": "chosen",
+                  "effect": {
+                    "seq": [
+                      {
+                        "enemyAttacks": {
+                          "enemies": "chosen"
+                        }
+                      },
+                      {
+                        "dealAttackDamage": {
+                          "cards": "chosen",
+                          "amount": 5
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "note": "Printed authority: datasets/cards/cards.json 10015. DSL event and selector spellings are engine choices."
+    },
+    {
+      "card": "10029",
+      "name": "Beat Cop",
+      "note": "Printed 10029. Move threat onto this support; discard cost retains the source incarnation and its captured threat for damage. Neither action is a thwart or attack.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this"
+          },
+          "cost": {
+            "exhaust": "this"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "schemes"
+              },
+              "effect": {
+                "moveThreat": {
+                  "from": "chosen",
+                  "to": "this",
+                  "amount": 1
+                }
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this"
+          },
+          "cost": {
+            "seq": [
+              {
+                "exhaust": "this"
+              },
+              {
+                "discard": "this"
+              }
+            ]
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "minions"
+              },
+              "effect": {
+                "dealDamage": {
+                  "cards": "chosen",
+                  "amount": {
+                    "tokensOn": "this"
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
     }
   ]
 }

@@ -81,8 +81,8 @@ public sealed class AbilityDataAnUnauthoredCardSaysSoRatherThanDoingNothingTests
     public void RevealingACardRunsItsWhenRevealedAndNotItsInterrupts()
     {
         // "When Revealed" *is* the occurrence, not a window around it. A card
-        // may carry both — an interrupt to a reveal is a different ability at a
-        // different tier — and matching on the condition alone would run it
+        // may carry both â€” an interrupt to a reveal is a different ability at a
+        // different tier â€” and matching on the condition alone would run it
         // here as well as in the window that is meant to offer it.
         var world = new World(Printed, players: 1);
         world.CreateSeat("p0");
@@ -109,7 +109,7 @@ public sealed class AbilityDataAnUnauthoredCardSaysSoRatherThanDoingNothingTests
         // "Players can only trigger interrupt abilities on cards they control
         // or on encounter cards", and any player may use the latter. So an
         // ability on a scenario-owned card has no controller, and one on a
-        // player's card belongs to that player — neither is something the card
+        // player's card belongs to that player â€” neither is something the card
         // data says, and neither is the seat that happens to be first.
         var world = new World(Printed, players: 2);
         world.CreateSeat("p0");
@@ -224,6 +224,13 @@ public sealed class AbilityDataAnUnauthoredCardSaysSoRatherThanDoingNothingTests
         permitted.UnionWith(["09001a", "09001b", "09002", "09005", "09036"]);
         permitted.UnionWith(["09008", "09012", "09033", "09035", "09006", "09010", "09032", "09034"]);
         permitted.UnionWith(["09013", "09019", "09039", "09003", "09004", "09007", "09014", "09015", "09027", "09029", "09028", "09031", "09030"]);
+        permitted.UnionWith(["10001a", "10001b", "10004", "10005"]);
+        permitted.UnionWith(["10002", "10003", "10006", "10007", "10008", "10009", "10010"]);
+        permitted.UnionWith(["10011", "10012", "10013", "10014", "10016", "10017", "10018", "10019"]);
+        permitted.UnionWith(["10020", "10021", "10022", "10023", "10024"]);
+        permitted.UnionWith(["10030", "10031", "10032"]);
+        permitted.UnionWith(["10025", "10026", "10027", "10028"]);
+        permitted.UnionWith(["10015", "10029"]);
         Assert.Equal(permitted.Order(StringComparer.Ordinal), AuthoredCards.Book.Authored.Order(StringComparer.Ordinal));
     }
 

@@ -10,6 +10,9 @@ namespace Marvel.Rules.Play;
 /// <summary>Card text used while paying a cost.</summary>
 public interface IResourceCardAbilities
 {
+    /// <summary>Whether printed card text permits this source to be discarded from hand for resources.</summary>
+    /// <remarks>Eligibility is independent of generated quantity, including an empty contribution.</remarks>
+    bool CanUseHandResources(World world, Card source);
     string ResourcesGeneratedBy(World world, Card source, Card? payingFor);
     IReadOnlyList<ResourceSource> PrintedResourceAbilities(World world, int player);
     IReadOnlyList<ResourceSource> ResourceAbilities(World world, int player);

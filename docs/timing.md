@@ -539,7 +539,12 @@ after its placement interrupts. Its receipt retains the exact destination
 occurrence and observes that scheme's Forced Response initiation independently
 of effect application or a subsequent threat reset. Callers wait for the
 containing procedure before choosing later text from this fact. Ranked scheme
-selection and Surge remain responsibilities of the authored ability.
+selection and Surge remain responsibilities of the authored ability. The
+bounded self-support destination instead stores actually removed threat after
+source defeat finishes. It retains its captured incarnation and resolving
+controller, emits token movement, and does not create scheme-placement windows
+(`rr:move.7`). Its receipt records stored tokens in `Placed`; a departed or
+reentered support receives nothing.
 
 The timing spine, nested windows, agenda continuations, player-phase ending,
 and the lasting and delayed effects required by the Core Set are executable.

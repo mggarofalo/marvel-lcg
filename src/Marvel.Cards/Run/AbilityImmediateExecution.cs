@@ -12,7 +12,7 @@ internal static class AbilityImmediateExecution
     {
         return effect switch
         {
-            AbilityEffect.IncreaseNextEventCost increase => IncreaseEventCost(increase, context),
+            AbilityPricingEffect.IncreaseNextEventCost increase => IncreaseEventCost(increase, context),
             AbilityEffect.BoostBasicUse bonus => BoostBasicUse(bonus, context),
             AbilityEffect.ModifyPlayedEvent modifier => AbilityPlayedEventModifier.Run(modifier, context),
             AbilityEffect.Fixed fixedEffect => RunFixed(fixedEffect, context),
@@ -22,7 +22,7 @@ internal static class AbilityImmediateExecution
             AbilityEffect.Draw or AbilityEffect.DrawToHandSize or AbilityEffect.GainSurge =>
                 RunPlayerEffect(effect, context),
             AbilityEffect.GrantTraitCharacters grant => AbilityTraitGroupExecution.Run(grant, context),
-            AbilityEffect.GrantControlledCharacters or AbilityEffect.ReduceNextCardCost
+            AbilityEffect.GrantControlledCharacters or AbilityPricingEffect.ReduceNextCardCost
                 or AbilityEffect.GrantField or AbilityEffect.GrantTrait =>
                 RunGrantEffect(effect, context),
             AbilityEffect.DelayedStun or AbilityEffect.DelayedDiscard =>
@@ -31,7 +31,7 @@ internal static class AbilityImmediateExecution
         };
     }
 
-    private static AbilityImmediateResult IncreaseEventCost(AbilityEffect.IncreaseNextEventCost increase, AbilityImmediateContext context)
+    private static AbilityImmediateResult IncreaseEventCost(AbilityPricingEffect.IncreaseNextEventCost increase, AbilityImmediateContext context)
     {
         NextEventCost.Register(context.Admission.World, context.Admission.Source,
             context.Admission.Query.Player, increase.Amount);
@@ -43,6 +43,11 @@ internal static class AbilityImmediateExecution
         var use = context.Admission.Query.Occurrence.BasicUse
             ?? throw new RulesNotImplementedException("basic-use bonus requires its exact occurrence");
         if (!use.IsCurrent(context.Admission.World)) return new(true, false);
+        if (bonus.Overkill)
+        {
+            use.GrantOverkill();
+            return new(true, true);
+        }
         long amount = bonus.MatchingAlly
             ? BasicUseAllyReceipt.Read(context.Admission.Expressions.Results, context.Admission.World, use)
             : bonus.Amount;
@@ -172,7 +177,7 @@ internal static class AbilityImmediateExecution
                         source, evaluator.Seat(grant.Player), field,
                         evaluator.Amount(grant.Amount), grant.Until);
                 return new(true, true);
-            case AbilityEffect.ReduceNextCardCost reduction:
+            case AbilityPricingEffect.ReduceNextCardCost reduction:
                 if (reduction.AnyPlayer)
                     CardPayment.ReduceNextMatchingCardCost(world, source,
                         evaluator.Amount(reduction.Amount), reduction.Filter!);

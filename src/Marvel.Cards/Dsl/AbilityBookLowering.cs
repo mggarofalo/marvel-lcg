@@ -35,6 +35,7 @@ internal static class AbilityBookLowering
                 ?? ImmutableDictionary.Create<string, CardCounterPool>(StringComparer.Ordinal), effects.ToImmutable())
         {
             SchemeDestinations = LowerSchemeDestinations(book),
+            HandResourceForms = AbilityHandResourceForms.Lower(book),
         };
         AbilityProfileReferences.Validate(book, program.Profiles);
         AbilityPrintedTextLowering.Validate(program);
@@ -86,6 +87,7 @@ internal static class AbilityBookLowering
     {
         LimitPeriod = AbilityLimit.Validate(ability),
         ResourceRestriction = AbilityResourceRestriction.Validate(ability),
+        PrintedCostResource = AbilityPrintedCostResource.Validate(ability),
     };
     }
 

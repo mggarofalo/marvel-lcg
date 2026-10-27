@@ -79,7 +79,7 @@ internal sealed class AbilityEventPayment
 
         string generated = GeneratedResources(sources.Generators, paying);
         var requirements = EventPaymentRequirements.Create(
-            world, card, adjusted, AbilityInvocationPayment.Expand(world, player, ability.Cost), energy);
+            world, card, adjusted, AbilityInvocationPayment.Expand(world, player, ability.Cost), energy, ability);
         ValidateGeneratedPayment(generated, requirements);
 
         var assigned = allocations;
@@ -168,9 +168,9 @@ internal sealed class AbilityEventPayment
         long Total, string Required, List<ResourceCost> Components)
     {
         internal static EventPaymentRequirements Create(
-            World world, Card card, AdjustedCardCost adjusted, AbilityCost? additionalCost, long? energy)
+            World world, Card card, AdjustedCardCost adjusted, AbilityCost? additionalCost, long? energy, CompiledCardAbility ability)
         {
-            string printed = Resources.Required(world, card, world.Facts);
+            string printed = AbilityPaymentPricing.PrintedRequirement(world, card, ability, adjusted.Amount);
             string additional = energy is { } x
                 ? new string(Resources.Energy, checked((int)x)) : ResourceRequirement(additionalCost, card);
             int additionalAmount = checked(additional.Length + GenericResourceAmount(additionalCost));

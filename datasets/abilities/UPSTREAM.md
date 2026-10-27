@@ -367,3 +367,78 @@ Cancellation and event discard are independent; attachment discard depends on
 both completing. No starting counters, engine, setup or public admission changes.
 Canonical and explicitly synthetic fixture evidence is recorded in
 [the Counterspell actual-row packet](../../docs/content/doctor-strange-counterspell-row.md).
+
+Hulk Basic reprints (10020–10024) append five research faces, bringing the book
+to 693 rows and Hulk coverage to 8/33 faces. Corrected generated printed records
+match Core 01088–01092 apart from IDs and pack, so their execution bodies are
+reused. All 688 predecessor raw objects remain byte-identical. Actual-row resource,
+recipient, exhaustion, discount consumption/expiry and title-limit evidence is in
+[the Basic reprint packet](../../docs/content/hulk-basic-reprints.md). No engine,
+starting-counter, setup or public admission changes are included.
+
+
+MARVEL-846 appends seven actual Hulk signature research faces: 10002, 10003 and
+10006–10010. The book has 700 rows and 15/33 Hulk faces; all 693 predecessor
+raw objects remain byte-identical. Joined generated printed records, current
+RR 1.8 and ruling:5bbba476a198a90c govern the interpretations. The seven faces
+print no starting counters. Actual-row payment, exact attack lifetime, independent
+draw and multiplayer form/ownership tests gate these rows. The signature packet
+has no engine, setup or public-admission changes. See
+[the signature packet](../../docs/content/hulk-signatures.md).
+
+## Hulk starter cards — MARVEL-847
+
+Actual research rows 10011–10014 and 10016–10019 append to 708 rows / 23 of
+33 Hulk faces. All 700 predecessor raw objects remain byte-identical. Printed
+authority is `datasets/cards/cards.json`; RR 1.8 and vendored FAQ 10016 govern
+attack receipts, eligibility and the printed maximum. Actual-row tests and eight
+killed data mutants are recorded in [the packet](../../docs/content/hulk-starter-cards.md).
+Toe to Toe (10015) remains absent: the actual activation inside a labelled
+attack requires a separate engine prerequisite. No engine, setup,
+starting-counter or public admission change is included.
+
+
+## Hulk Thunderclap — MARVEL-846
+
+Actual research row 10005 appends to 709 rows / 24 of 33 Hulk faces. All 708
+predecessor raw objects remain byte-identical. Printed authority is
+`datasets/cards/cards.json`; current RR 1.8 choose, target, damage, Guard, Stun,
+and Retaliate clauses govern. The vendored MarvelCDB FAQ queried 10005 and has
+no entry for it. One distinct optional group receives simultaneous ordinary
+damage through the independently reviewed bounded-damage prerequisite.
+Actual paid hero-action, multiplayer, suspension, purity and data-mutation
+proof is recorded in [the packet](../../docs/content/hulk-thunderclap-card.md).
+Toe to Toe 10015 remains absent. This row adds no starting counters, setup,
+public admission or engine source changes.
+
+
+## Hulk customization cards - MARVEL-850
+
+Actual research rows10030-10032 append to712 rows /27 of33 Hulk faces.
+All709 predecessor raw UTF-8 objects remain byte-identical. Printed authority
+is datasets/cards/cards.json, with current RR1.8 AND, defense and ownership
+rules. No starting counters, engine, setup or public-admission changes. Beat Cop
+10029 remains absent pending support-destination threat movement. See
+[the customization packet](../../docs/content/hulk-customization-cards.md).
+
+
+## Hulk obligation and nemesis - MARVEL-849
+
+Actual research rows 10025-10028 append to 716 rows / 31 of 33 Hulk faces.
+All 712 predecessor UTF-8 objects are preserved exactly. Corrected printed
+Inner Demons has no Then; RR 1.8 governs printed resource counting and attacks.
+No engine, starting-counter, setup or public-admission changes. Toe to Toe
+10015 and Beat Cop 10029 remain absent. See
+[the packet](../../docs/content/hulk-nemesis-cards.md).
+
+## Hulk final two faces - MARVEL-847 / MARVEL-850
+
+Actual research rows 10015 and 10029 complete 718 rows / all 33 Hulk faces.
+All corrected 716 predecessor raw UTF-8 objects remain byte-identical and LF.
+Printed authority is `datasets/cards/cards.json`; current RR 1.8 labeled
+abilities, Stun, cost and movement govern. The vendored Toe to Toe Stun ruling
+agrees with the current independent-instruction interpretation. Beat Cop uses
+captured source threat after its exhaust/discard cost. Neither Beat Cop action
+is an attack or thwart. No engine, starting-counter, setup or public-admission
+changes. Actual-card behavior, inventory, byte preservation and mutation evidence
+are recorded in [the packet](../../docs/content/hulk-final-two-cards.md).

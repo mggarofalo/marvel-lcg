@@ -84558,6 +84558,28 @@
       ]
     },
     {
+      "id": "setup:hero:hulk",
+      "kind": "setup",
+      "title": "Hulk",
+      "fingerprint": "sha256:92944b50c0fd59c370e60388316f22aeee23c2760d123aaedebd1b96967e2ae9",
+      "scope": "hero",
+      "disposition": "outside-core",
+      "obligations": [
+        {
+          "id": "behavior:setup:hero:hulk:hulk-setup",
+          "summary": "The Hulk hero record supplies the printed starter deck, obligation and nemesis set.",
+          "disposition": "outside-core",
+          "reason": "This record requires the Hulk hero pack, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
       "id": "setup:hero:iron_man",
       "kind": "setup",
       "title": "Iron Man",

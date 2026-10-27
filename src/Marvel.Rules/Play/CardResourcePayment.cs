@@ -148,7 +148,8 @@ internal sealed class CardResourcePayment(
 
     private void RequireHand(Card card)
     {
-        if (!request.Hands.Contains(card.Area) || card.ObjectId == request.Itself)
+        if (!request.Hands.Contains(card.Area) || card.ObjectId == request.Itself
+            || !abilities.CanUseHandResources(world, card))
             throw new RulesNotImplementedException($"card {card.ObjectId} cannot be discarded to pay this cost");
     }
 

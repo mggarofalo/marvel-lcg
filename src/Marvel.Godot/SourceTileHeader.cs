@@ -54,6 +54,15 @@ internal static class SourceTileHeader
         }
         for (int index = 0; index < card.Counters.Count; index++)
             symbols.AddChild(SourceCounterPips.Create(card.Counters[index], card.Counters.Count > 1));
+        if (!card.Concealed && card.Fields.FirstOrDefault(field => field.Name == "THREAT") is { } threat)
+        {
+            Label count = CardSourceStrip.Label($"THREAT {threat.Value}", "SourceThreat",
+                CompactTableTypography.Size(12, readingScale), CardTypography.Bold);
+            count.AccessibilityName = $"{threat.Value} threat here";
+            count.AddThemeColorOverride("font_color", CardFaceStyle.Paper);
+            count.AutowrapMode = TextServer.AutowrapMode.Off;
+            symbols.AddChild(count);
+        }
         if (card.DamageKnown && card.Damage > 0)
         {
             var damage = new HBoxContainer { AccessibilityName = $"{card.Damage} damage" };

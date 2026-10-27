@@ -35,7 +35,17 @@ restored revision passes that same check.
 Restoring a compiled mutant with a timestamp-preserving copy can leave its binary
 cached. Force a non-incremental rebuild of restored sources before claiming the
 restored run passes. Serialize mutation, restoration, verification and hooks in
-each worktree; preserve evidence outside the repository.
+each worktree; preserve evidence outside the repository. A returned process ID is
+not completion: harvest its exit before changing mutant sources, restoring them,
+or starting another build/test/hook in that worktree. Independent worktrees do not
+require a global build lock. Apphost/output-lock warnings or overlapping builds
+invalidate a mutation verdict until an isolated compiled rerun distinguishes it;
+do not classify an apparent survivor as equivalent from contaminated evidence. Quiet output
+or an idle outer `testhost` is not evidence of a stalled run: this repository's
+xUnit runner starts a separate test executable. Inspect the actual descendant
+process before diagnosing a wait. If cancellation is necessary, identify and
+harvest the owned process tree by its exact worktree; do not leave an old test
+executable running against files being mutated or rebuilt.
 
 Use the full encounter procedure when proving entry, surge and cleanup together;
 a direct placement or When Revealed call may deliberately omit later lifecycle
@@ -47,6 +57,12 @@ After authoring rows, run the ability-data tests as well as characteristic card
 tests. Reconcile explicit authored-face and starting-counter inventories with the
 printed facts, and keep unknown-card negative controls genuinely unauthored.
 Do not permit an entire incomplete pack merely to satisfy a face-inventory gate.
+
+Adding a public setup recipe also adds an authority source. Update its reviewed
+adjudication and regenerate the behavioral catalog offline; keep expansion setup
+explicitly outside the Core transcript corpus. Run the authority/catalog checks
+as well as setup tests, including exact source inventories. A passing dealer or
+public admission test does not establish that this separate catalog is current.
 
 When an actual row replaces a test-local placeholder, inspect fixtures using that
 card ID. Prefer the actual row when its behavior belongs in the test; otherwise

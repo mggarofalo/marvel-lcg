@@ -66,7 +66,7 @@ internal static class AbilityEffectBindingAnalysis
     ];
     private static readonly ImmutableArray<Type> PowerTypes =
     [
-        typeof(AbilityEffect.ReduceNextCardCost), typeof(AbilityEffect.Power),
+        typeof(AbilityPricingEffect.ReduceNextCardCost), typeof(AbilityEffect.Power),
         typeof(AbilityEffect.ThwartGroup), typeof(AbilityEffect.ActivateEnemies),
     ];
 
@@ -189,7 +189,7 @@ internal static class AbilityEffectBindingAnalysis
 
     private static bool PowerBindingCanChange(AbilityEffect effect) => effect switch
     {
-        AbilityEffect.ReduceNextCardCost reduction => reduction.Player == AbilityPlayer.ChosenPlayer || BindingCanChange(reduction.Amount),
+        AbilityPricingEffect.ReduceNextCardCost reduction => reduction.Player == AbilityPlayer.ChosenPlayer || BindingCanChange(reduction.Amount),
         AbilityEffect.Power power => (power.Target is { } target && BindingCanChange(target)) || BindingCanChange(power.Effect),
         AbilityEffect.ThwartGroup thwart => BindingCanChange(thwart.Schemes) || BindingCanChange(thwart.Thwart),
         AbilityEffect.ActivateEnemies activate => BindingCanChange(activate.Enemies)
@@ -213,11 +213,11 @@ internal static class AbilityEffectBindingAnalysis
         // This instruction always addresses its physical source, regardless of a prior choice.
         AbilityEffect.DiscardInvocation => false,
         AbilityEffect.Shuffle or AbilityEffect.Search => false,
-        AbilityEffect.DefineProfile or AbilityEffect.GainSurge or AbilityEffect.Fixed or AbilityEffect.Generate or AbilityEffect.AllowPlayBeneath or AbilityEffect.AllowPlayFromDiscard or AbilityEffect.ReduceSelfCostPerEngagedMinion or AbilityEffect.ReduceSelfCostPerControlledTrait or AbilityEffect.ReduceFirstAllyCost or AbilityEffect.DoubleResourceFor
+        AbilityEffect.DefineProfile or AbilityEffect.GainSurge or AbilityEffect.Fixed or AbilityEffect.Generate or AbilityEffect.AllowPlayBeneath or AbilityEffect.AllowPlayFromDiscard or AbilityPricingEffect.ReduceSelfCostPerEngagedMinion or AbilityPricingEffect.ReduceSelfCostPerControlledTrait or AbilityPricingEffect.ReduceFirstAllyCost or AbilityEffect.DoubleResourceFor
             or AbilityEffect.PreventDamageFrom or AbilityEffect.DelayedStun
             or AbilityEffect.ChooseTopForHand or AbilityEffect.ChooseDiscardToShuffle
             or AbilityEffect.DiscardHandWithResource
-            or AbilityEffect.RecoverDiscardedByResource or AbilityEffect.RecruitDiscarded or AbilityEffect.GrantTraitCharacters or AbilityEffect.ModifyPlayedEvent or AbilityEffect.BoostBasicUse or AbilityEffect.IncreaseNextEventCost => false,
+            or AbilityEffect.RecoverDiscardedByResource or AbilityEffect.RecruitDiscarded or AbilityEffect.GrantTraitCharacters or AbilityEffect.ModifyPlayedEvent or AbilityEffect.BoostBasicUse or AbilityPricingEffect.IncreaseNextEventCost => false,
         _ => throw new InvalidOperationException("Unknown compiled effect in player-binding analysis"),
     };
 

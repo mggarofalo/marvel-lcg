@@ -10,6 +10,9 @@ public sealed record CompiledCardAbility(
     ImmutableArray<string> Labels, string PrintedResources, AbilityMaximum? Maximum,
     AbilityEffectAddress Address)
 {
+    /// <summary>Every resource spent toward the adjusted printed price must have this type.</summary>
+    public char? PrintedCostResource { get; init; }
+
     /// <summary>The period of the per-instance use limit.</summary>
     public AbilityLimitPeriod LimitPeriod { get; init; }
 

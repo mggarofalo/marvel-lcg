@@ -10,8 +10,10 @@ internal sealed class AbilityResolutionBindings(World world, Card source)
     private AbilityCardReference? playerSelectionBinding;
     private int sourceIncarnation = source.Incarnation;
     private CardInstanceState sourceState = source.InstanceState;
+    public bool SourceWasPublicInPlay { get; private set; } = source.FaceUp && DeckTypes.IsInPlay(source.Area.Type);
 
     public CardInstanceState CaptureSourceState() => sourceState;
+    public void RestoreSourcePublicState(bool wasPublic) => SourceWasPublicInPlay = wasPublic;
 
     public void RestoreSourceState(CardInstanceState? restored)
     {
@@ -83,6 +85,7 @@ internal sealed class AbilityResolutionBindings(World world, Card source)
     internal AbilityQueryContext QueryContext(AbilityResolutionState resolution) => new(
         resolution.World, source, resolution.Occurrence, resolution.Player, sourceIncarnation,
         chosenBinding, playerSelectionBinding, resolution.Altered, [.. resolution.PowerTargets])
-        { DamageDefeats = resolution.DamageDefeats, SourceState = sourceState, TriggeringAttack = resolution.TriggeringAttack, TriggeringDefeat = resolution.TriggeringDefeat,
+        { DamageDefeats = resolution.DamageDefeats, SourceState = sourceState, SourceWasPublicInPlay = SourceWasPublicInPlay,
+            TriggeringAttack = resolution.TriggeringAttack, TriggeringDefeat = resolution.TriggeringDefeat,
             ExhaustedForCost = System.Collections.Immutable.ImmutableHashSet.CreateRange(resolution.ExhaustedForCost) };
 }

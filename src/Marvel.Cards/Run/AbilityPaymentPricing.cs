@@ -114,7 +114,7 @@ internal static class AbilityPaymentPricing
         World world, Card card, int player, CompiledCardAbility ability,
         IResourceCardAbilities resourceAbilities)
     {
-        var printed = EventPrice(world, card, player, ability.Effect, resourceAbilities);
+        var printed = EventPrice(world, card, player, ability, resourceAbilities);
         var arrow = Price(world, card, player, ability.Cost, resourceAbilities);
         if (printed is null || arrow is null)
         {
@@ -149,7 +149,7 @@ internal static class AbilityPaymentPricing
             // aggregate arrow price, matching the committed payment ledger.
             Components:
             [
-                new ResourceCost(printed.Cost, printed.Rule),
+                printed.ResourceCosts.Single(),
                 new ResourceCost(arrow.Cost, arrow.Rule),
             ]);
     }
@@ -165,7 +165,7 @@ internal static class AbilityPaymentPricing
         {
             Cost = printed.Cost + "+X",
             Variables = [new VariableRequest("X", 1, Math.Min(energy, Math.Max(0, total - amount)))],
-            Components = [new ResourceCost(printed.Cost, printed.Rule),
+            Components = [printed.ResourceCosts.Single(),
                 new ResourceCost("X") { RepeatedResource = Resources.Energy }],
         };
     }
@@ -183,9 +183,10 @@ internal static class AbilityPaymentPricing
     }
 
     internal static CostOption? EventPrice(
-        World world, Card card, int player, AbilityEffect effect,
+        World world, Card card, int player, CompiledCardAbility ability,
         IResourceCardAbilities resourceAbilities)
     {
+        var effect = ability.Effect;
         if (EffectiveCards.Kind(card, world.Facts) != CardKind.Event)
         {
             return null;
@@ -196,13 +197,22 @@ internal static class AbilityPaymentPricing
         return new CostOption(
             Target: card.ObjectId,
             Cost: cost.ToString(System.Globalization.CultureInfo.InvariantCulture),
-            Rule: Resources.Required(world, card, world.Facts) is { Length: > 0 } required
+            Rule: PrintedRequirement(world, card, ability, cost) is { Length: > 0 } required
                 ? [required]
                 : null,
             Sources: EventGenerators(world, card, player, effect, resourceAbilities),
             DeclarationSensitive: PaidResourceQueries(effect).Any(),
-            PreferredResourceTypes: string.Concat(PreferredPaidResourceTypes(effect).Distinct()));
+            PreferredResourceTypes: string.Concat(PreferredPaidResourceTypes(effect).Distinct()),
+            Components: ability.PrintedCostResource is { } resource
+                ? [new ResourceCost(cost.ToString(System.Globalization.CultureInfo.InvariantCulture))
+                    { RepeatedResource = resource }] : null);
     }
+
+    internal static string PrintedRequirement(
+        World world, Card card, CompiledCardAbility ability, long adjusted) =>
+        ability.PrintedCostResource is { } resource
+            ? new string(resource, checked((int)adjusted))
+            : Resources.Required(world, card, world.Facts);
 
     internal static List<ResourceSource> EventGenerators(
         World world, Card card, int player, AbilityEffect effect,
