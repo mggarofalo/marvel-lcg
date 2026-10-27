@@ -161,9 +161,64 @@ public sealed class ActivationDefeatOutcomeTests
         Assert.Empty(world.Agenda.Outstanding);
     }
 
-    private static AbilityRunner Runner(string before = "", bool suspended = false, bool recover = false)
+    [Fact]
+    [Rule("rr:overkill.1")]
+    [Rule("rr:overkill.2")]
+    public void TwoOverkillDefeatsRetainTheirCountButDealOnlyOneEncounterCard()
     {
-        const string condition = """{"if":{"test":{"atLeast":{"value":{"result":"activationDefeatedCharacters"},"count":1}},"then":{"dealEncounterCards":{"player":"firstPlayer","count":1}}}}""";
+        // Overkill's excess is "considered damage from an attack". Printed
+        // 90004 conditions one deal on a defeat, rather than dealing per defeat.
+        var runner = Runner(suspended: true);
+        var (world, ally) = Board(runner, survives: false);
+        world.FirstPlayer = 1;
+        world.Seats[0].IdentityCard.TakeDamage(9);
+        world.Effects.Register(new ContinuousEffect(EffectSource.LastingEffect,
+            Keywords.Overkill, Affects: world.TheCardIn(DeckType.VillainArea)!.ObjectId));
+        var events = Finish(world, runner, ally);
+
+        Assert.Equal(DeckType.RemovedArea, ally.Area.Type);
+        Assert.True(world.Seats[0].Eliminated);
+        Assert.Single(events.OfType<AttackCompleted>());
+        Assert.Equal(2, world.Seats[0].IdentityCard.Tokens.GetValueOrDefault("c_probeDefeats"));
+        Assert.Single(world.AreaOf(DeckType.DealtEncounterCardsDeck, PlayArea.Of(1)).Cards);
+        Assert.False(world.IsOver);
+        Assert.Null(world.Activation);
+        Assert.Empty(world.Agenda.Outstanding);
+    }
+
+    [Fact]
+    [Rule("rr:damage.step.6")]
+    public void DefeatFromWouldDefeatInterruptCannotQualifyTheRecoveredAttackRecipient()
+    {
+        // Step 6 resolves "when [character] would be defeated" before actual
+        // defeat. Damage from its interrupt is a separate causal effect.
+        var runner = Runner(recover: true, collateral: true);
+        var (world, ally) = Board(runner, survives: false);
+        var collateral = world.CreateCard("01002", world.AreaOf(DeckType.AlliesArea,
+            PlayArea.Of(0), cardOwner: 0));
+        var events = Finish(world, runner, ally);
+
+        Assert.Equal(5, Assert.Single(events.OfType<AttackCompleted>()).DamageDealt);
+        Assert.Equal(DeckType.AlliesArea, ally.Area.Type);
+        Assert.Equal(0, ally.Damage);
+        Assert.Equal(DeckType.DiscardPile, collateral.Area.Type);
+        Assert.Equal(0, world.Seats[0].IdentityCard.Tokens.GetValueOrDefault("c_probeDefeats"));
+        Assert.Equal(1, world.Seats[0].IdentityCard.Tokens.GetValueOrDefault("c_probeCompleted"));
+        Assert.Empty(world.AreaOf(DeckType.DealtEncounterCardsDeck, PlayArea.Of(0)).Cards);
+        Assert.False(world.IsOver);
+        Assert.Empty(world.Agenda.Outstanding);
+    }
+
+    private static AbilityRunner Runner(string before = "", bool suspended = false, bool recover = false,
+        bool collateral = false)
+    {
+        const string condition = """
+            {"seq":[
+              {"placeCounters":{"card":"you","counter":"probeDefeats","count":{"result":"activationDefeatedCharacters"}}},
+              {"if":{"test":{"atLeast":{"value":{"result":"activationDefeatedCharacters"},"count":1}},
+                "then":{"dealEncounterCards":{"player":"firstPlayer","count":1}}}}
+            ]}
+            """;
         string body = suspended
             ? """{"chooseCard":{"from":{"query":"identities"},"effect":BODY}}""".Replace("BODY", condition, StringComparison.Ordinal)
             : condition;
@@ -179,7 +234,9 @@ public sealed class ActivationDefeatOutcomeTests
                 BEFORE
               ]}
             }]}EXTRA]}
-            """.Replace("EXTRA", recover ? """ ,{"card":"01083","abilities":[{"trigger":{"event":"WhenCardWouldBeDefeated","timing":"ForcedInterrupt","subject":"game"},"effect":{"heal":{"card":"trigger.subject","amount":10}}}]} """ : "", StringComparison.Ordinal).Replace("BODY", body, StringComparison.Ordinal).Replace("BEFORE", before.Length == 0 ? "" : "," + before.TrimEnd(','), StringComparison.Ordinal)));
+            """.Replace("EXTRA", recover ? """ ,{"card":"01083","abilities":[{"trigger":{"event":"WhenCardWouldBeDefeated","timing":"ForcedInterrupt","subject":"this"},"effect":{"seq":[COLLATERAL{"heal":{"card":"trigger.subject","amount":10}}]}}]} """.Replace(
+                "COLLATERAL", collateral ? """{"dealDamage":{"cards":{"titled":"Black Cat"},"amount":3}},""" : "", StringComparison.Ordinal)
+                : "", StringComparison.Ordinal).Replace("BODY", body, StringComparison.Ordinal).Replace("BEFORE", before.Length == 0 ? "" : "," + before.TrimEnd(','), StringComparison.Ordinal)));
     }
 
     private static (World World, Card Ally) Board(AbilityRunner runner, bool survives)
