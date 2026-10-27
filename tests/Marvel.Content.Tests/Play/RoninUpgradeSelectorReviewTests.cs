@@ -43,8 +43,23 @@ public sealed class RoninUpgradeSelectorReviewTests
         World.MoveToTop(first, seat.Hand);
         World.MoveToTop(first, hosted);
         var last = new AbilityCardSelection.Last(selection);
-        Assert.Equal([first], new AbilitySelectorEvaluation(query).Every(last));
-        Assert.Equal([first], AbilityProjectedStateQueries.ProjectedEvery(last, projected, admission));
-        Assert.Equal([second, first], new AbilitySelectorEvaluation(query).Every(selection));
+        Assert.Equal([second], new AbilitySelectorEvaluation(query).Every(last));
+        Assert.Equal([second], AbilityProjectedStateQueries.ProjectedEvery(last, projected, admission));
+        Assert.Equal([first, second], new AbilitySelectorEvaluation(query).Every(selection));
+        Assert.Equal([first, second], AbilityProjectedStateQueries.ProjectedEvery(selection, projected, admission));
+
+        // Projected host changes retain the same id order even when the lower id enters last.
+        var other = world.CreateCard("01067", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0)));
+        projected.Hosts[first.ObjectId] = other.ObjectId;
+        Assert.Equal([second], AbilityProjectedStateQueries.ProjectedEvery(selection, projected, admission));
+        World.MoveToTop(first, world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), other.ObjectId));
+        Assert.Equal(new AbilitySelectorEvaluation(query).Every(selection),
+            AbilityProjectedStateQueries.ProjectedEvery(selection, projected, admission));
+        projected.Hosts[first.ObjectId] = source.ObjectId;
+        Assert.Equal([first, second], AbilityProjectedStateQueries.ProjectedEvery(selection, projected.Clone(), admission));
+        Assert.Equal([second], AbilityProjectedStateQueries.ProjectedEvery(last, projected, admission));
+        World.MoveToTop(first, hosted);
+        Assert.Equal(new AbilitySelectorEvaluation(query).Every(selection),
+            AbilityProjectedStateQueries.ProjectedEvery(selection, projected, admission));
     }
 }

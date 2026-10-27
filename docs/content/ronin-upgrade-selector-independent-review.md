@@ -30,3 +30,12 @@ see `C:/Users/mggar/Source/evidence/ronin-selector-review-failure.log`.
 This finding affects general selector composition; Ronin's existential constant
 does not depend on order. Verdict: reject source `1616709b` pending repair and
 independent retest.
+
+The proposed repair chooses ascending physical object-id order for this new
+selector, live and projected. The original review expected physical hosted-area
+order; that order is an engine choice rather than a printed requirement, and
+projected host changes retain membership but not attachment chronology. The
+revised regression checks the explicit id order and `last` after actual
+detachment and reattachment, plus projected host changes and a cloned state.
+Existing queries retain their order. Independent review of this policy and the
+repair remains required.

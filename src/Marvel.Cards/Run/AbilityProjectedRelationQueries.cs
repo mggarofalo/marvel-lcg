@@ -30,6 +30,7 @@ internal static class AbilityProjectedRelationQueries
             !state.Departed.Contains(card.ObjectId)
             && (DeckTypes.IsInPlay(card.Area.Type) || state.Entered.Contains(card.ObjectId))
             && state.Hosts.GetValueOrDefault(card.ObjectId, card.Area.Host) == source.ObjectId
-            && EffectiveCards.Kind(card, context.World.Facts) == CardKind.Upgrade)];
+            && EffectiveCards.Kind(card, context.World.Facts) == CardKind.Upgrade)
+            .OrderBy(card => card.ObjectId)];
     }
 }

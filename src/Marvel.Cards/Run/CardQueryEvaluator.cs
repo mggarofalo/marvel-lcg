@@ -78,9 +78,11 @@ internal sealed class CardQueryEvaluator(
         AbilityCardQuery.AttachedToThis =>
             [.. cast.World.Areas.Where(area => area.Host == cast.Source.ObjectId && !BeneathCards.IsStored(area.Type))
                 .SelectMany(area => area.Cards)],
+        // Engine choice: stable physical object id order for this selector.
         AbilityCardQuery.UpgradesOnThis => cast.SourceReference is { } source
             ? [.. cast.World.Areas.Where(area => area.Host == source.ObjectId && DeckTypes.IsInPlay(area.Type))
-                .SelectMany(area => area.Cards).Where(card => EffectiveCards.Kind(card, cast.World.Facts) == CardKind.Upgrade)]
+                .SelectMany(area => area.Cards).Where(card => EffectiveCards.Kind(card, cast.World.Facts) == CardKind.Upgrade)
+                .OrderBy(card => card.ObjectId)]
             : [],
         AbilityCardQuery.AttachmentsOnVillain => VillainAttachments(),
         AbilityCardQuery.AttachmentsOnThis =>

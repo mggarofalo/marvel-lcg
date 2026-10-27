@@ -1789,4 +1789,8 @@ two threat, while the enemy activation's ally defeat does not satisfy it.
 source’s current incarnation. It excludes encounter Attachment cards and cards
 stored beneath the source. Its name is an engine choice; `rr:upgrade.3` and
 `rr:attach-to.1` distinguish attached upgrades from the Attachment card type.
-Projected selection follows projected host, entry and departure changes.
+Projected selection follows projected host, entry and departure changes. The engine
+chooses ascending physical object-id order for this new selector in both live and
+projected evaluation. The printed condition requires existence, not attachment
+chronology; `last` therefore selects the greatest matching object id. Other
+queries retain their existing order.
