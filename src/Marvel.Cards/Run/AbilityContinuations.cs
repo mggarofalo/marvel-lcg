@@ -153,6 +153,10 @@ internal static class AbilityContinuations
         results["activationDamagePlaced"] = activation.DamagePlaced;
         results["activationThreat"] = activation.ThreatPlaced;
         results["activationMade"] = activation.Made ? 1 : 0;
+        // Engine choice: delayed result memory preserves the completed receipt's
+        // count, rather than consulting departed characters or another activation.
+        results["activationDefeatedCharacters"] = activation.CompletedAttack is { } attack
+            && attack.ActivationId == activation.Id ? attack.DefeatedCharacters.Length : 0;
     }
 
     internal static void CompleteDynamicActivation(IDictionary<string, long> results)

@@ -19,11 +19,9 @@ internal sealed class DeckSetupController
     internal DeckSetupController(Main main)
     {
         this.main = main;
-        var parent = main.start.GetParent();
+        var parent = main.GetNode<VBoxContainer>("Margin/Shell/Content/Setup/Selections/Fields");
         parent.AddChild(open);
         parent.AddChild(summary);
-        parent.MoveChild(open, main.start.GetIndex());
-        parent.MoveChild(summary, main.start.GetIndex());
         open.Pressed += Open;
         main.endpoint.TextChanged += _ => { chosen.Clear(); catalog = null; workspace = null; Refresh(); };
         main.hero.ItemSelected += _ => Refresh();

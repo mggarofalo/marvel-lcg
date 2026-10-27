@@ -4,7 +4,7 @@ param(
     [Parameter(Mandatory)][string]$Root,
     [Parameter(Mandatory)][string]$GodotBin,
     [string]$ServerContainer,
-    [string]$ReplayContract = 'engine-replay-v27'
+    [string]$ReplayContract = 'engine-replay-v28'
 )
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest

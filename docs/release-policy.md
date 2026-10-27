@@ -76,10 +76,20 @@ independent identities do:
 |---|---:|---|
 | Engine protocol | `42` | A request, response, affordance, event or descriptor change is not understood by the prior endpoint. |
 | Session schema | `7` | The strict persisted JSON shape changes. |
-| Engine replay contract | `engine-replay-v27` | The same setup and decision trace may resolve differently. |
+| Engine replay contract | `engine-replay-v28` | The same setup and decision trace may resolve differently. |
 | RNG contract | `mt19937-iso-cxx` | The seeded random stream changes. |
 | State digest | `state-digest-v3` | The canonical hidden-state serialization changes. |
 | Runtime datasets | Three SHA-256 values | Any byte in `cards.json`, `setup.json` or `abilities.json` changes. |
+
+Replay v28 completes an ordinary enemy attack before offering its defeat
+responses. The same legal attack with Black Widow Rapid Response (08031) can
+therefore produce different prompt and event timing. V27 sources, including
+current-content saves, have no named admission and remain quarantined unchanged.
+Only the exact frozen Core/RoRS v19/v20/v21 content triple has explicit routes to
+`engine-replay-v28`, verifying every original recorded fact before provenance
+changes; frozen-content v28 additive upgrades use the unchanged replay route.
+Historical named destinations remain exact. Protocol 42, schema 7, RNG and state
+digest formats retain their identities.
 
 Replay v27 evaluates dynamic lasting amounts against current state and preserves
 captured actor incarnation across suspended responses. These corrections can change

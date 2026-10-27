@@ -12,6 +12,7 @@ public static class StepConditions
     private static readonly ReadOnlyDictionary<string, ImmutableArray<string>> Conditions = new(
         new Dictionary<string, ImmutableArray<string>>(StringComparer.Ordinal)
     {
+        [VillainPhaseBeginning.Begins] = [VillainPhaseBeginning.Begins],
         [PlaceThreat] = [ThreatWouldBePlaced],
         [PlaceThreatEffect] = [ThreatWouldBePlaced],
         [MainSchemeCompletionOperation.Completed] = [MainSchemeCompletionOperation.Completed],

@@ -115,8 +115,9 @@ public sealed class OwnerDeckEliminationTests
             """));
         var world = ThorActualFixture.Board("06001a", players: 3);
         world.Abilities = runner;
-        Card[] cards = [Ally(world, "09013", 1), Ally(world, "01002", 0), Ally(world, "01011", 1)];
         Elimination.Eliminate(world, world.Facts, eliminated, "OwnerRoutingProbe", []);
+        // Synthetic post-elimination injection isolates later owner routing.
+        Card[] cards = [Ally(world, "09013", 1), Ally(world, "01002", 0), Ally(world, "01011", 1)];
         Assert.True(world.Seats[eliminated].Eliminated);
         Assert.All(cards, card => Assert.Equal(DeckType.AlliesArea, card.Area.Type));
         return (world, runner, cards);

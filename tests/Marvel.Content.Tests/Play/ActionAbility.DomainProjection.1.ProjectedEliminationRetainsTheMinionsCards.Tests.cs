@@ -10,13 +10,15 @@ public sealed class ActionAbilityDomainProjectionProjectedEliminationRetainsTheM
 {
     [Rule("rr:player-elimination.step.1")]
     [Rule("rr:player-elimination.step.2")]
+    [Rule("rr:player-elimination.step.4")]
     [Rule("rr:player-elimination.5")]
     [Rule("rr:initiating-abilities.3")]
     [Fact]
     public void ProjectedEliminationRetainsTheMinionsCardsAndFinishesThePaidAbility()
     {
         // Elimination transfers minions "retaining any ... attached cards ...
-        // and status cards on them". If it happens within an ability, "resolve
+        // and status cards on them". Step 4 then discards each eliminated-owned
+        // card, including the transferred Spider-Tracer. If it happens within an ability, "resolve
         // the entire ability", including the threat removal after the defeat.
         var runner = Runner(AuthoredCards.AuntMay, "Action", """
             {"thwart":{"target":{"query":"mainScheme"},"effect":{"seq":[
@@ -51,8 +53,8 @@ public sealed class ActionAbilityDomainProjectionProjectedEliminationRetainsTheM
         Assert.Equal(1, world.FirstPlayer);
         Assert.Equal(DeckType.RemovedArea, source!.Area.Type);
         Assert.Equal(PlayArea.Of(1), minion!.Area.PlayArea);
-        Assert.Equal(PlayArea.Of(1), tracer.Area.PlayArea);
-        Assert.Equal(minion.ObjectId, tracer.Area.Host);
+        Assert.Equal(DeckType.RemovedArea, tracer.Area.Type);
+        Assert.Equal(-1, tracer.Area.Host);
         Assert.Equal(PlayArea.Of(1), tough!.Area.PlayArea);
         Assert.True(Statuses.Has(world, minion, Statuses.Tough));
         Assert.Equal(threat - 1, scheme.Tokens["k_threat"]);

@@ -36,6 +36,8 @@ public sealed class RuntimeProductAdmission
         bool blackWidow = StandaloneProductAdmission.BlackWidow(setup, cards, authored);
         bool doctorStrange = StandaloneProductAdmission.DoctorStrange(setup, cards, authored);
         bool hulk = StandaloneProductAdmission.Hulk(setup, cards, authored);
+        bool kreeFanatic = StandaloneProductAdmission.KreeFanatic(setup, cards, authored);
+        if (!kreeFanatic) setup = setup.WithoutEncounterSet("kree_fanatic");
         bool Accepted(string pack) => pack switch
         {
             "core" => true,
@@ -48,9 +50,10 @@ public sealed class RuntimeProductAdmission
             "bkw" => blackWidow,
             "drs" => doctorStrange,
             "hlk" => hulk,
+            "ron" => kreeFanatic,
             _ => false,
         };
-        var playable = authored.Where(face => Accepted(cards.Pack(face)))
+        var playable = authored.Where(face => cards.Has(face) && Accepted(cards.Pack(face)))
             .ToImmutableHashSet(StringComparer.Ordinal);
         foreach (string pack in cards.Faces.Select(cards.Pack).Distinct(StringComparer.Ordinal)
             .Where(pack => !Accepted(pack)).Order(StringComparer.Ordinal))

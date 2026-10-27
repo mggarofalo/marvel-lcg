@@ -279,7 +279,7 @@ public static class Defeat
         }
 
         var happening = recordOn ?? world.Agenda.Occurrence!;
-        happening.Also(defeated);
+        happening.Also(defeated, deferResponse: world.Attack?.Defeats.Record(happening, defeated) == true);
         return defeated;
     }
 

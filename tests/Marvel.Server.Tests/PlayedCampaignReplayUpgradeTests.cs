@@ -15,12 +15,14 @@ public sealed class PlayedCampaignReplayUpgradeTests
     [Theory]
     [InlineData("v19")]
     [InlineData("v20")]
-    public void NestedRevealDivergenceRejectsTheWholePlayedCampaignWithoutChangingAnySourceFile(string version)
+    [Rule("rr:player-elimination.step.4")]
+    [Rule("rr:player-elimination.step.5")]
+    public void EliminationDivergenceRejectsTheWholePlayedCampaignWithoutChangingAnySourceFile(string version)
     {
         WithFixture(version, (fixture, factory) =>
         {
             string storage = Path.Combine(fixture, "campaigns");
-            var before = Snapshot(storage);
+            var before = Snapshot(fixture);
             using var access = JsonDocument.Parse(File.ReadAllText(Path.Combine(fixture, "access.json")));
             for (int restart = 0; restart < 2; restart++)
             {
@@ -32,7 +34,14 @@ public sealed class PlayedCampaignReplayUpgradeTests
                 var failure = Assert.Throws<ReplayDivergenceException>(() => route.Verify(original.Save,
                     factory.CampaignDefinition!, setup => ReplayContractUpgradeTests.Open(factory, setup),
                     factory.InspectCampaign));
-                Assert.Equal("unit 7 decision 2 events diverged: expected 18, got 14", failure.Message);
+                Assert.Equal("unit 16 decision 6 events diverged: expected 61, got 76", failure.Message);
+                if (restart == 0)
+                {
+                    AssertEliminationDivergence(original.Save.Attempts[0], factory, 16, 6, 61, 76, 15);
+                    var nested = Assert.Throws<ReplayDivergenceException>(() => route.Verify(
+                        original.Save.Attempts[1], setup => ReplayContractUpgradeTests.Open(factory, setup)));
+                    Assert.Equal("unit 7 decision 2 events diverged: expected 18, got 14", nested.Message);
+                }
                 var host = new CampaignHost(factory, store, new MemorySessionStore());
                 Assert.Equal("campaign_not_found", host.Exchange(new(EngineProtocol.Version, "owner",
                     EngineProtocol.Campaign, access.RootElement.GetProperty("id").GetString()!,
@@ -41,7 +50,7 @@ public sealed class PlayedCampaignReplayUpgradeTests
                 Assert.Equal("session_not_found", host.Exchange(EngineRequest.SyncGame("game",
                     access.RootElement.GetProperty("game").GetString()!,
                     access.RootElement.GetProperty("capability").GetString()!)).Error?.Code);
-                Assert.Equal(before, Snapshot(storage));
+                Assert.Equal(before, Snapshot(fixture));
                 Assert.Equal(CampaignSaveJson.Canonical(original),
                     CampaignSaveJson.Canonical(Assert.Single(store.Load()).Campaign));
             }
@@ -153,6 +162,44 @@ public sealed class PlayedCampaignReplayUpgradeTests
         }
         Assert.Empty(Directory.GetFiles(directory, ".upgrade-*", SearchOption.AllDirectories));
     }
+
+    internal static void AssertEliminationDivergence(SessionSave attempt, DatasetGameFactory factory,
+        int unit, int decision, int expectedCount, int actualCount, int newlyDiscarded)
+    {
+        Assert.Equal("crossbones", attempt.Setup.Scenario);
+        var game = FrozenReplayPrefixAssertions.Before(attempt, factory, unit, decision);
+        var step = attempt.Units[unit].Decisions[decision];
+        var result = game.Resolve(step.Decision.Resolve(game.Pending!));
+        var events = result.Events.Select(JournalJson.Event).ToArray();
+        Assert.Equal(expectedCount, step.Events.Count);
+        Assert.Equal(actualCount, events.Length);
+        // Step 4: "Place each card owned by the eliminated player" in their discard pile.
+        // Step 5: "Remove the eliminated player's play area and each other game element within it".
+        // The engine chooses event order; exact historical replay still rejects a different trace.
+        var discarded = events.Where(happened => IsOwnedPileMove(happened, "DiscardPile")).ToArray();
+        Assert.Equal(newlyDiscarded, discarded.Length);
+        Assert.Equal(newlyDiscarded, step.Events.Count(happened => IsOwnedPileMove(happened, "RemovedArea")));
+        Assert.DoesNotContain(step.Events, happened => IsOwnedPileMove(happened, "DiscardPile"));
+        Assert.Equal(step.Events.Where(happened => IsOwnedPileMove(happened, "RemovedArea"))
+            .SelectMany(happened => happened.GetProperty("cards").EnumerateArray())
+            .Select(card => card.GetProperty("card").GetInt32()).Order(),
+            discarded.SelectMany(happened => happened.GetProperty("cards").EnumerateArray())
+                .Select(card => card.GetProperty("card").GetInt32()).Order());
+        foreach (var happened in discarded)
+        {
+            int card = Assert.Single(happened.GetProperty("cards").EnumerateArray()).GetProperty("card").GetInt32();
+            Assert.Equal(DeckType.RemovedArea, game.State.Cards[card].Area.Type);
+        }
+        var failure = Assert.Throws<ReplayDivergenceException>(() =>
+            JournalReplay.RequireEvents(step.Events, result.Events, $"unit {unit} decision {decision} events"));
+        Assert.Equal($"unit {unit} decision {decision} events diverged: expected {expectedCount}, got {actualCount}",
+            failure.Message);
+    }
+
+    private static bool IsOwnedPileMove(JsonElement happened, string destination) =>
+        happened.GetProperty("kind").GetString() == "CardsMoved"
+        && happened.GetProperty("from").GetProperty("zone").GetString() is "PlayerDeck" or "HandsArea"
+        && happened.GetProperty("to").GetProperty("zone").GetString() == destination;
 
     private static string[] Snapshot(string directory) => Directory.GetFiles(directory, "*", SearchOption.AllDirectories)
         .Where(path => !path.EndsWith(".writer", StringComparison.Ordinal))

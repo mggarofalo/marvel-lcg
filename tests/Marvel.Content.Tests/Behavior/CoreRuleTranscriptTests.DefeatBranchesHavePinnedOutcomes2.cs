@@ -119,12 +119,15 @@ public sealed class CoreRuleTranscriptDefeatBranchesHavePinnedOutcomesTests
     [Fact]
     public void PlayerEliminationBranchesHavePinnedOutcomes()
     {
+        // Step 4 discards owned hand/deck cards before step 5 removes the area;
+        // rr:discard.4 takes deck cards top first. Pins include that RemovedArea
+        // order; the audited old/new states differ only in those card indices.
         var results = CoreTranscriptCorpus.All.Where(result => result.Scenario.StartsWith("specs/behavior/core/player-elimination.feature::", StringComparison.Ordinal)).ToDictionary(result => result.Obligation, StringComparer.Ordinal);
         Assert.Equal(5, results.Count);
-        Assert.Equal("77275b950cc268c82067c48f060a2d070688ebe852fa8cf13c6f527e426d65a5", results["behavior:rr:player-elimination:published-result"].Digest);
-        Assert.Equal("03661c7d3c891adb124d8a3e885c23d782c306d1e657b39662b48e317b80f646", results["behavior:rr:player-elimination.3:published-result"].Digest);
-        Assert.Equal("3775e34eb9c35a349628d652550cd9114a0c7998733004662c82465a0fa5e906", results["behavior:rr:player-elimination.5:published-result"].Digest);
-        Assert.Equal("c1e2215d7e40cc0f807a134a3d42ac4d3f8e8f55ec29e670e114056f90321ab8", results["behavior:rr:player-elimination.4:published-result"].Digest);
+        Assert.Equal("4f359268f8d63e4320547ab0724162e2fd871ac8c60f9f3f57d4f314873ff28e", results["behavior:rr:player-elimination:published-result"].Digest);
+        Assert.Equal("037cf2dc9c26a3967c836f886904259ab3eabed813324ef8c1157f150f3a398a", results["behavior:rr:player-elimination.3:published-result"].Digest);
+        Assert.Equal("b9ef47d2ffb1363467b155b645317065255d53520166869b2dec13129cb6d22e", results["behavior:rr:player-elimination.5:published-result"].Digest);
+        Assert.Equal("538924a612d6448bdaa3d0dd7057e0561516a2124088f27031337254a717daeb", results["behavior:rr:player-elimination.4:published-result"].Digest);
     }
 
     [Fact]

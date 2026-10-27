@@ -83956,6 +83956,28 @@
       ]
     },
     {
+      "id": "setup:encounter-set:kree_fanatic",
+      "kind": "setup",
+      "title": "Kree Fanatic",
+      "fingerprint": "sha256:ea6cc44d95f914641779286f5ecf1da40d3cbd86c9c3ef497b73446bac7f4149",
+      "scope": "encounter-set",
+      "disposition": "outside-core",
+      "obligations": [
+        {
+          "id": "behavior:setup:encounter-set:kree_fanatic:kree-fanatic-setup",
+          "summary": "The Kree Fanatic record supplies five distinct faces and seven physical encounter cards.",
+          "disposition": "outside-core",
+          "reason": "This record requires the Ronan Kree Fanatic modular set, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
       "id": "setup:encounter-set:legions_of_hydra",
       "kind": "setup",
       "title": "Legions of Hydra",

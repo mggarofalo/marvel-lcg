@@ -25,7 +25,11 @@ public sealed class WorldEliminationLayout : IEliminationLayout
 
     /// <inheritdoc />
     public IEnumerable<int> Cards => world.Areas.SelectMany(
-        area => area.Cards.Select(card => card.ObjectId));
+        area => area.Cards.Where(card => area.Type != DeckType.RemovedArea)
+            .Select(card => card.ObjectId));
+
+    /// <inheritdoc />
+    public int Owner(int card) => world.Cards[card].Owner;
 
     /// <inheritdoc />
     public EliminationPlacement Placement(int card)

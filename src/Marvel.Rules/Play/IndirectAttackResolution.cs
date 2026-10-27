@@ -144,6 +144,7 @@ internal static class IndirectAttackResolution
                 continue;
             }
 
+            world.Attack?.Defeats.Register(occurrence, target);
             var outcome = DamagePlacement.FinishPlaced(
                 world, facts, attacker,
                 new Damage.PlacedDamage(target, Dealt: 0, Taken: 1),

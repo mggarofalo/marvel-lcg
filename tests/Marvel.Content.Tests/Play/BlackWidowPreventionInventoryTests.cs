@@ -12,7 +12,7 @@ public sealed class BlackWidowPreventionInventoryTests
         using var document = JsonDocument.Parse(AuthoredCards.Text);
         var rows = document.RootElement.GetProperty("cards").EnumerateArray().ToArray();
         string[] added = ["08006", "08008", "08017", "08032"];
-        Assert.Equal(718, rows.Length);
+        Assert.Equal(723, rows.Length);
         Assert.Equal(added, rows.Skip(639).Take(4).Select(row => row.GetProperty("card").GetString()));
         Assert.All(rows.Skip(639).Take(4), row => Assert.False(row.TryGetProperty("startingCounters", out _)));
         Assert.All(added, face => Assert.Contains(face, AuthoredCards.Book.Authored));

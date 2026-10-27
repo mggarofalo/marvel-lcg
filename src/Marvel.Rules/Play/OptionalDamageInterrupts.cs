@@ -12,6 +12,8 @@ internal sealed class OptionalDamageInterrupts(IWindowAbilities inner)
     public bool ObservesPlayerTurnBeginning(World world) => inner.ObservesPlayerTurnBeginning(world);
     public bool ObservesVillainStepOneCompletion(World world) => inner.ObservesVillainStepOneCompletion(world);
 
+    /// <inheritdoc/>
+    public bool ObservesVillainPhaseBeginning(World world) => inner.ObservesVillainPhaseBeginning(world);
     public IReadOnlyList<PendingAbility> Waiting(
         World world, Occurrence occurrence, WindowKind window) =>
         [.. inner.Waiting(world, occurrence, window).Where(ability =>

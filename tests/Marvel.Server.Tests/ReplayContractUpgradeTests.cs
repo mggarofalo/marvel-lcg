@@ -30,7 +30,7 @@ public sealed class ReplayContractUpgradeTests
             string bytes = SessionSaveJson.Write(original);
             var upgrade = Assert.IsType<SessionContentUpgrade>(factory.ContentUpgrade(original.Compatibility));
             var current = upgrade.Verify(original, setup => Open(factory, setup));
-            Assert.Equal("engine-replay-v27", current.Compatibility.ReplayContract);
+            Assert.Equal("engine-replay-v28", current.Compatibility.ReplayContract);
             Assert.Equal(bytes, SessionSaveJson.Write(current with { Compatibility = original.Compatibility }));
             Assert.Equal(bytes, SessionSaveJson.Write(original));
             Assert.Null(factory.ContentUpgrade(original.Compatibility with { ReplayContract = "engine-replay-v22" }));
@@ -152,7 +152,7 @@ public sealed class ReplayContractUpgradeTests
     [InlineData("engine-replay-v19")]
     [InlineData("engine-replay-v20")]
     [InlineData("engine-replay-v21")]
-    [InlineData("engine-replay-v28")]
+    [InlineData("engine-replay-v29")]
     public void HostAdmissionRequiresThisDeliveryDestination(string destination)
     {
         AdditiveContentUpgradeTests.WithAddedScenario((root, _) =>
@@ -170,6 +170,7 @@ public sealed class ReplayContractUpgradeTests
     [InlineData("engine-replay-v25")]
     [InlineData("engine-replay-v26")]
     [InlineData("engine-replay-v27")]
+    [InlineData("engine-replay-v28")]
     public void DivergentRecordedGameplayIsRejectedWithoutProducingAnUpgrade(string destination)
     {
         AdditiveContentUpgradeTests.WithAddedScenario((root, _) =>

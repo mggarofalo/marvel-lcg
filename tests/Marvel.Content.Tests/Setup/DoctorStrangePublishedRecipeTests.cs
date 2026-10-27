@@ -27,7 +27,7 @@ public sealed class DoctorStrangePublishedRecipeTests
         Assert.Equal(40, admitted.Playable.Count(face => cards.Pack(face) == "drs"));
         Assert.Equal(13, admitted.Setup.HeroNames.Count);
         Assert.Equal(39, admitted.Setup.CampaignNames.Count);
-        Assert.Equal(14, admitted.Setup.EncounterSetNames.Count);
+        Assert.Equal(15, admitted.Setup.EncounterSetNames.Count);
         Assert.Equal(40, PlayerDeckAdmission.Admit(new([.. hero.HeroDeck, .. hero.PlayerDeck]),
             hero.HeroDeck, 0, cards, hero.Hero[0]).Count);
     }

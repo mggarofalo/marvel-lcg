@@ -19,4 +19,6 @@ public enum PhaseTransitionKind
     BeginPlayerTurn,
     /// <summary>Complete villain step one after its threat assignment and nested windows.</summary>
     EndVillainStepOne,
+    /// <summary>Begin the villain phase before its first threat placement.</summary>
+    BeginVillainPhase,
 }

@@ -696,7 +696,14 @@ Campaign schema 1 and protocol 37 are strict compatibility boundaries. No
 migration invents missing campaign meaning. Complete content admission is
 required before the host advertises a campaign or starts its first attempt.
 
-The current replay identity is `engine-replay-v27`. Dynamic lasting amounts follow
+The current replay identity is `engine-replay-v28`. Ordinary enemy attacks complete
+before their defeat responses are offered. Real Black Widow Rapid Response (08031)
+can therefore change prompt and event timing with identical datasets. V27 sources
+have no named admission to v28 and remain unchanged. Exact frozen v19/v20/v21
+routes verify every original fact before changing metadata; historical destination
+routes remain explicit. Protocol 42, schema 7, RNG and digest formats are unchanged.
+
+Replay v27 dynamic lasting amounts follow
 current game state, and captured actors cannot follow a reentered incarnation.
 This identity also covers occurrence-local attack-damage eligibility, optional
 overkill prevention and interrupted damage costs. These changes belong to one

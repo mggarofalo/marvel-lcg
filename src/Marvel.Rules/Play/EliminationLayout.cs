@@ -6,7 +6,7 @@ namespace Marvel.Rules.Play;
 /// <summary>A deterministic elimination layout, without executing any departure.</summary>
 /// <param name="NextPlayer">The next surviving clockwise player, or none.</param>
 /// <param name="Relocations">Minions and hosted cards retained by step 2.</param>
-/// <param name="Leaving">Cards left in the eliminated play area after step 2.</param>
+/// <param name="Leaving">Cards departing in steps 3�5, including owned cards in other play areas.</param>
 public sealed record EliminationLayout(
     int? NextPlayer,
     ImmutableArray<EliminationRelocation> Relocations,
@@ -34,17 +34,25 @@ public sealed record EliminationLayout(
         var retained = new HashSet<int>();
         var relocations = BuildRelocations(cards, children, player, next, retained);
 
+        // Step 4: "Place each card owned by the eliminated player" in their
+        // discard pile. Step 2 moves hosted cards first; ownership cleanup still
+        // applies afterwards, including to cards moved with those minions.
         // An area whose host belongs to another play area is not part of this
         // player's departure. Overlay readers supply projected locations here,
         // including cards moved by an earlier elimination in the same ability.
+        var ownedDeparture = cards.Where(card => read.Owner(card.Id) == player)
+            .Select(card => card.Id).ToHashSet();
+        foreach (int owned in ownedDeparture.ToArray())
+            ownedDeparture.UnionWith(Hosted(children, owned, out _));
         var leaving = cards.Where(card =>
-                card.At.PlayArea == PlayArea.Of(player)
+                (ownedDeparture.Contains(card.Id)
+                || card.At.PlayArea == PlayArea.Of(player)
                 && !retained.Contains(card.Id)
                 && (card.At.Host < 0
                     || placements.TryGetValue(card.At.Host, out var host)
-                        && host.PlayArea == PlayArea.Of(player)))
+                        && host.PlayArea == PlayArea.Of(player))))
             .Select(card => card.Id).ToImmutableArray();
-        ValidateLeaving(read, leaving);
+        ValidateLeaving(read, leaving, player);
         return new EliminationLayout(next, relocations.ToImmutable(), leaving);
     }
 
@@ -90,10 +98,10 @@ public sealed record EliminationLayout(
         return hosted.ToImmutable();
     }
 
-    private static void ValidateLeaving(IEliminationLayout read, ImmutableArray<int> leaving)
+    private static void ValidateLeaving(IEliminationLayout read, ImmutableArray<int> leaving, int player)
     {
         foreach (int card in leaving)
-            if (read.RequiresAttachTo(card))
+            if (read.Owner(card) != player && read.RequiresAttachTo(card))
                 throw new RulesNotImplementedException(
                     $"card {card} is a permanent attachment on an eliminated "
                     + "player's board, and rr:player-elimination.1 resolves its "

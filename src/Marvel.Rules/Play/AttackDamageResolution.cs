@@ -124,6 +124,8 @@ internal sealed class AttackDamageResolution
         if (request.Target.Incarnation != incarnation || !DeckTypes.IsInPlay(request.Target.Area.Type))
             return true;
         RecordDamage(placed!);
+        if (placed!.Landed && attacker.IsEnemy && (request.EnemyAttack is not null || spillOnly))
+            world.Attack?.Defeats.Register(Execution.Occurrence, request.Target);
         DamageAttacks.ResolveLandedDamage(world, request.ActivationId, request.Target, placed!, events);
         outcome = DamagePlacement.FinishPlaced(world, facts, request.Source, placed!, request.Trigger,
             request.Verb, events, LabeledAbilities.IdentityPlayer(world, request.Attacker), Execution.Occurrence);

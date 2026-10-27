@@ -22481,6 +22481,346 @@
           }
         }
       ]
+    },
+    {
+      "card": "90001",
+      "name": "Ronan the Accuser",
+      "note": "Printed Toughness uses the ordinary entry lifecycle. The cannot-be-stunned constant uses the engine modifier cannot_be_stunned. At the game-subject villain-phase beginning, the first player selects among every lowest-remaining-HP hero, including the current engagement; ordered eachPlayer scopes engagement to that selected live hero. Boost enters engaged with the player resolving the activation. These DSL spellings and player-order traversal are engine choices.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "grant": {
+              "card": "this",
+              "keyword": "cannot_be_stunned",
+              "amount": 1
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenVillainPhaseBegins",
+            "timing": "ForcedInterrupt",
+            "subject": "game"
+          },
+          "effect": {
+            "chooseCard": {
+              "chooser": "firstPlayer",
+              "from": {
+                "minBy": {
+                  "of": {
+                    "query": "heroes"
+                  },
+                  "by": "remainingHealth"
+                }
+              },
+              "effect": {
+                "eachPlayer": {
+                  "order": "playerOrder",
+                  "effect": {
+                    "if": {
+                      "test": {
+                        "and": [
+                          {
+                            "isYourIdentity": "chosen"
+                          },
+                          {
+                            "isInPlay": "chosen"
+                          },
+                          {
+                            "inForm": {
+                              "player": "you",
+                              "form": "hero"
+                            }
+                          }
+                        ]
+                      },
+                      "then": {
+                        "putIntoPlay": {
+                          "card": "this",
+                          "where": "engagedWithYou"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "Boost",
+            "subject": "this"
+          },
+          "effect": {
+            "putIntoPlay": {
+              "card": "this",
+              "where": "engagedWithYou"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "90003",
+      "name": "The Accused",
+      "note": "Printed authority: joined cards.json 90003. Ordinary entry uses the resolving identity; boost explicitly attaches to the activation recipient through attachCards. The enemy attack bonus expires at that exact attack end. Ronan defeat discards this attachment. DSL spellings are engine choices.",
+      "attachTo": "you",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenAttackInitiated",
+            "timing": "ForcedInterrupt",
+            "subject": "game",
+            "target": "attachedTo",
+            "actor": "enemy"
+          },
+          "effect": {
+            "grantUntil": {
+              "card": "trigger.actor",
+              "keyword": "attack",
+              "amount": 1,
+              "until": "EndOfAttack"
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenCardDefeated",
+            "timing": "ForcedResponse",
+            "subject": "game"
+          },
+          "effect": {
+            "discard": "this"
+          },
+          "when": {
+            "isTitle": {
+              "card": "defeated",
+              "title": "Ronan the Accuser"
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "Boost",
+            "subject": "this"
+          },
+          "effect": {
+            "attachCards": {
+              "cards": "this",
+              "host": "you"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "90005",
+      "name": "You Dare Oppose Me?",
+      "note": "Printed authority: joined cards.json 90005. Each-time alteration deals each exact Kree Fanatic discard before continuing the five-card instruction. Overkill belongs only to the attack activation. DSL spellings are engine choices.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "eachTime": {
+              "effect": {
+                "discardTop": {
+                  "from": "encounterDeck",
+                  "count": 5
+                }
+              },
+              "when": {
+                "cardSet": {
+                  "card": "that",
+                  "set": "kree_fanatic"
+                }
+              },
+              "then": {
+                "dealEncounterCard": {
+                  "card": "that",
+                  "player": "you"
+                }
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "Boost",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "activationIs": "attack"
+              },
+              "then": {
+                "grantUntil": {
+                  "card": "activatingEnemy",
+                  "keyword": "overkill",
+                  "until": "EndOfAttack",
+                  "amount": 1
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "90002",
+      "name": "Judge, Jury, Executioner",
+      "note": "Printed authority: joined cards.json 90002. Exact attack-damage recipients and defeat receipts retain friendly controller facts across departure and identity elimination. Boost uses ordinary side-scheme entry. DSL spellings are engine choices.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenDamageDealt",
+            "timing": "ForcedResponse",
+            "subject": "game",
+            "actor": "enemy",
+            "alsoHappened": "WhenCardDefeated",
+            "player": "trigger.player",
+            "target": "friendly"
+          },
+          "effect": {
+            "placeThreat": {
+              "scheme": {
+                "query": "mainScheme"
+              },
+              "amount": 2
+            }
+          },
+          "when": {
+            "damageFromAttack": "trigger"
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "Boost",
+            "subject": "this"
+          },
+          "effect": {
+            "putIntoPlay": {
+              "card": "this",
+              "where": "printedDestination"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "90004",
+      "name": "Bring the Hammer Down",
+      "note": "Printed authority: joined cards.json 90004. Each-player frames locate the engaged Ronan and use that player's form; absent Ronan gains surge for the revealing player. The delayed boost tests the exact activation-owned defeat receipt, excluding boost ability damage (rr:boost-boost-icon.3), and deals once when any character was defeated. DSL spellings and frame composition are engine choices.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "titleInPlay": "Ronan the Accuser"
+              },
+              "then": {
+                "eachPlayer": {
+                  "order": "playerOrder",
+                  "effect": {
+                    "if": {
+                      "test": {
+                        "exists": {
+                          "cardsIn": {
+                            "area": "yourPlayArea",
+                            "title": "Ronan the Accuser"
+                          }
+                        }
+                      },
+                      "then": {
+                        "if": {
+                          "test": {
+                            "inForm": {
+                              "player": "you",
+                              "form": "hero"
+                            }
+                          },
+                          "then": {
+                            "enemyAttacks": {
+                              "enemies": {
+                                "cardsIn": {
+                                  "area": "yourPlayArea",
+                                  "title": "Ronan the Accuser"
+                                }
+                              },
+                              "against": "you"
+                            }
+                          },
+                          "else": {
+                            "enemySchemes": {
+                              "enemies": {
+                                "cardsIn": {
+                                  "area": "yourPlayArea",
+                                  "title": "Ronan the Accuser"
+                                }
+                              },
+                              "against": "you"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "else": {
+                "gainSurge": 1
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "Boost",
+            "subject": "this"
+          },
+          "effect": {
+            "afterActivation": {
+              "effect": {
+                "if": {
+                  "test": {
+                    "atLeast": {
+                      "value": {
+                        "result": "activationDefeatedCharacters"
+                      },
+                      "count": 1
+                    }
+                  },
+                  "then": {
+                    "dealEncounterCards": {
+                      "player": "firstPlayer",
+                      "count": 1
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
     }
   ]
 }
