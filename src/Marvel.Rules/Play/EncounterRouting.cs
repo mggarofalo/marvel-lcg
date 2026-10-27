@@ -17,6 +17,26 @@ public static class EncounterRouting
         world.EncounterTopology is { } topology
             ? topology.Active.CurrentVillain : world.TheCardIn(DeckType.VillainArea);
 
+    /// <summary>The villain that can activate against this player in their game area.</summary>
+    public static Card? VillainForPlayer(World world, int player)
+    {
+        // pack:mc03:new-rules selects one active villain in the shared area.
+        if (world.EncounterTopology is not null) return Villain(world);
+
+        // pack:mc11:game-areas: "Players cannot attack or defend enemies in
+        // other game areas" and cards cannot affect another game area.
+        var identity = world.Seats[player].IdentityCard;
+        var candidates = world.Cards.Where(card => card.Area.Type == DeckType.VillainArea
+            && Places.CanAffect(world, identity, card)).ToList();
+        return candidates.Count switch
+        {
+            0 => null,
+            1 => candidates[0],
+            _ => throw new RulesNotImplementedException(
+                "multiple villains can activate in this player's game area"),
+        };
+    }
+
     /// <summary>The current encounter draw pile; ordinary games retain their existing area lookup.</summary>
     public static Area Deck(World world) =>
         world.EncounterTopology?.Active.Deck ?? world.AreaOf(DeckType.EncounterDeck);

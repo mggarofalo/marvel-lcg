@@ -37,13 +37,8 @@ internal static class ActivationProcedure
             return null;
         }
 
-        var villain = EncounterRouting.Villain(world);
-        if (villain is null)
-        {
-            return null;
-        }
-
         int seat = playerOrder[step.Index];
+        var villain = EncounterRouting.VillainForPlayer(world, seat);
         var activated = step.Require<ActivationPlanOperation>().ActivatedEnemies ?? [];
 
         // An eliminated seat remains in this procedure's stable order so its
@@ -65,7 +60,7 @@ internal static class ActivationProcedure
         }
 
         var remaining = MinionActivationChoice.Remaining(world, seat, step);
-        bool villainActivated = HasActivatedVillain(world, villain, activated);
+        bool villainActivated = villain is null || HasActivatedVillain(world, villain, activated);
         if (NeedsOrder(step, villainActivated, remaining))
             return MinionActivationChoice.Describe(world, villain, seat, remaining);
 
@@ -125,9 +120,9 @@ internal static class ActivationProcedure
         && remaining.Count > 1;
 
     private static int? NextEnemy(
-        PhaseStep step, Card villain, bool villainActivated, List<Card> remaining)
+        PhaseStep step, Card? villain, bool villainActivated, List<Card> remaining)
     {
-        if (!villainActivated) return villain.ObjectId;
+        if (!villainActivated) return villain!.ObjectId;
         return step.Require<ActivationPlanOperation>().Chosen?.Where(id => remaining.Any(card => card.ObjectId == id))
             .Select(id => (int?)id).FirstOrDefault()
             ?? remaining.Select(card => (int?)card.ObjectId).FirstOrDefault();

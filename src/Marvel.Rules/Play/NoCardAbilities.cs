@@ -60,7 +60,7 @@ public class NoCardAbilities : ICardAbilities
     /// <inheritdoc/>
     public virtual bool CanThwartScheme(World world, Card scheme, int ignoredSource = -1) => CanRemoveThreat(world, scheme, ignoredSource);
     /// <inheritdoc/>
-    public virtual Card? SchemeDestination(World world, Card enemy) => world.TheCardIn(DeckType.MainSchemesArea);
+    public virtual Card? SchemeDestination(World world, Card enemy) => EnemySchemeDestination.Resolve(world, enemy);
 
     /// <inheritdoc/>
     public virtual bool CanUseHandResources(World world, Card source) => true;
