@@ -1,11 +1,12 @@
 # Kang local routing independent review
 
-Reviewed source: `5dcc1efaf57ed78f3a4c6d36b00f109d7764d764` on Windows,
-2026-10-27. **Reject pending the absent-scheme response repair below.** This
+Reviewed source: `5dcc1efaf57ed78f3a4c6d36b00f109d7764d764`, followed by repair
+`30dc5ac3a077baf47973fbb3dc36f02e62149836`, on Windows, 2026-10-27.
+**Accept the routing prerequisite with the repair.** This
 review concerns the routing prerequisite only, not Kang setup, admission,
 stage-I defeat, split orchestration or reunion.
 
-## Blocking finding: absent local scheme loses the scheming enemy
+## Resolved finding: absent local scheme loses the scheming enemy
 
 The source explicitly supports a local minion continuing to scheme after its
 local main scheme is absent, without placing threat on central stage 2B. In
@@ -90,7 +91,7 @@ the absent assignment/target/placement conditions, and the actual response
 defeating Weapons Runner. A local villain with no scheme supplies the negative
 control: its completed scheme does not offer Quake's minion-only response.
 This remains prepared nonpublic topology; no Kang split orchestration or public
-admission is established. Independent reviewer closure remains outstanding.
+admission is established. Independent reviewer closure is recorded below.
 
 Windows verification on 2026-10-27, against the repaired sources:
 
@@ -113,3 +114,33 @@ Logs under `C:/Users/mggar/Source/` use the `kang-scheme-response-` prefix:
 `restored-content.log`, `restored-rules.log`, and `hooks.log`.
 These are focused Windows checks; no full managed, native or Linux
 certification is claimed for this repair.
+
+## Independent repair closure
+
+The reviewer cherry-picked only repair `30dc5ac3` onto review `c06f4162`,
+producing local review revision `a4300371`. Inspection confirms that the
+null-destination occurrence preserves the exact enemy subject, actor snapshot
+and activating seat. Its target remains absent and it carries no threat
+assignment or placement conditions. `Threat.Apply` therefore places zero threat;
+the existing procedure subsequently adds the scheme-end condition and completes
+the activation normally. Quake's response retains its minion-only restriction.
+
+Independent reruns against that revision passed:
+
+- 62 Content tests, including the complete repaired independent review class,
+  original local-routing class and affected Core, Wrecking Crew and Red Skull
+  controls. Log: `C:/Users/mggar/Source/kang-review-repair-content.log`.
+- 29 Rules tests across VillainPhase, NextMinionActivation, ActivationCompletion,
+  WreckingAttackRouting, EncounterTopology and citation checks. Log:
+  `C:/Users/mggar/Source/kang-review-repair-rules.log`.
+
+The reviewer inspected the repair's compiling empty-occurrence mutant evidence
+(exactly the two absent-scheme cases fail; nine controls pass), exact restoration
+and forced-build evidence. Repeating that same mutation adds no distinguishing
+case. The earlier independent physical-owner mutant remains applicable.
+The closure documentation commit uses normal hooks, recorded in
+`C:/Users/mggar/Source/kang-review-repair-hooks.log`.
+
+The blocking finding is closed. This accepts local enemy activation and ordinary
+main-scheme routing with the repair; the stage-I defeat/split/reunion work and
+complete Kang admission remain outstanding as described in the handoff.
