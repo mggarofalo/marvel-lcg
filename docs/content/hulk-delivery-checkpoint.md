@@ -138,8 +138,41 @@ Logs: `C:/Users/mggar/Source/evidence/hulk-public-integrated-unit.log` and
 `hulk-authority-{check,rules-restored}.log`. This is explicitly assembled
 evidence across the named revisions, not final same-head certification.
 
-MARVEL-851 remains: independent complete-game/fresh-host continuation proof,
-rendered native interaction proof, final combined managed/platform CI and merge.
+MARVEL-851 now has independent complete-game/fresh-host continuation proof and
+rendered native interaction proof. Final combined managed/platform CI and merge remain.
 The current public candidate is not yet a merged accepted pack. No marketing
 packaging reconciliation or blanket human content gate is added. A genuinely
 new UI requires inspected media and a focused Plane item.
+
+## Integrated public and native evidence
+
+Fresh-host review `b161c2fa` independently verifies Unstoppable Force before and
+after payment/action and Thunderclap before payment and recipient choice. Stored
+strict JSON loads into a fresh factory/host; invalid or stale input is atomic,
+subsequent decisions match exactly and costs are not charged twice.
+
+Acceptance at `5e28dcab` passed 189/189. The earlier broad integration run passed
+36 Release, 129 Architecture and 981 Godot tests (seven opt-in native entry cases
+skipped). It reported five Server failures: four stale admission expectations
+were corrected in `1f977d48`; an unchanged variable-payment socket test passed
+focused after cancellation under broad load. Focused seven Server and four
+Doctor Strange negative-control cases pass. That original broad run is not
+claimed green; final CI must certify the integrated head.
+
+Native source `9e49ff89` and independent review `e612e273` verify visible support
+threat, named exhaust/discard costs, move results and damage results. Semantic
+source `e50a87fe` supplies engine-owned known effect descriptions. Independent
+review `d076836c` adds native meaning assertions and four rendered journeys at
+100%/150%, but rejects loss of known damage on legal empty-deck recycling.
+Repair `49ca46db` captures public source provenance across costs and continuation;
+its compiled mutation fails four distinguishing cases, with exact restoration,
+21 Godot, 13 Content and 84 Session cases passing. The review closure separately
+verifies both visibility policies and actual completed three-damage resolution.
+See [repair evidence](hulk-public-provenance-repair.md) and
+[independent semantic review](hulk-damage-meaning-review.md).
+
+Main synchronization `a1369d37` includes every upstream change since the shared
+Strange ancestor: platform timeout budget and three documentation files. The
+four-path audit is in `C:/Users/mggar/Source/evidence/hulk-main-sync-paths.txt`.
+The complete Hulk candidate still requires final CI and merge; authored row count
+and exact book hash above remain unchanged.
