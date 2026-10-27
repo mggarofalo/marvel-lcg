@@ -176,3 +176,8 @@ Strange ancestor: platform timeout budget and three documentation files. The
 four-path audit is in `C:/Users/mggar/Source/evidence/hulk-main-sync-paths.txt`.
 The complete Hulk candidate still requires final CI and merge; authored row count
 and exact book hash above remain unchanged.
+
+Final semantic closure `56e9684d` is accepted and integrated as `bcffcaac`.
+On that integrated runtime, 21 focused Godot semantic cases and 13 Content cases
+pass (`hulk-final-semantic-{godot,content}.log`). Final certification is delegated
+to the existing required CI lanes rather than repeating earlier broad local runs.

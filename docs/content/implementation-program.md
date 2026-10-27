@@ -180,7 +180,7 @@ Hulk has all 33 faces (718 ability rows), verified starter and public admission,
 eight complete public games and independent fresh-host continuation proof.
 Rendered Beat Cop move/damage journeys pass at 100% and 150%. Final independent
 review found lost known damage after immediate empty-deck recycling; source
-`49ca46db` preserves public provenance and awaits independent closure. Final
+`49ca46db` preserves public provenance; independent review `56e9684d` accepts it. Final
 same-head CI certification and merge remain. See the Hulk delivery checkpoint.
 
 Ronan's official source is pinned in

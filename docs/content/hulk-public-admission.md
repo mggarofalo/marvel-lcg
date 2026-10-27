@@ -3,10 +3,9 @@
 This local candidate admits the complete Hulk Hero Pack after all 33 printed
 faces were authored and independently reviewed. The final two-face review is
 `d06a1c6f4063474cb9c21f2c71a349bc228ac8f1` (local cherry-pick `eff96883`).
-Doctor Strange runtime `a1870412` passed all eleven CI jobs; local Hulk setup
-verification may proceed while the required documentation synchronization rerun
-finishes. Hulk merge remains dependent on Doctor Strange merge. This packet
-does not claim whole-pack acceptance or complete-game/native evidence.
+Doctor Strange PR #454 is merged and its dependency is satisfied. This record
+contains the bounded admission evidence; the delivery checkpoint records later
+complete-game/native proof and final certification status.
 
 ## Authority and policy
 
