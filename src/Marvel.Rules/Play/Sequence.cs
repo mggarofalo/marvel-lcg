@@ -79,15 +79,7 @@ public static class Sequence
         World world, ICardFacts facts, IWindowAbilities abilities,
         List<GameEvent> events, WindowAbilityScope scope, PhaseStep step)
     {
-        if (step.What == Steps.PlaceThreat && world.Agenda.Occurrence is null)
-        {
-            events.Add(new PhaseStarted("Villain") { Round = step.Round, Trigger = "WhenVillainPhaseBegins", Verb = "Phase_Started" });
-            // Observe at the actual step boundary, after end-player-phase windows.
-            // Unobserved scenarios allocate no additional replay frame.
-            if (abilities.ObservesVillainStepOneCompletion(world))
-                world.Agenda.Then(new PhaseStep(new PhaseTransitionOperation(PhaseTransitionKind.EndVillainStepOne),
-                    step.Round, step.Number, Index: step.Index + 1));
-        }
+        if (VillainPhaseBeginning.Observe(world, abilities, step, events)) return null;
         if (TryWorkNonApplying(world, facts, abilities, events, scope, step, out Prompt? question))
         {
             if (question is null) return null;

@@ -35,6 +35,8 @@ public class NoCardAbilities : ICardAbilities
     public virtual bool ObservesVillainStepOneCompletion(World world) => false;
 
     /// <inheritdoc/>
+    public virtual bool ObservesVillainPhaseBeginning(World world) => false;
+    /// <inheritdoc/>
     public virtual bool ObservesHeroDefense(World world) => false;
 
     /// <inheritdoc/>

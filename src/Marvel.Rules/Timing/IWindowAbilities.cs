@@ -11,6 +11,8 @@ public interface IWindowAbilities : IAbilityDescriptions
     bool ObservesPlayerTurnBeginning(World world);
     /// <summary>Whether an in-play authored ability observes completion of villain step one.</summary>
     bool ObservesVillainStepOneCompletion(World world);
+    /// <summary>Whether an in-play authored ability observes the villain phase beginning.</summary>
+    bool ObservesVillainPhaseBeginning(World world);
 
     /// <summary>Whether an authored in-play or hand ability observes hero defenses.</summary>
     bool ObservesHeroDefense(World world);
