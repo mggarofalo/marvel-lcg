@@ -11,12 +11,12 @@ public sealed class DoctorStrangeLastSupportInventoryTests
     {
         using var document = JsonDocument.Parse(AuthoredCards.Text);
         var rows = document.RootElement.GetProperty("cards").EnumerateArray().ToArray();
-        Assert.Equal(682, rows.Length);
+        Assert.Equal(684, rows.Length);
         string[] faces = ["09015", "09027", "09029"];
-        Assert.Equal(faces, rows.Skip(679).Select(row => row.GetProperty("card").GetString()));
-        Assert.All(rows.Skip(679), row => Assert.False(row.TryGetProperty("startingCounters", out _)));
-        Assert.Equal(37, AuthoredCards.Book.Authored.Count(face => face.StartsWith("09", StringComparison.Ordinal)));
-        string[] unauthored = ["09028", "09030", "09031"];
+        Assert.Equal(faces, rows.Skip(679).Take(3).Select(row => row.GetProperty("card").GetString()));
+        Assert.All(rows.Skip(679).Take(3), row => Assert.False(row.TryGetProperty("startingCounters", out _)));
+        Assert.Equal(39, AuthoredCards.Book.Authored.Count(face => face.StartsWith("09", StringComparison.Ordinal)));
+        string[] unauthored = ["09030"];
         Assert.All(unauthored, face => Assert.DoesNotContain(face, AuthoredCards.Book.Authored));
     }
 }

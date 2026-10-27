@@ -9,13 +9,13 @@ that accepted baseline. The reviewed 38-commit Strange stack now ends at
 `22d67804` (pre-rebase head `4d95d05c`). Earlier hashes below name the revisions
 actually tested and remain evidence references. No source packets were dropped.
 
-Latest integration candidate: 682 authored rows, 37 of the 40 Strange faces.
+Latest integration candidate: 684 authored rows, 39 of the 40 Strange faces.
 Clea, Night Nurse and ally Iron Man source `a2714257` and independent content
 review `be3bc369` are combined with owner-discard source `43c0b046`, elimination
 reset repair `a6bb7ddd` and independent closure `7cdb2e23`. All 672 predecessor
 ability objects are retained unchanged. Public admission stays closed.
 
-The remaining three faces are 09028, 09030 and 09031. Actual Desperate Defense,
+The remaining face is 09030 (Counterspell). Actual Desperate Defense,
 Physical Toll and Open the Dark Dimension source `99d4b16e` and independent
 review `23dd5ada` are integrated, preserving all 679 predecessor raw objects.
 Canonical fixtures now exercise these production rows, including queued defense,
@@ -28,14 +28,24 @@ The complete integrated View lane passes 405 cases. Logs are
 `strange-37-faces-integrated-content.log` and `strange-37-faces-full-view.log`
 under `Source/evidence/`.
 
-Baron Mordo and Thoughtcasting have passing test-local candidates. Thoughtcasting
-uses the exact selected card's printed cost, so no generic direct-discard receipt
-extension is needed. Their actual rows are being authored separately. Counterspell's
-printed independent cancellation/discard followed by dependent attachment discard
-reaches unsupported completed-result semantics; MARVEL-835 tracks its separate
-engine implementation and review. The candidate's four failing probes remain
-intact, outside the production book.
+Baron Mordo and Thoughtcasting actual rows `70d66010` and independent review
+`d5171e3a` are integrated, preserving all 682 predecessor raw objects. Review
+passes 276 affected Content checks and adds seven adversarial cases. A mutant
+that rereads the remaining hand instead of the discarded chosen card survives
+the original tests but fails the new Thoughtcasting controls.
 
+Counterspell result/status prerequisite `e49fdf23` and independent review
+`3eca2646` resolve the candidate's four failures. Review passes 341 Content
+checks, including exact occurrence ownership, selected-ability status priority,
+and both simultaneous-effect orders. Its actual row remains to be authored.
+Combined testing exposed a fixture conflict: attaching Counterspell replaced
+explicit synthetic programs. The helper now initializes its candidate once at
+board creation and preserves the caller's selected program when attaching.
+The restored combined selection passes all 293 Content cases, including actual
+ability-data, Counterspell and Strange tests. Log:
+`Source/evidence/strange-39-integrated-content-restored.log`.
+Public setup and final pack certification remain open. MARVEL-836 tracks typed
+Invocation setup; MARVEL-834 tracks native continuation meaning and layout.
 The three signature events have reviewed prerequisites: reveal origin
 `530f156e`, simultaneous powers and Magic Blast stage repair `00f23ff2`, and
 Astral pre-arrow target/payment/inspection continuation `1abb96a2`. Their combined

@@ -118,6 +118,7 @@ internal static class AbilityResolutionAdmission
         AbilityEffect node, AbilityAdmissionScope cast) => node.OperationName() switch
         {
             "inspectDiscardOrderEncounterTop" => EncounterRouting.Deck(cast.World).Cards.Count > 0,
+            "cancelOccurrence" => AbilityOccurrenceCancellation.CanResolve(cast.World, cast.Occurrence),
             "cancelBoostAbility" => cast.Occurrence.BoostAbility is { } boost && boost.CanCancel(cast.World),
             "cancelBoostIcons" => cast.Occurrence.BoostIcons is { Remaining: > 0 } icons && icons.IsCurrent(cast.World),
             "inspectEncounterTop" => AbilityEncounterInspection.Cards(cast.World,
@@ -139,7 +140,6 @@ internal static class AbilityResolutionAdmission
             // performs any further rule-specific work.
             "chooseStatusRecipients" => AbilityStatusRecipients.Candidates((AbilityEffect.ChooseStatusRecipients)node, cast.Context).Count > 0,
             "generate" or "soakDamage" or "preventDamage" or "cancelWhenRevealed"
-                or "cancelOccurrence"
                 or "dealEncounterCards" or "dealEncounterCard"
                 or "revealFromVillainDeck" or "revealTop" or "reveal" or "placeAtRandom"
                 or "returnToHand" or "discardUntil" or "recoverDiscardedByResource" or "recruitDiscarded"
@@ -206,6 +206,8 @@ internal static class AbilityResolutionAdmission
     private static AdmissionResolution LeafResolutionOf(
         AbilityEffect node, AbilityAdmissionScope cast) => node.OperationName() switch
         {
+            "cancelOccurrence" => AbilityOccurrenceCancellation.CanResolve(cast.World, cast.Occurrence)
+                ? AdmissionResolution.Full : AdmissionResolution.None,
             "cancelBoostAbility" => cast.Occurrence.BoostAbility is { } boost && boost.CanCancel(cast.World)
                 ? AdmissionResolution.Full : AdmissionResolution.None,
             "cancelBoostIcons" => cast.Occurrence.BoostIcons is { Remaining: > 0 } icons && icons.IsCurrent(cast.World)

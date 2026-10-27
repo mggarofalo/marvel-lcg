@@ -1,0 +1,63 @@
+{
+  "card": "09031",
+  "name": "Thoughtcasting",
+  "note": "Test-local printed candidate. The resolving player chooses tied highest printed costs from their hand; the same physical discard receipt determines the form-specific penalty.",
+  "abilities": [
+    {
+      "trigger": {
+        "event": "WhenCardRevealed",
+        "timing": "WhenRevealed",
+        "subject": "this"
+      },
+      "effect": {
+        "seq": [
+          {
+            "chooseCard": {
+              "from": {
+                "maxBy": {
+                  "of": {
+                    "cardsIn": {
+                      "area": "yourHand"
+                    }
+                  },
+                  "by": "cost"
+                }
+              },
+              "effect": {
+                "discard": "chosen"
+              }
+            }
+          },
+          {
+            "if": {
+              "test": {
+                "inForm": {
+                  "player": "you",
+                  "form": "hero"
+                }
+              },
+              "then": {
+                "dealDamage": {
+                  "cards": "you",
+                  "amount": {
+                    "printedCostDiscarded": "game"
+                  }
+                }
+              },
+              "else": {
+                "placeThreat": {
+                  "scheme": {
+                    "query": "mainScheme"
+                  },
+                  "amount": {
+                    "printedCostDiscarded": "game"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

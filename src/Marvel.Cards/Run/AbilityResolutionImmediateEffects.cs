@@ -26,7 +26,8 @@ internal static class AbilityResolutionImmediateEffects
             cast.Results["cancelledBoostIcons"] = result.CancelledBoostIcons;
             cast.CompletedOutcome = result.CancelledBoostIcons > 0 ? AbilityStructuralOutcome.Full : AbilityStructuralOutcome.None;
         }
-        if (effect is AbilityEffect.Fixed { Instruction: AbilityFixedInstruction.CancelBoostAbility })
+        if (effect is AbilityEffect.Fixed { Instruction: AbilityFixedInstruction.CancelBoostAbility
+            or AbilityFixedInstruction.CancelOccurrence })
             cast.CompletedOutcome = result.ResolveEffect ? AbilityStructuralOutcome.Full : AbilityStructuralOutcome.None;
         if (result.ResolveEffect) cast.ResolveEffect();
     }

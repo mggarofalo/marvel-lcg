@@ -67,9 +67,8 @@ internal static class AbilityImmediateExecution
                 CancelWhenRevealed(context);
                 return new(true, true);
             case AbilityFixedInstruction.CancelOccurrence:
-                if (world.Agenda.IsOutstanding(context.Admission.Query.Occurrence))
-                    world.Agenda.Cancel(context.Admission.Query.Occurrence);
-                return new(true, true);
+                return new(true, AbilityOccurrenceCancellation.Cancel(
+                    world, context.Admission.Query.Occurrence));
             case AbilityFixedInstruction.PlaceAccelerationToken:
                 EncounterDeck.PlaceAccelerationToken(world, context.Trigger, context.Events);
                 return new(true, false);

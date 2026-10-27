@@ -30,17 +30,19 @@ internal sealed class AbilityInitiationPayment(
             effectPrevented = !EffectCanInitiate(execution, cast);
             if (effectPrevented) return true;
         }
-        if (eventPayment is not null && !initiationOpened)
-        {
-            initiationOpened = true;
-            initiation = AbilityEventInitiation.Open(execution, cast);
-            if (initiation is not null)
-            {
-                cast.Suspend();
-                return false;
-            }
-        }
-        return true;
+        return OpenEventInitiation(execution, cast);
+    }
+
+    private bool OpenEventInitiation(AbilityResolutionExecution execution, AbilityResolutionState cast)
+    {
+        if (eventPayment is null || initiationOpened) return true;
+        initiationOpened = true;
+        effectPrevented = AbilityEventStatusPriority.Cancel(execution, cast);
+        if (effectPrevented) return true;
+        initiation = AbilityEventInitiation.Open(execution, cast);
+        if (initiation is null) return true;
+        cast.Suspend();
+        return false;
     }
 
     private void ApplyEventReceipt(AbilityResolutionState cast)

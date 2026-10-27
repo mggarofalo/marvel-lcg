@@ -21213,6 +21213,153 @@
       ],
       "name": "Open the Dark Dimension",
       "note": "Printed facedown storage preserves the exact physical Invocation. When Defeated returns it before departure (rr:when-defeated-abilities.2.1); ordinary departure instead discards it."
+    },
+    {
+      "card": "09028",
+      "name": "Baron Mordo",
+      "note": "WhenAttackInitiated follows rr:attack-enemy-activation.5. Only this exact top-card discard supplies printed resources; wild applies all three independent effects.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenAttackInitiated",
+            "timing": "ForcedInterrupt",
+            "actor": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "discardTop": {
+                  "from": "yourDeck",
+                  "count": 1
+                }
+              },
+              {
+                "if": {
+                  "test": {
+                    "or": [
+                      {
+                        "discardedWithResource": "R"
+                      },
+                      {
+                        "discardedWithResource": "G"
+                      }
+                    ]
+                  },
+                  "then": {
+                    "giveStatus": {
+                      "card": "you",
+                      "status": "stunned"
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "test": {
+                    "or": [
+                      {
+                        "discardedWithResource": "Y"
+                      },
+                      {
+                        "discardedWithResource": "G"
+                      }
+                    ]
+                  },
+                  "then": {
+                    "dealDamage": {
+                      "cards": "you",
+                      "amount": 2
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "test": {
+                    "or": [
+                      {
+                        "discardedWithResource": "B"
+                      },
+                      {
+                        "discardedWithResource": "G"
+                      }
+                    ]
+                  },
+                  "then": {
+                    "giveStatus": {
+                      "card": "you",
+                      "status": "confused"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "09031",
+      "name": "Thoughtcasting",
+      "note": "The resolving player chooses a highest-cost card from their own hand. The chosen physical card remains bound after discard, supplying its printed cost in either form (rr:printed).",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "maxBy": {
+                  "of": {
+                    "cardsIn": {
+                      "area": "yourHand"
+                    }
+                  },
+                  "by": "cost"
+                }
+              },
+              "effect": {
+                "seq": [
+                  {
+                    "discard": "chosen"
+                  },
+                  {
+                    "if": {
+                      "test": {
+                        "inForm": {
+                          "player": "you",
+                          "form": "hero"
+                        }
+                      },
+                      "then": {
+                        "dealDamage": {
+                          "cards": "you",
+                          "amount": {
+                            "sumPrintedCost": "chosen"
+                          }
+                        }
+                      },
+                      "else": {
+                        "placeThreat": {
+                          "scheme": {
+                            "query": "mainScheme"
+                          },
+                          "amount": {
+                            "sumPrintedCost": "chosen"
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ]
     }
   ]
 }
