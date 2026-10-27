@@ -127,21 +127,30 @@ public sealed class IronManHandSizeMaximumTests : CoreCardTestBase
     }
 
     [Theory]
-    [InlineData(false, "hand_size", 10, 3)]
-    [InlineData(true, "hand_size", 10, 3)]
-    [InlineData(false, "hand_size", 2, 0)]
-    [InlineData(true, "hand_size", 2, 0)]
-    [InlineData(false, "health", 2, -6)]
-    [InlineData(true, "health", 2, -6)]
-    public void SyntheticProjectionClampsAfterAllModifiers(bool repeatedTrace, string field, long projectedAmount, long expected)
+    [InlineData(false, "hand_size", 10, 3, true)]
+    [InlineData(true, "hand_size", 10, 3, true)]
+    [InlineData(false, "hand_size", 2, 0, true)]
+    [InlineData(true, "hand_size", 2, 0, true)]
+    [InlineData(false, "health", 2, -6, true)]
+    [InlineData(true, "health", 2, -6, true)]
+    [InlineData(false, "hand_size", 20, 13, false)]
+    [InlineData(true, "hand_size", 20, 13, false)]
+    [InlineData(false, "hand_size", 2, 0, false)]
+    [InlineData(true, "hand_size", 2, 0, false)]
+    [InlineData(false, "attack", 10, 3, false)]
+    [InlineData(true, "attack", 10, 3, false)]
+    [InlineData(false, "attack", 2, 0, false)]
+    [InlineData(true, "attack", 2, 0, false)]
+    public void SyntheticProjectionClampsAfterAllModifiers(bool repeatedTrace, string field, long projectedAmount, long expected, bool maximum)
     {
         // Synthetic contract: no current end-to-end projected hand-size consumer exists.
         var world = Hero("01029a");
         var hero = world.Seats[0].IdentityCard;
         world.Effects.Register(new ContinuousEffect(EffectSource.LastingEffect, field, -8,
             Affects: hero.ObjectId));
-        world.Effects.Register(new ContinuousEffect(EffectSource.LastingEffect, "hand_size_maximum", 7,
-            Affects: hero.ObjectId));
+        if (maximum)
+            world.Effects.Register(new ContinuousEffect(EffectSource.LastingEffect, "hand_size_maximum", 7,
+                Affects: hero.ObjectId));
         var query = new AbilityQueryContext(world, hero, new Occurrence(1, []), 0,
             hero.Incarnation, null, null, null, []);
         var expression = new AbilityExpressionContext(query, ImmutableDictionary<string, long>.Empty,
@@ -156,6 +165,26 @@ public sealed class IronManHandSizeMaximumTests : CoreCardTestBase
             ? AbilityRepeatedCharacteristicTrace.TraceModified(hero, field, scope, [], modifiers)
             : projected.ModifiedOf(context, hero, field);
         Assert.Equal(expected, result);
+    }
+
+    [Theory]
+    [InlineData(-8, long.MinValue, long.MinValue)]
+    [InlineData(8, long.MaxValue, long.MaxValue)]
+    public void SyntheticAreaProjectionSaturatesSignedAdjustments(long live, long projectedAmount, long expected)
+    {
+        var world = Hero("01029a");
+        var hero = world.Seats[0].IdentityCard;
+        world.Effects.Register(new ContinuousEffect(EffectSource.LastingEffect, "health", live,
+            Affects: hero.ObjectId));
+        var query = new AbilityQueryContext(world, hero, new Occurrence(1, []), 0,
+            hero.Incarnation, null, null, null, []);
+        var expression = new AbilityExpressionContext(query, ImmutableDictionary<string, long>.Empty,
+            [], "", 0, false, null);
+        var context = new AbilityAdmissionContext(AbilityLowering.Book(AbilityCatalog.Parse("{\"cards\":[]}")),
+            world.ResourceAbilities, expression, new(), null);
+        var projection = new AreaProjectionState(context);
+        projection.Modifiers[(hero.ObjectId, "health")] = projectedAmount;
+        Assert.Equal(expected, projection.ModifiedOf(context, hero, "health"));
     }
 
     private static AbilityRunner Runner()

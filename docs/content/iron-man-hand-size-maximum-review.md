@@ -59,3 +59,13 @@ regressions passed 135 Content projection/Iron Man/Split Personality cases,
 Logs are under `C:/Users/mggar/Source/evidence/iron-bounds-*.log`. The generic
 projection cases are synthetic; no current played-card hand-size projection
 consumer is established by this evidence.
+
+## Independent closure
+
+The repair at `7958610784f4a0af3fe31c96e16a00215eb29cb7` passes this scoped
+review. Additional synthetic controls cover uncapped hand size and attack in
+both projection helpers, including negative final values and recovery from a
+negative live total. Area projection also covers saturation at both signed
+integer limits. All 23 Iron Man cases passed in the review run; see
+`C:/Users/mggar/Source/evidence/iron-bounds-review-focused.log`. These checks
+do not establish a played-card projected hand-size consumer.
