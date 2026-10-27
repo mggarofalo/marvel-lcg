@@ -1,11 +1,13 @@
 # Beat Cop damage meaning independent review
 
-Reviewed source `e50a87fe2def07ca87a85b73fc491287dba1cc8b` on
-`test/hulk-damage-meaning-review`, based on native source `9e49ff89`.
+Final narrow verdict: accepted with the provenance repair
+`49ca46dbdc6be0eea276622f0716d86972065f18`, independently checked as cherry-pick
+`fa4b78eb` on `test/hulk-damage-meaning-review`. The initial reviewed source was
+`e50a87fe2def07ca87a85b73fc491287dba1cc8b`, based on native source `9e49ff89`.
 This is a narrow engine-meaning and native rendering review, not whole-pack
 acceptance or a new interaction design approval.
 
-## Blocking finding on the reviewed source
+## Initial blocking finding, closed by the repair
 
 The known damage amount disappears if Beat Cop's discard cost resets an empty
 player deck. `rr:player-deck.4` explicitly permits an empty player deck alongside
@@ -30,10 +32,45 @@ preserved outside the suite pending repair:
 - `C:/Users/mggar/AppData/Local/Temp/hulk-meaning-review-regression.patch`
 - `C:/Users/mggar/AppData/Local/Temp/hulk-meaning-review-managed.log`
 
-Required repair: preserve the known quantity from the exact public resolving
+The required repair preserves the known quantity from the exact public resolving
 source without inspecting concealed current state. Keep source-incarnation,
 provenance, hidden-quantity and wrong-cost protections. Recheck the same compiled
 regression and normal controls.
+
+## Independent repair closure
+
+Reviewed the public provenance fact from creation in AbilityResolutionBindings,
+through AbilityResolutionEffectChoices capture into AbilityMemory,
+AbilityContinuationRestoration and AbilityResolutionRestoration, to the restored
+query context. The retained amount requires that captured public provenance,
+the same source incarnation, exhausted retained state, and the exact authored
+root choice with exhaust-source/discard-source costs. Live in-play reads still
+require a faceup source. A current hidden zone does not authorize inspecting
+hidden current quantities, and does not erase a previously public quantity.
+
+Independent Release runs passed all seven BeatCopSourceMeaningTests cases and
+all thirteen cases across HulkBeatCopMeaningTests, HulkFinalCardReviewTests and
+HulkBeatCopCardTests. These include the originally failing empty-deck variants
+under both viewer policies, the normal nonempty controls, synthetic hidden-origin
+and concealed/dynamic-quantity negatives, and reentry incarnation rejection.
+The reviewer strengthened the four actual-book draft cases to commit their
+selected target, finish the real continuation and assert three actual damage
+with the source still in the expected deck/discard zone.
+
+Commands were `dotnet test tests/Marvel.Godot.Tests/Marvel.Godot.Tests.csproj
+-c Release --filter FullyQualifiedName~BeatCopSourceMeaningTests` and the
+Content.Tests project with the three named classes joined by `|` in the filter.
+Logs:
+
+- `C:/Users/mggar/AppData/Local/Temp/hulk-meaning-review-repair-godot.log`
+- `C:/Users/mggar/AppData/Local/Temp/hulk-meaning-review-repair-content.log`
+
+The native results below remain evidence for e50a87f's normal, nonempty-deck
+rendering paths. They were not rerun on the internal provenance repair: it adds
+no UI code, copy or wire fields, and the affected positive and negative meaning
+paths were rechecked independently above. No unresolved finding remains in this
+narrow review. Full-pack acceptance and broader platform verification remain
+outside its scope.
 
 ## Native evidence on the reviewed source
 

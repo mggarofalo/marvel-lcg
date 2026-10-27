@@ -91,6 +91,11 @@ public sealed class BeatCopSourceMeaningTests
         Assert.Contains("Later effects may change it", continuation);
         Assert.Contains("Current damage: 3", WorldProjection.For(world, prompt, [],
             new RestrictedVisibilityPolicy(0).Authorize(null, 1)).Prompt!.Description);
+        var events = new List<Marvel.Rules.Events.GameEvent>();
+        Sequence.Answer(world, catalog, runner, prompt, Decision.Take(enemy.ObjectId), events);
+        Assert.Null(Sequence.Work(world, catalog, runner, events));
+        Assert.Equal(3, enemy.Damage);
+        Assert.Equal(emptyDeck ? DeckType.PlayerDeck : DeckType.DiscardPile, cop.Area.Type);
     }
 
     private static string Summary(World world, Prompt prompt, int id, bool restricted)
