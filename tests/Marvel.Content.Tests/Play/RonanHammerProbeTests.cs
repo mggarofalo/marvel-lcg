@@ -33,6 +33,8 @@ public sealed class RonanHammerProbeTests
         Assert.Equal(5, completed.DamageDealt);
         Assert.Equal(1, world.Seats[0].IdentityCard.Tokens.GetValueOrDefault("c_probeCompleted"));
         Assert.Equal(5, world.Seats[0].IdentityCard.Tokens.GetValueOrDefault("c_probeDamage"));
+        Assert.Equal(1,
+            world.Seats[0].IdentityCard.Tokens.GetValueOrDefault("c_probeChosenExists"));
         Assert.Empty(world.AreaOf(DeckType.DealtEncounterCardsDeck, PlayArea.Of(0)).Cards);
         Assert.False(world.IsOver);
         Assert.Null(world.Activation);
@@ -101,6 +103,8 @@ public sealed class RonanHammerProbeTests
                 "afterActivation":{"effect":{"seq":[
                   {"placeCounters":{"card":"you","counter":"probeCompleted","count":1}},
                   {"placeCounters":{"card":"you","counter":"probeDamage","count":{"result":"activationDamage"}}},
+                  {"if":{"test":{"exists":"chosen"},"then":{
+                    "placeCounters":{"card":"you","counter":"probeChosenExists","count":1}}}},
                   CONDITION
                 ]}}}}}
             }]}]}

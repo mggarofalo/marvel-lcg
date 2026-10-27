@@ -54,9 +54,7 @@ receipt; `RecordImmediateActivationResult` publishes damage/threat/made, while
 restores its boost-registration occurrence, rather than the later damage/defeat
 occurrence. A retained activation-qualified defeat fact, exposed to the delayed
 condition, is the concrete prerequisite suggested by this execution evidence.
-The probe does not establish that every conceivable alternative composition is
-impossible, nor separately establish how departed-selector resolution contributes
-to the candidate predicate's false result.
+An independent `exists(chosen)` condition executes in that same delayed body and records one in both cases, including after the ally physically departs to its discard pile. The chosen selector therefore still resolves; its absence does not cause the false defeat predicate. The probe does not establish that every conceivable alternative composition is impossible.
 
 The actual reveal instruction (Ronan present/absent, engaged player in either
 form), boost-ability defeats, nested activation attribution, prevented defeat,
@@ -82,3 +80,5 @@ CS0103), reading marker counters with the wrong prefix (`c_` is required), and
 using `hit_points` instead of the engine's `health` modifier. Those were corrected
 before the passing run. The final run rebuilt the test source. No engine mutant,
 whole-pack test, integration lane or public admission journey is claimed.
+
+A follow-up selector control initially assumed the departed ally would no longer resolve: expected zero, observed one. The final test requires `exists(chosen)` to record one in both lethal and surviving cases while retaining the physical-departure and false `wasDefeated(chosen)` assertions. This isolates the unavailable defeat fact from lost selection.
