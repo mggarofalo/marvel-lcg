@@ -96,7 +96,7 @@ internal sealed class AuthorizedSessionProjector(
                 unit.ResourceGenerators,
                 outcome);
             ActionHistoryPresentation presented = ActionHistoryPresenter.PresentEntry(
-                facts, unit.Events, world);
+                facts, unit.Events, WorldProjection.For(game.State, null, unit.Events, scope, game.Active).World);
             entries.Add(new HistoryEntryDescriptor(
                 unit.Cursor, presented.Summary, presented.Details));
         }

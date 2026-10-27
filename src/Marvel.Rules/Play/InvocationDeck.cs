@@ -163,6 +163,7 @@ public sealed class InvocationDeck
             Trigger = trigger,
             Verb = "Reveal",
             SubjectFaces = OccurrenceFaces.For(top),
+            PublicFaces = OccurrenceFaces.For(top),
         });
     }
 

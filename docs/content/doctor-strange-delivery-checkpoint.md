@@ -388,3 +388,16 @@ Combined integration at `1edebb22` passes all 181 selected D1, search, status,
 Invocation, Master, Spell Mastery, ability-data and citation cases. Log:
 `Source/evidence/strange-integrated-d1-search-vapors.log`. These are focused
 integration checks, not complete-pack certification.
+
+## Public restart and visibility integration
+
+Fresh-host proof `546a5517`, transient disclosure/history source `eb6f428d` and
+independent review `bec69d6b` are integrated. Review found one captured-title /
+later-form rules-text mismatch; the lead correction passes the preserved failing
+case and all 426 View tests. Combined Server history/restart/compatibility checks
+pass 89. Historical Expert campaign diagnostic source `fc140a28` and review
+`55478c40` preserve the exact archive and establish earlier status cancellation
+as the first divergence; no save, replay or wire version changes are made.
+The View correction awaits independent closure. Additional public Vapors/recycle
+proof `4a59592d` is in review; hosted Invocation public return and refreshed
+native/media proof remain open.

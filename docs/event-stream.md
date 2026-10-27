@@ -186,8 +186,15 @@ records the previous and next printed face ids.
 form and turning a card faceup are different rules operations even when both
 change what is readable.
 
-The server filters these events through the viewer scope. An event never grants
-access to a face the resulting descriptor hides.
+The server filters these events through the viewer scope. `CardsFlipped.PublicFaces`
+is engine-only occurrence authority for an explicitly public faceup reveal, such
+as the Invocation top. It is ignored by JSON and reconstructed by verified replay.
+View retains only that flip's named cards and captured faces, then removes the
+authority metadata before export. The existing `subject_faces` and `event_faces`
+contracts carry the authorized historical identity even when the final snapshot
+conceals the card again. This grants no current location, subsequent movement,
+private inspection, or hidden pile order. An ungranted flip still requires final
+addressability. A facedown flip cannot use a public-face grant.
 
 ## Attachments and control
 
@@ -237,8 +244,9 @@ event kind or payload field is a protocol compatibility decision because an
 older client cannot safely interpret the changed contract.
 
 The server filters the prompt, events and world descriptor as one result. A
-concealed creation, move, reorder, flip or field change cannot reintroduce a
-hidden object id removed from the descriptor.
+concealed creation, move, reorder or field change cannot reintroduce a hidden
+object id removed from the descriptor. An explicitly authorized public reveal
+may retain its occurrence identity without making that object addressable now.
 
 ## Verification
 

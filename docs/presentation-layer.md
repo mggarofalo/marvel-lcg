@@ -245,6 +245,9 @@ track a card through a shuffle.
 
 Prompts and events pass through the same visibility scope as the snapshot. A
 hidden event cannot restore a face or object id removed from the descriptor.
+An engine-captured public reveal retains its historical face and occurrence id
+even when the final descriptor conceals that card again; this event-local grant
+does not authorize its current location, later movement or concealed ordering.
 
 The table's passive pending situation names the primary answering seat and a
 typed public decision purpose. Its causal references are limited to already

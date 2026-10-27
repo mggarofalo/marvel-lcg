@@ -67,6 +67,8 @@ public sealed class PresentationSourcePolicyTests
             "Marvel.Rules.Events.CardsCreated.Cards",
             "Marvel.Rules.Events.CardsFlipped.Cards",
             "Marvel.Rules.Events.CardsFlipped.FaceUp",
+            // Event-local engine disclosure authority; no live concealed-state access.
+            "Marvel.Rules.Events.CardsFlipped.PublicFaces",
             "Marvel.Rules.Events.CardsMoved.Cards",
             "Marvel.Rules.Events.CardsMoved.From",
             "Marvel.Rules.Events.CardsMoved.To",

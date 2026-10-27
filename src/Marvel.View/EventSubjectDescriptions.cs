@@ -31,6 +31,11 @@ internal static class EventSubjectDescriptions
             return subject;
         }
 
+        if (OccurrenceTitle(id, world, happened) is { } occurrence)
+        {
+            return occurrence;
+        }
+
         CardDescriptor? card = world.Areas
             .SelectMany(area => area.Cards.Concat(area.Removed))
             .FirstOrDefault(candidate => candidate.Id == id);
@@ -47,6 +52,14 @@ internal static class EventSubjectDescriptions
         // An authorized event may outlive the object's presence in the resulting
         // snapshot. Its response-scoped object id is safe; a printed face is not.
         return $"card {id.ToString(CultureInfo.InvariantCulture)}";
+    }
+
+    private static string? OccurrenceTitle(int id, WorldDescriptor world, GameEvent? happened)
+    {
+        if (happened is null || happened.SubjectFaces is null) return null;
+        return happened.SubjectFaces.TryGetValue(id, out string? faceId)
+            && world.EventFaces.TryGetValue(faceId, out BoardCardPresentation? face)
+            ? face.Title : null;
     }
 
     internal static string Area(AreaRef area, WorldDescriptor world)

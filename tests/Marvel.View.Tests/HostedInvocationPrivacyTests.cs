@@ -80,11 +80,20 @@ public sealed class HostedInvocationPrivacyTests
             }
             Assert.DoesNotContain(visible.Events.OfType<AreaReordered>(), changed => changed.Area == Places.Reference(deck.Deck));
             Assert.DoesNotContain(visible.Events.OfType<CardsMoved>().SelectMany(moved => moved.Cards), landing => hidden.Contains(landing.Card));
-            Assert.DoesNotContain(visible.Events.OfType<CardsFlipped>().SelectMany(flipped => flipped.Cards), hidden.Contains);
+            var observed = events.OfType<CardsFlipped>().Where(flip => flip.FaceUp)
+                .SelectMany(flip => flip.PublicFaces ?? new Dictionary<int, string>()).ToDictionary(face => face.Key, face => face.Value);
+            Assert.All(visible.Events.OfType<CardsFlipped>(), flip =>
+            {
+                foreach (int card in flip.Cards.Where(hidden.Contains))
+                {
+                    Assert.True(flip.FaceUp);
+                    Assert.Equal(observed[card], flip.SubjectFaces![card]);
+                }
+            });
             Assert.DoesNotContain(visible.Events.OfType<CardAttached>(), attached => hidden.Contains(attached.Card));
             Assert.DoesNotContain(visible.Events.OfType<CardDetached>(), detached => hidden.Contains(detached.Card));
             Assert.DoesNotContain(visible.Events.Where(happened => happened.SubjectFaces is not null)
-                .SelectMany(happened => happened.SubjectFaces!.Keys), hidden.Contains);
+                .SelectMany(happened => happened.SubjectFaces!.Keys), card => hidden.Contains(card) && !observed.ContainsKey(card));
         }
     }
 }

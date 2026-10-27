@@ -23,7 +23,7 @@ internal static class EventFlipPresentation
         string[] text = world.Areas
             .SelectMany(area => area.Cards.Concat(area.Removed))
             .Where(card => card.Id is { } id && flipped.Cards.Contains(id))
-            .Select(card => card.Face?.RulesText)
+            .Select(card => RevealedRules(card, flipped, world))
             .Where(rules => !string.IsNullOrWhiteSpace(rules))
             .Cast<string>()
             .ToArray();
@@ -31,6 +31,17 @@ internal static class EventFlipPresentation
             ? $"Turned {cards} face up."
             : $"Revealed {cards}: {string.Join(" ", text)}";
     }
+
+    private static string? RevealedRules(CardDescriptor card, CardsFlipped flipped, WorldDescriptor world)
+    {
+        // Expanded rules accompany a currently readable card; the authorized
+        // occurrence face supplies its text when the card has since changed form.
+        if (card.Face is null) return null;
+        return card.Id is { } id && flipped.SubjectFaces?.TryGetValue(id, out string? faceId) == true
+            && world.EventFaces.TryGetValue(faceId, out BoardCardPresentation? captured)
+                ? captured.RulesText : card.Face.RulesText;
+    }
+
     internal static string CueSummary(CardsFlipped flipped, WorldDescriptor world)
     {
         string purpose = !flipped.FaceUp ? "Face down"
