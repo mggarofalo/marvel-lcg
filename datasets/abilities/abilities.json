@@ -21360,6 +21360,38 @@
           }
         }
       ]
+    },
+    {
+      "card": "09030",
+      "name": "Counterspell",
+      "note": "Hero-only attachment, with a form-independent Forced Interrupt for the attached identity. Independent cancellation and event discard precede dependent self-discard (rr:and.1-.2, rr:then.1-.2). rr:event.2 retains paid costs; rr:status-cards.2 gives stun priority.",
+      "attachTo": "yourHero",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenEventPlayInitiated",
+            "timing": "ForcedInterrupt",
+            "subject": "you"
+          },
+          "effect": {
+            "then": {
+              "effect": {
+                "and": [
+                  {
+                    "cancelOccurrence": "trigger"
+                  },
+                  {
+                    "discard": "trigger.subject"
+                  }
+                ]
+              },
+              "then": {
+                "discard": "this"
+              }
+            }
+          }
+        }
+      ]
     }
   ]
 }

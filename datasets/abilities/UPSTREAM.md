@@ -357,3 +357,13 @@ admission changes. Canonical fixture, secrecy, actual-row mutation and restored
 verification evidence is recorded in docs/content/doctor-strange-final-support-rows.md.
 
 Baron Mordo (09028) and Thoughtcasting (09031) append two actual research rows: 684 rows and 39/40 Doctor Strange faces. All 682 predecessor raw objects remain byte-identical. Generated datasets/cards/cards.json supplies printed authority; RR 1.8 attack initiation, printed values, resolving-player choice and deck reset govern. The exact discard receipt supplies Mordo resource branches; Thoughtcasting retains the chosen physical card across discard and reads its printed cost. No starting counters, engine, setup or public admission changes. Counterspell (09030) remains a test-local candidate pending MARVEL-835. Actual-row evidence is recorded in docs/content/doctor-strange-mordo-thoughtcasting.md.
+
+Counterspell (09030) appends the final actual Doctor Strange research face:
+685 rows and all 40 printed faces. All 684 predecessor raw objects remain
+byte-identical. Generated datasets/cards/cards.json supplies printed authority;
+current RR 1.8 event, AND, Then and status priority rules govern. The hero-only
+attachment has a form-independent Forced Interrupt for its attached player.
+Cancellation and event discard are independent; attachment discard depends on
+both completing. No starting counters, engine, setup or public admission changes.
+Canonical and explicitly synthetic fixture evidence is recorded in
+[the Counterspell actual-row packet](../../docs/content/doctor-strange-counterspell-row.md).

@@ -166,14 +166,14 @@ public sealed class DoctorStrangeIronFistCardTests
     {
         using var book = JsonDocument.Parse(AuthoredCards.Text);
         var rows = book.RootElement.GetProperty("cards").EnumerateArray().ToArray();
-        Assert.Equal(684, rows.Length);
+        Assert.Equal(685, rows.Length);
         Assert.Equal("09014", rows[678].GetProperty("card").GetString());
-        Assert.Equal(39, AuthoredCards.Book.Authored.Count(face => face.StartsWith("09", StringComparison.Ordinal)));
+        Assert.Equal(40, AuthoredCards.Book.Authored.Count(face => face.StartsWith("09", StringComparison.Ordinal)));
         var pool = rows[678].GetProperty("startingCounters");
         Assert.Equal("mystic", pool.GetProperty("type").GetString());
         Assert.Equal(2, pool.GetProperty("count").GetInt32());
         Assert.False(pool.GetProperty("uses").GetBoolean());
-        Assert.DoesNotContain("09030", AuthoredCards.Book.Authored);
+        Assert.DoesNotContain("10002", AuthoredCards.Book.Authored);
     }
 
     private static void Finish(World world, List<GameEvent> events)

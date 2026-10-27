@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Marvel.Content.Tests.Play;
 
-public sealed class DoctorStrangeCounterspellCandidateTests
+public sealed class DoctorStrangeCounterspellCardTests
 {
     [Theory]
     [InlineData(false)]

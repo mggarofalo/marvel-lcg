@@ -2,8 +2,9 @@
 
 Current migration: actual 09028 and 09031 programs, canonical tests and evidence
 are recorded in [the actual-row packet](doctor-strange-mordo-thoughtcasting.md).
-The record below describes the candidate baseline; only Counterspell remains
-test-local in `doctor-strange-final-nemesis.json`.
+Counterspell is also canonical; its actual-row evidence is recorded in
+[the final Counterspell packet](doctor-strange-counterspell-row.md). The record
+below preserves the candidate baseline and its original prerequisite findings.
 
 Base: `99d4b16e`, branch `feat/strange-final-nemesis`. These are test-local
 compositions, loaded by `DoctorStrangeAbilityFixture.WithReplacements`. The

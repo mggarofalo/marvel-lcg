@@ -1,4 +1,3 @@
-using System.Text.Json.Nodes;
 using Marvel.Cards.Run;
 using Marvel.Content.Tests.Cards;
 using Marvel.Rules.Play;
@@ -7,13 +6,10 @@ using Marvel.Tests;
 
 namespace Marvel.Content.Tests.Play;
 
-/// <summary>Canonical Mordo and Thoughtcasting with only Counterspell replaced by its explicit candidate.</summary>
+/// <summary>Canonical Doctor Strange nemesis programs on nonpublic research boards.</summary>
 internal static class DoctorStrangeNemesisFixture
 {
-    internal static JsonArray Rows() => JsonNode.Parse(File.ReadAllText(RepositoryPaths.Repository(
-        "tests", "Marvel.Content.Tests", "Play", "Fixtures", "doctor-strange-final-nemesis.json")))!.AsArray();
-
-    internal static AbilityRunner Runner() => DoctorStrangeAbilityFixture.WithReplacements(Rows());
+    internal static AbilityRunner Runner() => AuthoredCards.Runner();
 
     internal static World Board()
     {

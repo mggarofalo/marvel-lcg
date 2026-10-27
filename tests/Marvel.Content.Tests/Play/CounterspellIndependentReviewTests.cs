@@ -100,7 +100,7 @@ public sealed class CounterspellIndependentReviewTests
         // "Each status card ... that cancels any of the labeled ability's types is removed".
         // Synthetic same-cost bodies distinguish selected labels from another ability's labels.
         var world = DoctorStrangeNemesisFixture.Board();
-        var rows = DoctorStrangeNemesisFixture.Rows();
+        var rows = new JsonArray();
         var row = JsonNode.Parse("""
             {"card":"09016","abilities":[{
               "trigger":{"event":"WhenActionTriggered","timing":"Action","subject":"this","form":"hero"},

@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 using Marvel.Cards.Run;
+using Marvel.Content.Tests.Cards;
 using Marvel.Rules.Events;
 using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
@@ -20,10 +21,12 @@ public sealed class CounterspellDependentResultTests
     {
         // "If the pre-”then” text of an effect does not fully resolve, the
         // post-”then” text does not attempt to resolve."
-        // Synthetic sequencing isolates completion; the printed candidate keeps AND.
+        // Synthetic sequencing isolates completion; the canonical printed program keeps AND.
         var world = DoctorStrangeNemesisFixture.Board();
-        var rows = DoctorStrangeNemesisFixture.Rows();
-        var row = rows.Single(node => node!["card"]!.GetValue<string>() == "09030")!;
+        var rows = new JsonArray();
+        var row = JsonNode.Parse(AuthoredCards.Text)!["cards"]!.AsArray()
+            .Single(node => node!["card"]!.GetValue<string>() == "09030")!.DeepClone();
+        rows.Add(row);
         string effects = repeat
             ? "[{\"cancelOccurrence\":\"trigger\"},{\"cancelOccurrence\":\"trigger\"}]"
             : "[{\"cancelOccurrence\":\"trigger\"}]";
@@ -122,7 +125,7 @@ public sealed class CounterspellDependentResultTests
     {
         // Synthetic branch control: a nonselected attack supplies no status label.
         var world = DoctorStrangeNemesisFixture.Board();
-        var rows = DoctorStrangeNemesisFixture.Rows();
+        var rows = new JsonArray();
         rows.Add(JsonNode.Parse("""
             {"card":"09016","abilities":[{
               "trigger":{"event":"WhenActionTriggered","timing":"Action","subject":"this","form":"hero"},

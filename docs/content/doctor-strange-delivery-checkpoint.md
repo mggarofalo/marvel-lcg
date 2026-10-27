@@ -9,13 +9,13 @@ that accepted baseline. The reviewed 38-commit Strange stack now ends at
 `22d67804` (pre-rebase head `4d95d05c`). Earlier hashes below name the revisions
 actually tested and remain evidence references. No source packets were dropped.
 
-Latest integration candidate: 684 authored rows, 39 of the 40 Strange faces.
+Latest integration candidate: 685 authored rows, all 40 Strange faces.
 Clea, Night Nurse and ally Iron Man source `a2714257` and independent content
 review `be3bc369` are combined with owner-discard source `43c0b046`, elimination
 reset repair `a6bb7ddd` and independent closure `7cdb2e23`. All 672 predecessor
 ability objects are retained unchanged. Public admission stays closed.
 
-The remaining face is 09030 (Counterspell). Actual Desperate Defense,
+Counterspell source `4f02211c` supplies the final actual row; independent review is pending. Actual Desperate Defense,
 Physical Toll and Open the Dark Dimension source `99d4b16e` and independent
 review `23dd5ada` are integrated, preserving all 679 predecessor raw objects.
 Canonical fixtures now exercise these production rows, including queued defense,
@@ -37,15 +37,19 @@ the original tests but fails the new Thoughtcasting controls.
 Counterspell result/status prerequisite `e49fdf23` and independent review
 `3eca2646` resolve the candidate's four failures. Review passes 341 Content
 checks, including exact occurrence ownership, selected-ability status priority,
-and both simultaneous-effect orders. Its actual row remains to be authored.
+and both simultaneous-effect orders. Its actual row is now integrated from `4f02211c`, with canonical fixtures and preserved explicit synthetic controls.
 Combined testing exposed a fixture conflict: attaching Counterspell replaced
 explicit synthetic programs. The helper now initializes its candidate once at
 board creation and preserves the caller's selected program when attaching.
 The restored combined selection passes all 293 Content cases, including actual
 ability-data, Counterspell and Strange tests. Log:
 `Source/evidence/strange-39-integrated-content-restored.log`.
-Public setup and final pack certification remain open. MARVEL-836 tracks typed
-Invocation setup; MARVEL-834 tracks native continuation meaning and layout.
+The complete authored book plus typed setup integration passes all 321 selected
+Content cases (`Source/evidence/strange-40-setup-integrated-content.log`).
+Source preserves all 684 predecessor raw objects byte-identically. Counterspell
+independent review and setup repair closure remain pending. Public setup and
+final pack certification remain open; MARVEL-834 tracks native continuation
+meaning and layout.
 
 The three signature events have reviewed prerequisites: reveal origin
 `530f156e`, simultaneous powers and Magic Blast stage repair `00f23ff2`, and
