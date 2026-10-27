@@ -4,22 +4,20 @@ Canonical parent: MARVEL-565. The [40-face handoff](research/remaining/doctor-st
 defines complete scope. This candidate admits the complete pack and verified starter
 through public setup. It is not yet merged or accepted as a complete delivery.
 
-Current integrated revision: `ed03a479`, based on accepted Black Widow merge
+Integration baseline: `becc7263`, plus the final reviewed closures below, based on Black Widow merge
 `ffb26f66`. All 40 playable faces, the verified starter, public admission,
 eight complete public games and reviewed fresh-host Invocation checkpoints are
 integrated. The combined Release build passes without warnings and all six unit projects
 pass: 7,477 Content, 1,187 Rules, 426 View, 84 Session, 51 Core and 50 Decisions
-cases. Integration and acceptance lanes are being checked next.
+cases. The repaired full acceptance lane passes 178 tests; focused combined
+closure checks pass 47 Server, 27 Godot and six acceptance/citation tests. Final
+cross-platform CI remains required.
 
-Remaining delivery work:
+Remaining delivery work: final combined cross-platform CI, PR and merge.
 
-- Reviewed closure of the historical scheme-defeat replay fixture; keep its archive unchanged.
-- Other piles keyboard reach and focus restoration (MARVEL-842), then refresh
-  the inspected result/history media in existing UI item MARVEL-839.
-- Final combined managed/platform CI, PR and merge.
-
-No human content approval is required. MARVEL-839 is a separate UI comprehension
-review and remains evidence-refresh-pending. Earlier revision hashes below name
+No human content approval is required. MARVEL-839 is ready for separate focused
+UI comprehension review, with seven refreshed inspected Plane attachments and
+three specific questions. The keyboard gap is independently closed. Earlier revision hashes below name
 the evidence actually collected; historical packet notes do not supersede this
 current remaining-work list.
 
@@ -454,3 +452,26 @@ The combined acceptance sweep has 176 passes and one historical scheme-defeat
 replay failure at the corrected paid-stun cancellation boundary. Its separately
 assigned repair must preserve both the old archive and current legal full-game
 positive coverage. These failing broad runs are evidence, not a green candidate.
+## Final reviewed closures
+
+Historical scheme-defeat source `cec4af78` and review `ac583ecc` preserve the
+original archive and prove both the first divergence and a complete legal current
+route. It omits only the obsolete target answer after stun cancellation; all
+remaining events, fingerprints and the original terminal digest match. Full
+acceptance passes 178/178 in `Source/strange-scheme-full-acceptance.log`. That
+worker run overlapped its architecture hook dependency build; the root's
+serialized six-case acceptance/citation rerun also passes on the combined tree.
+CI owns the final isolated complete-lane result.
+
+Keyboard source `bd94c0ee` and independent closure `d432c486` make Other piles
+ordinarily focusable. A fresh rendered round trip reaches it after 25 Tab presses,
+opens the Invocation inspector by keyboard, then restores opener focus on Escape.
+The draft, pile and revision are unchanged, with exactly one initial mulligan
+resolve and zero warnings/errors. The source mutation removing the focus fix
+fails. No engine or protocol behavior changes in this repair.
+
+After integrating all reviewed closures, the root's serialized focused selection
+passes 47 Server, 27 Godot and six acceptance/citation cases. Offline card-data,
+behavior-index and executable Core corpus checks pass. Logs are under
+`Source/evidence/strange-final-*`. Earlier broad failures remain recorded above;
+no final green CI or merge is claimed until the PR completes those gates.

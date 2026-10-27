@@ -27,7 +27,10 @@ strength 2 against Spider-Man's defense 3; the attack completes with zero damage
 instead of offering the recorded Backflip. Strict production journal comparison
 rejects the changed seven-event result. The research policy is not an admitted
 simulation-replay policy, so these tests compare its recorded decisions directly.
-Seed 13 still replays its complete original history exactly.
+The seed-13 history is incompatible at decision 16: the paid Haymaker attempt
+removes Spider-Man's stun before an effect-target prompt. Its unchanged archive,
+exact historical prefix and complete current legal route are documented in
+[the seed-13 replay evidence](../../../docs/content/doctor-strange-scheme-replay.md).
 
 A separate current legal game uses the seed-10 decision intentions, with Backflip
 at 31 applied to the ensuing minion's positive damage, and intentions 75/76

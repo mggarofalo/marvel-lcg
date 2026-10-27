@@ -142,3 +142,36 @@ player can discover the Invocation pile, understand that only its current top is
 public, and understand the paid Special's recipient choice, committed costs and
 Master's return of the exact Invocation. Routine keyboard regression discovery
 remains agent-owned.
+
+Independent closure reviewed source fix
+`bd94c0ee6cd6ced218232fc6a6572a1ccc73e13a` in the same isolated review tree.
+The only runtime change is `FocusMode.All` on the overflow `Other piles`
+MenuButton. The add/add probe conflict was resolved to that source commit's exact
+full script, whose assertions were inspected before execution. The retained
+probe now checks actual Tab reachability, Enter opening, arrow/Enter Invocation
+selection, Escape dismissal and restoration to the same opener, plus unchanged
+draft, public pile and revision 1.
+
+Fresh Debug client and Release test-host builds passed with no warnings or
+errors; the Release server dependency was copied into the Debug runtime before
+the rendered rerun. At Windows 1920×1080, 100% scale and reduced motion, the
+closure run passed in 11.194 seconds, reached the opener after 25 actual Tab
+presses with focus mode 2, and restored it after keyboard inspection. Its
+authoritative log contains exactly one accepted resolve (Keep hand), zero
+warnings and zero errors. The complete Seven Rings inspector face and the amber
+opener focus ring were inspected in the rerun captures. A passive Mystical
+Studies preview remains visible after traversal and does not obscure the opener.
+
+Closure evidence is external at
+`C:/Users/mggar/Source/evidence/strange-public-native/independent-closure/`:
+`build-debug.log`, `build-release.log`, and `keyboard/` retain the builds,
+result JSON, native log and captures. The worker's compiled negative control at
+`C:/Users/mggar/Source/evidence/strange-pile-keyboard/mutant/` was also reviewed:
+removing the focus setting makes the same probe fail opener restoration. The
+worker's existing ten managed contracts and shared native driver checks cover
+the adjacent behavior; this one-line focus change introduces no uncovered risk
+requiring another managed sweep. All launched review processes were harvested.
+
+The keyboard entry/restoration finding is closed. The previous UI-readiness
+rejection above is superseded: this increment is accepted for the focused owner
+review described above, while owner product acceptance remains outstanding.

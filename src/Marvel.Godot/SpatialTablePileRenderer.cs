@@ -97,6 +97,7 @@ internal sealed class SpatialTablePileRenderer(
         var drawer = new MenuButton
         {
             Name = "InspectOtherRegions", Text = "Other piles",
+            FocusMode = Control.FocusModeEnum.All,
             TooltipText = "Inspect other areas and their visible contents.",
             Position = slot.Position, Size = slot.Size,
             ClipText = true, ZIndex = 30,
