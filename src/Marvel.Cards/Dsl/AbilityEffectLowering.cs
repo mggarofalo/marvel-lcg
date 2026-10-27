@@ -95,6 +95,8 @@ internal static class AbilityEffectLowering
             "captureKangStageOneDefeat" => FixedEffect(argument, child, "this", AbilityFixedInstruction.CaptureKangStageOneDefeat),
             "splitKangStageTwo" => FixedEffect(argument, child, "this", AbilityFixedInstruction.SplitKangStageTwo),
             "createKangGameArea" => FixedEffect(argument, child, "this", AbilityFixedInstruction.CreateKangGameArea),
+            "revealKangStageThree" => FixedEffect(argument, child, "this", AbilityFixedInstruction.RevealKangStageThree),
+            "putKangNemesesIntoPlay" => FixedEffect(argument, child, "this", AbilityFixedInstruction.PutKangNemesesIntoPlay),
             "advanceMainScheme" => FixedEffect(argument, child, "next", AbilityFixedInstruction.AdvanceMainScheme),
             "cancelBoostAbility" => FixedEffect(argument, child, "trigger", AbilityFixedInstruction.CancelBoostAbility),
             "cancelBoostIcons" => FixedEffect(argument, child, "trigger", AbilityFixedInstruction.CancelBoostIcons),

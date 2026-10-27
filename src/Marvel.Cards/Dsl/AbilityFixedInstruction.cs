@@ -14,6 +14,10 @@ public enum AbilityFixedInstruction
     SplitKangStageTwo,
     /// <summary>Scenario-owned createKangGameArea instruction.</summary>
     CreateKangGameArea,
+    /// <summary>Reveal the final Kang stage from 4A.</summary>
+    RevealKangStageThree,
+    /// <summary>Resolve 4B nemesis searches and entries.</summary>
+    PutKangNemesesIntoPlay,
     /// <summary>Advance directly to the next main scheme without completing this one.</summary>
     AdvanceMainScheme,
     /// <summary>Use ATK instead of THW for the current thwart.</summary>

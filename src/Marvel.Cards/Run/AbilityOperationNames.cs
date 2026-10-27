@@ -176,6 +176,8 @@ internal static class AbilityOperationNames
             AbilityFixedInstruction.CaptureKangStageOneDefeat => "captureKangStageOneDefeat",
             AbilityFixedInstruction.SplitKangStageTwo => "splitKangStageTwo",
             AbilityFixedInstruction.CreateKangGameArea => "createKangGameArea",
+            AbilityFixedInstruction.RevealKangStageThree => "revealKangStageThree",
+            AbilityFixedInstruction.PutKangNemesesIntoPlay => "putKangNemesesIntoPlay",
             AbilityFixedInstruction.AdvanceMainScheme => "advanceMainScheme",
             AbilityFixedInstruction.CancelBoostAbility => "cancelBoostAbility",
             AbilityFixedInstruction.CancelBoostIcons => "cancelBoostIcons",

@@ -1801,3 +1801,13 @@ join at the next actual phase-ending operation. This scenario instruction's name
 and binding are engine choices. It is available for test overlays only; no
 production card row or scenario admission is added. See
 `content/kang-first-split-evidence.md` for evidence and boundaries.
+
+
+`revealKangStageThree: "this"` and `putKangNemesesIntoPlay: "this"` are
+engine-chosen scenario instructions for the nonpublic two-seat central reunion.
+The phase-owned 4A reveal waits for the final villain's entry and reveal before
+4B flips. The 4B instruction searches each associated physical nemesis in player
+order, schedules non-reveal encounter entry, then shuffles the encounter deck.
+Both suspend their enclosing ability until their child work finishes. Stored
+cards under 4A and unsupported composition fail closed; these instructions do
+not admit Kang's production rows or complete the scenario.

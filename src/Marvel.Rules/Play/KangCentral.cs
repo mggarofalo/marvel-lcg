@@ -1,0 +1,160 @@
+using Marvel.Rules.Events;
+using Marvel.Rules.State;
+using Marvel.Rules.Timing;
+
+namespace Marvel.Rules.Play;
+
+/// <summary>Bounded central Kang transition and its actual stage instructions.</summary>
+public static class KangCentral
+{
+    internal static bool IsLastGroup(World world, KangDeparture departure) =>
+        !world.GameAreas.Any(area => !ReferenceEquals(area, departure.Source)
+            && area.PlayAreas.Any(play => play.IsPlayers));
+
+    internal static void Preflight(World world, KangDeparture departure)
+    {
+        if (!IsLastGroup(world, departure)) return;
+        RequireLastGroupShape(world, departure);
+        var next = RequireCentralSchemes(world);
+        RequireFinalVillain(world, departure, next);
+        RequireNemesisAssociations(world);
+    }
+
+    private static void RequireLastGroupShape(World world, KangDeparture departure)
+    {
+        if (world.Players != 2 || world.Seats.Any(seat => seat.Eliminated)
+            || departure.Group.Count != 2 || departure.Group.Any(play => !play.IsPlayers)
+            || world.GameAreaOf(PlayArea.Villains) is not null
+            || world.GameAreas.Any(area => !ReferenceEquals(area, departure.Source) && area.PlayAreas.Count > 0))
+            throw new RulesNotImplementedException("Kang central reunion requires the supported two-seat last group");
+    }
+
+    private static Card RequireCentralSchemes(World world)
+    {
+        var central = Require(world, "11008b", DeckType.MainSchemesArea);
+        if (central.Area.PlayArea != PlayArea.Villains)
+            throw new RulesNotImplementedException("Kang central reunion requires central 2B");
+        var next = Require(world, "11013a", DeckType.AsideDeck);
+        if (next.Faces.Count != 2 || next.Faces[1] != "11013b" || BeneathCards.Of(world, next).Count != 0)
+            throw new RulesNotImplementedException("Kang central reunion requires 4A without stored Dominion or unknown cards");
+        return next;
+    }
+
+    private static void RequireFinalVillain(World world, KangDeparture departure, Card next)
+    {
+        var old = world.Cards[departure.Defeated.Card];
+        string villainFace = old.FaceId is "11035" or "11036" or "11037" or "11038" ? "11039" : "11006";
+        var villain = Require(world, villainFace, DeckType.AsideDeck);
+        if (next.Area.PlayArea != PlayArea.Villains || villain.Area.PlayArea != PlayArea.Villains
+            || world.Areas.Any(area => area.Type == DeckType.VillainDeck && area.Cards.Count != 0)
+            || world.Cards.Any(card => card.Area.Type == DeckType.VillainArea))
+            throw new RulesNotImplementedException("Kang central reunion requires the matching set-aside final villain");
+        if (world.Cards.Any(card => card.Area.Type == DeckType.AsideDeck
+            && card.FaceId == (villainFace == "11006" ? "11039" : "11006")))
+            throw new RulesNotImplementedException("Kang central reunion requires one matching mode");
+    }
+
+    private static void RequireNemesisAssociations(World world)
+    {
+        foreach (var seat in world.Seats)
+            if (seat.NemesisSet.Count(card => world.Facts.IsNemesisMinion(card.FaceId)) != 1)
+                throw new RulesNotImplementedException("Kang central reunion requires each physical nemesis association");
+    }
+
+    internal static void Begin(World world, KangJoinOperation operation, List<GameEvent> events)
+    {
+        Preflight(world, operation.Departure);
+        var old = Require(world, "11008b", DeckType.MainSchemesArea);
+        var next = Require(world, "11013a", DeckType.AsideDeck);
+        long acceleration = old.Tokens.GetValueOrDefault(EncounterDeck.AccelerationToken);
+        world.Join(PlayArea.Villains, operation.Departure.Source, "11008b", events);
+        KangFirstSplit.Remove(world, old, "11008b", events);
+        Move(world, next, world.AreaOf(DeckType.MainSchemesArea), "11008b", events);
+        next.PlaceTokens(EncounterDeck.AccelerationToken, acceleration);
+        foreach (bool flip in new[] { false, true })
+            world.Agenda.ContinueBeforeOwner(operation.Origin, operation.Owner,
+                new PhaseStep(new KangCentralStageOperation(operation.Owner, operation.Origin, flip), operation.Owner.Round, operation.Owner.Number,
+                    Subject: next.ObjectId, Seat: world.FirstPlayer, Plan: true));
+    }
+
+    /// <summary>Schedule the scenario instruction inside its owning reveal ability.</summary>
+    public static void Schedule(World world, Card scheme, KangCentralPart part)
+    {
+        string expected = part == KangCentralPart.RevealVillain ? "11013a" : "11013b";
+        if (scheme.FaceId != expected || scheme.Area.Type != DeckType.MainSchemesArea
+            || world.Agenda.Current is not { Operation: KangCentralStageOperation stage } owner
+            || owner.Subject != scheme.ObjectId || stage.Flip != (part == KangCentralPart.Nemeses)
+            || !world.Agenda.IsOutstanding(stage.Owner, stage.Origin))
+            throw new RulesNotImplementedException("Kang central instruction requires its retained phase-owned scheme reveal");
+        world.Agenda.Now(new PhaseStep(new KangCentralOperation(part), owner.Round, owner.Number,
+            Subject: scheme.ObjectId, Seat: world.FirstPlayer, Plan: true));
+    }
+
+    internal static Prompts.Prompt? Apply(World world, PhaseStep step, List<GameEvent> events)
+    {
+        if (step.Operation is KangCentralStageOperation stage)
+        {
+            if (!world.Agenda.IsOutstanding(stage.Owner, stage.Origin))
+                throw new InvalidOperationException("the exact Kang phase owner is no longer outstanding");
+            var scheme = world.Cards[step.Subject];
+            if (stage.Flip)
+            {
+                scheme.TurnTo("11013b");
+                events.Add(new CardsFlipped([scheme.ObjectId], true)
+                    { SubjectFaces = OccurrenceFaces.For(scheme), Trigger = "11008b", Verb = "Advance" });
+                Reveal.EnterPlay(world, world.Facts, scheme, events);
+            }
+            ActivityBatches.Append(events, world.EncounterAbilities.ExecuteReveal(world, scheme, step.Seat).Events);
+            return null;
+        }
+        var op = step.Require<KangCentralOperation>();
+        if (op.Part == KangCentralPart.RevealVillain)
+        {
+            var villain = world.Cards.Single(card => card.Area.Type == DeckType.AsideDeck
+                && card.FaceId is "11006" or "11039");
+            Move(world, villain, world.AreaOf(DeckType.VillainArea), "11013a", events);
+            Reveal.EnterPlay(world, world.Facts, villain, events);
+            ActivityBatches.Append(events, world.EncounterAbilities.ExecuteReveal(world, villain, step.Seat).Events);
+        }
+        else SearchNext(world, step, op.Index, events);
+        return null;
+    }
+
+    private static void SearchNext(World world, PhaseStep step, int index, List<GameEvent> events)
+    {
+        var players = world.PlayerOrder.ToArray();
+        if (index == players.Length)
+        {
+            var deck = world.AreaOf(DeckType.EncounterDeck);
+            world.Shuffle(deck);
+            events.Add(new AreaReordered(Places.Reference(deck), [.. deck.Cards.Select(card => card.ObjectId)])
+                { Trigger = "11013b", Verb = "Shuffle" });
+            return;
+        }
+        int player = players[index];
+        var card = world.Seats[player].NemesisSet.Single(candidate => world.Facts.IsNemesisMinion(candidate.FaceId));
+        var continuation = step with { Operation = new KangCentralOperation(KangCentralPart.Nemeses, index + 1) };
+        if (card.Area.Type is DeckType.EncounterDeck or DeckType.EncounterDiscardPile or DeckType.AsideDeck)
+        {
+            EncounterEntry.Schedule(world, EncounterEntryRequest.For(card, player, new CardEntryPlacement(Verb: "Put_Into_Play")),
+                new EffectCompletion(1, 1), continuation);
+        }
+        else world.Agenda.Now(continuation);
+    }
+
+    private static Card Require(World world, string face, DeckType area)
+    {
+        var cards = world.Cards.Where(card => card.FaceId == face && card.Area.Type == area).ToArray();
+        return cards.Length == 1 ? cards[0]
+            : throw new RulesNotImplementedException($"Kang central reunion requires one {face} in {area}");
+    }
+
+    private static void Move(World world, Card card, Area into, string trigger, List<GameEvent> events)
+    {
+        var from = card.Area;
+        World.MoveToTop(card, into);
+        card.TurnFaceUp();
+        events.Add(new CardsMoved(Places.Reference(from), Places.Reference(into),
+            [new Landing(card.ObjectId, into.Cards.Count - 1)]) { Trigger = trigger, Verb = "Advance" });
+    }
+}

@@ -16,7 +16,10 @@ internal static class KangJoinProcedure
         {
             var destinations = Destinations(world, operation.Departure);
             if (destinations.Length == 0)
-                throw new RulesNotImplementedException("Kang's last-area central reunion");
+            {
+                KangCentral.Begin(world, operation, events);
+                return null;
+            }
             return Describe(world, operation, "Choose a game area to join", destinations.Select(area =>
                 new Affordance(area.Id, "Join_Game_Area", -1, world.FirstPlayer, $"game area {area.Id}")
                 {

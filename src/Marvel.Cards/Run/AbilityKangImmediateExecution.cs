@@ -1,4 +1,5 @@
 using Marvel.Cards.Dsl;
+using Marvel.Rules.Play;
 
 namespace Marvel.Cards.Run;
 
@@ -24,6 +25,12 @@ internal static class AbilityKangImmediateExecution
                 split.CreateLocalArea(context.Admission.World, context.Admission.Source,
                     context.Admission.Query.Player, context.Events);
                 return new(true, true);
+            case AbilityFixedInstruction.RevealKangStageThree:
+            case AbilityFixedInstruction.PutKangNemesesIntoPlay:
+                KangCentral.Schedule(context.Admission.World, context.Admission.Source,
+                    effect.Instruction == AbilityFixedInstruction.RevealKangStageThree
+                        ? KangCentralPart.RevealVillain : KangCentralPart.Nemeses);
+                return new(true, true) { ProcedureScheduled = true };
             default:
                 return null;
         }

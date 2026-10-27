@@ -60,6 +60,8 @@ public static class AgendaProcedures
             AgendaProcedureKind.AbilityContinuation =>
                 AbilityContinuationProcedure.Apply(world, step, events),
             AgendaProcedureKind.Activation => ActivationProcedure.Apply(world, facts, step),
+            AgendaProcedureKind.PhaseTransition when step.Operation is KangCentralOperation or KangCentralStageOperation =>
+                KangCentral.Apply(world, step, events),
             AgendaProcedureKind.PhaseTransition when step.Operation is KangSplitOperation =>
                 KangSplitProcedure.Apply(world, step, events),
             AgendaProcedureKind.PhaseTransition => step.Operation is KangJoinOperation

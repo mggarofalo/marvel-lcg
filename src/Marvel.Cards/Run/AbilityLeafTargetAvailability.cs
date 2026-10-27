@@ -50,6 +50,7 @@ internal static class AbilityLeafTargetAvailability
         "captureKangStageTwoDefeat" => true,
         "splitKangStageTwo" => true,
         "createKangGameArea" => true,
+        "revealKangStageThree" or "putKangNemesesIntoPlay" => true,
         "delayUntil" => true,
         "generate" or "preventDamage" or "cancelWhenRevealed" or "cancelOccurrence"
             or "dealEncounterCards" or "revealTop"

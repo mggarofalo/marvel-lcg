@@ -39,7 +39,9 @@ internal static class AbilityResolutionImmediateEffects
         bool declaredDefense = result.ResolveEffect && effect is AbilityEffect.CardAction
             { Instruction: AbilityCardInstruction.DeclareDefender };
         if (declaredDefense) cast.CompletedOutcome = AbilityStructuralOutcome.Full;
-        if (result.ProcedureScheduled && (declaredDefense || effect is AbilityEffect.GainSurge))
+        bool kang = effect is AbilityEffect.Fixed { Instruction: AbilityFixedInstruction.RevealKangStageThree
+            or AbilityFixedInstruction.PutKangNemesesIntoPlay };
+        if (result.ProcedureScheduled && (declaredDefense || kang || effect is AbilityEffect.GainSurge))
             execution.SuspendAfterProcedure(effect, cast, owner, occurrence);
     }
 }

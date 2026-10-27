@@ -78,6 +78,7 @@ public sealed class KangPhaseTransitions
         if (ready.Length != 1)
             throw new RulesNotImplementedException("simultaneous Kang phase-end departures require ordering");
         RequireGroup(ready[0]);
+        KangCentral.Preflight(world, ready[0]);
         string[] conditions = owner.Require<PhaseTransitionOperation>().Kind == PhaseTransitionKind.EndPlayerPhase
             ? [PhaseEnd.PlayerPhaseEnds] : [PhaseEnd.VillainPhaseEnds, PhaseEnd.RoundEnds];
         // The prepared controller has no accepted ordering policy for co-due

@@ -537,3 +537,38 @@ non-reveal entry for each found nemesis minion, and shuffle the encounter deck
 once after the searches. It must preflight missing or incompatible physical
 counterparts and stored Dominions before mutation, preserve the 2B acceleration
 tokens, and retain the existing membership and phase-end guards.
+
+## Prepared central reunion candidate
+
+The nonpublic candidate advances the actual two-seat last departure from 2B to
+4A and 4B with no cards stored under 4A. The phase-ending owner remains on the
+agenda while the 4A villain reveal, the 4B searches, each ordinary non-reveal
+entry, and the encounter-deck shuffle finish. A synthetic III reveal choice
+checks that 4B and the next phase operation wait for 4A's child. Test-local III
+rows omit the printed attack interrupt and When Defeated win instruction; they
+only allow entry and do not claim complete III behavior.
+
+Windows evidence for the uncommitted candidate: the focused suite passed nine
+cases (`C:/Users/mggar/Source/evidence/kang-central-focused.log`). A compiled
+mutant which skipped eligible nemesis entries failed the four location/mode
+cases (`kang-central-mutant.log`); a nonincremental restored Release build
+(`kang-central-restored-build.log`) preceded the restored combined Kang,
+uniqueness, WhenDefeated and DefeatStepSeven run, which passed 129 cases
+(`kang-central-restored-combined.log`). After cohesive preflight and fixture extraction, the affected combined suite
+passed 129 cases (`kang-central-extraction-tests.log`). Independent reconstruction compares
+ordered events, topology, pending work, RNG state and digest; it is not a
+session save/replay test. The full product, Linux, native and complete managed
+suite remain unverified.
+
+Two later prerequisites remain. Printed 11009b–11012b place a Dominion facedown
+under set-aside 4A, but `Area.ValidateCanAcceptCards` currently rejects adding a
+card to a hosted area when its host is out of play; the first test attempt hit
+this exact exception in `kang-central-candidate.log`. The negative fixture
+constructs an unsupported hosted state with a temporary in-play host only to
+prove rejection; it does not implement Dominion storage. Printed 11006/11039
+say the players win when defeated. `DefeatedCardAbilityResolution.Own` correctly
+raises for their unauthored When Defeated ability and the current DSL has no
+win-game instruction; the actual final-defeat reproduction is in
+`kang-central-fixture-fix.log`. A later engine/DSL packet must implement and
+author that instruction rather than bypassing the refusal. These gaps do not
+claim completion of Kang or permit public admission.
