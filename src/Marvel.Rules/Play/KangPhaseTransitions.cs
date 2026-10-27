@@ -78,6 +78,14 @@ public sealed class KangPhaseTransitions
         if (ready.Length != 1)
             throw new RulesNotImplementedException("simultaneous Kang phase-end departures require ordering");
         RequireGroup(ready[0]);
+        if (ready[0].CompletedScheme is { } completed)
+        {
+            var scheme = world.Cards[completed.Card];
+            var villain = world.Cards[ready[0].Defeated.Card];
+            if (scheme.Incarnation != completed.Incarnation || scheme.Area.Type != DeckType.MainSchemesArea
+                || villain.Incarnation != ready[0].Defeated.Incarnation || villain.Area.Type != DeckType.VillainArea)
+                throw new RulesNotImplementedException("the completed Kang stage or villain departed before phase end");
+        }
         KangCentral.Preflight(world, ready[0]);
         string[] conditions = owner.Require<PhaseTransitionOperation>().Kind == PhaseTransitionKind.EndPlayerPhase
             ? [PhaseEnd.PlayerPhaseEnds] : [PhaseEnd.VillainPhaseEnds, PhaseEnd.RoundEnds];
@@ -98,7 +106,7 @@ public sealed class KangPhaseTransitions
         && phase.Kind is PhaseTransitionKind.EndPlayerPhase or PhaseTransitionKind.EndVillainPhase
         ? pending.Where(item => item.NextPhase || item.Round == owner.Round && item.Boundary == phase.Kind).ToArray() : [];
 
-    internal void Begin(World world, PhaseStep owner)
+    internal void Begin(World world, PhaseStep owner, List<Marvel.Rules.Events.GameEvent> events)
     {
         var ready = Ready(owner);
         if (ready.Length == 0) return;
@@ -106,11 +114,25 @@ public sealed class KangPhaseTransitions
             throw new RulesNotImplementedException("simultaneous Kang phase-end departures require ordering");
         var origin = world.Agenda.Occurrence
             ?? throw new InvalidOperationException("the Kang phase boundary has no occurrence");
+        if (ready[0].CompletedScheme is { } scheme)
+        {
+            KangFirstSplit.Remove(world, world.Cards[ready[0].Defeated.Card], "Kang local completion", events);
+            KangFirstSplit.Remove(world, world.Cards[scheme.Card], "Kang local completion", events);
+        }
         world.Agenda.ContinueBeforeOwner(origin, owner, owner with
         {
             Operation = new KangJoinOperation(ready[0], owner, origin),
             Subject = ready[0].Defeated.Card,
         });
         pending.Remove(ready[0]);
+    }
+
+    internal void CaptureCompletion(World world, Card villain, Card scheme)
+    {
+        var captured = CaptureJoin(world, villain, -1, PhaseTransitionKind.EndPlayerPhase);
+        pending[pending.IndexOf(captured)] = captured with
+        {
+            NextPhase = true, CompletedScheme = OccurrenceCard.Capture(scheme, world.Facts),
+        };
     }
 }

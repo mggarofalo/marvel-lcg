@@ -12,6 +12,8 @@ public enum AbilityFixedInstruction
     CaptureKangStageOneDefeat,
     /// <summary>Scenario-owned captureKangStageTwoDefeat instruction.</summary>
     CaptureKangStageTwoDefeat,
+    /// <summary>Store Dominion and retain the completed local stage until phase end.</summary>
+    CaptureKangLocalCompletion,
     /// <summary>Scenario-owned splitKangStageTwo instruction.</summary>
     SplitKangStageTwo,
     /// <summary>Scenario-owned createKangGameArea instruction.</summary>

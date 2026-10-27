@@ -174,6 +174,7 @@ internal static class AbilityOperationNames
             AbilityFixedInstruction.ReadyUndamagedDefender => "readyUndamagedDefender",
             AbilityFixedInstruction.PlayersWin => "playersWin",
             AbilityFixedInstruction.CaptureKangStageTwoDefeat => "captureKangStageTwoDefeat",
+            AbilityFixedInstruction.CaptureKangLocalCompletion => "captureKangLocalCompletion",
             AbilityFixedInstruction.CaptureKangStageOneDefeat => "captureKangStageOneDefeat",
             AbilityFixedInstruction.SplitKangStageTwo => "splitKangStageTwo",
             AbilityFixedInstruction.CreateKangGameArea => "createKangGameArea",

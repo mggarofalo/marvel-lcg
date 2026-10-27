@@ -93,6 +93,7 @@ internal static class AbilityEffectLowering
             "readyUndamagedDefender" => FixedEffect(argument, child, "you", AbilityFixedInstruction.ReadyUndamagedDefender),
             "playersWin" => FixedEffect(argument, child, "game", AbilityFixedInstruction.PlayersWin),
             "captureKangStageTwoDefeat" => FixedEffect(argument, child, "this", AbilityFixedInstruction.CaptureKangStageTwoDefeat),
+            "captureKangLocalCompletion" => FixedEffect(argument, child, "this", AbilityFixedInstruction.CaptureKangLocalCompletion),
             "captureKangStageOneDefeat" => FixedEffect(argument, child, "this", AbilityFixedInstruction.CaptureKangStageOneDefeat),
             "splitKangStageTwo" => FixedEffect(argument, child, "this", AbilityFixedInstruction.SplitKangStageTwo),
             "createKangGameArea" => FixedEffect(argument, child, "this", AbilityFixedInstruction.CreateKangGameArea),

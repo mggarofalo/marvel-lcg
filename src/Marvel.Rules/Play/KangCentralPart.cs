@@ -5,6 +5,8 @@ public enum KangCentralPart
 {
     /// <summary>Reveal the last villain stage.</summary>
     RevealVillain,
+    /// <summary>Reveal the physical Dominions stored beneath 4A.</summary>
+    Dominions,
     /// <summary>Search and put each player's nemesis into play.</summary>
     Nemeses,
 }

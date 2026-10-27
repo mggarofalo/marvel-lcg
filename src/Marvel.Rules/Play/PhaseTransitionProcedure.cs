@@ -51,7 +51,7 @@ internal static class PhaseTransitionProcedure
         // point or condition may be used". PhaseEnd expires lasting effects and
         // resolves synchronous delayed work; this typed child retains the phase
         // frame while its required choices finish before the response window.
-        world.Agenda.KangTransitions.Begin(world, step);
+        world.Agenda.KangTransitions.Begin(world, step, events);
         world.Agenda.KangSplit.Begin(world, step, events);
         return null;
     }

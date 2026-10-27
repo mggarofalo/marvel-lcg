@@ -138,7 +138,6 @@ public sealed class KangCentralTransitionTests : CoreCardTestBase
     }
 
     [Theory]
-    [InlineData("dominion")]
     [InlineData("unknown")]
     [InlineData("missing_villain")]
     public void UnsupportedCentralCompositionFailsBeforePhaseMutation(string condition)
@@ -237,7 +236,7 @@ public sealed class KangCentralTransitionTests : CoreCardTestBase
         Sequence.Finish(world, Cards, world.Abilities, events);
     }
 
-    private static World Board(bool expert, bool revealChoice = false, bool captain = false)
+    internal static World Board(bool expert, bool revealChoice = false, bool captain = false)
     {
         var world = WorldSetup.DealWithoutCardAbilities(Cards, Blueprints(expert, captain), [captain ? "Captain America" : "Spider-Man", "Black Widow"], 42, expert: expert);
         var rows = AbilityRows(expert, revealChoice);
@@ -266,7 +265,7 @@ public sealed class KangCentralTransitionTests : CoreCardTestBase
         return blueprints;
     }
 
-    private static List<object> AbilityRows(bool expert, bool revealChoice)
+    internal static List<object> AbilityRows(bool expert, bool revealChoice, bool completion = false)
     {
         var rows = new List<object>
         {
@@ -281,7 +280,10 @@ public sealed class KangCentralTransitionTests : CoreCardTestBase
         {
             rows.Add(Row((expert ? 11035 + i : 11002 + i).ToString(System.Globalization.CultureInfo.InvariantCulture), "WhenDefeated", "captureKangStageTwoDefeat"));
             rows.Add(Row($"{11009 + i}a", "WhenRevealed", "createKangGameArea"));
-            rows.Add(new { card = $"{11009 + i}b", abilities = Array.Empty<object>() });
+            rows.Add(completion ? new { card = $"{11009 + i}b", abilities = new[] { new {
+                trigger = new { @event = "WhenMainSchemeCompleted", timing = "ForcedResponse", subject = "this" },
+                effect = new { captureKangLocalCompletion = "this" } } } }
+                : (object)new { card = $"{11009 + i}b", abilities = Array.Empty<object>() });
         }
         // III's attack interrupt remains outside this nonpublic overlay.
         if (!revealChoice) rows.Add(Row(expert ? "11039" : "11006", "WhenDefeated", "playersWin"));

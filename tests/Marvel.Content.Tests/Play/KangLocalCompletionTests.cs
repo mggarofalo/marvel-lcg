@@ -50,6 +50,7 @@ public sealed class KangLocalCompletionTests : CoreCardTestBase
     [Theory]
     [InlineData("01097b")]
     [InlineData("04063b")]
+    [InlineData("11013b")]
     [Rule("rr:main-scheme-main-scheme-deck.2.1")]
     public void SupportedFinalSchemeStillLosesWithUnrelatedKangStagesSetAside(string face)
     {

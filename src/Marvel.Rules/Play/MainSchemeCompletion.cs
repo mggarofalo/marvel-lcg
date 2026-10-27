@@ -56,13 +56,8 @@ internal static class MainSchemeCompletion
     internal static void Commit(World world, ICardFacts facts,
         IThreatCardAbilities abilities, Card scheme, List<GameEvent> events)
     {
-        // 11009b-11012b: "Forced Response: After this stage is completed"
-        // places Kang's Dominion under 4A and delays removal/join until phase end.
-        // Engine policy: these unsupported local consequences must raise before
-        // recording completion or applying ordinary sequential advancement/loss.
-        if (scheme.FaceId is "11009b" or "11010b" or "11011b" or "11012b")
-            throw new RulesNotImplementedException(
-                $"Kang local main scheme {scheme.FaceId} completion requires Kang's Dominion and phase-end reunion");
+        bool local = KangLocalCompletion.IsLocal(scheme);
+        if (local) KangLocalCompletion.Preflight(world, scheme);
 
         scheme.PlaceTokens("is_completed", 1);
         events.Add(new FieldSet(scheme.ObjectId, "is_completed", 0, 1)
@@ -70,6 +65,9 @@ internal static class MainSchemeCompletion
             Trigger = "main scheme completed",
             Verb = "Complete",
         });
+
+        // Printed 11009b-11012b continue in their Forced Response window.
+        if (local) return;
 
         if (world.AreaOf(DeckType.MainSchemesDeck).Cards.Count > 0)
         {

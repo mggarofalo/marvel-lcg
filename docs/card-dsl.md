@@ -1811,5 +1811,16 @@ The phase-owned 4A reveal waits for the final villain's entry and reveal before
 4B flips. The 4B instruction searches each associated physical nemesis in player
 order, schedules non-reveal encounter entry, then shuffles the encounter deck.
 Both suspend their enclosing ability until their child work finishes. Stored
-cards under 4A and unsupported composition fail closed; these instructions do
+Dominions under 4A use ordinary encounter reveal windows after III's complete
+reveal and before 4B; unknown hosted cards and unsupported composition fail closed. These instructions do
 not admit Kang's production rows or complete the scenario.
+
+`captureKangLocalCompletion: "this"` is an engine-chosen bounded instruction
+for an actual 11009b–11012b completion Forced Response. The completion occurrence
+retains the exact local stage; the instruction stores one scenario-owned physical
+11023 facedown beneath set-aside 11013a, then retains both local stage and matching
+II until their next actual phase ending. The existing whole-group join owns the
+continuation. Storage permits only that out-of-play physical pair and refuses a
+4A host that has already entered play. Ordered 4A reveals retain stored physical
+incarnations across suspension. No production rows or public admission are added.
+See `content/kang-dominion-storage-evidence.md` for evidence and remaining limits.

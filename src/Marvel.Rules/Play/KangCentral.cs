@@ -35,8 +35,11 @@ public static class KangCentral
         if (central.Area.PlayArea != PlayArea.Villains)
             throw new RulesNotImplementedException("Kang central reunion requires central 2B");
         var next = Require(world, "11013a", DeckType.AsideDeck);
-        if (next.Faces.Count != 2 || next.Faces[1] != "11013b" || BeneathCards.Of(world, next).Count != 0)
-            throw new RulesNotImplementedException("Kang central reunion requires 4A without stored Dominion or unknown cards");
+        if (next.Faces.Count != 2 || next.Faces[1] != "11013b"
+            || world.Areas.Where(area => area.Host == next.ObjectId).SelectMany(area => area.Cards)
+                .Any(card => card.FaceId != "11023" || card.Owner != -1 || card.FaceUp
+                    || card.Area.Type != DeckType.BeneathCardsPile))
+            throw new RulesNotImplementedException("Kang central reunion requires 4A with only concealed stored Dominions");
         return next;
     }
 
@@ -45,13 +48,19 @@ public static class KangCentral
         var old = world.Cards[departure.Defeated.Card];
         string villainFace = old.FaceId is "11035" or "11036" or "11037" or "11038" ? "11039" : "11006";
         var villain = Require(world, villainFace, DeckType.AsideDeck);
-        if (next.Area.PlayArea != PlayArea.Villains || villain.Area.PlayArea != PlayArea.Villains
-            || world.Areas.Any(area => area.Type == DeckType.VillainDeck && area.Cards.Count != 0)
-            || world.Cards.Any(card => card.Area.Type == DeckType.VillainArea))
-            throw new RulesNotImplementedException("Kang central reunion requires the matching set-aside final villain");
+        RequireFinalVillainAreas(world, departure, next, villain);
         if (world.Cards.Any(card => card.Area.Type == DeckType.AsideDeck
             && card.FaceId == (villainFace == "11006" ? "11039" : "11006")))
             throw new RulesNotImplementedException("Kang central reunion requires one matching mode");
+    }
+
+    private static void RequireFinalVillainAreas(World world, KangDeparture departure, Card next, Card villain)
+    {
+        if (next.Area.PlayArea != PlayArea.Villains || villain.Area.PlayArea != PlayArea.Villains
+            || world.Areas.Any(area => area.Type == DeckType.VillainDeck && area.Cards.Count != 0)
+            || world.Cards.Any(card => card.Area.Type == DeckType.VillainArea
+                && !(departure.CompletedScheme is not null && card.ObjectId == departure.Defeated.Card)))
+            throw new RulesNotImplementedException("Kang central reunion requires the matching set-aside final villain");
     }
 
     private static void RequireNemesisAssociations(World world)
@@ -114,8 +123,12 @@ public static class KangCentral
                 && card.FaceId is "11006" or "11039");
             Move(world, villain, world.AreaOf(DeckType.VillainArea), "11013a", events);
             Reveal.EnterPlay(world, world.Facts, villain, events);
+            // Printed 11013a reveals III, then each stored Dominion. Queue this
+            // continuation before III's children so his complete reveal finishes first.
+            world.Agenda.Now(step with { Operation = new KangCentralOperation(KangCentralPart.Dominions) });
             ActivityBatches.Append(events, world.EncounterAbilities.ExecuteReveal(world, villain, step.Seat).Events);
         }
+        else if (op.Part == KangCentralPart.Dominions) KangDominionReveal.Apply(world, step, op, events);
         else SearchNext(world, step, op, events);
         return null;
     }

@@ -49,6 +49,7 @@ internal static class AbilityLeafTargetAvailability
         "playersWin" => !cast.World.IsOver,
         "captureKangStageOneDefeat" => true,
         "captureKangStageTwoDefeat" => true,
+        "captureKangLocalCompletion" => true,
         "splitKangStageTwo" => true,
         "createKangGameArea" => true,
         "revealKangStageThree" or "putKangNemesesIntoPlay" => true,

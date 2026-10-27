@@ -11,6 +11,10 @@ internal static class AbilityKangImmediateExecution
         var split = context.Admission.World.Agenda.KangSplit;
         switch (effect.Instruction)
         {
+            case AbilityFixedInstruction.CaptureKangLocalCompletion:
+                KangLocalCompletion.Capture(context.Admission.World, context.Admission.Source,
+                    context.Admission.Query.Occurrence, context.Events);
+                return new(true, true);
             case AbilityFixedInstruction.CaptureKangStageTwoDefeat:
                 context.Admission.World.Agenda.KangTransitions.CaptureDefeat(context.Admission.World,
                     context.Admission.Source, context.Admission.Query.Defeat, context.Events);
