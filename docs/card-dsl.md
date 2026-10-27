@@ -1784,3 +1784,13 @@ callers for this causal ownership; a null value uses the current occurrence.
 Its accessibility is an engine API choice and adds no persisted or wire field.
 Actual authored Chase Them Down (`01052`) observes the lethal followup and removes
 two threat, while the enemy activation's ally defeat does not satisfy it.
+
+
+`captureKangStageOneDefeat: "this"`, `splitKangStageTwo: "this"` and
+`createKangGameArea: "this"` are engine-chosen scenario instructions for Kang's
+nonpublic two-seat first split. They capture the actual own When Defeated event,
+resolve central 2A, and create a selected 3A's local scheme/villain/deal through
+the retained phase-owned controller. Calling a reveal instruction without that
+controller raises. No production card rows or product admission are added by
+these spellings. See `content/kang-first-split-evidence.md` for exact scope,
+seeded assignment policy and remaining scenario boundaries.

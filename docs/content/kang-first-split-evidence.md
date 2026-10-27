@@ -250,3 +250,75 @@ three phase/round ordering probes. Both mutations are restored. Final restored
 build and focused results accompany the repair commit; independent acceptance
 of these repairs remains the reviewer's responsibility. No full managed, Linux,
 native, admission, printed defeat hook or public replay evidence is claimed.
+
+
+## Actual stage-I defeat and first split
+
+Implementation base `d707d848fa8608e791a2aa9ad8d38a477093fb43`.
+The nonpublic two-seat slice now connects actual Standard/Expert Kang I defeat
+to the next actual phase-ending boundary. `captureKangStageOneDefeat: "this"`
+executes inside the normal authored When Defeated tier. Another forced interrupt
+on the same defeat shares the first-player ordering prompt in either order;
+Kang remains in play until that step-seven batch completes. Scenario finalization
+removes Kang and his attachments/statuses without sequential promotion or victory.
+
+`Agenda.KangSplit` retains the physical defeated incarnation. At the next
+player/villain phase end it preflights composition, expires the phase normally,
+and schedules typed child work before the retained phase owner's responses.
+Other due delayed effects and simultaneous prepared joins raise explicitly;
+there is no accepted ordering policy for those combinations. Only two living
+seats are accepted by this slice. Stage-II printed defeat, simultaneous joins,
+central reunion, main-scheme completion, complete admission and UI remain open.
+No digest, protocol or session-schema fields are added.
+
+The 2A overlay uses `splitKangStageTwo: "this"`; each actual 3A overlay uses
+`createKangGameArea: "this"`. These narrow scenario-owned instructions are
+necessary because generic advancement assumes a sequential main-scheme deck,
+while the existing DSL has neither game-area creation nor an ordered random
+permutation which individually reveals each selected physical scheme. Ordinary
+`MainScheme.Advance` also flips its new card synchronously, so it cannot own this
+multi-reveal continuation. The typed controller executes the actual 2A and each
+3A through the normal interpreter and waits behind their child execution before
+flipping their B sides. Unused stages are removed after both local resolutions,
+and central 2B flips last. Existing entry rules supply toughness and printed
+starting threat; printed II HP is flat 18/22 through existing card facts.
+
+The authored data book is unchanged. Separate future row authoring must include
+11001/11034 When Defeated, 11008a When Revealed and 11009a-11012a When Revealed
+using these three instructions, alongside all other printed abilities. Tests
+explicitly overlay only reached abilities and empty unreached B-side reveal
+lists. They do not establish complete printed-face coverage or public setup.
+
+The engine chooses one seeded Choice from remaining 3A codes in printed-code
+order for each seat in player order, removing each selection before the next.
+Seed 42 assigns Rama-Tut then Chronopolis and consumes three MT words, including
+the rejected second-draw candidate. Seeds 0-5 reach all four scheme/villain
+pairs and starting-threat values 0/1/1/2. The shared encounter deck/discard stay
+shared; existing engaged minions follow their seats into the new topology.
+
+Eight prepared tests cover lethal-damage entry, Standard/Expert and both
+first-player orders; both competing defeat-interrupt orders; all four local
+pairings; and deterministic reconstruction in two independent worlds. The latter
+compares canonical card digest, complete concrete event JSON, game-area membership,
+all RNG state words/index/consumption, drained pending work and exact-once agenda
+completion. This is engine reconstruction evidence, not public save/host replay.
+
+Windows logs outside the repository use `C:/Users/mggar/Source/kang-stage-one-*`.
+Focused: 8 passed. Final nonincremental Release content build and combined Kang,
+uniqueness, WhenDefeated and DefeatStepSeven run are recorded in
+`kang-stage-one-final-build.log` and `kang-stage-one-final-combined.log`.
+Four earlier compiling mutants (ordinary final-villain victory, numeric seat
+allocation, premature central flip, omitted villain toughness) each failed the
+focused tests and were restored. A fifth compiling mutant moved unused-stage
+removal before local resolution; the added causal-order assertion kills it.
+The final sources are force rebuilt after restoration. No complete managed,
+Linux, native, whole-game or public replay result is claimed. Independent review
+is still required for this new slice.
+
+
+The normal hook found and rejected two source-policy issues before the first
+commit: the immediate dispatcher reached 303 lines, and a static array was
+mutable shared state. The cohesive Kang dispatch now lives in
+`AbilityKangImmediateExecution`; the scenario mapping is an immutable array.
+No baseline or gate was changed. The affected combined run after extraction
+passes 87 cases (`kang-stage-one-extracted-combined.log`).

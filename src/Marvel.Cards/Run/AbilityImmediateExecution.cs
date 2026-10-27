@@ -61,6 +61,7 @@ internal static class AbilityImmediateExecution
     {
         var world = context.Admission.World;
         if (AbilityBoostCancellation.TryRun(effect, context) is { } boost) return boost;
+        if (AbilityKangImmediateExecution.TryRun(effect, context) is { } kang) return kang;
         switch (effect.Instruction)
         {
             case AbilityFixedInstruction.DiscardOtherEnvironments:

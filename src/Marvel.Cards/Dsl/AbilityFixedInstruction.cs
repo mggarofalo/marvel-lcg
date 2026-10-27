@@ -6,6 +6,12 @@ namespace Marvel.Cards.Dsl;
 /// <summary>Instructions with fixed authored markers and no variable parameters.</summary>
 public enum AbilityFixedInstruction
 {
+    /// <summary>Scenario-owned captureKangStageOneDefeat instruction.</summary>
+    CaptureKangStageOneDefeat,
+    /// <summary>Scenario-owned splitKangStageTwo instruction.</summary>
+    SplitKangStageTwo,
+    /// <summary>Scenario-owned createKangGameArea instruction.</summary>
+    CreateKangGameArea,
     /// <summary>Advance directly to the next main scheme without completing this one.</summary>
     AdvanceMainScheme,
     /// <summary>Use ATK instead of THW for the current thwart.</summary>

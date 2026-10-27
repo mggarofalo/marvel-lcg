@@ -129,6 +129,11 @@ public static class Defeat
         var kind = EffectiveCards.Kind(card, facts);
         if (CardKinds.IsVillain(kind))
         {
+            if (KangFirstSplit.IsFirstStage(card))
+            {
+                world.Agenda.KangSplit.FinalizeDefeat(world, card, trigger, events);
+                return false;
+            }
             if (world.EncounterTopology is not null)
                 return EncounterVillainDefeat.Apply(world, card, trigger, events);
             VictoryDisplay.VillainStage(world, facts, card, trigger, events);

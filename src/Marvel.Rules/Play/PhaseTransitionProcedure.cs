@@ -12,6 +12,7 @@ internal static class PhaseTransitionProcedure
     internal static Prompt? Apply(
         World world, ICardFacts facts, PhaseStep step, List<GameEvent> events)
     {
+        world.Agenda.KangSplit.Preflight(world, step);
         world.Agenda.KangTransitions.Preflight(world, step);
         int start = events.Count;
         switch (step.What)
@@ -51,6 +52,7 @@ internal static class PhaseTransitionProcedure
         // resolves synchronous delayed work; this typed child retains the phase
         // frame while its required choices finish before the response window.
         world.Agenda.KangTransitions.Begin(world, step);
+        world.Agenda.KangSplit.Begin(world, step, events);
         return null;
     }
 
