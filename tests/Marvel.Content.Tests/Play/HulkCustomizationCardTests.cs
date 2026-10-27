@@ -13,17 +13,17 @@ namespace Marvel.Content.Tests.Play;
 public sealed class HulkCustomizationCardTests
 {
     [Fact]
-    public void ThreeActualFacesAppendWithoutAdmittingTheRemainder()
+    public void ThreeCustomizationFacesRetainTheirExactRowsWithoutStartingCounters()
     {
         using var document = JsonDocument.Parse(AuthoredCards.Text);
         var rows = document.RootElement.GetProperty("cards").EnumerateArray().ToArray();
-        Assert.Equal(716, rows.Length);
+        Assert.Equal(718, rows.Length);
         string[] expected = ["10030", "10031", "10032"];
         Assert.Equal(expected,
             rows.Skip(709).Take(3).Select(row => row.GetProperty("card").GetString()));
         Assert.All(rows.Skip(709).Take(3), row => Assert.False(row.TryGetProperty("startingCounters", out _)));
-        Assert.Equal(31, AuthoredCards.Book.Authored.Count(id => id.StartsWith("10", StringComparison.Ordinal)));
-        string[] absent = ["10015", "10029", "90001"];
+        Assert.Equal(33, AuthoredCards.Book.Authored.Count(id => id.StartsWith("10", StringComparison.Ordinal)));
+        string[] absent = ["90001"];
         Assert.All(absent,
             id => Assert.DoesNotContain(id, AuthoredCards.Book.Authored));
     }

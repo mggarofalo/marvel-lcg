@@ -166,7 +166,7 @@ public sealed class DoctorStrangeIronFistCardTests
     {
         using var book = JsonDocument.Parse(AuthoredCards.Text);
         var rows = book.RootElement.GetProperty("cards").EnumerateArray().ToArray();
-        Assert.Equal(716, rows.Length);
+        Assert.Equal(718, rows.Length);
         Assert.Equal("09014", rows[678].GetProperty("card").GetString());
         Assert.Equal(40, AuthoredCards.Book.Authored.Count(face => face.StartsWith("09", StringComparison.Ordinal)));
         var pool = rows[678].GetProperty("startingCounters");

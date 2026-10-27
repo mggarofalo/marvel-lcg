@@ -430,3 +430,15 @@ Inner Demons has no Then; RR 1.8 governs printed resource counting and attacks.
 No engine, starting-counter, setup or public-admission changes. Toe to Toe
 10015 and Beat Cop 10029 remain absent. See
 [the packet](../../docs/content/hulk-nemesis-cards.md).
+
+## Hulk final two faces - MARVEL-847 / MARVEL-850
+
+Actual research rows 10015 and 10029 complete 718 rows / all 33 Hulk faces.
+All corrected 716 predecessor raw UTF-8 objects remain byte-identical and LF.
+Printed authority is `datasets/cards/cards.json`; current RR 1.8 labeled
+abilities, Stun, cost and movement govern. The vendored Toe to Toe Stun ruling
+agrees with the current independent-instruction interpretation. Beat Cop uses
+captured source threat after its exhaust/discard cost. Neither Beat Cop action
+is an attack or thwart. No engine, starting-counter, setup or public-admission
+changes. Actual-card behavior, inventory, byte preservation and mutation evidence
+are recorded in [the packet](../../docs/content/hulk-final-two-cards.md).

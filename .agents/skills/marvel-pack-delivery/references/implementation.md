@@ -40,7 +40,12 @@ not completion: harvest its exit before changing mutant sources, restoring them,
 or starting another build/test/hook in that worktree. Independent worktrees do not
 require a global build lock. Apphost/output-lock warnings or overlapping builds
 invalidate a mutation verdict until an isolated compiled rerun distinguishes it;
-do not classify an apparent survivor as equivalent from contaminated evidence.
+do not classify an apparent survivor as equivalent from contaminated evidence. Quiet output
+or an idle outer `testhost` is not evidence of a stalled run: this repository's
+xUnit runner starts a separate test executable. Inspect the actual descendant
+process before diagnosing a wait. If cancellation is necessary, identify and
+harvest the owned process tree by its exact worktree; do not leave an old test
+executable running against files being mutated or rebuilt.
 
 Use the full encounter procedure when proving entry, surge and cleanup together;
 a direct placement or When Revealed call may deliberately omit later lifecycle

@@ -1,5 +1,3 @@
-using System.Text.Json.Nodes;
-using Marvel.Cards.Dsl;
 using Marvel.Cards.Run;
 using Marvel.Content.Tests.Cards;
 using Marvel.Rules.Events;
@@ -47,77 +45,7 @@ public sealed class BeatCopThreatDestinationTests
         Assert.DoesNotContain(events, e => e.Verb == "Thwart");
     }
 
-    // Actual printed 10029 draft, injected only into this nonpublic prerequisite probe.
-    private static AbilityRunner Runner()
-    {
-        var book = JsonNode.Parse(AuthoredCards.Text)!;
-        book["cards"]!.AsArray().Add(JsonNode.Parse("""
-            {
-              "card": "10029",
-              "name": "Beat Cop",
-              "note": "Printed 10029. Move threat onto this support; discard cost retains the source incarnation and its captured threat for damage. Neither action is a thwart or attack.",
-              "abilities": [
-                {
-                  "trigger": {
-                    "event": "WhenActionTriggered",
-                    "timing": "Action",
-                    "subject": "this"
-                  },
-                  "cost": {
-                    "exhaust": "this"
-                  },
-                  "effect": {
-                    "chooseCard": {
-                      "from": {
-                        "query": "schemes"
-                      },
-                      "effect": {
-                        "moveThreat": {
-                          "from": "chosen",
-                          "to": "this",
-                          "amount": 1
-                        }
-                      }
-                    }
-                  }
-                },
-                {
-                  "trigger": {
-                    "event": "WhenActionTriggered",
-                    "timing": "Action",
-                    "subject": "this"
-                  },
-                  "cost": {
-                    "seq": [
-                      {
-                        "exhaust": "this"
-                      },
-                      {
-                        "discard": "this"
-                      }
-                    ]
-                  },
-                  "effect": {
-                    "chooseCard": {
-                      "from": {
-                        "query": "minions"
-                      },
-                      "effect": {
-                        "dealDamage": {
-                          "cards": "chosen",
-                          "amount": {
-                            "tokensOn": "this"
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              ]
-            }
-            """));
-        return new(AbilityCatalog.Parse(book.ToJsonString()));
-    }
+    private static AbilityRunner Runner() => new(AuthoredCards.Book);
 
     private static void Answer(World world, Marvel.Cards.Run.AbilityRunner runner,
         List<GameEvent> events, int target)

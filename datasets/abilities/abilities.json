@@ -22376,6 +22376,111 @@
           }
         }
       ]
+    },
+    {
+      "card": "10015",
+      "name": "Toe to Toe",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "attackableEnemies"
+              },
+              "effect": {
+                "attack": {
+                  "target": "chosen",
+                  "effect": {
+                    "seq": [
+                      {
+                        "enemyAttacks": {
+                          "enemies": "chosen"
+                        }
+                      },
+                      {
+                        "dealAttackDamage": {
+                          "cards": "chosen",
+                          "amount": 5
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "note": "Printed authority: datasets/cards/cards.json 10015. DSL event and selector spellings are engine choices."
+    },
+    {
+      "card": "10029",
+      "name": "Beat Cop",
+      "note": "Printed 10029. Move threat onto this support; discard cost retains the source incarnation and its captured threat for damage. Neither action is a thwart or attack.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this"
+          },
+          "cost": {
+            "exhaust": "this"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "schemes"
+              },
+              "effect": {
+                "moveThreat": {
+                  "from": "chosen",
+                  "to": "this",
+                  "amount": 1
+                }
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this"
+          },
+          "cost": {
+            "seq": [
+              {
+                "exhaust": "this"
+              },
+              {
+                "discard": "this"
+              }
+            ]
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "minions"
+              },
+              "effect": {
+                "dealDamage": {
+                  "cards": "chosen",
+                  "amount": {
+                    "tokensOn": "this"
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
     }
   ]
 }

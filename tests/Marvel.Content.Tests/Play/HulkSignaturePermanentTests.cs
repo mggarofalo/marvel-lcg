@@ -15,10 +15,10 @@ public sealed class HulkSignaturePermanentTests
         using var document = JsonDocument.Parse(AuthoredCards.Text);
         var rows = document.RootElement.GetProperty("cards").EnumerateArray().ToArray();
         string[] expected = ["10002", "10003", "10006", "10007", "10008", "10009", "10010"];
-        Assert.Equal(716, rows.Length);
+        Assert.Equal(718, rows.Length);
         Assert.Equal(expected, rows.Skip(693).Take(7).Take(7).Select(row => row.GetProperty("card").GetString()));
         Assert.All(rows.Skip(693).Take(7).Take(7), row => Assert.False(row.TryGetProperty("startingCounters", out _)));
-        Assert.DoesNotContain("10015", AuthoredCards.Book.Authored);
+        Assert.DoesNotContain("90001", AuthoredCards.Book.Authored);
     }
 
     [Fact]

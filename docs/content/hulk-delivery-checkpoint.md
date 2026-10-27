@@ -2,14 +2,17 @@
 
 Canonical parent: MARVEL-566. Complete scope is the verified
 [33-face handoff](research/remaining/hulk-implementation-handoff.md).
-Current local assembly: **716 authored rows, 31/33 Hulk faces**. No public Hulk
+Current local assembly: **718 authored rows, 33/33 Hulk faces**. No public Hulk
 admission or full-pack acceptance. Ordinary content acceptance remains agent-owned.
 
-The branch starts from frozen Doctor Strange candidate `553869be`; PR454's final
-CI remains pending. Local nonpublic integration proceeds during that run. Public
-Hulk admission and merge preparation follow complete pack coverage and Strange
-acceptance. This explicitly supersedes the earlier plan to wait before assembling
-any Hulk prerequisites.
+The branch starts from frozen Doctor Strange candidate `553869be`. Its later
+runtime at `a1870412` passed all eleven CI jobs in run40451138391. Strict
+up-to-date protection requires a Markdown-only synchronization and another CI
+run before Strange merges; a Git path audit proves runtime files unchanged.
+Local Hulk public setup/admission verification now proceeds after all33 faces
+are independently reviewed. Hulk merge still follows Strange merge. This
+supersedes the earlier requirement to wait for Strange merge before any local
+public-path work; no partial pack or new public bypass is introduced.
 
 ## Reviewed and integrated packets
 
@@ -30,6 +33,7 @@ any Hulk prerequisites.
 | Support threat movement / 850 | `61d0973e` | `e1ae44f0` | Exact source-support threat storage and removal continuation |
 | Customization subset / 850 | `3c6bb5bc` | `546f42b8`, evidence closure `3b27745f` | Actual 10030–10032, three faces |
 | Obligation/nemesis / 849 | `a07d4305`, root Clash query correction | `022c8254` | Actual 10025–10028, four faces |
+| Final two / 847,850 | `163b1f66` | `d06a1c6f` | Actual Toe to Toe10015 and Beat Cop10029 |
 | Thunderclap / 846 | `4dcd8afb` | `42111a07` | Actual 10005 bounded ordinary damage, one face |
 
 Packet documents preserve the authority, source/review evidence and limitations.
@@ -91,37 +95,27 @@ excluded, not classified equivalent. Restored nonincremental build and all211
 source/review affected cases passed again; `3b27745f` records that correction.
 This latest assembly has not yet received full-pack certification.
 
-## Remaining work
+## Complete authored candidate and remaining product proof
 
-- MARVEL-846: all eight signature faces are reviewed and locally integrated.
-- MARVEL-847: eight starter faces are reviewed and locally integrated. Toe to Toe10015
-  remains absent, but its engine prerequisite is now independently accepted. Initial
-  review found a lost lethal defeat receipt that suppressed Chase Them Down. The narrow
-  explicit original-occurrence repair restores that response and excludes a defending
-  ally's defeat. Source161 Content/32 Rules/129 architecture and independent63 Content/
-  53 Rules checks passed. Root combined Hulk/activation/damage regression passed226;
-  `hulk-integrated-toe-repair.log`. Actual-row authoring is underway alongside Beat Cop, using passing test-local drafts before the final reviewed-book append.
-- MARVEL-849: all four obligation/nemesis faces are reviewed and integrated.
-  Independent review caught Clash's use of a selector that includes alter-egos;
-  the root-authored correction uses the existing `heroAndAllyTargets` selector.
-  Three independent no-target/mixed-pool controls kill the old query. Abomination's
-  exact last-card receipt survives deck reset; a compiled discard-zone mutant is
-  killed. Corrected source/review333 Content and129 architecture checks passed,
-  with restored nonincremental build and normal hooks. The 716-row combined book
-  is byte-identical to review `022c8254`; all712 predecessor objects are unchanged.
-  Root combined actual nemesis/ranked activation verification passes39 cases
-  (`hulk-31face-integration.log`).
-- MARVEL-850: customization10030–10032 are reviewed and integrated. Beat Cop10029
-  remains absent, but the separate support-threat prerequisite is now independently
-  accepted and integrated. It preserves removed amounts, exact support identity and
-  live controller, and produces no scheme-placement windows for support storage.
-  Actual Beat Cop authoring must prove both printed actions and replace the temporary
-  test-local row injection without admitting duplicate rows.
-- MARVEL-851: verified public setup, characteristic actions, complete games,
-  restart/replay and final combined regression/platform evidence after all33
-  faces are ready.
+All six card packets are independently reviewed and locally integrated:
+3+8+9+5+4+4=33 faces, with685 predecessor faces plus33 Hulk faces =718 rows.
+The final book is byte-identical to the reviewed two-card source, SHA-256
+`8a8935c1e8256354100ea185834a64ba7768cf77470012f3d673955e473ec189`.
+All716 predecessor objects were independently compared byte-for-byte; both
+Beat Cop injection fixtures now require the actual authored book.
 
-The six card packets cover3+8+9+5+4+4=33 faces exactly once. The final complete
-book is expected to contain685 predecessor faces plus33 Hulk faces:718 total.
-No marketing packaging reconciliation or blanket human content gate is added.
-A genuinely new UI needs inspected media and a focused Plane review item.
+Final-two source verification passed1064 affected cases and20 restored actual/
+citation checks; independent review passed969 affected cases and23 restored
+focused checks. Valid actual damage and counter-kind mutants were killed.
+A canceled broad run and a THEN-shaped admission rejection are explicitly
+excluded as behavioral mutation evidence. Root's final combined Hulk/activation/
+threat/ranked-choice/ability-data run passed263 cases
+(`hulk-33face-integration.log`). Normal hooks preserve the existing gates.
+
+MARVEL-851 remains: exact public starter/setup/custom decks and closed admission,
+complete representative games, fresh-host/replay continuation, proportionate native
+interaction proof, final combined managed/platform CI and merge. Public admission
+implementation is released to its bounded worker; it is not yet integrated or
+accepted here. The current candidate is complete authored content, not a completed
+public pack. No marketing packaging reconciliation or blanket human content gate
+is added. A genuinely new UI requires inspected media and a focused Plane item.
