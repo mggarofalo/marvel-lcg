@@ -5,7 +5,7 @@ namespace Marvel.Server.Tests;
 
 public sealed class EngagementReplayRouteTests
 {
-    private static readonly string[] OtherDestinations = ["engine-replay-v25", "engine-replay-v27"];
+    private static readonly string[] OtherDestinations = ["engine-replay-v25", "engine-replay-v27", "engine-replay-v28"];
 
     [Theory]
     [InlineData(SessionReplayUpgrade.CoreRorsV19ToV26)]

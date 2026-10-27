@@ -7,7 +7,7 @@ param(
     [string]$ClientArtifact,
     [string]$ClientArtifactSha256,
     [string]$ArtifactCommit,
-    [string]$ReplayContract = 'engine-replay-v27',
+    [string]$ReplayContract = 'engine-replay-v28',
     [switch]$ExternalInteraction
 )
 $ErrorActionPreference = 'Stop'
