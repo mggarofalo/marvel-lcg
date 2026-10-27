@@ -14,7 +14,7 @@ internal static class DecisionCopy
         string label = PromptPresentation.Words(view.DisplayLabel ?? view.Label);
         if (string.Equals(label, view.Anchor, StringComparison.OrdinalIgnoreCase))
         {
-            return anchor;
+            return view.CostDescription is { Length: > 0 } cost ? $"{anchor} · {cost}" : anchor;
         }
 
         if (!string.Equals(view.Verb, label, StringComparison.OrdinalIgnoreCase))

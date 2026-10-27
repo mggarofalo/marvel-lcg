@@ -10,6 +10,8 @@ internal static class CardSourceSummary
     {
         if (card.Concealed || card.Persistent is not { } source) return [];
         var lines = new List<string>(AbilityLines(card));
+        if (card.Fields.FirstOrDefault(field => field.Name == "THREAT") is { } threat)
+            lines.Add($"{threat.Value} threat here");
         if (card.DamageKnown && (card.Damage > 0 || StoresDamage(source))) lines.Add($"{card.Damage} damage here");
         foreach (BoardFieldPresentation counter in card.Counters) lines.Add($"{counter.Value} {counter.Name.ToLowerInvariant()}");
         if (SpatialTableZones.IsExhausted(card)) lines.Add("Exhausted");
