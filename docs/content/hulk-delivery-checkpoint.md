@@ -181,3 +181,10 @@ Final semantic closure `56e9684d` is accepted and integrated as `bcffcaac`.
 On that integrated runtime, 21 focused Godot semantic cases and 10 Content cases
 pass (`hulk-final-semantic-{godot,content}.log`). Final certification is delegated
 to the existing required CI lanes rather than repeating earlier broad local runs.
+
+CI run `40467444576` on `e1d4b33b` failed both Linux native shards when the
+new rendered Beat Cop cases launched without DISPLAY. Godot exited before any
+host request; this run is not accepted certification. The native CI step now
+supplies Xvfb on Linux for rendered entries in either profile, preserving case
+selection and all assertions. Eight local CI-policy/manifest cases pass in
+`hulk-ci-display-policy.log`; the next CI run must prove the actual Linux fix.
