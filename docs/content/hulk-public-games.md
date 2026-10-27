@@ -65,3 +65,6 @@ Successful and failed-prefix canonical session archives are written outside the 
 ## Scope
 
 These cases address public setup, solo and shared-table engine decisions, legal deck customization and strict durable replay. They do not establish hosted network behavior, fresh-host resumption during a nested decision, campaign continuation, all-card play coverage, all encounter combinations, native interaction or player comprehension.
+
+The separate [independent restart review](hulk-public-restart-review.md) covers
+natural Unstoppable Force and paid multiplayer Thunderclap fresh-host boundaries.
