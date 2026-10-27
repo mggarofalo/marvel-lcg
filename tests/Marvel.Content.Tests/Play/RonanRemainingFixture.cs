@@ -13,12 +13,13 @@ namespace Marvel.Content.Tests.Play;
 internal sealed class RonanRemainingFixture : CoreCardTestBase
 {
     internal World World { get; } = new(Cards, 2);
-    internal AbilityRunner Runner { get; } = AuthoredCards.Runner();
+    internal AbilityRunner Runner { get; }
     internal List<GameEvent> Events { get; } = [];
     internal Card Villain { get; }
     internal Card Main { get; }
-    internal RonanRemainingFixture()
+    internal RonanRemainingFixture(AbilityRunner? runner = null)
     {
+        Runner = runner ?? AuthoredCards.Runner();
         World.Abilities = Runner;
         for (int i = 0; i < 2; i++)
         {
