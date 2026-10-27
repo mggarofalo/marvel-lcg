@@ -39,7 +39,7 @@ The isolated Thor integration candidate adds all 35 printed faces, the exact
 required face or changing the pinned recipe closes the whole pack. Integration
 is on hold pending independent Loki and Hammer Throw preflight reviews.
 Whole-game, native and final combined gates remain separate from focused setup
-and admission evidence. Black Widow remains outside public admission.
+and admission evidence. Black Widow has candidate public admission.
 
 `datasets/setup/setup.json` supplies the recipes the runtime can start.
 `datasets/abilities/abilities.json` defines which printed faces have executable
@@ -59,7 +59,8 @@ a later product executable.
 
 The executable ability book contains the 209 Core Set, 181 Rise of Red Skull,
 35 Captain America and 60 Wrecking Crew faces, plus the candidates' 57 Green
-Goblin and 34 Ms. Marvel faces (576 total). Product admission requires complete
+Goblin, 34 Ms. Marvel, 35 Thor, 34 Black Widow and 40 Doctor Strange faces
+(685 total). Product admission requires complete
 playable content and the verified published starter; physical packaging copy
 quantities are outside that requirement. Language support for a later card pattern
 does not admit that product.
@@ -89,3 +90,17 @@ extra customization cards enter legal custom decks. Missing authored faces,
 changed catalog membership or wrong required recipes close the whole product.
 Public setup and Natasha Preparation-play response restart checks provide focused
 integration evidence; they do not establish complete-game or native acceptance.
+
+
+Doctor Strange has candidate public admission for all 40 printed faces
+(09001a/b and 09002-09039). The pinned mc08 divider in
+`datasets/rules-packs/mc08/UPSTREAM.md` supplies 15 signature, 17 Protection and
+8 Basic cards, a separate obligation, five nemesis cards and five Invocations.
+The typed Invocation recipe has one each of 09032-09036, outside the ordinary
+40-card deck. Missing any required face or changing the pinned recipe closes
+the entire product. Extra cards 09037-09039 remain outside the starter and enter
+legal custom decks at printed copy limits. Discovery now has twelve heroes,
+39 scenario/mode recipes and fourteen encounter sets. Public setup and focused
+action evidence are recorded in `docs/content/doctor-strange-public-admission.md`;
+complete-game, fresh-host replay and final combined acceptance belong to the
+separate MARVEL-838 packet.

@@ -46,6 +46,12 @@ public static class StandaloneProductAdmission
         && setup.HeroNames.Contains("black_widow")
         && BlackWidowRecipe.Complete(setup.Hero("black_widow"));
 
+    /// <summary>Admits Doctor Strange's complete face inventory and separate Invocation recipe.</summary>
+    public static bool DoctorStrange(SetupCatalog setup, CardCatalog cards, IReadOnlySet<string> authored) =>
+        Complete("drs", ["09001a", "09001b", .. Enumerable.Range(2, 38).Select(number => $"09{number:000}")], cards, authored)
+        && setup.HeroNames.Contains("doctor_strange")
+        && DoctorStrangeRecipe.Complete(setup.Hero("doctor_strange"));
+
     private static IEnumerable<string> WreckingRecipes() =>
         FixedWreckingRecipes
         .Concat(Enumerable.Range(0, 16).Select(value => "wrecking_crew_custom_"

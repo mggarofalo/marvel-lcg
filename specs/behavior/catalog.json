@@ -84514,6 +84514,28 @@
       ]
     },
     {
+      "id": "setup:hero:doctor_strange",
+      "kind": "setup",
+      "title": "Doctor Strange",
+      "fingerprint": "sha256:c1f49dd9f2ba0a8ee451df3abb21f17c5502a243856e8c02af92e901c80eafaf",
+      "scope": "hero",
+      "disposition": "outside-core",
+      "obligations": [
+        {
+          "id": "behavior:setup:hero:doctor_strange:doctor-strange-setup",
+          "summary": "The Doctor Strange hero record supplies the printed starter deck, obligation, nemesis set and separate Invocation deck.",
+          "disposition": "outside-core",
+          "reason": "This record requires the Doctor Strange hero pack, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
       "id": "setup:hero:hawkeye",
       "kind": "setup",
       "title": "Hawkeye",

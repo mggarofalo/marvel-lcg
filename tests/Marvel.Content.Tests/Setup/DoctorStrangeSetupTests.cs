@@ -134,7 +134,7 @@ public sealed class DoctorStrangeSetupTests
         var custom = Dealer.DealOrder(complete, "rhino", ["doctor_strange"], facts: PrintedCards, playerDecks: [legal]);
         Assert.Equal(5, custom.Count(card => card.Source == CreationSource.InvocationDeck));
         Assert.Equal(40, DeckConstruction.DeckSize(custom, PrintedCards));
-        Assert.DoesNotContain("doctor_strange", RuntimeProductAdmission.Discover(complete, PrintedCards,
+        Assert.Contains("doctor_strange", RuntimeProductAdmission.Discover(complete, PrintedCards,
             PrintedCards.Faces.ToHashSet(StringComparer.Ordinal)).Setup.HeroNames);
     }
 

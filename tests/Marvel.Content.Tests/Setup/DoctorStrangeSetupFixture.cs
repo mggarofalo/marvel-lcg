@@ -6,7 +6,7 @@ using Marvel.Tests;
 
 namespace Marvel.Content.Tests.Setup;
 
-/// <summary>Test-local mc08 divider recipe; this catalog never enters public admission.</summary>
+/// <summary>Independent mc08 divider recipe for typed setup and malformed-binding probes.</summary>
 internal static class DoctorStrangeSetupFixture
 {
     internal static readonly string[] Invocations = ["09032", "09033", "09034", "09035", "09036"];

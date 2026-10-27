@@ -1,8 +1,8 @@
 # Doctor Strange delivery checkpoint
 
 Canonical parent: MARVEL-565. The [40-face handoff](research/remaining/doctor-strange-implementation-handoff.md)
-defines complete scope. This branch contains nonpublic prerequisites and authored
-rows; Doctor Strange is not publicly admitted.
+defines complete scope. This candidate admits the complete pack and verified starter
+through public setup. It is not yet merged or accepted as a complete delivery.
 
 Black Widow PR #453 is merged at `ffb26f66`; this branch rebased cleanly onto
 that accepted baseline. The reviewed 38-commit Strange stack now ends at
@@ -13,7 +13,7 @@ Latest integration candidate: 685 authored rows, all 40 Strange faces.
 Clea, Night Nurse and ally Iron Man source `a2714257` and independent content
 review `be3bc369` are combined with owner-discard source `43c0b046`, elimination
 reset repair `a6bb7ddd` and independent closure `7cdb2e23`. All 672 predecessor
-ability objects are retained unchanged. Public admission stays closed.
+ability objects were retained unchanged in that earlier support packet.
 
 Counterspell source `4f02211c` and independent review `0917fd23` supply the final actual row. Actual Desperate Defense,
 Physical Toll and Open the Dark Dimension source `99d4b16e` and independent
@@ -49,8 +49,8 @@ Content cases (`Source/evidence/strange-40-setup-integrated-content.log`).
 Source preserves all 684 predecessor raw objects byte-identically. After both
 independent closure packets, the combined selection passes 326 cases
 (`Source/evidence/strange-40-reviewed-final-content.log`). Counterspell
-independent review and setup repair closure `a058bf6d` are accepted. Public setup and
-final pack certification remain open; MARVEL-834 tracks native continuation
+independent review and setup repair closure `a058bf6d` are accepted. Public setup is
+reviewed; final pack certification remains open. MARVEL-834 tracks native continuation
 meaning and layout.
 
 The first broad integrated Content run at `54b9055a` reports 7,276 passes and
@@ -73,6 +73,23 @@ the eventual public-admission candidate remains required. The full Rules lane
 at `54b9055a` passes 1,187 cases. Public setup source `d887173f` is implemented
 and in independent review; complete public-game work has started from that
 candidate. No complete-pack acceptance is implied.
+Public admission source `d887173f` and independent review `674cc26f` are integrated.
+The candidate admits all 40 faces, the pinned 15/17/8 starter composition and the
+separate five-card Invocation deck, with twelve heroes and unchanged scenario/set
+inventory. Independent admission review passes 1,282 Setup, 88 Server and 25
+authority cases; nine additional production-path ownership/injection controls
+also pass in integration. The complete integrated Content lane now passes
+7,460 cases with no failures or skips (`strange-public-integrated-full-content.log`).
+This supersedes the earlier 52-failure baseline for that lane.
+
+Complete-game source `a038531d` proves six games and preserves two Astral failures.
+The separate target-filter and deferred-defeat receipt work now reports both
+remaining public cases passing, but independent review and integration are pending.
+Fresh-host source `546a5517` exposes a legitimate transient reveal lost from View;
+source `eb6f428d` repairs response/history disclosure and is in independent review.
+Remaining restart checkpoints, final native evidence and platform/CI gates remain
+open. MARVEL-839 has inspected media but is marked evidence-refresh-pending until
+the new result/history behavior is verified; no human content approval is required.
 The three signature events have reviewed prerequisites: reveal origin
 `530f156e`, simultaneous powers and Magic Blast stage repair `00f23ff2`, and
 Astral pre-arrow target/payment/inspection continuation `1abb96a2`. Their combined

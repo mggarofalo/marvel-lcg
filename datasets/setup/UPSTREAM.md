@@ -119,3 +119,17 @@ cards, plus one obligation and five nemesis cards outside the player deck.
 Extra customization cards 08030–08033 are absent from the starter.
 `BlackWidowSetupTests`, `BlackWidowAdmissionTests` and inventory closure tests
 check exact composition and complete-product public admission.
+
+
+Doctor Strange has candidate public admission for all 40 printed faces
+(09001a/b and 09002-09039). The pinned mc08 divider in
+`datasets/rules-packs/mc08/UPSTREAM.md` supplies 15 signature, 17 Protection and
+8 Basic cards, a separate obligation, five nemesis cards and five Invocations.
+The typed Invocation recipe has one each of 09032-09036, outside the ordinary
+40-card deck. Missing any required face or changing the pinned recipe closes
+the entire product. Extra cards 09037-09039 remain outside the starter and enter
+legal custom decks at printed copy limits. Discovery now has twelve heroes,
+39 scenario/mode recipes and fourteen encounter sets. Public setup and focused
+action evidence are recorded in `docs/content/doctor-strange-public-admission.md`;
+complete-game, fresh-host replay and final combined acceptance belong to the
+separate MARVEL-838 packet.
