@@ -375,3 +375,34 @@ preserved in `kang-stage-one-independent-combined.log`: 92 passed, one failed,
 No source mutation, Linux, native, full managed or public replay evidence is
 claimed by this review. Review tests and this finding are preserved for the
 production repair and its independent retest.
+
+## Local completion fail-closed repair
+
+Repair based on independent review `c12aab78c94ec1f279f58fc0b169cdd5bcd5d43f`.
+`MainSchemeCompletion.Commit` identifies the completing card by the four actual
+local 3B face IDs, rather than current villain, player count, topology or the
+presence of set-aside Kang cards. Before recording completion, advancing a
+sequential deck or ending the game, it raises `RulesNotImplementedException`
+naming Kang's Dominion and phase-end reunion. This is an engine boundary policy;
+it does not reinterpret the printed Forced Response as When Completed, implement
+Dominion/reunion, or change the ability book, admission or UI.
+
+The original actual-first-split and independent acceleration, disposal and
+unsupported one/three/four-seat probes remain unchanged. New prepared capability
+cases cover all four 3Bs with and without a next-stage deck: ordinary threat up
+to eight resolves, reaching nine raises without completion markers/events,
+removal, advancement or game loss. Core Rhino and Rise of Red Skull Crossbones
+final-stage controls still complete and lose with all four Kang 3Bs set aside.
+Threat placement itself is committed before the unsupported boundary; rollback
+is not claimed.
+
+Windows raw logs outside the repository:
+`C:/Users/mggar/Source/kang-local-guard-final.log` records the restored combined
+Kang/uniqueness/WhenDefeated/DefeatStepSeven/main-scheme completion and advancement
+run. `kang-local-guard-rules.log` records the complete MainSchemeTests and
+ThreatWindowTests classes. `kang-local-guard-mutant.log` records a compiling
+guard-removal mutant: nine unsupported completion cases fail and both supported
+Core/RoRS controls pass. The guard is restored. An earlier intermediate positive
+control edit had a local-name compilation error, corrected before these runs.
+Independent closure remains with the original reviewer; no full managed, Linux,
+native, public setup/replay or complete Kang gameplay acceptance is claimed.
