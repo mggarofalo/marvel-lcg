@@ -398,6 +398,22 @@ case and all 426 View tests. Combined Server history/restart/compatibility check
 pass 89. Historical Expert campaign diagnostic source `fc140a28` and review
 `55478c40` preserve the exact archive and establish earlier status cancellation
 as the first divergence; no save, replay or wire version changes are made.
-The View correction awaits independent closure. Additional public Vapors/recycle
-proof `4a59592d` is in review; hosted Invocation public return and refreshed
-native/media proof remain open.
+Independent closure `16a82276` accepts the View correction with 84 focused checks.
+Public Vapors/recycle proof `4a59592d` and independent review `47b304e9` are
+integrated; hosted Invocation public return and refreshed native/media proof remain open.
+
+## Public games and Astral closure
+
+The combined public-offer and deferred-defeat fixes (`9eb7d9e5`, `fd8f8668`)
+pass independent review `ce51efd5`. All eight complete public game journeys
+and their policy control pass, including exact public-host event, RNG, digest
+and durable replay comparisons. The review's direct live-target negative kills
+the previously surviving overbroad projection mutant. No unsupported opaque
+board-reading tail is admitted. See [combined review](astral-combined-engine-review.md).
+
+Integration passes 66 affected Astral/deferred-defeat Content checks. Public
+Vapors status replacement and final-Invocation recycling now have reviewed
+fresh-host continuation evidence; a paid unpaid-submission negative preserves
+live and durable state. No synchronous resource ability is misrepresented as a
+server-persisted client payment draft. Public hosted return and multiplayer
+restart privacy remain assigned work, not implied by these solo cases.

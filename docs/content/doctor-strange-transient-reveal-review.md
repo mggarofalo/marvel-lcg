@@ -2,6 +2,8 @@
 
 Reviewed source: `eb6f428dad5560c0d61e89f3a51aa717ac0de109`.
 Verdict: reject pending correction of captured-face presentation below.
+Closure verdict: accepted for the captured-text correction at
+`0d55160ca3f778dccc6c7e1ddada7881d0eae3d3`; see independent closure below.
 This is a View/event/history contract review, not native UI, owner acceptance,
 complete-game evidence, or acceptance of the whole Doctor Strange pack.
 
@@ -80,3 +82,53 @@ selected whole Server history/restart/compatibility cases pass. Evidence:
 `Source/evidence/strange-transient-captured-text-integrated-view.log` and
 `strange-transient-compat-integrated-server.log`. Independent closure review
 remains required for this lead correction.
+
+## Independent captured-text closure
+
+Reviewed integrated source: `0d55160ca3f778dccc6c7e1ddada7881d0eae3d3`.
+Verdict: accept the narrow `EventFlipPresentation` correction. The original
+captured-title/later-text finding is closed. This supplements the independent
+review at `bec69d6b`; it does not repeat or broaden that review's acceptance.
+
+The correction resolves both the historical title and expanded rules text from
+the flip's `SubjectFaces` entry and the corresponding authorized `EventFaces`
+presentation. The existing form-change regression asserts the captured title
+and captured rules, first proves the later face has different rules, and rejects
+those later rules in the summary. It distinguishes the correction from the
+reviewed faulty implementation; no duplicate test or temporary mutation was
+needed for this closure.
+
+The enclosing enumeration still requires a matching card in the visible world,
+and `RevealedRules` returns no rules when that card has no readable face.
+Concealed historical reveals therefore retain their concise `face up` wording.
+Neither absent nor face-down current cards acquire expanded text from an
+occurrence reference. With no authorized occurrence presentation, the existing
+currently readable face supplies the text. Face-down and boost summaries still
+return before rules expansion. The correction adds no disclosure grant, live
+card lookup, engine behavior, serialization, save, digest or RNG change.
+
+Source inspection retained the existing authorization path:
+`WorldProjection` builds `EventFaces` only from visibility-filtered events;
+`PublicRevealProjection` intersects public grants with that flip's own cards
+and rejects face-down grants; `VisibilityEventFilter` strips `PublicFaces` on
+export. The focused suite covers spectator and both restricted seat scopes,
+concealed private hands, unrelated grants, later ungranted events and another
+incarnation, as well as query purity and unchanged event JSON. No guard was
+widened by this correction.
+
+Independent Windows Release verification passed all 84 selected cases, with
+zero failures or skips, against the reviewed revision. The filter included the
+whole `PublicRevealIsolationTests`, `InvocationTransientRevealTests`,
+`EventResultMeaningTests`, `EventCueCopyTests`, `OccurrenceFaceTests`, and
+`EventPresentation*` classes. Existing controls verify current-text fallback,
+boost wording, face-down wording, and concise concealed-history reveal wording.
+All shell execution used PTY with `login:false`; the test run left the worktree
+clean. Logs and TRX remain outside the repository:
+
+- `C:/Users/mggar/Source/evidence/transient-captured-text-closure.log`
+- `C:/Users/mggar/Source/evidence/transient-captured-text-closure/transient-captured-text.trx`
+
+No new Server boundary changed in the narrow correction, so this closure did not
+repeat the lead's already recorded 89 Server cases or the full View suite.
+Native evidence refresh, owner acceptance, complete-game evidence, pack-wide
+acceptance and cross-platform certification remain outside this closure.
