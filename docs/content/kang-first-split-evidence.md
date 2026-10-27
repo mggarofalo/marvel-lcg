@@ -474,3 +474,39 @@ The normal commit hook initially rejected the reunion fixture's mixed setup and
 row-authoring method at CCN 11. Extracting ability-overlay construction into a
 separate helper preserves setup and row order. The affected stage-II suite passes
 12 cases after extraction (`C:/Users/mggar/Source/kang-stage-two-fixture-focused.log`).
+
+## Independent stage-II defeat review
+
+Reviewed source `37a52732e2584b8849614ed7a49de19545cdef1c` against the eight
+printed II faces, their four named 3B schemes, the mc11 game-area and
+clarification insert, and RR 1.8 interrupt, delayed effect, forced and When
+Defeated clauses. The candidate's own-defeat tier, matching local scheme mapping,
+whole-group capture, cleanup and first-player unique-copy prompt agree with those
+authorities within the explicitly supported two-seat scope. Existing tests cover
+both forced orders, all Standard/Expert mappings and reconstruction after a real
+first split, including agenda, topology, RNG and event JSON. Reconstruction is
+not a session replay.
+
+Independent nonpublic tests add a synthetic phase-end damage ability with the
+actual Kang II When Defeated overlay. In the interrupt case the defeat and
+capture occur before the phase ending and the join prompt appears at that same
+ending. The forced-response control defeats Kang after the ending and observes
+the pending departure until the next actual ending. Separate negative controls
+reject another card's defeat, a stale incarnation and the matching scheme located
+only in the other game area. The test boards are prepared split states; they do
+not claim public setup or full-card implementation.
+
+Windows `dotnet test tests/Marvel.Content.Tests/Marvel.Content.Tests.csproj -c
+Release -m:1 --filter 'FullyQualifiedName~KangStageTwoTimingReviewTests|FullyQualifiedName~KangStageTwoCaptureReviewTests'`
+passed 5 cases (`C:/Users/mggar/Source/kang-stage-two-review-new.log`). The same
+project's `--no-build` selection
+`FullyQualifiedName~Kang|FullyQualifiedName~Uniqueness|FullyQualifiedName~WhenDefeated|FullyQualifiedName~DefeatStepSeven`
+passed 120 cases (`C:/Users/mggar/Source/kang-stage-two-independent-review.log`).
+Both used `MSBUILDDISABLENODEREUSE=1`. The source-reported scheme-removal mutant
+was not independently repeated.
+
+**Verdict:** accept the nonpublic stage-II defeat to delayed reunion slice. The
+membership-change, co-due delayed work, simultaneous departure and last-area
+boundaries remain explicit unsupported cases, not accepted implementations. No
+central 4A continuation, complete scenario admission, public replay, native,
+Linux or full managed suite is claimed.
