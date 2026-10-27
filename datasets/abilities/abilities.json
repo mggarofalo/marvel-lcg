@@ -22895,6 +22895,34 @@
           "effect": { "grant": { "card": "attachedTo", "keyword": "health", "amount": 2 } }
         }
       ]
+    },
+    {
+      "card": "12013",
+      "name": "Ronin",
+      "note": "Ronin gets +1 THW and +1 ATK while at least one upgrade is attached to them. upgradesOnThis and conditional grants are engine spellings; multiple upgrades do not multiply this bonus.",
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant", "subject": "this" },
+          "effect": { "if": {
+            "test": { "exists": { "query": "upgradesOnThis" } },
+            "then": { "seq": [
+              { "grant": { "card": "this", "keyword": "thwart", "amount": 1 } },
+              { "grant": { "card": "this", "keyword": "attack", "amount": 1 } }
+            ] }
+          } }
+        }
+      ]
+    },
+    {
+      "card": "12033",
+      "name": "Assess the Situation",
+      "note": "The Action grants its player +1 hand size until phase end, including the end-player draw before phase expiration. grantUntil and EndOfPhase are engine spellings.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this" },
+          "effect": { "grantUntil": { "card": "you", "keyword": "hand_size", "amount": 1, "until": "EndOfPhase" } }
+        }
+      ]
     }
   ]
 }

@@ -1,4 +1,3 @@
-using System.Text.Json.Nodes;
 using System.Collections.Immutable;
 using Marvel.Cards.Dsl;
 using Marvel.Cards.Run;
@@ -187,16 +186,7 @@ public sealed class IronManHandSizeMaximumTests : CoreCardTestBase
         Assert.Equal(expected, projection.ModifiedOf(context, hero, "health"));
     }
 
-    private static AbilityRunner Runner()
-    {
-        var book = JsonNode.Parse(AuthoredCards.Text)!;
-        book["cards"]!.AsArray().Add(JsonNode.Parse("""
-            {"card":"12033","abilities":[{"trigger":{"event":"WhenActionTriggered",
-             "timing":"Action","subject":"this"},"effect":{"grantUntil":{"card":"you",
-             "keyword":"hand_size","amount":1,"until":"EndOfPhase"}}}]}
-            """));
-        return new AbilityRunner(AbilityCatalog.Parse(book.ToJsonString()));
-    }
+    private static AbilityRunner Runner() => AuthoredCards.Runner();
 
     private static void AddTech(World world, int count)
     {
