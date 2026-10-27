@@ -487,3 +487,16 @@ passes 47 Server, 27 Godot and six acceptance/citation cases. Offline card-data,
 behavior-index and executable Core corpus checks pass. Logs are under
 `Source/evidence/strange-final-*`. Earlier broad failures remain recorded above;
 no final green CI or merge is claimed until the PR completes those gates.
+## Certified runtime and protected-branch synchronization
+
+All eleven jobs in CI run `40451138391` passed on exact candidate `a1870412`,
+including managed correctness, both platform gates, all four native journey
+shards, desktop packaging and both native aggregates. The complete40-face
+content and its gameplay evidence are independently reviewed.
+
+The later main-ledger synchronization changes only Markdown; a Git path audit
+confirms every runtime, dataset, test, build and workflow file is identical to
+that certified head. Branch protection additionally requires an up-to-date PR
+head, so the synchronized revision receives the required CI run before merge.
+No assertions, required gates or privacy checks are bypassed. The separate UI
+review MARVEL-839 remains open for the owner.

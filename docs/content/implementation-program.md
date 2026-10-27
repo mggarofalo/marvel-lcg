@@ -177,3 +177,24 @@ The program record and canonical pack parents are the status authority; this fil
 
 After each merge or source repair, update the program record with exact revision, the one active parent, newly unblocked shared capability, reviewer/CI evidence, blocked source gates and the next executable packet. Update only the affected canonical parent/wave links and priority; do not create 62 generic duplicates or reparent the 64 existing records. Replan if a reviewed source/ruling changes a mechanic, a shared engine primitive fails its negative control, or final integrated checks reveal a cross-pack regression.
 
+
+## Certification and next-pack checkpoint — 2026-10-27
+
+Doctor Strange candidate `a1870412` passed all eleven CI jobs in run
+`40451138391`: managed correctness, both platform gates, four native journey
+shards, desktop packaging and the required native aggregates. The complete
+40-face pack is independently reviewed; PR #454 is ready for merge. The separate
+UI review MARVEL-839 remains an owner decision, not a content gate.
+
+Hulk's complete 33-face source and engine prerequisites are independently reviewed
+in local integration; the final book has 718 rows. Public setup/admission,
+complete games, restart/replay and proportionate native proof remain. The Hulk
+branch's delivery checkpoint records exact source/reviewer revisions. Local
+nonpublic work during Strange CI does not itself increase accepted-pack counts.
+
+Ronan's official seven-page source is pinned in
+[the merged source record](research/remaining/ronan-source-pin.md). Existing
+ranked selection and player-context operations suffice for the engagement move;
+no destination extension is needed. The separate villain-phase-start prerequisite
+MARVEL-854 is independently reviewed but not integrated. All five actual faces
+and public modular-set proof remain pending.
