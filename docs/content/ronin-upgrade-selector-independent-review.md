@@ -37,5 +37,23 @@ order; that order is an engine choice rather than a printed requirement, and
 projected host changes retain membership but not attachment chronology. The
 revised regression checks the explicit id order and `last` after actual
 detachment and reattachment, plus projected host changes and a cloned state.
-Existing queries retain their order. Independent review of this policy and the
-repair remains required.
+Existing queries retain their order.
+
+## Independent repair review
+
+Reviewed repair `cefdcbaa7826dc40d2ddcc3f0cdb061dd9dfb727`. Ronin's printed
+condition tests existence and does not specify chronology; ascending physical
+object id is a deterministic repository choice for this new query. The
+documented `last` behavior follows that choice. Both evaluators explicitly sort
+after filtering, and no existing query changes order. The revised regression
+still compares concrete cards after actual reattachment, projected host changes
+and cloning; changing the expected card does not remove the original mismatch
+control. The repair's compiled old-live-order mutant failed at that control;
+its restored build and 87 focused selector tests passed. Normal hooks also
+passed. Source logs use the prefix
+`C:/Users/mggar/Source/evidence/ronin-selector-order-`.
+
+The independent Release rerun of all three Ronin selector tests passed; see
+`C:/Users/mggar/Source/evidence/ronin-selector-independent-closure.log`.
+Verdict: accept this selector prerequisite and close the ordering finding.
+This does not author Ronin or admit a product.
