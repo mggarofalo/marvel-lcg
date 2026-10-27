@@ -1,4 +1,4 @@
-# Ronan: complete Kree Fanatic delivery candidate
+# Ronan: accepted Kree Fanatic delivery
 
 Parent: MARVEL-567. This is the five-face, seven-card print-and-play modular set,
 not the Galaxy's Most Wanted Ronan scenario. The pinned official PDF and exact
@@ -32,7 +32,7 @@ All five actual authored rows have independent review. The integrated book has
   cards outside the eliminated player's area, ordered minion transfer followed
   by owned-card disposal, projections and canonical transcript changes.
 
-Replay contract v28 is the unpublished aggregate boundary; v27 journals are
+Replay contract v28 is the published aggregate boundary; v27 journals are
 explicitly rejected. Existing frozen Core/RoRS routes still require exact replay.
 [Played campaign reconciliation](played-campaign-v28-reconciliation.md) proves
 the corrected elimination moves cause earlier rejection of incompatible old
@@ -87,8 +87,8 @@ rechecked those snapshots before integrating `ac697031` as `eba0cbb7`.
 
 All three affected complete test classes pass **20/20** on the integrated fixture
 repair (`ronan-final-fixture-reconciliation.log`). No runtime change was needed.
-Final CI remains responsible for the complete combined unit, integration,
-acceptance, native and package gates before merge.
+Final CI subsequently passed the complete combined unit, integration, acceptance,
+native and package gates; the certification below records the exact revision.
 ## Setup overflow repair — MARVEL-864
 
 CI run `40495273740` at `93a996e5` exposed the same native failure on Windows
@@ -113,3 +113,19 @@ source captures before behavior-preserving helper extraction are under
 Independent final driver evidence is under `ronan-footer-independent-100-refactored`
 and `ronan-footer-independent-150-final`; the original-case rerun is under
 `ronan-footer-independent-shell`. New final CI must certify the integrated head.
+## Final certification and acceptance
+
+[PR #459](https://github.com/mggarofalo/marvel-lcg/pull/459) merged on
+2026-10-27 at 13:18:24 UTC as `1677ebcdf26bc44b1f092b91af4b973689c1f92f`.
+All eleven jobs in [CI run 40501220687](https://github.com/mggarofalo/marvel-lcg/actions/runs/40501220687)
+passed on exact source `a2439588384a10c503cebe8ec1f5b0578dce0e8c`, including
+managed correctness, both platform lanes, native gates and the Windows package.
+A whole-tree comparison confirms the squash merge is identical to that certified
+source. The final CI closes the earlier partial-run and setup-overflow failures;
+those observations remain recorded above rather than being reported as passes.
+
+MARVEL-567 and six delivery children (854, 856, 857, 859, 860 and 864) are Done.
+The program has nine accepted canonical packs and 55 remaining. Agent acceptance
+covers this complete modular set and its reviewed engine changes. It does not
+accept the separate Galaxy's Most Wanted Ronan scenario or unfinished Kang and
+Ant-Man candidates.
