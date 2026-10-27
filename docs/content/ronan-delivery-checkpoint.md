@@ -89,3 +89,27 @@ All three affected complete test classes pass **20/20** on the integrated fixtur
 repair (`ronan-final-fixture-reconciliation.log`). No runtime change was needed.
 Final CI remains responsible for the complete combined unit, integration,
 acceptance, native and package gates before merge.
+## Setup overflow repair — MARVEL-864
+
+CI run `40495273740` at `93a996e5` exposed the same native failure on Windows
+and Linux: `shell-finish-100-motion` could no longer see Start game after the
+additional Kree Fanatic choice wrapped onto another row. The Windows package
+and Linux native shard 1 passed on that attempt; it is not final certification.
+
+Source `4e80832e` (integrated as `a216bb14`) reserves a fixed setup footer while
+keeping the complete choice list scrollable. The Start button retains its readable
+typography and hides in join mode and after entering play. Independent review
+`63e450e0` (integrated as `0f06f741`) passes the original full native case and a
+pointer-driven lifecycle at 100% and 150%, including join/create, Kree selection,
+entry into play, scale, motion and viewport resize. Both agents inspected captures;
+no production change was needed during review. This restores the existing setup
+interaction and requires no separate human content acceptance.
+
+Source focused evidence passes 16 Godot, 129 architecture and three release
+manifest tests, native manifest checks and the four-seat scenario setup case.
+Normal hooks pass on source and review, including 66 architecture checks. The
+source captures before behavior-preserving helper extraction are under
+`C:/Users/mggar/Source/evidence/ronan-footer-final-render-100` and `-150`.
+Independent final driver evidence is under `ronan-footer-independent-100-refactored`
+and `ronan-footer-independent-150-final`; the original-case rerun is under
+`ronan-footer-independent-shell`. New final CI must certify the integrated head.
