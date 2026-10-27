@@ -81,7 +81,9 @@ Feature: Hero and alter-ego form changes
       | 01024 | 1    |
       | 01024 | 2    |
     Then seat 1 is in hero form
-    And seat 1 has 4 cards in hand
+    And seat 1 is offered the "Do You Even Lift?" pending opportunity
+    When seat 1 declines the pending opportunity
+    Then seat 1 has 4 cards in hand
     When seat 1 takes their voluntary form change
     Then seat 1 changed from hero to alter-ego form
 
@@ -107,7 +109,9 @@ Feature: Hero and alter-ego form changes
       | 01024 | 1    |
       | 01024 | 2    |
     Then seat 1 is in hero form
-    And seat 1 has 4 cards in hand
+    And seat 1 is offered the "Do You Even Lift?" pending opportunity
+    When seat 1 declines the pending opportunity
+    Then seat 1 has 4 cards in hand
     And card 01020 copy 0 is in seat 1's hand
     And card 01021 copy 0 is in seat 1's hand
 
@@ -136,7 +140,9 @@ Feature: Hero and alter-ego form changes
       | 01024 | 1    |
       | 01024 | 2    |
     Then seat 1 is in hero form
-    And seat 1 has 4 cards in hand
+    And seat 1 is offered the "Do You Even Lift?" pending opportunity
+    When seat 1 declines the pending opportunity
+    Then seat 1 has 4 cards in hand
     And card 01020 copy 0 is in seat 1's hand
     And card 01021 copy 0 is in seat 1's hand
     And card 01022 copy 0 is in seat 1's hand

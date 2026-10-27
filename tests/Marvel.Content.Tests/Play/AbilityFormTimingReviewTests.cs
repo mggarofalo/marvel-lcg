@@ -80,15 +80,17 @@ public sealed class AbilityFormTimingReviewTests
     [InlineData(true)]
     [Rule("rr:ability.1")]
     [Rule("rr:cannot.1")]
+    [Rule("rr:leaves-play.1")]
     [Rule("rr:then.2")]
     public void ADeferredFlipRevalidatesItsOriginalIncarnationAndPermission(bool prohibited)
     {
-        // Synthetic scheduler boundary: pending work cannot borrow a new copy.
+        // Synthetic scheduler boundary: rr:leaves-play.1 says a card that leaves
+        // play "is considered to be a new copy of the card".
         // rr:ability.1 restricts interaction to in-play cards; rr:cannot.1 gives
         // the ability with "cannot" precedence. Neither grants a successful flip.
         var (world, runner, source, _, villain) = Board("""
             {"heal":{"card":"you","amount":1}}
-            """);
+            """, responseObserver: true);
         Start(world, runner, source);
         var identity = world.Seats[0].IdentityCard;
         if (prohibited)
@@ -111,6 +113,31 @@ public sealed class AbilityFormTimingReviewTests
         Assert.False(world.Agenda.IsBusy);
     }
 
+    [Fact]
+    [Rule("rr:then.2")]
+    public void ADeferredFlipCannotBorrowAReplacementPhysicalIdentity()
+    {
+        // Synthetic scheduler boundary: the engine binds pending work to one
+        // physical identity. rr:then.2 requires the pre-then effect to "resolve in full".
+        var (world, runner, source, _, villain) = Board("""
+            {"heal":{"card":"you","amount":1}}
+            """, responseObserver: true);
+        Start(world, runner, source);
+        var original = world.Seats[0].IdentityCard;
+        var replacement = world.CreateCard("01019a,01019b", world.Seats[0].Hero);
+        replacement.TurnTo("01019b");
+        world.Seats[0].IdentityCard = replacement;
+        Assert.Equal(original.Incarnation, replacement.Incarnation);
+        var events = new List<GameEvent>();
+        Sequence.Finish(world, world.Facts, runner, events);
+        Assert.Equal("01019b", original.FaceId);
+        Assert.Equal("01019b", replacement.FaceId);
+        Assert.Empty(events.OfType<CardsFlipped>());
+        Assert.Empty(world.Seats[0].Hand.Cards);
+        Assert.Equal(1, villain.Damage);
+        Assert.False(world.Agenda.IsBusy);
+    }
+
     private static void Start(World world, AbilityRunner runner, Card source)
     {
         var action = Assert.Single(runner.Actions(world, 0), offer => offer.Card == source.ObjectId);
@@ -120,7 +147,7 @@ public sealed class AbilityFormTimingReviewTests
     }
 
     private static (World World, AbilityRunner Runner, Card Source, Card Observer, Card Villain)
-        Board(string interruption, bool nestedCost = false)
+        Board(string interruption, bool nestedCost = false, bool responseObserver = false)
     {
         var local = AbilityCatalog.Parse($$$$$"""
             {"cards":[{"card":"01006","abilities":[{
@@ -134,7 +161,11 @@ public sealed class AbilityFormTimingReviewTests
               "trigger":{"event":"WhenFormChanged","timing":"ForcedInterrupt","subject":"game"},
               {{{{{(nestedCost ? "\"cost\":{\"exhaust\":\"this\"}," : "")}}}}}
               "effect":{{{{{interruption}}}}}
-            }]}]}
+            }{{{{{(responseObserver ? """
+            ,{"trigger":{"event":"WhenFormChanged","timing":"ForcedResponse","subject":"game"},
+              "effect":{"dealDamage":{"cards":{"query":"villain"},"amount":10}}}
+            """ : "")}}}}}
+            ]}]}
             """);
         var runner = new AbilityRunner(local);
         var cards = CardCatalog.Parse(File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")));

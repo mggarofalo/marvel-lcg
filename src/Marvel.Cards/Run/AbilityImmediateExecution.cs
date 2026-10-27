@@ -225,7 +225,8 @@ internal static class AbilityImmediateExecution
                 $"'{seat.IdentityCard.FaceId}' does not have one unambiguous {change.Form} destination");
         var completion = new EffectCompletion(1, 1);
         world.Agenda.Then(new PhaseStep(
-            new IdentityFormChangeOperation(destinations[0], context.Trigger, completion),
+            new IdentityFormChangeOperation(seat.IdentityCard.ObjectId, seat.IdentityCard.Incarnation,
+                destinations[0], context.Trigger, completion),
             world.Agenda.Current?.Round ?? 0, 0,
             Index: seat.Index, Subject: seat.IdentityCard.ObjectId, Seat: seat.Index));
         return completion;
