@@ -406,3 +406,36 @@ Core/RoRS controls pass. The guard is restored. An earlier intermediate positive
 control edit had a local-name compilation error, corrected before these runs.
 Independent closure remains with the original reviewer; no full managed, Linux,
 native, public setup/replay or complete Kang gameplay acceptance is claimed.
+## Independent local-completion repair closure
+
+Re-reviewed source repair `a8ca0a69d9c5ee8b5ef954e3230a49eead3842e4`
+on local review cherry-pick `59c4513b4b63e63ce48e7f14f11c0f1b75c0eb87`,
+retaining the original independent scheduled regression from `c12aab78`.
+The exact four Kang 3B faces are rejected in `MainSchemeCompletion.Commit`
+before the completion marker/event, sequential advancement or villain victory.
+The preceding threat placement is committed; this is an unsupported execution
+boundary and does not claim rollback of that placement. Other completing faces
+retain the ordinary completion policy even when Kang cards exist aside.
+
+The original real first-split -> scheduled threat -> local completion regression
+now passes. Independent reruns on Windows:
+
+```powershell
+dotnet test tests/Marvel.Content.Tests/Marvel.Content.Tests.csproj -c Release --filter 'FullyQualifiedName~Kang|FullyQualifiedName~Uniqueness|FullyQualifiedName~WhenDefeated|FullyQualifiedName~DefeatStepSeven'
+dotnet test tests/Marvel.Rules.Tests/Marvel.Rules.Tests.csproj -c Release --filter 'FullyQualifiedName~MainSchemeTests'
+```
+
+Content: **103 passed**; Rules: **15 passed**. Logs outside the repository:
+`C:/Users/mggar/Source/kang-stage-one-review-repair-content.log` and
+`kang-stage-one-review-repair-rules.log`. The Content selection includes the
+original scheduled regression, the four local faces both with and without a
+next scheme, below-target controls, and Core/Rise of Red Skull final-stage loss
+controls with unrelated Kang stages aside. The complete Rules class retains
+ordinary progression, both-face reveal, acceleration carry-over and final loss.
+The source-reported mutant evidence is not an independently repeated mutation.
+
+**Verdict:** the reported local-completion finding is closed. Accept the reviewed
+nonpublic two-seat stage-I defeat/first-split slice and its explicit unsupported
+completion boundary. This does not accept stage-II defeat/reunion implementation,
+complete Kang admission, public replay, whole-game, native or Linux behavior.
+No production changes or scope extension were made in this review closure.
