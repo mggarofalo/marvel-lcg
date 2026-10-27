@@ -15,13 +15,14 @@ namespace Marvel.Content.Tests.Play;
 public sealed class KangDominionStorageTests : CoreCardTestBase
 {
     [Theory]
-    [InlineData(false, false, false)]
-    [InlineData(true, false, false)]
-    [InlineData(false, true, false)]
-    [InlineData(false, true, true)]
+    [InlineData(false, false, false, false)]
+    [InlineData(true, false, false, false)]
+    [InlineData(false, true, false, false)]
+    [InlineData(false, true, true, false)]
+    [InlineData(false, false, false, true)]
     [Rule("rr:reveal.step.1")]
     [Rule("rr:reveal.step.2")]
-    public void ActualLocalCompletionStoresOnePhysicalDominionUntilOrderedCentralReveal(bool expert, bool multiple, bool stale)
+    public void ActualLocalCompletionStoresOnePhysicalDominionUntilOrderedCentralReveal(bool expert, bool multiple, bool stale, bool villainPhase)
     {
         // 11009b-11012b: "place 1 set-aside Kang's Dominion facedown under stage 4A."
         // 11013a: "Reveal Kang (III) ... Reveal each face down Kang's Dominion under this stage."
@@ -64,7 +65,7 @@ public sealed class KangDominionStorageTests : CoreCardTestBase
         Assert.Single(BeneathCards.Of(world, host));
         Assert.Equal(beforeDuplicate, events.Count);
         Assert.Equal(Outcome.Unfinished, world.Result);
-        world.Agenda.Add(new PhaseStep(new PhaseTransitionOperation(PhaseTransitionKind.EndPlayerPhase), 2, 4));
+        world.Agenda.Add(new PhaseStep(new PhaseTransitionOperation(villainPhase ? PhaseTransitionKind.EndVillainPhase : PhaseTransitionKind.EndPlayerPhase), 2, 4));
         var prompt = Assert.IsType<Prompt>(Sequence.Work(world, Cards, world.Abilities, events));
         Assert.Equal(DeckType.RemovedArea, scheme.Area.Type);
         Assert.Equal(DeckType.RemovedArea, local.Area.Type);
