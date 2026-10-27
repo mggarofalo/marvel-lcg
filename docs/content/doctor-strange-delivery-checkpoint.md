@@ -14,6 +14,12 @@ closure checks pass 47 Server, 27 Godot and six acceptance/citation tests. Final
 cross-platform CI remains required.
 
 Remaining delivery work: green combined cross-platform CI and merge of PR 454.
+Run40444518229 at `553869be` passed managed correctness, Linux platform gates,
+all native shards and packaging. Windows passed129 architecture,981 Godot,
+36 release and645 Server cases, then reached the60-minute job deadline while
+building the hosted-client smoke. Its managed integration step alone took
+51m47s. The platform job allowance is now90 minutes, preserving all test and
+per-process smoke deadlines; a fresh PR-head run remains required.
 The first run, 40439351007 at `fdd16b0f`, passed managed correctness, all native
 journey shards and desktop packaging. Windows and Linux platform jobs each
 failed only the exact dependency pin for the native privacy witness. The
@@ -481,3 +487,16 @@ passes 47 Server, 27 Godot and six acceptance/citation cases. Offline card-data,
 behavior-index and executable Core corpus checks pass. Logs are under
 `Source/evidence/strange-final-*`. Earlier broad failures remain recorded above;
 no final green CI or merge is claimed until the PR completes those gates.
+## Certified runtime and protected-branch synchronization
+
+All eleven jobs in CI run `40451138391` passed on exact candidate `a1870412`,
+including managed correctness, both platform gates, all four native journey
+shards, desktop packaging and both native aggregates. The complete40-face
+content and its gameplay evidence are independently reviewed.
+
+The later main-ledger synchronization changes only Markdown; a Git path audit
+confirms every runtime, dataset, test, build and workflow file is identical to
+that certified head. Branch protection additionally requires an up-to-date PR
+head, so the synchronized revision receives the required CI run before merge.
+No assertions, required gates or privacy checks are bypassed. The separate UI
+review MARVEL-839 remains open for the owner.

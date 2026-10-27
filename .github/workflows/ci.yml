@@ -117,9 +117,9 @@ jobs:
     needs: changes
     if: ${{ needs.changes.outputs.run == 'true' }}
     runs-on: ${{ matrix.os }}
-    # Routine integration and hosted smoke checks share this bounded job budget.
-    # Certification also includes the complete scale matrix and rendered acceptance.
-    timeout-minutes: ${{ inputs.exhaustive && 90 || 60 }}
+    # Reserve time for hosted checks after managed integration.
+    # Individual smoke processes retain their own deadlines.
+    timeout-minutes: 90
     strategy:
       fail-fast: false
       matrix:
