@@ -16,7 +16,7 @@ public sealed class HulkObligationNemesisTests
     {
         using var book = JsonDocument.Parse(AuthoredCards.Text);
         var rows = book.RootElement.GetProperty("cards").EnumerateArray().ToArray();
-        Assert.Equal(719, rows.Length);
+        Assert.Equal(721, rows.Length);
         string[] expected = ["10025", "10026", "10027", "10028"];
         Assert.Equal(expected,
             rows.Skip(712).Take(4).Select(row => row.GetProperty("card").GetString()));

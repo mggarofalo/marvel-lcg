@@ -15,12 +15,12 @@ namespace Marvel.Content.Tests.Play;
 public sealed class RonanActualCardTests : CoreCardTestBase
 {
     [Fact]
-    public void OnlyTheReviewedFaceIsAuthoredAndTheIncompleteSetRemainsExcluded()
+    public void AuthoredFacesRemainExcludedUntilTheSeparateAdmissionPacket()
     {
         using var data = JsonDocument.Parse(File.ReadAllText(RepositoryPaths.Dataset("abilities", "abilities.json")));
         var rows = data.RootElement.GetProperty("cards").EnumerateArray().ToArray();
-        Assert.Equal(719, rows.Length);
-        Assert.Equal(["90001"], rows.Select(row => row.GetProperty("card").GetString()!)
+        Assert.Equal(721, rows.Length);
+        Assert.Equal(["90001", "90003", "90005"], rows.Select(row => row.GetProperty("card").GetString()!)
             .Where(face => Cards.Pack(face) == "ron"));
         Assert.Equal("Kang (The Conqueror)", Cards.Title("11001"));
         Assert.DoesNotContain("11001", AuthoredCards.Book.Authored);

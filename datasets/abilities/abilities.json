@@ -22565,6 +22565,118 @@
           }
         }
       ]
+    },
+    {
+      "card": "90003",
+      "name": "The Accused",
+      "note": "Printed authority: joined cards.json 90003. Ordinary entry uses the resolving identity; boost explicitly attaches to the activation recipient through attachCards. The enemy attack bonus expires at that exact attack end. Ronan defeat discards this attachment. DSL spellings are engine choices.",
+      "attachTo": "you",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenAttackInitiated",
+            "timing": "ForcedInterrupt",
+            "subject": "game",
+            "target": "attachedTo",
+            "actor": "enemy"
+          },
+          "effect": {
+            "grantUntil": {
+              "card": "trigger.actor",
+              "keyword": "attack",
+              "amount": 1,
+              "until": "EndOfAttack"
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenCardDefeated",
+            "timing": "ForcedResponse",
+            "subject": "game"
+          },
+          "effect": {
+            "discard": "this"
+          },
+          "when": {
+            "isTitle": {
+              "card": "defeated",
+              "title": "Ronan the Accuser"
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "Boost",
+            "subject": "this"
+          },
+          "effect": {
+            "attachCards": {
+              "cards": "this",
+              "host": "you"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "90005",
+      "name": "You Dare Oppose Me?",
+      "note": "Printed authority: joined cards.json 90005. Each-time alteration deals each exact Kree Fanatic discard before continuing the five-card instruction. Overkill belongs only to the attack activation. DSL spellings are engine choices.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "eachTime": {
+              "effect": {
+                "discardTop": {
+                  "from": "encounterDeck",
+                  "count": 5
+                }
+              },
+              "when": {
+                "cardSet": {
+                  "card": "that",
+                  "set": "kree_fanatic"
+                }
+              },
+              "then": {
+                "dealEncounterCard": {
+                  "card": "that",
+                  "player": "you"
+                }
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "Boost",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "activationIs": "attack"
+              },
+              "then": {
+                "grantUntil": {
+                  "card": "activatingEnemy",
+                  "keyword": "overkill",
+                  "until": "EndOfAttack",
+                  "amount": 1
+                }
+              }
+            }
+          }
+        }
+      ]
     }
   ]
 }

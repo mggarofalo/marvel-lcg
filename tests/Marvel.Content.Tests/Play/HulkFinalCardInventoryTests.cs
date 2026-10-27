@@ -11,7 +11,7 @@ public sealed class HulkFinalCardInventoryTests
     {
         using var book = JsonDocument.Parse(AuthoredCards.Text);
         var rows = book.RootElement.GetProperty("cards").EnumerateArray().ToArray();
-        Assert.Equal(719, rows.Length);
+        Assert.Equal(721, rows.Length);
         var appended = rows.Skip(716).Take(2).ToArray();
         Assert.Equal(["10015", "10029"], appended.Select(row => row.GetProperty("card").GetString()));
         Assert.All(appended, row => Assert.False(row.TryGetProperty("startingCounters", out _)));

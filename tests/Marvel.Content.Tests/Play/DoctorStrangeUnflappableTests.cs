@@ -17,7 +17,7 @@ public sealed class DoctorStrangeUnflappableTests
     {
         using var document = JsonDocument.Parse(AuthoredCards.Text);
         var rows = document.RootElement.GetProperty("cards").EnumerateArray().ToArray();
-        Assert.Equal(719, rows.Length);
+        Assert.Equal(721, rows.Length);
         Assert.Equal("09020", rows[671].GetProperty("card").GetString());
         Assert.False(rows[671].TryGetProperty("startingCounters", out _));
         Assert.Equal(40, AuthoredCards.Book.Authored.Count(face => face.StartsWith("09", StringComparison.Ordinal)));

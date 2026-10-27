@@ -13,7 +13,7 @@ public sealed class HulkStarterCardTests
     {
         using var book = JsonDocument.Parse(AuthoredCards.Text);
         var rows = book.RootElement.GetProperty("cards").EnumerateArray().ToArray();
-        Assert.Equal(719, rows.Length);
+        Assert.Equal(721, rows.Length);
         Assert.Equal(Enumerable.Range(10011, 9).Where(id => id != 10015).Select(id => id.ToString(System.Globalization.CultureInfo.InvariantCulture)),
             rows.Skip(700).Take(8).Select(row => row.GetProperty("card").GetString()));
         Assert.All(rows.Skip(700).Take(8), row => Assert.False(row.TryGetProperty("startingCounters", out _)));

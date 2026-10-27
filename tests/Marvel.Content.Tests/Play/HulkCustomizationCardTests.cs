@@ -17,7 +17,7 @@ public sealed class HulkCustomizationCardTests
     {
         using var document = JsonDocument.Parse(AuthoredCards.Text);
         var rows = document.RootElement.GetProperty("cards").EnumerateArray().ToArray();
-        Assert.Equal(719, rows.Length);
+        Assert.Equal(721, rows.Length);
         string[] expected = ["10030", "10031", "10032"];
         Assert.Equal(expected,
             rows.Skip(709).Take(3).Select(row => row.GetProperty("card").GetString()));
