@@ -66,3 +66,26 @@ squash ancestry in `75dd7175`; the audit is `ronan-hulk-squash-audit.txt`.
 Managed CI receives the same 90-minute bound as platform gates: the certified
 Hulk managed job took 58m31s against its 60-minute bound, and Ronan adds eight
 complete-game/restart cases. Test selection and correctness assertions are unchanged.
+
+
+## Final fixture reconciliation
+
+The post-cleanup unit attempt at `f5a03322` passed all five non-Content projects
+(1,815 tests). Content reported three failing cases: two eliminated-owner Clea
+fixtures and the standard/expert transcript assertion containing two stale Iron
+Man elimination pins. The run was stopped after those findings amid machine
+memory pressure; it is not a completed passing unit run. Its full log is
+`C:/Users/mggar/Source/evidence/ronan-final-unit.log`.
+
+The Clea fixtures now first assert that normal elimination removes the original
+foreign-controlled owned card, then introduce explicitly synthetic late copies
+to isolate absent-owner routing. Every original shuffle, RNG, interrupt and
+controller assertion remains. For each Iron Man transcript, independent full
+canonical comparison found exactly 40 changed RemovedArea indices, with all
+other fields identical; both old/new hashes match the pins. The root independently
+rechecked those snapshots before integrating `ac697031` as `eba0cbb7`.
+
+All three affected complete test classes pass **20/20** on the integrated fixture
+repair (`ronan-final-fixture-reconciliation.log`). No runtime change was needed.
+Final CI remains responsible for the complete combined unit, integration,
+acceptance, native and package gates before merge.

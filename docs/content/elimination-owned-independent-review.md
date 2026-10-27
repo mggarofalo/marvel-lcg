@@ -44,3 +44,24 @@ artifacts are `elimination-owned-canonical-old` and
 review evidence; aggregate integration and both-platform certification remain
 separate gates. Replay semantics belong to the unpublished v28 candidate; this
 review does not admit v27 history.
+
+## Iron Man elimination transcript pins
+
+Two additional Core FAQ transcripts eliminate Iron Man after the chosen upgrade
+is discarded. Comparing the complete canonical snapshots at `47db1688` and
+`f5a03322` found exactly 40 changed fields in each scenario: all are card indices
+in `RemovedArea`, and the changed indices are permutations of the same values.
+Every other canonical field is identical. The resolving encounter card 01188
+moves from index 46 to 7 as the step-4 owned-card cleanup precedes step 5; the
+remaining indices reflect the resulting removal order. This follows the same
+ordering explained above and does not change either scenario's elimination result.
+
+The SHA-256 of each captured canonical string matches its old or new pin. The
+external evidence directory `C:/Users/mggar/Source/evidence/` contains
+`ronan-pin-old-01036.json`, `ronan-pin-current-01036.json`,
+`ronan-pin-old-01039.json`, `ronan-pin-current-01039.json`,
+`ronan-pin-compare.py` and `ronan-pin-canonical-summary.txt`;
+`ronan-pin-old-test.log` records the passing predecessor check and
+`ronan-pin-current-red.log` the stale-pin failure. These captures used temporary
+runner instrumentation, restored before the pin update. The focused repaired
+check passed in `ronan-pin-repaired-test.log`.
