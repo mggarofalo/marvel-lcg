@@ -4,10 +4,24 @@ Canonical parent: MARVEL-565. The [40-face handoff](research/remaining/doctor-st
 defines complete scope. This candidate admits the complete pack and verified starter
 through public setup. It is not yet merged or accepted as a complete delivery.
 
-Black Widow PR #453 is merged at `ffb26f66`; this branch rebased cleanly onto
-that accepted baseline. The reviewed 38-commit Strange stack now ends at
-`22d67804` (pre-rebase head `4d95d05c`). Earlier hashes below name the revisions
-actually tested and remain evidence references. No source packets were dropped.
+Current integrated revision: `ed03a479`, based on accepted Black Widow merge
+`ffb26f66`. All 40 playable faces, the verified starter, public admission,
+eight complete public games and reviewed fresh-host Invocation checkpoints are
+integrated. The combined Release build passes without warnings and all six unit projects
+pass: 7,477 Content, 1,187 Rules, 426 View, 84 Session, 51 Core and 50 Decisions
+cases. Integration and acceptance lanes are being checked next.
+
+Remaining delivery work:
+
+- Reviewed closure of the historical scheme-defeat replay fixture; keep its archive unchanged.
+- Other piles keyboard reach and focus restoration (MARVEL-842), then refresh
+  the inspected result/history media in existing UI item MARVEL-839.
+- Final combined managed/platform CI, PR and merge.
+
+No human content approval is required. MARVEL-839 is a separate UI comprehension
+review and remains evidence-refresh-pending. Earlier revision hashes below name
+the evidence actually collected; historical packet notes do not supersede this
+current remaining-work list.
 
 Latest integration candidate: 685 authored rows, all 40 Strange faces.
 Clea, Night Nurse and ally Iron Man source `a2714257` and independent content
@@ -68,11 +82,9 @@ Combined affected Content/corpus checks pass 172; the full integrated View lane
 passes 418, and strengthened independent continuation controls pass separately.
 Logs: `Source/evidence/strange-regression-closures-integrated.log`,
 `strange-regression-closures-full-view.log`, and
-`strange-continuation-independent-integrated-view.log`. Full Content rerun on
-the eventual public-admission candidate remains required. The full Rules lane
+`strange-continuation-independent-integrated-view.log`. The subsequent full public-admission Content rerun is recorded below. The full Rules lane
 at `54b9055a` passes 1,187 cases. Public setup source `d887173f` is implemented
-and in independent review; complete public-game work has started from that
-candidate. No complete-pack acceptance is implied.
+and accepted by the independent review recorded below. No complete-pack acceptance is implied.
 Public admission source `d887173f` and independent review `674cc26f` are integrated.
 The candidate admits all 40 faces, the pinned 15/17/8 starter composition and the
 separate five-card Invocation deck, with twelve heroes and unchanged scenario/set
@@ -82,11 +94,10 @@ also pass in integration. The complete integrated Content lane now passes
 7,460 cases with no failures or skips (`strange-public-integrated-full-content.log`).
 This supersedes the earlier 52-failure baseline for that lane.
 
-Complete-game source `a038531d` proves six games and preserves two Astral failures.
-The separate target-filter and deferred-defeat receipt work now reports both
-remaining public cases passing, but independent review and integration are pending.
-Fresh-host source `546a5517` exposes a legitimate transient reveal lost from View;
-source `eb6f428d` repairs response/history disclosure and is in independent review.
+Complete-game source `a038531d` plus independently reviewed Astral fixes now
+prove all eight public games. Fresh-host source `546a5517` exposed transient
+reveal loss; source `eb6f428d`, lead captured-text correction and independent
+closure `16a82276` resolve it. The combined evidence is integrated at `ed03a479`.
 Remaining restart checkpoints, final native evidence and platform/CI gates remain
 open. MARVEL-839 has inspected media but is marked evidence-refresh-pending until
 the new result/history behavior is verified; no human content approval is required.
@@ -417,3 +428,29 @@ fresh-host continuation evidence; a paid unpaid-submission negative preserves
 live and durable state. No synchronous resource ability is misrepresented as a
 server-persisted client payment draft. Public hosted return and multiplayer
 restart privacy remain assigned work, not implied by these solo cases.
+
+## Reviewed public closure and broad-lane findings
+
+Public hosted return source `35bb5995` and review `69a23f67` are integrated.
+The nine-case reviewed selection includes genuine public two-player setup,
+exact hosted physical identity, natural paid Astral use, atomic unpaid rejection,
+fresh-host and uninterrupted continuation parity, durable bytes and production
+View privacy under no-seat/seat-0/seat-1 scopes. It makes no authenticated
+spectator-transport claim. See [hosted review](doctor-strange-hosted-independent-review.md).
+
+Native source `55c94501` and review `d19b6b37` are integrated. Review accepts
+normal public setup, pile inspection and Natural Talent proof, plus refreshed
+prepared Spell/Master history captures. It rejects UI readiness until the
+Other piles keyboard gap (MARVEL-842) is fixed: the opener is accessibility-only
+and cannot be reached by ordinary Tab navigation. MARVEL-839 stays pending.
+See [native evidence](doctor-strange-public-native.md).
+
+The first combined integration sweep has 129 Architecture and 36 Release passes;
+Godot has 980 passes, seven environment-gated skips and one socket-fixture failure;
+Server has 631 passes and one historical comparison-adapter failure. Sources
+`7ab1475d` and `bdcd5491`, independently accepted by `8703b95a`, repair these
+fixtures without changing production contracts, timeouts or archived bytes.
+The combined acceptance sweep has 176 passes and one historical scheme-defeat
+replay failure at the corrected paid-stun cancellation boundary. Its separately
+assigned repair must preserve both the old archive and current legal full-game
+positive coverage. These failing broad runs are evidence, not a green candidate.

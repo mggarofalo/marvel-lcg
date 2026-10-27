@@ -118,7 +118,33 @@ func _completion() -> bool:
     if not await ui.click(Locator.control(submit)): return false
     if not await ui.expect(func(): return witness.Revision() == 2 and witness.DecisionKind() == "PlayerAction", "one complete subset answer returns to play"): return false
     if not await _capture("result"): return false
-    if not await _release_table_resources(): return false
+    print("INVOCATION_RESULT " + _visible_text(main))
+    if not await _history(): return false
+    return await _release_table_resources()
+
+func _history() -> bool:
+    if not await ui.click(ui.named("ToggleHistory")): return false
+    var details = ui.button("▸ Details")
+    if not await ui.click(details): return false
+    print("INVOCATION_HISTORY " + _visible_text(main))
+    if not await ui.expect(func(): return "Reveal · Winds of Watoomb" in _visible_text(main), "history preserves the exact intermediate public Winds reveal"): return false
+    if not await _capture("history"): return false
+    return await _scroll_to_reveal()
+
+func _scroll_to_reveal() -> bool:
+    var components := main.find_child("OccurrenceComponents", true, false) as ScrollContainer
+    var reveal_rows: Array = components.find_children("*", "Button", true, false).filter(func(row): return "Reveal · Winds of Watoomb" in _visible_text(row))
+    if not await ui.expect(func(): return reveal_rows.size() == 1, "one physical intermediate reveal in history details"): return false
+    var reveal: Control = reveal_rows[0]
+    for step in range(30):
+        if _control_is_fully_visible(reveal): break
+        var point := _visible_control_rect(components).get_center()
+        ui._move(point)
+        ui._mouse_button(point, MOUSE_BUTTON_WHEEL_DOWN, true)
+        ui._mouse_button(point, MOUSE_BUTTON_WHEEL_DOWN, false)
+        await process_frame
+    if not await ui.expect(func(): return _control_is_fully_visible(reveal), "public intermediate reveal is fully readable after native scrolling"): return false
+    if not await _capture("history-reveal"): return false
     return true
 
 func _capture(leaf: String) -> bool:

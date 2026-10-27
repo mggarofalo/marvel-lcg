@@ -1,4 +1,5 @@
 using Godot;
+using Marvel.View;
 
 namespace Marvel.Godot;
 
@@ -58,4 +59,36 @@ public sealed partial class NativeGameWitness : RefCounted
         return $"{draft.Selected?.Id}|{draft.SelectedCost}|{string.Join(',', draft.Targets)}|"
             + $"{string.Join(',', draft.Resources)}|{string.Join(',', draft.Assignments)}|{string.Join(',', draft.Values)}";
     }
+
+    /// <summary>Checks typed ownership, physical public cards and anonymous concealed entries.</summary>
+    public bool PileMatches(string top, string discard, int concealed)
+    {
+        var world = table?.CurrentGame?.World;
+        if (world is null || world.InvocationDecks.Count != 1) return false;
+        var pile = world.InvocationDecks[0];
+        if (pile.Owner != 0) return false;
+        var deck = world.Areas.Single(area => area.Id == pile.Deck);
+        var removed = world.Areas.Single(area => area.Id == pile.Discard);
+        return deck.Owner == 0 && removed.Owner == 0 && PublicTopMatches(deck, top, concealed)
+            && DiscardMatches(removed, discard);
+    }
+
+    private static bool PublicTopMatches(AreaDescriptor deck, string top, int concealed)
+    {
+        var hidden = deck.Cards.Where(card => card.Face is null).ToArray();
+        return hidden.Length == concealed && hidden.All(card => card.Id is null && card.Location is null)
+            && deck.Cards.Count(card => card.Face?.Title == top && card.Id is not null && card.FaceUp) == 1
+            && deck.Cards.Count == concealed + 1;
+    }
+
+    private static bool DiscardMatches(AreaDescriptor removed, string discard) => discard.Length == 0
+        ? removed.Cards.Count == 0
+        : removed.Cards.Count == 1 && removed.Cards.Count(card => card.Face?.Title == discard && card.Id is not null) == 1;
+
+    /// <summary>Counts the player's authorized hand.</summary>
+    public int HandCount() => table?.CurrentGame?.World?.Areas.Single(area => area.Owner == 0 && area.Zone == "HandsArea").Cards.Count ?? -1;
+
+    /// <summary>Reads the visible identity's exhaustion.</summary>
+    public bool IdentityReady() => table?.CurrentGame?.World?.Areas.SelectMany(area => area.Cards)
+        .Single(card => card.Face?.Title == "Doctor Strange" || card.Face?.Title == "Stephen Strange").Ready ?? false;
 }
