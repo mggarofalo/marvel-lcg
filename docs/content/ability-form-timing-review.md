@@ -61,3 +61,44 @@ this review. No broad integration result is claimed. The source's stopped broad
 run is not evidence; replay/version and unrelated fixture reconciliation remain
 root-owned. These failing tests are regression witnesses for the reported gaps,
 not an accepted green delivery.
+
+## Closure review of `3b186f64`
+
+Verdict: accept the ability-driven form timing and revalidation packet within its
+stated boundary. The four prior findings are addressed: the pending destination,
+owner/identity eligibility, live prohibition, and original incarnation are checked
+at application; a replacement physical identity is also rejected. Failed changes
+settle zero and do not offer an after-change response. The synthetic tests verify
+that the dependent draw is skipped and the independent damage suffix still resolves.
+Cancellation, nested changes, elimination, prohibition, re-entry and replacement
+remain synthetic boundary controls; they do not claim all are reachable in admitted
+content. The response suppression predicate is restricted to the failed
+`IdentityFormChangeOperation`, while ordinary lifecycle windows retain their
+existing path and the Rules lifecycle regression selection passes.
+
+`AbilityFormGameReviewTests` adds a distinct normal `Game` offer/`Resolve` proof.
+It uses a manually prepared dealt She-Hulk/Rhino world with the villain replaced by
+actual Taskmaster, actual Split Personality, printed She-Hulk and a known boost;
+it is not public Taskmaster scenario setup or Ant-Man admission. Both accepting
+and declining the optional response pass. Three payment discards precede the
+single flip; Taskmaster discards the boost and deals three with its source and
+occurrence association before She-Hulk's response; acceptance deals two before
+both actual draws. The ordered event assertions include payment, receipts, flip,
+forced response, draw and event cleanup, and check the resumed draw does not
+borrow Taskmaster's attribution. The game returns to the root turn prompt with
+RNG state and consumption unchanged. Mulligan fills the prepared hand, so two
+cards are drawn to the printed hand size of four.
+
+Independent run on this tree, Release and `-m:1`, with
+`MSBUILDDISABLENODEREUSE=1`: Content filter
+`AbilityFormGameReviewTests|AbilityFormTimingReviewTests|AbilityFormTimingTests|AbilityFormCompletionTests|FormChange`
+passed 86/86; Rules filter `Forms|Lifecycle|RuleCitation` passed 65/65;
+Architecture passed 129/129. Logs are `C:/Users/mggar/Source/ability-form-closure-focused.log`,
+`ability-form-closure-rules.log`, and `ability-form-closure-architecture.log`.
+The initial fixture expected four cards drawn but mulligan had already filled its
+hand; that incorrect fixture expectation was corrected after inspecting the state.
+The event-inspection diagnostic intentionally failed and is not test evidence.
+The predecessor packet records its compiled mutants and broader 216-case Content
+and Gherkin runs. No production changes were made in this review. Voluntary
+flip-before-interrupt remains MARVEL-863; Tiny/Giant DSL, projections, admission,
+and replay compatibility remain outside this acceptance.
