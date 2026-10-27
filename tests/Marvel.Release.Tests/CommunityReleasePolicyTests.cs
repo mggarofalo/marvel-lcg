@@ -79,6 +79,9 @@ public sealed class CommunityReleasePolicyTests
             workflow, StringComparison.Ordinal);
         Assert.Contains("needs: [identity, acceptance-record, server-sign]",
             workflow, StringComparison.Ordinal);
+        Assert.Contains("engine-replay-v28 · protocol 42 · save 7",
+            File.ReadAllText(Path.Combine(RepositoryPaths.Root, ".github", "workflows", "ci.yml")),
+            StringComparison.Ordinal);
         Assert.Contains("engine-replay-v28 · protocol 42 · save 7", workflow,
             StringComparison.Ordinal);
         Assert.Contains("engine-replay-v28 · protocol 42 · save 7", serverUpgrade,
