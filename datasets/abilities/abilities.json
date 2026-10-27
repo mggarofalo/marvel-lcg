@@ -22719,6 +22719,108 @@
           }
         }
       ]
+    },
+    {
+      "card": "90004",
+      "name": "Bring the Hammer Down",
+      "note": "Printed authority: joined cards.json 90004. Each-player frames locate the engaged Ronan and use that player's form; absent Ronan gains surge for the revealing player. The delayed boost tests the exact activation-owned defeat receipt, excluding boost ability damage (rr:boost-boost-icon.3), and deals once when any character was defeated. DSL spellings and frame composition are engine choices.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "titleInPlay": "Ronan the Accuser"
+              },
+              "then": {
+                "eachPlayer": {
+                  "order": "playerOrder",
+                  "effect": {
+                    "if": {
+                      "test": {
+                        "exists": {
+                          "cardsIn": {
+                            "area": "yourPlayArea",
+                            "title": "Ronan the Accuser"
+                          }
+                        }
+                      },
+                      "then": {
+                        "if": {
+                          "test": {
+                            "inForm": {
+                              "player": "you",
+                              "form": "hero"
+                            }
+                          },
+                          "then": {
+                            "enemyAttacks": {
+                              "enemies": {
+                                "cardsIn": {
+                                  "area": "yourPlayArea",
+                                  "title": "Ronan the Accuser"
+                                }
+                              },
+                              "against": "you"
+                            }
+                          },
+                          "else": {
+                            "enemySchemes": {
+                              "enemies": {
+                                "cardsIn": {
+                                  "area": "yourPlayArea",
+                                  "title": "Ronan the Accuser"
+                                }
+                              },
+                              "against": "you"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "else": {
+                "gainSurge": 1
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "Boost",
+            "subject": "this"
+          },
+          "effect": {
+            "afterActivation": {
+              "effect": {
+                "if": {
+                  "test": {
+                    "atLeast": {
+                      "value": {
+                        "result": "activationDefeatedCharacters"
+                      },
+                      "count": 1
+                    }
+                  },
+                  "then": {
+                    "dealEncounterCards": {
+                      "player": "firstPlayer",
+                      "count": 1
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
     }
   ]
 }
