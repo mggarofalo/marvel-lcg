@@ -52,6 +52,8 @@ public sealed class AbilityRunner : ICardAbilities
     public bool CanPlayFromDiscard(World world, Card card, int player) => AbilityStoragePermission.CanPlayFromDiscard(world, program, card, player);
     public CardCounterPool? CounterPool(World world, Card card) => AbilityProgramQueries.CounterPool(world, program, card);
     public IReadOnlyList<ContinuousEffect> Constant(World world, Card card) => constantQueries.Constant(world, card);
+    public bool CanUseHandResources(World world, Card source) =>
+        AbilityProgramQueries.CanUseHandResources(world, program, source);
     public string ResourcesGeneratedBy(World world, Card source, Card? payingFor) => AbilityProgramQueries.ResourcesGeneratedBy(world, program, source, payingFor);
     public DefenderChoice Defenders(World world, EnemyAttack attack, IReadOnlyList<Card> candidates) => AbilityProgramQueries.Defenders(world, program, attack, candidates);
     public bool CanRemoveThreat(World world, Card scheme, int ignoredSource = -1) => AbilityProgramQueries.CanRemoveThreat(world, program, scheme, ignoredSource);

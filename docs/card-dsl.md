@@ -5,6 +5,19 @@ forced and optional attack-end responses and is zero without a completed attack.
 
 # The card DSL
 
+`handResourceForm: "hero"` is card-level metadata restricting the printed hand
+resource source to its owner's current hero form. The engine chooses this spelling;
+only `hero` is admitted, and the face must have a complete authored `abilities`
+list (which may be empty). It is not a Resource ability and grants no activated
+source. Offers, feasibility and commit validation use the same live form query.
+The resource capability exposes source eligibility separately from generated
+quantity; every selected hand contributor is validated before payment begins and
+again when it commits after any generator suspension. A sufficient aggregate or
+zero price does not permit an individually restricted source.
+Printed `RES` facts and nonpayment printed-icon counting remain unchanged. This
+capability does not itself admit Limitless Strength or the Hulk product.
+
+
 `invocationTop: "you"` captures the resolving player's exact public typed
 Invocation top and adds its printed resource cost to the ability payment.
 `resolveInvocation: "you"` resolves that captured physical card's Special through

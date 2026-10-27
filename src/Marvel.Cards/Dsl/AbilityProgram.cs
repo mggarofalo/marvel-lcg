@@ -47,6 +47,9 @@ public sealed class AbilityProgram
     /// <summary>Validated printed scheme destinations; omission preserves the main-scheme rule.</summary>
     public ImmutableDictionary<string, AbilitySchemeDestination> SchemeDestinations { get; internal init; }
         = ImmutableDictionary.Create<string, AbilitySchemeDestination>(StringComparer.Ordinal);
+    /// <summary>Validated form restrictions on hand resource generation.</summary>
+    public ImmutableDictionary<string, string> HandResourceForms { get; internal init; }
+        = ImmutableDictionary.Create<string, string>(StringComparer.Ordinal);
     /// <summary>Every effect and its stable structural address.</summary>
     public ImmutableDictionary<AbilityEffectAddress, AbilityEffect> Effects { get; }
     /// <summary>Temporary identities declared by authored constant definitions.</summary>

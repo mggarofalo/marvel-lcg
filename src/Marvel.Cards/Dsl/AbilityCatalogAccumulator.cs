@@ -16,6 +16,8 @@ internal sealed class AbilityCatalogAccumulator
     private readonly List<string> incomplete = [];
     private readonly Dictionary<string, AbilitySchemeDestination> schemeDestinations = new(StringComparer.Ordinal);
 
+    private readonly Dictionary<string, string> handResourceForms = new(StringComparer.Ordinal);
+
     internal void Add(JsonElement element)
     {
         Refuse(element, AbilityCatalog.CardKeys, "a card");
@@ -31,6 +33,12 @@ internal sealed class AbilityCatalogAccumulator
         ReadController(element, card);
         ReadCounters(element, card);
         ReadSchemeDestination(element, card);
+        if (element.TryGetProperty("handResourceForm", out var form))
+        {
+            if (form.ValueKind != JsonValueKind.String || form.GetString() != "hero")
+                throw new AbilityException($"card '{card}' has an unsupported handResourceForm");
+            handResourceForms.Add(card, "hero");
+        }
         ReadAbilities(element, card, name);
     }
 
@@ -43,7 +51,7 @@ internal sealed class AbilityCatalogAccumulator
         }
         return new AbilityBook(
             abilities, authored, attachTo, controlledByFirstPlayer, placementOnly,
-            counterPools, schemeDestinations);
+            counterPools, schemeDestinations) { HandResourceForms = handResourceForms };
     }
 
     private void ReadSchemeDestination(JsonElement element, string card)

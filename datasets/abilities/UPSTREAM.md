@@ -367,3 +367,11 @@ Cancellation and event discard are independent; attachment discard depends on
 both completing. No starting counters, engine, setup or public admission changes.
 Canonical and explicitly synthetic fixture evidence is recorded in
 [the Counterspell actual-row packet](../../docs/content/doctor-strange-counterspell-row.md).
+
+Hulk Basic reprints (10020–10024) append five research faces, bringing the book
+to 693 rows and Hulk coverage to 8/33 faces. Corrected generated printed records
+match Core 01088–01092 apart from IDs and pack, so their execution bodies are
+reused. All 688 predecessor raw objects remain byte-identical. Actual-row resource,
+recipient, exhaustion, discount consumption/expiry and title-limit evidence is in
+[the Basic reprint packet](../../docs/content/hulk-basic-reprints.md). No engine,
+starting-counter, setup or public admission changes are included.

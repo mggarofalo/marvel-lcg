@@ -51,6 +51,9 @@ public sealed record AbilityBook(
     IReadOnlyDictionary<string, CardCounterPool>? CounterPools = null,
     IReadOnlyDictionary<string, AbilitySchemeDestination>? SchemeDestinations = null)
 {
+    /// <summary>Printed form restrictions on discarding a hand card for resources.</summary>
+    public IReadOnlyDictionary<string, string>? HandResourceForms { get; init; }
+
     /// <summary>An empty book. No card has been read.</summary>
     public static AbilityBook None =>
         new([], FrozenSet<string>.Empty);

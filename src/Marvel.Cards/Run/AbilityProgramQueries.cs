@@ -18,11 +18,17 @@ internal static class AbilityProgramQueries
         World world, AbilityProgram program, Card card) =>
         PrintedText.IsBlanked(world, card) ? [] : On(program, card);
 
+    internal static bool CanUseHandResources(World world, AbilityProgram program, Card source) =>
+        program.HandResourceForms.GetValueOrDefault(source.FaceId) is not { } form
+        || Forms.In(world, world.Seats[source.Owner], world.Facts, form);
+
     internal static string ResourcesGeneratedBy(
         World world, AbilityProgram program, Card source, Card? payingFor)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(source);
+
+        if (!CanUseHandResources(world, program, source)) return string.Empty;
 
         string printed = EffectiveCards.HasProfile(source) ? string.Empty
             : Resources.GeneratedBy(source.FaceId, world.Facts);

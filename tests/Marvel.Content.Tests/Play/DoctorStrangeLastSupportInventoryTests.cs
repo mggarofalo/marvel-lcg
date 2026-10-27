@@ -11,7 +11,7 @@ public sealed class DoctorStrangeLastSupportInventoryTests
     {
         using var document = JsonDocument.Parse(AuthoredCards.Text);
         var rows = document.RootElement.GetProperty("cards").EnumerateArray().ToArray();
-        Assert.Equal(688, rows.Length);
+        Assert.Equal(693, rows.Length);
         string[] faces = ["09015", "09027", "09029"];
         Assert.Equal(faces, rows.Skip(679).Take(3).Select(row => row.GetProperty("card").GetString()));
         Assert.All(rows.Skip(679).Take(3), row => Assert.False(row.TryGetProperty("startingCounters", out _)));
