@@ -1784,3 +1784,9 @@ callers for this causal ownership; a null value uses the current occurrence.
 Its accessibility is an engine API choice and adds no persisted or wire field.
 Actual authored Chase Them Down (`01052`) observes the lethal followup and removes
 two threat, while the enemy activation's ally defeat does not satisfy it.
+
+`upgradesOnThis` selects in-play cards of effective Upgrade kind attached to the
+source’s current incarnation. It excludes encounter Attachment cards and cards
+stored beneath the source. Its name is an engine choice; `rr:upgrade.3` and
+`rr:attach-to.1` distinguish attached upgrades from the Attachment card type.
+Projected selection follows projected host, entry and departure changes.

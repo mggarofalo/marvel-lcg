@@ -11,7 +11,7 @@ internal sealed class CardQueryEvaluator(
 {
     private static readonly ImmutableArray<AbilityCardQuery> ScenarioQueries =
     [
-        AbilityCardQuery.AttachmentsOnVillain, AbilityCardQuery.AttachedToThis, AbilityCardQuery.AttachmentsOnThis, AbilityCardQuery.BeneathThis, AbilityCardQuery.SideSchemes,
+        AbilityCardQuery.AttachmentsOnVillain, AbilityCardQuery.AttachedToThis, AbilityCardQuery.AttachmentsOnThis, AbilityCardQuery.UpgradesOnThis, AbilityCardQuery.BeneathThis, AbilityCardQuery.SideSchemes,
         AbilityCardQuery.Schemes, AbilityCardQuery.PowerTargets,
         AbilityCardQuery.YourAsidePile, AbilityCardQuery.OtherEnvironments,
         AbilityCardQuery.Villain, AbilityCardQuery.MainScheme,
@@ -78,6 +78,10 @@ internal sealed class CardQueryEvaluator(
         AbilityCardQuery.AttachedToThis =>
             [.. cast.World.Areas.Where(area => area.Host == cast.Source.ObjectId && !BeneathCards.IsStored(area.Type))
                 .SelectMany(area => area.Cards)],
+        AbilityCardQuery.UpgradesOnThis => cast.SourceReference is { } source
+            ? [.. cast.World.Areas.Where(area => area.Host == source.ObjectId && DeckTypes.IsInPlay(area.Type))
+                .SelectMany(area => area.Cards).Where(card => EffectiveCards.Kind(card, cast.World.Facts) == CardKind.Upgrade)]
+            : [],
         AbilityCardQuery.AttachmentsOnVillain => VillainAttachments(),
         AbilityCardQuery.AttachmentsOnThis =>
             [.. cast.World.Areas.Where(area => area.Host == cast.Source.ObjectId && DeckTypes.IsInPlay(area.Type))
