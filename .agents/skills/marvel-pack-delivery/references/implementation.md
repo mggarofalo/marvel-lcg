@@ -35,7 +35,12 @@ restored revision passes that same check.
 Restoring a compiled mutant with a timestamp-preserving copy can leave its binary
 cached. Force a non-incremental rebuild of restored sources before claiming the
 restored run passes. Serialize mutation, restoration, verification and hooks in
-each worktree; preserve evidence outside the repository.
+each worktree; preserve evidence outside the repository. A returned process ID is
+not completion: harvest its exit before changing mutant sources, restoring them,
+or starting another build/test/hook in that worktree. Independent worktrees do not
+require a global build lock. Apphost/output-lock warnings or overlapping builds
+invalidate a mutation verdict until an isolated compiled rerun distinguishes it;
+do not classify an apparent survivor as equivalent from contaminated evidence.
 
 Use the full encounter procedure when proving entry, surge and cleanup together;
 a direct placement or When Revealed call may deliberately omit later lifecycle
