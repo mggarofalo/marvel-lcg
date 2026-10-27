@@ -19,6 +19,17 @@ internal static class DecisionPanelPromptRenderer
         if (panel.PaymentModal is { } payment) payment.AddCancel();
         else if (!(panel.LocalDecision.IsOpen && composer.Selected is not null
             && composer.Prompt.PublicKind == PublicDecisionKind.PlayerAction)) DecisionPanelSurface.AddDecline(panel);
+        FitScrollToControls(panel);
+    }
+
+    private static void FitScrollToControls(DecisionPanel panel)
+    {
+        if (panel.LayoutHost.GetNodeOrNull<ScrollContainer>("DecisionBodyScroll") is not { } scroll) return;
+        // Presentation choice: scrolling must be able to expose one complete
+        // interactive control, including its themed icons and content.
+        float height = scroll.FindChildren("*", "BaseButton", true, false).OfType<BaseButton>()
+            .Select(button => button.GetCombinedMinimumSize().Y).DefaultIfEmpty(0).Max();
+        scroll.CustomMinimumSize = scroll.CustomMinimumSize.Max(new Vector2(0, height));
     }
 
     internal static void CreateLayout(

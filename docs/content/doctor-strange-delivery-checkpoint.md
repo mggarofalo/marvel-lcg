@@ -94,13 +94,17 @@ Master return, hidden order and detached snapshots. Native continuation source
 
 The lead inspected both repaired recipient captures: the named Special, paid
 parent costs, current choice and pending discard/return are visible together.
-Five of six rendered path/scale cases pass with exactly two resolves; Spell
-Mastery at 80% reveals a clipped payment resource button before submission.
-Independent review reproduces that defect on the pre-copy source. A separate
-layout implementation/review is active under MARVEL-834; no visibility assertion
-is weakened. Evidence and limitations are in
-[the context review](doctor-strange-invocation-context-review.md). Public setup,
-complete-game and fresh-host proof remain downstream work.
+All six rendered path/scale cases now pass with exactly two resolves after
+layout source `dff1e9be`; independent review `d6c3ace2` accepts the repair.
+The reviewer independently rebuilds Debug/Release and passes both 80% paths,
+inspecting all six source recipient captures. The body scroll reserves enough
+height for one complete themed control. Existing 150% Spell decorative padding
+extends below the frame, while all meaningful content and commitment remain
+visible; the same geometry exists in the pre-fix capture. Integrated affected
+managed checks pass eight cases, including the repaired reveal-origin fixture
+(`Source/evidence/strange-payment-layout-integrated-managed.log`).
+See [layout review](doctor-strange-invocation-payment-scale-review.md).
+Public setup, complete-game and fresh-host proof remain downstream work.
 The thirteen-ruling authority catalog repair `10c8cd84` was independently rechecked
 and integrated at `cfec0321`: 2,667 sources, 4,434 obligations and 685 executable
 Core scenarios. The integrated behavioral/citation selection passes 134 cases.
