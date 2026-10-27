@@ -178,6 +178,6 @@ The complete Hulk candidate still requires final CI and merge; authored row coun
 and exact book hash above remain unchanged.
 
 Final semantic closure `56e9684d` is accepted and integrated as `bcffcaac`.
-On that integrated runtime, 21 focused Godot semantic cases and 13 Content cases
+On that integrated runtime, 21 focused Godot semantic cases and 10 Content cases
 pass (`hulk-final-semantic-{godot,content}.log`). Final certification is delegated
 to the existing required CI lanes rather than repeating earlier broad local runs.
