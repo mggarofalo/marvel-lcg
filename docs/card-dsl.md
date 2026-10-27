@@ -5,6 +5,15 @@ forced and optional attack-end responses and is zero without a completed attack.
 
 # The card DSL
 
+Player-deck `discardUntil` uses either `set` for an identity-set match or `kind`
+with an optional `trait`; when both kind and trait are supplied, both must match.
+`from: "yourDeck"` and `then: "addToHand"` retrieve the exact discarded physical
+card for the resolving player (or explicitly named `player`), including when the
+match was shuffled by the immediate empty-deck reset. The instruction stops at
+the original deck boundary. These vocabulary spellings are engine choices.
+Mixing an identity set with kind or trait, or supplying trait without kind, is
+rejected. This mechanism does not admit additional production cards.
+
 `grant` with `keyword: "hand_size_maximum"`, a positive constant amount and
 `card: "you"` expresses a total hand-size maximum from the current face's
 constant ability. This engine-chosen spelling applies after all additive

@@ -58,18 +58,7 @@ internal static class AbilityProcedureLowering
         var fields = Fields(value, location, "from", "kind", "trait", "then", "player", "set");
         var from = SearchArea(Required(fields, "from", location), location.Child("from"));
         if (from == AbilitySearchArea.YourDeck)
-        {
-            if (fields.ContainsKey("kind") || fields.ContainsKey("trait"))
-                throw location.Error("player discardUntil matches an identity set, not a kind or trait");
-            FixedWord(Required(fields, "then", location), location.Child("then"), "addToHand");
-            return new(null, null, AbilityDiscardUntilResult.AddToHand)
-            {
-                From = from,
-                Set = Text(Required(fields, "set", location), location.Child("set")),
-                Player = fields.TryGetValue("player", out var owner)
-                    ? AbilityLowering.Player(owner, location.Child("player")) : AbilityPlayer.You,
-            };
-        }
+            return PlayerDiscardUntil(fields, location);
         if (from != AbilitySearchArea.EncounterDeck || fields.ContainsKey("set"))
             throw location.Error("encounter discardUntil requires an encounter deck and kind");
         var result = Text(Required(fields, "then", location), location.Child("then")) switch
@@ -83,6 +72,23 @@ internal static class AbilityProcedureLowering
         return new(ConditionCardKind(Required(fields, "kind", location), location.Child("kind")),
             OptionalText(fields, "trait", location), result)
         { Player = fields.TryGetValue("player", out var player) ? AbilityLowering.Player(player, location.Child("player")) : AbilityPlayer.You };
+    }
+
+    private static AbilityEffect.DiscardUntil PlayerDiscardUntil(
+        IReadOnlyDictionary<string, AbilityValue> fields, AbilityLocation location)
+    {
+        bool identitySet = fields.ContainsKey("set");
+        if (identitySet && (fields.ContainsKey("kind") || fields.ContainsKey("trait")))
+            throw location.Error("player discardUntil requires either an identity set or a kind and optional trait");
+        FixedWord(Required(fields, "then", location), location.Child("then"), "addToHand");
+        return new(identitySet ? null : ConditionCardKind(Required(fields, "kind", location), location.Child("kind")),
+            OptionalText(fields, "trait", location), AbilityDiscardUntilResult.AddToHand)
+        {
+            From = AbilitySearchArea.YourDeck,
+            Set = OptionalText(fields, "set", location),
+            Player = fields.TryGetValue("player", out var owner)
+                ? AbilityLowering.Player(owner, location.Child("player")) : AbilityPlayer.You,
+        };
     }
 
     internal static AbilityEffect.ShuffleInto ShuffleIntoEffect(AbilityValue value, AbilityLocation location)

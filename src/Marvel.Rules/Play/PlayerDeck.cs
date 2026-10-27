@@ -62,8 +62,23 @@ public static class PlayerDeck
     public static Card? DiscardUntil(
         World world, int player, string set, string trigger, List<GameEvent> events)
     {
-        ArgumentNullException.ThrowIfNull(world);
         ArgumentException.ThrowIfNullOrEmpty(set);
+        return DiscardUntilMatching(world, player,
+            card => StringComparer.Ordinal.Equals(world.Facts.EncounterSet(card.FaceId), set), trigger, events);
+    }
+
+    /// <summary>Discard until both the printed kind and optional trait match.</summary>
+    public static Card? DiscardUntil(
+        World world, int player, CardKind kind, string trigger, List<GameEvent> events, string? trait = null) =>
+        DiscardUntilMatching(world, player,
+            card => EffectiveCards.Kind(card, world.Facts) == kind
+                && (trait is null || world.Facts.Traits(card.FaceId).Contains(trait, StringComparer.Ordinal)),
+            trigger, events);
+
+    private static Card? DiscardUntilMatching(
+        World world, int player, Predicate<Card> matches, string trigger, List<GameEvent> events)
+    {
+        ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(events);
         var deck = world.Seats[player].Deck;
         int remaining = deck.Cards.Count;
@@ -73,7 +88,7 @@ public static class PlayerDeck
         {
             var card = deck.Cards[^1];
             Discard.Card(world, card, trigger, events);
-            if (StringComparer.Ordinal.Equals(world.Facts.EncounterSet(card.FaceId), set))
+            if (matches(card))
             {
                 found = card;
                 break;
