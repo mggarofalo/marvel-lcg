@@ -572,3 +572,9 @@ win-game instruction; the actual final-defeat reproduction is in
 `kang-central-fixture-fix.log`. A later engine/DSL packet must implement and
 author that instruction rather than bypassing the refusal. These gaps do not
 claim completion of Kang or permit public admission.
+
+## Independent central reunion review — rejected
+
+Reviewed source `0da5cf8b3c3b2f006a4076000746dd2aaae4704a` against printed 11008b, 11013a/b, mc11 game-area rules and RR quickstrike. The nonpublic actual I split and II joins reach 4B with Captain America and Black Widow. A real set-aside Baron Zemo enters for the first player in hero form and quickstrikes for lethal damage. Elimination transfers Zemo to the survivor, but the survivor's physical nemesis stays set aside: `SearchNext` recalculates the eliminated-filtered player order and uses its prior numeric index, causing the subsequent search to be skipped. This violates 11013b's each-player search. The same fixture with nonlethal quickstrike passes. `KangCentralEliminationReviewTests` retains both observations and is intentionally red pending repair.
+
+Windows Release focused test (serial build, `MSBUILDDISABLENODEREUSE=1`) reports one passed control and one failed elimination case: `C:/Users/mggar/Source/evidence/kang-central-independent-control.log`. The source's reported nine focused/129 combined tests and mutation are not independent reruns. Reject this central continuation until repaired and independently retested. Dominion storage and final-victory behavior remain separate blockers for full Kang; neither is accepted here. No public admission, session replay, Linux, native or full-suite evidence is claimed.

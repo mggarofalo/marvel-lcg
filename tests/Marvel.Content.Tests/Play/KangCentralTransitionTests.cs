@@ -168,9 +168,9 @@ public sealed class KangCentralTransitionTests : CoreCardTestBase
         Assert.Equal(Outcome.Unfinished, world.Result);
     }
 
-    private static (World World, List<GameEvent> Events) ReadyForLastBoundary(bool revealChoice = false)
+    internal static (World World, List<GameEvent> Events) ReadyForLastBoundary(bool revealChoice = false, bool captain = false)
     {
-        var world = Board(false, revealChoice);
+        var world = Board(false, revealChoice, captain);
         var events = new List<GameEvent>();
         var first = Assert.Single(world.AreaOf(DeckType.VillainArea).Cards);
         Agendas.Happening(world);
@@ -211,20 +211,20 @@ public sealed class KangCentralTransitionTests : CoreCardTestBase
         Sequence.Finish(world, Cards, world.Abilities, events);
     }
 
-    private static World Board(bool expert, bool revealChoice = false)
+    private static World Board(bool expert, bool revealChoice = false, bool captain = false)
     {
-        var world = WorldSetup.DealWithoutCardAbilities(Cards, Blueprints(expert), ["Spider-Man", "Black Widow"], 42, expert: expert);
+        var world = WorldSetup.DealWithoutCardAbilities(Cards, Blueprints(expert, captain), [captain ? "Captain America" : "Spider-Man", "Black Widow"], 42, expert: expert);
         var rows = AbilityRows(expert, revealChoice);
         world.Abilities = new AbilityRunner(AbilityCatalog.Parse(JsonSerializer.Serialize(new { cards = rows })));
         return world;
     }
 
-    private static List<CardBlueprint> Blueprints(bool expert)
+    private static List<CardBlueprint> Blueprints(bool expert, bool captain = false)
     {
         var blueprints = new List<CardBlueprint>
         {
-            new("01001b,01001a", SetupSlot.Identity, 0), new("08001b,08001a", SetupSlot.Identity, 1),
-            new("01167", SetupSlot.Nemesis, 0), new("08026", SetupSlot.Nemesis, 1),
+            new(captain ? "03001b,03001a" : "01001b,01001a", SetupSlot.Identity, 0), new("08001b,08001a", SetupSlot.Identity, 1),
+            new(captain ? "03028" : "01167", SetupSlot.Nemesis, 0), new("08026", SetupSlot.Nemesis, 1),
             new("11007a,11007b", SetupSlot.MainScheme, -1),
             new(expert ? "11034" : "11001", SetupSlot.Villain, -1),
             new("11008a,11008b", SetupSlot.SetAside, -1),
