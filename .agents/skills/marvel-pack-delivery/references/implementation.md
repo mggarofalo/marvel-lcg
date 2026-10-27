@@ -58,6 +58,12 @@ tests. Reconcile explicit authored-face and starting-counter inventories with th
 printed facts, and keep unknown-card negative controls genuinely unauthored.
 Do not permit an entire incomplete pack merely to satisfy a face-inventory gate.
 
+Adding a public setup recipe also adds an authority source. Update its reviewed
+adjudication and regenerate the behavioral catalog offline; keep expansion setup
+explicitly outside the Core transcript corpus. Run the authority/catalog checks
+as well as setup tests, including exact source inventories. A passing dealer or
+public admission test does not establish that this separate catalog is current.
+
 When an actual row replaces a test-local placeholder, inspect fixtures using that
 card ID. Prefer the actual row when its behavior belongs in the test; otherwise
 explicitly replace it inside the documented synthetic fixture. Keep duplicate-row

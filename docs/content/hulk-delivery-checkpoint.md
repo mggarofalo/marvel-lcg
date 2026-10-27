@@ -112,10 +112,34 @@ excluded as behavioral mutation evidence. Root's final combined Hulk/activation/
 threat/ranked-choice/ability-data run passed263 cases
 (`hulk-33face-integration.log`). Normal hooks preserve the existing gates.
 
-MARVEL-851 remains: exact public starter/setup/custom decks and closed admission,
-complete representative games, fresh-host/replay continuation, proportionate native
-interaction proof, final combined managed/platform CI and merge. Public admission
-implementation is released to its bounded worker; it is not yet integrated or
-accepted here. The current candidate is complete authored content, not a completed
-public pack. No marketing packaging reconciliation or blanket human content gate
-is added. A genuinely new UI requires inspected media and a focused Plane item.
+Public admission is integrated as `48797dd1`, independently reviewed as
+`766c6cf0`: exact40 starter, all33 faces, nemesis quantities, legal extras and
+owner/copy limits, both public transports, and predecessor preservation.
+Source setup1429, Server69, restored Hulk110 and architecture129 passed.
+Independent admission111 and View29 passed, including actual support threat
+projection and hidden-card controls. See [admission](hulk-public-admission.md)
+and [independent review](hulk-admission-independent-review.md).
+
+The support threat display repair `4d535790` passed all430 View tests and a
+compiled original-formatter mutant killed all four distinguishing cases.
+Its [rendered interaction proof](hulk-support-threat-presentation.md) remains
+separate. Public games `314510bf` contain eight fixed complete games with exact
+independent-host accepted decisions and strict terminal replay. A test-policy
+control was corrected and separately passed after a compiled mutant was killed;
+the earlier TRX's control failure is not represented as a fully green run.
+See [game evidence](hulk-public-games.md).
+
+Broad unit verification at `48797dd1` passed7936 Content,430 View,84 Session,
+51 Core and50 Decisions tests. Rules reported18 failures from the omitted Hulk
+setup authority. The correction `5b637305` adds its reviewed outside-Core
+adjudication, regenerates the catalog and preserves exact source/obligation
+inventories; all1187 Rules tests and the offline catalog check then passed.
+Logs: `C:/Users/mggar/Source/evidence/hulk-public-integrated-unit.log` and
+`hulk-authority-{check,rules-restored}.log`. This is explicitly assembled
+evidence across the named revisions, not final same-head certification.
+
+MARVEL-851 remains: independent complete-game/fresh-host continuation proof,
+rendered native interaction proof, final combined managed/platform CI and merge.
+The current public candidate is not yet a merged accepted pack. No marketing
+packaging reconciliation or blanket human content gate is added. A genuinely
+new UI requires inspected media and a focused Plane item.
