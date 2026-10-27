@@ -90,3 +90,49 @@ The next action is independent engine diagnosis/repair, then rerun these exact
 four cases unchanged. Fresh-host characteristic review, native evidence and
 combined/platform gates remain separate delivery work. No owner approval gate
 is added for ordinary modular content.
+
+## Facedown timing repair
+
+`AbilityWindowAdmission` requires faceup placement for ordinary in-play printed
+window abilities. Explicit event-play origins remain available, including a
+facedown event in its owner's hand. Authority is
+`rr:in-play-and-out-of-play.10`: "Facedown cards attached to in-play cards are out
+of play." In the original seed-3 trace, card 75 is Great Responsibility, placed
+from Spider-Man's hand facedown on Highway Robbery (host 50) during round 4.
+Its printed interrupt is inactive. This is a stale candidate, rather than an
+already-initiated continuation permitted by `rr:player-elimination.5`.
+Host authorization is unchanged.
+
+`HighwayRobberyWindowTests` uses both actual rows to prove absence before and
+after the owner's elimination, restored availability after Highway Robbery's
+defeat, facedown-hand event access, and completion when a legally initiated
+Great Responsibility eliminates its owner. The focused Highway Robbery, Core
+threat/context, self-defeat and would-be-defeated classes pass together (53 tests).
+Removing the faceup requirement kills both captured-event cases while the
+restored-hand control passes (2 failed, 1 passed in the three-case mutant run).
+Logs are `C:/Users/mggar/Source/evidence/highway-window-regression-final.log` and
+`highway-window-mutant.log` in the same directory.
+
+The exact four original public cases pass after repair, including ordinary
+EngineHost authorization, per-step ordered events/digest/RNG and complete replay:
+`dotnet test tests/Marvel.Acceptance.Tests/Marvel.Acceptance.Tests.csproj -c Release
+--filter FullyQualifiedName~RonanPublicGameTests`.
+The run took 1.05 minutes; log:
+`C:/Users/mggar/Source/evidence/ronan-public-games-facedown-fix.log`.
+Seed 3 ends in PlayersLose at round 5, after 102 accepted decisions and 174 RNG
+words. The source prefix remains separately preserved at
+`C:/Users/mggar/Source/evidence/ronan-seed3-original-102.session.json`.
+
+This changes replay semantics: seed 3 first differs in the events of accepted
+decision 96, because removing a false optional window allows threat and activation
+work to continue in that resolution. A source journal must not be silently
+rewritten. This repair belongs to the unpublished aggregate replay-v28 candidate;
+the existing v27 rejection boundary and frozen-source admission routes require
+integration review. Protocol, save schema, RNG and state-digest formats are
+unchanged.
+
+A separate elimination ownership finding remains: `rr:player-elimination.step.4`
+says "Place each card owned by the eliminated player in the eliminated player's
+discard pile." Current elimination visits the eliminated play area, leaving the
+owned captured card on Highway Robbery in the villain's play area. Fixing that
+ownership-wide cleanup and its projected counterpart is a separate packet.
