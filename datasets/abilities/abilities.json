@@ -22821,6 +22821,51 @@
           }
         }
       ]
+    },
+    {
+      "card": "12019",
+      "name": "First Aid",
+      "note": "The action chooses any character and heals 2 damage from it.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "characters"
+              },
+              "effect": {
+                "heal": {
+                  "card": "chosen",
+                  "amount": 2
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "12021",
+      "name": "Energy",
+      "note": "This resource card has no ability. Its two printed energy resources are read from datasets/cards by the resource rules.",
+      "abilities": []
+    },
+    {
+      "card": "12022",
+      "name": "Genius",
+      "note": "This resource card has no ability. Its two printed mental resources are read from datasets/cards by the resource rules.",
+      "abilities": []
+    },
+    {
+      "card": "12023",
+      "name": "Strength",
+      "note": "This resource card has no ability. Its two printed physical resources are read from datasets/cards by the resource rules.",
+      "abilities": []
     }
   ]
 }

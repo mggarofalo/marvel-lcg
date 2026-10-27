@@ -23,6 +23,9 @@ namespace Marvel.Content.Tests.Cards;
 /// </remarks>
 internal static class AuthoredCards
 {
+    // Independently maintained expected total of authored faces.
+    public const int ExpectedFaceCount = 727;
+
     public static Marvel.Rules.State.EffectiveCardProfile DroneProfile =>
         Program.Profiles["effective-drone"];
 
