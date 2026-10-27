@@ -123,6 +123,35 @@ public sealed class IronManHandSizeMaximumTests : CoreCardTestBase
         Assert.Equal(6, projected.ModifiedOf(context, hero, "hand_size"));
         Assert.Equal(6, AbilityRepeatedCharacteristicTrace.TraceModified(hero, "hand_size", scope, [], modifiers));
         Assert.Equal(7, Modified(world, hero, "hand_size"));
+
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void SyntheticProjectionClampsAfterAllModifiers(bool repeatedTrace)
+    {
+        // Synthetic contract: no current end-to-end projected hand-size consumer exists.
+        var world = Hero("01029a");
+        var hero = world.Seats[0].IdentityCard;
+        world.Effects.Register(new ContinuousEffect(EffectSource.LastingEffect, "hand_size", -8,
+            Affects: hero.ObjectId));
+        world.Effects.Register(new ContinuousEffect(EffectSource.LastingEffect, "hand_size_maximum", 7,
+            Affects: hero.ObjectId));
+        var query = new AbilityQueryContext(world, hero, new Occurrence(1, []), 0,
+            hero.Incarnation, null, null, null, []);
+        var expression = new AbilityExpressionContext(query, ImmutableDictionary<string, long>.Empty,
+            [], "", 0, false, null);
+        var context = new AbilityAdmissionContext(AbilityLowering.Book(AbilityCatalog.Parse("{\"cards\":[]}")),
+            world.ResourceAbilities, expression, new(), null);
+        var projected = new AreaProjectionState(context);
+        projected.Modifiers[(hero.ObjectId, "hand_size")] = 10;
+        var scope = new AbilityAdmission.AbilityAdmissionScope(context, []);
+        var modifiers = new Dictionary<(int Card, string Field), long> { [(hero.ObjectId, "hand_size")] = 10 };
+        long result = repeatedTrace
+            ? AbilityRepeatedCharacteristicTrace.TraceModified(hero, "hand_size", scope, [], modifiers)
+            : projected.ModifiedOf(context, hero, "hand_size");
+        Assert.Equal(3, result);
     }
 
     private static AbilityRunner Runner()
