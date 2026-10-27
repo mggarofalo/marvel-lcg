@@ -442,3 +442,14 @@ captured source threat after its exhaust/discard cost. Neither Beat Cop action
 is an attack or thwart. No engine, starting-counter, setup or public-admission
 changes. Actual-card behavior, inventory, byte preservation and mutation evidence
 are recorded in [the packet](../../docs/content/hulk-final-two-cards.md).
+
+
+## Call for Aid - MARVEL-569
+
+Actual research row 12015 appends to 732 rows / nine of 35 Ant-Man faces.
+All 731 predecessor raw UTF-8 objects remain byte-identical and LF. Printed
+authority is `datasets/cards/cards.json`; RR 1.8 player-deck and discard rules
+govern the bounded batch and immediate empty-deck reset. The September 2023
+discard ruling agrees with those current rules. No new engine, starting-counter,
+setup or public-admission changes. Discard-from-deck response windows remain
+outside this capability. See [the packet](../../docs/content/ant-man-call-for-aid.md).

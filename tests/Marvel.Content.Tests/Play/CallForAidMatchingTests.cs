@@ -1,3 +1,5 @@
+using System.Text.Json.Nodes;
+using Marvel.Content.Tests.Cards;
 using Marvel.Cards.Dsl;
 using Marvel.Cards.Run;
 using Marvel.Rules.Events;
@@ -8,24 +10,58 @@ using Xunit;
 
 namespace Marvel.Content.Tests.Play;
 
-/// <summary>Nonpublic printed 12015 program; this does not admit the pack.</summary>
+/// <summary>Actual authored Call for Aid with explicitly synthetic composition probes; no pack admission.</summary>
 public sealed class CallForAidMatchingTests
 {
     private const string Discard = """
         {"discardUntil":{"from":"yourDeck","kind":"ally","trait":"AVENGER","then":"addToHand"}}
         """;
 
-    private static AbilityRunner Runner(bool choice = false, bool kindOnly = false) => new(AbilityCatalog.Parse("""
-        {"cards":[{"card":"12015","abilities":[{
-          "trigger":{"event":"WhenActionTriggered","timing":"Action","subject":"this","form":"hero"},
-          "effect":EFFECT
-        }]}]}
-        """.Replace("EFFECT", choice
+    private static AbilityRunner Runner(bool choice = false, bool kindOnly = false)
+    {
+        if (!choice && !kindOnly) return AuthoredCards.Runner();
+        // Synthetic variants replace only this row inside the complete authored book.
+        var book = JsonNode.Parse(AuthoredCards.Text)!;
+        var cards = book["cards"]!.AsArray();
+        int index = cards.Select((row, position) => (row, position))
+            .Single(item => item.row!["card"]!.GetValue<string>() == "12015").position;
+        string effect = choice
             ? "{\"seq\":[" + Discard + ", {\"choose\":{\"options\":["
                 + "{\"draw\":{\"player\":\"you\",\"count\":1}},"
                 + "{\"draw\":{\"player\":\"you\",\"count\":2}}]}}]}"
-            : Discard, StringComparison.Ordinal).Replace(kindOnly ? ",\"trait\":\"AVENGER\"" : "UNUSED",
-                "", StringComparison.Ordinal)));
+            : Discard.Replace(",\"trait\":\"AVENGER\"", "", StringComparison.Ordinal);
+        cards[index]!["abilities"]![0]!["effect"] = JsonNode.Parse(effect);
+        return new AbilityRunner(AbilityCatalog.Parse(book.ToJsonString()));
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    [Rule("rr:action.1")]
+    public void ActualZeroCostHeroActionBelongsToItsOwnerAndLeavesNoDuration(bool hero)
+    {
+        // "Players can only trigger action abilities on cards they control".
+        // Printed 12015 additionally requires hero form.
+        var (game, world) = Prepared(hero: hero);
+        var source = world.Cards.Single(card => card.FaceId == "12015");
+        var runner = (AbilityRunner)world.Abilities;
+        Assert.Equal("0", world.Facts.Attributes(source.FaceId)["Cost"]);
+        Assert.DoesNotContain(runner.Actions(world, 0), offer => offer.Card == source.ObjectId);
+        if (!hero)
+        {
+            Assert.DoesNotContain(runner.Actions(world, 1), offer => offer.Card == source.ObjectId);
+            return;
+        }
+        var hand = world.Seats[1].Hand;
+        int handCount = hand.Cards.Count;
+        long handSize = PhaseEnd.HandSize(world, world.Seats[1], world.Facts);
+        game.Resolve(Decision.Take(Action(game, world)));
+        Assert.Equal(DeckType.DiscardPile, source.Area.Type);
+        Assert.Equal(1, source.Owner);
+        Assert.Equal(handSize, PhaseEnd.HandSize(world, world.Seats[1], world.Facts));
+        Assert.Equal(handCount, hand.Cards.Count);
+        Assert.Single(hand.Cards, card => card.FaceId == "01011");
+    }
 
     [Fact]
     public void SyntheticKindOnlyMatcherAcceptsANonAvengerAllyAndStopsBeforeTheNextAlly()
@@ -118,7 +154,9 @@ public sealed class CallForAidMatchingTests
         var random = world.Random.Generator.GetState();
         var pending = game.Pending;
         var agenda = world.Agenda.Outstanding.ToArray();
-        for (int index = 0; index < 3; index++) Assert.Single(Runner(true).Actions(world, 1));
+        for (int index = 0; index < 3; index++)
+            Assert.Single(Runner(true).Actions(world, 1), offer => offer.Card ==
+                world.Cards.Single(card => card.FaceId == "12015").ObjectId);
         Assert.Equal(before, (world.Digest().Canonical(), world.Random.Generator.WordsConsumed));
         Assert.Equal(random.Words, world.Random.Generator.GetState().Words);
         Assert.Equal(random.Index, world.Random.Generator.GetState().Index);
@@ -182,11 +220,11 @@ public sealed class CallForAidMatchingTests
         offer => offer.AnchorId == world.Cards.Single(card => card.FaceId == "12015").ObjectId).Id;
 
     private static (Game Game, World World) Prepared(
-        bool exhaust = false, bool matchLast = false, bool choice = false, bool kindOnly = false) =>
+        bool exhaust = false, bool matchLast = false, bool choice = false, bool kindOnly = false, bool hero = true) =>
         Playing(board =>
         {
             var seat = board.Seats[1];
-            seat.IdentityCard.TurnTo("01010a");
+            seat.IdentityCard.TurnTo(hero ? "01010a" : "01010b");
             var removed = board.AreaOf(DeckType.RemovedArea, PlayArea.Of(1));
             foreach (var card in seat.Deck.Cards.ToArray()) World.MoveToTop(card, removed);
             // A matching copy in discard distinguishes a fresh search after the shuffle.

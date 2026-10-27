@@ -20,7 +20,7 @@ public sealed class AntManReprintTests : CoreCardTestBase
         string[] faces = ["12019", "12021", "12022", "12023"];
         Assert.Equal(AuthoredCards.ExpectedFaceCount, rows.Length);
         Assert.Equal(faces, rows.Skip(723).Take(4).Select(row => row.GetProperty("card").GetString()));
-        string[] allFaces = ["12012", "12013", "12018", "12019", "12021", "12022", "12023", "12033"];
+        string[] allFaces = ["12012", "12013", "12015", "12018", "12019", "12021", "12022", "12023", "12033"];
         Assert.Equal(allFaces, AuthoredCards.Book.Authored.Where(face => face.StartsWith("12", StringComparison.Ordinal)).Order());
         Assert.DoesNotContain("12020", AuthoredCards.Book.Authored);
         Assert.DoesNotContain("12001a", AuthoredCards.Book.Authored);

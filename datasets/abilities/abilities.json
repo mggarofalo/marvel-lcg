@@ -22923,6 +22923,17 @@
           "effect": { "grantUntil": { "card": "you", "keyword": "hand_size", "amount": 1, "until": "EndOfPhase" } }
         }
       ]
+    },
+    {
+      "card": "12015",
+      "name": "Call for Aid",
+      "note": "Hero Action discards from your deck until an Avenger ally, then adds that exact physical ally to your hand. The bounded discard operation retains the normal immediate empty-deck reset and does not continue through the replacement deck. DSL spellings are engine choices.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" },
+          "effect": { "discardUntil": { "from": "yourDeck", "kind": "ally", "trait": "AVENGER", "then": "addToHand" } }
+        }
+      ]
     }
   ]
 }
