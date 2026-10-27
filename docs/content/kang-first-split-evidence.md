@@ -149,3 +149,70 @@ identity. The corrected fixture constructs `01001a,01001b`; production sources
 were unchanged. Normal commit hooks passed, including 66 architecture checks,
 complexity and file length.
 No additional mutation, full-suite, Linux, native or replay result is claimed.
+
+## Prepared phase-transition continuation
+
+Continuation based on accepted review `5092072f0bd541268e3e15ebf5b2c0e80db5fc82`.
+`Agenda.KangTransitions` owns pending stage-II departure captures between phase
+frames. Each capture retains the physical defeated card and incarnation, round,
+player/villain phase boundary, source game area and a read-only whole-group
+snapshot sorted by play-area seat. `KangJoinOperation` retains the exact original
+phase frame and its occurrence through a required destination choice and repeated
+unique-copy discard choices. Every answer schedules a typed continuation and
+advances its exact child frame; occurrence identity alone cannot distinguish it
+from the phase owner. The prepared controller joins all captured play areas only
+after re-querying uniqueness following each real discard.
+
+This is a nonpublic prepared capability, **not** connection of printed Kang
+defeat/When Defeated abilities, stage-3 completion, stage-I splitting or public
+admission. The future defeat hook must capture the incarnation/group while the
+proper When Defeated tier resolves, suppress ordinary sequential promotion and
+perform the printed scheme removal. Its phase boundary must be supplied from
+the actual phase, not inferred from whichever villain is current later.
+
+The current boundary order is phase-end interrupts, `PhaseEnd` lasting-effect
+expiry, existing synchronous delayed-effect resolution, prepared Kang child
+choices, then the retained phase response window. RR `rr:lasting-effects.5`
+expires effects lasting until the phase ends; `rr:delayed-effect.1` requires
+delayed work before responses; 11002–11005 instruct joining at phase end.
+Ordering this new controller relative to competing delayed effects is not an
+accepted general policy. The prepared test's independent synchronous discard
+establishes the present seam only. Simultaneous Kang departures explicitly raise;
+their ordering and integration with other delayed work remain for the complete
+scenario controller. Last-area/solo central reunion also explicitly raises.
+The first player records the prepared destination/unique-copy choices; a public
+interaction and complete agreement/arbitration contract remain unimplemented.
+Destination affordances deliberately use an unspecified anchor rather than
+misrepresent game-area IDs as physical Area IDs; the future public contract must
+provide the proper structured relationship.
+
+Four prepared tests cover both first-player orders and both phase boundaries,
+required singleton destination, declined-choice rejection, original frame and
+occurrence retention, deterministic two-seat capture, a departed/reentered Kang
+whose later incarnation cannot rewrite the capture, expiry before prompting,
+synchronous delayed discard before prompting, two successive unique discards,
+one whole-group join, unchanged RNG consumption and no repeated join after the
+agenda drains. An identical later phase frame distinguishes exact frame identity
+from matching phase coordinates. Topology and agenda are asserted directly;
+digest v3 is unchanged and cannot establish topology restoration.
+
+Windows evidence outside the repository:
+
+```powershell
+dotnet test tests/Marvel.Content.Tests/Marvel.Content.Tests.csproj -c Release --filter FullyQualifiedName~KangPhaseTransitionTests
+dotnet build tests/Marvel.Content.Tests/Marvel.Content.Tests.csproj -c Release --no-incremental
+dotnet test tests/Marvel.Content.Tests/Marvel.Content.Tests.csproj -c Release --no-build --filter 'FullyQualifiedName~Kang|FullyQualifiedName~Uniqueness'
+```
+
+Focused: 4 passed. Forced restored build: passed. Combined restored focused:
+41 passed. Compiling mutants removing child identity advancement and truncating
+the captured group to one play area each failed all four phase tests; both
+mutants were restored before the forced rebuild. Logs:
+`C:/Users/mggar/Source/kang-phase-focused.log`,
+`kang-phase-mutant-identity.log`, `kang-phase-mutant-group.log`,
+`kang-phase-restored-build.log` and `kang-phase-restored-focused.log`.
+Earlier fixture iterations exposed incorrect API assumptions, attempted removed
+card reentry, and empty player-deck encounter exhaustion; the final fixture has
+nonempty player decks and models reentry through the encounter discard instead.
+No full managed, Linux, native, public replay or actual Kang split/reunion
+acceptance is claimed. Independent review remains required.

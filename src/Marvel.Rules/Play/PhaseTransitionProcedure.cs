@@ -45,6 +45,11 @@ internal static class PhaseTransitionProcedure
         }
         for (int index = start; index < events.Count; index++)
             events[index] = events[index] with { Round = step.Round };
+        // rr:delayed-effect.1: resolve delayed work "before responses to that
+        // point or condition may be used". PhaseEnd expires lasting effects and
+        // resolves synchronous delayed work; this typed child retains the phase
+        // frame while its required choices finish before the response window.
+        world.Agenda.KangTransitions.Begin(world, step);
         return null;
     }
 

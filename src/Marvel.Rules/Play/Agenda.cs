@@ -33,6 +33,9 @@ public sealed class Agenda
     /// <summary>Invocation ownership, suspension and completion for this game.</summary>
     public AbilityExecutions Executions { get; }
 
+    /// <summary>Scenario-owned Kang departures waiting for their phase boundary.</summary>
+    public KangPhaseTransitions KangTransitions { get; } = new();
+
     /// <summary>Create an empty game-owned agenda.</summary>
     public Agenda() => Executions = new(this);
 

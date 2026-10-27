@@ -60,8 +60,9 @@ public static class AgendaProcedures
             AgendaProcedureKind.AbilityContinuation =>
                 AbilityContinuationProcedure.Apply(world, step, events),
             AgendaProcedureKind.Activation => ActivationProcedure.Apply(world, facts, step),
-            AgendaProcedureKind.PhaseTransition =>
-                PhaseTransitionProcedure.Apply(world, facts, step, events),
+            AgendaProcedureKind.PhaseTransition => step.Operation is KangJoinOperation
+                ? KangJoinProcedure.Apply(world, step, events)
+                : PhaseTransitionProcedure.Apply(world, facts, step, events),
             AgendaProcedureKind.CardEntry => EventCardEntry.Apply(world, step, events),
             AgendaProcedureKind.ResourcePayment => ResourcePaymentProcedure.Apply(world, step, events),
             AgendaProcedureKind.Campaign => CampaignRecoveryProcedure.Apply(world, step, events),
@@ -106,6 +107,9 @@ public static class AgendaProcedures
 
         switch (step.Operation.Procedure)
         {
+            case AgendaProcedureKind.PhaseTransition when step.Operation is KangJoinOperation:
+                KangJoinProcedure.Answer(world, step, input, events);
+                break;
             case AgendaProcedureKind.Attack:
                 AttackProcedure.Answer(world, facts, step, input, events);
                 break;
