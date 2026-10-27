@@ -33,3 +33,11 @@ replay event order. Publication requires a new post-Ronan replay compatibility
 boundary; this packet does not change the replay version or claim compatibility
 with earlier ledgers. The legacy direct `Forms.ChangeAndSchedule` helper and
 additional-form changes are outside this voluntary-path packet.
+
+Independent review exercised actual She-Hulk and Taskmaster through voluntary
+`Game.Resolve`, accepting and declining She-Hulk's response. Both cases observe
+Taskmaster's forced damage before the optional prompt, the causal damage event,
+the voluntary flip event and the spent round permission. All nine voluntary
+timing cases passed on Windows; the review log is
+`C:/Users/mggar/Source/evidence/voluntary-review-focused.log`. This is focused
+engine evidence, not replay publication or cross-platform CI certification.
