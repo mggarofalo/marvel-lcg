@@ -4,10 +4,11 @@ using Marvel.Rules.State;
 
 namespace Marvel.Rules.Play;
 
-/// <summary>An ability-driven identity change with its flip inside the timing window.</summary>
+/// <summary>An identity change with its flip inside the timing window.</summary>
 /// <remarks>The operation payload is an engine choice; rr:interrupt.3 puts the flip after interrupts.</remarks>
 public sealed record IdentityFormChangeOperation(
-    int Identity, int Incarnation, string Destination, string Trigger, EffectCompletion Completion) : AgendaOperation
+    int Identity, int Incarnation, string Destination, string Trigger, EffectCompletion Completion,
+    bool Voluntary = false) : AgendaOperation
 {
     /// <inheritdoc/>
     public override string What => Steps.FormChanged;
@@ -23,7 +24,8 @@ public sealed record IdentityFormChangeOperation(
         // rr:leaves-play.1 makes a returning card a new copy. The engine binds
         // pending work to the physical identity and incarnation selected at scheduling.
         // rr:cannot.1: "the ability with 'cannot' takes precedence".
-        if (seat.Eliminated || identity.ObjectId != Identity
+        if (seat.Eliminated || (Voluntary && seat.FormChangedInRound == step.Round)
+            || identity.ObjectId != Identity
             || identity.Incarnation != Incarnation || !DeckTypes.IsInPlay(identity.Area.Type)
             || !FormChangePermissions.CanChange(world, identity)
             || !Forms.Destinations(seat, world.Facts).Contains(Destination, StringComparer.Ordinal))
@@ -31,10 +33,19 @@ public sealed record IdentityFormChangeOperation(
             Completion.Complete(0, 0);
             return null;
         }
-        Forms.Change(seat, world.Facts, Destination);
+        string from = Forms.Change(seat, world.Facts, Destination);
         Completion.Complete(0, 1);
-        events.Add(new CardsFlipped([Identity], true)
-        { Trigger = Trigger, Verb = "Change_Form" });
+        if (Voluntary)
+        {
+            // rr:form-change-form.1 permits one change, so an ineffective or
+            // cancelled occurrence does not consume the permission.
+            seat.FormChangedInRound = step.Round;
+            events.Add(new CardFormChanged(Identity, from, Destination)
+            { Trigger = Trigger, Verb = Game.ChangeForm });
+        }
+        else
+            events.Add(new CardsFlipped([Identity], true)
+            { Trigger = Trigger, Verb = "Change_Form" });
         return null;
     }
 }
