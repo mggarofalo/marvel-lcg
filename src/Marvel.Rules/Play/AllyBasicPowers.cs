@@ -156,7 +156,7 @@ public static class AllyBasicPowers
                 ? ConsequentialDamageKind.AllyConsequentialDamage
                 : ConsequentialDamageKind.AllyThwartConsequentialDamage,
                 target.ObjectId
-            ),
+            ) { PerformerIncarnation = ally.Incarnation },
             world.Agenda.Current?.Round ?? 0,
             9,
             Index: player,

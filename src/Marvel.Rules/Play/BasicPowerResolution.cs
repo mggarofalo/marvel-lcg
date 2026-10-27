@@ -53,6 +53,7 @@ public static class BasicPowerResolution
                 ?? throw new RulesNotImplementedException(
                     "a character thwart resolved without an occurrence for its response window");
             world.PowerAbilities.ResolveCardThwart(world, thwart, occurrence, events);
+            occurrence.Also(CharacterPowerTiming.ThwartEnds);
             return;
         }
 
@@ -66,12 +67,20 @@ public static class BasicPowerResolution
                     thwart.Amount, thwart.Trigger, ThwartVerb,
                     LabeledAbilities.IdentityPlayer(world, world.Cards[thwart.Thwarter]))
                     { ResponsiblePlayer = thwart.Player, ByThwarting = true }, events);
+            CompleteThwart(world, basic: false);
             return;
         }
 
         RemoveThreat(
             world, facts, world.Cards[thwart.Thwarter], world.Cards[thwart.Scheme], events, thwart.Player);
-        world.Agenda.Occurrence?.Also(BasicPowerTiming.ThwartEnds);
+        CompleteThwart(world, basic: true);
+    }
+
+    private static void CompleteThwart(World world, bool basic)
+    {
+        if (world.Agenda.Occurrence is not { } occurrence) return;
+        occurrence.Also(CharacterPowerTiming.ThwartEnds);
+        if (basic) occurrence.Also(BasicPowerTiming.ThwartEnds);
     }
 
     /// <summary>
