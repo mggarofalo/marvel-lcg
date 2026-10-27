@@ -71,3 +71,47 @@ and filter `FullyQualifiedName~CallForAidMatchingTests|FullyQualifiedName~TeenSp
 The mutation filter selects only
 `CallForAidMatchingTests.ResolvingSeatDiscardsBothNearMissesAndRecoversOnlyTheExactAvengerAlly`.
 Independent content review follows this source packet.
+
+## Independent content review
+
+Reviewed source `58ed12e911614dfcac04c3771ed52cf240b680c9` against
+`cd18a9b0f23cdd7541cc7b8a35a99730490b63b2`. Verdict: accepted for the
+single nonpublic authored face `12015`; no production defect found. Independently
+read the printed face and all three matcher fixture faces, current RR 1.8
+action, event, discard and player-deck clauses, the September 2023 ruling and
+the accepted MARVEL-871 matcher review. The older ruling agrees with the current
+rules used here. The vendored FAQ records the query and contains no 12015 entry.
+
+The production row implements the printed zero-cost Hero Action through the
+existing conjunctive ally/Avenger matcher and exact physical-card recovery.
+The predecessor's 731 objects are byte-identical: the 739313-byte raw prefix has
+the SHA-256 recorded above, the closing delimiters are unchanged and both books
+use LF. The final book has 732 unique faces and exactly the stated nine Ant-Man
+faces. The diff changes no engine, setup, starting counters or public admission.
+
+Existing actual-book cases distinguish both plausible matcher near misses,
+physical-copy identity, the non-first resolving seat, last-card and no-match
+exhaustion, replacement-deck order and RNG, one encounter penalty, form/owner
+restrictions, zero payment, event disposal and unchanged hand-size duration.
+The explicitly synthetic variants replace only 12015 within the complete book;
+the narrowed action assertion preserves its source-card uniqueness check and all
+query-purity and continuation comparisons while allowing Captain Marvel's own
+Action. No redundant review test was added. Inspected source mutation evidence
+shows a successful mutant build and the intended three-versus-two discard
+failure after removing the production row's trait requirement, followed by a
+restored 44-case pass; this review did not rerun that mutation.
+
+Independent evidence under `C:/Users/mggar/Source/`:
+
+- `ant-call-for-aid-independent-integrity.log`: exact byte-prefix, unchanged
+  suffix, LF, unique-face and Ant-Man inventory reconciliation.
+- `ant-call-for-aid-independent-build.log`: nonincremental Release build of
+  `Marvel.Content.Tests`, zero warnings/errors.
+- `ant-call-for-aid-independent-focused.log`: the full source-packet filter
+  listed above passes all 44 cases, with no failures or skips.
+- `ant-call-for-aid-independent-hooks.log`: normal review-commit hook evidence.
+
+This accepts the authored row within the existing reviewed matcher capability.
+It does not claim discard response windows, independent mutation execution,
+broad-suite or native verification, public admission or complete Ant-Man pack
+acceptance.
