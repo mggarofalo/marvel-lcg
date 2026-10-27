@@ -174,15 +174,21 @@ internal static class AttackProcedure
     private static void AllyConsequentialDamage(
         World world, ICardFacts facts, PhaseStep step, List<GameEvent> events)
     {
+        var operation = step.Require<ConsequentialDamageOperation>();
+        var ally = world.Cards[step.Subject];
+        // rr:leaves-play.1: a departing card "is considered to be a new copy".
+        // A labelled power cannot damage a different incarnation of its performer.
+        if (operation.PerformerIncarnation is { } incarnation
+            && (ally.Incarnation != incarnation || !DeckTypes.IsInPlay(ally.Area.Type))) return;
         bool attacked = string.Equals(
             step.What, Steps.AllyConsequentialDamage, StringComparison.Ordinal);
 
         BasicPowerResolution.Consequential(
             world,
             facts,
-            world.Cards[step.Subject],
-            byAttack: attacked || step.Require<ConsequentialDamageOperation>().UsesAttack
-                || BasicPowerStatus.Assaulted(world, facts, world.Cards[step.Require<ConsequentialDamageOperation>().Character]),
+            ally,
+            byAttack: attacked || operation.UsesAttack
+                || operation.Character >= 0 && BasicPowerStatus.Assaulted(world, facts, world.Cards[operation.Character]),
             attacked ? BasicPowers.AttackVerb : BasicPowers.ThwartVerb,
             events);
     }
