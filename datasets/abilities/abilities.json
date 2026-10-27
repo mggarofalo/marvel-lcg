@@ -22206,6 +22206,176 @@
           }
         }
       ]
+    },
+    {
+      "card": "10025",
+      "name": "Inner Demons",
+      "note": "Corrected printed text removes Then. Mandatory form change precedes the resulting-form branch; discard as many of two hand cards as available, or exhaust Hulk. Normal GiveTo routes to Bruce Banner.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "if": {
+                  "test": {
+                    "inForm": {
+                      "player": "you",
+                      "form": "hero"
+                    }
+                  },
+                  "then": {
+                    "changeForm": {
+                      "player": "you",
+                      "to": "alter-ego"
+                    }
+                  },
+                  "else": {
+                    "changeForm": {
+                      "player": "you",
+                      "to": "hero"
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "test": {
+                    "inForm": {
+                      "player": "you",
+                      "form": "alter-ego"
+                    }
+                  },
+                  "then": {
+                    "discardHandCards": 2
+                  },
+                  "else": {
+                    "exhaust": "yourHero"
+                  }
+                }
+              },
+              {
+                "discard": "this"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "10026",
+      "name": "Abomination",
+      "note": "After the completed attack, discard the attacked player deck top; a printed physical resource causes two damage. Wild is only wild outside payment (rr:wild-resource.3).",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenAttackEnds",
+            "timing": "ForcedResponse",
+            "actor": "this",
+            "player": "trigger.player"
+          },
+          "effect": {
+            "seq": [
+              {
+                "discardTop": {
+                  "from": "yourDeck",
+                  "count": 1
+                }
+              },
+              {
+                "if": {
+                  "test": {
+                    "discardedWithResource": "R"
+                  },
+                  "then": {
+                    "dealDamage": {
+                      "cards": "you",
+                      "amount": 2
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "10027",
+      "name": "Total Destruction",
+      "note": "Printed starting threat 2 per player and hazard icon use ordinary entry. Abomination anywhere in play prohibits removal from this scheme.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "exists": {
+                  "titled": "Abomination"
+                }
+              },
+              "then": {
+                "preventThreatRemoval": "this"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "10028",
+      "name": "Clash Of The Titans",
+      "note": "Highest current ATK enemy attacks the highest current ATK hero or ally. First player decides each tie; the chosen character remains the exact attack target. Surge follows only if no attack is made.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "otherwise": {
+              "effect": {
+                "chooseCard": {
+                  "chooser": "firstPlayer",
+                  "from": {
+                    "maxBy": {
+                      "of": {
+                        "query": "heroAndAllyTargets"
+                      },
+                      "by": "attack"
+                    }
+                  },
+                  "effect": {
+                    "enemyAttacks": {
+                      "enemies": {
+                        "maxBy": {
+                          "of": {
+                            "query": "enemies"
+                          },
+                          "by": "attack"
+                        }
+                      },
+                      "against": "chosen",
+                      "chooseEnemy": "firstPlayer"
+                    }
+                  }
+                }
+              },
+              "otherwise": {
+                "gainSurge": 1
+              }
+            }
+          }
+        }
+      ]
     }
   ]
 }

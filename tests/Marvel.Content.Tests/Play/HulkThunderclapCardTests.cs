@@ -20,10 +20,10 @@ public sealed class HulkThunderclapCardTests
     {
         using var book = JsonDocument.Parse(AuthoredCards.Text);
         var rows = book.RootElement.GetProperty("cards").EnumerateArray().ToArray();
-        Assert.Equal(712, rows.Length);
+        Assert.Equal(716, rows.Length);
         Assert.Equal("10005", rows[708].GetProperty("card").GetString());
         Assert.False(rows[708].TryGetProperty("startingCounters", out _));
-        Assert.Equal(27, AuthoredCards.Book.Authored.Count(id => id.StartsWith("10", StringComparison.Ordinal)));
+        Assert.Equal(31, AuthoredCards.Book.Authored.Count(id => id.StartsWith("10", StringComparison.Ordinal)));
         Assert.DoesNotContain("10015", AuthoredCards.Book.Authored);
     }
 

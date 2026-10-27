@@ -420,3 +420,13 @@ is datasets/cards/cards.json, with current RR1.8 AND, defense and ownership
 rules. No starting counters, engine, setup or public-admission changes. Beat Cop
 10029 remains absent pending support-destination threat movement. See
 [the customization packet](../../docs/content/hulk-customization-cards.md).
+
+
+## Hulk obligation and nemesis - MARVEL-849
+
+Actual research rows 10025-10028 append to 716 rows / 31 of 33 Hulk faces.
+All 712 predecessor UTF-8 objects are preserved exactly. Corrected printed
+Inner Demons has no Then; RR 1.8 governs printed resource counting and attacks.
+No engine, starting-counter, setup or public-admission changes. Toe to Toe
+10015 and Beat Cop 10029 remain absent. See
+[the packet](../../docs/content/hulk-nemesis-cards.md).

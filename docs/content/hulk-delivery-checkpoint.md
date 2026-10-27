@@ -2,7 +2,7 @@
 
 Canonical parent: MARVEL-566. Complete scope is the verified
 [33-face handoff](research/remaining/hulk-implementation-handoff.md).
-Current local assembly: **712 authored rows, 27/33 Hulk faces**. No public Hulk
+Current local assembly: **716 authored rows, 31/33 Hulk faces**. No public Hulk
 admission or full-pack acceptance. Ordinary content acceptance remains agent-owned.
 
 The branch starts from frozen Doctor Strange candidate `553869be`; PR454's final
@@ -29,6 +29,7 @@ any Hulk prerequisites.
 | Labelled activation / 847 | `b2f45d97`, repair `3a016518` | finding `633ce5fc`, closure `ca700082` | Original attack damage/defeat receipts across chosen enemy activation |
 | Support threat movement / 850 | `61d0973e` | `e1ae44f0` | Exact source-support threat storage and removal continuation |
 | Customization subset / 850 | `3c6bb5bc` | `546f42b8`, evidence closure `3b27745f` | Actual 10030–10032, three faces |
+| Obligation/nemesis / 849 | `a07d4305`, root Clash query correction | `022c8254` | Actual 10025–10028, four faces |
 | Thunderclap / 846 | `4dcd8afb` | `42111a07` | Actual 10005 bounded ordinary damage, one face |
 
 Packet documents preserve the authority, source/review evidence and limitations.
@@ -99,9 +100,17 @@ This latest assembly has not yet received full-pack certification.
   explicit original-occurrence repair restores that response and excludes a defending
   ally's defeat. Source161 Content/32 Rules/129 architecture and independent63 Content/
   53 Rules checks passed. Root combined Hulk/activation/damage regression passed226;
-  `hulk-integrated-toe-repair.log`. Actual-row authoring is the next dependent step.
-- MARVEL-849: actual obligation/nemesis10025–10028 (four faces), including full
-  Clash reveal/cleanup using the reviewed ranked-attack primitive.
+  `hulk-integrated-toe-repair.log`. Actual-row authoring is underway alongside Beat Cop, using passing test-local drafts before the final reviewed-book append.
+- MARVEL-849: all four obligation/nemesis faces are reviewed and integrated.
+  Independent review caught Clash's use of a selector that includes alter-egos;
+  the root-authored correction uses the existing `heroAndAllyTargets` selector.
+  Three independent no-target/mixed-pool controls kill the old query. Abomination's
+  exact last-card receipt survives deck reset; a compiled discard-zone mutant is
+  killed. Corrected source/review333 Content and129 architecture checks passed,
+  with restored nonincremental build and normal hooks. The 716-row combined book
+  is byte-identical to review `022c8254`; all712 predecessor objects are unchanged.
+  Root combined actual nemesis/ranked activation verification passes39 cases
+  (`hulk-31face-integration.log`).
 - MARVEL-850: customization10030–10032 are reviewed and integrated. Beat Cop10029
   remains absent, but the separate support-threat prerequisite is now independently
   accepted and integrated. It preserves removed amounts, exact support identity and

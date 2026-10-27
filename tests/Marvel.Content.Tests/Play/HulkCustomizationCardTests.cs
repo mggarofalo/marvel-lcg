@@ -17,13 +17,13 @@ public sealed class HulkCustomizationCardTests
     {
         using var document = JsonDocument.Parse(AuthoredCards.Text);
         var rows = document.RootElement.GetProperty("cards").EnumerateArray().ToArray();
-        Assert.Equal(712, rows.Length);
+        Assert.Equal(716, rows.Length);
         string[] expected = ["10030", "10031", "10032"];
         Assert.Equal(expected,
-            rows.Skip(709).Select(row => row.GetProperty("card").GetString()));
-        Assert.All(rows.Skip(709), row => Assert.False(row.TryGetProperty("startingCounters", out _)));
-        Assert.Equal(27, AuthoredCards.Book.Authored.Count(id => id.StartsWith("10", StringComparison.Ordinal)));
-        string[] absent = ["10015", "10029", "10025", "10026", "10027", "10028", "90001"];
+            rows.Skip(709).Take(3).Select(row => row.GetProperty("card").GetString()));
+        Assert.All(rows.Skip(709).Take(3), row => Assert.False(row.TryGetProperty("startingCounters", out _)));
+        Assert.Equal(31, AuthoredCards.Book.Authored.Count(id => id.StartsWith("10", StringComparison.Ordinal)));
+        string[] absent = ["10015", "10029", "90001"];
         Assert.All(absent,
             id => Assert.DoesNotContain(id, AuthoredCards.Book.Authored));
     }

@@ -14,7 +14,7 @@ public sealed class BlackWidowFinalResponseCardTests
     {
         using var book = JsonDocument.Parse(AuthoredCards.Text);
         var rows = book.RootElement.GetProperty("cards").EnumerateArray().ToArray();
-        Assert.Equal(712, rows.Length);
+        Assert.Equal(716, rows.Length);
         string[] added = ["08030", "08031"];
         Assert.Equal(added,
             rows.Skip(643).Take(2).Select(row => row.GetProperty("card").GetString()));
