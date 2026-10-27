@@ -44,7 +44,7 @@ public sealed class BehaviorAuthorityTests
         Assert.Equal(209, sources.Count(source => source.Kind == "card"));
         Assert.Equal(63, sources.Count(source => source.Kind == "faq"));
         Assert.Equal(1113, sources.Count(source => source.Kind == "ruling"));
-        Assert.Equal(66, sources.Count(source => source.Kind == "setup"));
+        Assert.Equal(67, sources.Count(source => source.Kind == "setup"));
         Assert.Equal(sources.Count, sources.Select(source => source.Id).Distinct().Count());
 
         var kinds = sources.Select(source => source.Kind).Distinct().ToList();
@@ -102,10 +102,10 @@ public sealed class BehaviorAuthorityTests
     public void JcsEscapingUsesLiteralUnicodeAndRequiredControlEscapes()
     {
         using var document = JsonDocument.Parse(
-            "{\"z\":\"<b>—\\n\",\"a\":\"\\u0001\\\"\\\\\"}");
+            "{\"z\":\"<b>â€”\\n\",\"a\":\"\\u0001\\\"\\\\\"}");
 
         Assert.Equal(
-            "{\"a\":\"\\u0001\\\"\\\\\",\"z\":\"<b>—\\n\"}",
+            "{\"a\":\"\\u0001\\\"\\\\\",\"z\":\"<b>â€”\\n\"}",
             CanonicalJson.Serialize(document.RootElement));
     }
 
@@ -115,11 +115,11 @@ public sealed class BehaviorAuthorityTests
         var catalog = Catalog.Build();
 
         Assert.Equal(2, catalog.Version);
-        Assert.Equal(2669, catalog.Sources.Count);
-        Assert.Equal(4436, catalog.Sources.Sum(source => source.Obligations.Count));
+        Assert.Equal(2670, catalog.Sources.Count);
+        Assert.Equal(4437, catalog.Sources.Sum(source => source.Obligations.Count));
         Assert.All(catalog.Sources, source => Assert.NotEmpty(source.Obligations));
         Assert.Equal(
-            4436,
+            4437,
             catalog.Sources.SelectMany(source => source.Obligations)
                 .Select(obligation => obligation.Id)
                 .Distinct(StringComparer.Ordinal)

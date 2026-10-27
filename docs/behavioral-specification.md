@@ -24,7 +24,7 @@ adding a complete expansion does not certify it through these Core transcripts.
 Every authored setup record is still enumerated and fingerprinted. The 15 Rise
 of Red Skull records, 19 Wrecking Crew variant records, Captain America and
 Ms. Marvel, Thor, Black Widow, Doctor Strange and Hulk hero recipes, two Risky Business and two Mutagen Formula modes, and A Mess of Things and
-Goblin Gimmicks modular recipes are explicitly
+Goblin Gimmicks and Kree Fanatic modular recipes are explicitly
 adjudicated `outside-core`; they are not
 filtered out or marked executable by this corpus.
 

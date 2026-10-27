@@ -9,9 +9,9 @@ admits a product without its complete face and recipe gates.
 | | |
 |---|---|
 | Kind | authored |
-| Declared products | Marvel Champions Core Set; Rise of Red Skull; The Wrecking Crew; Captain America; Ms. Marvel; Thor; Black Widow; Green Goblin (both scenarios and four modular sets) |
-| Records | 39 scenario modes, 11 heroes, 14 encounter sets; candidate runtime admission exposes 39 modes, 11 heroes and 14 sets |
-| Gated by | `SetupDatasetTests`, `RiseOfRedSkullSetupDataTests`, `CaptainAmericaSetupTests`, `MsMarvelSetupTests`, `ThorSetupTests`, `BlackWidowSetupTests`, `MessOfThingsSetupTests`, `RiskyBusinessSetupTests`, complete-product admission |
+| Declared products | Marvel Champions Core Set; Rise of Red Skull; The Wrecking Crew; Captain America; Ms. Marvel; Thor; Black Widow; Doctor Strange; Hulk; Green Goblin (both scenarios and four modular sets); Ronan Kree Fanatic modular set |
+| Records | 39 scenario modes, 13 heroes, 15 encounter sets; candidate runtime admission exposes 39 modes, 13 heroes and 15 sets |
+| Gated by | `SetupDatasetTests`, `RiseOfRedSkullSetupDataTests`, `CaptainAmericaSetupTests`, `MsMarvelSetupTests`, `ThorSetupTests`, `BlackWidowSetupTests`, `MessOfThingsSetupTests`, `RiskyBusinessSetupTests`, `KreeFanaticAdmissionTests`, complete-product admission |
 
 ## Why it is authored
 
@@ -32,7 +32,7 @@ Rise of Red Skull printed faces before exposing its runtime recipes.
 - every named encounter or modular set is defined;
 - every scenario has valid main schemes and villain stages;
 - every hero has two identity faces, an obligation, and a nemesis set;
-- the declared products contain 39 authored modes, 10 heroes, and 14 sets;
+- the declared products contain 39 authored modes, 13 heroes, and 15 sets;
 - required encounter sets remain fixed when optional modular sets change;
 - the header counts match the file.
 
@@ -146,3 +146,18 @@ custom decks at printed copy limits. Public discovery has thirteen heroes,
 39 scenario/mode recipes and fourteen encounter sets. Focused setup/admission
 evidence is recorded in `docs/content/hulk-public-admission.md`; this candidate
 does not establish complete-game, native or final combined acceptance.
+
+
+Kree Fanatic has candidate public admission as a modular encounter set only.
+The pinned seven-page FFG PDF recorded in
+`docs/content/research/remaining/ronan-source-pin.md` supplies one copy each of
+90001–90003 and two copies each of 90004–90005. All five authored/catalog faces,
+exact pack membership, modular role and the complete seven-copy recipe are required
+together. A missing face or malformed recipe closes the entire set while preserving
+predecessor products. Standard and Expert scenario slots accept its normal modular
+selection with starter or legal custom player decks. Recommended defaults remain
+scenario-owned. Discovery has thirteen heroes, 39 scenario/mode recipes and fifteen
+encounter sets, thirteen of them modular. The separate Galaxy’s Most Wanted Ronan
+scenario remains unsupported. Focused evidence is in
+`docs/content/ronan-public-admission.md`; this gate does not establish complete-game,
+fresh-host or native acceptance.

@@ -5,6 +5,8 @@ namespace Marvel.Content.Setup;
 /// <summary>Requires complete reviewed standalone products before runtime discovery.</summary>
 public static class StandaloneProductAdmission
 {
+    private static readonly ImmutableArray<string> KreeFanaticCopies =
+        ["90001", "90002", "90003", "90004", "90004", "90005", "90005"];
     private static readonly ImmutableArray<string> FixedWreckingRecipes =
         ["wrecking_crew_standard", "wrecking_crew_expert", "wrecking_crew_extreme"];
 
@@ -57,6 +59,15 @@ public static class StandaloneProductAdmission
         Complete("hlk", ["10001a", "10001b", .. Enumerable.Range(2, 31).Select(number => $"10{number:000}")], cards, authored)
         && setup.HeroNames.Contains("hulk")
         && HulkRecipe.Complete(setup.Hero("hulk"));
+
+    /// <summary>Admits the complete seven-card Kree Fanatic modular set.</summary>
+    public static bool KreeFanatic(SetupCatalog setup, CardCatalog cards, IReadOnlySet<string> authored) =>
+        Complete("ron", ["90001", "90002", "90003", "90004", "90005"], cards, authored)
+        && setup.EncounterSetNames.Contains("kree_fanatic")
+        && setup.EncounterRole("kree_fanatic") == EncounterSetRole.Modular
+        // Repository policy pins physical quantities to the seven numbered FFG PDF pages.
+        && setup.EncounterSet("kree_fanatic").Order(StringComparer.Ordinal)
+            .SequenceEqual(KreeFanaticCopies);
 
     private static IEnumerable<string> WreckingRecipes() =>
         FixedWreckingRecipes

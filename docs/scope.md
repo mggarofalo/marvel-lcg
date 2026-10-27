@@ -60,7 +60,7 @@ a later product executable.
 The executable ability book contains the 209 Core Set, 181 Rise of Red Skull,
 35 Captain America and 60 Wrecking Crew faces, plus the candidates' 57 Green
 Goblin, 34 Ms. Marvel, 35 Thor, 34 Black Widow, 40 Doctor Strange and 33 Hulk faces
-(718 total). Product admission requires complete
+and five Ronan Kree Fanatic faces (723 total). Product admission requires complete
 playable content and the verified published starter; physical packaging copy
 quantities are outside that requirement. Language support for a later card pattern
 does not admit that product.
@@ -117,3 +117,18 @@ custom decks at printed copy limits. Public discovery has thirteen heroes,
 39 scenario/mode recipes and fourteen encounter sets. Focused setup/admission
 evidence is recorded in `docs/content/hulk-public-admission.md`; this candidate
 does not establish complete-game, native or final combined acceptance.
+
+
+Kree Fanatic has candidate public admission as a modular encounter set only.
+The pinned seven-page FFG PDF recorded in
+`docs/content/research/remaining/ronan-source-pin.md` supplies one copy each of
+90001–90003 and two copies each of 90004–90005. All five authored/catalog faces,
+exact pack membership, modular role and the complete seven-copy recipe are required
+together. A missing face or malformed recipe closes the entire set while preserving
+predecessor products. Standard and Expert scenario slots accept its normal modular
+selection with starter or legal custom player decks. Recommended defaults remain
+scenario-owned. Discovery has thirteen heroes, 39 scenario/mode recipes and fifteen
+encounter sets, thirteen of them modular. The separate Galaxy’s Most Wanted Ronan
+scenario remains unsupported. Focused evidence is in
+`docs/content/ronan-public-admission.md`; this gate does not establish complete-game,
+fresh-host or native acceptance.
