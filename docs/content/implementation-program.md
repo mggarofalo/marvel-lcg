@@ -125,7 +125,7 @@ and public proof do not reenter the queue. The next delivery sequence is:
    PR #453 is merged at `ffb26f66`. See the
    [Black Widow checkpoint](black-widow-delivery-checkpoint.md).
 3. Doctor Strange PR #454 is merged with all eleven checks green. Its 40 faces, verified starter, public games and restart evidence are accepted; MARVEL-839 remains separate UI review.
-4. Complete Hulk final semantic review and integrated certification; its 33 faces, public admission, eight games and fresh-host proof are integrated. Ronan's remaining two faces follow independently reviewed causal attack/activation work.
+4. Complete Hulk PR #458 certification at `0edf7c9a`; all content and independent semantic review are integrated. Ronan now has all five reviewed faces and independently accepted public admission; complete-game repair and fresh-host review remain.
 5. Advance the dependency groups and eleven-wave ledger above through Fear No
    Evil. Source-incomplete products retain their explicit acquisition gates;
    each completed product closes its own canonical parent with evidence.
@@ -183,12 +183,24 @@ review found lost known damage after immediate empty-deck recycling; source
 `49ca46db` preserves public provenance; independent review `56e9684d` accepts it. Final
 same-head CI certification and merge remain. See the Hulk delivery checkpoint.
 
-Ronan's official source is pinned in
-[the source record](research/remaining/ronan-source-pin.md). Villain-phase-start
-and existing engagement composition are independently reviewed and integrated
-locally. Actual 90001, 90003 and 90005 are independently reviewed (721 total
-ability rows). MARVEL-856 preserves exact enemy-attack defeat receipts and their
-single response window for 90002; source `561e3904` awaits independent review.
-90004 activation-outcome composition is under an executable probe. Both faces
-and complete public modular-set admission/proof remain. Ronan is not yet an
-accepted public set.
+Ronan has all five actual faces independently reviewed and integrated: 723 ability
+rows, seven physical modular cards. Both attack-defeat prerequisites and replay
+v28 are reviewed. Public admission source `d1871dd2` and review `f4fae394` cover
+all 80 supported scenario/mode/player-count setups. Public-game source `e3a55aa5`
+passes three of four fixed games; seed 3 exposes a facedown attached-event offer
+for an eliminated player. MARVEL-859 owns the engine repair and independent
+review; MARVEL-860 separately reconciles owned cards outside the eliminated
+player's play area. Preserve the failing seed and archive. Complete-game closure,
+fresh-host continuation review and final integrated CI remain required.
+
+Kang's area-routing prerequisite is independently accepted through `343da120`.
+The deterministic whole-group unique-conflict query at `2f7317e7` is under
+independent review. Actual stage-I split, phase-end reunion and public admission
+remain unimplemented; MARVEL-858 and the Kang handoff own the next controller
+packet. No Kang runtime is admitted by the Ronan candidate.
+
+Fear No Evil acquisition has pinned all 201 scan files. The first missing family,
+Bullseye, has 12 faces/14 physical cards independently transcribed and proofread
+from 15 originals (`0e0057e0`, `49930947`). Annotation import repair `8cf73d30`
+is under review; no new Fear No Evil cards are imported or admitted yet. The
+remaining families retain explicit transcription, review and acquisition gates.
