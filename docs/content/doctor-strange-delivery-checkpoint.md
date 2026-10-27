@@ -14,6 +14,12 @@ closure checks pass 47 Server, 27 Godot and six acceptance/citation tests. Final
 cross-platform CI remains required.
 
 Remaining delivery work: green combined cross-platform CI and merge of PR 454.
+Run40444518229 at `553869be` passed managed correctness, Linux platform gates,
+all native shards and packaging. Windows passed129 architecture,981 Godot,
+36 release and645 Server cases, then reached the60-minute job deadline while
+building the hosted-client smoke. Its managed integration step alone took
+51m47s. The platform job allowance is now90 minutes, preserving all test and
+per-process smoke deadlines; a fresh PR-head run remains required.
 The first run, 40439351007 at `fdd16b0f`, passed managed correctness, all native
 journey shards and desktop packaging. Windows and Linux platform jobs each
 failed only the exact dependency pin for the native privacy witness. The
