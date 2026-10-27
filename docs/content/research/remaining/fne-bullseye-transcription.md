@@ -77,8 +77,9 @@ candidate's pinned scans before a separate acquisition change. Confirm especiall
 the clause stars, boost stars, star-only modifiers, fixed threat and stage I
 correction. No setup or ability interpretation is part of this packet.
 
-The current `Supplement.ReadEntry` accepts full-card inputs but constructs an
-empty stat-annotation list and ignores this research metadata. A later admission
+The current `Supplement.ReadEntry` accepts full-card inputs but leaves
+`Card.StatAnnotations` at its default empty dictionary. Its constructor `[]`
+argument is `LinkedTo`, not annotations. A later admission
 change must preserve the captured special stars explicitly; copying these rows
 alone would lose them. The candidate records this observed limitation without
 changing the extractor. No generated card, supplement, vendored snapshot, setup,
