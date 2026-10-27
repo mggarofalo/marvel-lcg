@@ -27,3 +27,32 @@ These checkpoints cover conventional modular interactions through the existing
 client/session contracts. Existing native selector and contract suites remain
 the UI regression lane; no new interaction or human content approval is needed.
 Independent review and final combined certification remain required.
+
+## Independent restart review
+
+Reviewed `a4c69d7fd61b7c0013f225571057391a7653cf35` in the isolated
+`C:/Users/mggar/Source/marvel-ronan-restart-review` worktree. The unchanged
+four-case test assembly passed independently in 2.92 minutes; log:
+`C:/Users/mggar/Source/evidence/ronan-fresh-host-independent-review.log`.
+
+The factory delegates directly to current `DatasetGameFactory`; it neither
+changes the ability book nor prepares game state. Each restart creates its own
+factory, store, host, game and world. Strict save serialization and independently
+copied authority metadata retain the original archive. Equality includes the
+complete generator state, outstanding agenda, effects, prompt, serialized save,
+revision, world and history; accepted continuations also compare ordered events.
+Stale rejection preserves state and save, with the same answer subsequently
+accepted as its compatible control. The second restart uses the original twin,
+so both views are Sync snapshots without removing EventFaces from comparison.
+
+The review strengthens the Accused checkpoint with its actual identity host:
+printed `90003` says "Attach to your identity." Zone and seat alone would permit
+an incorrect host. All four cases pass again with this assertion (2.38 minutes):
+`C:/Users/mggar/Source/evidence/ronan-fresh-host-independent-strengthened.log`.
+No production code, policy, replay fixture or existing assertion changed.
+
+Verdict: accepted for these four public restart checkpoints, including exact
+continuation to terminal outcomes. The facedown and elimination repairs remain
+separately reviewed prerequisites. Combined delivery and platform certification
+remain outstanding; this review does not claim complete modular branch or UI
+coverage.

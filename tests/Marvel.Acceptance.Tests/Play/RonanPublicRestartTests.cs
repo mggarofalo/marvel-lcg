@@ -27,6 +27,9 @@ public sealed class RonanPublicRestartTests(ITestOutputHelper output)
         var source = Assert.Single(original.Factory.Game.State.Cards, card => card.FaceId == face);
         Assert.Equal(expectedArea, source.Area.Type);
         Assert.Equal(PlayArea.Of(expectedSeat), source.Area.PlayArea);
+        // Printed 90003: "Attach to your identity."
+        if (face == "90003")
+            Assert.Equal(original.Factory.Game.State.Seats[expectedSeat].IdentityCard.ObjectId, source.Area.Host);
         Assert.NotNull(original.Current.Prompt);
         var fresh = original.Restart();
         var answer = policy.Answer(original.Factory.Game);
