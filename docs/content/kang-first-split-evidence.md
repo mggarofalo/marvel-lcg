@@ -110,4 +110,42 @@ contained no conflict; the fixture now includes a matching physical pair and
 the repeated mutant fails. A forced nonincremental restored build passed.
 The final test-only extension also compares every RNG state word and index. No full
 managed, Linux, native, save/replay or played split/reunion evidence is claimed.
-Independent review remains required.
+Independent review is recorded below.
+
+## Independent join-query review
+
+Reviewed production revision `2f7317e758350788d1d9634bb7485cd73d3d97a1`
+in a separate worktree. Accepted only the pure conflict-query prerequisite:
+no production correctness finding was identified. This verdict does not accept
+a split/reunion controller, discard choice, public admission or played Kang.
+
+The vendored `pack:mc11:rules-clarifications` requires unique-copy reconciliation
+inside the combined game area. RR 1.8 `rr:unique-icon.1.1` and `.1.2` define
+matching; reusing `Uniqueness.Matches` preserves the distinction between bare
+titles, subtitles and alter-ego names. Sorting physical object IDs determines
+report order without selecting a survivor. Membership uses actual placement,
+including every player's play area in both groups. Detached central cards,
+other groups and out-of-play cards are outside this union. Source inspection
+confirms that the query performs no state, RNG or agenda mutation; the existing
+purity test observes those baselines before its first query.
+
+`KangJoinMatchingReviewTests` adds five passing actual-card cases: Spider-Man's
+two-face identity matches the Peter Parker ally in both forms and both join
+directions; the Miles Morales ally does not match merely by hero title; physical
+placement governs a differently owned ally; distinct Nick Fury printings match;
+and querying after a real discard removes that pair. These are prepared
+nonpublic states, not public setup or played scenario evidence.
+
+Independent Windows command (30 passed):
+
+```powershell
+dotnet test tests/Marvel.Content.Tests/Marvel.Content.Tests.csproj -c Release --filter 'FullyQualifiedName~KangJoin|FullyQualifiedName~KangAreaRoutingTests|FullyQualifiedName~KangRoutingIndependentReviewTests'
+```
+
+Raw log: `C:/Users/mggar/Source/kang-join-independent-review-restored.log`.
+An earlier review attempt hit a fixture-only missing `Seat.Discard` compile
+error; the earlier review log retains four failures from constructing a one-face
+identity. The corrected fixture constructs `01001a,01001b`; production sources
+were unchanged. Normal commit hooks passed, including 66 architecture checks,
+complexity and file length.
+No additional mutation, full-suite, Linux, native or replay result is claimed.
