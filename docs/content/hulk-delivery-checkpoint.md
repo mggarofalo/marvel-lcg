@@ -188,3 +188,12 @@ host request; this run is not accepted certification. The native CI step now
 supplies Xvfb on Linux for rendered entries in either profile, preserving case
 selection and all assertions. Eight local CI-policy/manifest cases pass in
 `hulk-ci-display-policy.log`; the next CI run must prove the actual Linux fix.
+
+Run `40468537711` exposed a Windows Beat Cop damage commitment exceeding the
+UI driver's default three-second wait. The accepted transport exchange took
+3474 ms; the inspected failure image still shows the pending commitment.
+Only Beat Cop's two remote commitment waits now allow ten seconds, retaining
+exact revision, effect and cost assertions. The shared target helper defaults
+remain unchanged for other journeys. Both rendered 100% Beat Cop cases pass in
+`C:/Users/mggar/Source/evidence/hulk-ci-commit-wait-native/`; the next CI run
+must certify the final candidate. The timeout is not treated as a passed run.
