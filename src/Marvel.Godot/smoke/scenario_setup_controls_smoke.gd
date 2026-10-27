@@ -6,7 +6,7 @@ func _initialize() -> void:
 func _run() -> void:
     var main = load("res://Main.tscn").instantiate()
     root.add_child(main)
-    var start = main.get_node("Margin/Shell/Content/Setup/Selections/Fields/Start")
+    var start = main.find_child("Start", true, false)
     for attempt in range(1200):
         await process_frame
         if not start.disabled:
