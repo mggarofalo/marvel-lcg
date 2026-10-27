@@ -9,7 +9,8 @@ internal sealed record AttackDamagePolicy(bool Overkill, bool Retaliate)
     internal ExcessDamageThreat? ExcessThreat { get; init; }
 
     internal static AttackDamagePolicy Capture(World world, AttackDamageRequest request, bool spillOnly = false) =>
-        new(!spillOnly && AttackKeywords.Has(world, request.Attacker, request.Source, Keywords.Overkill, request.Basic),
+        new(!spillOnly && (request.GrantedOverkill
+                || AttackKeywords.Has(world, request.Attacker, request.Source, Keywords.Overkill, request.Basic)),
             !spillOnly && request.Retaliate
                 && !AttackKeywords.Has(world, request.Attacker, request.Source, Keywords.Ranged, request.Basic))
         { ExcessThreat = spillOnly ? null : ExcessDamageThreat.Capture(world, request) };

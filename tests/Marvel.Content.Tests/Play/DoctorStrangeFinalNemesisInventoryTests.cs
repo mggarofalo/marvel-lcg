@@ -14,9 +14,9 @@ public sealed class DoctorStrangeFinalNemesisInventoryTests
     {
         using var book = JsonDocument.Parse(AuthoredCards.Text);
         var rows = book.RootElement.GetProperty("cards").EnumerateArray().ToArray();
-        Assert.Equal(685, rows.Length);
-        Assert.Equal(FinalFaces, rows.Skip(682).Select(row => row.GetProperty("card").GetString()));
-        Assert.All(rows.Skip(682), row => Assert.False(row.TryGetProperty("startingCounters", out _)));
+        Assert.Equal(688, rows.Length);
+        Assert.Equal(FinalFaces, rows.Skip(682).Take(3).Select(row => row.GetProperty("card").GetString()));
+        Assert.All(rows.Skip(682).Take(3), row => Assert.False(row.TryGetProperty("startingCounters", out _)));
         using var printed = JsonDocument.Parse(File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")));
         var faces = printed.RootElement.GetProperty("cards").EnumerateArray()
             .Select(row => row.GetProperty("card_id").GetString()!)

@@ -1671,3 +1671,20 @@ with captive rescue or host removal. Open the Dark Dimension uses this during
 When Defeated before the scheme departs. Ordinary nondefeat host departure
 instead discards its stored card through the separate Invocation discard/recycle
 lifecycle. The destination spelling and exact-set validation are engine choices.
+
+### Adjusted printed-price resource restriction
+
+An action ability may declare `"printedCostResource": "R"`. This bounded
+interpretation represents Crushing Blow's physical-only spending restriction:
+every resource **spent toward the adjusted printed event price** must be physical.
+Wild resources can be declared physical. Unused generated icons are overpayment,
+and additional arrow costs retain their own requirements. Discounts, including a
+reduction to zero, apply before the repeated physical requirement is constructed.
+The spelling and current physical-only admission are repository choices. Pricing,
+resource feasibility and committed allocation share the existing payment owners.
+No Hulk production row or public admission is supplied by this prerequisite.
+
+Resource abilities additionally admit `"resourceRestriction": "attackEvent"`.
+This means an event with the **Attack trait**, matching Martial Prowess's printed
+`[[Attack]]` restriction. It does not mean any event used during a basic attack:
+Hulk Smash has the Superpower trait and cannot consume this restricted resource.

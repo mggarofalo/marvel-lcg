@@ -29,7 +29,9 @@ internal static class AbilityEffectLowering
             "resolveInvocation" => InvocationEffect(argument, child),
             "returnInvocation" => InvocationReturn(argument, child),
             "attackAnotherEnemy" => AbilityStagedAttackLowering.Lower(argument, child),
-            "boostBasicUse" => argument is AbilityValue.Word { Value: "exhaustedAllyPower" }
+            "boostBasicUse" => argument is AbilityValue.Word { Value: "overkill" }
+                ? new AbilityEffect.BoostBasicUse(0, Overkill: true)
+                : argument is AbilityValue.Word { Value: "exhaustedAllyPower" }
                 ? new AbilityEffect.BoostBasicUse(0, MatchingAlly: true)
                 : new AbilityEffect.BoostBasicUse(PositiveCount(argument, child)),
             "modifyPlayedEvent" => PlayedEventModifier(argument, child),

@@ -220,10 +220,9 @@ internal static class AbilityPaymentRules
 
         long cost = CardPayment.CostOf(
             world, world.Facts, world.Seats[player], card).Amount;
-        string required = Resources.Required(world, card, world.Facts)
+        string required = AbilityPaymentPricing.PrintedRequirement(world, card, ability, cost)
             + ResourceRequirement(ability.Cost, card);
-        cost += required.Length
-            - Resources.Required(world, card, world.Facts).Length + GenericResourceAmount(ability.Cost);
+        cost += ResourceRequirement(ability.Cost, card).Length + GenericResourceAmount(ability.Cost);
         var generators = AbilityPaymentPricing.EventGenerators(world, card, player, ability.Effect, resourceAbilities);
         if (discarded is not null)
             return Resources.Pays(new string([.. generators

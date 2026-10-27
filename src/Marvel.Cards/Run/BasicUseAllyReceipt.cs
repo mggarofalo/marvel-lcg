@@ -40,6 +40,7 @@ internal sealed record BasicUseAllyReceipt(int Card, int Incarnation, int Player
     internal static bool CanApply(AbilityEffect.BoostBasicUse effect, AbilityAdmissionContext context)
     {
         if (context.Query.Occurrence.BasicUse is not { } use) return false;
+        if (effect.Overkill && use.Field != "attack") return false;
         // A committed payment may fizzle when its physical participant departs.
         // Keeping its continuation admissible lets earlier choices finish normally.
         if (effect.MatchingAlly && context.Expressions.Results.ContainsKey(Prefix + "card")) return true;

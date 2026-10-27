@@ -47,7 +47,7 @@ public sealed class DoctorStrangeInvocationCardTests
     {
         using var json = JsonDocument.Parse(AuthoredCards.Text);
         var rows = json.RootElement.GetProperty("cards").EnumerateArray().ToArray();
-        Assert.Equal(685, rows.Length);
+        Assert.Equal(688, rows.Length);
         Assert.Equal(InvocationFaces, rows.Skip(665).Take(2).Select(row => row.GetProperty("card").GetString()));
         Assert.All(rows.Skip(665).Take(2), row => Assert.False(row.TryGetProperty("startingCounters", out _)));
         Assert.DoesNotContain("10002", AuthoredCards.Book.Authored);

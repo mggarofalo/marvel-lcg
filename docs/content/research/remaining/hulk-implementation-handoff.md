@@ -137,7 +137,8 @@ AspectCard, Event and PreparationCard, with no AttackEvent case. Extend this
 existing restriction owner for Martial Prowess rather than permitting all
 events. Reuse `RestrictedResourceTests.cs`, `RestrictedResourceAdmissionTests.cs`
 and `PreparationResourceIndependentTests.cs` as regression controls. Prove use
-for Drop Kick and Hulk Smash; reject a thwart event, basic attack and unrelated
+for Drop Kick and Crushing Blow; reject Hulk Smash (it has only the Superpower
+trait), a thwart event, basic attack and unrelated
 ability cost. Resourceful and Banner's Laboratory remain ordinary resource
 ability authoring. Q3 separately inspects printed hand-source eligibility for
 Limitless Strength, including switching form while payment is pending.

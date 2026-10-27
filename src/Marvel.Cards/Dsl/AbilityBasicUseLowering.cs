@@ -9,6 +9,7 @@ internal static class AbilityBasicUseLowering
 {
     internal static void Validate(CardAbility ability, AbilityEffect effect, AbilityLocation location)
     {
+        ValidateOverkill(ability, effect, location);
         var cost = ability.Cost is { } syntax
             ? AbilityCostLowering.LowerCost(AbilityBookLowering.Syntax(syntax), location.Child("cost")) : null;
         int matches = MatchingCount(effect);
@@ -22,6 +23,17 @@ internal static class AbilityBasicUseLowering
             || ability.Trigger.Timing != AbilityType.Interrupt))
             throw location.Error("matching ally power requires the hero basic-use interrupt");
     }
+
+    private static void ValidateOverkill(CardAbility ability, AbilityEffect effect, AbilityLocation location)
+    {
+        if (ContainsOverkill(effect) && (ability.Trigger.Event != BasicPowerTiming.HeroAttackInitiated
+            || ability.Trigger.Timing != AbilityType.Interrupt))
+            throw location.Error("basic-use overkill requires the hero basic-attack interrupt");
+    }
+
+    private static bool ContainsOverkill(AbilityEffect effect) =>
+        effect is AbilityEffect.BoostBasicUse { Overkill: true }
+        || AbilityEffectStructure.AllEffectChildren(effect).Any(ContainsOverkill);
 
     private static int MatchingCount(AbilityEffect effect) =>
         (effect is AbilityEffect.BoostBasicUse { MatchingAlly: true } ? 1 : 0)

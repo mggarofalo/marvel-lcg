@@ -21392,6 +21392,124 @@
           }
         }
       ]
+    },
+    {
+      "card": "10001a",
+      "name": "Hulk",
+      "note": "Printed 10001a Enraged. The entire current hand is selected for discard in the forced-interrupt tier of its controller’s turn end.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "ForcedInterrupt",
+            "event": "WhenPlayerTurnEnds",
+            "subject": "you",
+            "form": "hero"
+          },
+          "effect": {
+            "discardHandCards": {
+              "count": {
+                "cardsIn": {
+                  "area": "yourHand"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "10001b",
+      "name": "Bruce Banner",
+      "note": "Printed 10001b Experimental Research. Draw precedes the selected discard; the action is limited once per round.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Action",
+            "event": "WhenActionTriggered",
+            "subject": "this",
+            "form": "alter-ego"
+          },
+          "limitPerRound": 1,
+          "effect": {
+            "seq": [
+              {
+                "draw": {
+                  "player": "you",
+                  "count": 1
+                }
+              },
+              {
+                "discardHandCards": 1
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "10004",
+      "name": "Sub-Orbital Leap",
+      "note": "Printed 10004. Enhancement requires physical resources actually paid and no other declared type. ruling:5bbba476a198a90c clarifies the same Hulk physical-only enhancement at zero adjusted price: no physical payment does not qualify. Unused generated icons are not paid (rr:cost.4.1).",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Action",
+            "event": "WhenActionTriggered",
+            "subject": "this",
+            "form": "hero"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "thwartableSchemes"
+              },
+              "effect": {
+                "thwart": {
+                  "target": "chosen",
+                  "effect": {
+                    "if": {
+                      "test": {
+                        "and": [
+                          {
+                            "paidWithResource": "R"
+                          },
+                          {
+                            "not": {
+                              "paidWithResource": "B"
+                            }
+                          },
+                          {
+                            "not": {
+                              "paidWithResource": "Y"
+                            }
+                          },
+                          {
+                            "not": {
+                              "paidWithResource": "G"
+                            }
+                          }
+                        ]
+                      },
+                      "then": {
+                        "removeThreat": {
+                          "scheme": "chosen",
+                          "amount": 5
+                        }
+                      },
+                      "else": {
+                        "removeThreat": {
+                          "scheme": "chosen",
+                          "amount": 3
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
     }
   ]
 }

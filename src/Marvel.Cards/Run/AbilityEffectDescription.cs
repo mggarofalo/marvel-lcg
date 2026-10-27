@@ -6,7 +6,8 @@ namespace Marvel.Cards.Run;
 /// <summary>Readable effect vocabulary derived from checked ability instructions.</summary>
 internal static class AbilityEffectDescription
 {
-    internal static string? Summary(AbilityEffect effect) => AbilityCostReductionDescription.Summary(effect)
+    internal static string? Summary(AbilityEffect effect) => AbilityBasicUseDescription.Summary(effect)
+        ?? AbilityCostReductionDescription.Summary(effect)
         ?? AbilitySearchDescription.Summary(effect)
         ?? AbilityRevealDescription.Summary(effect)
         ?? AbilityReadinessDescription.Summary(effect) ?? (effect switch
@@ -16,7 +17,6 @@ internal static class AbilityEffectDescription
         AbilityEffect.Fixed { Instruction: AbilityFixedInstruction.ReadyUndamagedDefender } =>
             "At the end of this attack, ready your defending hero if it took no damage from that attack",
         AbilityEffect.BoostBasicUse { MatchingAlly: true } => "Add the exhausted ally's matching modified power to this basic use only; no ally consequential damage",
-        AbilityEffect.BoostBasicUse bonus => $"Add {bonus.Amount} ATK for this basic attack only",
         AbilityEffect.ModifyPlayedEvent modifier =>
             $"Increase each {(modifier.Kind == "eventDamage" ? "damage" : "threat removal")} instance of this event by {modifier.Amount} until this play finishes",
         AbilityEffect.IncreaseNextEventCost increase => $"Your next event costs {increase.Amount} additional resources; discard this obligation after that event",

@@ -76,6 +76,7 @@ internal static class AbilityJsonReader
         {
             LimitPeriod = element.TryGetProperty("limitPerPhase", out _) ? AbilityLimitPeriod.Phase : AbilityLimitPeriod.Round,
             ResourceRestriction = AbilityResourceRestriction.Read(element, trigger.Timing),
+            PrintedCostResource = AbilityPrintedCostResource.Read(element),
         };
     }
 

@@ -155,7 +155,7 @@ public sealed class BlackWidowPreparationCardTests
         using var book = System.Text.Json.JsonDocument.Parse(AuthoredCards.Text);
         string[] added = ["08001a", "08005", "08007", "08009", "08010"];
         var rows = book.RootElement.GetProperty("cards").EnumerateArray().ToArray();
-        Assert.Equal(685, rows.Length);
+        Assert.Equal(688, rows.Length);
         Assert.Equal(added, rows.Skip(623).Take(5).Select(row => row.GetProperty("card").GetString()));
         Assert.All(rows.Skip(623).Take(5), row => Assert.False(row.TryGetProperty("startingCounters", out _)));
         Assert.DoesNotContain("11028", AuthoredCards.Book.Authored);

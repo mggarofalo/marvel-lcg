@@ -86,6 +86,7 @@ internal static class AbilityBookLowering
     {
         LimitPeriod = AbilityLimit.Validate(ability),
         ResourceRestriction = AbilityResourceRestriction.Validate(ability),
+        PrintedCostResource = AbilityPrintedCostResource.Validate(ability),
     };
     }
 

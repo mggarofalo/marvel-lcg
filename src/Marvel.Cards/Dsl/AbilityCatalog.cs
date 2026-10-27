@@ -43,7 +43,7 @@ public static class AbilityCatalog
         {
             "name", "note", "trigger", "effect", "cost", "limitPerRound", "limitPerPhase", "when",
             "anyPlayer", "labels", "printedResources", "maxPerRound", "maxPerPhase", "maxPerAttack", "maxPerActivation",
-            "maxPerGame", "maxPerInstance", "resourceRestriction",
+            "maxPerGame", "maxPerInstance", "resourceRestriction", "printedCostResource",
         }.ToFrozenSet(StringComparer.Ordinal);
 
     internal static readonly FrozenSet<string> TriggerKeys =
