@@ -13,7 +13,13 @@ cases. The repaired full acceptance lane passes 178 tests; focused combined
 closure checks pass 47 Server, 27 Godot and six acceptance/citation tests. Final
 cross-platform CI remains required.
 
-Remaining delivery work: final combined cross-platform CI, PR and merge.
+Remaining delivery work: green combined cross-platform CI and merge of PR 454.
+The first run, 40439351007 at `fdd16b0f`, passed managed correctness, all native
+journey shards and desktop packaging. Windows and Linux platform jobs each
+failed only the exact dependency pin for the native privacy witness. The
+[reviewed ownership closure](doctor-strange-witness-boundary.md) admits precisely
+the two View contracts that witness reads; its independent boundary test passes.
+No runtime behavior or native media changes accompany this closure.
 
 No human content approval is required. MARVEL-839 is ready for separate focused
 UI comprehension review, with seven refreshed inspected Plane attachments and

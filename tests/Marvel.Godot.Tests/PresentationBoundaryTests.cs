@@ -200,6 +200,9 @@ public sealed class PresentationBoundaryTests
             "Marvel.View.EventActivityKind",
             // Native read-only witnesses locate cards in authorized area descriptors.
             "Marvel.View.GameAreaDescriptor",
+            // Native pile witnesses read View-owned public ownership and assert concealed locations stay absent.
+            "Marvel.View.InvocationDeckDescriptor",
+            "Marvel.View.CardLocationDescriptor",
             "Marvel.View.OutcomeDescription",
             "Marvel.View.ActivitySubject",
             "Marvel.View.ActivitySubjectRole",
