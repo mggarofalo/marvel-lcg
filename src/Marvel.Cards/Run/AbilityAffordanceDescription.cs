@@ -95,7 +95,7 @@ internal static class AbilityAffordanceDescription
     // Do not descend into conditional, optional or power-cancellable branches.
     private static bool StartsWithTargetSelection(AbilityEffect effect) => effect switch
     {
-        AbilityEffect.ChooseCard => true,
+        AbilityEffect.ChooseCard or AbilityEffect.Damage { Maximum: not null } => true,
         AbilityEffect.Sequence { Effects.Length: 1 } sequence =>
             StartsWithTargetSelection(sequence.Effects[0]),
         _ => false,

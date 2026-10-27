@@ -152,7 +152,7 @@ internal static class AbilityPlayerBindingAnalysis
 
     private static bool ContainsPower(AbilityEffect effect) => effect switch
     {
-        AbilityEffect.ReduceNextCardCost reduction =>
+        AbilityPricingEffect.ReduceNextCardCost reduction =>
             reduction.Player == AbilityPlayer.You || Contains(reduction.Amount),
         AbilityEffect.Power power =>
             power.Target is { } target && Contains(target) || Contains(power.Effect),
@@ -172,14 +172,14 @@ internal static class AbilityPlayerBindingAnalysis
         AbilityEffect.DiscardUntil discard => discard.Player == AbilityPlayer.You,
         AbilityEffect.AttachCards attach => Contains(attach.Cards) || Contains(attach.Host),
         AbilityEffect.ChooseCardsToHand group => Contains(group.From),
-        AbilityEffect.ReleaseBeneath or AbilityEffect.IncreaseNextEventCost => false,
+        AbilityEffect.ReleaseBeneath or AbilityPricingEffect.IncreaseNextEventCost => false,
         AbilityEffect.StoreBeneath store => Contains(store.Cards) || Contains(store.Host),
         AbilityEffect.InitializeAuxiliaryDeck initialize => Contains(initialize.Cards),
         AbilityEffect.RevealAuxiliaryTop => false,
         AbilityEffect.Shuffle shuffle => shuffle.Area == AbilitySearchArea.YourDeck,
         AbilityEffect.Search search => search.Areas.Contains(AbilitySearchArea.YourDeck),
         AbilityEffect.DefineProfile or AbilityEffect.GainSurge or AbilityEffect.Fixed or AbilityEffect.Generate
-            or AbilityEffect.AllowPlayBeneath or AbilityEffect.AllowPlayFromDiscard or AbilityEffect.ReduceSelfCostPerEngagedMinion or AbilityEffect.ReduceSelfCostPerControlledTrait or AbilityEffect.ReduceFirstAllyCost or AbilityEffect.ReduceUpgradeCostOnThis or AbilityEffect.DoubleResourceFor or AbilityEffect.PreventDamageFrom
+            or AbilityEffect.AllowPlayBeneath or AbilityEffect.AllowPlayFromDiscard or AbilityPricingEffect.ReduceSelfCostPerEngagedMinion or AbilityPricingEffect.ReduceSelfCostPerControlledTrait or AbilityPricingEffect.ReduceFirstAllyCost or AbilityPricingEffect.ReduceUpgradeCostOnThis or AbilityEffect.DoubleResourceFor or AbilityEffect.PreventDamageFrom
             or AbilityEffect.DelayedStun
             or AbilityEffect.AttackAnotherEnemy or AbilityEffect.ChooseTopForHand or AbilityEffect.ChooseDiscardToShuffle
             or AbilityEffect.DiscardHandWithResource

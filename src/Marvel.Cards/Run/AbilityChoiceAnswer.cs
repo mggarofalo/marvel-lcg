@@ -19,11 +19,8 @@ internal sealed class AbilityChoiceAnswer(
 
     internal List<Marvel.Rules.Events.GameEvent> Apply(AbilityEffect choice)
     {
-        if (choice is AbilityEffect.ChooseStatusRecipients recipients)
-        {
-            AbilityStatusRecipients.Commit(execution.StructuralContext(cast), cast, recipients, input);
-            return Continue();
-        }
+        if (choice is AbilityEffect.Damage { Maximum: not null } or AbilityEffect.ChooseStatusRecipients)
+            return ApplyRecipientSelection(choice);
         string operation = choice.OperationName();
         if (choice is AbilityEffect.MoveThreat move)
         {
@@ -41,6 +38,16 @@ internal sealed class AbilityChoiceAnswer(
         if (operation == "indirectDamage") return ApplyIndirectDamage(choice);
         if (operation == "attack") return ApplyCountedAttack((AbilityEffect.Power)choice);
         return ApplyResumableEffectChoice(choice);
+    }
+
+    private List<Marvel.Rules.Events.GameEvent> ApplyRecipientSelection(AbilityEffect choice)
+    {
+        if (choice is AbilityEffect.Damage damage)
+            AbilityDamageRecipients.Commit(execution, cast, damage, input);
+        else
+            AbilityStatusRecipients.Commit(execution.StructuralContext(cast), cast,
+                (AbilityEffect.ChooseStatusRecipients)choice, input);
+        return cast.Suspended ? cast.Events : Continue();
     }
 
     private List<Marvel.Rules.Events.GameEvent> ApplyStructural(AbilityEffect choice)

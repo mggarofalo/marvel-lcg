@@ -7,7 +7,7 @@ internal static class AbilitySelfPlayCostLowering
     internal static AbilityEffect LowerControlledTrait(AbilityValue value, AbilityLocation location)
     {
         var fields = AbilitySelectorLowering.Fields(value, location, "trait", "amount");
-        return new AbilityEffect.ReduceSelfCostPerControlledTrait(
+        return new AbilityPricingEffect.ReduceSelfCostPerControlledTrait(
             AbilityLowering.Text(AbilitySelectorLowering.Required(fields, "trait", location), location.Child("trait")),
             AbilityCostLowering.PositiveInteger(AbilitySelectorLowering.Required(fields, "amount", location), location.Child("amount")));
     }
@@ -24,5 +24,5 @@ internal static class AbilitySelfPlayCostLowering
     }
 
     private static bool IsSelfCost(AbilityEffect effect) => effect is
-        AbilityEffect.ReduceSelfCostPerEngagedMinion or AbilityEffect.ReduceSelfCostPerControlledTrait;
+        AbilityPricingEffect.ReduceSelfCostPerEngagedMinion or AbilityPricingEffect.ReduceSelfCostPerControlledTrait;
 }

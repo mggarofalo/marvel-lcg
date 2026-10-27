@@ -2,65 +2,84 @@
 
 Canonical parent: MARVEL-566. Complete scope is the verified
 [33-face handoff](research/remaining/hulk-implementation-handoff.md).
-Public admission is closed until all faces, starter, obligation/nemesis and extras
-are complete. No human content acceptance gate applies.
+Current local assembly: **700 authored rows, 15/33 Hulk faces**. No public Hulk
+admission or full-pack acceptance. Ordinary content acceptance remains agent-owned.
 
-## Current local assembly
+The branch starts from frozen Doctor Strange candidate `553869be`; PR454's final
+CI remains pending. Local nonpublic integration proceeds during that run. Public
+Hulk admission and merge preparation follow complete pack coverage and Strange
+acceptance. This explicitly supersedes the earlier plan to wait before assembling
+any Hulk prerequisites.
 
-Baseline `553869be` is the frozen Doctor Strange PR454 candidate, whose second
-CI run remains pending. The lead permits local nonpublic dependency integration
-and downstream authoring during CI; this replaces the earlier plan to wait for
-Strange's merge before assembling any Hulk packets. Public Hulk admission and
-its merge preparation follow Strange acceptance. This avoids idle dependency
-work without changing the frozen Strange candidate.
-
-Reviewed packets assembled here:
+## Reviewed and integrated packets
 
 | Packet | Source | Independent review | Scope |
 |---|---|---|---|
-| H1 / MARVEL-843 | `9a143090` | `43a2e812` | Actual Hulk/Banner and Sub-Orbital Leap; 3 faces, book688 |
-| P1/P3 / MARVEL-844 | `a88a0935` | `e59755cf` | Physical adjusted printed price and Attack-event resource source |
-| P2 / MARVEL-845 | `08619549` | `0919e81d` | Basic attack occurrence grants overkill only to that attack |
-| Basic / MARVEL-848 | `fc9a01b6` | `52ec4dd2` | Actual10020–10024; 8 Hulk faces total, book693 |
-| Q3 / MARVEL-853 | `f45a6d39`, repair `697de00b` | finding `acb92681`, closure `e2a5d352` | Explicit live hand-resource eligibility before and during contribution |
-| Selected target / MARVEL-852 | `fd23bf88`, repair `b001e377` | finding `1c6f36fa`, closure `2bccd3fb` | Current controller owns chosen target's attack; stale explicit targets never substitute resolver |
+| H1 / 843 | `9a143090` | `43a2e812` | Actual Hulk/Banner and Leap, three faces |
+| P1/P3 / 844 | `a88a0935` | `e59755cf` | Physical adjusted printed price; Attack-trait event resources |
+| P2 / 845 | `08619549` | `0919e81d` | Overkill belongs to one basic attack occurrence |
+| Basic / 848 | `fc9a01b6` | `52ec4dd2` | Actual 10020–10024, five faces |
+| Q3 / 853 | `f45a6d39`, repair `697de00b` | finding `acb92681`, closure `e2a5d352` | Explicit live hand-resource eligibility before and during payment |
+| Selected target / 852 | `fd23bf88`, repair `b001e377` | finding `1c6f36fa`, closure `2bccd3fb` | Current controller owns chosen target's attack; lost explicit target never substitutes resolver |
+| Signature subset / 846 | `86412c83` | `10336f30` | Actual 10002,10003,10006–10010, seven faces |
+| Ranked attack / 852 | `c6621429` | `b68c7878` | First player selects one ranked enemy, retaining the selected character |
+| Bounded ordinary damage / 846 | `7a98feea`, repair `65190efe` | finding `5fea29de`, closure `b3c9d8c` | One bounded recipient group; accurate later-choice descriptions |
 
-Source/reviewer evidence is in each packet document; it is not a claim of
-complete pack acceptance. Combined local Release verification passes153 Content tests spanning Hulk,
-physical price, restricted sources, basic-attack overkill, ability data and rule
-citations. Log: `Source/evidence/hulk-integrated-prerequisites.log`. This is
-focused integration evidence, not a full pack or full-suite certification.
+Packet documents preserve the authority, source/review evidence and limitations.
+The independently accepted signature subset preserves all 693 predecessor objects
+byte-identically. The two concurrent additions to `AbilityEffect.cs` were reviewed
+at integration: only `Damage.Maximum` and `ActivateEnemies.ChooseOneEnemy` change
+their separate record blocks. No broad record replacement occurred.
 
-Combined H1/P1/P3/P2/Basic/Q3 verification passes **212** Content tests,
-including the original rejected-payment regression and its closure controls.
-Log: `Source/evidence/hulk-integrated-basic-hand-resource.log`. The two Basic
-and Q3 review packets are accepted for this local dependency assembly. Actual
-Limitless Strength and the remaining signature rows are still unauthored.
+## Combined local evidence
 
-The selected-target repair also passes **236** combined activation, attack-chain,
-selected-character and citation cases. Log:
-`Source/evidence/hulk-integrated-selected-owner.log`. No full ranked-pair or
-actual Clash acceptance is implied by that result.
+All logs below are under `C:/Users/mggar/Source/evidence/`:
 
-## Outstanding bounded packets
+- H1/payment/basic-use assembly: 153 Content tests;
+  `hulk-integrated-prerequisites.log`.
+- Basic/Q3 combined assembly: 212 Content tests;
+  `hulk-integrated-basic-hand-resource.log`.
+- Selected-target repair: 236 activation/attack-chain cases;
+  `hulk-integrated-selected-owner.log`.
+- Actual signature integration: 465 focused cases;
+  `hulk-integrated-signatures.log`.
+- Ranked choice integration: 84 cases; `hulk-integrated-ranked-attack.log`.
+- Bounded ordinary damage plus ranked/status/description regression: 225 cases;
+  `hulk-integrated-bounded-damage.log`.
+- Complete 18 inventory-owning classes plus AbilityData/citations: 156 cases;
+  `hulk-global-inventory-closure.log`.
 
-- MARVEL-852: ranked enemy/hero-or-ally pair composition. The selected target
-  ownership and stale target repairs are independently closed and integrated.
-  The next source packet demonstrates that an enemy tie is currently ordered as
-  multiple attacks rather than one selected attack; a narrow first-player
-  select-one policy is under implementation. Full Clash stun/surge remains open.
-- MARVEL-846: seven signature faces 10002,10003,10006–10010 are authored in
-  `86412c83` and under independent review; they are not yet integrated here.
-  Thunderclap 10005 remains a separate ordinary-damage recipient-group engine
-  prerequisite and actual-card authoring task. The eight-face item is incomplete.
-- MARVEL-847: starter allies/aspect faces10011–10019 (9).
-- MARVEL-849: obligation/nemesis faces10025–10028 (4).
-- MARVEL-850: customization faces10029–10032 (4).
-- MARVEL-851: exact public setup, characteristic actions, complete games,
-  restart/replay and combined regression evidence after all33 faces are ready.
+Integration inspection caught sixteen inherited whole-book assertions still at
+693 and negative controls naming now-authored 10002. Those counts now assert700;
+unknown controls name existing catalog face90001, which remains unauthored.
+Original pack positions, exact face sets and counter assertions remain intact.
+The first closure run found two additional array-form negative controls (154
+passed, two failed); both are repaired in the final156-pass run. The global exact
+authored inventory remains enforced. These are fixture maintenance corrections,
+not relaxed content coverage or gameplay changes. Future authors must search
+whole-book counts and newly authored negative IDs and run every affected inventory
+class, including initially unchanged classes.
 
-The six content packets account for3+8+9+5+4+4=33 faces exactly once.
-No package marketing reconciliation or new owner content-approval requirement
-is added. Ordinary reused interactions need proportionate existing native
-regression evidence; a genuinely new UI requires inspected media and a precise
-Plane review item.
+These focused runs are not a combined full-suite or complete-pack certification.
+
+## Remaining work
+
+- MARVEL-846: actual Thunderclap10005 authoring, now unblocked by the reviewed
+  bounded ordinary-damage prerequisite. Seven of the eight signature faces in
+  this item are integrated.
+- MARVEL-847: eight starter faces are source-complete at `6e758f7d` and under
+  independent review (10011–10014 and10016–10019, book708 in that isolated tree).
+  Toe to Toe10015 is excluded. Its faithful labelled attack suspends for an enemy
+  activation; the existing power continuation is being proved behind a narrow
+  admission extension in a separate implementation/review pair.
+- MARVEL-849: actual obligation/nemesis10025–10028 (four faces), including full
+  Clash reveal/cleanup using the reviewed ranked-attack primitive.
+- MARVEL-850: customization10029–10032 (four faces).
+- MARVEL-851: verified public setup, characteristic actions, complete games,
+  restart/replay and final combined regression/platform evidence after all33
+  faces are ready.
+
+The six card packets cover3+8+9+5+4+4=33 faces exactly once. The final complete
+book is expected to contain685 predecessor faces plus33 Hulk faces:718 total.
+No marketing packaging reconciliation or blanket human content gate is added.
+A genuinely new UI needs inspected media and a focused Plane review item.

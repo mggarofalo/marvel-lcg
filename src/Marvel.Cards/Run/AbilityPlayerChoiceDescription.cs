@@ -52,7 +52,7 @@ internal static class AbilityPlayerChoiceDescription
 
     private static long? Discount(AbilityEffect.ChooseCard choice) => choice is
         { From: AbilityCardSelection.Query { Kind: AbilityCardQuery.Identities },
-          Effect: AbilityEffect.ReduceNextCardCost { Player: AbilityPlayer.ChosenPlayer,
+          Effect: AbilityPricingEffect.ReduceNextCardCost { Player: AbilityPlayer.ChosenPlayer,
               Amount: AbilityNumber.Constant amount } } ? amount.Value : null;
 
     private static string Cards(int count) => $"{count} card{(count == 1 ? "" : "s")}";

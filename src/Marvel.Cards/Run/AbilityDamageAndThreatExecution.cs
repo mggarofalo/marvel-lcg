@@ -70,6 +70,9 @@ internal static class AbilityDamageAndThreatExecution
     {
         switch (instruction)
         {
+            case AbilityEffect.Damage { Maximum: not null } when context.SelectedDamageRecipients is null:
+                state.Suspension = AbilityDamageAndThreatSuspension.Choice;
+                return true;
             case AbilityEffect.Damage damage:
                 DealDamage(damage, syntax, context, state);
                 return true;
@@ -193,7 +196,7 @@ internal static class AbilityDamageAndThreatExecution
         long amount = ModifiedAbilityDamage(AbilityAmounts.SaturatingMultiply(
             Amount(damage.Amount, context), multiplier), context);
         state.Damage = new(context.Occurrence);
-        var requests = Every(damage.Cards, context).Select(target =>
+        var requests = (context.SelectedDamageRecipients ?? Every(damage.Cards, context)).Select(target =>
             new DamageRequest(context.Source, target, amount, context.Trigger,
                 damage.AttackVerb ? "Attack" : "Deal_Damage", AbilityEffectAttribution.IdentityPlayer(context))
             {

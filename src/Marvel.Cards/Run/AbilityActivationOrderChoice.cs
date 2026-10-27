@@ -6,7 +6,7 @@ using static Marvel.Cards.Run.AbilityStructuralPowerExecution;
 
 namespace Marvel.Cards.Run;
 
-/// <summary>Offers and validates the order of one ability’s enemy activations.</summary>
+/// <summary>Offers and validates one ability’s enemy selection or activation order.</summary>
 internal static class AbilityActivationOrderChoice
 {
     internal static Prompt DescribeActivationOrder(
@@ -14,6 +14,15 @@ internal static class AbilityActivationOrderChoice
     {
         var enemies = ActivationCandidates(context, activation);
         var ids = enemies.Select(card => card.ObjectId).ToList();
+        if (activation.ChooseOneEnemy)
+        {
+            // rr:first-player.1: "the first player selects among the eligible options."
+            int chooser = context.Expressions.World.FirstPlayer;
+            return new Prompt(chooser, Question.Element, TimingPriority.Untimed,
+                Steps.CardRevealed, $"{context.SourceFace}: choose an attacking enemy", false,
+                [new Affordance(context.Expressions.Source.ObjectId, "Choose", context.Expressions.Source.ObjectId,
+                    chooser, "attacking enemy", new TargetRequest(ids, 1, 1, Rule: "rr:first-player.1"))]);
+        }
         // Resolve the same attacked seats that scheduling will use. An explicit
         // "against" binding or an engaged hero can differ from the ability player.
         if (Activation(context, activation, enemies) is not ScheduleActivationsCommand schedule)
@@ -40,12 +49,13 @@ internal static class AbilityActivationOrderChoice
         AbilityStructuralContext context, AbilityEffect.ActivateEnemies activation, Decision answer)
     {
         var legal = ActivationCandidates(context, activation).Select(card => card.ObjectId).ToHashSet();
+        int required = activation.ChooseOneEnemy ? 1 : legal.Count;
         if (answer.IsDecline || answer.Affordance != context.Expressions.Source.ObjectId
-            || answer.Targets.Count != legal.Count || answer.Targets.Distinct().Count() != legal.Count
+            || answer.Targets.Count != required || answer.Targets.Distinct().Count() != required
             || answer.Targets.Any(id => !legal.Contains(id)))
         {
             return new Unsupported(
-                $"'{context.SourceFace}' requires one permutation of all {legal.Count} enemy activations");
+                $"'{context.SourceFace}' requires {required} distinct eligible enemy activations");
         }
         return Activation(context, activation,
             [.. answer.Targets.Select(id => context.Expressions.World.Cards[id])]);

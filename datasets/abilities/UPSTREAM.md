@@ -375,3 +375,14 @@ reused. All 688 predecessor raw objects remain byte-identical. Actual-row resour
 recipient, exhaustion, discount consumption/expiry and title-limit evidence is in
 [the Basic reprint packet](../../docs/content/hulk-basic-reprints.md). No engine,
 starting-counter, setup or public admission changes are included.
+
+
+MARVEL-846 appends seven actual Hulk signature research faces: 10002, 10003 and
+10006–10010. The book has 700 rows and 15/33 Hulk faces; all 693 predecessor
+raw objects remain byte-identical. Joined generated printed records, current
+RR 1.8 and ruling:5bbba476a198a90c govern the interpretations. The seven faces
+print no starting counters. Actual-row payment, exact attack lifetime, independent
+draw and multiplayer form/ownership tests gate these rows. Thunderclap 10005
+remains unauthored pending distinct ordinary-damage group selection; the packet
+has no engine, setup or public-admission changes. See
+[the signature packet](../../docs/content/hulk-signatures.md).

@@ -7,7 +7,8 @@ namespace Marvel.Cards.Dsl;
 /// <summary>A checked, inert instruction in an ability program.</summary>
 public abstract record AbilityEffect
 {
-    private AbilityEffect() { }
+    // Engine choice: peer instruction families are owned by this assembly.
+    private protected AbilityEffect() { }
 
     /// <summary>Resolve the Special of the exact Invocation captured before payment.</summary>
     public sealed record ResolveInvocation : AbilityEffect;
@@ -94,6 +95,8 @@ public abstract record AbilityEffect
     {
         /// <summary>Bypasses Tough only for this instruction's damage instances.</summary>
         public bool IgnoresTough { get; init; }
+        /// <summary>Select up to this many distinct recipients before ordinary damage.</summary>
+        public int? Maximum { get; init; }
     }
     /// <summary>Deal attack damage with its attack-specific rule handling.</summary>
     public sealed record AttackDamage(AbilityCardSelection Cards, AbilityNumber Amount, bool Overkill) : AbilityEffect
@@ -154,14 +157,6 @@ public abstract record AbilityEffect
     public sealed record Generate(string Resources) : AbilityEffect;
     /// <summary>A constant resource multiplier for a printed classification.</summary>
     public sealed record DoubleResourceFor(string Classification) : AbilityEffect;
-    /// <summary>A constant discount for the first ally played globally each round.</summary>
-    public sealed record ReduceFirstAllyCost(long Amount) : AbilityEffect;
-    /// <summary>Reduce each upgrade played onto this physical host.</summary>
-    public sealed record ReduceUpgradeCostOnThis(long Amount) : AbilityEffect;
-    /// <summary>Reduce only this candidate's play cost for each minion engaged with its future controller.</summary>
-    public sealed record ReduceSelfCostPerEngagedMinion(long Amount) : AbilityEffect;
-    /// <summary>Reduce this candidate's play cost per controlled in-play card with a trait.</summary>
-    public sealed record ReduceSelfCostPerControlledTrait(string Trait, long Amount) : AbilityEffect;
     /// <summary>Shuffle an engine-supported search area.</summary>
     public sealed record Shuffle(AbilitySearchArea Area) : AbilityEffect;
     /// <summary>Pay resources or resolve the alternative effect.</summary>
@@ -270,17 +265,7 @@ public abstract record AbilityEffect
     public sealed record DiscardHandWithResource(char Resource) : AbilityEffect;
     /// <summary>Recover cards discarded this way with a printed resource.</summary>
     public sealed record RecoverDiscardedByResource(char Resource) : AbilityEffect;
-    /// <summary>Increase your next event cost, then discard this source after that event.</summary>
-    public sealed record IncreaseNextEventCost(long Amount) : AbilityEffect;
 
-    /// <summary>Reduce the next card cost paid by a player.</summary>
-    public sealed record ReduceNextCardCost(AbilityPlayer Player, AbilityNumber Amount) : AbilityEffect
-    {
-        /// <summary>Any player may use the next matching card reduction.</summary>
-        public bool AnyPlayer { get; init; }
-        /// <summary>Optional printed card kind and trait restriction.</summary>
-        public Marvel.Rules.Play.CardCostFilter? Filter { get; init; }
-    }
     /// <summary>A labeled attack, defense, or thwart containing an effect.</summary>
     public sealed record Power(AbilityPowerKind Kind, AbilityCardSelection? Target, AbilityEffect Effect, bool AutomaticTarget) : AbilityEffect
     {
@@ -297,6 +282,8 @@ public abstract record AbilityEffect
     public sealed record ActivateEnemies(bool Attack, AbilityCardSelection Enemies, AbilityCardSelection? Against,
         bool EngagedHero, bool First, bool Dynamic) : AbilityEffect
     {
+        /// <summary>Select one enemy, with ties decided by the first player.</summary>
+        public bool ChooseOneEnemy { get; init; }
         /// <summary>Modify ATK or SCH only for the activations scheduled by this instruction.</summary>
         public AbilityNumber? Modifier { get; init; }
         /// <summary>Whether this attack may receive new boost cards.</summary>

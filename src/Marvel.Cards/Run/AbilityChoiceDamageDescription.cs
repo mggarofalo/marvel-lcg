@@ -12,10 +12,12 @@ internal static class AbilityChoiceDamageDescription
         ProjectedDamage(context, choice.Effect, publicPath: AbilityPublicChoicePath.AllowsAmount(context, choice)) is { } projection ? DescribeDamage(context, projection, card) : null;
 
     private static string DescribeDamage(AbilityStructuralContext context,
-        (AbilityNumber Amount, bool IsAttack, bool Overkill, bool PublicPath) projection, Card card)
+        (AbilityNumber Amount, bool IsAttack, bool Overkill, bool PublicPath, int? Maximum) projection, Card card)
     {
         var world = context.Expressions.World;
         string title = EffectiveCards.Title(card, world.Facts);
+        if (projection.Maximum is { } maximum)
+            return $"{title} · {AbilityBoundedDamageDescription.Instruction(projection.Amount, maximum)}";
         Card attacker = context.AbilityActor
             ?? world.Seats[AbilityCardQueries.Resolver(context.Expressions.Bindings)].IdentityCard;
         if (projection.IsAttack
@@ -42,7 +44,7 @@ internal static class AbilityChoiceDamageDescription
             + "Later effects may change it. ";
     }
 
-    private static (AbilityNumber Amount, bool IsAttack, bool Overkill, bool PublicPath)? ProjectedDamage(
+    private static (AbilityNumber Amount, bool IsAttack, bool Overkill, bool PublicPath, int? Maximum)? ProjectedDamage(
         AbilityStructuralContext context, AbilityEffect? effect, bool attack = false, bool publicPath = true)
     {
         if (effect is AbilityEffect.Power { Kind: AbilityPowerKind.Attack } power)
@@ -56,8 +58,8 @@ internal static class AbilityChoiceDamageDescription
             return ProjectedDamage(context, sequence.Effects.FirstOrDefault(), attack, publicPath);
         return effect switch
         {
-            AbilityEffect.AttackDamage damage => (damage.Amount, true, damage.Overkill, publicPath),
-            AbilityEffect.Damage damage => (damage.Amount, attack, false, publicPath),
+            AbilityEffect.AttackDamage damage => (damage.Amount, true, damage.Overkill, publicPath, null),
+            AbilityEffect.Damage damage => (damage.Amount, attack, false, publicPath, damage.Maximum),
             _ => null,
         };
     }

@@ -13,6 +13,7 @@ internal sealed record AbilityDamageAndThreatContext(
     bool HasContinuation, ThreatPlacement? ImminentThreat, PendingAbility? ResolutionAbility,
     long Incoming, IThreatCardAbilities ThreatAbilities)
 {
+    internal IReadOnlyList<Card>? SelectedDamageRecipients { get; init; }
     internal Occurrence? PowerOccurrence { get; init; }
     internal bool StagedAttack { get; init; }
     internal int? DamageActivationId { get; init; }

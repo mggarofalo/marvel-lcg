@@ -54,7 +54,7 @@ internal static class AbilityRecipientCommitment
         {
             AbilityEffect.Draw { Players: AbilityPlayerSelection.OnePlayer
                 { Player: AbilityPlayer.ChosenPlayer } } => choice,
-            AbilityEffect.ReduceNextCardCost { Player: AbilityPlayer.ChosenPlayer,
+            AbilityPricingEffect.ReduceNextCardCost { Player: AbilityPlayer.ChosenPlayer,
                 Amount: AbilityNumber.Constant } => choice,
             _ => null,
         };

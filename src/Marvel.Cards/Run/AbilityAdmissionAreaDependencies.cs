@@ -50,7 +50,7 @@ internal static class AbilityAdmissionAreaDependencies
         typeof(AbilityEffect.ModifyPlayedEvent), typeof(AbilityEffect.PreventThreat), typeof(AbilityEffect.PreventDamage),
         typeof(AbilityEffect.GrantControlledCharacters),
         typeof(AbilityEffect.DiscardAtRandom), typeof(AbilityEffect.DiscardTop),
-        typeof(AbilityEffect.ReduceNextCardCost), typeof(AbilityEffect.DiscardHandCards),
+        typeof(AbilityPricingEffect.ReduceNextCardCost), typeof(AbilityEffect.DiscardHandCards),
         typeof(AbilityEffect.DiscardResourceIcons),
     ];
 
@@ -214,7 +214,7 @@ internal static class AbilityAdmissionAreaDependencies
             AbilityEffect.DiscardResourceIcons discard => discard.Count,
             AbilityEffect.DiscardAtRandom discard => discard.Count,
             AbilityEffect.DiscardTop discard => discard.Count,
-            AbilityEffect.ReduceNextCardCost reduction => reduction.Amount,
+            AbilityPricingEffect.ReduceNextCardCost reduction => reduction.Amount,
             _ => throw new InvalidOperationException("Unknown numeric area dependency"),
         };
         CollectSingularAreaDependencies(number, context, areas);
@@ -227,7 +227,7 @@ internal static class AbilityAdmissionAreaDependencies
                 or AbilityEffect.DrawToHandSize or AbilityEffect.GainSurge
                 or AbilityEffect.Fixed or AbilityEffect.Generate
                 or AbilityEffect.InitializeAuxiliaryDeck or AbilityEffect.RevealAuxiliaryTop
-                or AbilityEffect.ChooseCardsToHand or AbilityEffect.ReleaseBeneath or AbilityEffect.AllowPlayBeneath or AbilityEffect.AllowPlayFromDiscard or AbilityEffect.ReduceSelfCostPerEngagedMinion or AbilityEffect.ReduceSelfCostPerControlledTrait or AbilityEffect.ReduceFirstAllyCost or AbilityEffect.DoubleResourceFor or AbilityEffect.Shuffle
+                or AbilityEffect.ChooseCardsToHand or AbilityEffect.ReleaseBeneath or AbilityEffect.AllowPlayBeneath or AbilityEffect.AllowPlayFromDiscard or AbilityPricingEffect.ReduceSelfCostPerEngagedMinion or AbilityPricingEffect.ReduceSelfCostPerControlledTrait or AbilityPricingEffect.ReduceFirstAllyCost or AbilityEffect.DoubleResourceFor or AbilityEffect.Shuffle
                 or AbilityEffect.PreventDamageFrom or AbilityEffect.DelayedStun
                 or AbilityEffect.DealEncounterCards or AbilityEffect.EngageTopAsMinion
                 or AbilityEffect.DiscardUntil or AbilityEffect.ShuffleInto
@@ -238,7 +238,7 @@ internal static class AbilityAdmissionAreaDependencies
                 or AbilityEffect.ChooseDiscardToShuffle
                 or AbilityEffect.DiscardHandWithResource
                 or AbilityEffect.RecoverDiscardedByResource or AbilityEffect.RecruitDiscarded
-                or AbilityEffect.ActivateEnemies or AbilityEffect.GrantTraitCharacters or AbilityEffect.ModifyPlayedEvent or AbilityEffect.BoostBasicUse or AbilityEffect.IncreaseNextEventCost => true,
+                or AbilityEffect.ActivateEnemies or AbilityEffect.GrantTraitCharacters or AbilityEffect.ModifyPlayedEvent or AbilityEffect.BoostBasicUse or AbilityPricingEffect.IncreaseNextEventCost => true,
             _ => false,
         };
 

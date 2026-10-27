@@ -9,9 +9,15 @@ internal static class AbilityDamageLowering
 {
     internal static AbilityEffect.Damage DamageEffect(AbilityValue value, AbilityLocation location)
     {
-        var fields = Fields(value, location, "cards", "amount", "attack", "ignoresTough");
-        return new(Selected(fields, "cards", location), Numeric(fields, "amount", location), Marker(fields, "attack", location))
-        { IgnoresTough = Marker(fields, "ignoresTough", location) };
+        var fields = Fields(value, location, "cards", "amount", "attack", "ignoresTough", "maximum");
+        var amount = Numeric(fields, "amount", location);
+        bool attack = Marker(fields, "attack", location);
+        int? maximum = fields.TryGetValue("maximum", out var bound)
+            ? AbilityCostLowering.PositiveCount(bound, location.Child("maximum")) : null;
+        if (maximum is not null && (attack || amount is not AbilityNumber.Constant { Value: > 0 }))
+            throw location.Error("bounded recipients require positive constant ordinary damage");
+        return new(Selected(fields, "cards", location), amount, attack)
+        { IgnoresTough = Marker(fields, "ignoresTough", location), Maximum = maximum };
     }
 
     internal static AbilityEffect.AttackDamage AttackDamageEffect(AbilityValue value, AbilityLocation location)

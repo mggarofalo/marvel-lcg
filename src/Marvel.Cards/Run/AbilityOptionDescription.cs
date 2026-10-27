@@ -35,6 +35,9 @@ internal static class AbilityOptionDescription
             AbilityEffect.EngageTopAsMinion
                 { Players: AbilityPlayerSelection.OnePlayer { Player: AbilityPlayer.You } } minions =>
                 MinionOption(context, minions),
+            AbilityEffect.Damage { Maximum: { } maximum } damage =>
+                (AbilityBoundedDamageDescription.Label(maximum),
+                    AbilityBoundedDamageDescription.Instruction(damage.Amount, maximum)),
             AbilityEffect.Damage
                 { Cards: AbilityCardSelection.Bound { Binding: AbilityCardBinding.You } } damage
                 when AbilityPublicAmounts.IsFixed(damage.Amount) => DamageOption(context, damage),

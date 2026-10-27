@@ -121,6 +121,9 @@ internal static class AbilityEffectTargetAdmission
                 && Amount(EffectOf<AbilityEffect.Heal>(node, cast).Amount, cast) > 0
                     ? TargetLegality.Valid : TargetLegality.Invalid,
             "setHitPoints" => AbilityHitPointAssignment.TargetLegalityOf(node, cast),
+            "dealDamage" when node is AbilityEffect.Damage { Maximum: not null } group =>
+                AbilityDamageRecipients.Candidates(group, cast.Context).Count > 0
+                    ? TargetLegality.Valid : TargetLegality.Invalid,
             "dealDamage" or "dealAttackDamage" =>
                 AbilityFutureDiscardAdmission.MayDealDamage(DamageAmountOf(node, cast), cast)
                     ? CardsLegality(DamageTargets(DamageSelectionOf(node, cast), cast))

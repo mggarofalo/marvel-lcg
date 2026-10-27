@@ -19,8 +19,10 @@ internal static class AbilityEffectDescription
         AbilityEffect.BoostBasicUse { MatchingAlly: true } => "Add the exhausted ally's matching modified power to this basic use only; no ally consequential damage",
         AbilityEffect.ModifyPlayedEvent modifier =>
             $"Increase each {(modifier.Kind == "eventDamage" ? "damage" : "threat removal")} instance of this event by {modifier.Amount} until this play finishes",
-        AbilityEffect.IncreaseNextEventCost increase => $"Your next event costs {increase.Amount} additional resources; discard this obligation after that event",
+        AbilityPricingEffect.IncreaseNextEventCost increase => $"Your next event costs {increase.Amount} additional resources; discard this obligation after that event",
         AbilityEffect.ResolveInvocation => "Resolve your captured Invocation top Special",
+        AbilityEffect.Damage { Maximum: { } maximum } damage =>
+            AbilityBoundedDamageDescription.Instruction(damage.Amount, maximum),
         AbilityEffect.ChooseCard choice => ChoiceSummary(choice),
         AbilityEffect.Draw draw => DrawSummary(draw),
         AbilityEffect.GiveStatus status => StatusAction(status.Status),
@@ -87,6 +89,7 @@ internal static class AbilityEffectDescription
         AbilityEffect.ReplaceStatus status => $"Replace with {status.Status}",
         AbilityEffect.RemoveStatuses => "Remove status cards",
         AbilityEffect.AttackDamage => "attack",
+        AbilityEffect.Damage { Maximum: not null } => "choose damage recipients after selecting",
         AbilityEffect.Damage => "deal damage to",
         AbilityEffect.RemoveThreat => "remove threat from",
         AbilityEffect.Power power => Action(power.Effect),

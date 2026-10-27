@@ -10,6 +10,6 @@ internal static class AbilityAllyPlayHistory
     {
         var faces = world.Seats.SelectMany(seat => seat.IdentityCard.Faces).ToHashSet(StringComparer.Ordinal);
         return program.Abilities.Any(ability => faces.Contains(ability.Card)
-            && ability.Effect is AbilityEffect.ReduceFirstAllyCost);
+            && ability.Effect is AbilityPricingEffect.ReduceFirstAllyCost);
     }
 }

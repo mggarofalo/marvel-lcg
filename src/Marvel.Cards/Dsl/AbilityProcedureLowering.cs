@@ -164,7 +164,7 @@ internal static class AbilityProcedureLowering
             : new AbilityEffect.PlaceCounters(card, counter, Numeric(fields, "count", location));
     }
 
-    internal static AbilityEffect.ReduceNextCardCost ReduceCostEffect(AbilityValue value, AbilityLocation location)
+    internal static AbilityPricingEffect.ReduceNextCardCost ReduceCostEffect(AbilityValue value, AbilityLocation location)
     {
         var fields = Fields(value, location, "player", "amount", "kind", "trait");
         bool any = Required(fields, "player", location) is AbilityValue.Word { Value: "any" };
@@ -204,7 +204,8 @@ internal static class AbilityProcedureLowering
 
     internal static AbilityEffect.ActivateEnemies ActivationEffect(AbilityValue value, AbilityLocation location, bool attack)
     {
-        var fields = Fields(value, location, "enemies", "against", "first", "dynamic", "modifier", "dealBoostCards");
+        var fields = Fields(value, location, "enemies", "against", "first", "dynamic", "modifier", "dealBoostCards", "chooseEnemy");
+        bool chooseOne = SelectOneAttacker(fields, location, attack);
         if (!attack && fields.ContainsKey("dealBoostCards"))
             throw location.Error("dealBoostCards is supported only for attacks");
         AbilityCardSelection? against = null;
@@ -220,9 +221,20 @@ internal static class AbilityProcedureLowering
         return new(attack, Selected(fields, "enemies", location), against, engagedHero,
             Boolean(fields, "first", location), Boolean(fields, "dynamic", location))
         {
+            ChooseOneEnemy = chooseOne,
             DealBoostCards = !fields.ContainsKey("dealBoostCards") || Boolean(fields, "dealBoostCards", location),
             Modifier = fields.TryGetValue("modifier", out var modifier)
                 ? Number(modifier, location.Child("modifier")) : null,
         };
+    }
+
+    private static bool SelectOneAttacker(
+        IReadOnlyDictionary<string, AbilityValue> fields, AbilityLocation location, bool attack)
+    {
+        if (!fields.TryGetValue("chooseEnemy", out var chooser)) return false;
+        FixedWord(chooser, location.Child("chooseEnemy"), "firstPlayer");
+        if (!attack || Boolean(fields, "dynamic", location))
+            throw location.Error("chooseEnemy requires a nondynamic enemy attack");
+        return true;
     }
 }

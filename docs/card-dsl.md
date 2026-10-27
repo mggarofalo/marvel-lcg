@@ -452,6 +452,13 @@ sole legal target without a prompt; multiple targets ask the first player.
 `you`, the original resolving player, and continuation bindings retain their
 meanings. Omission uses the resolving player and retains explicit target selection.
 Other chooser values are rejected.
+`enemyAttacks` accepts `chooseEnemy: "firstPlayer"` to select exactly one
+enemy from its selector, rather than activating the complete pool. A single
+candidate proceeds without a selection prompt; multiple candidates ask the first
+player under `rr:first-player.1`. The selection preserves the outer `chosen`
+character binding. This spelling is an engine choice; `enemySchemes`, dynamic
+collections and other chooser values reject it. Omission retains activation of
+every candidate and the existing activation-order rules.
 `isEnemyAttacker` accepts a singular card selector and tests whether that in-play
 card is the current enemy attack's attacker. It does not use the active-villain
 counter or a completed attack. Stage-transition projection refuses this condition
@@ -1701,3 +1708,35 @@ Resource abilities additionally admit `"resourceRestriction": "attackEvent"`.
 This means an event with the **Attack trait**, matching Martial Prowess's printed
 `[[Attack]]` restriction. It does not mean any event used during a basic attack:
 Hulk Smash has the Superpower trait and cannot consume this restricted resource.
+
+`dealDamage` optionally accepts a positive integer `maximum` for one complete
+bounded group of distinct recipients from `cards`. This form requires positive
+constant ordinary damage and rejects the `attack` marker. A single target request
+accepts zero through the available maximum; choosing zero deals no damage.
+Initiation still requires a valid target that can be affected (`rr:target.2`,
+`rr:target.3.7`), after live event damage modifiers. Tough and prevention retain
+validity (`rr:target.3.6`). The complete chosen group enters the existing
+simultaneous direct-damage pipeline, retaining its prevention, placement and
+defeat barriers. It creates no attack and does not invoke Guard, stun or
+Retaliate. Labelled powers with this additional choice remain unsupported.
+
+The motivating printed authority is `datasets/cards/cards.json`, `10005`:
+“Choose up to 3 different enemies. Deal 3 damage to each of them.” The existing
+`chooseCard` binds a single recipient; `chooseStatusRecipients` only gives
+statuses; counted `attack` admits only simultaneous `dealAttackDamage`. None
+expresses a bounded chosen group for ordinary damage. `dealDamage` already
+resolves plural selections through `SimultaneousDirectDamage`; `maximum` adds
+the missing selection boundary without adding a second damage procedure.
+
+Zero is admitted by the printed “up to” range as an effect choice, not a cost:
+`rr:cost.9` imposes its minimum of one only on costs. This is the interpretation
+of that printed range; `rr:choose-game-element.3.1` separately prohibits repeats,
+and `rr:target.2` still requires at least one valid target at initiation.
+A zero group has no successful damage, so dependent instructions use the ordinary
+empty damage completion. No Thunderclap-specific timing ruling is present in the
+vendored FAQ corpus; current RR 1.8 target and damage clauses govern this support.
+
+Descriptions of `dealDamage.maximum` explain the later bounded selection and
+damage to chosen recipients. A candidate is not promised damage or a committed
+HP result before that selection, including within player choices and options.
+Direct unbounded instructions retain their existing public damage previews.

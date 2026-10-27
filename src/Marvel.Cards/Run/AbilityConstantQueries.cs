@@ -40,7 +40,7 @@ internal sealed class AbilityConstantQueries
         {
             // Candidate pricing has its own read-only port and never supplies an in-play grant.
             if (ability.Trigger.Timing != AbilityType.Constant
-                || ability.Effect is AbilityEffect.ReduceSelfCostPerEngagedMinion or AbilityEffect.ReduceSelfCostPerControlledTrait) continue;
+                || ability.Effect is AbilityPricingEffect.ReduceSelfCostPerEngagedMinion or AbilityPricingEffect.ReduceSelfCostPerControlledTrait) continue;
 
             var bindings = new AbilityQueryContext(
                 world, card, new Occurrence(0, []),
@@ -105,13 +105,13 @@ internal sealed class AbilityConstantQueries
             case AbilityEffect.Fixed { Instruction: AbilityFixedInstruction.GainEnvironmentTraits }:
                 found.AddRange(EnvironmentTraitGrants.For(bindings.World, bindings.Source));
                 return true;
-            case AbilityEffect.ReduceUpgradeCostOnThis reduction:
+            case AbilityPricingEffect.ReduceUpgradeCostOnThis reduction:
                 found.Add(new ContinuousEffect(EffectSource.ConstantAbility,
                     Kind: UpgradeHostCost.Reduction, Amount: reduction.Amount,
                     Card: bindings.Source.ObjectId, Affects: bindings.Source.ObjectId,
                     Lasts: Duration.WhileInPlay));
                 return true;
-            case AbilityEffect.ReduceFirstAllyCost reduction:
+            case AbilityPricingEffect.ReduceFirstAllyCost reduction:
                 found.Add(new ContinuousEffect(EffectSource.ConstantAbility,
                     Kind: AllyPlayHistory.Reduction, Amount: reduction.Amount,
                     Card: bindings.Source.ObjectId, Lasts: Duration.WhileInPlay));

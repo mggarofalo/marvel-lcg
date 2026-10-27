@@ -17,12 +17,12 @@ public sealed class HulkBasicReprintTests
         using var book = JsonDocument.Parse(AuthoredCards.Text);
         var rows = book.RootElement.GetProperty("cards").EnumerateArray().ToArray();
         string[] faces = ["10020", "10021", "10022", "10023", "10024"];
-        Assert.Equal(693, rows.Length);
-        Assert.Equal(faces, rows.Skip(688).Select(row => row.GetProperty("card").GetString()));
-        Assert.All(rows.Skip(688), row => Assert.False(row.TryGetProperty("startingCounters", out _)));
-        Assert.Equal(new List<string> { "10001a", "10001b", "10004" }.Concat(faces).Order(),
+        Assert.Equal(700, rows.Length);
+        Assert.Equal(faces, rows.Skip(688).Take(5).Select(row => row.GetProperty("card").GetString()));
+        Assert.All(rows.Skip(688).Take(5), row => Assert.False(row.TryGetProperty("startingCounters", out _)));
+        Assert.Equal(new List<string> { "10001a", "10001b", "10004" }.Concat(faces).Concat(["10002", "10003", "10006", "10007", "10008", "10009", "10010"]).Order(),
             AuthoredCards.Book.Authored.Where(face => face.StartsWith("10", StringComparison.Ordinal)).Order());
-        Assert.DoesNotContain("10002", AuthoredCards.Book.Authored);
+        Assert.DoesNotContain("10005", AuthoredCards.Book.Authored);
     }
 
     [Theory]
