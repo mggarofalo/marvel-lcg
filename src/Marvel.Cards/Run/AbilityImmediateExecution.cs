@@ -217,16 +217,12 @@ internal static class AbilityImmediateExecution
     {
         World world = context.Admission.World;
         var seat = world.Seats[seatOf(change.Player)];
-        if (!AbilityAdmissionFacts.CanChangeForm(world, seatOf(change.Player), change.Form)) return null;
-        var destinations = Forms.Destinations(seat, world.Facts)
-            .Where(face => Forms.OfFace(face, world.Facts) == change.Form).ToArray();
-        if (destinations.Length != 1)
-            throw new RulesNotImplementedException(
-                $"'{seat.IdentityCard.FaceId}' does not have one unambiguous {change.Form} destination");
+        string? destination = AbilityAdmissionFacts.FormDestination(world, seat.Index, change.Destination);
+        if (destination is null || !FormChangePermissions.CanChange(world, seat.IdentityCard)) return null;
         var completion = new EffectCompletion(1, 1);
         world.Agenda.Then(new PhaseStep(
             new IdentityFormChangeOperation(seat.IdentityCard.ObjectId, seat.IdentityCard.Incarnation,
-                destinations[0], context.Trigger, completion),
+                destination, context.Trigger, completion),
             world.Agenda.Current?.Round ?? 0, 0,
             Index: seat.Index, Subject: seat.IdentityCard.ObjectId, Seat: seat.Index));
         return completion;

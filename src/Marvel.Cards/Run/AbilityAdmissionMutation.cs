@@ -192,6 +192,7 @@ internal static class AbilityAdmissionMutation
         AbilityEffect node, AbilityAdmissionScope cast, ulong before, bool bindingMayChange)
     {
         var change = FormChangeOf(node, cast);
+        string form = AbilityFormDestinationResolver.LegacyForm(change.Destination);
         bool canChangePlayer = change.Player == AbilityPlayer.ChosenPlayer;
         var seats = bindingMayChange && canChangePlayer
             ? cast.World.PlayerOrder.ToList()
@@ -201,7 +202,7 @@ internal static class AbilityAdmissionMutation
             if (!AbilityProjectedCharacterPermissions.PriorCanChangeForm(seat, cast)) return state;
             ulong bit = PlayerSeat(seat);
             return Forms.In(
-                    cast.World, cast.World.Seats[seat], cast.World.Facts, change.Form)
+                    cast.World, cast.World.Seats[seat], cast.World.Facts, form)
                 ? state & ~bit : state | bit;
         }
         if (bindingMayChange && canChangePlayer)

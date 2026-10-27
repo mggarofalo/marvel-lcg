@@ -1,3 +1,4 @@
+using Marvel.Cards.Dsl;
 using Marvel.Rules.Play;
 using Marvel.Rules.State;
 
@@ -7,12 +8,15 @@ namespace Marvel.Cards.Run;
 // receives the exact domain values it reads; neither caller is exposed here.
 internal static class AbilityAdmissionFacts
 {
-    internal static bool AlreadyInForm(
-        World world, int player, string form) =>
-        Forms.In(world, world.Seats[player], world.Facts, form);
+    internal static string? FormDestination(World world, int player, AbilityFormDestination destination)
+    {
+        var seat = world.Seats[player];
+        return AbilityFormDestinationResolver.Resolve(seat.IdentityCard, world.Facts,
+            seat.IdentityCard.FaceId, Forms.Of(world, seat, world.Facts), destination);
+    }
 
-    internal static bool CanChangeForm(World world, int player, string form) =>
-        !AlreadyInForm(world, player, form)
+    internal static bool CanChangeForm(World world, int player, AbilityFormDestination destination) =>
+        FormDestination(world, player, destination) is not null
         && FormChangePermissions.CanChange(world, world.Seats[player].IdentityCard);
 
     internal static bool CanAdvanceMainScheme(World world) =>

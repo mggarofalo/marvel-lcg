@@ -15,8 +15,8 @@ internal static class AbilityPublicInstructionDescription
         AbilityEffect.Dependent { OnFull: true } dependent => Dependent(context, dependent, chosenTitle),
         AbilityEffect.ChooseCard choice => Choice(context, choice),
         AbilityEffect.CardAction action => CardAction(context, action, chosenTitle),
-        AbilityEffect.ChangeForm { Player: AbilityPlayer.You, Form: Forms.AlterEgo } => "Change to alter-ego form",
-        AbilityEffect.ChangeForm { Player: AbilityPlayer.You, Form: Forms.Hero } => "Change to hero form",
+        AbilityEffect.ChangeForm { Player: AbilityPlayer.You, Destination: AbilityFormDestination.Form { Name: Forms.AlterEgo } } => "Change to alter-ego form",
+        AbilityEffect.ChangeForm { Player: AbilityPlayer.You, Destination: AbilityFormDestination.Form { Name: Forms.Hero } } => "Change to hero form",
         _ => StateInstruction(context, effect),
     };
 

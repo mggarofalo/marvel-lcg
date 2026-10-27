@@ -552,6 +552,20 @@ upgradesYouControl wasDefeated withStatus withTrait within withoutAnotherCopyAtt
 yourAsideMinion yourAsidePile yourAsideSideScheme
 ```
 
+### Identity form destinations
+
+The engine chooses `changeForm.to` spellings. `hero` and `alter-ego` name a
+form; `other-hero` names the other hero face when a hero face is active; and
+`{"face":"12001c"}` names an exact face of the changing physical identity.
+A current destination has no effect. A foreign face or a generic form with
+multiple possible destinations is unsupported and raises rather than choosing.
+Form-change effects do not consume the voluntary form-change receipt.
+
+Exact and other-hero destinations are currently admitted only as standalone
+instructions. A composed ability containing either raises during preflight:
+the existing dependent and repeated traces do not yet project an exact face or
+its traits. This boundary does not admit Ant-Man content.
+
 ## Generic selection and temporary identities
 
 `peekTop: "anyDeck"` first asks which nonempty deck to inspect. Its subsequent

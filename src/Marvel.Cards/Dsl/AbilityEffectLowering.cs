@@ -77,7 +77,7 @@ internal static class AbilityEffectLowering
             "chooseStatusRecipients" => AbilityStatusLowering.Recipients(argument, child),
             "giveStatus" => AbilityStatusLowering.Given(argument, child),
             "removeStatuses" => AbilityStatusRemovalLowering.Lower(argument, child),
-            "changeForm" => FormEffect(argument, child),
+            "changeForm" => AbilityFormChangeLowering.Lower(argument, child),
             "draw" => DrawEffect(argument, child),
             "allowPlayBeneath" => AbilityStoragePermissionLowering.Lower(argument, child),
             "allowPlayFromDiscard" => AbilityStoragePermissionLowering.LowerDiscard(argument, child),
@@ -205,17 +205,6 @@ internal static class AbilityEffectLowering
 
     internal static AbilityEffect.IndirectDamage IndirectEffect(AbilityValue value, AbilityLocation location) =>
         AbilityDamageLowering.IndirectEffect(value, location);
-
-    internal static AbilityEffect.ChangeForm FormEffect(AbilityValue value, AbilityLocation location)
-    {
-        var fields = Fields(value, location, "player", "to");
-        string form = Text(Required(fields, "to", location), location.Child("to"));
-        if (form is not ("hero" or "alter-ego"))
-        {
-            throw location.Child("to").Error($"'{form}' is not a supported form");
-        }
-        return new(LowerPlayer(Required(fields, "player", location), location.Child("player")), form);
-    }
 
     internal static AbilityEffect.Draw DrawEffect(AbilityValue value, AbilityLocation location)
     {

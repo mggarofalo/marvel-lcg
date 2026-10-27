@@ -167,7 +167,7 @@ internal static class AbilityRepeatedDamageAnalysis
     {
         var change = FormChangeOf(node, cast);
         return [new DamageTransfer(
-            0, 0, 0, ChangesForm: Seat(change.Player, cast), Form: change.Form)];
+            0, 0, 0, ChangesForm: Seat(change.Player, cast), Form: AbilityFormDestinationResolver.LegacyForm(change.Destination))];
     }
 
     private static IReadOnlyList<DamageTransfer> DealtDamageTransfers(
