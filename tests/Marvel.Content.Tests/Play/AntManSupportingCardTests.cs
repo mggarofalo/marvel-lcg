@@ -62,8 +62,10 @@ public sealed class AntManSupportingCardTests : CoreCardTestBase
         Assert.Equal(4, DamagePlacement.Health(world, Cards, ally));
         world.Effects.Expire(TimingPoints.EndOfPhase);
         Assert.Equal(6, DamagePlacement.Health(world, Cards, ally));
-        var duplicate = world.CreateCard("12018", world.Seats[0].Hand);
+        var otherAlly = world.CreateCard("01083", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+        var duplicate = world.CreateCard("12018", world.Seats[1].Hand);
         Assert.DoesNotContain(ally.ObjectId, runner.AttachmentTargets(world, duplicate)!);
+        Assert.Contains(otherAlly.ObjectId, runner.AttachmentTargets(world, duplicate)!);
         ally.TakeDamage(4);
         Discard.Card(world, suit, "test", []);
         Sequence.Finish(world, Cards, runner, []);
