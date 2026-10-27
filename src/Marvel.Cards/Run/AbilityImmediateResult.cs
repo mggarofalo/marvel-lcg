@@ -9,5 +9,6 @@ namespace Marvel.Cards.Run;
 internal readonly record struct AbilityImmediateResult(bool Handled, bool ResolveEffect)
 {
     internal long CancelledBoostIcons { get; init; }
+    internal EffectCompletion? Completion { get; init; }
     internal bool ProcedureScheduled { get; init; }
 }

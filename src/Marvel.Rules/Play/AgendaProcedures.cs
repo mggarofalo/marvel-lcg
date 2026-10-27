@@ -66,7 +66,8 @@ public static class AgendaProcedures
             AgendaProcedureKind.ResourcePayment => ResourcePaymentProcedure.Apply(world, step, events),
             AgendaProcedureKind.Campaign => CampaignRecoveryProcedure.Apply(world, step, events),
             AgendaProcedureKind.EncounterEntry => EncounterEntry.Apply(world, step, events),
-            AgendaProcedureKind.Lifecycle => null,
+            AgendaProcedureKind.Lifecycle => step.Operation is IdentityFormChangeOperation form
+                ? form.Apply(world, step, events) : null,
             _ => throw new RulesNotImplementedException(
                 $"the agenda has no procedure for '{step.What}'"),
         };

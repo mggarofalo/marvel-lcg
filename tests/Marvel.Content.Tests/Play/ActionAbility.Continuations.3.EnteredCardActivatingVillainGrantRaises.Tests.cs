@@ -205,10 +205,11 @@ public sealed class ActionAbilityContinuationsEnteredCardActivatingVillainGrantR
         world.CreateCard("01002", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
         int held = world.Seats[0].Hand.Cards.Count;
         runner.ExecuteReveal(world, identity, 0);
-        Assert.Equal("01001b", identity.FaceId);
-        var first = Assert.Single(world.Agenda.Outstanding, step => step.What == Steps.Attack);
+        Assert.Equal("01001a", identity.FaceId);
         var events = new List<GameEvent>();
         var firstDefense = Sequence.Work(world, world.Facts, runner, events)!;
+        Assert.Equal("01001b", identity.FaceId);
+        var first = Assert.Single(world.Agenda.Outstanding, step => step.What == Steps.DeclareDefender);
         Assert.Equal(Question.Defender, firstDefense.Asking);
         // rr:status-cards.2 replaces the next attack, while the attack whose defender
         // is already being chosen completes with actual positive damage.
@@ -230,14 +231,7 @@ public sealed class ActionAbilityContinuationsEnteredCardActivatingVillainGrantR
         var identity = world.Seats[0].IdentityCard;
         int held = world.Seats[0].Hand.Cards.Count;
         runner.ExecuteReveal(world, identity, 0);
-        var frame = Assert.Single(world.Agenda.Outstanding, step => step.What == Steps.ResolveEachPlayer);
-        for (int advances = 0; world.Agenda.Current?.What != Steps.ResolveEachPlayer && advances < 20; advances++)
-        {
-            world.Agenda.Advance();
-        }
-
-        Assert.Equal(Steps.ResolveEachPlayer, world.Agenda.Current?.What);
-        runner.ResolveEachPlayer(world, frame);
+        Sequence.Finish(world, world.Facts, runner, []);
         Assert.Equal("01001b", identity.FaceId);
         Assert.Equal(0, identity.Damage);
         Assert.Equal(held + 2, world.Seats[0].Hand.Cards.Count);
