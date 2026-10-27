@@ -6,6 +6,22 @@ namespace Marvel.Rules.Play;
 /// <summary>Captures actual placements for the containing enemy attack's step-six window.</summary>
 internal static class AttackDamageReceipts
 {
+    internal static void Publish(EnemyAttack attack, Occurrence occurrence)
+    {
+        // rr:attack-enemy-activation.step.6.a: damage and defeat responses share
+        // attack completion, after step-seven interrupts and departure finish.
+        foreach (var placement in attack.ReceivedDamage)
+            occurrence.ReceivedAttackDamage.Record(placement);
+        foreach (var defeat in attack.Defeats.Items)
+        {
+            if (!occurrence.Defeats.Contains(defeat)) occurrence.Also(defeat);
+            else occurrence.Also(Steps.CardDefeated);
+        }
+        if (attack.ReceivedDamage.Count == 0) return;
+        occurrence.Also(Steps.DamageDealt);
+        occurrence.DamageFromAttack = true;
+    }
+
     internal static void Record(World world, OccurrenceCard attacker, Damage.PlacedDamage damage)
     {
         if (!damage.Landed || !attacker.IsEnemy || world.Attack is not { } attack) return;

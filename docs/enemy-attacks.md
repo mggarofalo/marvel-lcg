@@ -143,3 +143,12 @@ actual placement receipts, with original attacker and recipient facts, survive
 into that shared attack-end occurrence; child damage execution does not open a
 separate earlier damage-response window. Same-title villain succession preserves
 the character, while a reentered minion is a new copy.
+
+Damage-owned defeat receipts also survive into that shared window. Each actual
+damage recipient registers its exact occurrence and incarnation before defeat
+settlement. The authoritative defeat record captures the original controller
+before departure or identity elimination can finish the attack. Overkill and
+indirect recipients retain separate defeat instances; nested nonattack damage,
+boost abilities, retaliation and prevented or replaced defeats cannot supply one.
+Early activation completion preserves all frames of its current occurrence so
+an elimination inside a continuation cannot erase the shared response window.

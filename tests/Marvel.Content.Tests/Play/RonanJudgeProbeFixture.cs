@@ -21,7 +21,7 @@ internal sealed class RonanJudgeProbeFixture : CoreCardTestBase
     internal Card Observer { get; }
     internal Card Judge { get; }
 
-    internal RonanJudgeProbeFixture(string triggerEvent = "WhenAttackEnds")
+    internal RonanJudgeProbeFixture(string triggerEvent = "WhenAttackEnds", string? extraCards = null)
     {
         // Printed authority: datasets/cards/cards.json, 90002. This prototype is
         // injected into the full book only here; it does not admit Kree Fanatic.
@@ -31,8 +31,8 @@ internal sealed class RonanJudgeProbeFixture : CoreCardTestBase
               {"card":"90002","abilities":[{
                 "trigger":{"event":"{{{{triggerEvent}}}}","alsoHappened":"WhenCardDefeated",
                   "timing":"ForcedResponse","subject":"game","actor":"enemy","player":"trigger.player"},
-                "when":{"or":[{"isKind":{"card":"defeated","kind":"ally"}},
-                  {"isYourIdentity":"defeated"}]},
+                "when":{"and":[{"damageFromAttack":"trigger"},{"or":[{"isKind":{"card":"defeated","kind":"ally"}},
+                  {"isYourIdentity":"defeated"}]}]},
                 "effect":{"placeThreat":{"scheme":{"query":"mainScheme"},"amount":2}}
               },{
                 "trigger":{"event":"WhenCardRevealed","timing":"Boost","subject":"this"},
@@ -51,11 +51,13 @@ internal sealed class RonanJudgeProbeFixture : CoreCardTestBase
               }]}
             ]}
             """);
+        var extra = AbilityCatalog.Parse(extraCards ?? "{\"cards\":[]}");
+        var replaced = extra.Abilities.Select(row => row.Card).ToHashSet();
         Runner = new(AuthoredCards.Book with
         {
             Authored = new HashSet<string>(AuthoredCards.Book.Authored.Concat(["90002"])),
-            Abilities = [.. AuthoredCards.Book.Abilities.Where(row => row.Card is not ("90002" or "01008")),
-                .. local.Abilities],
+            Abilities = [.. AuthoredCards.Book.Abilities.Where(row => row.Card is not ("90002" or "01008") && !replaced.Contains(row.Card)),
+                .. local.Abilities, .. extra.Abilities],
         });
         World.Abilities = Runner;
         for (int player = 0; player < 2; player++)
@@ -86,25 +88,38 @@ internal sealed class RonanJudgeProbeFixture : CoreCardTestBase
         return ally;
     }
 
-    internal Prompt AttackUntilResponse(Card ally)
+    internal Prompt AttackUntilResponse(Card? ally, int[]? indirect = null, int? responseSource = null)
     {
         World.Agenda.Add(new PhaseStep(new EnemyAttackOperation(), 1, 2, Subject: Villain.ObjectId, Seat: 1));
         for (int step = 0; step < 50; step++)
         {
             var prompt = Sequence.Work(World, World.Facts, Runner, Events);
-            Assert.NotNull(prompt);
+            Assert.True(prompt is not null, $"No response: threat={Main.Tokens.GetValueOrDefault("k_threat")}, defeats={World.Agenda.Occurrence?.Defeats.Count}, finished={World.FinishedAttack?.Defender}, eliminated={World.Seats[1].Eliminated}");
+            if (AnswerRequiredChoice(prompt, indirect)) continue;
             if (prompt.Asking != Question.Defender)
             {
-                if (prompt.Affordances.Any(option => option.AnchorId == Observer.ObjectId)) return prompt;
+                if (prompt.Affordances.Any(option => option.AnchorId == Observer.ObjectId || option.AnchorId == responseSource)) return prompt;
                 Assert.True(prompt.Cancellable, prompt.Description);
                 Sequence.Answer(World, World.Facts, Runner, prompt, Decision.Decline, Events);
                 continue;
             }
-            var defense = prompt.Affordances.SingleOrDefault(option => option.AnchorId == ally.ObjectId);
+            if (indirect is not null) Attack.MakeIndirect(World);
+            var defense = prompt.Affordances.SingleOrDefault(option => option.AnchorId == ally?.ObjectId);
             Sequence.Answer(World, World.Facts, Runner, prompt,
                 defense is null ? Decision.Decline : Decision.Take(defense.Id), Events);
         }
         throw new InvalidOperationException("Attack did not reach its response window");
+    }
+
+    private bool AnswerRequiredChoice(Prompt prompt, int[]? indirect)
+    {
+        Decision decision;
+        if (prompt.Asking == Question.Order) decision = Decision.Take(prompt.Affordances[0].Id);
+        else if (prompt.Asking == Question.Element && indirect is not null)
+            decision = Decision.Take(prompt.Affordances[0].Id, indirect, []);
+        else return false;
+        Sequence.Answer(World, World.Facts, Runner, prompt, decision, Events);
+        return true;
     }
 
     internal void Finish()
@@ -120,6 +135,7 @@ internal sealed class RonanJudgeProbeFixture : CoreCardTestBase
                 Assert.False(World.IsOver);
                 return;
             }
+            if (AnswerRequiredChoice(prompt, null)) continue;
             Assert.True(prompt.Cancellable, prompt.Description);
             Sequence.Answer(World, World.Facts, Runner, prompt, Decision.Decline, Events);
         }
