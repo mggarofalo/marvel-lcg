@@ -35,10 +35,34 @@ public sealed class KangPhaseTransitions
         return departure;
     }
 
+    internal void Preflight(World world, PhaseStep owner)
+    {
+        var ready = Ready(owner);
+        if (ready.Length == 0) return;
+        if (ready.Length != 1)
+            throw new RulesNotImplementedException("simultaneous Kang phase-end departures require ordering");
+        RequireGroup(ready[0]);
+        string[] conditions = ready[0].Boundary == PhaseTransitionKind.EndPlayerPhase
+            ? [PhaseEnd.PlayerPhaseEnds] : [PhaseEnd.VillainPhaseEnds, PhaseEnd.RoundEnds];
+        // The prepared controller has no accepted ordering policy for co-due
+        // delayed work. Refuse before PhaseEnd expires or consumes any effect.
+        if (world.Effects.HasDue(conditions))
+            throw new RulesNotImplementedException("Kang phase-end departure and competing delayed effects require ordering");
+    }
+
+    internal static void RequireGroup(KangDeparture departure)
+    {
+        if (departure.Group.Count != departure.Source.PlayAreas.Count
+            || departure.Group.Any(area => !departure.Source.Contains(area)))
+            throw new RulesNotImplementedException("the captured Kang group changed before its departure resolved");
+    }
+
+    private KangDeparture[] Ready(PhaseStep owner) => owner.Operation is PhaseTransitionOperation phase
+        ? pending.Where(item => item.Round == owner.Round && item.Boundary == phase.Kind).ToArray() : [];
+
     internal void Begin(World world, PhaseStep owner)
     {
-        if (owner.Operation is not PhaseTransitionOperation phase) return;
-        var ready = pending.Where(item => item.Round == owner.Round && item.Boundary == phase.Kind).ToArray();
+        var ready = Ready(owner);
         if (ready.Length == 0) return;
         if (ready.Length != 1)
             throw new RulesNotImplementedException("simultaneous Kang phase-end departures require ordering");

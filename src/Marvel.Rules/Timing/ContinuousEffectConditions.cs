@@ -72,6 +72,11 @@ public static class ContinuousEffectConditions
         return [.. due.Select(entry => entry.Effect)];
     }
 
+    internal static bool HasDue(this ContinuousEffects effects, IReadOnlyList<string> conditions,
+        int? activationId = null) => effects.entries.Any(entry =>
+            entry.Effect.Lasts?.OnCondition is { } condition && conditions.Contains(condition)
+            && Matches(entry.Effect, activationId));
+
     private static bool Matches(ContinuousEffect effect, int? activation) =>
         effect.AwaitingActivation is null
         && (effect.ActivationId is null || effect.ActivationId == activation);

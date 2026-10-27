@@ -92,7 +92,6 @@ internal static class KangJoinProcedure
     {
         if (!world.Agenda.IsOutstanding(operation.Owner, operation.Origin))
             throw new InvalidOperationException("the exact Kang phase owner is no longer outstanding");
-        if (operation.Departure.Group.Any(area => !operation.Departure.Source.Contains(area)))
-            throw new RulesNotImplementedException("the captured Kang group changed before its departure resolved");
+        KangPhaseTransitions.RequireGroup(operation.Departure);
     }
 }

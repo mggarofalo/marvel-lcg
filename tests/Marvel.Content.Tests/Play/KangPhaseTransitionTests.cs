@@ -52,8 +52,7 @@ public sealed class KangPhaseTransitionTests : CoreCardTestBase
             "attack", 2, first.ObjectId, first.ObjectId, Duration.UntilEndOf(TimingPoints.EndOfPhase)));
         world.Effects.Register(new ContinuousEffect(EffectSource.DelayedEffect,
             DelayedEffects.DiscardFromPlay, Card: delayedDiscard.ObjectId, Affects: delayedDiscard.ObjectId,
-            Lasts: Duration.NextTime(boundary == PhaseTransitionKind.EndPlayerPhase
-                ? PhaseEnd.PlayerPhaseEnds : PhaseEnd.VillainPhaseEnds)));
+            Lasts: Duration.NextTime(Steps.AttackEnds)));
         world.Agenda.Add(new PhaseStep(new PhaseTransitionOperation(boundary), 7, 6));
         var owner = world.Agenda.Current!.Value;
         var origin = world.Agenda.Occurrence!;
@@ -69,7 +68,8 @@ public sealed class KangPhaseTransitionTests : CoreCardTestBase
         Assert.Equal(firstPlayer, prompt.Player);
         Assert.False(prompt.Cancellable);
         Assert.DoesNotContain(world.Effects.Active(), effect => effect.Source == EffectSource.LastingEffect);
-        Assert.NotEqual(world.Seats[2].Hero, delayedDiscard.Area);
+        Assert.Same(world.Seats[2].Hero, delayedDiscard.Area);
+        Assert.Contains(world.Effects.Registered, effect => effect.Card == delayedDiscard.ObjectId);
         Assert.Single(prompt.Affordances);
         Assert.Equal(destination.Id, prompt.Affordances[0].Id);
         var child = world.Agenda.Current!.Value.Require<KangJoinOperation>();

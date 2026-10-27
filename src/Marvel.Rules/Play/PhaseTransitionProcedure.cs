@@ -12,6 +12,7 @@ internal static class PhaseTransitionProcedure
     internal static Prompt? Apply(
         World world, ICardFacts facts, PhaseStep step, List<GameEvent> events)
     {
+        world.Agenda.KangTransitions.Preflight(world, step);
         int start = events.Count;
         switch (step.What)
         {

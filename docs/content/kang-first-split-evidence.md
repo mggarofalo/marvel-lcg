@@ -170,16 +170,20 @@ proper When Defeated tier resolves, suppress ordinary sequential promotion and
 perform the printed scheme removal. Its phase boundary must be supplied from
 the actual phase, not inferred from whichever villain is current later.
 
-The current boundary order is phase-end interrupts, `PhaseEnd` lasting-effect
-expiry, existing synchronous delayed-effect resolution, prepared Kang child
-choices, then the retained phase response window. RR `rr:lasting-effects.5`
+The prepared boundary order is phase-end interrupts, a fail-closed preflight,
+`PhaseEnd` lasting-effect expiry, prepared Kang child choices, then the retained
+phase response window. RR `rr:lasting-effects.5`
 expires effects lasting until the phase ends; `rr:delayed-effect.1` requires
 delayed work before responses; 11002–11005 instruct joining at phase end.
 Ordering this new controller relative to competing delayed effects is not an
-accepted general policy. The prepared test's independent synchronous discard
-establishes the present seam only. Simultaneous Kang departures explicitly raise;
-their ordering and integration with other delayed work remain for the complete
-scenario controller. Last-area/solo central reunion also explicitly raises.
+accepted general policy. A matching registered condition therefore raises before
+phase-end expiry, temporary-card discard, delayed-effect consumption or pending
+departure removal. Matching uses the same activation and awaiting-activation
+predicate as `ContinuousEffects.Occur`; another condition, another activation or
+an instruction awaiting activation does not block the join. Simultaneous Kang
+departures explicitly raise before phase-end mutation; their ordering and
+integration with other delayed work remain for the complete scenario controller.
+Last-area/solo central reunion also explicitly raises.
 The first player records the prepared destination/unique-copy choices; a public
 interaction and complete agreement/arbitration contract remain unimplemented.
 Destination affordances deliberately use an unspecified anchor rather than
@@ -190,7 +194,7 @@ Four prepared tests cover both first-player orders and both phase boundaries,
 required singleton destination, declined-choice rejection, original frame and
 occurrence retention, deterministic two-seat capture, a departed/reentered Kang
 whose later incarnation cannot rewrite the capture, expiry before prompting,
-synchronous delayed discard before prompting, two successive unique discards,
+retention of an unrelated delayed registration, two successive unique discards,
 one whole-group join, unchanged RNG consumption and no repeated join after the
 agenda drains. An identical later phase frame distinguishes exact frame identity
 from matching phase coordinates. Topology and agenda are asserted directly;
@@ -216,3 +220,33 @@ card reentry, and empty player-deck encounter exhaustion; the final fixture has
 nonempty player decks and models reentry through the encounter discard instead.
 No full managed, Linux, native, public replay or actual Kang split/reunion
 acceptance is claimed. Independent review remains required.
+
+## Phase-boundary review repairs
+
+The review probes at `c8e9fcfe84e74bec292e1dc7790686588ce7018b` exposed two
+unsupported paths: an added source member was omitted from the captured move,
+and a matching delayed unique discard was consumed before the Kang choice.
+The controller compares complete captured/source membership before phase-end
+mutation and again before every prompt, discard answer and whole-group join.
+Added members therefore fail closed just as missing members do.
+
+The four original phase/first-player variants retain their required destination,
+two real unique discards, captured incarnation, exact owner/frame, whole-group
+movement and exact-once assertions. Their co-due independent discard fixture is
+now registered for `AttackEnds`, and asserts that both the card and registration
+remain. This is an explicit scope change: accepting the old discard-first
+expectation would encode the unsupported ordering that this repair rejects.
+Dedicated phase/round cases instead assert rejection with unchanged card digest,
+registered effects, target placement and pending departure, no emitted events,
+and the original owner still outstanding. Additional controls cover mismatched
+conditions/activation, awaiting activation, and source membership changes during
+both destination and unique-copy choices.
+
+Windows repair evidence is recorded in `C:/Users/mggar/Source/` under
+`kang-phase-repair-*.log`. The combined focused Kang/uniqueness run passes 52
+cases. Two compiling mutants are killed: removing the complete-membership count
+check fails all three membership probes; suppressing the co-due match fails all
+three phase/round ordering probes. Both mutations are restored. Final restored
+build and focused results accompany the repair commit; independent acceptance
+of these repairs remains the reviewer's responsibility. No full managed, Linux,
+native, admission, printed defeat hook or public replay evidence is claimed.

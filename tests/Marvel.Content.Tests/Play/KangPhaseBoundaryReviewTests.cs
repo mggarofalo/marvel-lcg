@@ -14,31 +14,117 @@ public sealed class KangPhaseBoundaryReviewTests : CoreCardTestBase
     public void AddedSourceMemberMustFailClosedRatherThanLeavePartOfTheGroupBehind()
     {
         var (world, kang, source, _) = Split();
-        world.Agenda.KangTransitions.CaptureJoin(world, kang, 7, PhaseTransitionKind.EndPlayerPhase);
+        var departure = world.Agenda.KangTransitions.CaptureJoin(world, kang, 7, PhaseTransitionKind.EndPlayerPhase);
         world.Join(PlayArea.Of(2), source, "prepared group change", []);
         AddBoundary(world);
+        var events = new List<GameEvent>();
+        string digest = world.Digest().Canonical();
 
         Assert.Throws<RulesNotImplementedException>(() =>
-            Sequence.Work(world, Cards, new NoCardAbilities(), []));
+            Sequence.Work(world, Cards, new NoCardAbilities(), events));
+
+        Assert.Equal(digest, world.Digest().Canonical());
+        Assert.Same(departure, Assert.Single(world.Agenda.KangTransitions.Pending));
+        Assert.Equal(2, source.PlayAreas.Count);
+        Assert.Empty(events);
     }
 
-    [Fact]
+    [Theory]
     [Rule("rr:delayed-effect.1")]
-    public void CompetingDelayedUniqueDiscardMustFailClosedWithoutAnAcceptedOrderingPolicy()
+    [InlineData(PhaseTransitionKind.EndPlayerPhase, PhaseEnd.PlayerPhaseEnds)]
+    [InlineData(PhaseTransitionKind.EndVillainPhase, PhaseEnd.VillainPhaseEnds)]
+    [InlineData(PhaseTransitionKind.EndVillainPhase, PhaseEnd.RoundEnds)]
+    public void CompetingDelayedUniqueDiscardMustFailClosedWithoutAnAcceptedOrderingPolicy(
+        PhaseTransitionKind boundary, string condition)
     {
         // Delayed effects resolve "before responses to that point or condition
         // may be used"; this does not decide their order relative to each other.
         var (world, kang, _, _) = Split();
         var first = world.CreateCard("01011", world.Seats[0].Hero);
         world.CreateCard("01011", world.Seats[1].Hero);
-        world.Agenda.KangTransitions.CaptureJoin(world, kang, 7, PhaseTransitionKind.EndPlayerPhase);
+        var departure = world.Agenda.KangTransitions.CaptureJoin(world, kang, 7, boundary);
+        world.Effects.Register(new ContinuousEffect(EffectSource.LastingEffect,
+            "attack", 2, first.ObjectId, first.ObjectId, Duration.UntilEndOf(TimingPoints.EndOfPhase)));
         world.Effects.Register(new ContinuousEffect(EffectSource.DelayedEffect,
             DelayedEffects.DiscardFromPlay, Card: first.ObjectId, Affects: first.ObjectId,
-            Lasts: Duration.NextTime(PhaseEnd.PlayerPhaseEnds)));
-        AddBoundary(world);
+            Lasts: Duration.NextTime(condition)));
+        world.Agenda.Add(new PhaseStep(new PhaseTransitionOperation(boundary), 7, 6));
+        var registered = world.Effects.Registered.ToArray();
+        var owner = world.Agenda.Current!.Value;
+        var origin = world.Agenda.Occurrence!;
+        var events = new List<GameEvent>();
+        string digest = world.Digest().Canonical();
 
-        Assert.Throws<RulesNotImplementedException>(() =>
-            Sequence.Work(world, Cards, new NoCardAbilities(), []));
+        var error = Assert.Throws<RulesNotImplementedException>(() =>
+            Sequence.Work(world, Cards, new NoCardAbilities(), events));
+
+        Assert.Contains("ordering", error.Message);
+        Assert.Equal(digest, world.Digest().Canonical());
+        Assert.Equal(registered, world.Effects.Registered);
+        Assert.Same(world.Seats[0].Hero, first.Area);
+        Assert.Same(departure, Assert.Single(world.Agenda.KangTransitions.Pending));
+        Assert.True(world.Agenda.IsOutstanding(owner, origin));
+        Assert.Empty(events);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(2)]
+    public void UnmatchedDelayedRegistrationsDoNotBlockTheDeparture(int mismatch)
+    {
+        var (world, kang, _, _) = Split();
+        var target = world.CreateCard("01041", world.Seats[0].Hero);
+        world.Agenda.KangTransitions.CaptureJoin(world, kang, 7, PhaseTransitionKind.EndPlayerPhase);
+        world.Effects.Register(new ContinuousEffect(EffectSource.DelayedEffect,
+            DelayedEffects.DiscardFromPlay, Card: target.ObjectId, Affects: target.ObjectId,
+            Lasts: Duration.NextTime(mismatch == 0 ? Steps.AttackEnds : PhaseEnd.PlayerPhaseEnds))
+        {
+            ActivationId = mismatch == 1 ? 123 : null,
+            AwaitingActivation = mismatch == 2 ? 456 : null,
+        });
+        AddBoundary(world);
+        var registered = world.Effects.Registered.ToArray();
+
+        var prompt = Sequence.Work(world, Cards, new NoCardAbilities(), [])!;
+
+        Assert.NotEmpty(prompt.Affordances);
+        Assert.All(prompt.Affordances, offer => Assert.Equal("Join_Game_Area", offer.Verb));
+        Assert.Equal(registered, world.Effects.Registered);
+        Assert.Same(world.Seats[0].Hero, target.Area);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void GroupChangesWhileChoosingCannotCommitAnAnswer(bool destinationChosen)
+    {
+        var (world, kang, source, destination) = Split();
+        var first = world.CreateCard("01011", world.Seats[0].Hero);
+        world.CreateCard("01011", world.Seats[1].Hero);
+        world.Agenda.KangTransitions.CaptureJoin(world, kang, 7, PhaseTransitionKind.EndPlayerPhase);
+        AddBoundary(world);
+        var abilities = new NoCardAbilities();
+        var prompt = Sequence.Work(world, Cards, abilities, [])!;
+        if (destinationChosen)
+        {
+            Sequence.Answer(world, Cards, abilities, prompt, Decision.Take(destination.Id), []);
+            prompt = Sequence.Work(world, Cards, abilities, [])!;
+        }
+        world.Join(PlayArea.Of(2), source, "prepared group change", []);
+        string digest = world.Digest().Canonical();
+        var events = new List<GameEvent>();
+
+        Assert.Throws<RulesNotImplementedException>(() => Sequence.Answer(world, Cards, abilities,
+            prompt, Decision.Take(destinationChosen ? first.ObjectId : destination.Id), events));
+        Assert.Throws<RulesNotImplementedException>(() => Sequence.Work(world, Cards, abilities, events));
+
+        Assert.Equal(digest, world.Digest().Canonical());
+        Assert.Same(world.Seats[0].Hero, first.Area);
+        Assert.Same(source, world.GameAreaOf(PlayArea.Of(0)));
+        Assert.Same(source, world.GameAreaOf(PlayArea.Of(2)));
+        Assert.Same(destination, world.GameAreaOf(PlayArea.Of(1)));
+        Assert.Empty(events);
     }
 
     [Fact]
