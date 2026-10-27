@@ -35,6 +35,7 @@ internal static class AbilityBatchExecution
             cast.TrackResolution(ordinal);
             execution.Run(ability, cast);
             cast.CompleteResolution();
+            if (cast.World.IsOver) return;
             pending = cast.Execution is { IsComplete: false };
         }
     }

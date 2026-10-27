@@ -132,6 +132,7 @@ internal static class AbilityPowerResolution
 
     internal static void FinishResumedPower(this AbilityResolutionExecution execution, AbilityResolutionState cast)
     {
+        if (cast.World.IsOver) return;
         var state = cast.PowerExecution ?? throw new InvalidOperationException("The power has no execution state.");
         if (state.Aftermath is null)
         {
