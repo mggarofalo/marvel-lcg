@@ -16,7 +16,7 @@ public sealed class DoctorStrangeFinalSignatureEventTests
     {
         using var book = JsonDocument.Parse(AuthoredCards.Text);
         var rows = book.RootElement.GetProperty("cards").EnumerateArray().ToArray();
-        Assert.Equal(700, rows.Length);
+        Assert.Equal(709, rows.Length);
         Assert.Equal(FinalFaces, rows.Skip(675).Take(3)
             .Select(row => row.GetProperty("card").GetString()));
         Assert.All(rows.Skip(675).Take(3), row => Assert.False(row.TryGetProperty("startingCounters", out _)));

@@ -382,7 +382,31 @@ MARVEL-846 appends seven actual Hulk signature research faces: 10002, 10003 and
 raw objects remain byte-identical. Joined generated printed records, current
 RR 1.8 and ruling:5bbba476a198a90c govern the interpretations. The seven faces
 print no starting counters. Actual-row payment, exact attack lifetime, independent
-draw and multiplayer form/ownership tests gate these rows. Thunderclap 10005
-remains unauthored pending distinct ordinary-damage group selection; the packet
+draw and multiplayer form/ownership tests gate these rows. The signature packet
 has no engine, setup or public-admission changes. See
 [the signature packet](../../docs/content/hulk-signatures.md).
+
+## Hulk starter cards — MARVEL-847
+
+Actual research rows 10011–10014 and 10016–10019 append to 708 rows / 23 of
+33 Hulk faces. All 700 predecessor raw objects remain byte-identical. Printed
+authority is `datasets/cards/cards.json`; RR 1.8 and vendored FAQ 10016 govern
+attack receipts, eligibility and the printed maximum. Actual-row tests and eight
+killed data mutants are recorded in [the packet](../../docs/content/hulk-starter-cards.md).
+Toe to Toe (10015) remains absent: the actual activation inside a labelled
+attack requires a separate engine prerequisite. No engine, setup,
+starting-counter or public admission change is included.
+
+
+## Hulk Thunderclap — MARVEL-846
+
+Actual research row 10005 appends to 709 rows / 24 of 33 Hulk faces. All 708
+predecessor raw objects remain byte-identical. Printed authority is
+`datasets/cards/cards.json`; current RR 1.8 choose, target, damage, Guard, Stun,
+and Retaliate clauses govern. The vendored MarvelCDB FAQ queried 10005 and has
+no entry for it. One distinct optional group receives simultaneous ordinary
+damage through the independently reviewed bounded-damage prerequisite.
+Actual paid hero-action, multiplayer, suspension, purity and data-mutation
+proof is recorded in [the packet](../../docs/content/hulk-thunderclap-card.md).
+Toe to Toe 10015 remains absent. This row adds no starting counters, setup,
+public admission or engine source changes.

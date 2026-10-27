@@ -2,7 +2,7 @@
 
 Canonical parent: MARVEL-566. Complete scope is the verified
 [33-face handoff](research/remaining/hulk-implementation-handoff.md).
-Current local assembly: **700 authored rows, 15/33 Hulk faces**. No public Hulk
+Current local assembly: **709 authored rows, 24/33 Hulk faces**. No public Hulk
 admission or full-pack acceptance. Ordinary content acceptance remains agent-owned.
 
 The branch starts from frozen Doctor Strange candidate `553869be`; PR454's final
@@ -24,6 +24,10 @@ any Hulk prerequisites.
 | Signature subset / 846 | `86412c83` | `10336f30` | Actual 10002,10003,10006–10010, seven faces |
 | Ranked attack / 852 | `c6621429` | `b68c7878` | First player selects one ranked enemy, retaining the selected character |
 | Bounded ordinary damage / 846 | `7a98feea`, repair `65190efe` | finding `5fea29de`, closure `b3c9d8c` | One bounded recipient group; accurate later-choice descriptions |
+
+| Pricing-family layout | `7aa42043` (isolated remedy) | `38b271f2` | Six pricing variants extracted; no operation or JSON change |
+| Starter subset / 847 | `6e758f7d` | `3588d6ac` | Actual 10011–10014 and 10016–10019, eight faces |
+| Thunderclap / 846 | `4dcd8afb` | `42111a07` | Actual 10005 bounded ordinary damage, one face |
 
 Packet documents preserve the authority, source/review evidence and limitations.
 The independently accepted signature subset preserves all 693 predecessor objects
@@ -60,21 +64,31 @@ not relaxed content coverage or gameplay changes. Future authors must search
 whole-book counts and newly authored negative IDs and run every affected inventory
 class, including initially unchanged classes.
 
-These focused runs are not a combined full-suite or complete-pack certification.
+The reviewed pricing remedy was applied to exact staged tree `eb14ac4d`, producing
+source tree `9fce6b9b` byte-for-byte. That 700-row candidate passed all 7,670 Content
+checks, full architecture 129 and a warning-free Release solution build. Independent
+layout review passed architecture 129 and 193 focused Content cases. Root integration
+commit is `88b6fa87`; the review document follows in its own commit.
+
+The 709-row combined book is byte-identical to the independently reviewed Thunderclap
+source. Sixteen starter integration conflicts were proved to differ only in whole-book
+700→708 counts (plus two terminal blank lines in one file), then advanced to709 with
+the reviewed Thunderclap row. Pack slices and 90001 unknown controls remain intact.
+The combined inventory/Hulk/bounded-damage/ranked-choice run passed 314 cases;
+`hulk-24face-integration.log`. Source/review packet runs remain linked in their documents.
+This latest 709-row assembly has not yet received full-pack certification.
 
 ## Remaining work
 
-- MARVEL-846: actual Thunderclap10005 authoring, now unblocked by the reviewed
-  bounded ordinary-damage prerequisite. Seven of the eight signature faces in
-  this item are integrated.
-- MARVEL-847: eight starter faces are source-complete at `6e758f7d` and under
-  independent review (10011–10014 and10016–10019, book708 in that isolated tree).
-  Toe to Toe10015 is excluded. Its faithful labelled attack suspends for an enemy
-  activation; the existing power continuation is being proved behind a narrow
-  admission extension in a separate implementation/review pair.
+- MARVEL-846: all eight signature faces are reviewed and locally integrated.
+- MARVEL-847: eight starter faces are reviewed and locally integrated. Toe to Toe10015
+  remains absent. Engine source `b2f45d9` passed full Content7606, but independent
+  review found its retained attack loses a lethal defeat receipt, suppressing the
+  existing Chase Them Down response. A damage-only control passes. The engine pair
+  must repair and independently close that concrete finding before actual-row authoring.
 - MARVEL-849: actual obligation/nemesis10025–10028 (four faces), including full
   Clash reveal/cleanup using the reviewed ranked-attack primitive.
-- MARVEL-850: customization10029–10032 (four faces).
+- MARVEL-850: customization10029–10032 (four faces), now in bounded authoring from the reviewed 709-row book.
 - MARVEL-851: verified public setup, characteristic actions, complete games,
   restart/replay and final combined regression/platform evidence after all33
   faces are ready.

@@ -21835,6 +21835,289 @@
           }
         }
       ]
+    },
+    {
+      "card": "10011",
+      "name": "Brawn",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenAttackEnds",
+            "timing": "Response",
+            "actor": "this"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "thwartableSchemes"
+              },
+              "effect": {
+                "removeThreat": {
+                  "scheme": "chosen",
+                  "amount": 1
+                }
+              }
+            }
+          }
+        }
+      ],
+      "note": "Printed authority: datasets/cards/cards.json 10011. DSL event and selector spellings are engine choices."
+    },
+    {
+      "card": "10012",
+      "name": "Sentry",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardEntersPlay",
+            "timing": "ForcedResponse",
+            "subject": "this"
+          },
+          "effect": {
+            "dealEncounterCards": {
+              "player": "you",
+              "count": 1
+            }
+          }
+        }
+      ],
+      "note": "Printed authority: datasets/cards/cards.json 10012. DSL event and selector spellings are engine choices."
+    },
+    {
+      "card": "10013",
+      "name": "She-Hulk",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "grant": {
+              "card": "this",
+              "keyword": "attack",
+              "amount": {
+                "damageOn": "this"
+              }
+            }
+          }
+        }
+      ],
+      "note": "Printed authority: datasets/cards/cards.json 10013. DSL event and selector spellings are engine choices."
+    },
+    {
+      "card": "10014",
+      "name": "Drop Kick",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "attackableEnemies"
+              },
+              "effect": {
+                "attack": {
+                  "target": "chosen",
+                  "effect": {
+                    "seq": [
+                      {
+                        "dealAttackDamage": {
+                          "cards": "chosen",
+                          "amount": 4
+                        }
+                      },
+                      {
+                        "if": {
+                          "test": {
+                            "and": [
+                              {
+                                "paidWithResource": "R"
+                              },
+                              {
+                                "not": {
+                                  "paidWithResource": "B"
+                                }
+                              },
+                              {
+                                "not": {
+                                  "paidWithResource": "Y"
+                                }
+                              },
+                              {
+                                "not": {
+                                  "paidWithResource": "G"
+                                }
+                              }
+                            ]
+                          },
+                          "then": {
+                            "seq": [
+                              {
+                                "giveStatus": {
+                                  "card": "chosen",
+                                  "status": "stunned"
+                                }
+                              },
+                              {
+                                "draw": {
+                                  "player": "you",
+                                  "count": 1
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "note": "Printed authority: datasets/cards/cards.json 10014. DSL event and selector spellings are engine choices."
+    },
+    {
+      "card": "10016",
+      "name": "\"You'll Pay for That!\"",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenAttackEnds",
+            "timing": "Response",
+            "actor": "villain",
+            "player": "you",
+            "form": "hero"
+          },
+          "when": {"atLeast": {"value": {"receivedAttackDamage": "game"}, "count": 1}},
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "thwartableSchemes"
+              },
+              "effect": {
+                "thwart": {
+                  "target": "chosen",
+                  "effect": {
+                    "removeThreat": {
+                      "scheme": "chosen",
+                      "amount": {
+                        "receivedAttackDamage": "game"
+                      },
+                      "maximum": 5
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "note": "Printed authority: datasets/cards/cards.json 10016. DSL event and selector spellings are engine choices."
+    },
+    {
+      "card": "10017",
+      "name": "The Power of Aggression",
+      "note": "Printed authority: datasets/cards/cards.json 10017. DSL event and selector spellings are engine choices.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "doubleResourceFor": "Aggression"
+          }
+        }
+      ]
+    },
+    {
+      "card": "10018",
+      "name": "Martial Prowess",
+      "attachTo": {
+        "query": "identitiesWithinPerPlayerLimit"
+      },
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Resource",
+            "subject": "this"
+          },
+          "cost": {
+            "exhaust": "this"
+          },
+          "resourceRestriction": "attackEvent",
+          "effect": {
+            "generate": "R"
+          }
+        }
+      ],
+      "note": "Printed authority: datasets/cards/cards.json 10018. DSL event and selector spellings are engine choices."
+    },
+    {
+      "card": "10019",
+      "name": "To the Rescue!",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "thwartableSchemes"
+              },
+              "effect": {
+                "thwart": {
+                  "target": "chosen",
+                  "effect": {
+                    "removeThreat": {
+                      "scheme": "chosen",
+                      "amount": 2
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "note": "Printed authority: datasets/cards/cards.json 10019. DSL event and selector spellings are engine choices."
+    },
+    {
+      "card": "10005",
+      "name": "Thunderclap",
+      "note": "Printed authority: datasets/cards/cards.json 10005. DSL event, query and maximum spellings are engine choices. Nonpublic Hulk research; ordinary damage is not an attack.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "effect": {
+            "dealDamage": {
+              "cards": {
+                "query": "enemies"
+              },
+              "amount": 3,
+              "maximum": 3
+            }
+          }
+        }
+      ]
     }
   ]
 }
