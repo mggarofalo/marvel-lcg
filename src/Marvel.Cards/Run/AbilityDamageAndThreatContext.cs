@@ -15,6 +15,7 @@ internal sealed record AbilityDamageAndThreatContext(
 {
     internal IReadOnlyList<Card>? SelectedDamageRecipients { get; init; }
     internal Occurrence? PowerOccurrence { get; init; }
+    internal bool ActivationAttack { get; init; }
     internal bool StagedAttack { get; init; }
     internal int? DamageActivationId { get; init; }
     internal ImmutableArray<Attacked> DeclaredAttackRecipients { get; init; }

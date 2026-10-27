@@ -1740,3 +1740,28 @@ Descriptions of `dealDamage.maximum` explain the later bounded selection and
 damage to chosen recipients. A candidate is not promised damage or a committed
 HP result before that selection, including within player choices and options.
 Direct unbounded instructions retain their existing public damage previews.
+
+### Enemy activation within a labeled attack
+
+A labeled power body may contain the bounded sequence
+`enemyAttacks(enemies: chosen)` followed by fixed `dealAttackDamage(cards: chosen)`.
+The ordinary enemy activation procedure owns defense, boosts and timing windows;
+the existing power continuation retains the original attack occurrence, performer,
+modifier lifetime and exact chosen incarnation. Following damage is independent
+of whether stun replaced the enemy attack. Stun on the performing identity still
+cancels the whole labeled ability after costs (`rr:labeled-ability.6`).
+
+This shape is an engine admission choice motivated by printed Toe to Toe (`10015`)
+and its vendored FAQ. Current RR 1.8 `rr:stun-stunned.6` and `.7` still replace the
+enemy attack, consistent with that FAQ; the printed text has no `then` prerequisite.
+Other activation/recipient selectors and board-dependent followups retain their
+existing unsupported gates. Synthetic tests do not admit a production Hulk row.
+
+The classified resumed body passes its retained occurrence through
+`AttackDamageRequest.Origin`, so the ordinary damage procedure records its own
+defeats on that attack. The enemy activation retains the separate defeat of a
+defending ally. `Origin` is an existing Rules execution field exposed to ability
+callers for this causal ownership; a null value uses the current occurrence.
+Its accessibility is an engine API choice and adds no persisted or wire field.
+Actual authored Chase Them Down (`01052`) observes the lethal followup and removes
+two threat, while the enemy activation's ally defeat does not satisfy it.

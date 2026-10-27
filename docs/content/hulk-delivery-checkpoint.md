@@ -24,9 +24,9 @@ any Hulk prerequisites.
 | Signature subset / 846 | `86412c83` | `10336f30` | Actual 10002,10003,10006–10010, seven faces |
 | Ranked attack / 852 | `c6621429` | `b68c7878` | First player selects one ranked enemy, retaining the selected character |
 | Bounded ordinary damage / 846 | `7a98feea`, repair `65190efe` | finding `5fea29de`, closure `b3c9d8c` | One bounded recipient group; accurate later-choice descriptions |
-
 | Pricing-family layout | `7aa42043` (isolated remedy) | `38b271f2` | Six pricing variants extracted; no operation or JSON change |
 | Starter subset / 847 | `6e758f7d` | `3588d6ac` | Actual 10011–10014 and 10016–10019, eight faces |
+| Labelled activation / 847 | `b2f45d97`, repair `3a016518` | finding `633ce5fc`, closure `ca700082` | Original attack damage/defeat receipts across chosen enemy activation |
 | Thunderclap / 846 | `4dcd8afb` | `42111a07` | Actual 10005 bounded ordinary damage, one face |
 
 Packet documents preserve the authority, source/review evidence and limitations.
@@ -82,13 +82,15 @@ This latest 709-row assembly has not yet received full-pack certification.
 
 - MARVEL-846: all eight signature faces are reviewed and locally integrated.
 - MARVEL-847: eight starter faces are reviewed and locally integrated. Toe to Toe10015
-  remains absent. Engine source `b2f45d9` passed full Content7606, but independent
-  review found its retained attack loses a lethal defeat receipt, suppressing the
-  existing Chase Them Down response. A damage-only control passes. The engine pair
-  must repair and independently close that concrete finding before actual-row authoring.
+  remains absent, but its engine prerequisite is now independently accepted. Initial
+  review found a lost lethal defeat receipt that suppressed Chase Them Down. The narrow
+  explicit original-occurrence repair restores that response and excludes a defending
+  ally's defeat. Source161 Content/32 Rules/129 architecture and independent63 Content/
+  53 Rules checks passed. Root combined Hulk/activation/damage regression passed226;
+  `hulk-integrated-toe-repair.log`. Actual-row authoring is the next dependent step.
 - MARVEL-849: actual obligation/nemesis10025–10028 (four faces), including full
   Clash reveal/cleanup using the reviewed ranked-attack primitive.
-- MARVEL-850: customization10029–10032 (four faces), now in bounded authoring from the reviewed 709-row book.
+- MARVEL-850: customization10030–10032 (three faces) are in bounded authoring from the reviewed 709-row book. Actual Beat Cop10029 is deferred behind a demonstrated engine gap: threat movement currently restricts both endpoints to schemes, excluding the printed support destination. A separate implementation/review pair owns that narrow prerequisite.
 - MARVEL-851: verified public setup, characteristic actions, complete games,
   restart/replay and final combined regression/platform evidence after all33
   faces are ready.

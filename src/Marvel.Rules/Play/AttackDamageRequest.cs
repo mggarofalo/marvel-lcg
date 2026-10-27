@@ -14,7 +14,8 @@ public sealed record AttackDamageRequest(
     /// <summary>Overkill granted to this exact attack before damage resolution.</summary>
     public bool GrantedOverkill { get; init; }
 
-    internal Occurrence? Origin { get; init; }
+    /// <summary>The exact attack occurrence retained across suspended ability execution; null uses the current occurrence.</summary>
+    public Occurrence? Origin { get; init; }
     internal EnemyAttack? EnemyAttack { get; init; }
     internal DamageReplacement? Replacement { get; init; }
     internal PreparedAttackDamage? Prepared { get; init; }
