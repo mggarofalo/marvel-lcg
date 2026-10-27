@@ -49,9 +49,20 @@ internal static class AbilityModifierLowering
         // modifier conventions; they are not inferred from a card's title.
         var amount = fields.TryGetValue("amount", out var number)
             ? Number(number, location.Child("amount")) : new AbilityNumber.Constant(lasting ? 0 : 1);
+        ValidateHandSizeMaximum(field, cards, amount, lasting, each, location);
         var attackRestriction = AbilityAttackKeywordLowering.Restriction(fields, location, cards, field, each);
         return new AbilityEffect.GrantField(cards, field, amount, each, until)
         { AttackRestriction = attackRestriction };
+    }
+
+    private static void ValidateHandSizeMaximum(string field, AbilityCardSelection cards,
+        AbilityNumber amount, bool lasting, bool each, AbilityLocation location)
+    {
+        if (field != "hand_size_maximum") return;
+        if (lasting || each || cards is not AbilityCardSelection.Bound { Binding: AbilityCardBinding.You })
+            throw location.Error("a hand-size maximum requires a constant grant to you");
+        if (amount is not AbilityNumber.Constant { Value: > 0 })
+            throw location.Error("a hand-size maximum requires a positive constant");
     }
 
     private static AbilityEffect.GrantTrait TraitGrant(IReadOnlyDictionary<string, AbilityValue> fields,
@@ -80,7 +91,8 @@ internal static class AbilityModifierLowering
     {
         string name = Text(value, location);
         return StateFieldCatalog.IsModifiable(name) || keyword && (Keywords.Granted.Contains(name)
-            || name == ExcessDamageThreat.Modifier || name == RevealRepetitions.Modifier)
+            || name == ExcessDamageThreat.Modifier || name == RevealRepetitions.Modifier
+            || name == "hand_size_maximum")
             ? name : throw location.Error($"'{name}' is not a modifier implemented by the engine");
     }
 

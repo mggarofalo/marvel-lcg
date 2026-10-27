@@ -2154,7 +2154,10 @@
       "abilities": [
         {
           "trigger": { "timing": "Constant", "subject": "this" },
-          "effect": { "grant": { "card": "you", "keyword": "hand_size", "amount": { "min": [ 6, { "count": { "withTrait": { "cards": { "query": "upgradesYouControl" }, "trait": "TECH" } } } ] } } }
+          "effect": { "seq": [
+            { "grant": { "card": "you", "keyword": "hand_size", "amount": { "count": { "withTrait": { "cards": { "query": "upgradesYouControl" }, "trait": "TECH" } } } } },
+            { "grant": { "card": "you", "keyword": "hand_size_maximum", "amount": 7 } }
+          ] }
         }
       ]
     },

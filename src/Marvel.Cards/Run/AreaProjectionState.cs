@@ -46,9 +46,9 @@ internal sealed class AreaProjectionState(AbilityAdmissionContext context)
 
     public long ModifiedOf(AbilityAdmissionContext current, Card card, string field)
     {
-        long value = StateFields.Modified(
+        long value = CardValues.EvaluateUnbounded(
             current.World, card, field,
-            current.World.Facts, current.World.Players);
+            current.World.Facts, current.World.Players).CurrentValue;
         value += ProjectedConstantAdjustment(current, card, field);
         if (ProjectedPredicateInputsChanged(current)
             && new AbilityProjectedConstantQueries(this).MayModify(current, card, field))
@@ -71,10 +71,16 @@ internal sealed class AreaProjectionState(AbilityAdmissionContext context)
         };
         if (printedModifier is null)
         {
-            return value;
+            return ApplyMaximum(current, card, field, value);
         }
-        return value + ProjectedAttachmentAdjustment(
-            current, card, printedModifier);
+        return ApplyMaximum(current, card, field, value + ProjectedAttachmentAdjustment(
+            current, card, printedModifier));
+    }
+
+    private long ApplyMaximum(AbilityAdmissionContext current, Card card, string field, long value)
+    {
+        var maximum = CardValues.Maximum(current.World, card, field, Departed);
+        return maximum is null ? value : Math.Min(value, maximum.Amount);
     }
 
     private long ProjectedConstantAdjustment(

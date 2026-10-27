@@ -5,6 +5,13 @@ forced and optional attack-end responses and is zero without a completed attack.
 
 # The card DSL
 
+`grant` with `keyword: "hand_size_maximum"`, a positive constant amount and
+`card: "you"` expresses a total hand-size maximum from the current face's
+constant ability. This engine-chosen spelling applies after all additive
+modifiers; multiple maxima use the smallest. It is distinct from a limit on
+one ability's bonus. The maximum ends when its source's text is inactive.
+
+
 `handResourceForm: "hero"` is card-level metadata restricting the printed hand
 resource source to its owner's current hero form. The engine chooses this spelling;
 only `hero` is admitted, and the face must have a complete authored `abilities`

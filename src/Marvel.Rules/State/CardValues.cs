@@ -14,10 +14,33 @@ public static class CardValues
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(card);
         ArgumentNullException.ThrowIfNull(facts);
+        CardValueEvaluation result = EvaluateUnbounded(world, card, field, facts, players);
+        ContinuousEffect? maximum = Maximum(world, card, field);
+        if (maximum is null || result.CurrentValue <= maximum.Amount) return result;
+        return result with
+        {
+            CurrentValue = maximum.Amount,
+            Steps = [.. result.Steps, new(CardValueStepKind.Maximum, maximum.Amount,
+                maximum.Amount, Source(world, maximum), maximum.Lasts)],
+        };
+    }
+
+    /// <summary>Evaluate before any total-value maximum, for ordered projection.</summary>
+    public static CardValueEvaluation EvaluateUnbounded(
+        World world, Card card, string field, ICardFacts facts, int players)
+    {
         (long value, CardValueBaseKind kind) = Base(card, field, facts, players);
         if (PrintedText.IsBlanked(world, card) && PrintedText.IsTextKeywordField(field)) value = 0;
         return Evaluate(world, card, field, facts, players, value, kind);
     }
+
+    /// <summary>Active total hand-size maximum, excluding projected departed sources.</summary>
+    public static ContinuousEffect? Maximum(World world, Card card, string field, IReadOnlySet<int>? departed = null) =>
+        field != "hand_size" ? null : world.Effects.Active()
+            .Where(effect => effect.Kind == "hand_size_maximum" && effect.AppliesTo(world, card)
+                && (effect.Source != EffectSource.ConstantAbility || effect.Card is not int source
+                    || departed is null || !departed.Contains(source)))
+            .OrderBy(effect => effect.Amount).FirstOrDefault();
 
     /// <summary>The character's maximum HP, including active HP modifiers.</summary>
     public static CardValueEvaluation MaximumHealth(World world, Card card, ICardFacts facts)

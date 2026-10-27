@@ -115,8 +115,8 @@ internal static class AbilityRepeatedCharacteristicTrace
             "thwart" => "THW+",
             _ => null,
         };
-        long value = StateFields.Modified(
-                cast.World, current, field, cast.World.Facts, cast.World.Players)
+        long value = CardValues.EvaluateUnbounded(
+                cast.World, current, field, cast.World.Facts, cast.World.Players).CurrentValue
             + (modifiers?.GetValueOrDefault((current.ObjectId, field)) ?? 0);
         value -= DiscardedAttachmentModifier(current, printed, cast, discarded);
         value -= DiscardedConstantModifier(current, field, cast, discarded);
@@ -124,11 +124,19 @@ internal static class AbilityRepeatedCharacteristicTrace
         int boardVillain = AbilityProjectedAttachmentHosts.BoardVillain(current, cast);
         if (current.ObjectId == boardVillain)
         {
-            return value;
+            return ApplyMaximum(current, field, cast, discarded, value);
         }
 
         var carried = TraceCarriedAttachments(current, cast, discarded);
-        return value + CarriedModifier(carried, boardVillain, printed, field, cast);
+        return ApplyMaximum(current, field, cast, discarded,
+            value + CarriedModifier(carried, boardVillain, printed, field, cast));
+    }
+
+    private static long ApplyMaximum(Card current, string field, AbilityAdmissionScope cast,
+        HashSet<int> discarded, long value)
+    {
+        var maximum = CardValues.Maximum(cast.World, current, field, discarded);
+        return maximum is null ? value : Math.Min(value, maximum.Amount);
     }
 
     private static bool IsUnmodifiableDashPower(
