@@ -322,3 +322,56 @@ mutable shared state. The cohesive Kang dispatch now lives in
 `AbilityKangImmediateExecution`; the scenario mapping is an immutable array.
 No baseline or gate was changed. The affected combined run after extraction
 passes 87 cases (`kang-stage-one-extracted-combined.log`).
+
+## Independent stage-I review on integrated candidate
+
+Reviewed integrated `b92fa81dffd38baa0b8e4814460200d3051b452c` (source packet
+`3bbcc838568478037772977764186d48f4ccabef`) in a fresh detached worktree.
+Authority checked against the generated printed rows 11001/11034, 11008a/b,
+11009a/b–11012a/b and the pinned mc11 `areas`, `game-areas`,
+`rules-clarifications`, `adjustable-difficulty` and `setup` records. The
+implementation follows the printed two-seat first split: own When Defeated
+capture in the normal interrupt tier, phase-end delay, distinct seeded choices
+in player order, matching flat-HP/tough villains, full local 3A resolution before
+its B side, and removal of unused 3s before the final central flip. Selection
+order and bounded RNG consumption are explicitly engine choices. No extra player
+selection or bookkeeping prompt is introduced. These observations do not accept
+later Kang behavior or public admission.
+
+**Review finding: fail-closed local stage-3 completion is missing.** Once this
+slice reaches a local 3B, scheduled placement to its printed target runs the
+ordinary `MainSchemeCompletion.Commit` path and ends the game with
+`Outcome.VillainWins`. Printed 11009b–11012b instead require a facedown Dominion
+under 4A and a delayed removal/join. Deferring that implementation is within the
+packet boundary, but reaching it must raise `RulesNotImplementedException`.
+`MainSchemeCompletionAbilities` checks literal When Completed text; the local
+cards print Forced Response / After this stage is completed, so that guard does
+not cover them. This finding blocks acceptance until the newly reached
+unsupported consequence fails closed. The review does not implement the repair.
+
+`KangFirstSplitReviewTests` adds five prepared cases. Four pass: acceleration
+carry-over from 1B combines with two side schemes; all side schemes and their
+hosted attachment depart; Kang I attachments/statuses do not transfer; and
+one/three/four-player paths raise before phase-end card mutation, events or RNG
+consumption. The fifth is an intentionally failing regression for the real
+scheduled local-completion path after an actual first split. Expected result is
+unfinished plus the explicit unsupported exception; observed result is villain
+victory without that exception. All fixtures remain nonpublic and use narrow
+actual-card overlays, including empty B-side rows for the still-unimplemented
+abilities. No product or whole-game claim is made from them.
+
+Windows commands and raw logs outside the repository:
+
+```powershell
+dotnet test tests/Marvel.Content.Tests/Marvel.Content.Tests.csproj -c Release --filter 'FullyQualifiedName~KangFirstSplit'
+dotnet test tests/Marvel.Content.Tests/Marvel.Content.Tests.csproj -c Release --filter 'FullyQualifiedName~Kang|FullyQualifiedName~Uniqueness|FullyQualifiedName~WhenDefeated|FullyQualifiedName~DefeatStepSeven'
+```
+
+`C:/Users/mggar/Source/kang-stage-one-independent.log`: 12 passed, one failed
+(the initial direct completion probe). The subsequent scheduled-path probe is
+preserved in `kang-stage-one-independent-combined.log`: 92 passed, one failed,
+93 total. An intermediate scheduled-probe attempt used the wrong enum member
+`CardEffect` and failed compilation; `CardAbility` is the corrected fixture.
+No source mutation, Linux, native, full managed or public replay evidence is
+claimed by this review. Review tests and this finding are preserved for the
+production repair and its independent retest.
