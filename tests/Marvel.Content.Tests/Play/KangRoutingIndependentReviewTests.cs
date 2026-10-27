@@ -77,20 +77,22 @@ public sealed class KangRoutingIndependentReviewTests : CoreCardTestBase
     }
 
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
+    [InlineData(0, false)]
+    [InlineData(0, true)]
+    [InlineData(1, false)]
+    [InlineData(1, true)]
     [Rule("rr:scheme-enemy-activation.step.3")]
-    public void MinionSchemeRetainsItsResponseWhenLocalSchemeIsAbsent(bool removeScheme)
+    public void MinionSchemeRetainsItsResponseWhenLocalSchemeIsAbsent(int seat, bool removeScheme)
     {
         // "Place threat on the main scheme equal to the scheming enemy's
         // modified SCH value." Quake's printed response follows a minion
         // scheming; it does not require threat to have been placed.
         var (world, central, schemes, _) = Board(0);
-        if (removeScheme) World.MoveToTop(schemes[0], world.AreaOf(DeckType.RemovedArea));
+        if (removeScheme) World.MoveToTop(schemes[seat], world.AreaOf(DeckType.RemovedArea));
         var minion = world.CreateCard("01121",
-            world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+            world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(seat)));
         var quake = world.CreateCard("08012",
-            world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+            world.AreaOf(DeckType.AlliesArea, PlayArea.Of(seat), cardOwner: seat));
         // Test-local copy of Quake's authored response; no product admission.
         var runner = new AbilityRunner(AbilityCatalog.Parse("""
             {"cards":[{"card":"08012","abilities":[{
@@ -100,16 +102,59 @@ public sealed class KangRoutingIndependentReviewTests : CoreCardTestBase
             }]}]}
             """));
         world.Agenda.Add(new PhaseStep(new EnemySchemeOperation(), 1, 2,
-            Subject: minion.ObjectId, Seat: 0));
+            Subject: minion.ObjectId, Seat: seat));
         var events = new List<GameEvent>();
 
         var response = Assert.IsType<Prompt>(Sequence.Work(world, Cards, runner, events));
-        Assert.Equal(0, response.Player);
+        Assert.Equal(seat, response.Player);
+        var occurrence = Assert.IsType<Marvel.Rules.Timing.Occurrence>(world.Agenda.Occurrence);
+        Assert.Equal(minion.ObjectId, occurrence.Subject);
+        Assert.Equal(minion.ObjectId, occurrence.Actor);
+        Assert.Equal(seat, occurrence.Player);
+        Assert.Equal(minion.ObjectId, occurrence.ActorFacts?.Card);
+        Assert.True(occurrence.ActorFacts?.IsMinion);
+        Assert.Equal(minion.Incarnation, occurrence.ActorFacts?.Incarnation);
+        Assert.Contains(Steps.SchemeEnds, occurrence.Conditions);
+        if (removeScheme)
+        {
+            Assert.Null(occurrence.Threat);
+            Assert.Equal(-1, occurrence.Target);
+            Assert.Null(occurrence.TargetFacts);
+            Assert.DoesNotContain(Steps.ThreatWouldBePlaced, occurrence.Conditions);
+            Assert.DoesNotContain(Steps.ThreatPlaced, occurrence.Conditions);
+        }
         var offer = Assert.Single(response.Affordances, item => item.AnchorId == quake.ObjectId);
         Sequence.Answer(world, Cards, runner, response, Decision.Take(offer.Id), events);
         Sequence.Finish(world, Cards, runner, events);
 
         Assert.Equal(DeckType.EncounterDiscardPile, minion.Area.Type);
+        Assert.Equal(0, central.Tokens.GetValueOrDefault("k_threat"));
+        Assert.False(world.Agenda.IsBusy);
+        Assert.Null(world.Activation);
+        Assert.Equal(Outcome.Unfinished, world.Result);
+    }
+
+    [Fact]
+    public void VillainSchemeWithoutLocalSchemeDoesNotOfferMinionResponse()
+    {
+        // Quake 08012: "After a minion schemes" excludes the local villain.
+        var (world, central, schemes, villains) = Board(0);
+        World.MoveToTop(schemes[1], world.AreaOf(DeckType.RemovedArea));
+        world.CreateCard("08012", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(1), cardOwner: 1));
+        var runner = new AbilityRunner(AbilityCatalog.Parse("""
+            {"cards":[{"card":"08012","abilities":[{
+              "trigger":{"event":"WhenSchemeEnds","timing":"Response","actor":"minion"},
+              "cost":{"exhaust":"this"},
+              "effect":{"dealDamage":{"cards":"trigger.actor","amount":2}}
+            }]}]}
+            """));
+        world.Agenda.Add(new PhaseStep(new EnemySchemeOperation(), 1, 2,
+            Subject: villains[1].ObjectId, Seat: 1));
+        var events = new List<GameEvent>();
+
+        Assert.Null(Sequence.Work(world, Cards, runner, events));
+
+        Assert.Equal(0, villains[1].Damage);
         Assert.Equal(0, central.Tokens.GetValueOrDefault("k_threat"));
         Assert.False(world.Agenda.IsBusy);
         Assert.Null(world.Activation);

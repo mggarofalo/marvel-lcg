@@ -74,3 +74,42 @@ Logs are outside the repository in `C:/Users/mggar/Source/`:
 The source's existing 961-content/70-rules logs were inspected and are broader
 regression evidence for that source revision; they do not cover the discovered
 response gap. No full managed, Linux or native certification is claimed.
+
+## Absent-scheme repair follow-up
+
+The repair in this commit is based on review revision
+`c06f4162f4e25792ed4d8b1c24e6a79f798fedbf`. `PhaseStep.SchemeThreat`
+retains the enemy subject, actor, captured actor facts and activating seat when
+there is no local scheme. That occurrence has no threat assignment or target;
+the existing threat procedure supplies `WhenSchemeEnds` and completes the
+activation in its ordinary order. Central stage 2B receives no threat.
+
+The paired Quake probe now covers both activating seats, including the
+non-first player. It asserts the captured minion incarnation and causal roles,
+the absent assignment/target/placement conditions, and the actual response
+defeating Weapons Runner. A local villain with no scheme supplies the negative
+control: its completed scheme does not offer Quake's minion-only response.
+This remains prepared nonpublic topology; no Kang split orchestration or public
+admission is established. Independent reviewer closure remains outstanding.
+
+Windows verification on 2026-10-27, against the repaired sources:
+
+- Initial independent review class: 11 passed.
+- Compiled mutant restoring the empty occurrence: 2 failed, 9 passed. Exactly
+  the two absent-scheme minion cases failed because Quake was not offered;
+  both retained-scheme controls passed.
+- Exact source restored by SHA-256 comparison, then `dotnet build
+  tests/Marvel.Content.Tests/Marvel.Content.Tests.csproj -c Release
+  --no-incremental`: passed with zero warnings and errors.
+- Restored content run: 62 passed across both Kang routing classes,
+  ActivationCards, Wrecking scheme destinations and other-villain schemes,
+  RedSkullScenario and rule citation checks.
+- Restored Rules run: 56 passed across VillainPhase, NextMinionActivation,
+  ActivationCompletion, WreckingAttackRouting, EncounterTopology and rule
+  citation checks.
+
+Logs under `C:/Users/mggar/Source/` use the `kang-scheme-response-` prefix:
+`fixed-paired.log`, `mutant.log`, `restored-build.log`,
+`restored-content.log`, `restored-rules.log`, and `hooks.log`.
+These are focused Windows checks; no full managed, native or Linux
+certification is claimed for this repair.

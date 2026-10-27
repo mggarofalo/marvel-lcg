@@ -161,7 +161,10 @@ public readonly record struct PhaseStep(
 
         var enemy = world.Cards[Subject];
         if (world.ThreatAbilities.SchemeDestination(world, enemy) is not { } scheme)
-            return new Occurrence(id, []);
+            // The enemy still schemes when its area has no threat destination.
+            // Keep its causal roles for scheme-end responses without a placement.
+            return new Occurrence(id, [], Subject: enemy.ObjectId, Player: Seat,
+                Actor: enemy.ObjectId, ActorFacts: OccurrenceCard.Capture(enemy, facts));
         long amount = StateFields.Modified(
             world, enemy, "scheme", facts, world.Players);
         if (amount <= 0)
