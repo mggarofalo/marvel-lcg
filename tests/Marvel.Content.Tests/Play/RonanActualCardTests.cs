@@ -11,11 +11,11 @@ using Xunit;
 
 namespace Marvel.Content.Tests.Play;
 
-/// <summary>Actual 90001 entry, activation ownership and status restriction; no public modular admission.</summary>
+/// <summary>Actual 90001 entry, activation ownership, status restriction and complete modular admission.</summary>
 public sealed class RonanActualCardTests : CoreCardTestBase
 {
     [Fact]
-    public void AuthoredFacesRemainExcludedUntilTheSeparateAdmissionPacket()
+    public void AllFiveAuthoredFacesAreAdmittedTogetherWhileKangRemainsExcluded()
     {
         using var data = JsonDocument.Parse(File.ReadAllText(RepositoryPaths.Dataset("abilities", "abilities.json")));
         var rows = data.RootElement.GetProperty("cards").EnumerateArray().ToArray();
@@ -26,10 +26,10 @@ public sealed class RonanActualCardTests : CoreCardTestBase
         Assert.DoesNotContain("11001", AuthoredCards.Book.Authored);
         var setup = SetupCatalog.Parse(File.ReadAllText(RepositoryPaths.Dataset("setup", "setup.json")));
         var admitted = RuntimeProductAdmission.Discover(setup, Cards, AuthoredCards.Book.Authored);
-        Assert.DoesNotContain(admitted.Playable, face => Cards.Pack(face) == "ron");
+        Assert.Equal(["90001", "90002", "90003", "90004", "90005"],
+            admitted.Playable.Where(face => Cards.Pack(face) == "ron").Order(StringComparer.Ordinal));
         Assert.Contains("01001a", admitted.Playable);
-        Assert.Throws<KeyNotFoundException>(() => Dealer.DealOrder(admitted.Setup,
-            "rhino", ["spider_man"], ["kree_fanatic"], Cards));
+        Assert.DoesNotContain("11001", admitted.Playable);
     }
 
     [Fact]
