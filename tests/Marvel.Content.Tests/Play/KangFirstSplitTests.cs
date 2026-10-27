@@ -14,20 +14,26 @@ namespace Marvel.Content.Tests.Play;
 // overlaid; no complete Kang admission, stage-3 completion or public setup claim.
 public sealed class KangFirstSplitTests : CoreCardTestBase
 {
-    private static readonly string[] ExpectedStages = ["11011b", "11009b"];
+    private static readonly string[] ExpectedStages = ["11011b", "11009b", "11010b", "11012b"];
 
     [Theory]
-    [InlineData(0, false)]
-    [InlineData(1, false)]
-    [InlineData(0, true)]
-    [InlineData(1, true)]
+    [InlineData(0, false, 2)]
+    [InlineData(0, false, 1)]
+    [InlineData(2, false, 3)]
+    [InlineData(3, false, 4)]
+    [InlineData(1, false, 2)]
+    [InlineData(0, true, 2)]
+    [InlineData(0, true, 1)]
+    [InlineData(2, true, 3)]
+    [InlineData(3, true, 4)]
+    [InlineData(1, true, 2)]
     [Rule("rr:when-defeated-abilities.2.1")]
     [Rule("rr:toughness.1")]
-    public void DefeatWaitsForThePhaseThenRevealsDistinctLocalStagesInTurnOrder(int firstPlayer, bool expert)
+    public void DefeatWaitsForThePhaseThenRevealsDistinctLocalStagesInTurnOrder(int firstPlayer, bool expert, int players)
     {
         // 11001/11034: "Advance the main scheme to stage 2 at the end of the phase."
         // 11008a: "Each player reveals a random stage 3A in turn order."
-        var (world, kang, side, minions) = Board(firstPlayer, expert);
+        var (world, kang, side, minions) = Board(firstPlayer, expert, players: players);
         var events = new List<GameEvent>();
         Agendas.Happening(world);
         DamagePlacement.Resolve(world, Cards, new DamageRequest(world.Seats[0].IdentityCard, kang,
@@ -54,20 +60,21 @@ public sealed class KangFirstSplitTests : CoreCardTestBase
         // MT19937 seed 42: Choice([9,10,11,12])=11; Choice([9,10,12])=9,
         // including masked rejection for the second draw. This pins consumption,
         // distinct allocation and first-player order independently of the controller.
-        Assert.Equal(ExpectedStages, localSchemes.Select(card => card.FaceId));
-        Assert.Equal(3, world.Random.Generator.WordsConsumed);
+        Assert.Equal(ExpectedStages.Take(players), localSchemes.Select(card => card.FaceId));
+        Assert.Equal(new long[] { 1, 3, 4, 5 }[players - 1], world.Random.Generator.WordsConsumed);
         foreach (int player in world.PlayerOrder)
         {
             var scheme = Assert.Single(world.AreaOf(DeckType.MainSchemesArea, PlayArea.Of(player)).Cards);
             var villain = Assert.Single(world.AreaOf(DeckType.VillainArea, PlayArea.Of(player)).Cards);
             Assert.Equal(expert ? 22 : 18, DamagePlacement.Health(world, Cards, villain));
             Assert.True(Statuses.Has(world, villain, Statuses.Tough));
-            Assert.Equal(Cards.PrintedValue(scheme.FaceId, "StartingThreat", 2), scheme.Tokens.GetValueOrDefault("k_threat"));
+            Assert.Equal(Cards.PrintedValue(scheme.FaceId, "StartingThreat", players), scheme.Tokens.GetValueOrDefault("k_threat"));
             Assert.Single(world.AreaOf(DeckType.DealtEncounterCardsDeck, PlayArea.Of(player)).Cards);
             Assert.Same(world.GameAreaOf(PlayArea.Of(player)), Places.GameAreaOf(world, minions[player]));
-            Assert.False(Places.CanAffect(world, villain, minions[1 - player]));
+            foreach (int other in world.PlayerOrder.Where(other => other != player))
+                Assert.False(Places.CanAffect(world, villain, minions[other]));
         }
-        Assert.Equal(2, world.Cards.Count(card => card.Area.Type == DeckType.RemovedArea
+        Assert.Equal(4 - players, world.Cards.Count(card => card.Area.Type == DeckType.RemovedArea
             && card.Faces.Any(face => face is "11009a" or "11010a" or "11011a" or "11012a")));
         int finalFlip = events.FindLastIndex(item => item is CardsFlipped flipped && flipped.Cards.Contains(central.ObjectId));
         int lastDeal = events.FindLastIndex(item => item.Verb == "Deal");
@@ -75,8 +82,12 @@ public sealed class KangFirstSplitTests : CoreCardTestBase
         int firstUnusedRemoval = events.FindIndex(item => item is CardsMoved moved
             && moved.Cards.Any(landing => world.Cards[landing.Card].Area.Type == DeckType.RemovedArea
                 && world.Cards[landing.Card].Faces.Any(face => face is "11009a" or "11010a" or "11011a" or "11012a")));
-        Assert.True(firstUnusedRemoval > lastDeal);
-        Assert.True(firstUnusedRemoval < finalFlip);
+        if (players < 4)
+        {
+            Assert.True(firstUnusedRemoval > lastDeal);
+            Assert.True(firstUnusedRemoval < finalFlip);
+        }
+        else Assert.Equal(-1, firstUnusedRemoval);
         Assert.False(world.Agenda.IsBusy);
         Assert.Equal(Outcome.Unfinished, world.Result);
     }
@@ -173,13 +184,14 @@ public sealed class KangFirstSplitTests : CoreCardTestBase
         Assert.Equal(4, reached.Count);
     }
 
-    private static (World World, Card Kang, Card Side, Card[] Minions) Board(int first, bool expert, bool observer = false, uint seed = 42)
+    private static (World World, Card Kang, Card Side, Card[] Minions) Board(int first, bool expert, bool observer = false, uint seed = 42, int players = 2)
     {
-        var world = new World(Cards, 2, seed) { FirstPlayer = first };
-        for (int player = 0; player < 2; player++)
+        var world = new World(Cards, players, seed) { FirstPlayer = first };
+        for (int player = 0; player < players; player++)
         {
             var seat = world.CreateSeat($"p{player}");
-            seat.IdentityCard = world.CreateCard(player == 0 ? "01001a,01001b" : "01019a,01019b", seat.Hero);
+            string[] identities = ["01001a,01001b", "01019a,01019b", "01029a,01029b", "01040a,01040b"];
+            seat.IdentityCard = world.CreateCard(identities[player], seat.Hero);
         }
         var scheme = world.CreateCard("11007a,11007b", world.AreaOf(DeckType.MainSchemesArea));
         scheme.TurnTo("11007b");
@@ -192,8 +204,8 @@ public sealed class KangFirstSplitTests : CoreCardTestBase
             world.CreateCard((expert ? 11035 + index : 11002 + index).ToString(System.Globalization.CultureInfo.InvariantCulture), aside);
         }
         var side = world.CreateCard("01098", world.AreaOf(DeckType.SideSchemesArea));
-        Card[] minions = [world.CreateCard("01101", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0))),
-            world.CreateCard("01101", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(1)))];
+        Card[] minions = Enumerable.Range(0, players).Select(player => world.CreateCard("01101",
+            world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(player)))).ToArray();
         for (int count = 0; count < 6; count++) world.CreateCard("01101", world.AreaOf(DeckType.EncounterDeck));
         var rows = new List<object>();
         object Row(string card, string timing, string effect) => new { card, abilities = new[] { new {

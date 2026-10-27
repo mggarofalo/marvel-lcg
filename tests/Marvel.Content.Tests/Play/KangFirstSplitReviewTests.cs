@@ -41,21 +41,23 @@ public sealed class KangFirstSplitReviewTests : CoreCardTestBase
 
     [Theory]
     [InlineData(1)]
+    [InlineData(2)]
     [InlineData(3)]
     [InlineData(4)]
-    public void UnsupportedPlayerCountsRaiseBeforeThePhaseBoundaryMutates(int players)
+    public void EliminatedSeatsRaiseBeforeThePhaseBoundaryMutates(int players)
     {
         var (world, kang, _, _) = Board(0, false, players: players);
         var events = new List<GameEvent>();
         Agendas.Happening(world);
         Defeat.Character(world, Cards, kang, "prepared defeat", events);
         Sequence.Finish(world, Cards, world.Abilities, events);
+        world.Seats[players - 1].Eliminated = true;
         var pending = world.Agenda.KangSplit.Pending;
         var before = world.Digest().Canonical();
         int eventCount = events.Count;
         world.Agenda.Add(new PhaseStep(new PhaseTransitionOperation(PhaseTransitionKind.EndPlayerPhase), 1, 4));
         var error = Assert.Throws<RulesNotImplementedException>(() => Sequence.Finish(world, Cards, world.Abilities, events));
-        Assert.Contains("two participating seats", error.Message, StringComparison.Ordinal);
+        Assert.Contains("without elimination", error.Message, StringComparison.Ordinal);
         Assert.Equal(before, world.Digest().Canonical());
         Assert.Same(pending, world.Agenda.KangSplit.Pending);
         Assert.Equal(eventCount, events.Count);

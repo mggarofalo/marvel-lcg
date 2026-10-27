@@ -6,7 +6,7 @@ using Marvel.Rules.Timing;
 namespace Marvel.Rules.Play;
 
 /// <summary>Owns Kang I's printed delayed advancement and ordered stage-3 reveals.</summary>
-/// <remarks>Nonpublic two-seat capability; product admission remains closed.</remarks>
+/// <remarks>Nonpublic one-to-four-seat capability; product admission remains closed.</remarks>
 public sealed class KangFirstSplit
 {
     private static readonly ImmutableArray<string> StageThree = ["11009a", "11010a", "11011a", "11012a"];
@@ -44,9 +44,10 @@ public sealed class KangFirstSplit
     internal void Preflight(World world, PhaseStep step)
     {
         if (!IsBoundary(step)) return;
-        if (world.Players != 2 || world.Seats.Any(seat => seat.Eliminated)
+        if (world.Players is < 1 or > 4 || world.Seats.Count != world.Players
+            || world.Seats.Any(seat => seat.Eliminated)
             || world.Agenda.KangTransitions.Pending.Count != 0)
-            throw new RulesNotImplementedException("the first Kang split currently requires two participating seats");
+            throw new RulesNotImplementedException("the first Kang split requires one to four participating seats without elimination");
         string[] conditions = step.Require<PhaseTransitionOperation>().Kind == PhaseTransitionKind.EndPlayerPhase
             ? [PhaseEnd.PlayerPhaseEnds] : [PhaseEnd.VillainPhaseEnds, PhaseEnd.RoundEnds];
         if (world.Effects.HasDue(conditions))

@@ -77,7 +77,7 @@ public sealed class KangPhaseTransitions
         if (ready.Length == 0) return;
         if (ready.Length != 1)
             throw new RulesNotImplementedException("simultaneous Kang phase-end departures require ordering");
-        RequireGroup(ready[0]);
+        RequireParticipatingGroup(world, ready[0]);
         if (ready[0].CompletedScheme is { } completed)
         {
             var scheme = world.Cards[completed.Card];
@@ -93,6 +93,13 @@ public sealed class KangPhaseTransitions
         // delayed work. Refuse before PhaseEnd expires or consumes any effect.
         if (world.Effects.HasDue(conditions))
             throw new RulesNotImplementedException("Kang phase-end departure and competing delayed effects require ordering");
+    }
+
+    private static void RequireParticipatingGroup(World world, KangDeparture departure)
+    {
+        if (world.Seats.Any(seat => seat.Eliminated))
+            throw new RulesNotImplementedException("Kang local departure with eliminated players is not implemented");
+        RequireGroup(departure);
     }
 
     internal static void RequireGroup(KangDeparture departure)

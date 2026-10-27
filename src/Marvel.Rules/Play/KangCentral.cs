@@ -22,11 +22,14 @@ public static class KangCentral
 
     private static void RequireLastGroupShape(World world, KangDeparture departure)
     {
-        if (world.Players != 2 || world.Seats.Any(seat => seat.Eliminated)
-            || departure.Group.Count != 2 || departure.Group.Any(play => !play.IsPlayers)
+        if (world.Players is < 1 or > 4 || world.Seats.Count != world.Players
+            || world.Seats.Any(seat => seat.Eliminated)
+            || departure.Group.Count != world.Players
+            || world.Seats.Any(seat => !departure.Group.Contains(PlayArea.Of(seat.Index)))
+            || departure.Group.Any(play => !play.IsPlayers)
             || world.GameAreaOf(PlayArea.Villains) is not null
             || world.GameAreas.Any(area => !ReferenceEquals(area, departure.Source) && area.PlayAreas.Count > 0))
-            throw new RulesNotImplementedException("Kang central reunion requires the supported two-seat last group");
+            throw new RulesNotImplementedException("Kang central reunion requires one complete participating last group");
     }
 
     private static Card RequireCentralSchemes(World world)
