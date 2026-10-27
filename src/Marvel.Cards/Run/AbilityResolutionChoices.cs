@@ -18,7 +18,8 @@ internal static class AbilityResolutionChoices
         var cast = RestoreChoice(execution, world, step);
         var choice = AbilityContinuations.Choice(execution.program, cast.Source, cast.Tier,
             step.Index, step, execution.AdmissionContext(cast));
-        return execution.DescribeChoice(cast.Source, cast.Tier, step, choice, cast);
+        var prompt = execution.DescribeChoice(cast.Source, cast.Tier, step, choice, cast);
+        return prompt is null ? null : AbilityInvocationContinuationDescription.WithContext(execution, world, step, prompt);
     }
 
     internal static IReadOnlyList<GameEvent> Chose(

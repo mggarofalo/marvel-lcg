@@ -36,7 +36,7 @@ public sealed class InvocationInteractionContractTests
             Assert.Contains($"Pay {specialCost} resources for {title}'s Special", offer.CostDescription);
             Assert.DoesNotContain("resolve", offer.CostDescription!, StringComparison.OrdinalIgnoreCase);
             Assert.Contains(title, offer.Description);
-            Assert.Contains("independently discard", offer.Description);
+            Assert.Contains($"{title}'s Special discards this Invocation and reveals the next Invocation", offer.Description);
             Assert.Contains("Later choices and interrupts", offer.Description);
         }
         Assert.Contains("Exhaust Doctor Strange", spell.CostDescription);

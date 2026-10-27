@@ -8,10 +8,10 @@ namespace Marvel.Cards.Run;
 /// <summary>Binds the public physical Invocation and its cost before paying an arrow.</summary>
 internal static class AbilityInvocationPayment
 {
-    private const string CardKey = "__invocation.card";
-    private const string CopyKey = "__invocation.incarnation";
-    private const string OwnerKey = "__invocation.owner";
-    private const string CostKey = "__invocation.cost";
+    internal const string CardKey = "__invocation.card";
+    internal const string CopyKey = "__invocation.incarnation";
+    internal const string OwnerKey = "__invocation.owner";
+    internal const string CostKey = "__invocation.cost";
 
     internal static Card? Top(World world, int player) => player >= 0 && player < world.Seats.Count
         && world.Seats[player].InvocationDeck?.PublicTop is { } top && top.Owner == player ? top : null;

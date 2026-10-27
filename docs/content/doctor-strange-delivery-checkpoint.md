@@ -46,6 +46,7 @@ ability-data, Counterspell and Strange tests. Log:
 `Source/evidence/strange-39-integrated-content-restored.log`.
 Public setup and final pack certification remain open. MARVEL-836 tracks typed
 Invocation setup; MARVEL-834 tracks native continuation meaning and layout.
+
 The three signature events have reviewed prerequisites: reveal origin
 `530f156e`, simultaneous powers and Magic Blast stage repair `00f23ff2`, and
 Astral pre-arrow target/payment/inspection continuation `1abb96a2`. Their combined
@@ -82,16 +83,20 @@ Physical Toll's next-event price and Invocation interaction meaning are independ
 reviewed and integrated at `4f1a5512`. Combined Content checks pass 1,060 cases;
 the complete View lane passes 405. Invocation
 contract tests cover captured top, resource cost, ordinary discard versus exact
-Master return, hidden order and detached snapshots; native nested context and
-staged choices remain open. Prepared native runs now reproduce the missing
-origin and pending completion consequence in the Seven Rings recipient prompt
-for both Spell Mastery and Master. MARVEL-834 tracks the narrow semantic-context
-repair and independent review. Inspected captures are under
-`Source/marvel-evidence/invocation-native/rendered7/` and `rendered8/`.
-The two paths pay and commit once, but the required nested-context assertions
-fail; later staging/result checks are not yet established. Setup/starter admission,
-complete-game and fresh-host proof also remain downstream work.
+Master return, hidden order and detached snapshots. Native continuation source
+`7ccdcd73`, copy repair `6382318c`, independent review `68ca52b6` and closure
+`c1b5656c` are integrated. The full combined View lane passes 416 cases
+(`Source/evidence/strange-invocation-context-integrated-view.log`).
 
+The lead inspected both repaired recipient captures: the named Special, paid
+parent costs, current choice and pending discard/return are visible together.
+Five of six rendered path/scale cases pass with exactly two resolves; Spell
+Mastery at 80% reveals a clipped payment resource button before submission.
+Independent review reproduces that defect on the pre-copy source. A separate
+layout implementation/review is active under MARVEL-834; no visibility assertion
+is weakened. Evidence and limitations are in
+[the context review](doctor-strange-invocation-context-review.md). Public setup,
+complete-game and fresh-host proof remain downstream work.
 The thirteen-ruling authority catalog repair `10c8cd84` was independently rechecked
 and integrated at `cfec0321`: 2,667 sources, 4,434 obligations and 685 executable
 Core scenarios. The integrated behavioral/citation selection passes 134 cases.

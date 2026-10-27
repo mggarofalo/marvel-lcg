@@ -64,6 +64,6 @@ public sealed class InvocationInteractionBoundaryReviewTests
         var ordinary = Assert.Single(presentation.Affordances,
             item => item.AnchorId == world.Seats[1].IdentityCard.ObjectId && item.Verb == "Action");
         Assert.Contains("Winds of Watoomb", ordinary.Description);
-        Assert.Contains("independently discard", ordinary.Description);
+        Assert.Contains("Winds of Watoomb's Special discards this Invocation", ordinary.Description);
     }
 }

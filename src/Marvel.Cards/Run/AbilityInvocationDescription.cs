@@ -23,14 +23,21 @@ internal static class AbilityInvocationDescription
         if (effect is not AbilityEffect.ResolveInvocation && !returns) return null;
         if (AbilityInvocationPayment.Top(world, player) is not { } top) return null;
         string summary = $"Resolve {world.Facts.Title(top.FaceId)}'s Special from your public Invocation top. Later choices and interrupts can change the result.";
+        return summary + Consequences(execution, world, top, returns);
+    }
+
+    internal static string Consequences(AbilityResolutionExecution execution, World world, Card top, bool returns)
+    {
+        string summary = string.Empty;
+        string title = world.Facts.Title(top.FaceId);
         // An unconditional final sequence instruction is independent of earlier application.
         // Do not infer self-discard from the Invocation's printed name or card kind.
         var specials = execution.On(top).Where(ability => ability.Trigger.Timing == AbilityType.Special).ToArray();
         if (specials.Length == 1 && specials[0].Effect is AbilityEffect.Sequence sequence
             && sequence.Effects.LastOrDefault() is AbilityEffect.DiscardInvocation)
-            summary += " Its instructions independently discard this Invocation and refresh the public top, even if the other effects do not apply.";
+            summary += $" {title}'s Special discards this Invocation and reveals the next Invocation, even if its other effects do not apply.";
         if (returns)
-            summary += " After its Special completes, return that exact physical Invocation faceup to the top of your Invocation deck.";
+            summary += $" After {title}'s Special completes, return that exact physical Invocation faceup to the top of your Invocation deck.";
         return summary;
     }
 }

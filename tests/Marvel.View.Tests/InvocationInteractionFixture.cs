@@ -13,7 +13,8 @@ namespace Marvel.View.Tests;
 internal static class InvocationInteractionFixture
 {
     internal static (World World, Game Game, InvocationDeck Deck, Card Master) Create(string face,
-        bool syntheticNoDiscard = false, bool syntheticReturnOtherwise = false)
+        bool syntheticNoDiscard = false, bool syntheticReturnOtherwise = false,
+        Action<AbilityRunner>? captureRunner = null)
     {
         var facts = CardCatalog.Parse(File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")));
         var book = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(
@@ -22,9 +23,8 @@ internal static class InvocationInteractionFixture
         {
             // Explicit synthetic control: retaining an Invocation does not imply self-discard.
             var row = book["cards"]!.AsArray().Single(item => item!["card"]!.GetValue<string>() == face)!;
-            row["abilities"]![0]!["effect"] = System.Text.Json.Nodes.JsonNode.Parse("""
-                {"draw":{"player":"you","count":1}}
-                """);
+            var instructions = row["abilities"]![0]!["effect"]!["seq"]!.AsArray();
+            instructions.RemoveAt(instructions.Count - 1);
         }
         if (syntheticReturnOtherwise)
         {
@@ -35,6 +35,7 @@ internal static class InvocationInteractionFixture
                 """);
         }
         var runner = new AbilityRunner(AbilityCatalog.Parse(book.ToJsonString()));
+        captureRunner?.Invoke(runner);
         var world = new World(facts, 2, 5489);
         for (int index = 0; index < 2; index++)
         {
