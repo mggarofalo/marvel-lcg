@@ -59,8 +59,8 @@ a later product executable.
 
 The executable ability book contains the 209 Core Set, 181 Rise of Red Skull,
 35 Captain America and 60 Wrecking Crew faces, plus the candidates' 57 Green
-Goblin, 34 Ms. Marvel, 35 Thor, 34 Black Widow and 40 Doctor Strange faces
-(685 total). Product admission requires complete
+Goblin, 34 Ms. Marvel, 35 Thor, 34 Black Widow, 40 Doctor Strange and 33 Hulk faces
+(718 total). Product admission requires complete
 playable content and the verified published starter; physical packaging copy
 quantities are outside that requirement. Language support for a later card pattern
 does not admit that product.
@@ -99,8 +99,21 @@ Doctor Strange has candidate public admission for all 40 printed faces
 The typed Invocation recipe has one each of 09032-09036, outside the ordinary
 40-card deck. Missing any required face or changing the pinned recipe closes
 the entire product. Extra cards 09037-09039 remain outside the starter and enter
-legal custom decks at printed copy limits. Discovery now has twelve heroes,
+legal custom decks at printed copy limits. Discovery now has thirteen heroes,
 39 scenario/mode recipes and fourteen encounter sets. Public setup and focused
 action evidence are recorded in `docs/content/doctor-strange-public-admission.md`;
 complete-game, fresh-host replay and final combined acceptance belong to the
 separate MARVEL-838 packet.
+
+
+Hulk has candidate public admission for all 33 printed faces (10001a/b and
+10002–10032). The pinned FFG divider in `datasets/rules-packs/mc09/UPSTREAM.md`
+supplies the exact 40-card starter: 15 signature, 17 Aggression and 8 Basic.
+Identity, Inner Demons (10025 ×1) and the five-card nemesis set
+(10026 ×1, 10027 ×1, 10028 ×3) are separate. Missing any required authored or
+catalog face, changed pack membership or an incorrect required recipe closes
+the complete pack. Extras 10029–10032 stay outside the starter and enter legal
+custom decks at printed copy limits. Public discovery has thirteen heroes,
+39 scenario/mode recipes and fourteen encounter sets. Focused setup/admission
+evidence is recorded in `docs/content/hulk-public-admission.md`; this candidate
+does not establish complete-game, native or final combined acceptance.

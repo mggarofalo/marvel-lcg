@@ -52,6 +52,12 @@ public static class StandaloneProductAdmission
         && setup.HeroNames.Contains("doctor_strange")
         && DoctorStrangeRecipe.Complete(setup.Hero("doctor_strange"));
 
+    /// <summary>Admits Hulk's complete face inventory and published starter.</summary>
+    public static bool Hulk(SetupCatalog setup, CardCatalog cards, IReadOnlySet<string> authored) =>
+        Complete("hlk", ["10001a", "10001b", .. Enumerable.Range(2, 31).Select(number => $"10{number:000}")], cards, authored)
+        && setup.HeroNames.Contains("hulk")
+        && HulkRecipe.Complete(setup.Hero("hulk"));
+
     private static IEnumerable<string> WreckingRecipes() =>
         FixedWreckingRecipes
         .Concat(Enumerable.Range(0, 16).Select(value => "wrecking_crew_custom_"

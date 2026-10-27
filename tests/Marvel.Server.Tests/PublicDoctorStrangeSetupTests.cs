@@ -21,7 +21,7 @@ public sealed class PublicDoctorStrangeSetupTests
         var factory = DatasetGameFactory.Load(RepositoryPaths.Root);
         var catalog = factory.DiscoverDecks();
         var hero = catalog.Heroes.Single(hero => hero.Key == "doctor_strange");
-        Assert.Equal(12, catalog.Heroes.Count);
+        Assert.Equal(13, catalog.Heroes.Count);
         Assert.Equal(40, hero.Starter.Count);
         Assert.Equal(15, hero.Signature.Count);
         Assert.True(factory.AssessDeck(hero.Key, hero.Starter).IsValid);
