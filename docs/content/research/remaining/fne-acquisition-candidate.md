@@ -89,7 +89,7 @@ contact sheet. Ten distinct faces across six numbered components were read:
 
 | Scans | Verified printed fact |
 |---|---|
-| `60065-1.jpg` | Bullseye, villain stage 0; footer position 1/14. |
+| `60065-1.jpg` | Bullseye, villain stage I; footer position 1/14. |
 | `60068a-1.jpg`, `60068b-1.jpg` | Adamantium-Laced Spine / Damaged Spine; both footer position 4/14; printed numbers 68A / 68B. |
 | `60071-1.jpg`, `60071_2-1.jpg`, `60071_3-1.jpg` | Incessant Pursuit; same printed card number 71, consecutive footer positions 7/14, 8/14 and 9/14. These establish three copies for this sampled face. |
 | `60110a.jpg`, `60110b.jpg` | Typhoid Mary / Bloody Mary, villain faces; both footer position 1/15, printed 110A / 110B. |
