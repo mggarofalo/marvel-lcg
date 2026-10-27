@@ -103,10 +103,12 @@ internal static class AbilityStructuralPowerExecution
         IReadOnlyList<Card>? ordered = null)
     {
         Card? against = activation.Against is { } named ? Find(named, context) : null;
-        int seat = ActivationSeat(context, activation);
+        int seat = ActivationSeat(context, activation, against);
         if (seat < 0)
             return new Unsupported(
                 $"'{context.SourceFace}' initiates an enemy attack against a character with no attacked player");
+        if (!HasCurrentActivationTarget(activation, against))
+            return new Unsupported($"'{context.SourceFace}' cannot resolve its explicit attacked character");
 
         var enemies = ordered ?? ActivationCandidates(context, activation);
         if (enemies.Count > 1 && ordered is null)
@@ -118,8 +120,15 @@ internal static class AbilityStructuralPowerExecution
             activation.First, activation.Dynamic);
     }
 
+    // An omitted target uses the attacked identity. A retained explicit target
+    // must still be that in-play incarnation; it never authorizes a substitute.
+    private static bool HasCurrentActivationTarget(
+        AbilityEffect.ActivateEnemies activation, Card? against) =>
+        activation.Against is null
+            || (against is not null && DeckTypes.IsInPlay(against.Area.Type));
+
     private static int ActivationSeat(
-        AbilityStructuralContext context, AbilityEffect.ActivateEnemies activation) =>
+        AbilityStructuralContext context, AbilityEffect.ActivateEnemies activation, Card? against) =>
         activation.Against switch
         {
             AbilityCardSelection.Bound { Binding: AbilityCardBinding.Defeater } =>
@@ -128,7 +137,11 @@ internal static class AbilityStructuralPowerExecution
                 context.Expressions.Occurrence.ActorFacts?.Controller ?? World.Scenario,
             AbilityCardSelection.Bound { Binding: AbilityCardBinding.TriggerTarget } =>
                 context.Expressions.Occurrence.TargetFacts?.Controller ?? World.Scenario,
-            _ => context.Player,
+            // rr:attack-enemy-activation.1.1: an ability may attack "an ally that
+            // player controls". Ordinary selections use the current controller;
+            // occurrence bindings above retain their captured causal controller.
+            _ => against is null ? context.Player
+                : CardControl.ControllerOf(context.Expressions.World, against),
         };
 
     private static ImmutableArray<ActivationTarget> ActivationTargets(

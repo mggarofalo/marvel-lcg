@@ -23,6 +23,7 @@ Reviewed packets assembled here:
 | P2 / MARVEL-845 | `08619549` | `0919e81d` | Basic attack occurrence grants overkill only to that attack |
 | Basic / MARVEL-848 | `fc9a01b6` | `52ec4dd2` | Actual10020–10024; 8 Hulk faces total, book693 |
 | Q3 / MARVEL-853 | `f45a6d39`, repair `697de00b` | finding `acb92681`, closure `e2a5d352` | Explicit live hand-resource eligibility before and during contribution |
+| Selected target / MARVEL-852 | `fd23bf88`, repair `b001e377` | finding `1c6f36fa`, closure `2bccd3fb` | Current controller owns chosen target's attack; stale explicit targets never substitute resolver |
 
 Source/reviewer evidence is in each packet document; it is not a claim of
 complete pack acceptance. Combined local Release verification passes153 Content tests spanning Hulk,
@@ -36,15 +37,22 @@ Log: `Source/evidence/hulk-integrated-basic-hand-resource.log`. The two Basic
 and Q3 review packets are accepted for this local dependency assembly. Actual
 Limitless Strength and the remaining signature rows are still unauthored.
 
+The selected-target repair also passes **236** combined activation, attack-chain,
+selected-character and citation cases. Log:
+`Source/evidence/hulk-integrated-selected-owner.log`. No full ranked-pair or
+actual Clash acceptance is implied by that result.
+
 ## Outstanding bounded packets
 
-- MARVEL-852: selected character's controlling-player activation seat, then
-  retained ranked enemy/hero-or-ally pair composition. Source `fd23bf88` fixes
-  the selected-seat gap. Reviewer `1c6f36fa` demonstrates a further stale explicit
-  target falling back to the resolver after leave/reentry during enemy ordering;
-  source repair and independent closure remain required. The two-choice binding
-  limitation is traced evidence, not completed actual Clash behavior.
-- MARVEL-846: remaining signature faces10002,10003,10005–10010 (8).
+- MARVEL-852: ranked enemy/hero-or-ally pair composition. The selected target
+  ownership and stale target repairs are independently closed and integrated.
+  The next source packet demonstrates that an enemy tie is currently ordered as
+  multiple attacks rather than one selected attack; a narrow first-player
+  select-one policy is under implementation. Full Clash stun/surge remains open.
+- MARVEL-846: seven signature faces 10002,10003,10006–10010 are authored in
+  `86412c83` and under independent review; they are not yet integrated here.
+  Thunderclap 10005 remains a separate ordinary-damage recipient-group engine
+  prerequisite and actual-card authoring task. The eight-face item is incomplete.
 - MARVEL-847: starter allies/aspect faces10011–10019 (9).
 - MARVEL-849: obligation/nemesis faces10025–10028 (4).
 - MARVEL-850: customization faces10029–10032 (4).
