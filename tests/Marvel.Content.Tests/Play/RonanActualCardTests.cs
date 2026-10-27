@@ -19,8 +19,8 @@ public sealed class RonanActualCardTests : CoreCardTestBase
     {
         using var data = JsonDocument.Parse(File.ReadAllText(RepositoryPaths.Dataset("abilities", "abilities.json")));
         var rows = data.RootElement.GetProperty("cards").EnumerateArray().ToArray();
-        Assert.Equal(721, rows.Length);
-        Assert.Equal(["90001", "90003", "90005"], rows.Select(row => row.GetProperty("card").GetString()!)
+        Assert.Equal(722, rows.Length);
+        Assert.Equal(["90001", "90003", "90005", "90002"], rows.Select(row => row.GetProperty("card").GetString()!)
             .Where(face => Cards.Pack(face) == "ron"));
         Assert.Equal("Kang (The Conqueror)", Cards.Title("11001"));
         Assert.DoesNotContain("11001", AuthoredCards.Book.Authored);

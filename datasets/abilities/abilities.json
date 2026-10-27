@@ -22677,6 +22677,48 @@
           }
         }
       ]
+    },
+    {
+      "card": "90002",
+      "name": "Judge, Jury, Executioner",
+      "note": "Printed authority: joined cards.json 90002. Exact attack-damage recipients and defeat receipts retain friendly controller facts across departure and identity elimination. Boost uses ordinary side-scheme entry. DSL spellings are engine choices.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenDamageDealt",
+            "timing": "ForcedResponse",
+            "subject": "game",
+            "actor": "enemy",
+            "alsoHappened": "WhenCardDefeated",
+            "player": "trigger.player",
+            "target": "friendly"
+          },
+          "effect": {
+            "placeThreat": {
+              "scheme": {
+                "query": "mainScheme"
+              },
+              "amount": 2
+            }
+          },
+          "when": {
+            "damageFromAttack": "trigger"
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "Boost",
+            "subject": "this"
+          },
+          "effect": {
+            "putIntoPlay": {
+              "card": "this",
+              "where": "printedDestination"
+            }
+          }
+        }
+      ]
     }
   ]
 }

@@ -165,7 +165,7 @@ public sealed class RonanJudgeDefeatReceiptTests
     public void EnemyRetaliationDoesNotCountAsAnEnemyAttackDefeat()
     {
         // Retaliate is a "Forced Response" that deals damage to the attacker.
-        var f = new RonanJudgeProbeFixture("WhenDamageDealt");
+        var f = new RonanJudgeProbeFixture();
         var identity = f.World.Seats[1].IdentityCard;
         identity.TakeDamage(9);
         f.World.Effects.Register(new ContinuousEffect(EffectSource.LastingEffect,

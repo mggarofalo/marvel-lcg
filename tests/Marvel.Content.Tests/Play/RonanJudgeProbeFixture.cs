@@ -10,7 +10,7 @@ using Xunit;
 
 namespace Marvel.Content.Tests.Play;
 
-/// <summary>Unsupported, nonpublic 90002 prototype with synthetic receipt observers.</summary>
+/// <summary>Nonpublic actual 90002 board with synthetic receipt observers and optional trigger-composition probes.</summary>
 internal sealed class RonanJudgeProbeFixture : CoreCardTestBase
 {
     internal World World { get; } = new(Cards, 2);
@@ -21,15 +21,15 @@ internal sealed class RonanJudgeProbeFixture : CoreCardTestBase
     internal Card Observer { get; }
     internal Card Judge { get; }
 
-    internal RonanJudgeProbeFixture(string triggerEvent = "WhenAttackEnds", string? extraCards = null)
+    internal RonanJudgeProbeFixture(string? triggerEvent = null, string? extraCards = null, int observerPlayer = 0)
     {
-        // Printed authority: datasets/cards/cards.json, 90002. This prototype is
-        // injected into the full book only here; it does not admit Kree Fanatic.
+        // Default uses the actual 90002 row. Explicit event variants exercise the
+        // existing trigger composition without admitting Kree Fanatic.
         // Event/role spellings and the observer counters are engine/test choices.
         var local = AbilityCatalog.Parse($$$$"""
             {"cards":[
               {"card":"90002","abilities":[{
-                "trigger":{"event":"{{{{triggerEvent}}}}","alsoHappened":"WhenCardDefeated",
+                "trigger":{"event":"{{{{triggerEvent ?? "WhenDamageDealt"}}}}","alsoHappened":"WhenCardDefeated",
                   "timing":"ForcedResponse","subject":"game","actor":"enemy","player":"trigger.player"},
                 "when":{"and":[{"damageFromAttack":"trigger"},{"or":[{"isKind":{"card":"defeated","kind":"ally"}},
                   {"isYourIdentity":"defeated"}]}]},
@@ -57,7 +57,10 @@ internal sealed class RonanJudgeProbeFixture : CoreCardTestBase
         {
             Authored = new HashSet<string>(AuthoredCards.Book.Authored.Concat(["90002"])),
             Abilities = [.. AuthoredCards.Book.Abilities.Where(row => row.Card is not ("90002" or "01008") && !replaced.Contains(row.Card)),
-                .. local.Abilities, .. extra.Abilities],
+                .. (triggerEvent is null
+                    ? AuthoredCards.Book.Abilities.Where(row => row.Card == "90002")
+                    : local.Abilities.Where(row => row.Card == "90002")),
+                .. local.Abilities.Where(row => row.Card == "01008"), .. extra.Abilities],
         });
         World.Abilities = Runner;
         for (int player = 0; player < 2; player++)
@@ -70,7 +73,7 @@ internal sealed class RonanJudgeProbeFixture : CoreCardTestBase
         Main = World.CreateCard("01097b", World.AreaOf(DeckType.MainSchemesArea));
         for (int card = 0; card < 12; card++)
             World.CreateCard("01098", World.AreaOf(DeckType.EncounterDeck));
-        Observer = World.CreateCard("01008", World.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), cardOwner: 0));
+        Observer = World.CreateCard("01008", World.AreaOf(DeckType.UpgradesArea, PlayArea.Of(observerPlayer), cardOwner: observerPlayer));
         Judge = World.CreateCard("90002", World.AreaOf(DeckType.DealtEncounterCardsDeck, PlayArea.Of(1)));
         World.Agenda.Add(new PhaseStep(new RevealStageOperation(RevealStageKind.RevealEncounterCard),
             1, 4, Subject: Judge.ObjectId, Seat: 1));
