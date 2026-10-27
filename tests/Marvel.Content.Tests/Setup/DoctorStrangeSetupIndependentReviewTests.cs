@@ -56,13 +56,17 @@ public sealed class DoctorStrangeSetupIndependentReviewTests
         Assert.Empty(events);
     }
 
-    [Fact]
-    public void PartialIdentityCannotHideMissingInvocationDeck()
+    [Theory]
+    [InlineData("09001a", false)]
+    [InlineData("09001b", false)]
+    [InlineData("09001a", true)]
+    [InlineData("09001b", true)]
+    public void PartialIdentityCannotBypassInvocationComposition(string identityFace, bool includeDeck)
     {
         // mc08: Doctor Strange "begins each game with a special, five-card Invocation deck".
         var blueprints = DoctorStrangeSetupFixture.Blueprints(1)
-            .Where(card => card.Slot != SetupSlot.InvocationDeck)
-            .Select(card => card.Slot == SetupSlot.Identity ? card with { Spec = "09001b" } : card).ToArray();
+            .Where(card => includeDeck || card.Slot != SetupSlot.InvocationDeck)
+            .Select(card => card.Slot == SetupSlot.Identity ? card with { Spec = identityFace } : card).ToArray();
         var events = new List<GameEvent>();
         Assert.Throws<ArgumentException>(() => WorldSetup.DealWithoutCardAbilities(
             PrintedCards, blueprints, ["Strange"], 9381, events));

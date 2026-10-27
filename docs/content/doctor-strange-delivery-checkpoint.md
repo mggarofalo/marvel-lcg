@@ -15,7 +15,7 @@ review `be3bc369` are combined with owner-discard source `43c0b046`, elimination
 reset repair `a6bb7ddd` and independent closure `7cdb2e23`. All 672 predecessor
 ability objects are retained unchanged. Public admission stays closed.
 
-Counterspell source `4f02211c` supplies the final actual row; independent review is pending. Actual Desperate Defense,
+Counterspell source `4f02211c` and independent review `0917fd23` supply the final actual row. Actual Desperate Defense,
 Physical Toll and Open the Dark Dimension source `99d4b16e` and independent
 review `23dd5ada` are integrated, preserving all 679 predecessor raw objects.
 Canonical fixtures now exercise these production rows, including queued defense,
@@ -46,8 +46,10 @@ ability-data, Counterspell and Strange tests. Log:
 `Source/evidence/strange-39-integrated-content-restored.log`.
 The complete authored book plus typed setup integration passes all 321 selected
 Content cases (`Source/evidence/strange-40-setup-integrated-content.log`).
-Source preserves all 684 predecessor raw objects byte-identically. Counterspell
-independent review and setup repair closure remain pending. Public setup and
+Source preserves all 684 predecessor raw objects byte-identically. After both
+independent closure packets, the combined selection passes 326 cases
+(`Source/evidence/strange-40-reviewed-final-content.log`). Counterspell
+independent review and setup repair closure `a058bf6d` are accepted. Public setup and
 final pack certification remain open; MARVEL-834 tracks native continuation
 meaning and layout.
 
@@ -104,7 +106,8 @@ visible; the same geometry exists in the pre-fix capture. Integrated affected
 managed checks pass eight cases, including the repaired reveal-origin fixture
 (`Source/evidence/strange-payment-layout-integrated-managed.log`).
 See [layout review](doctor-strange-invocation-payment-scale-review.md).
-Public setup, complete-game and fresh-host proof remain downstream work.
+Public setup is being implemented under MARVEL-837; complete-game and fresh-host
+proof follow under MARVEL-838. Both remain required before pack acceptance.
 The thirteen-ruling authority catalog repair `10c8cd84` was independently rechecked
 and integrated at `cfec0321`: 2,667 sources, 4,434 obligations and 685 executable
 Core scenarios. The integrated behavioral/citation selection passes 134 cases.

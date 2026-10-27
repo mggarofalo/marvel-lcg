@@ -57,6 +57,60 @@ that process was stopped. `restored-tests.log` hit its locked executable.
 had passed); the later finite detailed and restored selections above completed.
 All those PTYs are harvested. Normal pre-commit hooks remain enabled.
 
-Independent review, public setup/admission, save/restart, native interaction and
-whole-pack evidence remain downstream work. Forty authored research faces alone
+Public setup/admission, save/restart, native interaction and whole-pack evidence
+remain downstream work. Forty authored research faces alone
 do not establish a publicly playable pack.
+
+## Independent actual-row review
+
+Reviewed source `4f02211c514b3e456c01315c18530ec04f63832a` on
+`review/strange-counterspell-row`, using the pack-delivery review workflow.
+Verdict: accept the actual 09030 research row and canonical fixture migration.
+This review changes tests and this record only; it admits no public product.
+
+Independent inspection compared the actual JSON with generated printed 09030,
+current RR 1.8 `and.1-.2`, `then.1-.2`, `event.2`, `status-cards.2`,
+`ability.8.1`, `ability.12-.13`, and the local Counterspell rulings. The older
+alter-ego, attached-player and status-priority answers agree with the current
+rules. The queried MarvelCDB FAQ corpus contains no Counterspell-specific entry.
+Hero-only attachment does not add a Hero qualifier to the later Forced Interrupt.
+
+The independent raw-object parser confirms exactly 685 rows, one appended 09030,
+and byte-identical preservation of all 684 preceding JSON objects, including the
+previously recorded SHA-256. The candidate JSON is absent. Canonical fixtures
+load the actual book; explicit synthetic replacements retain their programs
+through attachment. The unknown-card controls remain unauthored and strict
+duplicate-row rejection remains tested.
+
+`CounterspellActualRowReviewTests` adds two actual Astral Projection cases on the
+non-first seat. Both pay the resource and choose the scheme before the arrow.
+Confusion consumes the thwart and retains Counterspell; unrelated stun remains
+while Counterspell cancels the event. Neither removes threat or opens the private
+encounter inspection prompt. The latter uses the reverse independent AND order.
+These cases complement the existing actual Magic Blast, alter-ego, other-seat,
+Invocation/Master, competing-copy and explicit synthetic branch controls.
+
+Independent external evidence is under
+`C:/Users/mggar/Source/strange-counterspell-row-review/`:
+
+- `authority-preservation.log`: printed row, local ruling records and raw-object
+  preservation check.
+- `baseline.log` / `baseline.trx`: 293 passed; all 33 concrete AbilityData cases
+  are present and passed.
+- `new.log` / `new.trx`: both added cases passed.
+- `subject-mutant.log` / `subject-mutant.trx`: changing only actual 09030's
+  trigger subject from `you` to `this` loads and fails the unrelated-stun case by
+  reaching the forbidden inspection prompt; the confusion control passes
+  (1 failed / 1 passed). Original book bytes are restored in a finally block.
+- `restored-build.log`: nonincremental Release Content test-project build,
+  zero warnings/errors.
+- `restored-final.log` / `restored-final.trx`: 314 passed, zero failed/skipped.
+  Whole-class selection includes DoctorStrange, Counterspell, EventPlay,
+  AbilityData, RuleCitation, NestedPower, SelectedPower and the four affected
+  BlackWidow inventory classes (BurnNotice, FinalResponseCard, PreparationCard,
+  PreventionInventory).
+- `cards-check.log`: offline cards/search generator parity passed.
+
+All test PTYs are harvested and the book diff is empty after restoration.
+Normal commit hooks remain enabled. This bounded review makes no full-suite,
+public setup, save/restart, native interaction or whole-pack certification claim.

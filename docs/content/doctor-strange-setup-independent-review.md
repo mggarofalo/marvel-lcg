@@ -59,3 +59,53 @@ queue origin already represented in its physical setup. Its three existing
 meaning/privacy assertions pass unchanged. The initial build required adding
 the Timing namespace; the restored run passes. Evidence:
 `Source/evidence/strange-godot-reveal-origin-fixture-restored.log`.
+
+## Independent closure review
+
+Reviewed integrated production revision: `b0847e10cb2cf82ccd7e128ba60838ddef7e9263`
+from `review/strange-setup-closure` in the isolated
+`C:/Users/mggar/Source/marvel-strange-setup-closure` worktree. Verdict: accepted
+for the typed setup prerequisite. The sole production repair relative to the
+reviewed `a8e71f5b` Invocation validator recognizes either exact Strange face;
+the exact paired identity, exact five single Invocations, selected owner and
+separate-slot checks remain intact. Validation still precedes `new World`,
+card/area allocation and setup events. No public admission, canonical setup,
+ability book, engine source or existing expected result changes were made by
+this closure reviewer.
+
+The original single-face/no-deck regression is retained within
+`PartialIdentityCannotBypassInvocationComposition`, now parameterized over both
+`09001a` and `09001b`, each with and without the five-card block. All four
+malformed identities reject with no emitted setup events. The complete Doctor
+Strange setup, independent review, compatibility and Content rule-citation filter
+passes 33/33 cases on the integrated sources plus these reviewer controls. The
+prior immutable-input, physical binding, exact composition and accepted-product
+fingerprint/RNG assertions remain unchanged. Existing compiled-mutant evidence
+above remains applicable; this closure introduces no production decision.
+
+The encounter-replacement fixture correction matches the production
+`RevealNextEncounterCard` operation: the origin names the same physical card as
+`Subject`, records its actual dealt-encounter queue, and marks that queued card
+as dealt. This supplies the required causal fact rather than bypassing the
+engine qualifier. All three existing meaning/privacy cases pass with their
+assertions unchanged. This is managed fixture verification, not native or
+whole-product acceptance.
+
+Closure commands (Release) and external evidence:
+
+- `dotnet test tests/Marvel.Content.Tests/Marvel.Content.Tests.csproj --filter
+  'FullyQualifiedName~DoctorStrangeSetup|FullyQualifiedName~RuleCitationTests'`:
+  33 passed; `C:/Users/mggar/Source/strange-setup-closure-content.log`.
+- `dotnet test tests/Marvel.Godot.Tests/Marvel.Godot.Tests.csproj --filter
+  'FullyQualifiedName~EncounterReplacementMeaningTests'`: 3 passed;
+  `C:/Users/mggar/Source/strange-setup-closure-godot-meaning.log`.
+
+The final reviewer test rename was rebuilt and all 9 independent review cases
+pass (`C:/Users/mggar/Source/strange-setup-closure-controls.log`). Normal commit
+hooks are captured in `C:/Users/mggar/Source/strange-setup-closure-commit.log`.
+
+The prerequisite evidence document now decodes with a strict UTF-8 decoder;
+its multiplication signs, en/em dashes and curly punctuation are intact, with
+no replacement characters or common mojibake sequences. The prior encoding
+finding is closed. Public pack admission, complete gameplay, save/replay and
+native acceptance remain outside this prerequisite verdict.
