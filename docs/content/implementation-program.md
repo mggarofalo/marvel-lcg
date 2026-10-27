@@ -191,8 +191,8 @@ Ant-Man/Wasp explicit three-face engine selection is independently verified as a
 nonpublic prerequisite (MARVEL-861). Ability-driven form timing and face-specific
 DSL/projections remain separate work under MARVEL-862; no pack admission is claimed.
 
-Fear No Evil has 201 pinned scans. Bullseye, Electro, Hammerhead and Typhoid Mary
-transcriptions are independently accepted: 47 missing faces across 61 inspected
+Fear No Evil has 201 pinned scans. Bullseye, Electro, Hammerhead, Typhoid Mary and Purple Man
+transcriptions are independently accepted: 60 missing faces across 76 inspected
 originals. Further families are being transcribed and reviewed. Annotation import
 repair `8cf73d30` is independently accepted but not yet merged; no new Fear No Evil
 card dataset or runtime admission is claimed.
