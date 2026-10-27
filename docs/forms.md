@@ -32,7 +32,7 @@ has the form `<name> form`. Prose that merely mentions a form is not a keyword.
 `rr:form-change-form.1` permits one voluntary identity change during a player's
 turn each round. The engine separates the operation from the permission:
 
-- `Forms.Change` flips the identity and leaves the rest of the card unchanged.
+- `Forms.Change` changes the identity face and leaves the rest of the card unchanged.
 - the `Change_Form` affordance checks and records `Seat.FormChangedInRound`.
 
 The separation implements `rr:form-change-form.3`: a card ability that changes
@@ -57,12 +57,21 @@ through `Forms.ChangeAdditional`. A card ability must still supply the printed
 condition that permits the change. No isolated expansion card is admitted to
 the executable catalog merely because this general operation exists.
 
-`Forms.Change` refuses an identity with more than two faces. The Rules
-Reference defines what counts as flipping a foldable card, but the general rule
-does not decide which hero face a change from alter-ego reaches. The engine
-raises `RulesNotImplementedException` instead of choosing a face. Supporting a
-product with such an identity requires its product rules, setup data, card
-abilities, and behavioral scenes to cross the boundary together.
+`Forms.Destinations` lists the other identity faces. For an identity with more
+than two faces, the voluntary turn offers one explicit destination per offer.
+The mc12 and mc13 rules clarifications permit alter-ego to either hero, either
+hero to alter-ego, and one hero to the other. The selected offer changes to that
+exact face. The destination overload of `Forms.Change` rejects the current face,
+a foreign face, or a nonidentity face before mutation. The overload without a
+destination still refuses more than two faces rather than guessing.
+
+The existing `Affordance.Label` carries the destination face id for a three-face
+offer; `DisplayLabel` and `CommitLabel` describe it. This is an engine-selected
+semantic address, using the existing replay tuple. Two-face offers retain their
+existing label, handle allocation and toggle behavior. No new wire or digest
+field is introduced. This nonpublic engine prerequisite does not admit Ant-Man
+or Wasp: their setup, complete card abilities, face-specific DSL projections and
+client interaction remain separate work. See [the evidence record](content/three-face-forms-evidence.md).
 
 ## State contract
 

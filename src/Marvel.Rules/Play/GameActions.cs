@@ -27,13 +27,13 @@ internal static class GameActions
     /// </para>
     /// <para>
     /// <c>rr:form-change-form.3</c> is why this counter lives on the seat and
-    /// not inside <see cref="Forms.Change"/>: "if a card ability causes a player
+    /// not inside <see cref="Forms.Change(Seat, ICardFacts)"/>: "if a card ability causes a player
     /// to change forms, it does not count against the one voluntary form change
     /// the player is permitted". An ability calls the flip without touching the
     /// count, so the count belongs to the permission and not to the flip.
     /// </para>
     /// </remarks>
-    internal static Resolution ChangeFormNow(this Game game)
+    internal static Resolution ChangeFormNow(this Game game, Decision input)
     {
         var seat = game.world.Seats[game.Active];
         if (seat.FormChangedInRound == game.Round)
@@ -43,7 +43,8 @@ internal static class GameActions
                 + "rr:form-change-form.1 permits one voluntary change each round");
         }
 
-        string was = Forms.ChangeAndSchedule(game.world, seat, game.facts, game.Round);
+        string was = Forms.ChangeAndSchedule(game.world, seat, game.facts, game.Round,
+            GameFormChanges.Destination(game, input));
         seat.FormChangedInRound = game.Round;
 
         var happened = new List<GameEvent>
