@@ -34,6 +34,7 @@ func _run() -> void:
     print("NATIVE_CONTRACT_STAGE ready " + contract)
     var passed := false
     match contract:
+        "beat-cop-move", "beat-cop-damage": passed = await preload("res://smoke/native_beat_cop_contract.gd").run(self)
         "widow-safe-house", "widow-preparation": passed = await preload("res://smoke/native_widow_contract.gd").run(self)
         "lightning-payment": passed = await preload("res://smoke/native_lightning_contract.gd").run(self)
         "heimdall-order": passed = await preload("res://smoke/native_heimdall_contract.gd").run(self)

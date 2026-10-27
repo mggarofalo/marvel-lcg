@@ -19,15 +19,15 @@ public sealed class RuntimeProductAdmissionTests
             Assert.Contains(factory.DiscoverSetup().Heroes, hero => hero.Key == "hawkeye");
             Assert.DoesNotContain(factory.DiscoverSetup().Heroes, hero => hero.Key == "research_hero");
             Assert.DoesNotContain(factory.DiscoverSetup().Scenarios, scenario => scenario.Key == "research_scenario");
-            Assert.DoesNotContain(factory.DiscoverDecks().Cards, card => card.Face is "10003" or "10024");
+            Assert.DoesNotContain(factory.DiscoverDecks().Cards, card => card.Face is "12003" or "12024");
             var hero = factory.DiscoverDecks().Heroes.Single(hero => hero.Key == "spider_man");
-            string[] draft = [.. hero.Starter, "10024"];
+            string[] draft = [.. hero.Starter, "12024"];
             Assert.False(factory.AssessDeck(hero.Key, draft).CanExtend);
             Assert.False(factory.AssessCampaignDeck(hero.Key, draft, []).CanExtend);
-            Assert.False(factory.DeckQuantities(hero.Key, hero.Signature).ContainsKey("10024"));
-            Assert.False(factory.CampaignDeckQuantities(hero.Key, hero.Signature, []).ContainsKey("10024"));
+            Assert.False(factory.DeckQuantities(hero.Key, hero.Signature).ContainsKey("12024"));
+            Assert.False(factory.CampaignDeckQuantities(hero.Key, hero.Signature, []).ContainsKey("12024"));
             var research = Enumerable.Range(0, 5).SelectMany(page => factory.BrowseCards(page).Cards);
-            Assert.False(Assert.Single(research, card => card.Face == "10024").RuntimeSupported);
+            Assert.False(Assert.Single(research, card => card.Face == "12024").RuntimeSupported);
             Assert.Throws<ArgumentException>(() => factory.Create(
                 new GameSpecification("rhino", [hero.Key], [], 7, [new(draft)])));
             var store = new MemorySessionStore();
@@ -51,7 +51,7 @@ public sealed class RuntimeProductAdmissionTests
         {
             string path = Path.Combine(root, "datasets", "setup", "setup.json");
             var setup = JsonNode.Parse(File.ReadAllText(path))!;
-            setup["heroes"]!["spider_man"]!["player_deck"]!.AsArray().Add("10024");
+            setup["heroes"]!["spider_man"]!["player_deck"]!.AsArray().Add("12024");
             File.WriteAllText(path, setup.ToJsonString());
             var error = Assert.Throws<ArgumentException>(() => DatasetGameFactory.Load(root));
             Assert.Contains("outside the admitted executable content", error.Message);
@@ -74,16 +74,16 @@ public sealed class RuntimeProductAdmissionTests
             var setup = JsonNode.Parse(File.ReadAllText(setupPath))!;
             // Synthetic ownership recipes, not a claim about the pack's starter or scenario.
             var hero = setup["heroes"]!["spider_man"]!.DeepClone();
-            hero["hero"] = new JsonArray("10001a,10001b");
+            hero["hero"] = new JsonArray("12001a,12001b");
             setup["heroes"]!["research_hero"] = hero;
             var scenario = setup["campaigns"]!["rhino"]!.DeepClone();
-            scenario["villain"] = new JsonArray("10028");
+            scenario["villain"] = new JsonArray("12028");
             setup["campaigns"]!["research_scenario"] = scenario;
             File.WriteAllText(setupPath, setup.ToJsonString());
             string abilityPath = Path.Combine(root, "datasets", "abilities", "abilities.json");
             var abilities = JsonNode.Parse(File.ReadAllText(abilityPath))!;
             var authored = abilities["cards"]!.AsArray();
-            foreach (string face in new[] { "10001a", "10001b", "10003", "10024", "10028" })
+            foreach (string face in new[] { "12001a", "12001b", "12003", "12024", "12028" })
                 if (!authored.Any(card => card!["card"]!.GetValue<string>() == face))
                     authored.Add(new JsonObject { ["card"] = face, ["abilities"] = new JsonArray() });
             File.WriteAllText(abilityPath, abilities.ToJsonString());
@@ -91,7 +91,7 @@ public sealed class RuntimeProductAdmissionTests
             {
                 string cardPath = Path.Combine(root, "datasets", "cards", "cards.json");
                 var cards = JsonNode.Parse(File.ReadAllText(cardPath))!;
-                foreach (var card in cards["cards"]!.AsArray().Where(card => card!["pack"]!.GetValue<string>() == "hlk"))
+                foreach (var card in cards["cards"]!.AsArray().Where(card => card!["pack"]!.GetValue<string>() == "ant"))
                     card!["pack"] = "unreviewed-product";
                 File.WriteAllText(cardPath, cards.ToJsonString());
             }

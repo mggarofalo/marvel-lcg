@@ -51,7 +51,8 @@ internal static class AbilityChoicePromptDescription
     private static string? DescribePrompt(AbilityStructuralContext context, AbilityEffect choice)
     {
         string? summary = choice is AbilityEffect.ChooseCard card
-            ? AbilityDamageTransferDescription.Summary(context, card) ?? AbilityEffectDescription.Summary(card)
+            ? AbilityDamageTransferDescription.Summary(context, card)
+                ?? AbilitySourceThreatDescription.Summary(context, card) ?? AbilityEffectDescription.Summary(card)
             : null;
         return context.Expressions.FinalStep ? $"Final step. {summary}".TrimEnd() : summary;
     }

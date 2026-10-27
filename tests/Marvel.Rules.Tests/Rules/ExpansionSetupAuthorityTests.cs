@@ -40,7 +40,7 @@ public sealed class ExpansionSetupAuthorityTests
             "setup:encounter-set:goblin_gimmicks",
             "setup:encounter-set:hydra_assault", "setup:encounter-set:hydra_patrol",
             "setup:encounter-set:power_drain", "setup:encounter-set:running_interference", "setup:encounter-set:weapon_master", "setup:hero:black_widow", "setup:hero:captain_america",
-            "setup:hero:doctor_strange", "setup:hero:hawkeye", "setup:hero:ms_marvel", "setup:hero:spider_woman", "setup:hero:thor",
+            "setup:hero:doctor_strange", "setup:hero:hawkeye", "setup:hero:hulk", "setup:hero:ms_marvel", "setup:hero:spider_woman", "setup:hero:thor",
         };
         var expansion = Catalog.Build().Sources.Where(source =>
             source.Kind == "setup" && source.Disposition == "outside-core").ToArray();
@@ -61,6 +61,7 @@ public sealed class ExpansionSetupAuthorityTests
         "setup:hero:captain_america" => "Captain America hero pack",
         "setup:hero:ms_marvel" => "Ms. Marvel hero pack",
         "setup:hero:doctor_strange" => "Doctor Strange hero pack",
+        "setup:hero:hulk" => "Hulk hero pack",
         "setup:hero:thor" => "Thor hero pack",
         "setup:encounter-set:a_mess_of_things" or "setup:encounter-set:goblin_gimmicks"
             or "setup:encounter-set:power_drain" or "setup:encounter-set:running_interference" or "setup:campaign:risky_business" or "setup:campaign:risky_business_expert"

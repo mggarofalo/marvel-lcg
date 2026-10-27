@@ -47,6 +47,6 @@ public sealed class PublicDoctorStrangeCustomDeckTests
         var quantities = factory.DeckQuantities(hero.Key, hero.Signature);
         Assert.Equal([0], quantities["09001a"]);
         Assert.Equal([0], quantities["09001b"]);
-        Assert.False(quantities.ContainsKey("10001a"));
+        Assert.False(quantities.ContainsKey("12001a"));
     }
 }

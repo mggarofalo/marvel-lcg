@@ -6,7 +6,7 @@ expansion is excluded from public discovery as a whole.
 
 `RuntimeProductAdmission` owns the closed accepted-product policy: Core Set,
 Rise of Red Skull, Captain America, Wrecking Crew and the complete Green Goblin,
-Ms. Marvel, Thor, Black Widow and Doctor Strange integration candidates. Merely adding an authored ability or setup
+Ms. Marvel, Thor, Black Widow, Doctor Strange and Hulk integration candidates. Merely adding an authored ability or setup
 recipe does not admit another product. Unaccepted product-owned recipes are excluded; a retained accepted recipe that references an unavailable face
 still fails validation. The same admitted face set controls discovery, research
 cards' runtime-support flags, deck assessment and game creation.
@@ -24,7 +24,7 @@ The file has 3 groups:
 | Group | Admitted rows | Declared rows |
 |---|---:|---:|
 | `campaigns` | 39 Core Set, Rise of Red Skull, Wrecking Crew and Green Goblin scenario/mode combinations | 39 |
-| `heroes` | 12 Core Set, Rise of Red Skull, Captain America, Ms. Marvel, Thor, Black Widow and Doctor Strange starter decks | 12 |
+| `heroes` | 13 Core Set, Rise of Red Skull, Captain America, Ms. Marvel, Thor, Black Widow, Doctor Strange and Hulk starter decks | 13 |
 | `encounter_sets` | 14 Core Set, Rise of Red Skull and Green Goblin fixed/modular sets | 14 |
 
 Ms. Marvel is admitted as a complete integration candidate. Her 40-card starter,
@@ -296,8 +296,21 @@ Doctor Strange has candidate public admission for all 40 printed faces
 The typed Invocation recipe has one each of 09032-09036, outside the ordinary
 40-card deck. Missing any required face or changing the pinned recipe closes
 the entire product. Extra cards 09037-09039 remain outside the starter and enter
-legal custom decks at printed copy limits. Discovery now has twelve heroes,
+legal custom decks at printed copy limits. Discovery now has thirteen heroes,
 39 scenario/mode recipes and fourteen encounter sets. Public setup and focused
 action evidence are recorded in `docs/content/doctor-strange-public-admission.md`;
 complete-game, fresh-host replay and final combined acceptance belong to the
 separate MARVEL-838 packet.
+
+
+Hulk has candidate public admission for all 33 printed faces (10001a/b and
+10002–10032). The pinned FFG divider in `datasets/rules-packs/mc09/UPSTREAM.md`
+supplies the exact 40-card starter: 15 signature, 17 Aggression and 8 Basic.
+Identity, Inner Demons (10025 ×1) and the five-card nemesis set
+(10026 ×1, 10027 ×1, 10028 ×3) are separate. Missing any required authored or
+catalog face, changed pack membership or an incorrect required recipe closes
+the complete pack. Extras 10029–10032 stay outside the starter and enter legal
+custom decks at printed copy limits. Public discovery has thirteen heroes,
+39 scenario/mode recipes and fourteen encounter sets. Focused setup/admission
+evidence is recorded in `docs/content/hulk-public-admission.md`; this candidate
+does not establish complete-game, native or final combined acceptance.

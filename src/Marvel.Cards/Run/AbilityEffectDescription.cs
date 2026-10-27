@@ -92,6 +92,10 @@ internal static class AbilityEffectDescription
         AbilityEffect.Damage { Maximum: not null } => "choose damage recipients after selecting",
         AbilityEffect.Damage => "deal damage to",
         AbilityEffect.RemoveThreat => "remove threat from",
+        AbilityEffect.MoveThreat { From: AbilityCardSelection.Bound { Binding: AbilityCardBinding.Chosen },
+            To: AbilityCardSelection.Bound { Binding: AbilityCardBinding.This },
+            Amount: AbilityNumber.Constant amount, All: false } =>
+            $"move {amount.Value} threat onto this card from",
         AbilityEffect.Power power => Action(power.Effect),
         AbilityEffect.Sequence sequence when sequence.Effects.Length == 1 =>
             Action(sequence.Effects[0]),

@@ -13,7 +13,7 @@ public sealed class PublicBlackWidowSetupTests
         var factory = DatasetGameFactory.Load(RepositoryPaths.Root);
         var discovery = new EngineHost(factory).Exchange(EngineRequest.ReadSetup("setup"));
         Assert.Null(discovery.Error);
-        Assert.Equal(12, discovery.Setup!.Heroes.Count);
+        Assert.Equal(13, discovery.Setup!.Heroes.Count);
         Assert.Contains(discovery.Setup.Heroes, hero => hero.Key == "black_widow");
         var hero = factory.DiscoverDecks().Heroes.Single(hero => hero.Key == "black_widow");
         Assert.Equal(40, hero.Starter.Count);

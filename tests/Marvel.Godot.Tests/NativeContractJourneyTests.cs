@@ -67,6 +67,7 @@ public sealed class NativeContractJourneyTests
         {
             "dense-table" => 0,
             "melee-sequential" => 3,
+            "beat-cop-move" or "beat-cop-damage" => 2,
             "heimdall-order" => 4,
             "widow-preparation" => 3,
             "end-phase" or "card-look" or "bruno-0" or "bruno-1" or "bruno-3" => 2,
@@ -86,6 +87,7 @@ public sealed class NativeContractJourneyTests
 
     private static void VerifyAbilityContracts(string contract, NativeContractServer server, EngineRequest[] mutations)
     {
+        if (contract.StartsWith("beat-cop-", StringComparison.Ordinal)) BeatCopNativeAssertions.Verify(contract, server, mutations);
         if (contract.StartsWith("widow-", StringComparison.Ordinal)) WidowNativeAssertions.Verify(contract, server, mutations);
         if (contract == "lockjaw-discard") LockjawNativeAssertions.Verify(server, mutations);
         if (contract == "melee-sequential") MeleeNativeAssertions.Verify(server, mutations);

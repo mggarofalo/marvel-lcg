@@ -31,7 +31,7 @@ public sealed class MsMarvelAdmissionIndependentTests
 
         Assert.DoesNotContain("ms_marvel", admitted.Setup.HeroNames);
         Assert.DoesNotContain(admitted.Playable, id => Cards.Pack(id) == "msm");
-        Assert.Equal(11, admitted.Setup.HeroNames.Count);
+        Assert.Equal(12, admitted.Setup.HeroNames.Count);
         Assert.Contains("spider_man", admitted.Setup.HeroNames);
         Assert.Contains("captain_america", admitted.Setup.HeroNames);
         Assert.Contains("hawkeye", admitted.Setup.HeroNames);

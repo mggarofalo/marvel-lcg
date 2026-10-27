@@ -13,4 +13,5 @@ internal sealed record RestoredContinuationState(
     ImmutableHashSet<int> CrisisIgnoringThwarts, CardInstanceState? SourceState)
 {
     internal ImmutableHashSet<int> ExhaustedForCost { get; init; } = [];
+    internal bool SourceWasPublicInPlay { get; init; }
 }

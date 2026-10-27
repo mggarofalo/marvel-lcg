@@ -112,10 +112,79 @@ excluded as behavioral mutation evidence. Root's final combined Hulk/activation/
 threat/ranked-choice/ability-data run passed263 cases
 (`hulk-33face-integration.log`). Normal hooks preserve the existing gates.
 
-MARVEL-851 remains: exact public starter/setup/custom decks and closed admission,
-complete representative games, fresh-host/replay continuation, proportionate native
-interaction proof, final combined managed/platform CI and merge. Public admission
-implementation is released to its bounded worker; it is not yet integrated or
-accepted here. The current candidate is complete authored content, not a completed
-public pack. No marketing packaging reconciliation or blanket human content gate
-is added. A genuinely new UI requires inspected media and a focused Plane item.
+Public admission is integrated as `48797dd1`, independently reviewed as
+`766c6cf0`: exact40 starter, all33 faces, nemesis quantities, legal extras and
+owner/copy limits, both public transports, and predecessor preservation.
+Source setup1429, Server69, restored Hulk110 and architecture129 passed.
+Independent admission111 and View29 passed, including actual support threat
+projection and hidden-card controls. See [admission](hulk-public-admission.md)
+and [independent review](hulk-admission-independent-review.md).
+
+The support threat display repair `4d535790` passed all430 View tests and a
+compiled original-formatter mutant killed all four distinguishing cases.
+Its [rendered interaction proof](hulk-support-threat-presentation.md) remains
+separate. Public games `314510bf` contain eight fixed complete games with exact
+independent-host accepted decisions and strict terminal replay. A test-policy
+control was corrected and separately passed after a compiled mutant was killed;
+the earlier TRX's control failure is not represented as a fully green run.
+See [game evidence](hulk-public-games.md).
+
+Broad unit verification at `48797dd1` passed7936 Content,430 View,84 Session,
+51 Core and50 Decisions tests. Rules reported18 failures from the omitted Hulk
+setup authority. The correction `5b637305` adds its reviewed outside-Core
+adjudication, regenerates the catalog and preserves exact source/obligation
+inventories; all1187 Rules tests and the offline catalog check then passed.
+Logs: `C:/Users/mggar/Source/evidence/hulk-public-integrated-unit.log` and
+`hulk-authority-{check,rules-restored}.log`. This is explicitly assembled
+evidence across the named revisions, not final same-head certification.
+
+MARVEL-851 now has independent complete-game/fresh-host continuation proof and
+rendered native interaction proof. Final combined managed/platform CI and merge remain.
+The current public candidate is not yet a merged accepted pack. No marketing
+packaging reconciliation or blanket human content gate is added. A genuinely
+new UI requires inspected media and a focused Plane item.
+
+## Integrated public and native evidence
+
+Fresh-host review `b161c2fa` independently verifies Unstoppable Force before and
+after payment/action and Thunderclap before payment and recipient choice. Stored
+strict JSON loads into a fresh factory/host; invalid or stale input is atomic,
+subsequent decisions match exactly and costs are not charged twice.
+
+Acceptance at `5e28dcab` passed 189/189. The earlier broad integration run passed
+36 Release, 129 Architecture and 981 Godot tests (seven opt-in native entry cases
+skipped). It reported five Server failures: four stale admission expectations
+were corrected in `1f977d48`; an unchanged variable-payment socket test passed
+focused after cancellation under broad load. Focused seven Server and four
+Doctor Strange negative-control cases pass. That original broad run is not
+claimed green; final CI must certify the integrated head.
+
+Native source `9e49ff89` and independent review `e612e273` verify visible support
+threat, named exhaust/discard costs, move results and damage results. Semantic
+source `e50a87fe` supplies engine-owned known effect descriptions. Independent
+review `d076836c` adds native meaning assertions and four rendered journeys at
+100%/150%, but rejects loss of known damage on legal empty-deck recycling.
+Repair `49ca46db` captures public source provenance across costs and continuation;
+its compiled mutation fails four distinguishing cases, with exact restoration,
+21 Godot, 13 Content and 84 Session cases passing. The review closure separately
+verifies both visibility policies and actual completed three-damage resolution.
+See [repair evidence](hulk-public-provenance-repair.md) and
+[independent semantic review](hulk-damage-meaning-review.md).
+
+Main synchronization `a1369d37` includes every upstream change since the shared
+Strange ancestor: platform timeout budget and three documentation files. The
+four-path audit is in `C:/Users/mggar/Source/evidence/hulk-main-sync-paths.txt`.
+The complete Hulk candidate still requires final CI and merge; authored row count
+and exact book hash above remain unchanged.
+
+Final semantic closure `56e9684d` is accepted and integrated as `bcffcaac`.
+On that integrated runtime, 21 focused Godot semantic cases and 10 Content cases
+pass (`hulk-final-semantic-{godot,content}.log`). Final certification is delegated
+to the existing required CI lanes rather than repeating earlier broad local runs.
+
+CI run `40467444576` on `e1d4b33b` failed both Linux native shards when the
+new rendered Beat Cop cases launched without DISPLAY. Godot exited before any
+host request; this run is not accepted certification. The native CI step now
+supplies Xvfb on Linux for rendered entries in either profile, preserving case
+selection and all assertions. Eight local CI-policy/manifest cases pass in
+`hulk-ci-display-policy.log`; the next CI run must prove the actual Linux fix.

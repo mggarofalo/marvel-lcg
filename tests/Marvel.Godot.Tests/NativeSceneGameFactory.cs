@@ -101,7 +101,8 @@ internal sealed class NativeSceneGameFactory(string contract) : IGameFactory, IS
             "card-look" => "01029b",
             _ => wakanda ? "01040a" : "01001a",
         }));
-        PrepareCards(scene, wakanda);
+        if (contract.StartsWith("beat-cop-", StringComparison.Ordinal)) BeatCopNativeScene.Prepare(scene, contract);
+        else PrepareCards(scene, wakanda);
     }
 
     private void PrepareCards(CanonicalCoreScene scene, bool wakanda)

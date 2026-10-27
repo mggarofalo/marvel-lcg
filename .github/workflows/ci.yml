@@ -117,9 +117,9 @@ jobs:
     needs: changes
     if: ${{ needs.changes.outputs.run == 'true' }}
     runs-on: ${{ matrix.os }}
-    # Routine integration and hosted smoke checks share this bounded job budget.
-    # Certification also includes the complete scale matrix and rendered acceptance.
-    timeout-minutes: ${{ inputs.exhaustive && 90 || 60 }}
+    # Reserve time for hosted checks after managed integration.
+    # Individual smoke processes retain their own deadlines.
+    timeout-minutes: 90
     strategy:
       fail-fast: false
       matrix:
@@ -452,7 +452,14 @@ jobs:
         env:
           NATIVE_PROFILE: ${{ inputs.exhaustive && 'exhaustive' || 'representative' }}
           MARVEL_NATIVE_RESULTS_DIRECTORY: ${{ runner.temp }}/native-evidence-${{ matrix.shard }}
-        run: ./tools/native-cases.ps1 -GodotBin $env:GODOT_BIN -Profile $env:NATIVE_PROFILE -ShardCount 2 -ShardIndex ${{ matrix.shard }}
+        run: |
+          # Rendered contract entries need a display even in the representative profile.
+          if ($IsLinux) {
+            xvfb-run -a pwsh -NoProfile -File ./tools/native-cases.ps1 -GodotBin $env:GODOT_BIN -Profile $env:NATIVE_PROFILE -ShardCount 2 -ShardIndex ${{ matrix.shard }}
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          } else {
+            ./tools/native-cases.ps1 -GodotBin $env:GODOT_BIN -Profile $env:NATIVE_PROFILE -ShardCount 2 -ShardIndex ${{ matrix.shard }}
+          }
 
       - name: Retain native shard inputs and results
         if: ${{ always() }}

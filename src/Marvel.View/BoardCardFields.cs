@@ -20,8 +20,8 @@ internal static class BoardCardFields
             yield return field;
         }
         if (card.State?.Threat is { } threat
-            && card.Face.Kind is CardKind.MainScheme or CardKind.EncounterSideScheme
-            && !card.Face.Fields.ContainsKey("k_threat"))
+            && (card.Face.Kind is not (CardKind.MainScheme or CardKind.EncounterSideScheme)
+                || !card.Face.Fields.ContainsKey("k_threat")))
         {
             yield return new BoardFieldPresentation(
                 "THREAT", threat.ToString(CultureInfo.InvariantCulture));
