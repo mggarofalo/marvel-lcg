@@ -25,9 +25,9 @@ internal static class AbilityEffectLowering
         var argument = node.Argument;
         return node.Kind switch
         {
-            "discardInvocation" => InvocationDiscard(argument, child),
-            "resolveInvocation" => InvocationEffect(argument, child),
-            "returnInvocation" => InvocationReturn(argument, child),
+            "discardInvocation" => AbilityInvocationLowering.Discard(argument, child),
+            "resolveInvocation" => AbilityInvocationLowering.Resolve(argument, child),
+            "returnInvocation" => AbilityInvocationLowering.Return(argument, child),
             "attackAnotherEnemy" => AbilityStagedAttackLowering.Lower(argument, child),
             "boostBasicUse" => argument is AbilityValue.Word { Value: "overkill" }
                 ? new AbilityEffect.BoostBasicUse(0, Overkill: true)
@@ -91,6 +91,7 @@ internal static class AbilityEffectLowering
             "gainSurge" => new AbilityEffect.GainSurge(Integer(argument, child)),
             "useAttackForThwart" => FixedEffect(argument, child, "trigger", AbilityFixedInstruction.UseAttackForThwart),
             "readyUndamagedDefender" => FixedEffect(argument, child, "you", AbilityFixedInstruction.ReadyUndamagedDefender),
+            "playersWin" => FixedEffect(argument, child, "game", AbilityFixedInstruction.PlayersWin),
             "captureKangStageTwoDefeat" => FixedEffect(argument, child, "this", AbilityFixedInstruction.CaptureKangStageTwoDefeat),
             "captureKangStageOneDefeat" => FixedEffect(argument, child, "this", AbilityFixedInstruction.CaptureKangStageOneDefeat),
             "splitKangStageTwo" => FixedEffect(argument, child, "this", AbilityFixedInstruction.SplitKangStageTwo),
@@ -297,20 +298,4 @@ internal static class AbilityEffectLowering
         return new(instruction);
     }
 
-    private static AbilityEffect.ResolveInvocation InvocationEffect(AbilityValue value, AbilityLocation location)
-    {
-        FixedWord(value, location, "you");
-        return new();
-    }
-    private static AbilityEffect.DiscardInvocation InvocationDiscard(AbilityValue value, AbilityLocation location)
-    {
-        FixedWord(value, location, "this");
-        return new();
-    }
-    private static AbilityEffect.ReturnInvocation InvocationReturn(AbilityValue value, AbilityLocation location)
-    {
-        FixedWord(value, location, "you");
-        return new();
-    }
 }
-

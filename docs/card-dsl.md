@@ -5,6 +5,8 @@ forced and optional attack-end responses and is zero without a completed attack.
 
 # The card DSL
 
+`playersWin: "game"` ends the game with a player victory. The spelling is an engine choice; Kang III uses it in its When Defeated ability. The terminal result abandons remaining agenda work.
+
 `handResourceForm: "hero"` is card-level metadata restricting the printed hand
 resource source to its owner's current hero form. The engine chooses this spelling;
 only `hero` is admitted, and the face must have a complete authored `abilities`

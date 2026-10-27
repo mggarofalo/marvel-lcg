@@ -19,6 +19,8 @@ public sealed class KangCentralTransitionTests : CoreCardTestBase
     [InlineData(false, "discard", "deck", 1)]
     [InlineData(true, "play", "aside", 0)]
     [Rule("rr:when-revealed-abilities.2")]
+    [Rule("rr:when-defeated-abilities.2.1")]
+    [Rule("rr:winning-the-game.1")]
     public void LastDefeatedLocalGroupReturnsToCentralAndPutsNemesesIntoPlay(bool expert, string firstZone, string secondZone, int firstPlayer)
     {
         // "If an encounter card with a When Revealed ability is put into play without being revealed,
@@ -31,12 +33,14 @@ public sealed class KangCentralTransitionTests : CoreCardTestBase
         Agendas.Happening(world);
         Defeat.Character(world, Cards, stageOne, "test", events);
         Sequence.Finish(world, Cards, world.Abilities, events);
+        Assert.Equal(Outcome.Unfinished, world.Result);
         End(world, 1, events);
         var first = Assert.Single(world.AreaOf(DeckType.VillainArea, PlayArea.Of(0)).Cards);
         var last = Assert.Single(world.AreaOf(DeckType.VillainArea, PlayArea.Of(1)).Cards);
         Agendas.Happening(world);
         Defeat.Character(world, Cards, first, "test", events);
         Sequence.Finish(world, Cards, world.Abilities, events);
+        Assert.Equal(Outcome.Unfinished, world.Result);
         world.Agenda.Add(new PhaseStep(new PhaseTransitionOperation(PhaseTransitionKind.EndPlayerPhase), 2, 4));
         var choice = Assert.IsType<Prompt>(Sequence.Work(world, Cards, world.Abilities, events));
         Sequence.Answer(world, Cards, world.Abilities, choice, Decision.Take(Assert.Single(choice.Affordances).Id), events);
@@ -85,6 +89,7 @@ public sealed class KangCentralTransitionTests : CoreCardTestBase
                 && move.Cards.Any(landing => landing.Card == minion.ObjectId)).ToArray();
             Assert.Equal(seat.Index == 0 && firstZone == "play" ? 0 : 1, moves.Length);
         }
+        AssertFinalVictory(world, villain, events);
     }
 
     [Fact]
@@ -192,6 +197,27 @@ public sealed class KangCentralTransitionTests : CoreCardTestBase
         return (world, events);
     }
 
+    private static void AssertFinalVictory(World world, Card villain, List<GameEvent> events)
+    {
+        // 11006/11039: "When Defeated: The players win the game."
+        // rr:when-defeated-abilities.2.1: "A defeated card leaves play after its
+        // When Defeated ability is resolved"; rr:winning-the-game.1 permits alternate wins.
+        var identity = world.Seats[0].IdentityCard;
+        identity.Exhaust();
+        int beforeDefeat = events.Count;
+        Agendas.Happening(world);
+        world.Agenda.Add(new PhaseStep(new PhaseTransitionOperation(PhaseTransitionKind.ReadyCards), 4, 5));
+        Defeat.Character(world, Cards, villain, "test", events);
+        Sequence.Finish(world, Cards, world.Abilities, events);
+        Assert.Equal(Outcome.PlayersWin, world.Result);
+        Assert.Equal(DeckType.VillainArea, villain.Area.Type);
+        Assert.DoesNotContain(events.Skip(beforeDefeat).OfType<CardsMoved>(), move =>
+            move.Cards.Any(landing => landing.Card == villain.ObjectId));
+        Assert.DoesNotContain(events.Skip(beforeDefeat).OfType<FieldSet>(), field =>
+            field.Card == identity.ObjectId && field.Verb == "Ready");
+        Assert.Empty(world.Agenda.Outstanding);
+    }
+
     private static void PutNemesis(World world, int player, string zone)
     {
         var card = Assert.Single(world.Seats[player].NemesisSet, candidate => Cards.IsNemesisMinion(candidate.FaceId));
@@ -257,9 +283,8 @@ public sealed class KangCentralTransitionTests : CoreCardTestBase
             rows.Add(Row($"{11009 + i}a", "WhenRevealed", "createKangGameArea"));
             rows.Add(new { card = $"{11009 + i}b", abilities = Array.Empty<object>() });
         }
-        // Stage entry has no printed When Revealed ability. III's attack interrupt and
-        // When Defeated victory text are outside this entry-only overlay.
-        if (!revealChoice) rows.Add(new { card = expert ? "11039" : "11006", abilities = Array.Empty<object>() });
+        // III's attack interrupt remains outside this nonpublic overlay.
+        if (!revealChoice) rows.Add(Row(expert ? "11039" : "11006", "WhenDefeated", "playersWin"));
         if (revealChoice) rows.Add(new { card = "11006", abilities = new[] { new {
             trigger = new { @event = "WhenCardRevealed", timing = "WhenRevealed", subject = "this" },
             effect = new { choose = new { options = new object[] {
@@ -275,5 +300,5 @@ public sealed class KangCentralTransitionTests : CoreCardTestBase
 
     private static object Row(string card, string timing, string effect) => new { card, abilities = new[] { new {
         trigger = new { @event = timing == "WhenDefeated" ? "WhenCardDefeated" : "WhenCardRevealed", timing, subject = "this" },
-        effect = new Dictionary<string, string> { [effect] = "this" } } } };
+        effect = new Dictionary<string, string> { [effect] = effect == "playersWin" ? "game" : "this" } } } };
 }

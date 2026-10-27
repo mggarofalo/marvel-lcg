@@ -172,6 +172,7 @@ internal static class AbilityOperationNames
         {
             AbilityFixedInstruction.UseAttackForThwart => "useAttackForThwart",
             AbilityFixedInstruction.ReadyUndamagedDefender => "readyUndamagedDefender",
+            AbilityFixedInstruction.PlayersWin => "playersWin",
             AbilityFixedInstruction.CaptureKangStageTwoDefeat => "captureKangStageTwoDefeat",
             AbilityFixedInstruction.CaptureKangStageOneDefeat => "captureKangStageOneDefeat",
             AbilityFixedInstruction.SplitKangStageTwo => "splitKangStageTwo",

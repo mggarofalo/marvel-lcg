@@ -64,6 +64,9 @@ internal static class AbilityImmediateExecution
         if (AbilityKangImmediateExecution.TryRun(effect, context) is { } kang) return kang;
         switch (effect.Instruction)
         {
+            case AbilityFixedInstruction.PlayersWin:
+                world.Finish(Outcome.PlayersWin);
+                return new(true, true);
             case AbilityFixedInstruction.DiscardOtherEnvironments:
                 return new(true, EnvironmentReplacement.DiscardOthers(context));
             case AbilityFixedInstruction.AdvanceMainScheme:

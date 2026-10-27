@@ -54,8 +54,18 @@ public static class Sequence
 
         while (world.Agenda.Current is { } step)
         {
+            if (world.IsOver)
+            {
+                world.Agenda.Abandon();
+                return null;
+            }
             var stage = world.Agenda.Stage;
             var question = WorkIteration(world, facts, abilities, events, scope, step);
+            if (world.IsOver)
+            {
+                world.Agenda.Abandon();
+                return null;
+            }
             if (question is not null) return question;
             if (world.Agenda.Current?.SameFrameAs(step) == true && world.Agenda.Stage == stage)
                 throw new InvalidOperationException(

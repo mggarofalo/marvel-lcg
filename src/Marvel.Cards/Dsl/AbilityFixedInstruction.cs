@@ -6,6 +6,8 @@ namespace Marvel.Cards.Dsl;
 /// <summary>Instructions with fixed authored markers and no variable parameters.</summary>
 public enum AbilityFixedInstruction
 {
+    /// <summary>The players win the game.</summary>
+    PlayersWin,
     /// <summary>Scenario-owned captureKangStageOneDefeat instruction.</summary>
     CaptureKangStageOneDefeat,
     /// <summary>Scenario-owned captureKangStageTwoDefeat instruction.</summary>
