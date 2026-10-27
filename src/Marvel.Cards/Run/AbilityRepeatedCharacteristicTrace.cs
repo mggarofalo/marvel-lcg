@@ -115,8 +115,9 @@ internal static class AbilityRepeatedCharacteristicTrace
             "thwart" => "THW+",
             _ => null,
         };
-        long value = CardValues.EvaluateUnbounded(
-                cast.World, current, field, cast.World.Facts, cast.World.Players).CurrentValue
+        var evaluation = CardValues.EvaluateRaw(
+            cast.World, current, field, cast.World.Facts, cast.World.Players);
+        long value = evaluation.CurrentValue
             + (modifiers?.GetValueOrDefault((current.ObjectId, field)) ?? 0);
         value -= DiscardedAttachmentModifier(current, printed, cast, discarded);
         value -= DiscardedConstantModifier(current, field, cast, discarded);
@@ -124,18 +125,19 @@ internal static class AbilityRepeatedCharacteristicTrace
         int boardVillain = AbilityProjectedAttachmentHosts.BoardVillain(current, cast);
         if (current.ObjectId == boardVillain)
         {
-            return ApplyMaximum(current, field, cast, discarded, value);
+            return ApplyBounds(current, field, cast, discarded, evaluation.BaseKind, value);
         }
 
         var carried = TraceCarriedAttachments(current, cast, discarded);
-        return ApplyMaximum(current, field, cast, discarded,
+        return ApplyBounds(current, field, cast, discarded, evaluation.BaseKind,
             value + CarriedModifier(carried, boardVillain, printed, field, cast));
     }
 
-    private static long ApplyMaximum(Card current, string field, AbilityAdmissionScope cast,
-        HashSet<int> discarded, long value)
+    private static long ApplyBounds(Card current, string field, AbilityAdmissionScope cast,
+        HashSet<int> discarded, CardValueBaseKind kind, long value)
     {
         var maximum = CardValues.Maximum(cast.World, current, field, discarded);
+        value = CardValues.Floor(kind, value);
         return maximum is null ? value : Math.Min(value, maximum.Amount);
     }
 

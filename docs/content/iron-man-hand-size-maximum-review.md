@@ -41,3 +41,21 @@ predates this change, but the new generic maximum contract inherits it. This is
 not evidence of a reachable played-card hand-size regression. A repair must
 apply both bounds after the complete projected modifiers and retain the other
 projection behavior.
+
+## Bounds-order repair
+
+The repair evaluates live contributions without a floor, then applies projected
+adjustments before the minimum and maximum. Live evaluation retains its ordered
+source steps and final bounds. A signed health adjustment remains signed; area
+projection also uses signed-safe saturating addition for its projected modifier.
+The synthetic contract covers both projection helpers, a recovering negative
+base, a negative final hand size, maximum ordering, and signed health.
+
+A compiled early-floor mutation failed both recovering-negative cases (expected
+3, actual 7) and both negative-final cases (expected 0, actual 2). After source
+restoration, a forced Release rebuild and all 13 Iron Man tests passed. Focused
+regressions passed 135 Content projection/Iron Man/Split Personality cases,
+6 Rules value-evaluation cases, 8 View cases and 5 Godot inspection cases.
+Logs are under `C:/Users/mggar/Source/evidence/iron-bounds-*.log`. The generic
+projection cases are synthetic; no current played-card hand-size projection
+consumer is established by this evidence.

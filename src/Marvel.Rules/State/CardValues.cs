@@ -14,7 +14,14 @@ public static class CardValues
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(card);
         ArgumentNullException.ThrowIfNull(facts);
-        CardValueEvaluation result = EvaluateUnbounded(world, card, field, facts, players);
+        CardValueEvaluation result = EvaluateRaw(world, card, field, facts, players);
+        long floored = Floor(result.BaseKind, result.CurrentValue);
+        if (floored != result.CurrentValue)
+            result = result with
+            {
+                CurrentValue = floored,
+                Steps = [.. result.Steps, new(CardValueStepKind.MinimumZero, 0, floored)],
+            };
         ContinuousEffect? maximum = Maximum(world, card, field);
         if (maximum is null || result.CurrentValue <= maximum.Amount) return result;
         return result with
@@ -25,14 +32,19 @@ public static class CardValues
         };
     }
 
-    /// <summary>Evaluate before any total-value maximum, for ordered projection.</summary>
-    public static CardValueEvaluation EvaluateUnbounded(
+    /// <summary>Evaluates contributions before the complete value is bounded.</summary>
+    public static CardValueEvaluation EvaluateRaw(
         World world, Card card, string field, ICardFacts facts, int players)
     {
         (long value, CardValueBaseKind kind) = Base(card, field, facts, players);
         if (PrintedText.IsBlanked(world, card) && PrintedText.IsTextKeywordField(field)) value = 0;
         return Evaluate(world, card, field, facts, players, value, kind);
     }
+
+    /// <summary>Floors complete values while preserving signed adjustment fields.</summary>
+    // rr:modifiers.4: "if a value is below zero, it is treated as zero"
+    public static long Floor(CardValueBaseKind kind, long value) =>
+        kind == CardValueBaseKind.Adjustment ? value : Math.Max(0, value);
 
     /// <summary>Active total hand-size maximum, excluding projected departed sources.</summary>
     public static ContinuousEffect? Maximum(World world, Card card, string field, IReadOnlySet<int>? departed = null) =>
@@ -105,12 +117,6 @@ public static class CardValues
             steps.Add(new(CardValueStepKind.Add, amount, current, Source(world, effect), effect.Lasts));
         }
 
-        // `rr:modifiers.4`: clamp complete values, not adjustment-only fields.
-        if (kind != CardValueBaseKind.Adjustment && current < 0)
-        {
-            current = 0;
-            steps.Add(new(CardValueStepKind.MinimumZero, 0, current));
-        }
         return new(field, value, kind, current, steps.ToArray());
     }
 

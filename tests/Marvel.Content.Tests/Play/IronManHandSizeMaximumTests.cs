@@ -127,14 +127,18 @@ public sealed class IronManHandSizeMaximumTests : CoreCardTestBase
     }
 
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void SyntheticProjectionClampsAfterAllModifiers(bool repeatedTrace)
+    [InlineData(false, "hand_size", 10, 3)]
+    [InlineData(true, "hand_size", 10, 3)]
+    [InlineData(false, "hand_size", 2, 0)]
+    [InlineData(true, "hand_size", 2, 0)]
+    [InlineData(false, "health", 2, -6)]
+    [InlineData(true, "health", 2, -6)]
+    public void SyntheticProjectionClampsAfterAllModifiers(bool repeatedTrace, string field, long projectedAmount, long expected)
     {
         // Synthetic contract: no current end-to-end projected hand-size consumer exists.
         var world = Hero("01029a");
         var hero = world.Seats[0].IdentityCard;
-        world.Effects.Register(new ContinuousEffect(EffectSource.LastingEffect, "hand_size", -8,
+        world.Effects.Register(new ContinuousEffect(EffectSource.LastingEffect, field, -8,
             Affects: hero.ObjectId));
         world.Effects.Register(new ContinuousEffect(EffectSource.LastingEffect, "hand_size_maximum", 7,
             Affects: hero.ObjectId));
@@ -145,13 +149,13 @@ public sealed class IronManHandSizeMaximumTests : CoreCardTestBase
         var context = new AbilityAdmissionContext(AbilityLowering.Book(AbilityCatalog.Parse("{\"cards\":[]}")),
             world.ResourceAbilities, expression, new(), null);
         var projected = new AreaProjectionState(context);
-        projected.Modifiers[(hero.ObjectId, "hand_size")] = 10;
+        projected.Modifiers[(hero.ObjectId, field)] = projectedAmount;
         var scope = new AbilityAdmission.AbilityAdmissionScope(context, []);
-        var modifiers = new Dictionary<(int Card, string Field), long> { [(hero.ObjectId, "hand_size")] = 10 };
+        var modifiers = new Dictionary<(int Card, string Field), long> { [(hero.ObjectId, field)] = projectedAmount };
         long result = repeatedTrace
-            ? AbilityRepeatedCharacteristicTrace.TraceModified(hero, "hand_size", scope, [], modifiers)
-            : projected.ModifiedOf(context, hero, "hand_size");
-        Assert.Equal(3, result);
+            ? AbilityRepeatedCharacteristicTrace.TraceModified(hero, field, scope, [], modifiers)
+            : projected.ModifiedOf(context, hero, field);
+        Assert.Equal(expected, result);
     }
 
     private static AbilityRunner Runner()
