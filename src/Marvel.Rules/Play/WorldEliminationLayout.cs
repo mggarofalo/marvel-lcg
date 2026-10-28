@@ -25,7 +25,8 @@ public sealed class WorldEliminationLayout : IEliminationLayout
 
     /// <inheritdoc />
     public IEnumerable<int> Cards => world.Areas.SelectMany(
-        area => area.Cards.Where(card => area.Type != DeckType.RemovedArea)
+        area => area.Cards.Where(card => area.Type != DeckType.RemovedArea
+            && !world.Agenda.KangTransitions.Elimination.Retains(card))
             .Select(card => card.ObjectId));
 
     /// <inheritdoc />

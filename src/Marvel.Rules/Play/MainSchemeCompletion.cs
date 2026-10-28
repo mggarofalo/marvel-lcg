@@ -38,8 +38,9 @@ internal static class MainSchemeCompletion
         Commit(world, facts, abilities, scheme, events);
     }
 
-    private static void Schedule(World world, Card scheme)
+    internal static void Schedule(World world, Card scheme)
     {
+        if (AlreadyCompleting(world, scheme)) return;
         var current = world.Agenda.Current;
         var completion = new PhaseStep(new MainSchemeCompletionOperation(scheme.Incarnation),
             current?.Round ?? 0, current?.Number ?? 0, Subject: scheme.ObjectId,

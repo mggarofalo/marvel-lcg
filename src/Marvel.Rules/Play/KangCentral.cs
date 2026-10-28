@@ -23,9 +23,8 @@ public static class KangCentral
     private static void RequireLastGroupShape(World world, KangDeparture departure)
     {
         if (world.Players is < 1 or > 4 || world.Seats.Count != world.Players
-            || world.Seats.Any(seat => seat.Eliminated)
-            || departure.Group.Count != world.Players
-            || world.Seats.Any(seat => !departure.Group.Contains(PlayArea.Of(seat.Index)))
+            || departure.Group.Count != world.Seats.Count(seat => !seat.Eliminated)
+            || world.Seats.Any(seat => !seat.Eliminated && !departure.Group.Contains(PlayArea.Of(seat.Index)))
             || departure.Group.Any(play => !play.IsPlayers)
             || world.GameAreaOf(PlayArea.Villains) is not null
             || world.GameAreas.Any(area => !ReferenceEquals(area, departure.Source) && area.PlayAreas.Count > 0))
@@ -68,7 +67,7 @@ public static class KangCentral
 
     private static void RequireNemesisAssociations(World world)
     {
-        foreach (var seat in world.Seats)
+        foreach (var seat in world.Seats.Where(seat => !seat.Eliminated))
             if (seat.NemesisSet.Count(card => world.Facts.IsNemesisMinion(card.FaceId)) != 1)
                 throw new RulesNotImplementedException("Kang central reunion requires each physical nemesis association");
     }
@@ -79,6 +78,8 @@ public static class KangCentral
         var old = Require(world, "11008b", DeckType.MainSchemesArea);
         var next = Require(world, "11013a", DeckType.AsideDeck);
         long acceleration = old.Tokens.GetValueOrDefault(EncounterDeck.AccelerationToken);
+        world.Agenda.KangTransitions.Elimination.Join(world, operation.Departure.Source,
+            operation.Departure.Source, "11008b", events);
         world.Join(PlayArea.Villains, operation.Departure.Source, "11008b", events);
         KangFirstSplit.Remove(world, old, "11008b", events);
         Move(world, next, world.AreaOf(DeckType.MainSchemesArea), "11008b", events);

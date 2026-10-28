@@ -63,7 +63,7 @@ public sealed class KangPlayerCountGameTests : CoreCardTestBase
     [InlineData(2)]
     [InlineData(3)]
     [InlineData(4)]
-    public void EliminatedLocalDepartureRefusesBeforeItsPhaseMutates(int players)
+    public void MalformedEliminatedSeatStillInTopologyRefusesBeforeItsPhaseMutates(int players)
     {
         var world = KangPlayerCountFixture.Board(players, false);
         var events = new List<GameEvent>();

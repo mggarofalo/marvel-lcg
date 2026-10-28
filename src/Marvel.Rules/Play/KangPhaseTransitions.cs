@@ -9,6 +9,23 @@ public sealed class KangPhaseTransitions
 {
     private readonly List<KangDeparture> pending = [];
 
+    internal KangElimination Elimination { get; } = new();
+
+    internal void PlayerDeparted(World world, GameArea source)
+    {
+        for (int index = 0; index < pending.Count; index++)
+            if (ReferenceEquals(pending[index].Source, source))
+                pending[index] = pending[index] with
+                {
+                    Group = Array.AsReadOnly(source.PlayAreas.OrderBy(area => area.Player).ToArray()),
+                };
+        var scheme = world.Cards.SingleOrDefault(card => KangLocalCompletion.IsLocal(card)
+            && card.Area.Type == DeckType.MainSchemesArea
+            && ReferenceEquals(Places.GameAreaOf(world, card), source));
+        if (scheme is not null && !source.PlayAreas.Any(area => area.IsPlayers))
+            MainSchemeCompletion.Schedule(world, scheme);
+    }
+
     /// <summary>A detached snapshot of departures which have not reached their boundary.</summary>
     public IReadOnlyList<KangDeparture> Pending => pending.ToArray();
 
@@ -101,8 +118,8 @@ public sealed class KangPhaseTransitions
 
     private static void RequireParticipatingGroup(World world, KangDeparture departure)
     {
-        if (world.Seats.Any(seat => seat.Eliminated))
-            throw new RulesNotImplementedException("Kang local departure with eliminated players is not implemented");
+        if (world.Seats.Any(seat => seat.Eliminated && world.GameAreaOf(PlayArea.Of(seat.Index)) is not null))
+            throw new RulesNotImplementedException("Kang eliminated players must leave through player elimination");
         RequireGroup(departure);
     }
 

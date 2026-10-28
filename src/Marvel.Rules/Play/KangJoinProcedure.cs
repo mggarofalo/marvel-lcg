@@ -40,6 +40,8 @@ internal static class KangJoinProcedure
                 }).ToArray());
         foreach (var area in operation.Departure.Group)
             world.Join(area, operation.Destination, operation.Origin.Conditions[0], events);
+        world.Agenda.KangTransitions.Elimination.Join(world, operation.Departure.Source,
+            operation.Destination, operation.Origin.Conditions[0], events);
         KangDepartureOrderProcedure.AfterJoin(world, operation);
         return null;
     }
