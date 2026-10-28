@@ -14,8 +14,11 @@ internal static class AbilityFormDestinationResolver
         if (effect is AbilityEffect.Sequence { Effects.Length: 2 } sequence
             && sequence.Effects[0] is AbilityEffect.ChangeForm
                 { Player: AbilityPlayer.You, Destination: AbilityFormDestination.OtherHero }
-            && sequence.Effects[1] is AbilityEffect.Draw
-                { Players: AbilityPlayerSelection.OnePlayer { Player: AbilityPlayer.You } }) return;
+            && (sequence.Effects[1] is AbilityEffect.Draw
+                    { Players: AbilityPlayerSelection.OnePlayer { Player: AbilityPlayer.You } }
+                || sequence.Effects[1] is AbilityEffect.CardAction
+                    { Instruction: AbilityCardInstruction.Ready,
+                      Selection: AbilityCardSelection.Bound { Binding: AbilityCardBinding.YourHero } })) return;
         if (ContainsExplicitDestination(effect))
             throw new RulesNotImplementedException(
                 "projecting a composed exact or other-hero form change is not implemented");

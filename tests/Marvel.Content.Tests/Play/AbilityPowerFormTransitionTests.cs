@@ -114,6 +114,26 @@ public sealed class AbilityPowerFormTransitionTests : CoreCardTestBase
             AbilityPowerOutcomeTrace.ChangeFormState(hero, scope, false, changed)));
     }
 
+    [Fact]
+    public void OtherHeroProjectionPreservesReadinessAndPhysicalIdentityForReady()
+    {
+        var (world, scope, initial) = Setup();
+        var hero = world.Seats[0].IdentityCard;
+        hero.Exhaust();
+        initial = AbilityPowerStateFactory.Initial(scope);
+        var change = new AbilityEffect.ChangeForm(AbilityPlayer.You, new AbilityFormDestination.OtherHero());
+        var ready = new AbilityEffect.CardAction(AbilityCardInstruction.Ready,
+            new AbilityCardSelection.Bound(AbilityCardBinding.YourHero));
+        var giant = AbilityPowerOutcomeTrace.ChangeFormState(change, scope, false, initial);
+        Assert.Equal("12001c", giant.IdentityFaces[0]);
+        Assert.Equal(PowerReadiness.Exhausted, AbilityPowerStateProjection.PowerReady(hero, giant));
+        var readied = AbilityPowerStateMutation.ApplyPowerLeafState(ready, scope, false, giant);
+        Assert.Equal(PowerReadiness.Ready, AbilityPowerStateProjection.PowerReady(hero, readied));
+        Assert.Equal("12001c", readied.IdentityFaces[0]);
+        Assert.False(hero.Ready);
+        Assert.Equal("12001a", hero.FaceId);
+    }
+
     private static AbilityEffect.ChangeForm Change(string face) =>
         new(AbilityPlayer.You, new AbilityFormDestination.Face(face));
 
