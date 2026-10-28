@@ -20,6 +20,14 @@ Windows Release, `MSBUILDDISABLENODEREUSE=1`, `-m:1`, in the isolated `marvel-an
 
 External evidence: `C:/Users/mggar/Source/evidence/ant-signature-{initial,corrected,mutant,restored-build,restored-tests,final}.log`; the restored book is `ant-signature-restored.json`. The filter is `FullyQualifiedName~AntMan|FullyQualifiedName~AbilityData|FullyQualifiedName~AbilityFormDestination`. These are focused results, not a complete managed or cross-platform candidate run.
 
+## Independent review
+
+Reviewed source `9e51ef2e7832da2a64a219a667fe3e48eed7c7f7` against the generated printed faces and RR 1.8 ability, ally, cost, control, target and wild-resource clauses, and searched the local rulings. The 738 prior parsed rows match the base and only the four named rows were appended; the book contains 742 rows and 19 `120` faces. No discrepancy was found in these four authored interpretations. This verdict covers the four faces on synthetic boards, not pack admission or complete gameplay.
+
+The independent probes add Wasp response declines in both forms, wrong-kind target rejection with unchanged digest, RNG and pending agenda followed by a valid answer, and foreign Gauntlet exclusion. A `Game.Resolve` probe rejects a wild declared mental when two energy or physical are required, preserves the prompt, digest, RNG and agenda, and accepts a valid same-cost retry in each form. An initial direct `ExecuteAction` version expected rejection and failed twice: that API accepts already validated actions, whereas `Game.Resolve` assesses declarations before dispatch. This was a fixture boundary error, not evidence that the game decision path accepts the invalid payment.
+
+Windows Release focused run with `MSBUILDDISABLENODEREUSE=1` and `-m:1`: 22 passed, none failed or skipped; log `C:/Users/mggar/Source/evidence/ant-signature-independent-review-final.log`. The initial failed fixture log is `ant-signature-independent-review.log`. The source packet's compiled mutation and restored 121-test run remain separate evidence above.
+
 ## Remaining scope
 
 Giant Stomp `12003` remains unauthored. `AntManGiantStompBoundaryTests` preserves one bounded diagnostic: an attack whose singular `target` is the plural `minions` query is rejected before payment, with an otherwise legal same-cost Swinging Web Kick control. This demonstrates an invalid candidate encoding. It does **not** establish that the printed mechanic lacks a supported DSL composition or justify an engine prerequisite. A targeted authority/DSL composition packet must decide that separately.

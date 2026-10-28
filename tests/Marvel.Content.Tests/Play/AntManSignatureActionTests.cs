@@ -38,6 +38,17 @@ public sealed class AntManSignatureActionTests : CoreCardTestBase
             var offer = Assert.Single(prompt.Affordances, a => a.AnchorId == wasp.ObjectId);
             int target = face == "12001c" ? villain.ObjectId : scheme.ObjectId;
             Sequence.Answer(world, Cards, runner, prompt, Decision.Take(offer.Id), []);
+            var choice = Assert.IsType<Prompt>(Sequence.Work(world, Cards, runner, []));
+            int invalid = face == "12001c" ? scheme.ObjectId : villain.ObjectId;
+            Assert.DoesNotContain(choice.Affordances, a => a.Id == invalid);
+            string before = world.Digest().Canonical();
+            var random = world.Random.Generator.GetState();
+            var pending = world.Agenda.Outstanding.ToArray();
+            Assert.Throws<ArgumentException>(() => Sequence.Answer(world, Cards, runner, choice, Decision.Take(invalid), []));
+            Assert.Equal(before, world.Digest().Canonical());
+            Assert.Equal(random.Words, world.Random.Generator.GetState().Words);
+            Assert.Equal(random.Index, world.Random.Generator.GetState().Index);
+            Assert.Equal(pending, world.Agenda.Outstanding.ToArray());
             Choose(world, runner, world.Cards[target]);
         }
         Sequence.Finish(world, Cards, runner, []);
@@ -50,6 +61,36 @@ public sealed class AntManSignatureActionTests : CoreCardTestBase
         Assert.Equal(DeckType.DiscardPile, energy.Area.Type);
         Assert.Equal(DeckType.DiscardPile, strength.Area.Type);
         Assert.False(world.Agenda.IsBusy);
+    }
+
+    [Theory]
+    [InlineData("12001a")]
+    [InlineData("12001c")]
+    [Rule("rr:ability.11")]
+    public void WaspEntryResponseCanBeDeclined(string face)
+    {
+        // "Unless prefaced by the word Forced", responses are optional.
+        var world = Board(face);
+        var runner = AuthoredCards.Runner();
+        var wasp = world.CreateCard("12002", world.Seats[1].Hand);
+        var energy = world.CreateCard("12021", world.Seats[1].Hand);
+        var strength = world.CreateCard("12023", world.Seats[1].Hand);
+        var scheme = world.TheCardIn(DeckType.MainSchemesArea)!;
+        scheme.PlaceTokens("k_threat", 6);
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        CardPlay.Play(world, Cards, runner, world.Seats[1], wasp,
+            [energy.ObjectId, strength.ObjectId], [], []);
+        var prompt = Assert.IsType<Prompt>(Sequence.Work(world, Cards, runner, []));
+        Assert.Equal(1, prompt.Player);
+        Assert.Contains(prompt.Affordances, a => a.AnchorId == wasp.ObjectId);
+        Assert.True(prompt.Cancellable);
+        Sequence.Answer(world, Cards, runner, prompt, Decision.Decline, []);
+        Sequence.Finish(world, Cards, runner, []);
+        Assert.Equal(0, villain.Damage);
+        Assert.Equal(6, scheme.Tokens["k_threat"]);
+        Assert.Equal(DeckType.AlliesArea, wasp.Area.Type);
+        Assert.False(world.Agenda.IsBusy);
+        Assert.Equal(Outcome.Unfinished, world.Result);
     }
 
     [Theory]
@@ -113,10 +154,12 @@ public sealed class AntManSignatureActionTests : CoreCardTestBase
         var world = Board(face);
         var runner = AuthoredCards.Runner();
         var source = world.CreateCard("12010", world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(1), cardOwner: 1));
+        var foreign = world.CreateCard("12010", world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), cardOwner: 0));
         var wrong = world.CreateCard("12022", world.Seats[1].Hand);
         Assert.DoesNotContain(runner.Actions(world, 1), a => a.Card == source.ObjectId);
         var payment = world.CreateCard(paying, world.Seats[1].Hand);
         var action = Assert.Single(runner.Actions(world, 1), a => a.Card == source.ObjectId);
+        Assert.DoesNotContain(runner.Actions(world, 1), a => a.Card == foreign.ObjectId);
         string before = world.Digest().Canonical();
         Assert.Throws<RulesNotImplementedException>(() => runner.ExecuteAction(world,
             new PlayerAction(action, [wrong.ObjectId], [])));
@@ -128,6 +171,7 @@ public sealed class AntManSignatureActionTests : CoreCardTestBase
         Assert.True(Statuses.Has(world, villain, status));
         Assert.False(Statuses.Has(world, villain, status == "stunned" ? "confused" : "stunned"));
         Assert.False(source.Ready);
+        Assert.True(foreign.Ready);
         Assert.Equal(DeckType.DiscardPile, payment.Area.Type);
         Assert.Same(world.Seats[1].Hand, wrong.Area);
         Assert.DoesNotContain(runner.Actions(world, 1), a => a.Card == source.ObjectId);
