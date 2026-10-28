@@ -11,11 +11,9 @@ using Xunit;
 
 namespace Marvel.Content.Tests.Play;
 
-// Test-local interpretation of 12005; this fixture does not admit the pack.
+// Actual Resize with a synthetic response; this fixture does not admit the pack.
 public sealed class ResizeSequenceTests
 {
-    private const string Effect = """{"seq":[{"changeForm":{"player":"you","to":"other-hero"}},{"draw":{"player":"you","count":1}}]}""";
-
     [Theory]
     [InlineData("12001a", "12001c")]
     [InlineData("12001c", "12001a")]
@@ -108,16 +106,8 @@ public sealed class ResizeSequenceTests
     private static (World World, AbilityRunner Runner, Card Resize) Board(string face, bool response)
     {
         var cards = CardCatalog.Parse(File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")));
-        var book = AbilityCatalog.Parse($$$$"""
-            {"cards":[{"card":"12005","abilities":[{
-              "trigger":{"event":"WhenActionTriggered","timing":"Action","subject":"this","form":"hero"},
-              "effect":{{{{Effect}}}}
-            }]},{"card":"01006","abilities":[{
-              "trigger":{"event":"WhenFormChanged","timing":"Response","subject":"game"},
-              "effect":{"draw":{"player":"you","count":1}}
-            }]}]}
-            """);
-        var runner = new AbilityRunner(book);
+        var runner = AntManF1Fixture.Runner(["12005"],
+            """{"card":"01006","abilities":[{"trigger":{"event":"WhenFormChanged","timing":"Response","subject":"game"},"effect":{"draw":{"player":"you","count":1}}}]}""");
         var world = new World(cards, 1, 241);
         var seat = world.CreateSeat("p0");
         seat.IdentityCard = world.CreateCard("12001a,12001b,12001c", seat.Hero);
