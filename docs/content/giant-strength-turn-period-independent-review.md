@@ -48,3 +48,43 @@ The source packet's own reported evidence is in
 content tests, 34 rules tests and five compiled mutants. The larger 50/52 run
 contains two separately handled sparse-deck fixture failures. Those are not
 attributed to this change.
+
+## Repair review
+
+Reviewed repair `c4fa7b9d52296c4a4d1ac2d325f599f0defe09b0` on the above
+review commit. It removes the active-elimination shortcut, so the existing
+turn-ending occurrence handles interrupts, expiration, delayed work and
+responses before advancing to another surviving seat. RR 1.8
+`rr:player-elimination.step.5` says the remaining players continue; combined
+with `rr:lasting-effects.5` this supports ending the elapsed turn and expiring
+its effects. The explicit normal ending windows are the engine's existing
+sequencing applied to that boundary; the elimination clause does not itself
+spell out their scheduling.
+
+The original actual-card regression is unchanged. Additional controls cover
+elimination of a non-active player without ending the turn; elimination of the
+last seat to take a turn; and a survivor's forced interrupt and response to the
+eliminated seat's turn ending. The implementer's compiled original-shortcut
+mutant failed four cases and a direct-expiration-without-windows mutant failed
+both window controls. The packet reports restored Content 52/52, Rules 44/44
+and passing normal hooks; see
+`C:/Users/mggar/Source/evidence/ant-turn-elimination-repair.txt` and its logs.
+
+The new occurrence also consumes a scheduler occurrence ID on a path that did
+not previously consume one. Subsequent event causes and ability receipts can
+expose those IDs, and session replay verifies serialized events exactly. The
+integrator must resolve replay identity and compatibility on the final combined
+candidate under the MARVEL-870 publication gate, alongside its form, hand-size
+and ally-completion changes. Include a genuine predecessor trace with a
+survivor's action after elimination; the behavioral repair alone does not
+establish unchanged replay.
+
+Independent rerun on `c4fa7b9d`: GiantStrengthPeriodTests, PlayerTurnTests,
+PlayerPhaseTests and PhaseAbilityLimitTests **52/52 passed**; PhaseEndTests,
+PlayerPhaseEndTests and EliminationTests **44/44 passed**. Logs:
+`C:/Users/mggar/Source/evidence/ant-turn-closure-independent-content.log` and
+`C:/Users/mggar/Source/evidence/ant-turn-closure-independent-rules.log`.
+
+Verdict: **accept the bounded engine behavior** after the repair. The original
+expiration finding is closed; the MARVEL-870 replay publication gate remains
+open for the integrated candidate.
