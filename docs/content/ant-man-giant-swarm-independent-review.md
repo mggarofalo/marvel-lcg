@@ -1,0 +1,19 @@
+# Giant Stomp and Swarm Tactics independent content review
+
+Reviewed `6a10f07a5ba5c8cc5293e93c8259d88231bf3ebd` against `511e096a7d911f3e9be3f0ff559c7fe937a49e68`. No blocking finding in these two nonpublic authored rows; accept for internal integration, subject to the broader integration and publication gates. This is not complete Ant-Man admission, replay certification, native UI review, or a claim of a green final full suite. MARVEL-870 remains open.
+
+The generated printed catalog identifies 12003 as cost 3, Giant hero-only, Hero Action attack: 1 damage to each minion, followed by 8 to an enemy; 12020 is cost 1, Hero Action with Team-Up (Ant-Man and Wasp): change to the other hero form, then ready the hero. The ability rows reflect those instructions. RR 1.8 ability.4, attack-player-ability-type.2.1 and .5, guard.1, team-up.1, form-change-form.2 and .3, and initiating-abilities.2 govern their sequencing, attack, eligibility and responses. The prerequisite reviews and ruling searches are linked from [the source record](ant-man-giant-swarm-cards.md); the vendored FAQ has no card-specific entries for either face.
+
+Against the actual base, the first 746 parsed objects are identical and their first 755307 bytes match SHA-256 `79caabecec81c0dccd3e75becef4f05e4502054d50c698ab8766b175d72dd244`; only 12003 and 12020 are appended, for 748. `AuthoredCards.ExpectedFaceCount` and the separate AbilityData authored-face inventory include both; the Ant-Man inventory lists 25 of 35. No public admission or setup source changes occur in this diff.
+
+The live Giant fixture keeps actual 12003 while synthetic observers replace unrelated rows. Actual-row cases cover Giant form, cost, simultaneous splash across both players, live target selection, zero minions, Guard, stun, terminal defeat, and one attack; fixed target and unsupported nested selector fixtures explicitly replace 12003 and remain synthetic. Swarm tests take actual 12020 and actual response rows, including full-book both-direction play, independent ready under a form prohibition, response timing, invalid payment and retry. Team-Up action cases use actual 12020 and a same-cost control, including partner departure and retry; window and storage probes are explicitly synthetic. These nonpublic boards are not production setup journeys.
+
+On Windows, with `MSBUILDDISABLENODEREUSE=1` and `-m:1`, the following independent runs passed:
+
+```text
+dotnet test tests/Marvel.Content.Tests/Marvel.Content.Tests.csproj -c Release -m:1 --filter 'FullyQualifiedName~GiantStomp|FullyQualifiedName~SwarmTacticsFormReady|FullyQualifiedName~TeamUpEventAdmission|FullyQualifiedName~AntManReprint|FullyQualifiedName~AbilityData|FullyQualifiedName~AntManTeamStage'
+dotnet build tests/Marvel.Server.Tests/Marvel.Server.Tests.csproj -c Release -m:1 --no-restore --no-incremental
+dotnet test tests/Marvel.Server.Tests/Marvel.Server.Tests.csproj -c Release -m:1 --no-restore --no-build --filter 'FullyQualifiedName~DeckCatalogTransportTests|FullyQualifiedName~RuntimeProductAdmissionTests'
+```
+
+The content run passed 104; server catalog/admission passed 12. The review adds explicit exclusions for both faces to the existing in-process and socket catalog test. A separately compiled negative control injected 12003 into the in-process returned catalog and 12020 into the socket returned catalog; both cases failed at the new exclusion. The control was removed and the restored sources rebuilt non-incrementally before the passing server run. This injection proves the assertions detect leaked faces, not that an altered production admission implementation was exercised. Logs under `C:/Users/mggar/Source/` are `ant-giant-swarm-review-content.log`, `ant-giant-swarm-review-server.log`, `ant-giant-swarm-review-injected.log`, `ant-giant-swarm-review-restored-build.log`, and `ant-giant-swarm-review-restored.log`. The source record separately documents compiled card-row mutants and restored 192-case run.
