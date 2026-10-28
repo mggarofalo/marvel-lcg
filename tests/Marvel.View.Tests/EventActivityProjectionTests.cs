@@ -7,20 +7,25 @@ namespace Marvel.View.Tests;
 public sealed class EventActivityProjectionTests : EventPresentationTestBase
 {
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void EnemyLessAttackKeepsOnlyItsAuthorizedSource(bool cooperative)
+    [InlineData(false, true, false, "Attack begins.")]
+    [InlineData(true, true, false, "Attack begins.")]
+    [InlineData(false, true, true, "Attack resumes.")]
+    [InlineData(true, true, true, "Attack resumes.")]
+    [InlineData(false, false, false, "Attack resolved.")]
+    [InlineData(true, false, false, "Attack resolved.")]
+    public void AttackWithoutSingleTargetKeepsOnlyItsAuthorizedSource(
+        bool cooperative, bool started, bool resumed, string status)
     {
         var world = VisibilityFixture.Board();
         int source = world.TheCardIn(DeckType.VillainArea)!.ObjectId;
         IVisibilityPolicy policy = cooperative ? new PermissiveVisibilityPolicy() : new RestrictedVisibilityPolicy(0);
-        var boundary = new AttackBoundary(new(19, false), source, -1, true)
-        { AttackIdentity = new(19, false), Subjects = new Dictionary<int, string> { [source] = "Hero" } };
+        var boundary = new AttackBoundary(new(19, false), source, -1, started)
+        { Resumed = resumed, AttackIdentity = new(19, false), Subjects = new Dictionary<int, string> { [source] = "Hero" } };
         var projected = WorldProjection.For(world, null, [boundary], policy.Authorize(null, world.Players));
         var retained = Assert.IsType<AttackBoundary>(Assert.Single(projected.Events));
         var presented = EventPresenter.Present(retained, projected.World);
         Assert.Equal([source], presented.Anchors);
-        Assert.Contains("without an attacked enemy", presented.Summary);
+        Assert.Equal("Hero · " + status, presented.Summary);
         Assert.Equal(source, Assert.Single(presented.Activity!.Subjects).Card);
         Assert.Equal(ActivitySubjectRole.Source, Assert.Single(presented.Activity.Subjects).Role);
     }
