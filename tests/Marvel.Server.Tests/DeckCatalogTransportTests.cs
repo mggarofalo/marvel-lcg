@@ -33,6 +33,8 @@ public sealed class DeckCatalogTransportTests : TransportTestBase
         Assert.Contains(catalog.Cards, card => card.Face == "09039");
         Assert.Contains(catalog.Cards, card => card.Face == "10024");
         Assert.DoesNotContain(catalog.Cards, card => card.Face == "12024");
+        Assert.DoesNotContain(catalog.Cards, card => card.Face == "12032");
+        Assert.DoesNotContain(catalog.Heroes, hero => hero.Key == "ant_man");
         var kick = Assert.Single(catalog.Cards, card => card.Face == "01005");
         Assert.Equal("3", kick.Cost);
         Assert.Null(kick.Preview!.TargetId);

@@ -1,17 +1,17 @@
 # Remaining content implementation program
 
-**Tracking:** Content Expansion module and [MARVEL-703](https://plane.wallingford.me/dev/projects/cd677658-41d9-4576-b055-5f2a726b3c85/issues/b26d754d-4e0e-486c-8a04-f0e9b968cdb2). **Planning baseline:** `b16183e2`, 2026-10-25. **Current:** eight of 64 canonical packs are merged and agent-accepted; 56 remain. Captain America/Wrecking Crew are in PR #439, Green Goblin/Ms. Marvel in #451, Thor in #452, Black Widow in #453, Doctor Strange in #454 and Hulk in #458. Hulk merged as `f256e30b` after all eleven CI jobs passed on `0edf7c9a` in run `40474550732`. Core and Rise of Red Skull are the accepted regression baseline outside this expansion queue. MARVEL-630 additive-content compatibility and MARVEL-696 all-pack research remain Done. Separate UI review items do not reopen accepted content.
+**Tracking:** Content Expansion module and [MARVEL-703](https://plane.wallingford.me/dev/projects/cd677658-41d9-4576-b055-5f2a726b3c85/issues/b26d754d-4e0e-486c-8a04-f0e9b968cdb2). **Planning baseline:** `b16183e2`, 2026-10-25. **Current:** nine of 64 canonical packs are merged and agent-accepted; 55 remain. Captain America/Wrecking Crew are in PR #439, Green Goblin/Ms. Marvel in #451, Thor in #452, Black Widow in #453, Doctor Strange in #454, Hulk in #458 and Ronan Kree Fanatic in #459. Hulk merged as `f256e30b` after all eleven CI jobs passed on `0edf7c9a` in run `40474550732`. Core and Rise of Red Skull are the accepted regression baseline outside this expansion queue. MARVEL-630 additive-content compatibility and MARVEL-696 all-pack research remain Done. Separate UI review items do not reopen accepted content.
 
 The [research coverage ledger](research/remaining/README.md), its ten paired narrative/face-inventory packets, [source review](research/remaining/source-review.md), and [independent review](research/remaining/independent-review.md) supply MARVEL-563–622 handoffs. [Green Goblin](research/green-goblin-deep-research.md) and [Ms. Marvel](research/ms-marvel-deep-research.md) have their own deeper packets. Their examples are first slices; the canonical parent acceptance criteria still require every playable face and mode. The current source gaps are recorded below, without turning them into invented card behavior.
 
 ## Complete pack-to-wave ledger
 
-The existing Content Expansion module defines these **11 planning waves**. Ranges are inclusive, and a box owns its included heroes, scenarios, modular sets and campaign, even where those components also appear in another deck. This mapping covers each of the 64 canonical parents exactly once; the eight accepted parents are shown only to make the subtraction auditable. A wave is a delivery grouping, not proof of a published release or a command to admit its packs together. Each parent keeps its own implementation, evidence and acceptance state.
+The existing Content Expansion module defines these **11 planning waves**. Ranges are inclusive, and a box owns its included heroes, scenarios, modular sets and campaign, even where those components also appear in another deck. This mapping covers each of the 64 canonical parents exactly once; the nine accepted parents are shown only to make the subtraction auditable. A wave is a delivery grouping, not proof of a published release or a command to admit its packs together. Each parent keeps its own implementation, evidence and acceptance state.
 
 | Existing wave | Canonical pack parents | Remaining |
 |---|---|---:|
 | Core-era expansions | **559 Green Goblin accepted**; **560 Captain America accepted**; **561 Ms. Marvel accepted**; **562 Wrecking Crew accepted**; **563 Thor accepted**; **564 Black Widow accepted**; **565 Doctor Strange accepted**; **566 Hulk accepted** | 0 |
-| Rise of Red Skull cycle | 567 Ronan Modular Set; 568 The Once and Future Kang; 569 Ant-Man; 570 Wasp; 571 Quicksilver; 572 Scarlet Witch | 6 |
+| Rise of Red Skull cycle | **567 Ronan Modular Set accepted**; 568 The Once and Future Kang; 569 Ant-Man; 570 Wasp; 571 Quicksilver; 572 Scarlet Witch | 5 |
 | Galaxy's Most Wanted cycle | 573 The Galaxy's Most Wanted; 574 Star-Lord; 575 Gamora; 576 Drax; 577 Venom | 5 |
 | Mad Titan's Shadow cycle | 578 The Mad Titan's Shadow; 579 Nebula; 580 War Machine; 581 The Hood; 582 Valkyrie; 583 Vision | 6 |
 | Sinister Motives cycle | 584 Sinister Motives; 585 Nova; 586 Ironheart; 587 Spider-Ham; 588 SP//dr | 5 |
@@ -21,9 +21,28 @@ The existing Content Expansion module defines these **11 planning waves**. Range
 | Agents of S.H.I.E.L.D. cycle | 607 Agents of S.H.I.E.L.D.; 608 Black Panther (Shuri); 609 Silk; 610 Falcon; 611 Winter Soldier; 612 Trickster Takeover | 6 |
 | Civil War cycle | 613 Civil War; 614 Synthezoid Smackdown; 615 Wonder Man; 616 Hercules | 4 |
 | Fear No Evil cycle | 617 Fear No Evil; 618 Jessica Jones; 619 Luke Cage; 620 Elektra; 621 Iron Fist; 622 Shadowland | 6 |
-| **Total** | **64 parents, including 8 accepted** | **56** |
+| **Total** | **64 parents, including 9 accepted** | **55** |
 
 ## Current integration checkpoint
+
+The active Ant-Man/Kang candidate is recorded in
+[the cycle checkpoint](roars-cycle-integration.md). It has 23 independently
+reviewed Ant-Man faces out of 35, with 746 total authored rows, and reviewed Kang
+engine foundations. Neither pack is publicly admitted. Giant Stomp's live-choice
+draft is withheld pending the shared simultaneous attack-defeat repair in
+MARVEL-627 and its independent review; MARVEL-875 owns the remaining continuation.
+Swarm Tactics' form-change/ready prerequisite is MARVEL-876. MARVEL-870 owns the
+final replay publication boundary, and final combined verification remains open.
+
+Fear No Evil's printed catalog is published in PR #465, merged as `0dbd5824`
+after all eleven checks passed on `b3e457ff`; source and squash trees match.
+Acquisition MARVEL-697 is complete. The 171 added records bring that catalog to
+239 IDs; this is printed authority for implementation, not executable content or
+another accepted pack. All 64 canonical parents are present. Nine have accepted
+content/engine behavior; eight are marked Done because Wrecking Crew retains its
+separate UI review. No owner-content-acceptance gate is added.
+
+## Accepted baseline evidence
 
 [PR #451](https://github.com/mggarofalo/marvel-lcg/pull/451) is merged at
 `71ac4975a3d6899715c0b5e29cf29bb84231a9db`. All eleven CI jobs passed on exact
@@ -95,7 +114,7 @@ product fix or relaxed assertion was substituted for evidence.
 ## Delivery order and shared capability queue
 
 Work through one integrated pack candidate at a time. Green Goblin, Ms. Marvel
-Thor, Black Widow, Doctor Strange and Hulk are accepted; Ronan is the current integrated candidate, with Kang and Ant-Man prerequisites in bounded parallel work. A source acquisition or narrowly owned review may run beside it when paths and integration capacity are independent. Within later waves, choose the first source-ready pack whose characteristic capability yields reusable proof; the table order is the default until evidence changes the dependency. Do not bulk author all cards or admit an incomplete pack to manufacture an early public journey. Before whole-pack admission, use nonpublic engine tests for characteristic mechanics. When complete, use the normal `DatasetGameFactory` and session/client path for setup, action, save and restart.
+Thor, Black Widow, Doctor Strange, Hulk and Ronan are accepted; Kang and Ant-Man prerequisites are in bounded parallel work. A source acquisition or narrowly owned review may run beside it when paths and integration capacity are independent. Within later waves, choose the first source-ready pack whose characteristic capability yields reusable proof; the table order is the default until evidence changes the dependency. Do not bulk author all cards or admit an incomplete pack to manufacture an early public journey. Before whole-pack admission, use nonpublic engine tests for characteristic mechanics. When complete, use the normal `DatasetGameFactory` and session/client path for setup, action, save and restart.
 
 | Order | Shared capability and first proving pack | Required boundary/proof; later reuse |
 |---:|---|---|
@@ -171,28 +190,36 @@ After each merge or source repair, update the program record with exact revision
 
 ## Certification and next-pack checkpoint — 2026-10-27
 
-Hulk PR #458 merged as `f256e30b` after all eleven checks passed on `0edf7c9a`.
-Its 33 faces, verified starter, eight public games, fresh-host proof and reviewed
-Beat Cop semantics are accepted. Eight canonical packs are accepted; 56 remain.
+Ronan Kree Fanatic PR #459 is merged as `1677ebcdf26bc44b1f092b91af4b973689c1f92f`.
+All eleven CI jobs passed on `a2439588384a10c503cebe8ec1f5b0578dce0e8c` in
+[run 40501220687](https://github.com/mggarofalo/marvel-lcg/actions/runs/40501220687).
+The certified and merged trees are identical. Nine canonical packs are accepted;
+55 remain. This is the print-and-play modular set, not the Galaxy's Most Wanted
+Ronan scenario. All five faces, seven physical cards, 80 public setup combinations,
+four complete games and four fresh-host checkpoints are accepted. The
+[delivery checkpoint](ronan-delivery-checkpoint.md) records the independent reviews,
+resolved failures and published replay-v28 boundary.
 
-Ronan has all five actual faces reviewed and integrated (723 total ability rows),
-seven physical modular cards, all 80 public setup combinations, four complete
-public games and four independent fresh-host checkpoints. The facedown-card and
-ownership-wide elimination repairs are independently accepted. Full acceptance
-passes 197 tests; final CI and merge remain. The [delivery checkpoint](ronan-delivery-checkpoint.md)
-records exact revisions and the repaired broader replay-test failures.
+Kang integration `e7e3e745` includes the accepted nonpublic two-seat first split,
+Stage-II reunion, physical nemesis association and central 2B-to-4B continuation.
+Independent review caught and closed a survivor being skipped when the first
+nemesis's quickstrike eliminated a player. Stored Dominion support (MARVEL-868),
+printed Stage-III victory (MARVEL-869), wider player counts, complete card authoring,
+public admission and UI proof remain. The accepted central slice has no stored
+Dominions; it is not full-pack acceptance.
 
-Kang's routing, unique-conflict query, prepared phase continuation and actual
-nonpublic two-seat first split are independently verified in candidate branches. Local 3B completion
-raises until its Dominion/join rule is implemented. Stage-II connection, wider
-player counts, admission and UI remain in MARVEL-858's execution queue.
+Ant-Man integration `cdb611d3` includes reviewed explicit three-face selection,
+ability-driven and voluntary form timing, six of 35 authored faces and the Ronin
+upgrade selector. Iron Man's global hand-size maximum repair is independently accepted after
+closing an early zero-floor in projected calculations; integration verification remains. The actual
+Ronin and Assess the Situation rows remain unauthored. Face-specific DSL, remaining
+cards, public admission and the post-Ronan replay boundary remain separate work.
 
-Ant-Man/Wasp explicit three-face engine selection is independently verified as a
-nonpublic prerequisite (MARVEL-861). Ability-driven form timing and face-specific
-DSL/projections remain separate work under MARVEL-862; no pack admission is claimed.
-
-Fear No Evil has 201 pinned scans. Bullseye, Electro, Hammerhead, Typhoid Mary and Purple Man
-transcriptions are independently accepted: 60 missing faces across 76 inspected
-originals. Further families are being transcribed and reviewed. Annotation import
-repair `8cf73d30` is independently accepted but not yet merged; no new Fear No Evil
-card dataset or runtime admission is claimed.
+Fear No Evil has 201 pinned original scans. Bullseye, Electro, Hammerhead, Typhoid
+Mary, Purple Man, Tombstone, Cops and Disasters are independently proofread: 74 faces,
+87 physical cards and 91 original scans. The Cops review identified Wanted's hazard
+icon and independently accepted the regenerated candidate. The six Tombstone/Cops/Disasters
+research documents are included with this checkpoint. Additional families remain.
+Annotation importer PR #460 is independently reviewed but unmerged; one Windows
+server-readiness timeout in its first CI run is being investigated on current main.
+No new Fear No Evil card dataset or runtime admission is claimed.

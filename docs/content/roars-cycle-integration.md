@@ -3,7 +3,7 @@
 The canonical delivery records are MARVEL-568 (Kang) and MARVEL-569 (Ant-Man),
 within MARVEL-703. This candidate combines reviewed engine prerequisites; neither
 pack has complete executable content or public admission. The production book
-contains 745 rows, including 22 of Ant-Man's 35 faces and no Kang faces.
+contains 746 rows, including 23 of Ant-Man's 35 faces and no Kang faces.
 
 The integrated sources are Kang `07fd360d`, Ant-Man `f6357d29`, the independently
 strengthened baseline fixture repair `3a7bb2ec`, and the Resize projection closure
@@ -35,6 +35,22 @@ a real villain phase and their expiry in the next live player turn, and verifies
 Lay Down the Law's selected scheme. Six source behavior mutations and the
 reviewer's omitted-round-expiry mutation are distinguished; restored independent
 checks pass 83/83. See [the review](ant-man-form-response-independent-review.md).
+
+Muster Courage source `d812dc88`, independently reviewed at `3c027ee9`, adds
+`12032` using existing stage-based conditional branches. No dynamic-selection
+engine extension is needed. Review covers current versus prior and active versus
+first villain, all-tough versus one eligible recipient, and incomplete-pack
+exclusion over both transports: 44 Content and nine catalog transport tests pass.
+See [the source and review](research/remaining/ant-man-team-stage-composition.md).
+The candidate also incorporates main `0dbd5824`, including the independently
+certified Fear No Evil printed catalog; those research faces add no runtime
+admission.
+
+The combined main/Muster tree `77c0a51c69c3ae2663f5bfa417eb95e2d62f2a98`
+passes all 68 selected Muster, ability-data, supplement, printed-correction and
+setup-dataset checks. Offline card regeneration also matches both generated
+files. Logs are `roars-muster-main-focused.log` and
+`roars-muster-main-generator.log`; the final complete suite remains pending.
 
 ## Combined verification
 
@@ -80,7 +96,7 @@ acceptance does not settle replay compatibility.
 
 ## Next delivery
 
-Verify the form-response packet on the combined candidate. Test-only probe
+Verify Muster Courage and updated main on the combined candidate. Test-only probe
 `364660e1` establishes two Giant Stomp
 boundaries under MARVEL-875: nested live choice inside one attack is refused,
 and a splash followed by fixed villain damage omits that villain's per-enemy

@@ -18,6 +18,9 @@ answers must not be used to restore the superseded behavior. An assertion based
 on the older rule is a test finding, not evidence of an engine defect.
 
 Map each new mechanic to its engine prerequisite and test a characteristic card.
+Rejection of one candidate encoding does not establish a missing capability.
+Check existing compositions before extending the DSL: a finite capped value may
+be expressible with conditional branches and existing fixed bounds.
 Keep card DSL changes separate from engine mechanisms where practical. Confirm
 cost assessment, choices and mutations happen in the correct order: a rejected
 answer must preserve the prompt, state, RNG and pending effects, including on retry.
