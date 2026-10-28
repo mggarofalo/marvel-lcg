@@ -134,6 +134,31 @@ public sealed class SwarmTacticsFormReadyTests
                 a => a.Verb == Game.ResolveMulligans).Id));
         Assert.Equal(offered, game.PromptFor(1)?.Affordances.Any(a => a.AnchorId == source.ObjectId) == true);
     }
+
+    [Theory]
+    [InlineData("12001a")]
+    [InlineData("12001c")]
+    [Rule("rr:cannot.1")]
+    [Rule("rr:ability.4")]
+    public void ProhibitedFormChangeStillAllowsIndependentReady(string face)
+    {
+        // rr:cannot.1 makes the prohibition absolute; rr:ability.4 resolves sentences one at a time.
+        var runner = Runner();
+        var (world, source, payment, _) = Board(runner, face);
+        var hero = world.Seats[1].IdentityCard;
+        world.Effects.Register(new ContinuousEffect(EffectSource.LastingEffect,
+            FormChangePermissions.ProhibitedField, 1, Card: hero.ObjectId, Affects: hero.ObjectId));
+        Assert.DoesNotContain(runner.Actions(world, 1), a => a.Card == source.ObjectId);
+        hero.Exhaust();
+        var action = Assert.Single(runner.Actions(world, 1), a => a.Card == source.ObjectId);
+        var events = runner.ExecuteAction(world, new PlayerAction(action, [payment.ObjectId], [])).Events.ToList();
+        Sequence.Finish(world, Cards, runner, events);
+        Assert.Equal(face, hero.FaceId);
+        Assert.True(hero.Ready);
+        Assert.Equal(DeckType.DiscardPile, source.Area.Type);
+        Assert.Equal(DeckType.DiscardPile, payment.Area.Type);
+        Assert.False(world.Agenda.IsBusy);
+    }
     private static AbilityRunner Runner(bool responses = false)
     {
         var root = JsonNode.Parse($$"""
