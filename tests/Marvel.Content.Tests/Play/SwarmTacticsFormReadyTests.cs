@@ -2,6 +2,7 @@ using System.Text.Json.Nodes;
 using Marvel.Cards.Dsl;
 using Marvel.Cards.Run;
 using Marvel.Content.Tests.Cards;
+using Marvel.Rules.Events;
 using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
@@ -158,6 +159,52 @@ public sealed class SwarmTacticsFormReadyTests
         Assert.Equal(DeckType.DiscardPile, source.Area.Type);
         Assert.Equal(DeckType.DiscardPile, payment.Area.Type);
         Assert.False(world.Agenda.IsBusy);
+    }
+
+    [Theory]
+    [InlineData("12001a")]
+    [InlineData("12001c")]
+    public void ExtraOfferQueriesPreserveThePaidResolutionAndNextOffer(string face)
+    {
+        var runner = Runner();
+        var controlRunner = Runner();
+        var (world, source, payment, _) = Board(runner, face);
+        var (control, controlSource, controlPayment, _) = Board(controlRunner, face);
+        var nextSource = world.CreateCard("12020", world.Seats[1].Hand);
+        var controlNextSource = control.CreateCard("12020", control.Seats[1].Hand);
+        world.CreateCard("01088", world.Seats[1].Hand);
+        control.CreateCard("01088", control.Seats[1].Hand);
+        world.Seats[1].IdentityCard.Exhaust();
+        control.Seats[1].IdentityCard.Exhaust();
+        string before = world.Digest().Canonical();
+        var random = world.Random.Generator.GetState();
+        long words = world.Random.Generator.WordsConsumed;
+        var pending = world.Agenda.Outstanding.ToArray();
+        _ = runner.Actions(world, 1);
+        _ = runner.Actions(world, 1);
+        Assert.Equal(before, world.Digest().Canonical());
+        Assert.Equal(random.Words, world.Random.Generator.GetState().Words);
+        Assert.Equal(random.Index, world.Random.Generator.GetState().Index);
+        Assert.Equal(words, world.Random.Generator.WordsConsumed);
+        Assert.Equal(pending, world.Agenda.Outstanding);
+        var action = Assert.Single(runner.Actions(world, 1), a => a.Card == source.ObjectId);
+        var controlAction = Assert.Single(controlRunner.Actions(control, 1), a => a.Card == controlSource.ObjectId);
+        var events = runner.ExecuteAction(world, new PlayerAction(action, [payment.ObjectId], [])).Events.ToList();
+        var controlEvents = controlRunner.ExecuteAction(control,
+            new PlayerAction(controlAction, [controlPayment.ObjectId], [])).Events.ToList();
+        Sequence.Finish(world, Cards, runner, events);
+        Sequence.Finish(control, Cards, controlRunner, controlEvents);
+        Assert.Equal(control.Digest().Canonical(), world.Digest().Canonical());
+        Assert.Equal(controlEvents.Select(EventJson.Write), events.Select(EventJson.Write));
+        Assert.Equal(control.Random.Generator.WordsConsumed, world.Random.Generator.WordsConsumed);
+        Assert.Equal(control.Random.Generator.GetState().Words, world.Random.Generator.GetState().Words);
+        Assert.Equal(control.Random.Generator.GetState().Index, world.Random.Generator.GetState().Index);
+        Assert.Equal(control.Agenda.Outstanding, world.Agenda.Outstanding);
+        var next = runner.Actions(world, 1);
+        var controlNext = controlRunner.Actions(control, 1);
+        Assert.Contains(next, a => a.Card == nextSource.ObjectId);
+        Assert.Contains(controlNext, a => a.Card == controlNextSource.ObjectId);
+        Assert.Equal(controlNext, next);
     }
     private static AbilityRunner Runner(bool responses = false)
     {
