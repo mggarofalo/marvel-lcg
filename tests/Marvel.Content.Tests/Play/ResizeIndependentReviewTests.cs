@@ -10,7 +10,7 @@ using Xunit;
 
 namespace Marvel.Content.Tests.Play;
 
-// Test-local printed Resize and Giant response, without admitting the pack.
+// Actual Resize and Giant response, without admitting the pack.
 public sealed class ResizeIndependentReviewTests
 {
     [Fact]
@@ -19,12 +19,7 @@ public sealed class ResizeIndependentReviewTests
     {
         // rr:initiating-abilities.2: responses initiate immediately after their condition.
         var cards = CardCatalog.Parse(File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")));
-        var runner = new AbilityRunner(AbilityCatalog.Parse("""
-            {"cards":[
-              {"card":"12005","abilities":[{"trigger":{"event":"WhenActionTriggered","timing":"Action","subject":"this","form":"hero"},"effect":{"seq":[{"changeForm":{"player":"you","to":"other-hero"}},{"draw":{"player":"you","count":1}}]}}]},
-              {"card":"12001c","abilities":[{"trigger":{"event":"WhenFormChanged","timing":"Response","subject":"this"},"effect":{"chooseCard":{"from":{"query":"enemies"},"effect":{"dealDamage":{"cards":"chosen","amount":1}}}}}]}
-            ]}
-            """));
+        var runner = AntManF1Fixture.Runner(["12005", "12001c"]);
         var world = new World(cards, 2, 241);
         var first = world.CreateSeat("first");
         first.IdentityCard = world.CreateCard("01001a,01001b", first.Hero);

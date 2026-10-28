@@ -3,7 +3,7 @@
 The canonical delivery records are MARVEL-568 (Kang) and MARVEL-569 (Ant-Man),
 within MARVEL-703. This candidate combines reviewed engine prerequisites; neither
 pack has complete executable content or public admission. The production book
-contains 733 rows, including 10 of Ant-Man's 35 faces and no Kang faces.
+contains 738 rows, including 15 of Ant-Man's 35 faces and no Kang faces.
 
 The integrated sources are Kang `07fd360d`, Ant-Man `f6357d29`, the independently
 strengthened baseline fixture repair `3a7bb2ec`, and the Resize projection closure
@@ -11,10 +11,17 @@ strengthened baseline fixture repair `3a7bb2ec`, and the Resize projection closu
 and form-change completion in their shared interpreter paths. Fixture integration
 is `69fa1a2e`; the subsequent projection merge has no textual conflicts.
 
+The five-face content packet `40bc0d6a`, independently reviewed at `5902b564`,
+adds Ant-Man's three identity faces, Resize and Helmet. Its 62 focused review
+checks cover target legality, response and draw ordering, all six form changes,
+and multiplayer ownership. Synthetic blank-reading controls do not establish a
+reachable effect that blanks these card kinds. The merged exact inventory retains
+Power Gloves and all five new faces. Giant Strength remains unauthored.
+
 ## Combined verification
 
-The tested staged tree is `b0d57f65b7e1c36420edfb4cdcb73f9e03120bb6`, before this
-evidence document was added. Windows Release tests used
+The tested staged tree is `b0d57f65b7e1c36420edfb4cdcb73f9e03120bb6`, before the
+five-face content packet and this evidence document were added. Windows Release tests used
 `MSBUILDDISABLENODEREUSE=1` and `-m:1`:
 
 - Full Content: 8,483 passed, 10 failed, none skipped; 8 minutes 25 seconds.

@@ -22950,6 +22950,53 @@
           "effect": { "chooseCard": { "from": { "query": "enemies" }, "effect": { "dealDamage": { "cards": "chosen", "amount": 1 } } } }
         }
       ]
+    },
+    {
+      "card": "12001a",
+      "name": "Ant-Man (Tiny)",
+      "note": "After changing to this face, the optional response removes 1 threat from a scheme. Trigger and selector spellings are engine choices.",
+      "abilities": [
+        { "trigger": { "event": "WhenFormChanged", "timing": "Response", "subject": "this" },
+          "effect": { "chooseCard": { "from": { "query": "schemes" }, "effect": { "removeThreat": { "scheme": "chosen", "amount": 1 } } } } }
+      ]
+    },
+    {
+      "card": "12001b",
+      "name": "Scott Lang",
+      "note": "After changing to this face, the optional response heals Scott Lang 1 damage. Trigger and selector spellings are engine choices.",
+      "abilities": [
+        { "trigger": { "event": "WhenFormChanged", "timing": "Response", "subject": "this" },
+          "effect": { "heal": { "card": "you", "amount": 1 } } }
+      ]
+    },
+    {
+      "card": "12001c",
+      "name": "Ant-Man (Giant)",
+      "note": "After changing to this face, the optional response deals 1 damage to an enemy. Trigger and selector spellings are engine choices.",
+      "abilities": [
+        { "trigger": { "event": "WhenFormChanged", "timing": "Response", "subject": "this" },
+          "effect": { "chooseCard": { "from": { "query": "enemies" }, "effect": { "dealDamage": { "cards": "chosen", "amount": 1 } } } } }
+      ]
+    },
+    {
+      "card": "12005",
+      "name": "Resize",
+      "note": "Hero Action changes to the other hero form and independently draws a card. Destination and sequence spellings are engine choices.",
+      "abilities": [
+        { "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" },
+          "effect": { "seq": [ { "changeForm": { "player": "you", "to": "other-hero" } }, { "draw": { "player": "you", "count": 1 } } ] } }
+      ]
+    },
+    {
+      "card": "12008",
+      "name": "Ant-Man's Helmet",
+      "note": "After changing to Giant, heal 2 damage; after changing to Tiny, draw 1 card. Both are optional Hero Responses; trigger and trait spellings are engine choices.",
+      "abilities": [
+        { "trigger": { "event": "WhenFormChanged", "timing": "Response", "subject": "you", "form": "hero" },
+          "when": { "hasTrait": { "card": "you", "trait": "GIANT" } }, "effect": { "heal": { "card": "you", "amount": 2 } } },
+        { "trigger": { "event": "WhenFormChanged", "timing": "Response", "subject": "you", "form": "hero" },
+          "when": { "hasTrait": { "card": "you", "trait": "TINY" } }, "effect": { "draw": { "player": "you", "count": 1 } } }
+      ]
     }
   ]
 }
