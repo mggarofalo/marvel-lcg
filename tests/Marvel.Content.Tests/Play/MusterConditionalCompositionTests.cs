@@ -98,6 +98,61 @@ public sealed class MusterConditionalCompositionTests
         Assert.Contains(world.Seats[1].IdentityCard.ObjectId, offer.Targets.Legal);
     }
 
+    [Fact]
+    [Rule("rr:initiating-abilities.step.2")]
+    public void AllFriendlyCharactersToughSuppressesOfferButOneEligibleAllowsSameCost()
+    {
+        // "If the card or ability does not have at least one valid target, it cannot be played or initiated."
+        var runner = Runner();
+        var (blocked, source, payment, payment2) = Board(runner, "01095");
+        var (control, controlSource, _, _) = Board(runner, "01095");
+        foreach (var character in new[] { blocked.Seats[0].IdentityCard, blocked.Seats[1].IdentityCard,
+                     blocked.AreaOf(DeckType.AlliesArea, PlayArea.Of(1)).Cards.Single() })
+            Statuses.Give(blocked, character, Statuses.Tough);
+        Statuses.Give(control, control.Seats[0].IdentityCard, Statuses.Tough);
+        Statuses.Give(control, control.Seats[1].IdentityCard, Statuses.Tough);
+        Assert.DoesNotContain(runner.Actions(blocked, 0), action => action.Card == source.ObjectId);
+        Assert.Contains(runner.Actions(control, 0), action => action.Card == controlSource.ObjectId);
+        Assert.Same(blocked.Seats[0].Hand, source.Area);
+        Assert.Same(blocked.Seats[0].Hand, payment.Area);
+        Assert.Same(blocked.Seats[0].Hand, payment2.Area);
+    }
+
+    [Fact]
+    [Rule("rr:villain-defeat")]
+    public void CurrentStageRatherThanRemovedPriorStageSetsBound()
+    {
+        // "Remove the current stage ... The next sequential stage of the villain deck is revealed."
+        var runner = Runner();
+        var (world, source, payment, payment2) = Board(runner, "01094");
+        World.MoveToTop(world.TheCardIn(DeckType.VillainArea)!, world.AreaOf(DeckType.RemovedArea));
+        world.CreateCard("01095", world.AreaOf(DeckType.VillainArea));
+        var action = Assert.Single(runner.Actions(world, 0), a => a.Card == source.ObjectId);
+        runner.ExecuteAction(world, new PlayerAction(action, [payment.ObjectId, payment2.ObjectId], []));
+        var prompt = Assert.IsType<Prompt>(Sequence.Work(world, world.Facts, runner, []));
+        Assert.Equal(2, Assert.Single(prompt.Affordances).Targets!.Max);
+    }
+
+    [Fact]
+    public void SyntheticMultipleVillainsUseActiveRatherThanFirstVillain()
+    {
+        var runner = Runner();
+        var (world, source, payment, payment2) = Board(runner, "01094");
+        var first = world.TheCardIn(DeckType.VillainArea)!;
+        var second = world.CreateCard("01095", world.AreaOf(DeckType.VillainArea));
+        EncounterDeckGroup Group(Card villain, string scheme) => new(villain,
+            world.CreateCard(scheme, world.AreaOf(DeckType.SideSchemesArea)),
+            world.CreateArea(DeckType.EncounterDeck), world.CreateArea(DeckType.EncounterDiscardPile),
+            [], [villain]);
+        var firstGroup = Group(first, "07004");
+        var secondGroup = Group(second, "07019");
+        world.BindEncounterTopology(new EncounterTopology(world, [firstGroup, secondGroup], second));
+        var action = Assert.Single(runner.Actions(world, 0), a => a.Card == source.ObjectId);
+        runner.ExecuteAction(world, new PlayerAction(action, [payment.ObjectId, payment2.ObjectId], []));
+        var prompt = Assert.IsType<Prompt>(Sequence.Work(world, world.Facts, runner, []));
+        Assert.Equal(2, Assert.Single(prompt.Affordances).Targets!.Max);
+    }
+
     [Theory]
     [InlineData(0, false)]
     [InlineData(4, true)]
