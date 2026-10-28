@@ -44,7 +44,7 @@ internal static class DecisionProgressProjection
         int generatedIcons = composer.Resources.Sum(effect =>
             cost.Generators
                 .Where(generator => generator.Effect == effect)
-                .Sum(generator => generator.Generates.Length));
+                .Sum(generator => ResourcePayment.GeneratedBy(generator, composer.CollapseAssignments()).Length));
         VariableRequest[] requested = cost.VariableRequests.ToArray();
         bool variablesSatisfied = DecisionAssessment.VariablesAllowed(cost, composer.Values);
         bool paymentSatisfied = composer.CostApplies(cost)

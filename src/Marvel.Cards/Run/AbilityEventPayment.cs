@@ -81,14 +81,15 @@ internal sealed class AbilityEventPayment
         var sources = EventPaymentSources.Find(world, card, player, resourceAbilities);
         ValidateSelectedSources(card, paying, sources.Generators);
 
-        string generated = GeneratedResources(sources.Generators, paying);
+        var generatedSources = ResolveSources(sources.Generators, paying, allocations, adjusted.Amount);
+        string generated = GeneratedResources(generatedSources, paying);
         var requirements = EventPaymentRequirements.Create(
             world, card, adjusted, AbilityInvocationPayment.Expand(world, player, ability.Cost), energy, ability);
         ValidateGeneratedPayment(generated, requirements);
 
         var assigned = allocations;
         string paid = ResolvePaidResources(
-            card, ability.Effect, sources.Generators, paying, assigned, generated, requirements);
+            card, ability.Effect, generatedSources, paying, assigned, generated, requirements);
 
         return new AbilityEventPayment(world, card, player, resourceAbilities, paying, sources,
             new EventPaymentQuote(adjusted, requirements.Total, requirements.Required, paid,
@@ -100,6 +101,19 @@ internal sealed class AbilityEventPayment
 
     private sealed record EventPaymentQuote(AdjustedCardCost Adjusted, long Total, string Required, string Paid,
         CostOption? Price, ImmutableArray<ResourceAllocation> Allocations);
+
+    private static ResourceSource[] ResolveSources(
+        IReadOnlyList<ResourceSource> sources, IReadOnlyList<int> paying,
+        IReadOnlyList<ResourceAllocation> allocations, long amount)
+    {
+        if (allocations.Count == 0 && amount > 0
+            && sources.Any(source => paying.Contains(source.Effect) && source.ConditionalBonus is not null))
+            throw new RulesNotImplementedException("conditional resource generation requires the player's allocation");
+        return [.. sources.Select(source => source with
+        {
+            Generates = ResourcePayment.GeneratedBy(source, allocations), ConditionalBonus = null,
+        })];
+    }
 
     private static string GeneratedResources(
         IReadOnlyList<ResourceSource> generators, IReadOnlyList<int> paying)

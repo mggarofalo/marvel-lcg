@@ -8,6 +8,9 @@ public sealed record PaymentSourcePresentation(int Id, string Name, string Resou
     /// <summary>Authorized display markup preserves the printed resource symbols.</summary>
     public string ReferenceMarkup { get; init; } = string.Empty;
 
+    /// <summary>Additional output and its qualifying cost components.</summary>
+    public ConditionalResourceBonus? ConditionalBonus { get; init; }
+
     /// <summary>The exact offered resource ability, when supplied by the engine.</summary>
     public string? AbilityName { get; init; }
 
@@ -25,10 +28,12 @@ public sealed record PaymentSourcePresentation(int Id, string Name, string Resou
                 area.Zone == "HandsArea", face.RulesText)
             {
                 ReferenceMarkup = face.RulesMarkup,
+                ConditionalBonus = source.ConditionalBonus,
                 AbilityName = source.AbilityName,
                 CostDescription = source.CostDescription,
             };
         }
-        return new(source.Effect, "Resource ability", source.Generates, false, string.Empty);
+        return new(source.Effect, "Resource ability", source.Generates, false, string.Empty)
+        { ConditionalBonus = source.ConditionalBonus };
     }
 }

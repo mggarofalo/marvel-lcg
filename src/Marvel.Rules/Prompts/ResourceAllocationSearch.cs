@@ -9,13 +9,15 @@ internal sealed class ResourceAllocationSearch
     private readonly List<Slot> slots;
     private readonly List<Icon> icons;
     private readonly bool[] used;
+    private readonly IReadOnlyList<ResourceSource> sources;
     private readonly Choice[] choices;
     private readonly bool[] assigned;
 
     internal ResourceAllocationSearch(List<Slot> slots, IReadOnlyList<ResourceSource> sources)
     {
         this.slots = slots;
-        icons = sources.SelectMany(source => source.Generates.Select(resource =>
+        this.sources = sources;
+        icons = sources.SelectMany(source => source.PossibleResources.Select(resource =>
             new Icon(source.Effect, resource))).ToList();
         used = new bool[icons.Count];
         choices = new Choice[slots.Count];
@@ -29,7 +31,18 @@ internal sealed class ResourceAllocationSearch
 
     private bool Search(int slotIndex)
     {
-        if (slotIndex == slots.Count) return true;
+        if (slotIndex == slots.Count)
+        {
+            var allocation = Collapse();
+            return sources.All(source =>
+            {
+                string generated = ResourcePayment.GeneratedBy(source, allocation);
+                return icons.Select((icon, index) => (icon, index))
+                    .Where(entry => used[entry.index] && entry.icon.Source == source.Effect)
+                    .GroupBy(entry => entry.icon.Printed)
+                    .All(group => group.Count() <= generated.Count(icon => icon == group.Key));
+            });
+        }
         Slot slot = slots[slotIndex];
         foreach (int index in Candidates(slot))
         {

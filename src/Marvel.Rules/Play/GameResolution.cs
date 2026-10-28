@@ -95,7 +95,8 @@ public static class GameResolution
             // ahead of information clearing as well as exposure and cost commitment.
             _ = CardPlayPayment.Prepare(game.world, new CardPlayInitiation(
                 game.facts, game.world.CardPlayAbilities, seat, card,
-                CardPayment.CostOf(game.world, game.facts, seat, card, input.Targets.SingleOrDefault()), input.Targets, input.Spent));
+                CardPayment.CostOf(game.world, game.facts, seat, card, input.Targets.SingleOrDefault()), input.Targets, input.Spent)
+                { Allocations = input.Allocated });
         }
         catch (RulesNotImplementedException rejected)
         {

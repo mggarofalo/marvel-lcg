@@ -38,7 +38,7 @@ public static class ResourcePayment
         IReadOnlyDictionary<string, long>? values)
     {
         List<Slot>? slots = Slots(costs, values);
-        return slots is null || slots.Any(slot => source.Generates.Any(icon =>
+        return slots is null || slots.Any(slot => source.PossibleResources.Any(icon =>
             Accepts(icon, slot.Required, slot.Printed)));
     }
 
@@ -115,6 +115,13 @@ public static class ResourcePayment
         // requirements, rather than depending on allocation enumeration order.
         return new ResourceAllocationSearch(slots, selected).CanAllocate();
     }
+
+    /// <summary>Output of one quoted source for the submitted component allocation.</summary>
+    public static string GeneratedBy(ResourceSource source, IReadOnlyList<ResourceAllocation> allocations) =>
+        source.Generates + (source.ConditionalBonus is { } bonus
+            && allocations.Any(allocation => allocation.Source == source.Effect
+                && allocation.PaidAs.Length > 0 && bonus.AppliesTo(allocation.Cost))
+            ? bonus.Generates : string.Empty);
 
     private static bool ApplyAllocation(
         ResourceAllocation allocation, IReadOnlyList<ResourceCost> costs,
