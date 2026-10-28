@@ -35,6 +35,30 @@ public sealed class AffordanceContextTests
     }
 
     [Fact]
+    public void HistoricalAttackLabelSurvivesWithoutAssociatingAHiddenCurrentCopy()
+    {
+        World world = VisibilityFixture.Board();
+        int source = world.TheCardIn(DeckType.VillainArea)!.ObjectId;
+        int hidden = world.Seats[1].Hand.Cards[0].ObjectId;
+        var offers = new[]
+        {
+            new Affordance(10, "Response", source, 0, "Respond")
+            { ContextCardIds = [hidden], DisplayLabel = "Respond after attacking a secret" },
+            new Affordance(11, "Response", source, 0, "Respond")
+            { DisplayLabel = "Respond after attacking the public original",
+                Description = "Heal up to 3 damage from your identity." },
+        };
+        var prompt = new Prompt(0, Question.Opportunity, TimingPriority.Response, "Synthetic", "Respond", true, offers);
+        var visible = WorldProjection.For(world, prompt, [], new RestrictedVisibilityPolicy(0).Authorize(null, 2));
+        var projected = visible.Prompt!.Affordances;
+        Assert.Empty(projected[0].ContextCardIds);
+        Assert.Null(projected[0].DisplayLabel);
+        Assert.Empty(projected[1].ContextCardIds);
+        Assert.Equal("Respond after attacking the public original", projected[1].DisplayLabel);
+        Assert.Equal(offers[1].Description, projected[1].Description);
+    }
+
+    [Fact]
     public void PresentationNamesSameTitleCopiesWithoutChangingTheirSourceOrTargets()
     {
         World world = VisibilityFixture.Board();
