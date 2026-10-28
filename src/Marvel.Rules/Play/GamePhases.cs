@@ -106,6 +106,7 @@ internal static class GamePhases
         {
             // `rr:villain-defeat` -- the players can win in the middle of their
             // own turn, and nothing is asked of anybody after a game is over.
+            game.world.Agenda.PlayerTurnOpen = false;
             game.Phase = GamePhase.Over;
             game.Pending = null;
             game.asking = Asker.Game;
@@ -135,6 +136,7 @@ internal static class GamePhases
         {
             // The only thing that makes a prompt absent. Nothing is asked of a
             // player after a game is over.
+            game.world.Agenda.PlayerTurnOpen = false;
             game.Phase = GamePhase.Over;
             game.Pending = null;
             game.asking = Asker.Game;
@@ -160,6 +162,7 @@ internal static class GamePhases
     /// </remarks>
     internal static Resolution AdvanceTurn(this Game game, List<GameEvent> happened)
     {
+        game.world.Agenda.PlayerTurnOpen = false;
         game.finishedTurns.Add(game.Active);
         for (int offset = 1; offset < game.world.Players; offset++)
         {
@@ -188,6 +191,7 @@ internal static class GamePhases
 
         if (game.world.IsOver)
         {
+            game.world.Agenda.PlayerTurnOpen = false;
             game.Phase = GamePhase.Over;
             game.Pending = null;
             game.asking = Asker.Game;
