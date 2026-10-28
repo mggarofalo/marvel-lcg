@@ -70,23 +70,40 @@ public static class Forms
     /// <param name="seat">Whose forms.</param>
     /// <param name="facts">The printed card data.</param>
     public static IReadOnlySet<string> Of(World world, Seat seat, ICardFacts facts)
+        => Collect(world, seat, facts, null);
+
+    /// <summary>Forms with a speculative identity face and the live additional-form cards.</summary>
+    public static IReadOnlySet<string> OfIdentityFace(World world, Seat seat, ICardFacts facts, string identityFace)
+        => Collect(world, seat, facts, identityFace);
+
+    private static SortedSet<string> Collect(World world, Seat seat, ICardFacts facts, string? identityFace)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(seat);
         ArgumentNullException.ThrowIfNull(facts);
+        if (identityFace is not null && (seat.IdentityCard is null
+            || !seat.IdentityCard.Faces.Contains(identityFace, StringComparer.Ordinal)))
+            throw new ArgumentException("Face must belong to the identity.", nameof(identityFace));
 
         // Sorted, and ordinally. Non-negotiable 1 in `AGENTS.md` forbids
         // "iteration over unordered set/dict where order can affect game
         // state", and a form set is read to decide what a card may do -- a hash
         // set would hand two runs of one game different orders.
         var forms = new SortedSet<string>(StringComparer.Ordinal);
-        if (seat.IdentityCard is { } identity && OfFace(identity.FaceId, facts) is { } own)
+        if (seat.IdentityCard is { } identity && OfFace(identityFace ?? identity.FaceId, facts) is { } own)
         {
             // `rr:identity.4` -- the faceup side is in play and the facedown
             // side is out of play, so there is no question of being in both.
             forms.Add(own);
         }
 
+        AddAdditionalForms(world, seat, facts, identityFace, forms);
+        return forms;
+    }
+
+    private static void AddAdditionalForms(
+        World world, Seat seat, ICardFacts facts, string? identityFace, SortedSet<string> forms)
+    {
         foreach (var area in world.Areas)
         {
             if (!DeckTypes.IsInPlay(area.Type))
@@ -97,14 +114,13 @@ public static class Forms
             foreach (var card in area.Cards)
             {
                 if (card.Owner == seat.Index && card.FaceUp
-                    && facts.FormKeyword(card.FaceId) is { } granted)
+                    && facts.FormKeyword(card == seat.IdentityCard ? identityFace ?? card.FaceId : card.FaceId) is { } granted)
                 {
                     forms.Add(granted);
                 }
             }
         }
 
-        return forms;
     }
 
     /// <summary>Whether a seat is in one particular form.</summary>

@@ -36,9 +36,25 @@ public static class CardValues
     public static CardValueEvaluation EvaluateRaw(
         World world, Card card, string field, ICardFacts facts, int players)
     {
-        (long value, CardValueBaseKind kind) = Base(card, field, facts, players);
+        ArgumentNullException.ThrowIfNull(card);
+        return EvaluateRaw(world, card, field, facts, players, card.FaceId);
+    }
+
+    /// <summary>Evaluates a speculative physical face without changing the card.</summary>
+    /// <remarks>Effect applicability and dynamic amounts still use the live world;
+    /// a projector must validate those dependencies before using this result.</remarks>
+    public static CardValueEvaluation EvaluateRaw(
+        World world, Card card, string field, ICardFacts facts, int players, string faceId)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(card);
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(faceId);
+        if (!card.Faces.Contains(faceId, StringComparer.Ordinal))
+            throw new ArgumentException("Face must belong to the card.", nameof(faceId));
+        (long value, CardValueBaseKind kind) = Base(card, field, facts, players, faceId);
         if (PrintedText.IsBlanked(world, card) && PrintedText.IsTextKeywordField(field)) value = 0;
-        return Evaluate(world, card, field, facts, players, value, kind);
+        return Evaluate(world, card, field, facts, players, (value, kind), faceId);
     }
 
     /// <summary>Floors complete values while preserving signed adjustment fields.</summary>
@@ -79,8 +95,9 @@ public static class CardValues
 
     private static CardValueEvaluation Evaluate(
         World world, Card card, string field, ICardFacts facts, int players,
-        long value, CardValueBaseKind kind)
+        (long Value, CardValueBaseKind Kind) initial, string faceId)
     {
+        var (value, kind) = initial;
         IReadOnlyList<ContinuousEffect> active = world.Effects.Active();
         var steps = new List<CardValueStep>();
         if (DefinedBase(world, card, field, active) is { } definition)
@@ -96,7 +113,7 @@ public static class CardValues
             return new(field, value, kind, 0,
                 [.. steps, new(CardValueStepKind.Lost, 0, 0, Source(world, loss), loss.Lasts)]);
 
-        if (IsUnmodifiable(card, field, facts))
+        if (IsUnmodifiable(card, field, facts, faceId))
         {
             // `rr:dash-value.3`: a referenced dash is an unmodifiable zero.
             return new(field, value, kind, 0, [new(CardValueStepKind.Unmodifiable, 0, 0)]);
@@ -138,11 +155,11 @@ public static class CardValues
         return definitions[0];
     }
 
-    private static bool IsUnmodifiable(Card card, string field, ICardFacts facts) =>
+    private static bool IsUnmodifiable(Card card, string field, ICardFacts facts, string faceId) =>
         PrintedFrom.TryGetValue(field, out string? attribute)
         && PowerAttributes.Contains(attribute)
         && !EffectiveCards.HasProfile(card)
-        && !HasUsablePrintedPower(facts, card.FaceId, attribute);
+        && !HasUsablePrintedPower(facts, faceId, attribute);
 
     private static IEnumerable<(long Amount, CardSourceSnapshot Source)> Attachments(
         World world, Card card, string field, ICardFacts facts, int players)
@@ -160,12 +177,12 @@ public static class CardValues
     }
 
     private static (long Value, CardValueBaseKind Kind) Base(
-        Card card, string field, ICardFacts facts, int players)
+        Card card, string field, ICardFacts facts, int players, string faceId)
     {
-        if (field == "ally_limit" && EffectiveCards.Kind(card, facts) is CardKind.Hero or CardKind.AlterEgo)
+        if (field == "ally_limit" && (card.InstanceState.Profile?.Kind ?? facts.Kind(faceId)) is CardKind.Hero or CardKind.AlterEgo)
             return (AllyLimit, CardValueBaseKind.Rule);
         return PrintedFrom.TryGetValue(field, out string? attribute)
-            ? (EffectiveCards.BaseValue(card, facts, attribute, players), IdentityBase(card))
+            ? (EffectiveCards.BaseValue(card, facts, attribute, players, faceId), IdentityBase(card))
             : (0, CardValueBaseKind.Adjustment);
     }
 

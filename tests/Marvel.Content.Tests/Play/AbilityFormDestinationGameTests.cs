@@ -61,7 +61,9 @@ public sealed class AbilityFormDestinationGameTests
 
     [Theory]
     [InlineData("""{"changeForm":{"player":"you","to":{"face":"01001a"}}}""")]
-    [InlineData("""{"seq":[{"changeForm":{"player":"you","to":"other-hero"}},{"draw":{"player":"you","count":1}}]}""")]
+    [InlineData("""{"seq":[{"changeForm":{"player":"firstPlayer","to":"other-hero"}},{"draw":{"player":"you","count":1}}]}""")]
+    [InlineData("""{"seq":[{"changeForm":{"player":"you","to":{"face":"12001c"}}},{"draw":{"player":"you","count":1}}]}""")]
+    [InlineData("""{"seq":[{"changeForm":{"player":"you","to":"other-hero"}},{"if":{"test":{"inForm":{"player":"you","form":"hero"}},"then":{"draw":{"player":"you","count":1}}}}]}""")]
     [InlineData("""{"afterActivation":{"effect":{"changeForm":{"player":"you","to":"other-hero"}}}}""")]
     public void InvalidOrUnprojectedDestinationFailsBeforeMutatingTheQuery(string effect)
     {

@@ -24,6 +24,12 @@ public static class EffectiveCards
             ? profile.BaseValues.GetValueOrDefault(attribute, fallback)
             : facts.PrintedValue(card.FaceId, attribute, players, fallback);
 
+    /// <summary>Base value with a speculative physical face, preserving replacement profiles.</summary>
+    public static long BaseValue(Card card, ICardFacts facts, string attribute, int players, string faceId) =>
+        card.InstanceState.Profile is { } profile
+            ? profile.BaseValues.GetValueOrDefault(attribute, 0)
+            : facts.PrintedValue(faceId, attribute, players);
+
     /// <summary>Active printed attributes; temporary identities expose only their own base values.</summary>
     public static IReadOnlyDictionary<string, string> Attributes(Card card, ICardFacts facts) =>
         card.InstanceState.Profile is { } profile
@@ -34,4 +40,8 @@ public static class EffectiveCards
     /// <summary>Traits on the active identity before granted traits.</summary>
     public static IReadOnlyList<string> InherentTraits(Card card, ICardFacts facts) =>
         card.InstanceState.Profile is { } profile ? profile.Traits : facts.Traits(card.FaceId);
+
+    /// <summary>Inherent traits with a speculative physical face, preserving replacement profiles.</summary>
+    public static IReadOnlyList<string> InherentTraits(Card card, ICardFacts facts, string faceId) =>
+        card.InstanceState.Profile is { } profile ? profile.Traits : facts.Traits(faceId);
 }

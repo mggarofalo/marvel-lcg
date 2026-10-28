@@ -217,62 +217,19 @@ internal static class AbilityProjectedStateQueries
         };
     }
 
-    internal static bool? ProjectedTest(
-        AbilityCondition test, AreaProjectionState state, AbilityAdmissionContext context)
-    {
-        if (test is AbilityCondition.CardText
-            { Property: AbilityCardTextProperty.Status } status)
-        {
-            return ProjectedStatusTest(status, state, context);
-        }
-        if (test is AbilityCondition.Negated negated)
-        {
-            return ProjectedTest(negated.Operand, state, context) is { } inner
-                ? !inner : null;
-        }
-        return test is AbilityCondition.All or AbilityCondition.Any
-            ? ProjectedCompoundTest(test, state, context)
-            : null;
-    }
-
-    private static bool? ProjectedStatusTest(
-        AbilityCondition.CardText status, AreaProjectionState state,
-        AbilityAdmissionContext context) =>
-        ProjectedFind(status.Card, state, context) is { } target
-            ? state.StatusOf(context, target, status.Text) > 0
-            : null;
-
-    private static bool? ProjectedCompoundTest(
-        AbilityCondition test, AreaProjectionState state,
-        AbilityAdmissionContext context)
-    {
-        var operands = test is AbilityCondition.All all
-            ? all.Operands : ((AbilityCondition.Any)test).Operands;
-        var values = operands
-            .Select(child => ProjectedTest(child, state, context)).ToList();
-        if (test is AbilityCondition.All && values.Any(value => value == false))
-        {
-            return false;
-        }
-        if (test is AbilityCondition.Any && values.Any(value => value == true))
-        {
-            return true;
-        }
-        return values.Any(value => value is null)
-            ? null
-            : test is AbilityCondition.All;
-    }
-
     internal static AbilityProjectionResolution ProjectedResolution(
         AbilityEffect effect, AreaProjectionState state, AbilityAdmissionContext context) =>
         effect.OperationName() switch
         {
+            "changeForm" => AbilityAreaFormProjection.Destination(
+                    (AbilityEffect.ChangeForm)effect, state, context) is null
+                ? AbilityProjectionResolution.None : AbilityProjectionResolution.Full,
             "moveActiveCounter" => AbilityActiveCounterProjection.CanMoveArea(effect, state, context)
                 ? AbilityProjectionResolution.Full : AbilityProjectionResolution.None,
             "seq" or "and" => CombinedOutcomes(
                 OrderedEffects(effect).Select(child =>
                     ProjectedResolution(child, state, context))),
-            "if" => ProjectedTest(
+            "if" => AbilityProjectedConditions.Test(
                     ConditionalOf(effect, context).Test, state, context)
                 is { } result
                     ? ConditionalBranch(effect, result ? "then" : "else") is { } branch

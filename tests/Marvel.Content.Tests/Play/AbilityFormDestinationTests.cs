@@ -14,6 +14,17 @@ public sealed class AbilityFormDestinationTests
     private static readonly CardCatalog Cards = CardCatalog.Parse(
         File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")));
 
+    [Fact]
+    public void IndependentDrawShapeRequiresTheResolvingPlayerForBothSteps()
+    {
+        var draw = new AbilityEffect.Draw(new AbilityPlayerSelection.OnePlayer(AbilityPlayer.You), 1);
+        var other = new AbilityEffect.ChangeForm(AbilityPlayer.FirstPlayer, new AbilityFormDestination.OtherHero());
+        Assert.Throws<RulesNotImplementedException>(() =>
+            AbilityFormDestinationResolver.RequireStandalone(new AbilityEffect.Sequence([other, draw])));
+        var own = new AbilityEffect.ChangeForm(AbilityPlayer.You, new AbilityFormDestination.OtherHero());
+        AbilityFormDestinationResolver.RequireStandalone(new AbilityEffect.Sequence([own, draw]));
+    }
+
     [Theory]
     [InlineData("12001a", "12001b")]
     [InlineData("12001a", "12001c")]
@@ -61,6 +72,23 @@ public sealed class AbilityFormDestinationTests
         var identity = Identity("12001a");
         Assert.Equal("12001a", AbilityFormDestinationResolver.Resolve(identity, Cards, "12001c",
             FormsFor("12001c"), new AbilityFormDestination.OtherHero()));
+        Assert.Equal("12001a", identity.FaceId);
+    }
+
+    [Fact]
+    [Rule("rr:flip.1")]
+    public void ConsecutiveHypotheticalHeroChangesUseThePreviousDestination()
+    {
+        // rr:flip.1: a three-sided card has flipped when its faceup side changes.
+        var identity = Identity("12001a");
+        var otherHero = new AbilityFormDestination.OtherHero();
+        string first = AbilityFormDestinationResolver.Resolve(identity, Cards, identity.FaceId,
+            FormsFor(identity.FaceId), otherHero)!;
+        string second = AbilityFormDestinationResolver.Resolve(identity, Cards, first,
+            FormsFor(first), otherHero)!;
+
+        Assert.Equal("12001c", first);
+        Assert.Equal("12001a", second);
         Assert.Equal("12001a", identity.FaceId);
     }
 
