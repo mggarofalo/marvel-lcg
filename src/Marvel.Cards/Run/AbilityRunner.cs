@@ -57,6 +57,8 @@ public sealed class AbilityRunner : ICardAbilities
     public bool CanUseHandResources(World world, Card source) =>
         AbilityProgramQueries.CanUseHandResources(world, program, source);
     public string ResourcesGeneratedBy(World world, Card source, Card? payingFor) => AbilityProgramQueries.ResourcesGeneratedBy(world, program, source, payingFor);
+    public ResourceSource QuoteHandResources(World world, Card source, Card? costOwner, ulong qualifyingComponents = 1) =>
+        AbilityProgramQueries.QuoteHandResources(world, program, source, costOwner, qualifyingComponents);
     public DefenderChoice Defenders(World world, EnemyAttack attack, IReadOnlyList<Card> candidates) => AbilityProgramQueries.Defenders(world, program, attack, candidates);
     public bool CanRemoveThreat(World world, Card scheme, int ignoredSource = -1) => AbilityProgramQueries.CanRemoveThreat(world, program, scheme, ignoredSource);
     /// <inheritdoc/>

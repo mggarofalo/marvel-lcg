@@ -18,10 +18,13 @@ internal static class AbilityPaymentReceiptAdmission
         var price = AbilityPaymentPricing.CombinedPrice(context.World, context.Source,
             context.Query.Player, ability, context.ResourceAbilities)!;
         int cost = int.Parse(price.Cost, System.Globalization.CultureInfo.InvariantCulture);
-        string generated = string.Concat(price.Generators.Select(source => source.Generates));
+        string generated = string.Concat(price.Generators.Select(source => source.PossibleResources));
         foreach (string receipt in Receipts(generated, cost))
         {
             if (!Resources.PaysDeclared(receipt, cost, string.Concat(price.Rule ?? []))) continue;
+            var receiptPrice = price with { Rule = [receipt] };
+            if (ResourcePayment.Allocate(receiptPrice, price.Generators.Select(source => source.Effect).ToArray()) is null)
+                continue;
             var result = AbilityDiscardReceiptAdmission.Admit(ability, WithReceipt(context, receipt), selected);
             if (result is not null) return result;
         }

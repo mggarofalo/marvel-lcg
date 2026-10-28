@@ -3,7 +3,25 @@
 The canonical delivery records are MARVEL-568 (Kang) and MARVEL-569 (Ant-Man),
 within MARVEL-703. This candidate combines reviewed engine prerequisites; neither
 pack has complete executable content or public admission. The production book
-contains 748 rows, including 25 of Ant-Man's 35 faces and no Kang faces.
+contains 750 rows, including 27 of Ant-Man's 35 faces and no Kang faces.
+
+Stinger and Moment of Triumph are independently accepted at `ef9ff6f8`, after
+the response explanation repair `1eccb891` and its independent review `c868fa51`.
+The integrated fast-forward has exactly the reviewed tree
+`460713e7c6ce03648e7abdbf36f845b1f2fbae50`. Independent content/data checks pass
+58 cases and catalog/admission checks pass 20; the original 748 objects and raw
+book prefix remain unchanged. See [the content review](ant-man-stinger-triumph-independent-review.md).
+
+Actual Power generation source `c1363aea` is independently reviewed at
+`cadf296e` and combined here without textual conflicts. Its source checks pass
+57 Rules and 818 Content cases; independent payment checks pass 29 and catch a
+compiled one-paid/one-excess mutation. The [review](power-resource-activation-independent-review.md)
+records the synthetic ten-resource search measurement and remaining limits.
+Combined Windows Release verification passes 866 affected Content checks and
+69 Rules checks in `roars-power-content-integration.log` and
+`roars-power-rules-integration.log` under the external evidence directory.
+Native conditional-resource interaction, final whole-candidate verification and
+MARVEL-870 replay publication remain open. These rows do not admit the pack.
 
 The integrated sources are Kang `07fd360d`, Ant-Man `f6357d29`, the independently
 strengthened baseline fixture repair `3a7bb2ec`, and the Resize projection closure

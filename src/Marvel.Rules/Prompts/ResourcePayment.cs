@@ -192,6 +192,34 @@ public static class ResourcePayment
         return Allocate([new ResourceCost(option.OrCost, option.OrRule)], selected, values);
     }
 
+    /// <summary>Find an allocation only if every legal allocation produces the same conditional output.</summary>
+    /// <remarks>Wild declarations and other paid-resource choices remain the caller's responsibility.</remarks>
+    public static IReadOnlyList<ResourceAllocation>? AllocateUnambiguousGeneration(
+        CostOption option, IReadOnlyList<int> paying, IReadOnlyDictionary<string, long>? values = null)
+    {
+        var first = Allocate(option, paying, values);
+        if (first is null) return null;
+        var selected = option.Generators.Where(source => paying.Contains(source.Effect)).ToArray();
+        foreach (var source in selected.Where(source => source.ConditionalBonus is not null))
+        {
+            string generated = GeneratedBy(source, first);
+            bool Different(IReadOnlyList<ResourceAllocation> allocation) =>
+                GeneratedBy(source, allocation) != generated;
+            if (FindDifferent(option.ResourceCosts, selected, values, Different)
+                || option.Components is null && option.HasAlternative
+                && FindDifferent([new ResourceCost(option.OrCost, option.OrRule)], selected, values, Different))
+                return null;
+        }
+        return first;
+    }
+
+    private static bool FindDifferent(IReadOnlyList<ResourceCost> costs, IReadOnlyList<ResourceSource> sources,
+        IReadOnlyDictionary<string, long>? values, Func<IReadOnlyList<ResourceAllocation>, bool> different)
+    {
+        var slots = Slots(costs, values);
+        return slots is not null && new ResourceAllocationSearch(slots, sources, different).CanAllocate();
+    }
+
     private static IReadOnlyList<ResourceAllocation>? Allocate(
         IReadOnlyList<ResourceCost> costs,
         IReadOnlyList<ResourceSource> sources,

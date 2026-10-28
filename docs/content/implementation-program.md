@@ -26,16 +26,17 @@ The existing Content Expansion module defines these **11 planning waves**. Range
 ## Current integration checkpoint
 
 The active Ant-Man/Kang candidate is recorded in
-[the cycle checkpoint](roars-cycle-integration.md). It has 25 independently
-reviewed Ant-Man faces out of 35, with 748 total authored rows, and reviewed Kang
+[the cycle checkpoint](roars-cycle-integration.md). It has 27 independently
+reviewed Ant-Man faces out of 35, with 750 total authored rows, and reviewed Kang
 engine foundations. Neither pack is publicly admitted. Giant Stomp's live-choice
 capability is independently accepted at `38ce4bca` and integrated at `78b62715`,
 including the shared simultaneous attack-defeat repair and corrected View wording.
 Swarm Tactics' form-change/ready prerequisite is independently accepted at
 `a7973b01`; the separate event Team-Up check is accepted at `1c21233a`.
 Actual Giant Stomp and Swarm Tactics rows are independently accepted at `62eac154`.
-MARVEL-878 now owns the confirmed Power resource generation gap; spent-card
-response and Hank entry/overpayment mechanisms remain pending. MARVEL-870 owns the
+MARVEL-878's Power resource generation source is independently reviewed at
+`cadf296e`; MARVEL-882 owns the pending spent-card response boundary. Hank
+entry/overpayment remains pending. MARVEL-870 owns the
 final replay publication boundary, and final combined verification remains open.
 
 The attack-excess prerequisite is independently accepted at `3b3f3558` and
@@ -43,10 +44,12 @@ integrated by an identical-tree fast-forward. Conditional-resource contract
 repair `aaedbb07` is independently accepted at `01f9ebca`; its protocol 43
 boundary rejects protocol 42 peers before gameplay. The combined candidate
 passes 201 selected checks across Content, Rules, Server and Decisions. Actual
-Power-card generation remains in progress. The ally-limit prerequisite is
+Power-card generation is integrated with 866 affected Content and 69 Rules
+checks passing. The ally-limit prerequisite is
 independently accepted at `9e7290e2` and integrated with 211 selected Content
-and Rules checks passing. Stinger and Moment of Triumph's actual rows remain
-outstanding; their accepted prerequisites are now available together.
+and Rules checks passing. Stinger and Moment of Triumph's actual rows are
+independently accepted at `ef9ff6f8` and integrated by an identical-tree
+fast-forward, including the separately reviewed response explanation repair.
 
 Fear No Evil's printed catalog is published in PR #465, merged as `0dbd5824`
 after all eleven checks passed on `b3e457ff`; source and squash trees match.

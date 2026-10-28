@@ -59,4 +59,47 @@ public sealed class ConditionalResourcePaymentTests
             ResourcePayment.Allocate(option, [7, 8]));
         Assert.True(ResourcePayment.Allows(option, [7, 8], null, suggested));
     }
+    [Fact]
+    public void ImplicitGenerationIsAllowedOnlyWhenAllLegalAllocationsAgree()
+    {
+        var certain = new CostOption(0, "2", Sources: [Conditional]);
+        var allocation = Assert.IsAssignableFrom<IReadOnlyList<ResourceAllocation>>(
+            ResourcePayment.AllocateUnambiguousGeneration(certain, [7]));
+        Assert.Equal("GG", ResourcePayment.GeneratedBy(Conditional, allocation));
+        var ambiguous = certain with { Sources = [Conditional, new ResourceSource(8, "YY")] };
+        Assert.Null(ResourcePayment.AllocateUnambiguousGeneration(ambiguous, [7, 8]));
+        var zero = certain with { Cost = "0" };
+        var excess = Assert.IsAssignableFrom<IReadOnlyList<ResourceAllocation>>(
+            ResourcePayment.AllocateUnambiguousGeneration(zero, [7]));
+        Assert.Equal("G", ResourcePayment.GeneratedBy(Conditional, excess));
+    }
+
+    [Fact]
+    public void SeparateSourcesKeepTheirOwnQualifyingComponents()
+    {
+        var first = new ResourceSource(7, "R") { ConditionalBonus = new("R", 1) };
+        var second = new ResourceSource(8, "Y") { ConditionalBonus = new("Y", 2) };
+        var option = new CostOption(0, "2", Sources: [first, second],
+            Components: [new("1"), new("1")]);
+        ResourceAllocation[] swapped = [new(7, 1, "R"), new(8, 0, "Y")];
+        Assert.True(ResourcePayment.Allows(option, [7, 8], null, swapped));
+        Assert.Equal("R", ResourcePayment.GeneratedBy(first, swapped));
+        Assert.Equal("Y", ResourcePayment.GeneratedBy(second, swapped));
+        ResourceAllocation[] matching = [new(7, 0, "R"), new(8, 1, "Y")];
+        Assert.True(ResourcePayment.Allows(option, [7, 8], null, matching));
+        Assert.Equal("RR", ResourcePayment.GeneratedBy(first, matching));
+        Assert.Equal("YY", ResourcePayment.GeneratedBy(second, matching));
+    }
+
+    [Fact]
+    public void RepeatedEquivalentIconsDoNotMultiplyAmbiguitySearch()
+    {
+        var source = new ResourceSource(7, new string('G', 18))
+        { ConditionalBonus = new("G", 1) };
+        var option = new CostOption(0, "18", Sources: [source]);
+        var allocation = Assert.IsAssignableFrom<IReadOnlyList<ResourceAllocation>>(
+            ResourcePayment.AllocateUnambiguousGeneration(option, [7]));
+        Assert.True(ResourcePayment.Allows(option, [7], null, allocation));
+        Assert.Equal(19, ResourcePayment.GeneratedBy(source, allocation).Length);
+    }
 }

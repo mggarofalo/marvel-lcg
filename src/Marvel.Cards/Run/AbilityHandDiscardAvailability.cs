@@ -12,14 +12,11 @@ internal static class AbilityHandDiscardAvailability
         IReadOnlyList<ResourceSource> generators, long amount, string required, int? discardCount = null)
     {
         var discards = Costs(cost).OfType<AbilityCost.DiscardFromHand>().ToArray();
-        string pool = new([.. generators.SelectMany(source => source.Generates).Order()]);
-        if (discards.Length == 0) return Resources.Pays(pool, amount, required);
         if (discards.Length > 1)
             throw new RulesNotImplementedException("multiple hand-discard cost selections require separate commitments");
-        int minimum = discardCount ?? AbilityCostSelection.Range(discards[0].Range, candidates.Count).Min;
-        var generated = generators.ToDictionary(source => source.Effect, source => source.Generates);
-        string[] receipts = [.. candidates.Select(card => generated.GetValueOrDefault(card.ObjectId, ""))];
-        return new PaymentSearch(receipts, amount, required).Find(0, minimum, pool);
+        int minimum = discards.Length == 0 ? 0
+            : discardCount ?? AbilityCostSelection.Range(discards[0].Range, candidates.Count).Min;
+        return new PaymentSearch(candidates, generators, amount, required).Find(0, minimum, []);
     }
 
     private static IEnumerable<AbilityCost> Costs(AbilityCost? cost) => cost switch
@@ -29,30 +26,22 @@ internal static class AbilityHandDiscardAvailability
         _ => [cost],
     };
 
-    // Canonical resource pools make equivalent search branches share a failed
-    // state. This query owns no world mutation, RNG use or persistent cache.
-    private sealed class PaymentSearch(string[] receipts, long amount, string required)
+    private sealed class PaymentSearch(
+        IReadOnlyList<Card> candidates, IReadOnlyList<ResourceSource> generators, long amount, string required)
     {
-        private readonly HashSet<(int Index, int Remaining, string Pool)> failed = [];
-
-        internal bool Find(int index, int remaining, string pool)
+        internal bool Find(int index, int remaining, HashSet<int> discarded)
         {
-            if (!Resources.Pays(pool, amount, required)) return false;
+            var available = generators.Where(source => !discarded.Contains(source.Effect)).ToArray();
+            var price = new CostOption(0, amount.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                Rule: [required], Sources: available);
+            if (ResourcePayment.Allocate(price, available.Select(source => source.Effect).ToArray()) is null)
+                return false;
             if (remaining == 0) return true;
-            if (receipts.Length - index < remaining || !failed.Add((index, remaining, pool))) return false;
-            return Find(index + 1, remaining - 1, Without(pool, receipts[index]))
-                || Find(index + 1, remaining, pool);
-        }
-
-        private static string Without(string pool, string receipt)
-        {
-            foreach (char resource in receipt)
-            {
-                int index = pool.IndexOf(resource);
-                if (index < 0) throw new InvalidOperationException("a hand resource receipt is absent from its pool");
-                pool = pool.Remove(index, 1);
-            }
-            return pool;
+            if (candidates.Count - index < remaining) return false;
+            discarded.Add(candidates[index].ObjectId);
+            bool found = Find(index + 1, remaining - 1, discarded);
+            discarded.Remove(candidates[index].ObjectId);
+            return found || Find(index + 1, remaining, discarded);
         }
     }
 }

@@ -64,7 +64,7 @@ public sealed class DoctorStrangeResourceReprintTests
         var power = world.CreateCard("09017", world.Seats[0].Hand);
         var extra = world.CreateCard("01003", world.Seats[0].Hand);
         Assert.Equal(icons, Assert.Single(CardPayment.Generators(world, world.Facts,
-            world.Seats[0], runner, card), item => item.Effect == power.ObjectId).Generates);
+            world.Seats[0], runner, card), item => item.Effect == power.ObjectId).PossibleResources);
         Assert.Equal("G", Assert.Single(CardPayment.Generators(world, world.Facts,
             world.Seats[0], runner), item => item.Effect == power.ObjectId).Generates);
         var abilitySource = InPlay(world, "09018");

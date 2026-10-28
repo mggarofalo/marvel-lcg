@@ -31,11 +31,15 @@ public sealed class PowerOfAspectTests
         var abilities = AuthoredCards.Runner();
         world.Abilities = abilities;
 
-        Assert.Equal("GG", abilities.ResourcesGeneratedBy(world, source, matching));
+        Assert.Equal("G", abilities.ResourcesGeneratedBy(world, source, matching));
         Assert.Equal("G", abilities.ResourcesGeneratedBy(world, source, basic));
 
         var advertised = CardPayment.Generators(world, Cards, seat, matching)
             .Single(option => option.Effect == source.ObjectId);
-        Assert.Equal("GG", advertised.Generates);
+        Assert.Equal("G", advertised.Generates);
+        Assert.Equal("G", advertised.ConditionalBonus?.Generates);
+        Assert.Equal(1UL, advertised.ConditionalBonus?.ComponentMask);
+        Assert.Null(CardPayment.Generators(world, Cards, seat, basic)
+            .Single(option => option.Effect == source.ObjectId).ConditionalBonus);
     }
 }
