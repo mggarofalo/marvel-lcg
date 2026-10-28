@@ -175,7 +175,33 @@ public sealed class TeamUpEventAdmissionTests
         Assert.Equal(deckCount - 1, world.Seats[1].Deck.Cards.Count);
     }
 
-    private static AbilityRunner Runner(string timing)
+    [Theory]
+    [InlineData("Action", WindowKind.Interrupt)]
+    [InlineData("Interrupt", WindowKind.Interrupt)]
+    [Rule("rr:team-up")]
+    [Rule("rr:in-play-and-out-of-play.10")]
+    public void StoredEventStillRequiresBothCharacters(string timing, WindowKind window)
+    {
+        // rr:team-up: a card cannot be played unless both named friendly characters are in play.
+        // Synthetic storage permission: a stored event remains out of play.
+        var runner = Runner(timing, storage: true);
+        var (world, source, _, wasp) = Board(runner, ally: true);
+        var host = world.CreateCard("01006", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(1), cardOwner: 1));
+        BeneathCards.Place(world, source, host, false, "synthetic", []);
+        var occurrence = new Occurrence(1, ["WhenFormChanged"], Player: 1);
+        Assert.True(CardPlayOrigin.CanPlayEvent(world, source, 1));
+        Assert.False(DeckTypes.IsInPlay(source.Area.Type));
+        bool Offered() => timing == "Action"
+            ? runner.Actions(world, 1).Any(a => a.Card == source.ObjectId)
+            : runner.Waiting(world, occurrence, window).Any(a => a.Card == source.ObjectId);
+        Assert.True(Offered());
+        World.MoveToTop(wasp!, world.AreaOf(DeckType.DiscardPile, PlayArea.Of(0), cardOwner: 0));
+        Assert.False(Offered());
+        World.MoveToTop(wasp!, world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+        Assert.True(Offered());
+    }
+
+    private static AbilityRunner Runner(string timing, bool storage = false)
     {
         string trigger = timing == "Action" ? "WhenActionTriggered" : "WhenFormChanged";
         string subject = timing == "Action" ? "this" : "game";
@@ -186,6 +212,7 @@ public sealed class TeamUpEventAdmissionTests
             {"cards":[
               {"card":"12020","abilities":[{"trigger":{"event":"{{trigger}}","timing":"{{timing}}","subject":"{{subject}}"},"effect":{{effect}}}]},
               {"card":"01004","abilities":[{"trigger":{"event":"{{trigger}}","timing":"{{timing}}","subject":"{{subject}}"},"effect":{{effect}}}]}
+              {{(storage ? ", {\"card\":\"01006\",\"abilities\":[{\"trigger\":{\"timing\":\"Constant\",\"subject\":\"this\"},\"effect\":{\"allowPlayBeneath\":{\"kind\":\"Event\",\"trait\":\"TACTIC\"}}}]}" : "")}}
             ]}
             """));
     }
