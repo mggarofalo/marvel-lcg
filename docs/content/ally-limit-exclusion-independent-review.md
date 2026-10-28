@@ -13,3 +13,21 @@ Existing candidate tests cover exclusion versus ordinary ally, transfer, blankin
 ## Verification
 
 On the candidate, the focused run compiled and produced two passes and one failure: the restored-limit probe throws `InvalidOperationException: player 0 no longer exceeds their ally limit`. The affected Content classes (independent probes, candidate exclusion, Ant ally support, ally entry payment) produced 26 passes and the same one failure. The query-purity probe also answered the same next choice in both boards and compared resulting digest, RNG and pending agenda. Logs: `C:/Users/mggar/Source/ally-exclusion-independent.log` and `C:/Users/mggar/Source/ally-exclusion-independent-affected.log`. The red test is intentionally retained for the subsequent fix. No independent mutant was run because the candidate failed a control; the author previously reported three compiled mutants.
+
+## Stale-choice repair verification
+
+The queued plan now returns no prompt when the live counted total is legal;
+the existing agenda applies that plan and proceeds normally. Synthetic controls
+cover continuation to the suspended entry response and a limit restored and
+then reduced again before the queued plan executes. Neither establishes a
+supported gameplay route to the synthetic interposition.
+
+The unchanged independent probe and affected Content selection passed 104/104;
+the affected Rules selection passed 76/76. A compiled mutant restoring the
+stale-choice exception failed both the original probe and continuation control
+while the restored-then-reduced control passed. The restored source was rebuilt
+with `dotnet build tests/Marvel.Content.Tests/Marvel.Content.Tests.csproj -c
+Release -m:1 --no-incremental`; the same Content selection then passed 104/104
+with `dotnet test ... --no-build`. All runs set `MSBUILDDISABLENODEREUSE=1`.
+Logs are at `C:/Users/mggar/stinger-stale-*.log`, outside the source tree.
+Independent closure review and integration gates remain.

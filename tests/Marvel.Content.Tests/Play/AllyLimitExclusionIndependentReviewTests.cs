@@ -45,6 +45,62 @@ public sealed class AllyLimitExclusionIndependentReviewTests
     }
 
     [Fact]
+    [Rule("rr:ally-limit")]
+    public void RestoredLimitSkipsStaleChoiceAndContinuesEntryResponse()
+    {
+        // Discard applies only while the player controls more than the limit.
+        var world = ThorActualFixture.Board("06001a");
+        var runner = Runner();
+        world.Abilities = runner;
+        var area = world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0);
+        world.CreateCard("01067", area);
+        world.CreateCard("01068", area);
+        world.CreateCard("01041", area);
+        var ally = world.CreateCard("06012", world.Seats[0].Hand);
+        var events = new List<GameEvent>();
+        CardPlay.PutAllyIntoPlay(world, world.Facts, runner, ally, 0, "synthetic", events);
+        Assert.Contains(world.Agenda.Outstanding, step => step.What == Steps.ChooseAllyForLimit);
+        using var increase = world.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect, "ally_limit", Amount: 1,
+            Card: world.Seats[0].IdentityCard.ObjectId, Affects: world.Seats[0].IdentityCard.ObjectId));
+        var prompt = Sequence.Work(world, world.Facts, runner, events);
+        Assert.NotNull(prompt);
+        Assert.NotEqual(Steps.ChooseAllyForLimit, prompt.Trigger);
+        var response = Assert.Single(prompt.Affordances, option => option.AnchorId == ally.ObjectId);
+        Assert.False(ally.Tokens.ContainsKey("c_test"));
+        Sequence.Answer(world, world.Facts, runner, prompt, Decision.Take(response.Id), events);
+        Assert.Null(Sequence.Work(world, world.Facts, runner, events));
+        Assert.Equal(1, ally.Tokens["c_test"]);
+        Assert.Equal(4, area.Cards.Count);
+        Assert.Empty(world.Agenda.Outstanding);
+    }
+
+    [Fact]
+    [Rule("rr:ally-limit")]
+    public void RestoredThenReducedLimitStillRequiresTheQueuedChoice()
+    {
+        // The live count, rather than whether the plan was once obsolete, decides.
+        var world = ThorActualFixture.Board("06001a");
+        var runner = Runner();
+        world.Abilities = runner;
+        var area = world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0);
+        world.CreateCard("01067", area);
+        world.CreateCard("01068", area);
+        world.CreateCard("01041", area);
+        var reduction = world.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect, "ally_limit", Amount: -1,
+            Card: world.Seats[0].IdentityCard.ObjectId, Affects: world.Seats[0].IdentityCard.ObjectId));
+        reduction.Dispose();
+        using var second = world.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect, "ally_limit", Amount: -1,
+            Card: world.Seats[0].IdentityCard.ObjectId, Affects: world.Seats[0].IdentityCard.ObjectId));
+        var prompt = Sequence.Work(world, world.Facts, runner, []);
+        Assert.NotNull(prompt);
+        Assert.Equal(Steps.ChooseAllyForLimit, prompt.Trigger);
+        Assert.Equal(3, prompt.Affordances.Count);
+    }
+
+    [Fact]
     public void RepeatedQueriesPreserveStateAndTheNextLimitChoice()
     {
         var runner = Runner();

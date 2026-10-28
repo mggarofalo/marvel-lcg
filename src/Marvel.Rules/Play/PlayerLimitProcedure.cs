@@ -9,15 +9,17 @@ namespace Marvel.Rules.Play;
 
 internal static class PlayerLimitProcedure
 {
-    internal static Prompt ChooseAlly(World world, ICardFacts facts, int player)
+    internal static Prompt? ChooseAlly(World world, ICardFacts facts, int player)
     {
         var allies = ControlledAllies(world, player);
         long limit = StateFields.Modified(
             world, world.Seats[player].IdentityCard, "ally_limit", facts, world.Players);
         if (CountedAllies(world, player).Count <= limit)
         {
-            throw new InvalidOperationException(
-                $"player {player} no longer exceeds their ally limit");
+            // rr:ally-limit requires a discard only while the live count exceeds
+            // the limit. A queued plan may become obsolete before it applies;
+            // returning no prompt lets the agenda complete this frame normally.
+            return null;
         }
 
         return new Prompt(
