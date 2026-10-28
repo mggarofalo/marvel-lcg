@@ -40,6 +40,8 @@ internal static class AbilityPowerLowering
         AbilityPowerKind kind, bool automatic, AbilityLocation location)
     {
         if (kind == AbilityPowerKind.Defense) return null;
+        if (kind == AbilityPowerKind.Attack && !fields.ContainsKey("target")
+            && AbilityStagedAttackLowering.IsSplashBody(body)) return null;
         if (kind != AbilityPowerKind.Thwart || fields.ContainsKey("target"))
             return Selected(fields, "target", location);
         if (automatic || body is not AbilityEffect.GiveStatus

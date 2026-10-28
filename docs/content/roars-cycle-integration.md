@@ -102,8 +102,8 @@ Test-only probe
 boundaries under MARVEL-875: nested live choice inside one attack is refused,
 and a splash followed by fixed villain damage omits that villain's per-enemy
 attack-end response. A damage/completion control is not full attack correctness.
-Recipient facts have since been repaired and independently reviewed below. Complete
-the live-choice continuation after applying the accepted shared defeat repair.
+Recipient facts and the live-choice continuation have since been repaired and
+independently reviewed below. Author and review the actual card after integration.
 Complete
 remaining Ant-Man and Kang content, setup,
 publication/replay boundary MARVEL-870, public journeys and relevant native/UI
@@ -115,8 +115,8 @@ and retaliation eligibility, while repeated damage accumulates for the same
 physical incarnation. Independent verification passes 34 affected Content tests;
 Tough-prevention probes and a compiled omitted-retaliation mutation distinguish
 zero damage from not attacking. [The review](research/remaining/attack-recipient-review.md)
-records code-review and behavioral evidence limits. The live-choice continuation
-and its Guard interaction remain unsupported, and MARVEL-870 includes the changed
+records code-review and behavioral evidence limits. The subsequently reviewed
+live-choice continuation is recorded below, and MARVEL-870 includes the changed
 responses/retaliation in its final compatibility assessment.
 
 The combined 22-face/recipient-repair tree
@@ -150,3 +150,14 @@ The integrated staged tree `15d345cc31856e30caa5deca9ec84e005aa23f3a` passes
 48 simultaneous-attack and ability-data checks in
 `roars-sim-defeat-merged-focused.log`. This focused result supplements the
 source review; a final complete combined run remains required.
+
+Giant Stomp's bounded live-choice capability is implemented at `e1f5f267`, with
+cohesive test-layout closure `bae99bb0` and independent review `38ce4bca`.
+Its unchanged two-Hydra defeat-order test passes on the shared Rules repair.
+The reviewer adds stale-incarnation rejection and retry evidence, and accepts
+the targetless attack description correction `2fa6b3d4`. Restored independent
+verification passes 57 affected Content and 66 View checks; normal hooks pass.
+See [the exact review and limits](giant-stomp-live-choice-review.md).
+Card `12003` still needs its production row and content review. Swarm's separate
+form/ready and Team-Up prerequisites remain in their review workflow. Neither
+new capability changes the current 23-face Ant-Man inventory or public admission.

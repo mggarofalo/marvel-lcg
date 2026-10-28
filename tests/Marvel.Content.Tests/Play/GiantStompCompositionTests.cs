@@ -162,17 +162,19 @@ public sealed class GiantStompCompositionTests
         Assert.False(world.Agenda.IsBusy);
     }
 
-    private static AbilityRunner Runner(string tail)
+    internal static AbilityRunner Runner(string tail, bool targetless = false, bool interrupt = false, bool optionalResponse = false)
     {
         var root = JsonNode.Parse(AuthoredCards.Text)!;
         var rows = root["cards"]!.AsArray();
         rows.Remove(rows.Single(row => row!["card"]!.GetValue<string>() == "01092"));
         rows.Remove(rows.Single(row => row!["card"]!.GetValue<string>() == "01093"));
+        if (interrupt) rows.Remove(rows.Single(row => row!["card"]!.GetValue<string>() == "01091"));
+        string target = targetless ? "" : "\"target\":{\"query\":\"villain\"},";
         root["cards"]!.AsArray().Add(JsonNode.Parse($$$$"""
             {"card":"12003","abilities":[{
               "trigger":{"event":"WhenActionTriggered","timing":"Action","subject":"this","form":"hero"},
               "when":{"hasTrait":{"card":"you","trait":"GIANT"}},
-              "effect":{"attack":{"target":{"query":"villain"},"effect":{"seq":[{{{{Splash}}}},{{{{tail}}}}]}}}
+              "effect":{"attack":{{{{{target}}}}"effect":{"seq":[{{{{Splash}}}},{{{{tail}}}}]}}}
             }]}
             """));
         root["cards"]!.AsArray().Add(JsonNode.Parse("""
@@ -187,10 +189,18 @@ public sealed class GiantStompCompositionTests
               "effect":{"placeCounters":{"card":"trigger.target","counter":"recipient","count":1}}
             }]}
             """));
+        if (optionalResponse)
+            rows.Single(row => row!["card"]!.GetValue<string>() == "01093")!["abilities"]![0]!["trigger"]!["timing"] = "Response";
+        if (interrupt) root["cards"]!.AsArray().Add(JsonNode.Parse("""
+            {"card":"01091","abilities":[{
+              "trigger":{"event":"WhenDamageWouldBeDealt","timing":"ForcedInterrupt","target":"minion"},
+              "effect":{"choose":{"options":[{"preventDamage":"trigger.target"},{"draw":{"player":"you","count":1}}]}}
+            }]}
+            """));
         return new AbilityRunner(AbilityCatalog.Parse(root.ToJsonString()));
     }
 
-    private static World Board(AbilityRunner runner, int minions)
+    internal static World Board(AbilityRunner runner, int minions)
     {
         var cards = CardCatalog.Parse(File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")));
         var world = new World(cards, 1, 241);
