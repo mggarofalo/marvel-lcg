@@ -53,3 +53,11 @@ candidate bytes in a `finally` block. Logs are `ant-nemesis-yellowjacket-mutant.
 and `ant-nemesis-size-mutant.log`; the restored 59-case run covers both checks.
 Normal hooks and independent review remain required. The inherited Power
 regressions at this base are separately tracked by MARVEL-878.
+
+## Independent card review
+
+Reviewed source `8f4053bacd2a1ef9e7421f273413e3cdd143dd8e` against the printed faces, RR 1.8 activation, forced, uses, retaliation, attachment and triggering-condition rules, and the vendored rulings. The Yellowjacket/Yellow Jacket ruling confirms those are distinct titles; the exact `Yellowjacket` selection is appropriate. The vendored Ant-Man encounter inventory specifies one Yellowjacket and two Size Increase copies. The source tests cover current engaged-player form and traits, actual form changes, host preference, printed modifiers, both activation kinds, status replacements, response ordering and nested activations. The new independent check attaches both physical Size Increase copies to Yellowjacket and verifies their modifiers stack and each responds in the chosen order after either activation (`rr:triggering-condition.1.1`, `rr:forced.5`).
+
+The original 750 card objects compare equal to the candidate's first 750, with the exact 757112-byte shared prefix SHA-256 `b71d3bb8c94a077f7b6baee0e8af0e4c7436731d6853a2129d86cf31656987fd`. There are 752 distinct authored rows, including exactly 29 Ant-Man faces; the starting-counter inventory adds only `12028` with three size uses. The unauthored `12006` control remains excluded. Independent Release test run passed 61 cases (new copy tests, nemesis behavior, reprints and all `AbilityData` classes), log `C:/Users/mggar/Source/evidence/ant-nemesis-independent-review.log`. The source packet's two valid card-data mutants and restored results are recorded above.
+
+Verdict: accept these two authored rows and the reviewed test coverage for the nonpublic research boundary. This is not full-pack admission or a complete-game review. The inherited Power findings remain separate; the independent run did not include the full Content suite.
