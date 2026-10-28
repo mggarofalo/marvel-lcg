@@ -209,12 +209,12 @@ public sealed class SetupDatasetTests
     [Fact]
     public void TheGeneratedDatasetCarriesEveryPrintedUniqueIcon()
     {
-        // The icon is vendored as MarvelSDB's `is_unique` boolean and emitted
-        // as the generated `Unique` fact. Pin the complete current pool so a
+        // The icon comes from the pinned snapshot or reviewed supplement and
+        // is emitted as the generated `Unique` fact. Pin the current pool so a
         // dropped extractor branch cannot silently disable every rule using it.
         using var document = JsonDocument.Parse(CardsText);
         Assert.Equal(
-            1340,
+            1399,
             document.RootElement.GetProperty("cards").EnumerateArray().Count(card =>
                 card.GetProperty("attributes").TryGetProperty("Unique", out _)));
     }
