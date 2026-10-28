@@ -79,8 +79,9 @@ public sealed class ManOutOfTimeTests
         var source = world.CreateCard("03026", world.AreaOf(DeckType.ObligationsArea, PlayArea.Of(0)));
         runner.ExecuteReveal(world, source, 0);
         runner.Chose(world, AbilityContinuationFixtures.Pending(world, source), Decision.Take(flip ? 0 : 1));
+        var removal = Assert.IsType<Prompt>(Sequence.Work(world, world.Facts, runner, []));
         var step = AbilityContinuationFixtures.Pending(world, source);
-        Assert.Equal(removable, runner.Choosing(world, step)!.Affordances.Any(offer => offer.Id == 0));
+        Assert.Equal(removable, removal.Affordances.Any(offer => offer.Id == 0));
         if (removable)
         {
             runner.Chose(world, step, Decision.Take(0));

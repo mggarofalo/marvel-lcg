@@ -229,7 +229,7 @@ public sealed class CoreCorrectionChoiceTests : ChoosingCardsTestBase
         runner.Chose(world, AbilityContinuationFixtures.Pending(world, source), Decision.Take(flip ? 0 : 1));
         if (flip)
         {
-            Prompt removal = runner.Choosing(world, AbilityContinuationFixtures.Pending(world, source))!;
+            Prompt removal = Assert.IsType<Prompt>(Sequence.Work(world, Cards, runner, []));
             Assert.Equal(0, Assert.Single(removal.Affordances).Id);
             runner.Chose(world, AbilityContinuationFixtures.Pending(world, source), Decision.Take(0));
             Assert.Equal(DeckType.RemovedArea, source.Area.Type);

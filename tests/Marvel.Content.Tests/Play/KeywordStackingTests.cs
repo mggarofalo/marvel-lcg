@@ -290,10 +290,8 @@ public sealed class KeywordStackingTests
         scheme.PlaceTokens("k_threat", 1);
 
         ResolveReveal(world, card, runner);
-        var step = Assert.Single(
-            world.Agenda.Outstanding, item => item.What == Steps.CharacterThwarts);
-        runner.ResolveCardThwart(
-            world, step.Require<CharacterThwartOperation>().Thwart, step.OccurrenceOf(world, Cards), []);
+        Assert.Single(world.Agenda.Outstanding, item => item.What == Steps.CharacterThwarts);
+        Sequence.Finish(world, Cards, runner, []);
 
         AssertOneAdditionalCard(world);
     }
