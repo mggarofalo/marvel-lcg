@@ -167,7 +167,10 @@ public sealed class ProjectedIdentityFaceTests : CoreCardTestBase
         var named = new AbilityEffect.ChangeForm(AbilityPlayer.You,
             new AbilityFormDestination.Form(Forms.AlterEgo));
         var existingChoice = new AbilityEffect.Choose([named, named], ["first", "second"]);
-        Assert.Same(state, Assert.Single(projection.Trace(existingChoice, [state])));
+        var projected = Assert.Single(projection.Trace(existingChoice, [state]));
+        Assert.Equal("12001b", projected.FaceOf(hero));
+        Assert.Equal("12001a", state.FaceOf(hero));
+        Assert.Equal("12001a", hero.FaceId);
     }
 
     [Fact]

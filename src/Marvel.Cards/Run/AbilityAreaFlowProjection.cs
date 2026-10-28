@@ -143,6 +143,13 @@ internal static class AbilityAreaFlowProjection
             if (ContainsExactFormChange(effect))
                 throw new RulesNotImplementedException(
                     "projecting exact form changes within an unresolved choice is not implemented");
+            if (ContainsFormChange(effect))
+            {
+                if (effect is not AbilityEffect.Choose choice)
+                    throw new RulesNotImplementedException(
+                        "projecting form changes within an unresolved card choice is not implemented");
+                return TraceFormChoice(projection, choice, states, repetitions, baseMultiplier);
+            }
             return states;
         }
         return null;
@@ -151,6 +158,25 @@ internal static class AbilityAreaFlowProjection
     private static bool ContainsExactFormChange(AbilityEffect effect) =>
         effect is AbilityEffect.ChangeForm { Destination: not AbilityFormDestination.Form }
         || AbilityEffectStructure.AllEffectChildren(effect).Any(ContainsExactFormChange);
+
+    private static bool ContainsFormChange(AbilityEffect effect) =>
+        effect is AbilityEffect.ChangeForm
+        || AbilityEffectStructure.AllEffectChildren(effect).Any(ContainsFormChange);
+
+    private static List<AreaProjectionState> TraceFormChoice(
+        AbilityAreaProjection projection, AbilityEffect.Choose choice,
+        List<AreaProjectionState> states, long repetitions, long baseMultiplier)
+    {
+        // The engine keeps one board per named-form alternative so following
+        // face reads remain correlated with the effects of that same choice.
+        for (long repeat = 0; repeat < repetitions; repeat++)
+        {
+            states = AreaProjectionState.Distinct(states.SelectMany(state =>
+                choice.Options.SelectMany(option => projection.Trace(
+                    option, [state.Clone()], baseMultiplier: baseMultiplier))));
+        }
+        return states;
+    }
 
     internal static List<AreaProjectionState>? TryTracePower(
         this AbilityAreaProjection projection, AbilityEffect effect, List<AreaProjectionState> states,
