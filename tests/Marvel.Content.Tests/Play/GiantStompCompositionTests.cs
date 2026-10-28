@@ -124,6 +124,44 @@ public sealed class GiantStompCompositionTests
         Assert.Equal(1, world.Seats[0].IdentityCard.Damage);
     }
 
+    [Rule("rr:prevent.1.3")]
+    [Rule("rr:retaliate-x.1")]
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void PreventedDamageStillCountsAsAnAttackOfThatEnemy(bool protectMinion)
+    {
+        // An attack with all damage prevented is not "attacked and damaged";
+        // retaliate triggers after a character "is attacked".
+        var runner = Runner(FixedDamage);
+        var world = Board(runner, 1);
+        var minion = world.Cards.Single(card => card.FaceId == "01102");
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        var protectedEnemy = protectMinion ? minion : villain;
+        Statuses.Give(world, protectedEnemy, Statuses.Tough);
+        world.Effects.Register(new ContinuousEffect(EffectSource.LastingEffect,
+            Kind: "retaliate", Amount: 1, Affects: protectedEnemy.ObjectId));
+        var source = world.Seats[0].Hand.Cards.Single(card => card.FaceId == "12003");
+        var game = Game.Begin(world, world.Facts, runner);
+        while (game.Pending!.Affordances.Any(option => option.Verb == Game.ResolveMulligans))
+            game.Resolve(Decision.Take(game.Pending.Affordances.Single(option => option.Verb == Game.ResolveMulligans).Id));
+        var action = Assert.Single(game.Pending.Affordances, offer => offer.AnchorId == source.ObjectId);
+        int[] paying = world.Seats[0].Hand.Cards.Where(card => card.FaceId is "12021" or "12023")
+            .Select(card => card.ObjectId).ToArray();
+        game.Resolve(new Decision(action.Id, [], paying,
+            Allocations: ResourcePayment.Allocate(Assert.Single(action.Costs!), paying)));
+        Assert.Equal(Question.Order, game.Pending!.Asking);
+        Assert.Equal(0, Assert.Single(world.Agenda.Occurrence!.Attacks,
+            item => item.Card == protectedEnemy.ObjectId).DamageTaken);
+        while (game.Pending!.Asking == Question.Order)
+            game.Resolve(Decision.Take(game.Pending.Affordances[0].Id));
+        Assert.Equal(0, protectedEnemy.Damage);
+        Assert.False(Statuses.Has(world, protectedEnemy, Statuses.Tough));
+        Assert.Equal(1, protectedEnemy.Tokens.GetValueOrDefault("c_recipient"));
+        Assert.Equal(1, world.Seats[0].IdentityCard.Damage);
+        Assert.False(world.Agenda.IsBusy);
+    }
+
     private static AbilityRunner Runner(string tail)
     {
         var root = JsonNode.Parse(AuthoredCards.Text)!;
