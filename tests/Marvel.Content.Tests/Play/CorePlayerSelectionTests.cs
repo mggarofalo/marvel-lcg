@@ -129,6 +129,8 @@ public sealed class CorePlayerSelectionTests
         var game = Game.Begin(world, Cards, runner);
         game.Resolve(Decision.Take(game.Pending!.Affordances.Single(option => option.Verb == Game.ResolveMulligans).Id));
 
+        world.CreateCard("01087", world.Seats[0].Deck);
+        Assert.Single(world.Seats[0].Deck.Cards);
         var actions = game.Pending!.Affordances
             .Where(option => option.AnchorId == channel.ObjectId)
             .ToList();
@@ -144,6 +146,7 @@ public sealed class CorePlayerSelectionTests
 
         // Both generators produce six energy in total. X was defined as four
         // before payment, so the other two are overpaid and do not change X.
+        Assert.Equal(Outcome.Unfinished, world.Result);
         Assert.Equal(4, channel.Tokens["c_energy"]);
         var charged = runner.Actions(world, 0)
             .Where(action => action.Card == channel.ObjectId)
@@ -158,6 +161,7 @@ public sealed class CorePlayerSelectionTests
         Sequence.Answer(world, Cards, runner, answer, Decision.Take(villain.ObjectId), []);
         Sequence.Finish(world, Cards, runner, []);
 
+        Assert.Equal(Outcome.Unfinished, world.Result);
         Assert.Equal(8, villain.Damage);
         Assert.False(DeckTypes.IsInPlay(channel.Area.Type));
     }
@@ -180,6 +184,8 @@ public sealed class CorePlayerSelectionTests
         var reserve = world.CreateCard("01014", world.Seats[0].Hand);
         var game = Game.Begin(world, Cards, AuthoredCards.Runner());
         game.Resolve(Decision.Take(game.Pending!.Affordances.Single(option => option.Verb == Game.ResolveMulligans).Id));
+        world.CreateCard("01087", world.Seats[0].Deck);
+        Assert.Single(world.Seats[0].Deck.Cards);
         var offer = Assert.Single(game.Pending!.Affordances, option => option.AnchorId == channel.ObjectId);
         var cost = Assert.Single(offer.CostOptions);
         var values = new Dictionary<string, long> { ["X"] = 2 };
@@ -193,6 +199,7 @@ public sealed class CorePlayerSelectionTests
         var allocation = ResourcePayment.Allocate(cost, [reserve.ObjectId], values);
         Assert.NotNull(allocation);
         game.Resolve(Decision.Take(offer.Id, [], [reserve.ObjectId], values, allocation));
+        Assert.Equal(Outcome.Unfinished, world.Result);
         Assert.Equal(2, channel.Tokens["c_energy"]);
         Assert.DoesNotContain(reserve, world.Seats[0].Hand.Cards);
         Assert.Contains(mental, world.Seats[0].Hand.Cards);

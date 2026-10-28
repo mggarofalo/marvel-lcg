@@ -19,6 +19,7 @@ public sealed class CoreLastingEffectCardsTests
     public void LeadFromTheFrontAffectsTheChosenPlayersCurrentAndLaterCharacters()
     {
         var world = Board();
+        world.CreateCard("01088", world.Seats[0].Deck);
         var eventCard = world.CreateCard("01070", world.Seats[0].Hand);
         var payment = world.CreateCard("01088", world.Seats[0].Hand);
         var existing = world.CreateCard(
@@ -26,7 +27,9 @@ public sealed class CoreLastingEffectCardsTests
         var runner = AuthoredCards.Runner();
 
         runner.ExecuteAction(world, new PlayerAction(new PendingAbility(eventCard.ObjectId, AbilityType.Action, 0), [payment.ObjectId], []));
+        Assert.Equal(Outcome.Unfinished, world.Result);
         AnswerCardChoice(world, runner, eventCard, world.Seats[1].IdentityCard);
+        Assert.Equal(Outcome.Unfinished, world.Result);
 
         var later = world.CreateCard(
             "01083", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(1), cardOwner: 1));

@@ -147,6 +147,7 @@ public sealed class CoreFinalCardBatchTests
         // A Hero Action (thwart) is a thwart, and "unless specified by the
         // ability's text, a hero does not exhaust" to use one.
         var world = Board(players: 1, identity: "01019a,01019b");
+        world.CreateCard("01088", world.Seats[0].Deck);
         world.Seats[0].IdentityCard.TurnTo("01019b");
         var scheme = world.CreateCard("01151", world.AreaOf(DeckType.SideSchemesArea));
         scheme.PlaceTokens("k_threat", 5);
@@ -164,6 +165,7 @@ public sealed class CoreFinalCardBatchTests
         var answer = Sequence.Work(world, Cards, runner, events)!;
         Sequence.Answer(world, Cards, runner, answer,
             Decision.Take(scheme.ObjectId, [first.ObjectId, second.ObjectId], []), events);
+        Assert.Equal(Outcome.Unfinished, world.Result);
         Sequence.Finish(world, Cards, runner, events);
 
         Assert.Equal(3, scheme.Tokens["k_threat"]);

@@ -58,12 +58,14 @@ public sealed class StageEntryContinuationTests : CoreCardTestBase
         if (stunned) Statuses.Give(world, first, Statuses.Stunned);
         var source = world.CreateCard("04043", world.Seats[0].Hand);
         var payment = world.CreateCard("01088", world.Seats[0].Hand);
+        world.CreateCard("01088", world.Seats[0].Deck);
         var drawn = world.CreateCard("01089", world.Seats[0].Deck);
         var action = Assert.Single(runner.Actions(world, 0), option => option.Card == source.ObjectId);
         var events = runner.ExecuteAction(world, new PlayerAction(action, [payment.ObjectId], [])).Events.ToList();
         var prompt = Sequence.Work(world, Cards, runner, events)!;
         Sequence.Answer(world, Cards, runner, prompt, Decision.Take(first.ObjectId), events);
         Sequence.Finish(world, Cards, runner, events);
+        Assert.Equal(Outcome.Unfinished, world.Result);
         Assert.Same(next, world.TheCardIn(DeckType.VillainArea));
         Assert.Equal(DeckType.SideSchemesArea, scheme.Area.Type);
         Assert.Equal(28, Damage.Health(world, Cards, next));
