@@ -12,11 +12,12 @@ namespace Marvel.Content.Tests.Play;
 // Production responses on synthetic research boards; no Ant-Man product admission.
 internal static class AntManFormResponseFixture
 {
+    // Armored Guard supplies the fixture encounter deck during a full round.
     internal static AbilityRunner Runner(string synthetic)
     {
         var rows = JsonNode.Parse(synthetic)!["cards"]!.AsArray();
         foreach (var row in JsonNode.Parse(AuthoredCards.Text)!["cards"]!.AsArray())
-            if (row!["card"]!.GetValue<string>() is "12009" or "12016" or "12031")
+            if (row!["card"]!.GetValue<string>() is "12009" or "12016" or "12031" or "01120")
                 rows.Add(row.DeepClone());
         return new AbilityRunner(AbilityCatalog.Parse(new JsonObject { ["cards"] = rows.DeepClone() }.ToJsonString()));
     }
