@@ -214,7 +214,7 @@ public abstract record AbilityEffect
         public AbilityPlayer Player { get; init; } = AbilityPlayer.You;
         /// <summary>The deck whose current contents bound the discard.</summary>
         public AbilitySearchArea From { get; init; } = AbilitySearchArea.EncounterDeck;
-        /// <summary>The printed identity set required for a player-deck match.</summary>
+        /// <summary>The printed set required for a deck match.</summary>
         public string? Set { get; init; }
     }
     /// <summary>Move selected cards into a deck and shuffle it.</summary>

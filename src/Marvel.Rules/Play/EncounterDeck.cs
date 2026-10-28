@@ -154,6 +154,19 @@ public static class EncounterDeck
         string trigger,
         List<GameEvent> events,
         string? trait = null)
+        => DiscardUntilMatching(world, facts, card => EffectiveCards.Kind(card, facts) == kind
+            && (trait is null || facts.Traits(card.FaceId).Contains(trait, StringComparer.Ordinal)), trigger, events);
+
+    /// <summary>Discard until a card from the printed encounter set is found.</summary>
+    public static Card? DiscardUntil(World world, ICardFacts facts, string set, string trigger, List<GameEvent> events)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(set);
+        return DiscardUntilMatching(world, facts,
+            card => StringComparer.Ordinal.Equals(facts.EncounterSet(card.FaceId), set), trigger, events);
+    }
+
+    private static Card? DiscardUntilMatching(
+        World world, ICardFacts facts, Predicate<Card> matches, string trigger, List<GameEvent> events)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
@@ -174,18 +187,16 @@ public static class EncounterDeck
                     "the encounter deck changed while one discard effect was resolving");
             Discard.Card(world, card, trigger, events);
 
-            bool matches = EffectiveCards.Kind(card, facts) == kind
-                && (trait is null
-                    || facts.Traits(card.FaceId).Contains(trait, StringComparer.Ordinal));
+            bool matched = matches(card);
 
             if (deck.Cards.Count == 0)
             {
                 Reset(world, trigger, events);
                 ActivityBatches.Complete(events, start, "Discard", -1);
-                return matches ? card : null;
+                return matched ? card : null;
             }
 
-            if (matches)
+            if (matched)
             {
                 ActivityBatches.Complete(events, start, "Discard", -1);
                 return card;
