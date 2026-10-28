@@ -174,6 +174,7 @@ internal static class AbilityPowerOutcomeTrace
         AbilityPowerState state)
     {
         var change = FormChangeOf(node, cast);
+        _ = AbilityFormDestinationResolver.LegacyForm(change.Destination);
         if (bindingMayChange && change.Player == AbilityPlayer.ChosenPlayer) return null;
         int seat = Seat(change.Player, cast);
         if (!AbilityProjectedCharacterPermissions.CanChangeForm(seat, cast, state))
@@ -202,6 +203,7 @@ internal static class AbilityPowerOutcomeTrace
         AbilityEffect.ChangeForm change, AbilityAdmissionScope cast, bool bindingMayChange,
         AbilityPowerState reachability)
     {
+        _ = AbilityFormDestinationResolver.LegacyForm(change.Destination);
         var player = change.Player;
         if (bindingMayChange && player == AbilityPlayer.ChosenPlayer)
         {

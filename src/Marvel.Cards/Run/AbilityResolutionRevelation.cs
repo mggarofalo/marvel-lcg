@@ -65,18 +65,19 @@ internal static class AbilityResolutionRevelation
                 StringComparison.Ordinal)
                 && RevealedInForm(world, player, entry.Ability.Trigger.Form))
             .ToList();
-        var addresses = reveals.Select(entry => new PendingAbility(
-            card.ObjectId, AbilityType.WhenRevealed, player, entry.Ordinal)).ToList();
-        if (EffectiveCards.Kind(card, world.Facts) == CardKind.Treachery)
-        {
-            occurrence.Resolution.BeginCard(card.ObjectId, addresses);
-        }
-
         var events = new List<GameEvent>();
         if (execution.CancelWhenRevealed(world, card, player, occurrence) is { } canceled)
         {
             events.Add(canceled);
             return events;
+        }
+
+        AbilityBatchExecution.RequireStandaloneDestinations(reveals.Select(entry => entry.Ability));
+        var addresses = reveals.Select(entry => new PendingAbility(
+            card.ObjectId, AbilityType.WhenRevealed, player, entry.Ordinal)).ToList();
+        if (EffectiveCards.Kind(card, world.Facts) == CardKind.Treachery)
+        {
+            occurrence.Resolution.BeginCard(card.ObjectId, addresses);
         }
 
         var gainedKeywords = new HashSet<string>(StringComparer.Ordinal);

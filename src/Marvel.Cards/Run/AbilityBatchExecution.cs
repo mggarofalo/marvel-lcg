@@ -10,11 +10,13 @@ internal static class AbilityBatchExecution
     internal static void RunOrdered(this AbilityResolutionExecution execution,
         IEnumerable<CompiledCardAbility> abilities, Func<CompiledCardAbility, AbilityResolutionState> create)
     {
+        var ordered = abilities.ToArray();
+        RequireStandaloneDestinations(ordered);
         bool pending = false;
         PhaseStep? owner = null;
         Occurrence? containing = null;
         bool started = false;
-        foreach (var ability in abilities)
+        foreach (var ability in ordered)
         {
             var cast = create(ability);
             if (!started)
@@ -37,6 +39,12 @@ internal static class AbilityBatchExecution
             cast.CompleteResolution();
             pending = cast.Execution is { IsComplete: false };
         }
+    }
+
+    internal static void RequireStandaloneDestinations(IEnumerable<CompiledCardAbility> abilities)
+    {
+        foreach (var ability in abilities)
+            AbilityFormDestinationResolver.RequireStandalone(ability.Effect);
     }
 
     private static void Schedule(AbilityResolutionExecution execution, AbilityResolutionState cast,
