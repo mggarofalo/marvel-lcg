@@ -131,4 +131,66 @@ public sealed class SimultaneousCardAttackTests
         Assert.Equal(expectedDamage, minion.Tokens.GetValueOrDefault("c_damaged"));
         Assert.Equal(1, world.Seats[0].IdentityCard.Tokens.GetValueOrDefault("c_whole"));
     }
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    [Rule("rr:triggering-condition.2")]
+    public void DamageAndDefeatReceiptsRetainTheirOwnAttackedRecipient(bool tough)
+    {
+        // rr:triggering-condition.2: one attack can cause damage and defeat in one window.
+        var runner = new AbilityRunner(AbilityCatalog.Parse("""
+            {"cards":[
+              {"card":"01004","abilities":[{
+                "trigger":{"event":"WhenActionTriggered","timing":"Action","subject":"game"},
+                "effect":{"attack":{"target":{"query":"villain"},"effect":{
+                  "dealAttackDamage":{"cards":{"query":"enemies"},"amount":1,"simultaneous":1}
+                }}}
+              }]},
+              {"card":"01007","abilities":[{
+                "trigger":{"event":"WhenAttackEnds","timing":"ForcedResponse","target":"enemy"},
+                "effect":{"placeCounters":{"card":"trigger.target","counter":"recipient","count":1}}
+              }]},
+              {"card":"01092","abilities":[{
+                "trigger":{"event":"WhenAttackEnds","timing":"ForcedResponse","subject":"game"},
+                "effect":{"placeCounters":{"card":"you","counter":"whole","count":1}}
+              }]}
+            ]}
+            """));
+        Card? source = null;
+        Card? payment = null;
+        Card? minion = null;
+        var (game, world) = Playing(board =>
+        {
+            source = board.CreateCard("01004", board.Seats[0].Hand);
+            payment = board.CreateCard("01088", board.Seats[0].Hand);
+            minion = board.CreateCard("01102", board.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+            minion.TakeDamage(3);
+            if (tough) Statuses.Give(board, minion, Statuses.Tough);
+            InPlay(board, "01007");
+            InPlay(board, "01092");
+        }, hero: true, abilities: runner);
+        int incarnation = minion!.Incarnation;
+        var action = Assert.Single(game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+        int[] paying = [payment!.ObjectId];
+        game.Resolve(new Decision(action.Id, [], paying,
+            Allocations: ResourcePayment.Allocate(Assert.Single(action.Costs!), paying)));
+        Assert.Equal(Question.Order, game.Pending!.Asking);
+        var occurrence = world.Agenda.Occurrence!;
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        Assert.Equal(1, Assert.Single(occurrence.Attacks, item => item.Card == villain.ObjectId).DamageTaken);
+        Assert.Equal(tough ? 0 : 1, Assert.Single(occurrence.Attacks, item => item.Card == minion.ObjectId).DamageTaken);
+        if (tough) Assert.Empty(occurrence.Defeats);
+        else
+        {
+            var defeat = Assert.Single(occurrence.Defeats);
+            Assert.Equal(minion.ObjectId, defeat.Card);
+            Assert.Equal(incarnation, defeat.Incarnation);
+        }
+        while (game.Pending!.Asking == Question.Order)
+            game.Resolve(Decision.Take(game.Pending.Affordances[0].Id));
+        Assert.Equal(tough ? DeckType.EngagedEnemiesArea : DeckType.EncounterDiscardPile, minion.Area.Type);
+        Assert.Equal(1, villain.Damage);
+        Assert.False(world.IsOver);
+    }
+
 }

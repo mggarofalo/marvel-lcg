@@ -12,6 +12,43 @@ namespace Marvel.Rules.Play;
 /// <summary>Records actual attack-step damage independently of placement and defeat.</summary>
 internal static class AttackDamageAccounting
 {
+    internal static void RecordDamage(World world, AttackDamageRequest request, AbilityExecution execution,
+        OccurrenceCard attacker, Damage.PlacedDamage damage, bool spillOnly, List<GameEvent> events)
+    {
+        RecordAttackPlacement(world, request, execution, attacker, damage, spillOnly);
+        RecordCausalDamage(world, request, damage, spillOnly);
+        DamageAttacks.ResolveLandedDamage(world, request.ActivationId, request.Target, damage, events);
+    }
+
+    private static void RecordAttackPlacement(World world, AttackDamageRequest request, AbilityExecution execution,
+        OccurrenceCard attacker, Damage.PlacedDamage damage, bool spillOnly)
+    {
+        if (request.EnemyAttack is not null || spillOnly)
+            RecordPlacement(world, request.ActivationId, damage);
+        if (damage.Landed && request.EnemyAttack is null && !spillOnly)
+            execution.Occurrence.Also(Steps.DamageDealt);
+        RecordReceived(world, request, execution, attacker, damage, spillOnly);
+    }
+
+    private static void RecordReceived(World world, AttackDamageRequest request, AbilityExecution execution,
+        OccurrenceCard attacker, Damage.PlacedDamage damage, bool spillOnly)
+    {
+        if (damage.Landed && attacker.IsEnemy && (request.EnemyAttack is not null || spillOnly))
+        {
+            AttackDamageReceipts.Record(world, attacker, damage);
+            world.Attack?.Defeats.Register(execution.Occurrence, request.Target);
+        }
+    }
+
+    private static void RecordCausalDamage(World world, AttackDamageRequest request, Damage.PlacedDamage damage, bool spillOnly)
+    {
+        if (!spillOnly && request.EnemyAttack is { } attack)
+            RecordAttackDamage(world, attack, damage);
+        RecordRecipient(world, request.Source, request.Target, damage.Dealt);
+        if (request.EnemyAttack is not null || spillOnly)
+            RecordIdentityDamage(world, request.Source, damage);
+    }
+
     internal static void ValidateBoostPlacement(World world, int? activationId)
     {
         if (activationId is null) return;

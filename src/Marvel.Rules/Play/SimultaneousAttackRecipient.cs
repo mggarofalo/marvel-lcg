@@ -5,12 +5,20 @@ using Marvel.Rules.Timing;
 namespace Marvel.Rules.Play;
 
 /// <summary>Retains one selected incarnation through a simultaneous damage barrier.</summary>
-internal sealed class SimultaneousAttackRecipient(AttackDamageRequest request)
+internal sealed class SimultaneousAttackRecipient(AttackDamageRequest request, DamageRequest defeatRequest, OccurrenceCard attacker) : ISimultaneousDefeatRecipient
 {
     private readonly int incarnation = request.Target.Incarnation;
     private DamageReplacement? replacement;
     private bool pierced;
     private PreparedAttackDamage? prepared;
+    public DamageRequest Request => defeatRequest;
+    public Defeated? Defeated { get; private set; }
+    public bool IsLethal(World world, ICardFacts facts) => IsCurrent && prepared!.Placement.Landed
+        && DamagePlacement.Health(world, facts, request.Target) - request.Target.Damage <= 0;
+    public void RecordDefeat(World world) => Defeated = Defeat.Record(world, request.Target,
+        defeatRequest.By, request.Verb, defeatRequest.RecordDefeatOn);
+    public bool Depart(World world, ICardFacts facts, List<GameEvent> events) =>
+        Defeated is not null && IsCurrent && Defeat.FinalizeCharacter(world, facts, request.Target, request.Trigger, events);
     internal AttackDamageResult? Result { get; private set; }
 
     private bool IsCurrent => request.Target.Incarnation == incarnation
@@ -51,12 +59,20 @@ internal sealed class SimultaneousAttackRecipient(AttackDamageRequest request)
             DamagePlacement.ApplyPlaced(world, facts, prepared!.Placement, request.Trigger, request.Verb, events);
     }
 
+    internal void RecordPlacement(World world, AbilityExecution execution, List<GameEvent> events)
+    {
+        if (!IsCurrent) return;
+        AttackDamageAccounting.RecordDamage(world, request, execution,
+            attacker, prepared!.Placement, false, events);
+    }
+
     internal bool Settle(World world, ICardFacts facts, AbilityExecution execution, List<GameEvent> events)
     {
         Result ??= DamageAttacks.Begin(world, facts,
             request with
             {
-                Prepared = prepared! with { Policy = prepared.Policy with { Retaliate = false } },
+                Prepared = prepared! with { Policy = prepared.Policy with { Retaliate = false },
+                    SettledOutcome = Defeated is null ? Damage.Outcome.NotDefeated : Damage.Outcome.Defeated },
                 Origin = execution.Occurrence,
             }, events, spillOnly: false);
         return Result.IsComplete;
