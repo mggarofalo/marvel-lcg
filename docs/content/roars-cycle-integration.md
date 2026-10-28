@@ -3,7 +3,7 @@
 The canonical delivery records are MARVEL-568 (Kang) and MARVEL-569 (Ant-Man),
 within MARVEL-703. This candidate combines reviewed engine prerequisites; neither
 pack has complete executable content or public admission. The production book
-contains 738 rows, including 15 of Ant-Man's 35 faces and no Kang faces.
+contains 742 rows, including 19 of Ant-Man's 35 faces and no Kang faces.
 
 The integrated sources are Kang `07fd360d`, Ant-Man `f6357d29`, the independently
 strengthened baseline fixture repair `3a7bb2ec`, and the Resize projection closure
@@ -17,6 +17,13 @@ checks cover target legality, response and draw ordering, all six form changes,
 and multiplayer ownership. Synthetic blank-reading controls do not establish a
 reachable effect that blanks these card kinds. The merged exact inventory retains
 Power Gloves and all five new faces. Giant Strength remains unauthored.
+
+Signature-action source `9e51ef2e`, independently reviewed at `cd1763139`, adds
+Wasp, Hive Mind, Army of Ants and Wrist Gauntlets. Source verification passes
+121 affected checks and distinguishing mutations; independent review passes
+22 focused cases, including declined Wasp responses, wrong-target retry and
+invalid wild-resource declarations through `Game.Resolve`. The four rows leave
+the previous book entries unchanged. See [source and independent review](ant-man-signature-actions.md).
 
 ## Combined verification
 
@@ -62,8 +69,9 @@ acceptance does not settle replay compatibility.
 
 ## Next delivery
 
-Integrate the independently reviewed signature-action packet, then author Giant
-Strength against the accepted turn-period engine. Verify Giant Stomp's sequential
+Verify the signature-action packet on the combined candidate, then author Giant
+Strength, Moxie and Lay Down the Law against the accepted form/turn-period engine.
+Verify Giant Stomp's sequential
 targeting composition before assigning any engine expansion. Complete
 remaining Ant-Man and Kang content, setup,
 publication/replay boundary MARVEL-870, public journeys and relevant native/UI

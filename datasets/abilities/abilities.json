@@ -22997,6 +22997,237 @@
         { "trigger": { "event": "WhenFormChanged", "timing": "Response", "subject": "you", "form": "hero" },
           "when": { "hasTrait": { "card": "you", "trait": "TINY" } }, "effect": { "draw": { "player": "you", "count": 1 } } }
       ]
+    },
+    {
+      "card": "12002",
+      "name": "Wasp",
+      "note": "Printed 12002 Hero Response uses the current controller identity form. Damage is not an attack and threat removal is not a thwart. DSL spellings are engine choices.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardEntersPlay",
+            "timing": "Response",
+            "subject": "this",
+            "form": "hero"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "hasTrait": {
+                  "card": "you",
+                  "trait": "GIANT"
+                }
+              },
+              "then": {
+                "chooseCard": {
+                  "from": {
+                    "query": "enemies"
+                  },
+                  "effect": {
+                    "dealDamage": {
+                      "cards": "chosen",
+                      "amount": 2
+                    }
+                  }
+                }
+              },
+              "else": {
+                "if": {
+                  "test": {
+                    "hasTrait": {
+                      "card": "you",
+                      "trait": "TINY"
+                    }
+                  },
+                  "then": {
+                    "chooseCard": {
+                      "from": {
+                        "query": "schemes"
+                      },
+                      "effect": {
+                        "removeThreat": {
+                          "scheme": "chosen",
+                          "amount": 2
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "12004",
+      "name": "Hive Mind",
+      "note": "Printed Tiny-only thwart removes 2 plus one additional threat per controlled Army of Ants support. The additional amount belongs to the same thwart. DSL spellings are engine choices.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "when": {
+            "hasTrait": {
+              "card": "you",
+              "trait": "TINY"
+            }
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "thwartableSchemes"
+              },
+              "effect": {
+                "thwart": {
+                  "target": "chosen",
+                  "effect": {
+                    "removeThreat": {
+                      "scheme": "chosen",
+                      "amount": {
+                        "add": [
+                          2,
+                          {
+                            "count": {
+                              "cardsIn": {
+                                "area": "yourPlayArea",
+                                "kind": "Support",
+                                "title": "Army of Ants"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "12007",
+      "name": "Army of Ants",
+      "note": "Printed Tiny-only Hero Action exhausts this support to deal nonattack damage to an enemy. DSL spellings are engine choices.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "when": {
+            "hasTrait": {
+              "card": "you",
+              "trait": "TINY"
+            }
+          },
+          "cost": {
+            "exhaust": "this"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "enemies"
+              },
+              "effect": {
+                "dealDamage": {
+                  "cards": "chosen",
+                  "amount": 1
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "12010",
+      "name": "Wrist Gauntlets",
+      "note": "Printed Hero Actions require Giant and two physical resources to stun, or Tiny and two energy resources to confuse; both exhaust this upgrade. Resource encodings and DSL spellings are engine choices.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "when": {
+            "hasTrait": {
+              "card": "you",
+              "trait": "GIANT"
+            }
+          },
+          "cost": {
+            "seq": [
+              {
+                "exhaust": "this"
+              },
+              {
+                "spend": "RR"
+              }
+            ]
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "enemies"
+              },
+              "effect": {
+                "giveStatus": {
+                  "card": "chosen",
+                  "status": "stunned"
+                }
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "when": {
+            "hasTrait": {
+              "card": "you",
+              "trait": "TINY"
+            }
+          },
+          "cost": {
+            "seq": [
+              {
+                "exhaust": "this"
+              },
+              {
+                "spend": "YY"
+              }
+            ]
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "enemies"
+              },
+              "effect": {
+                "giveStatus": {
+                  "card": "chosen",
+                  "status": "confused"
+                }
+              }
+            }
+          }
+        }
+      ]
     }
   ]
 }
