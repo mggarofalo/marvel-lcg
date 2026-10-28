@@ -113,6 +113,11 @@ public sealed class KangPhaseTransitions
             throw new RulesNotImplementedException("the captured Kang group changed before its departure resolved");
     }
 
+    internal static void RequireGroups(IEnumerable<KangDeparture> departures)
+    {
+        foreach (var departure in departures) RequireGroup(departure);
+    }
+
     private KangDeparture[] Ready(PhaseStep owner) => owner.Operation is PhaseTransitionOperation phase
         && phase.Kind is PhaseTransitionKind.EndPlayerPhase or PhaseTransitionKind.EndVillainPhase
         ? pending.Where(item => item.NextPhase || item.Round == owner.Round && item.Boundary == phase.Kind).ToArray() : [];

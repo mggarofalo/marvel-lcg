@@ -96,6 +96,8 @@ internal static class KangJoinProcedure
     {
         if (!world.Agenda.IsOutstanding(operation.Owner, operation.Origin))
             throw new InvalidOperationException("the exact Kang phase owner is no longer outstanding");
-        KangPhaseTransitions.RequireGroup(operation.Departure);
+        // Engine choice: admit the complete retained batch before any choice or
+        // join commits; only AfterJoin may extend a capture for a managed join.
+        KangPhaseTransitions.RequireGroups(new[] { operation.Departure }.Concat(operation.Following ?? []));
     }
 }

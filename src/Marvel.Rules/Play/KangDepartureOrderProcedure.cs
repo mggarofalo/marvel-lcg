@@ -9,8 +9,12 @@ namespace Marvel.Rules.Play;
 internal static class KangDepartureOrderProcedure
 {
     internal static void Schedule(World world, IReadOnlyList<KangDeparture> remaining,
-        PhaseStep owner, Occurrence origin) => world.Agenda.ContinueBeforeOwner(origin, owner,
+        PhaseStep owner, Occurrence origin)
+    {
+        KangPhaseTransitions.RequireGroups(remaining);
+        world.Agenda.ContinueBeforeOwner(origin, owner,
             owner with { Operation = new KangDepartureOrderOperation(remaining, owner, origin) });
+    }
 
     internal static Prompt? Apply(World world, PhaseStep step, List<GameEvent> events)
     {
@@ -55,6 +59,7 @@ internal static class KangDepartureOrderProcedure
     internal static void BeginJoin(World world, KangDeparture departure, IReadOnlyList<KangDeparture> following,
         PhaseStep owner, Occurrence origin, List<GameEvent> events)
     {
+        KangPhaseTransitions.RequireGroups(new[] { departure }.Concat(following));
         KangPhaseTransitions.PreflightDeparture(world, departure);
         if (departure.CompletedScheme is { } scheme)
         {
@@ -84,7 +89,7 @@ internal static class KangDepartureOrderProcedure
         var operation = step.Require<KangDepartureOrderOperation>();
         if (!world.Agenda.IsOutstanding(operation.Owner, operation.Origin))
             throw new InvalidOperationException("the exact Kang phase owner is no longer outstanding");
-        foreach (var departure in operation.Remaining) KangPhaseTransitions.RequireGroup(departure);
+        KangPhaseTransitions.RequireGroups(operation.Remaining);
         return operation;
     }
 }
