@@ -8,13 +8,15 @@ using Xunit;
 
 namespace Marvel.Content.Tests.Play;
 
-// Actual-card composition probe, deliberately outside the authored production inventory.
+// Synthetic unsupported composition, explicitly replacing the authored row.
 public sealed class AntManGiantStompBoundaryTests
 {
     [Fact]
     public void GiantStompNestedTargetAfterAreaAttackRaisesBeforePayment()
     {
         var root = JsonNode.Parse(AuthoredCards.Text)!;
+        var rows = root["cards"]!.AsArray();
+        rows.Remove(rows.Single(row => row!["card"]!.GetValue<string>() == "12003"));
         root["cards"]!.AsArray().Add(JsonNode.Parse("""
             {"card":"12003","abilities":[{
               "trigger":{"event":"WhenActionTriggered","timing":"Action","subject":"this","form":"hero"},
@@ -49,6 +51,6 @@ public sealed class AntManGiantStompBoundaryTests
         Discard.Card(world, source, "test", []);
         var valid = world.CreateCard("01005", world.Seats[0].Hand);
         Assert.Contains(runner.Actions(world, 0), action => action.Card == valid.ObjectId);
-        Assert.DoesNotContain("12003", AuthoredCards.Book.Authored);
+        Assert.Contains("12003", AuthoredCards.Book.Authored);
     }
 }

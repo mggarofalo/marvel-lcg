@@ -23448,6 +23448,29 @@
       }
     }
   ]
-}
+},
+    {
+      "card": "12003",
+      "note": "Giant hero action: one attack deals simultaneous damage to each minion, then selects a live enemy for eight damage.",
+      "abilities": [{
+        "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" },
+        "when": { "hasTrait": { "card": "you", "trait": "GIANT" } },
+        "effect": { "attack": { "effect": { "seq": [
+          { "dealAttackDamage": { "cards": { "query": "minions" }, "amount": 1, "simultaneous": 1 } },
+          { "attackAnyEnemy": { "amount": 8 } }
+        ] } } }
+      }]
+    },
+    {
+      "card": "12020",
+      "note": "Hero action: change to the other hero form, then ready your hero; printed Team-Up governs play.",
+      "abilities": [{
+        "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" },
+        "effect": { "seq": [
+          { "changeForm": { "player": "you", "to": "other-hero" } },
+          { "ready": "yourHero" }
+        ] }
+      }]
+    }
   ]
 }
