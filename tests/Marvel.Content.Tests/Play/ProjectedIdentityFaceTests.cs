@@ -203,6 +203,27 @@ public sealed class ProjectedIdentityFaceTests : CoreCardTestBase
         Assert.Equal("12001a", Assert.Single(projection.Trace(change, [state])).FaceOf(hero));
     }
 
+    [Fact]
+    public void OtherHeroThenReadyProjectionReadsTheNewPrintedFace()
+    {
+        var world = Hero("12001a,12001b,12001c");
+        var hero = world.Seats[0].IdentityCard;
+        hero.Exhaust();
+        var context = Context(world, hero);
+        var projection = new AbilityAreaProjection([], null, new HashSet<DeckType>(), context, 1);
+        var sequence = new AbilityEffect.Sequence([
+            new AbilityEffect.ChangeForm(AbilityPlayer.You, new AbilityFormDestination.OtherHero()),
+            new AbilityEffect.CardAction(AbilityCardInstruction.Ready,
+                new AbilityCardSelection.Bound(AbilityCardBinding.YourHero))]);
+        string before = world.Digest().Canonical();
+        var state = Assert.Single(projection.Trace(sequence, [new AreaProjectionState(context)]));
+        Assert.Equal("12001c", state.FaceOf(hero));
+        Assert.True(state.HasTrait(context, hero, "GIANT"));
+        Assert.False(state.HasTrait(context, hero, "TINY"));
+        Assert.Equal(3, state.ModifiedOf(context, hero, "attack"));
+        Assert.Equal(before, world.Digest().Canonical());
+    }
+
     private static AbilityAdmissionContext Context(World world, Card source, string book = "{\"cards\":[]}")
     {
         var query = new AbilityQueryContext(world, source, new Occurrence(1, []), 0,

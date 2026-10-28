@@ -25,6 +25,25 @@ public sealed class AbilityFormDestinationTests
         AbilityFormDestinationResolver.RequireStandalone(new AbilityEffect.Sequence([own, draw]));
     }
 
+    [Fact]
+    public void ReadyCompositionRequiresTheResolvingPlayersHeroAndExactOrder()
+    {
+        var change = new AbilityEffect.ChangeForm(AbilityPlayer.You, new AbilityFormDestination.OtherHero());
+        var ready = new AbilityEffect.CardAction(AbilityCardInstruction.Ready,
+            new AbilityCardSelection.Bound(AbilityCardBinding.YourHero));
+        AbilityFormDestinationResolver.RequireStandalone(new AbilityEffect.Sequence([change, ready]));
+        var wrongTarget = ready with { Selection = new AbilityCardSelection.Bound(AbilityCardBinding.You) };
+        var wrongPlayer = change with { Player = AbilityPlayer.FirstPlayer };
+        Assert.Throws<RulesNotImplementedException>(() =>
+            AbilityFormDestinationResolver.RequireStandalone(new AbilityEffect.Sequence([change, wrongTarget])));
+        Assert.Throws<RulesNotImplementedException>(() =>
+            AbilityFormDestinationResolver.RequireStandalone(new AbilityEffect.Sequence([wrongPlayer, ready])));
+        Assert.Throws<RulesNotImplementedException>(() =>
+            AbilityFormDestinationResolver.RequireStandalone(new AbilityEffect.Sequence([ready, change])));
+        Assert.Throws<RulesNotImplementedException>(() =>
+            AbilityFormDestinationResolver.RequireStandalone(new AbilityEffect.Simultaneous([change, ready])));
+    }
+
     [Theory]
     [InlineData("12001a", "12001b")]
     [InlineData("12001a", "12001c")]

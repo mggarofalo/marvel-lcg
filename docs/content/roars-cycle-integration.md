@@ -159,5 +159,40 @@ the targetless attack description correction `2fa6b3d4`. Restored independent
 verification passes 57 affected Content and 66 View checks; normal hooks pass.
 See [the exact review and limits](giant-stomp-live-choice-review.md).
 Card `12003` still needs its production row and content review. Swarm's separate
-form/ready and Team-Up prerequisites remain in their review workflow. Neither
+form/ready and Team-Up prerequisites are recorded below. Neither
 new capability changes the current 23-face Ant-Man inventory or public admission.
+
+The Giant Stomp integration `78b62715` passes 90 selected Giant Stomp, Melee,
+counted-attack and ability-data checks and normal commit hooks. The focused log is
+`roars-giant-integration-focused.log`; the staged source tree is retained in
+`roars-giant-integration-tested-tree.txt` under the external evidence directory.
+
+Swarm form/ready source `a3aad554` is independently accepted at `a7973b01`.
+The review adds prohibited-form-change/independent-ready controls and compares
+extra offer queries against same-seed unprobed execution, including complete
+events, RNG consumption, pending work and a subsequent nonempty offer. All 84
+focused checks pass; no production source changes were needed in review.
+[Its record](swarm-form-ready-evidence.md) preserves mutations and limits.
+Team-Up event source `b4726685` is independently accepted at `1c21233a`, including
+stored-event action/interrupt eligibility. Restored review passes 50 affected
+Content and 69 normal card-play checks, with a distinguishing compiled stored-zone
+mutant and normal hooks. [The record](team-up-event-admission-evidence.md) covers
+the captured-offer rejection and in-play-trigger boundaries. These sources are
+combined for full Content and Rules verification; actual `12020` remains unauthored.
+
+The combined staged tree `33bba469c53c6944f75c1a46e7edfac22d135085` completes
+Content with 8,640 passes and one failure, and Rules with all 1,193 passing,
+without skips. The sole failure is the earlier composition probe expecting
+Swarm's now-supported form/ready sequence to raise. It is updated to assert the
+actual form change, readying and paid-card discards while retaining every original
+query-purity check and its same-cost draw control. Logs are
+`roars-three-prerequisites-full-content.log` and
+`roars-three-prerequisites-full-rules.log`. This is not claimed as an
+uninterrupted green full run; the corrected probe and affected paths require their
+focused result, with final full verification still due before publication.
+After the fixture correction, all 168 selected composition, Swarm, Team-Up,
+form/projection, Giant Stomp and ability-data tests pass in
+`roars-three-prerequisites-corrected-focused.log`. The independent Swarm reviewer
+also inspected the fixture-only change and found no weakened assertion or
+production defect: the former refusal no longer applies to this supported shape,
+and the retained draw control distinguishes both final face and readiness.

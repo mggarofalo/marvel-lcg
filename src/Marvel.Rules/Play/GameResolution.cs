@@ -39,6 +39,7 @@ public static class GameResolution
         var assessment = DecisionAssessment.Assess(game.Pending, input);
         if (!assessment.IsAccepted)
             throw new ArgumentException(assessment.Reason ?? assessment.Rejection.ToString(), nameof(input));
+        ValidateLiveTeamUp(game, input);
         ValidateLiveCardPlay(game, input);
         GameFormChanges.Validate(game, input);
         game.world.ClearInformationSignals();
@@ -55,6 +56,18 @@ public static class GameResolution
         }
 
         return ResolveDeclineOrVillain(game, input);
+    }
+
+    private static void ValidateLiveTeamUp(Game game, Decision input)
+    {
+        if (input.IsDecline) return;
+        var offer = game.Pending!.Affordances.First(option => option.Id == input.Affordance);
+        // rr:team-up: a card cannot be played unless both named friendly characters are in play.
+        // An offer describes an earlier board, so check again before committing an answer.
+        if (offer.PlaysCard && !DeckTypes.IsInPlay(game.world.Cards[offer.AnchorId].Area.Type)
+            && !CardPlayLegality.TeamedUp(
+                game.world, game.facts, game.world.Cards[offer.AnchorId]))
+            throw new ArgumentException("the offered card no longer satisfies team-up", nameof(input));
     }
 
     private static void ValidateLiveCardPlay(Game game, Decision input)

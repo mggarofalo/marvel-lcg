@@ -17,7 +17,7 @@ public sealed class AntManTeamStageCompositionTests
         File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")));
 
     [Fact]
-    public void SwarmOtherHeroThenReadyIsRejectedBeforePaymentWithSameCostControl()
+    public void SwarmChangesFormAndReadiesAfterPaymentWithSameCostControl()
     {
         const string desired = """{"seq":[{"changeForm":{"player":"you","to":"other-hero"}},{"ready":"yourHero"}]}""";
         const string control = """{"draw":{"player":"you","count":1}}""";
@@ -29,8 +29,7 @@ public sealed class AntManTeamStageCompositionTests
         var random = world.Random.Generator.GetState();
         long words = world.Random.Generator.WordsConsumed;
         var pending = world.Agenda.Outstanding.ToArray();
-        var error = Assert.Throws<RulesNotImplementedException>(() => runner.Actions(world, 0));
-        Assert.Contains("composed", error.Message);
+        var offered = Assert.Single(runner.Actions(world, 0), a => a.Card == source.ObjectId);
         Assert.Equal(before, world.Digest().Canonical());
         Assert.Equal(random.Index, world.Random.Generator.GetState().Index);
         Assert.Equal(random.Words, world.Random.Generator.GetState().Words);
@@ -38,6 +37,14 @@ public sealed class AntManTeamStageCompositionTests
         Assert.Equal(pending, world.Agenda.Outstanding);
         Assert.Same(world.Seats[0].Hand, source.Area);
         Assert.Same(world.Seats[0].Hand, payment.Area);
+
+        runner.ExecuteAction(world, new PlayerAction(offered, [payment.ObjectId], []));
+        Sequence.Finish(world, world.Facts, runner, []);
+        Assert.Equal("12001c", identity.FaceId);
+        Assert.True(identity.Ready);
+        Assert.Equal(DeckType.DiscardPile, source.Area.Type);
+        Assert.Equal(DeckType.DiscardPile, payment.Area.Type);
+        Assert.Empty(world.Seats[0].Hand.Cards);
 
         var controlRunner = Runner("12020", control);
         var (controlWorld, controlSource, controlPayment) = Board(controlRunner, "12020");
@@ -48,6 +55,8 @@ public sealed class AntManTeamStageCompositionTests
         Assert.Equal(DeckType.DiscardPile, controlSource.Area.Type);
         Assert.Equal(DeckType.DiscardPile, controlPayment.Area.Type);
         Assert.Single(controlWorld.Seats[0].Hand.Cards);
+        Assert.Equal("12001a", controlWorld.Seats[0].IdentityCard.FaceId);
+        Assert.False(controlWorld.Seats[0].IdentityCard.Ready);
     }
 
     [Fact]
