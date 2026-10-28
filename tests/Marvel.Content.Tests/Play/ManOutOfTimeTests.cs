@@ -78,13 +78,15 @@ public sealed class ManOutOfTimeTests
         }, abilities: runner);
         var source = world.CreateCard("03026", world.AreaOf(DeckType.ObligationsArea, PlayArea.Of(0)));
         runner.ExecuteReveal(world, source, 0);
-        runner.Chose(world, AbilityContinuationFixtures.Pending(world, source), Decision.Take(flip ? 0 : 1));
-        var removal = Assert.IsType<Prompt>(Sequence.Work(world, world.Facts, runner, []));
-        var step = AbilityContinuationFixtures.Pending(world, source);
+        var events = new List<Marvel.Rules.Events.GameEvent>();
+        var first = Assert.IsType<Prompt>(Sequence.Work(world, world.Facts, runner, events));
+        Sequence.Answer(world, world.Facts, runner, first, Decision.Take(flip ? 0 : 1), events);
+        var removal = Assert.IsType<Prompt>(Sequence.Work(world, world.Facts, runner, events));
         Assert.Equal(removable, removal.Affordances.Any(offer => offer.Id == 0));
         if (removable)
         {
-            runner.Chose(world, step, Decision.Take(0));
+            Sequence.Answer(world, world.Facts, runner, removal, Decision.Take(0), events);
+            Sequence.Finish(world, world.Facts, runner, events);
             Assert.False(world.Seats[0].IdentityCard.Ready);
             Assert.Equal("03001b", world.Seats[0].IdentityCard.FaceId);
             Assert.Equal(DeckType.RemovedArea, source.Area.Type);
@@ -92,7 +94,7 @@ public sealed class ManOutOfTimeTests
         else
         {
             string before = world.Digest().Fingerprint();
-            Assert.Throws<ArgumentException>(() => runner.Chose(world, step, Decision.Take(0)));
+            Assert.Throws<ArgumentException>(() => Sequence.Answer(world, world.Facts, runner, removal, Decision.Take(0), events));
             Assert.Equal(before, world.Digest().Fingerprint());
         }
     }

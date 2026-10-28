@@ -275,14 +275,17 @@ public sealed class KeywordStackingTests
 
     [Rule("rr:keywords.1")]
     [Rule("rr:surge")]
-    [Fact]
-    public void GainedSurgeSurvivesAThwartContinuation()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void GainedSurgeSurvivesAThwartContinuation(bool gainAgain)
     {
         // Thwart uses its own queued power record, so it independently carries
         // the reveal state needed when the outer sequence resumes.
+        string suffix = gainAgain ? """{ "gainSurge": 1 },""" : "";
         var runner = Runner(
             "01110",
-            """{ "seq": [ { "gainSurge": 1 }, { "thwart": { "target": { "query": "mainScheme" }, "effect": { "seq": [] } } }, { "gainSurge": 1 } ] }""");
+            $$"""{ "seq": [ { "gainSurge": 1 }, { "thwart": { "target": { "query": "mainScheme" }, "effect": { "seq": [] } } }, {{suffix}} { "placeCounters": { "card": "this", "counter": "icons", "count": 1 } } ] }""");
         var (world, card) = Board("01110", runner);
         var seat = world.Seats[0];
         seat.IdentityCard = world.CreateCard("01001a", seat.Hero);
@@ -293,6 +296,7 @@ public sealed class KeywordStackingTests
         Assert.Single(world.Agenda.Outstanding, item => item.What == Steps.CharacterThwarts);
         Sequence.Finish(world, Cards, runner, []);
 
+        Assert.Equal(1, card.Tokens["c_icons"]);
         AssertOneAdditionalCard(world);
     }
 

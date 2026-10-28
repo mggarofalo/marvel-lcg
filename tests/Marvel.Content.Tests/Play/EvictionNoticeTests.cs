@@ -44,7 +44,9 @@ public sealed class EvictionNoticeTests
         int before = seat.FormChangedInRound;
 
         var runner = AuthoredCards.Runner();
-        var events = runner.Chose(world, AbilityContinuationFixtures.Pending(world, card), Decision.Take(0)).ToList();
+        var events = new List<Marvel.Rules.Events.GameEvent>();
+        var flip = Assert.IsType<Marvel.Rules.Prompts.Prompt>(Sequence.Work(world, Cards, runner, events));
+        Sequence.Answer(world, Cards, runner, flip, Decision.Take(0), events);
         var prompt = Assert.IsType<Marvel.Rules.Prompts.Prompt>(Sequence.Work(world, Cards, runner, events));
         var resolved = new Resolution(world, prompt, events);
 
