@@ -16,6 +16,9 @@ internal sealed class AreaProjectionState(AbilityAdmissionContext context)
     public Dictionary<int, int> Hosts { get; } = [];
     public Dictionary<int, int> EngagedWith { get; } = [];
     public Dictionary<int, HashSet<string>> Traits { get; } = [];
+    // A missing entry means the physical card's live face remains active.
+    private readonly Dictionary<int, string> faces = [];
+    public IReadOnlyDictionary<int, string> Faces => faces;
     public Dictionary<(int Card, string Field), long> Modifiers { get; } = [];
     public bool SourceReferenceCurrent { get; set; } = true;
     public int ActiveVillain { get; set; } =
@@ -41,14 +44,25 @@ internal sealed class AreaProjectionState(AbilityAdmissionContext context)
 
     public long HealthOf(AbilityAdmissionContext current, Card card) => AbilityAmounts.SaturatingSum(
         EffectiveCards.BaseValue(
-            card, current.World.Facts, "HP", current.World.Players),
+            card, current.World.Facts, "HP", current.World.Players, FaceOf(card)),
         [ModifiedOf(current, card, "health")]);
+
+    public string FaceOf(Card card) => Faces.GetValueOrDefault(card.ObjectId, card.FaceId);
+
+    public void SetFace(Card card, string face)
+    {
+        if (!card.Faces.Contains(face, StringComparer.Ordinal))
+            throw new ArgumentException("Face must belong to the card.", nameof(face));
+        if (face == card.FaceId) faces.Remove(card.ObjectId);
+        else faces[card.ObjectId] = face;
+    }
 
     public long ModifiedOf(AbilityAdmissionContext current, Card card, string field)
     {
+        new AbilityProjectedConstantQueries(this).RequireFaceConstantsProjected(current);
         var evaluation = CardValues.EvaluateRaw(
             current.World, card, field,
-            current.World.Facts, current.World.Players);
+            current.World.Facts, current.World.Players, FaceOf(card));
         long value = evaluation.CurrentValue;
         value += ProjectedConstantAdjustment(current, card, field);
         if (ProjectedPredicateInputsChanged(current)
@@ -182,12 +196,14 @@ internal sealed class AreaProjectionState(AbilityAdmissionContext context)
         || Hosts.Count > 0
         || EngagedWith.Count > 0
         || Traits.Count > 0
+        || Faces.Count > 0
         || Modifiers.Count > 0
         || ActiveVillain != (current.World.TheCardIn(
             DeckType.VillainArea)?.ObjectId ?? -1);
 
     public bool HasTrait(AbilityAdmissionContext current, Card card, string trait)
     {
+        new AbilityProjectedConstantQueries(this).RequireFaceConstantsProjected(current);
         var active = current.World.Effects.Active()
             .Where(effect => effect.Source != EffectSource.ConstantAbility
                 || effect.Card is not int source
@@ -203,7 +219,7 @@ internal sealed class AreaProjectionState(AbilityAdmissionContext context)
         {
             return false;
         }
-        return EffectiveCards.InherentTraits(card, current.World.Facts)
+        return EffectiveCards.InherentTraits(card, current.World.Facts, FaceOf(card))
                 .Contains(trait, StringComparer.Ordinal)
             || active.Any(effect =>
                 ProjectedTraitEffectApplies(current, effect, card)
@@ -261,6 +277,10 @@ internal sealed class AreaProjectionState(AbilityAdmissionContext context)
         {
             clone.Traits[card] = [.. traits];
         }
+        foreach (var (card, face) in Faces)
+        {
+            clone.faces[card] = face;
+        }
         foreach (var (key, amount) in Modifiers)
         {
             clone.Modifiers[key] = amount;
@@ -276,31 +296,5 @@ internal sealed class AreaProjectionState(AbilityAdmissionContext context)
         states.GroupBy(state => state.Key(), StringComparer.Ordinal)
             .Select(group => group.First()).ToList();
 
-    public string Key() => string.Join(
-        ";",
-        Damage.OrderBy(pair => pair.Key)
-            .Select(pair => $"d{pair.Key}:{pair.Value}")
-            .Concat(Tough.OrderBy(pair => pair.Key)
-                .Select(pair => $"s{pair.Key}:{pair.Value}"))
-            .Concat(Threat.OrderBy(pair => pair.Key)
-                .Select(pair => $"t{pair.Key}:{pair.Value}"))
-            .Concat(Status.OrderBy(pair => pair.Key.Card)
-                .ThenBy(pair => pair.Key.Status, StringComparer.Ordinal)
-                .Select(pair =>
-                    $"x{pair.Key.Card}:{pair.Key.Status}:{pair.Value}"))
-            .Concat(Departed.Order().Select(card => $"o{card}"))
-            .Concat(Entered.Order().Select(card => $"i{card}"))
-            .Concat(Hosts.OrderBy(pair => pair.Key)
-                .Select(pair => $"h{pair.Key}:{pair.Value}"))
-            .Concat(EngagedWith.OrderBy(pair => pair.Key)
-                .Select(pair => $"e{pair.Key}:{pair.Value}"))
-            .Concat(Traits.OrderBy(pair => pair.Key)
-                .SelectMany(pair => pair.Value.Order(StringComparer.Ordinal)
-                    .Select(trait => $"g{pair.Key}:{trait}")))
-            .Concat(Modifiers.OrderBy(pair => pair.Key.Card)
-                .ThenBy(pair => pair.Key.Field, StringComparer.Ordinal)
-                .Select(pair =>
-                    $"m{pair.Key.Card}:{pair.Key.Field}:{pair.Value}"))
-            .Append($"v{ActiveVillain}:{VillainAttachmentHost}")
-            .Append($"r{SourceReferenceCurrent}"));
+    public string Key() => AreaProjectionKey.Key(this);
 }

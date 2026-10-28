@@ -174,14 +174,10 @@ internal static class AbilityPowerOutcomeTrace
         AbilityPowerState state)
     {
         var change = FormChangeOf(node, cast);
-        _ = AbilityFormDestinationResolver.LegacyForm(change.Destination);
         if (bindingMayChange && change.Player == AbilityPlayer.ChosenPlayer) return null;
         int seat = Seat(change.Player, cast);
-        if (!AbilityProjectedCharacterPermissions.CanChangeForm(seat, cast, state))
-            return [AdmissionResolution.None];
-        bool live = AlreadyInForm(change, cast);
-        bool current = SeatMayChange(state.FormsMayChange, seat) ? !live : live;
-        return [current ? AdmissionResolution.None : AdmissionResolution.Full];
+        return [AbilityPowerFormTransition.Destination(change, seat, cast, state) is null
+            ? AdmissionResolution.None : AdmissionResolution.Full];
     }
 
     internal static bool ConditionalCanSkipBranch(
@@ -203,29 +199,20 @@ internal static class AbilityPowerOutcomeTrace
         AbilityEffect.ChangeForm change, AbilityAdmissionScope cast, bool bindingMayChange,
         AbilityPowerState reachability)
     {
-        _ = AbilityFormDestinationResolver.LegacyForm(change.Destination);
         var player = change.Player;
         if (bindingMayChange && player == AbilityPlayer.ChosenPlayer)
         {
+            var seats = cast.World.PlayerOrder.Where(seat =>
+                AbilityProjectedCharacterPermissions.CanChangeForm(seat, cast, reachability)).ToArray();
             return reachability with
             {
                 FormsMayChange = reachability.FormsMayChange
-                    | cast.World.PlayerOrder.Where(seat =>
-                        AbilityProjectedCharacterPermissions.CanChangeForm(seat, cast, reachability))
-                        .Aggregate(0UL, (seats, seat) => seats | PlayerSeat(seat)),
+                    | seats.Aggregate(0UL, (bits, seat) => bits | PlayerSeat(seat)),
+                IdentityFaces = reachability.IdentityFaces.RemoveRange(seats),
             };
         }
         int seat = Seat(player, cast);
-        if (!AbilityProjectedCharacterPermissions.CanChangeForm(seat, cast, reachability))
-            return reachability;
-        ulong bit = PlayerSeat(seat);
-        bool destinationIsCurrent = AlreadyInForm(change, cast);
-        return reachability with
-        {
-            FormsMayChange = destinationIsCurrent
-                ? reachability.FormsMayChange & ~bit
-                : reachability.FormsMayChange | bit,
-        };
+        return AbilityPowerFormTransition.Apply(change, seat, cast, reachability);
     }
 
     internal const ulong FirstPlayerRebinding = 1UL << 63;

@@ -1,3 +1,5 @@
+using System.Collections.Immutable;
+
 namespace Marvel.Cards.Run;
 
 internal readonly record struct AbilityPowerState(
@@ -14,6 +16,9 @@ internal readonly record struct AbilityPowerState(
     Dictionary<int, int> Engagement,
     int CurrentVillain, int VillainStagesDrawn, bool Finished)
 {
+    // Exact projected face overrides are immutable and local to each path.
+    internal ImmutableDictionary<int, string> IdentityFaces { get; init; } =
+        ImmutableDictionary<int, string>.Empty;
     // Only multi-villain scenarios need a projected current stage per immutable group.
     internal Dictionary<int, int>? EncounterStages { get; init; }
     internal int[]? EncounterOrder { get; init; }

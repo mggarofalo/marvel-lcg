@@ -79,7 +79,7 @@ internal static class AbilityAreaFlowProjection
             var branched = new List<AreaProjectionState>();
             foreach (var state in states)
             {
-                bool? projected = ProjectedTest(test, state, projection.context);
+                bool? projected = AbilityProjectedConditions.Test(test, state, projection.context);
                 var branches = projected is { } result
                     ? ConditionalBranch(effect, result ? "then" : "else") is { } taken
                         ? [taken]
@@ -140,10 +140,17 @@ internal static class AbilityAreaFlowProjection
     {
         if (effect.OperationName() is "choose" or "chooseCard")
         {
+            if (ContainsExactFormChange(effect))
+                throw new RulesNotImplementedException(
+                    "projecting exact form changes within an unresolved choice is not implemented");
             return states;
         }
         return null;
     }
+
+    private static bool ContainsExactFormChange(AbilityEffect effect) =>
+        effect is AbilityEffect.ChangeForm { Destination: not AbilityFormDestination.Form }
+        || AbilityEffectStructure.AllEffectChildren(effect).Any(ContainsExactFormChange);
 
     internal static List<AreaProjectionState>? TryTracePower(
         this AbilityAreaProjection projection, AbilityEffect effect, List<AreaProjectionState> states,

@@ -1,4 +1,5 @@
 using Marvel.Cards.Dsl;
+using Marvel.Rules.Play;
 using Marvel.Rules.State;
 using Marvel.Rules.Timing;
 
@@ -7,6 +8,24 @@ namespace Marvel.Cards.Run;
 // Refuses projected reads whose constant definitions or modifiers need changed inputs.
 internal sealed class AbilityProjectedConstantQueries(AreaProjectionState state)
 {
+    internal void RequireFaceConstantsProjected(AbilityAdmissionContext current)
+    {
+        if (state.Faces.Count > 0 && current.World.Effects.Active().Any(effect =>
+                effect.Scope.StartsWith(ContinuousEffect.CharactersWithTrait, StringComparison.Ordinal)
+                || effect.LiveAmount is not null))
+            throw new RulesNotImplementedException(
+                "projecting trait-scoped effects or live amounts across identity faces is not implemented");
+        foreach (var (id, face) in state.Faces)
+        {
+            var card = current.World.Cards[id];
+            if (EffectiveCards.HasProfile(card)) continue;
+            if (current.Program.On(card.FaceId).Concat(current.Program.On(face))
+                .Any(ability => ability.Trigger.Timing == AbilityType.Constant))
+                throw new RulesNotImplementedException(
+                    $"projecting constants across identity faces '{card.FaceId}' and '{face}' is not implemented");
+        }
+    }
+
     internal bool MayModify(
         AbilityAdmissionContext current, Card target, string field)
     {

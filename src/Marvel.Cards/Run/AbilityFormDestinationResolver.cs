@@ -11,6 +11,11 @@ internal static class AbilityFormDestinationResolver
     internal static void RequireStandalone(AbilityEffect effect)
     {
         if (effect is AbilityEffect.ChangeForm) return;
+        if (effect is AbilityEffect.Sequence { Effects.Length: 2 } sequence
+            && sequence.Effects[0] is AbilityEffect.ChangeForm
+                { Player: AbilityPlayer.You, Destination: AbilityFormDestination.OtherHero }
+            && sequence.Effects[1] is AbilityEffect.Draw
+                { Players: AbilityPlayerSelection.OnePlayer { Player: AbilityPlayer.You } }) return;
         if (ContainsExplicitDestination(effect))
             throw new RulesNotImplementedException(
                 "projecting a composed exact or other-hero form change is not implemented");

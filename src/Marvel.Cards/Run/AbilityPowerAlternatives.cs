@@ -87,6 +87,7 @@ internal static class AbilityPowerAlternatives
     private static bool SamePowerHeader(
         AbilityPowerState left, AbilityPowerState right) =>
         left.FormsMayChange == right.FormsMayChange
+        && SameValues(left.IdentityFaces, right.IdentityFaces)
         && left.FirstPlayer == right.FirstPlayer
         && left.FirstPlayerDamage == right.FirstPlayerDamage
         && left.FirstPlayerTough == right.FirstPlayerTough;
