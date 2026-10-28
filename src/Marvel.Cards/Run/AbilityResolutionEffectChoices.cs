@@ -231,10 +231,12 @@ internal static class AbilityResolutionEffectChoices
 
     /// <summary>Resume an initiated ability after its cost procedure settles.</summary>
     internal static void SuspendAfterCost(this AbilityResolutionExecution execution,
-        AbilityResolutionState cast, int abilityOrdinal, PhaseStep? owner, Occurrence? occurrence)
+        AbilityResolutionState cast, int abilityOrdinal, PhaseStep? owner, Occurrence? occurrence,
+        bool effectProcedure = false)
     {
-        var capture = AbilityContinuationScheduling.ForCostProcedure(
-            execution.Capture(cast, abilityOrdinal));
+        var captured = execution.Capture(cast, abilityOrdinal);
+        var capture = effectProcedure ? AbilityContinuationScheduling.ForEffectProcedure(captured)
+            : AbilityContinuationScheduling.ForCostProcedure(captured);
         var continuation = AbilityContinuations.Step(
             capture, AbilityContinuationStage.Resume, cast.World.Agenda.Current?.Round ?? 0, plan: true);
         if (owner is null)

@@ -109,7 +109,7 @@ public sealed class HighwayRobberyWindowTests
     private static Occurrence Threat(World world)
     {
         var scheme = world.TheCardIn(DeckType.MainSchemesArea)!;
-        return Occurrence.ForThreat(100, [Steps.ThreatWouldBePlaced], world, Cards,
+        return OccurrenceCapture.Threat(100, [Steps.ThreatWouldBePlaced], world, Cards,
             new ThreatPlacement(scheme.ObjectId, scheme.ObjectId, 1,
                 ThreatCause.CardAbility, "test", player: 0));
     }

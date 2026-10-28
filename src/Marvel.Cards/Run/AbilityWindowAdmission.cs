@@ -43,7 +43,7 @@ internal static class AbilityWindowAdmission
         AbilityProgram program, World world, Card card, Occurrence occurrence,
         WindowKind window, IResourceCardAbilities resourceAbilities, AbilityQueryProjection? projection)
     {
-        if (!CanHostWindowAbility(world, card)) yield break;
+        if (!CanHostWindowAbility(world, card, occurrence)) yield break;
         var written = program.On(card.FaceId);
         for (int index = 0; index < written.Length; index++)
         {
@@ -60,14 +60,17 @@ internal static class AbilityWindowAdmission
         }
     }
 
-    private static bool CanHostWindowAbility(World world, Card card)
+    private static bool CanHostWindowAbility(World world, Card card, Occurrence occurrence)
     {
         if (EffectiveCards.HasProfile(card) || PrintedText.IsBlanked(world, card)) return false;
         bool playableEvent = CardPlayOrigin.CanPlayEvent(world, card, card.Owner);
         // rr:in-play-and-out-of-play.10: "Facedown cards attached to in-play
         // cards are out of play." Explicit event-play origins remain separate:
         // hand cards need not be faceup to be played.
-        return DeckTypes.IsInPlay(card.Area.Type) && card.FaceUp || playableEvent;
+        return DeckTypes.IsInPlay(card.Area.Type) && card.FaceUp || playableEvent
+            || card.Area.Type == DeckType.DiscardPile && occurrence.Is(ResourceSpentWindow.Condition)
+                && occurrence.SpentResourceCards.Any(spent => spent.Card == card.ObjectId
+                    && spent.Incarnation == card.Incarnation);
     }
 
     private static bool IsWaitingCandidate(
@@ -188,6 +191,9 @@ internal static class AbilityWindowAdmission
         Card card, Occurrence occurrence) =>
         RestrictedPlayer(program, world, ability, card) is { } restricted
             ? restricted
+            : occurrence.Is(ResourceSpentWindow.Condition)
+                && occurrence.SpentResourceCards.FirstOrDefault(spent => spent.Card == card.ObjectId) is { } spent
+                ? spent.Player
             : ability.Trigger.Player is not null
                 ? occurrence.Player
                 : ability.Trigger.Actor == AbilityRoles.You

@@ -117,13 +117,13 @@ internal sealed class AbilityChoiceAnswer(
             var occurrence = cast.World.Agenda.Occurrence;
             var payment = AbilityResourcePayment.Spend(cast.World, execution.resourceAbilities,
                 new(cast.Source, player, input.Spent, requirement.Amount, requirement.Resources), cast.Events);
-            if (!payment.IsComplete)
+            var plan = new AbilityChoicePayment(payment);
+            if (!payment.IsComplete || !plan.Commit(execution, cast))
             {
-                cast.PendingPayment = new AbilityChoicePayment(payment);
+                cast.PendingPayment = plan;
                 execution.SuspendAfterProcedure(choice, cast, owner, occurrence);
                 return cast.Events;
             }
-            cast.ResolveEffect();
         }
         else if (input.Affordance == 1)
         {
@@ -238,16 +238,13 @@ internal sealed class AbilityChoiceAnswer(
             [cast.World.Seats[player].Hand], input.Spent, cost,
             Resources.Required(cast.World, ally, cast.World.Facts), cast.Source.ObjectId,
             player, cast.Events, payingFor: ally);
-        if (!payment.IsComplete)
+        var plan = new AbilityChoicePayment(payment, ally);
+        if (!payment.IsComplete || !plan.Commit(execution, cast))
         {
-            cast.PendingPayment = new AbilityChoicePayment(payment, ally);
+            cast.PendingPayment = plan;
             execution.SuspendAfterProcedure(choice, cast, owner, occurrence);
             return cast.Events;
         }
-        CardPlay.PutAllyIntoPlay(
-            cast.World, cast.World.Facts, execution.cardPlayAbilities, ally, player,
-            cast.Trigger, cast.Events);
-        cast.ResolveEffect();
         return Continue();
     }
 

@@ -8,11 +8,21 @@ internal sealed class AbilityChoicePayment(ResourcePaymentReceipt payment, Card?
     : AbilityPaymentPlan
 {
     private readonly int incarnation = ally?.Incarnation ?? -1;
+    private bool windowOpened;
 
     internal override bool Commit(AbilityResolutionExecution execution, AbilityResolutionState cast)
     {
         if (!payment.IsComplete)
             throw new InvalidOperationException("payment choice resumed before its resource costs completed");
+        if (!windowOpened)
+        {
+            windowOpened = true;
+            if (ResourceSpentWindow.Open(cast.World, payment.SpentCards, cast.Player))
+            {
+                cast.Suspend();
+                return false;
+            }
+        }
         if (ally is not null)
         {
             // rr:leaves-play.1: a returning card is "a new copy of the card."

@@ -7,6 +7,7 @@ namespace Marvel.Rules.Play;
 internal sealed class CardPaymentEntry
 {
     private bool consumed;
+    private bool spendWindowOpened;
     internal required AbilityExecution Execution { get; init; }
     internal required World World { get; init; }
     internal required ICardFacts Facts { get; init; }
@@ -25,6 +26,17 @@ internal sealed class CardPaymentEntry
         if (!Payment.IsComplete) throw new InvalidOperationException("card entry preceded its payment");
         if (Card.Incarnation != Incarnation)
             throw new InvalidOperationException("the paid card changed incarnation before entry");
+        if (!spendWindowOpened)
+        {
+            spendWindowOpened = true;
+            if (ResourceSpentWindow.Open(world, Payment.SpentCards, Seat.Index))
+            {
+                world.Agenda.ThenContinuation(
+                    new PhaseStep(new CardPaymentEntryOperation(this), world.Agenda.Current?.Round ?? 0, 0),
+                    Execution.Occurrence);
+                return Execution.Yield(events);
+            }
+        }
         consumed = true;
         AllyPlayHistory.Record(world, Abilities, Card);
         CardEntry.Enter(world, Facts, Abilities, Seat, Card, events, new CardEntryChoices(Targets, Payment.Paid));

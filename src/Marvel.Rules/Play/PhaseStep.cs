@@ -66,7 +66,7 @@ public readonly record struct PhaseStep(
             Steps.PlaceThreat => VillainPhaseThreat(id, world, facts),
             Steps.SchemeThreat => SchemeThreat(id, world, facts),
             Steps.PlaceThreatEffect when Operation is ThreatPlacementOperation { Placement: { } placement } =>
-                Occurrence.ForThreat(id, Conditions, world, facts, placement),
+                OccurrenceCapture.Threat(id, Conditions, world, facts, placement),
             Steps.PlaceThreatEffect => throw new RulesNotImplementedException(
                 "a scheduled threat placement has no placement payload"),
             Steps.Attack => Occurrence.ForAttack(
@@ -142,7 +142,7 @@ public readonly record struct PhaseStep(
             return new Occurrence(id, Conditions, Subject: scheme.ObjectId);
         }
 
-        return Occurrence.ForThreat(
+        return OccurrenceCapture.Threat(
             id,
             Conditions,
             world,
@@ -169,7 +169,7 @@ public readonly record struct PhaseStep(
             world, enemy, "scheme", facts, world.Players);
         if (amount <= 0)
         {
-            return Occurrence.ForThreat(
+            return OccurrenceCapture.Threat(
                 id,
                 [Steps.SchemeEnds],
                 world,
@@ -180,7 +180,7 @@ public readonly record struct PhaseStep(
                 subject: enemy.ObjectId);
         }
 
-        return Occurrence.ForThreat(
+        return OccurrenceCapture.Threat(
             id,
             Conditions,
             world,

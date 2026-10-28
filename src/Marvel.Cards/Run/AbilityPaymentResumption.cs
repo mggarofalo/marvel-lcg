@@ -12,7 +12,8 @@ internal static class AbilityPaymentResumption
         var occurrence = cast.World.Agenda.Occurrence;
         if (!payment.Commit(execution, cast))
         {
-            execution.SuspendAfterCost(cast, resumed.Invocation.Address.Ordinal, owner, occurrence);
+            execution.SuspendAfterCost(cast, resumed.Invocation.Address.Ordinal, owner, occurrence,
+                effectProcedure: payment is AbilityChoicePayment);
             cast.CompleteResolution();
             return false;
         }

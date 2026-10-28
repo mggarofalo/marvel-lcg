@@ -248,6 +248,8 @@ internal sealed class AbilityEventPayment
         return true;
     }
 
+    internal ResourcePaymentReceipt? ResourceReceipt => payment;
+
     internal string PreviewPaid => paid;
 
     internal string Paid => completed ? paid

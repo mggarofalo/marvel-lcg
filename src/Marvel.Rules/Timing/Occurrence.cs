@@ -99,6 +99,10 @@ public sealed record Occurrence
     [JsonIgnore]
     public Play.PlayedCardPayment? CardPlayPayment { get; init; }
 
+    /// <summary>Physical cards spent in this completed cost, reconstructed by replay.</summary>
+    [JsonIgnore]
+    public IReadOnlyList<Play.SpentResourceCard> SpentResourceCards { get; init; } = [];
+
     /// <summary>The imminent threat placement, when this occurrence is one.</summary>
     public State.ThreatPlacement? Threat { get; }
 
@@ -211,12 +215,6 @@ public sealed record Occurrence
         int scheme,
         int player) =>
         OccurrenceCapture.Thwart(id, conditions, world, facts, actor, scheme, player);
-
-    /// <summary>Create an occurrence for one imminent threat assignment.</summary>
-    public static Occurrence ForThreat(
-        int id, IReadOnlyList<string> conditions, State.World world,
-        State.ICardFacts facts, State.ThreatPlacement placement, int? subject = null) =>
-        OccurrenceCapture.Threat(id, conditions, world, facts, placement, subject);
 
     /// <summary>
     /// Every triggering condition this occurrence has created so far.

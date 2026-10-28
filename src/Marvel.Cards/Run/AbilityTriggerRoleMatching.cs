@@ -1,4 +1,5 @@
 using Marvel.Cards.Dsl;
+using Marvel.Rules.Play;
 using Marvel.Rules.State;
 
 namespace Marvel.Cards.Run;
@@ -21,7 +22,10 @@ internal static class AbilityTriggerRoleMatching
         int? restricted, Defeated? defeat) => subject switch
         {
             null => true,
-            AbilitySubjects.This => (defeat?.Card ?? occurrence.Subject) == card.ObjectId,
+            AbilitySubjects.This => occurrence.Is(ResourceSpentWindow.Condition)
+                ? occurrence.SpentResourceCards.Any(spent => spent.Card == card.ObjectId
+                    && spent.Incarnation == card.Incarnation)
+                : (defeat?.Card ?? occurrence.Subject) == card.ObjectId,
             AbilitySubjects.AttachedTo =>
                 card.Area.Host >= 0 && (defeat?.Card ?? occurrence.Subject) == card.Area.Host,
             AbilitySubjects.You => occurrence.Player >= 0
@@ -61,6 +65,9 @@ internal static class AbilityTriggerRoleMatching
         int? restricted) => match switch
         {
             null or AbilityPlayers.TriggerPlayer => true,
+            AbilityPlayers.You when occurrence.Is(ResourceSpentWindow.Condition) =>
+                occurrence.SpentResourceCards.Any(spent => spent.Card == card.ObjectId
+                    && spent.Player == (restricted ?? AbilityCardQueries.ControllerOf(world, card))),
             AbilityPlayers.You => occurrence.Player >= 0
                 && occurrence.Player
                     == (restricted ?? AbilityCardQueries.ControllerOf(world, card)),

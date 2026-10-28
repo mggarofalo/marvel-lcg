@@ -11,6 +11,7 @@ internal sealed class CardResourcePayment(
     World world, ICardFacts facts, IResourceCardAbilities abilities, CardResourcePaymentRequest request)
 {
     private readonly List<int> discarded = [];
+    private readonly List<SpentResourceCard> spentCards = [];
     private int firstDiscardEvent = -1;
     private readonly StringBuilder generated = new();
     private IReadOnlyDictionary<int, int> payers = new Dictionary<int, int>();
@@ -73,7 +74,7 @@ internal sealed class CardResourcePayment(
         return new(Execution, () => explicitAllocations
             ? string.Concat(allocations.Select(allocation => allocation.PaidAs))
             : Resources.Paid(generated.ToString(), request.Cost, request.Required),
-            () => generated.ToString());
+            () => generated.ToString(), () => spentCards.ToArray());
     }
 
     private void Validate()
@@ -189,6 +190,7 @@ internal sealed class CardResourcePayment(
         // rr:resource.1: generate resources "by discarding cards from their hand".
         // Generation commits this discard before a later generator can suspend.
         if (firstDiscardEvent < 0) firstDiscardEvent = events.Count;
+        spentCards.Add(new(card.ObjectId, card.Incarnation, card.Area.PlayArea.Player));
         discarded.Add(card.ObjectId);
         Discard.Card(world, card, CardPlay.Verb, events);
     }
