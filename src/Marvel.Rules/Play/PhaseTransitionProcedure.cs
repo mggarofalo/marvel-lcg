@@ -36,6 +36,7 @@ internal static class PhaseTransitionProcedure
                 // The scheduled occurrence owns the beginning windows; no state changes at its body.
                 break;
             case PlayerTurnTiming.Ends:
+                world.Agenda.PlayerTurnOpen = false;
                 PhaseEnd.EndPlayerTurn(world, step.Seat, events);
                 break;
             case Steps.EndPlayerPhase:

@@ -47,13 +47,24 @@ transcript has one reviewed state difference: final Uppercut remains in the
 resolving area because victory stops its cleanup discard. Its pin and explicit
 event checks now reflect that authority-derived result; the transcript and
 historical artifacts are unchanged. See [the repair and review](roars-terminal-fixture-repair.md).
-The final combined suite still needs to run after integration.
+At integrated revision `b13de4fa`, 1,654 affected Content tests pass, with no
+failures or skips (`roars-reviewed-combined-focused.log`). The final full combined
+suite still needs to run after the remaining reviewed packets are integrated.
+
+The end-turn period repair `c4fa7b9d`, independently accepted at `34395423`,
+closes MARVEL-874's engine prerequisite. Eliminating the active player now runs
+the ordinary end-turn windows and expiry before advancing. Independent checks
+pass 52 Content and 44 Rules tests; the merged Resize and Giant Strength fixture
+classes pass all 18 tests (`roars-end-turn-merged-focused.log`). Giant Strength's
+production row remains unauthored. The changed post-elimination action occurrence
+sequence remains part of publication/replay gate MARVEL-870; this narrow engine
+acceptance does not settle replay compatibility.
 
 ## Next delivery
 
-Verify the reviewed regression repairs and five-face packet together. Giant
-Strength has a separate villain-phase lasting-effect prerequisite, MARVEL-874;
-it remains unauthored until the engine repair passes independent review. Complete
+Integrate the independently reviewed signature-action packet, then author Giant
+Strength against the accepted turn-period engine. Verify Giant Stomp's sequential
+targeting composition before assigning any engine expansion. Complete
 remaining Ant-Man and Kang content, setup,
 publication/replay boundary MARVEL-870, public journeys and relevant native/UI
 evidence before claiming either pack complete.

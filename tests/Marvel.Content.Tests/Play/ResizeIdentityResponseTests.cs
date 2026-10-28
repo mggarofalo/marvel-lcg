@@ -111,6 +111,15 @@ public sealed class ResizeIdentityResponseTests
         scheme.PlaceTokens("k_threat", 2);
         var villain = world.CreateCard("01114", world.AreaOf(DeckType.VillainArea));
         for (int i = 0; i < 8; i++) world.CreateCard("01087", seat.Deck);
+        if (upgrades)
+        {
+            // Prepare this upgrade-response journey during an actual player turn.
+            var game = Game.Begin(world, cards, runner);
+            game.Resolve(Decision.Take(Assert.Single(game.Pending!.Affordances,
+                a => a.Verb == Game.ResolveMulligans).Id));
+            Assert.Equal(GamePhase.PlayerTurn, game.Phase);
+            foreach (var card in seat.Hand.Cards.ToArray()) World.MoveToTop(card, seat.Deck);
+        }
         var resize = world.CreateCard("12005", seat.Hand);
         if (interrupt) world.CreateCard("01092", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
         if (upgrades)

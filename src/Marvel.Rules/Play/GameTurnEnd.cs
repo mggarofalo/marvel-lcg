@@ -8,7 +8,8 @@ internal static class GameTurnEnd
 {
     internal static Resolution FinishTurn(this Game game, List<GameEvent> events)
     {
-        if (game.world.Seats[game.Active].Eliminated) return game.AdvanceTurn(events);
+        // rr:player-elimination.step.5: "the remaining players continue to play the game."
+        // Their lasting effects and ending abilities still observe this turn's ending.
         game.endingTurn = true;
         game.world.Agenda.Add(new PhaseStep(new PhaseTransitionOperation(PhaseTransitionKind.EndPlayerTurn),
             game.Round, 1, Seat: game.Active)

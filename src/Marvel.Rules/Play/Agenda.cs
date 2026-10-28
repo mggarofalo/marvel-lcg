@@ -33,6 +33,9 @@ public sealed class Agenda
     /// <summary>Invocation ownership, suspension and completion for this game.</summary>
     public AbilityExecutions Executions { get; }
 
+    /// <summary>Whether a player turn has begun and its ending timing point has not occurred.</summary>
+    public bool PlayerTurnOpen { get; internal set; }
+
     /// <summary>Scenario-owned Kang departures waiting for their phase boundary.</summary>
     public KangPhaseTransitions KangTransitions { get; } = new();
 
@@ -157,58 +160,6 @@ public sealed class Agenda
     {
         ArgumentNullException.ThrowIfNull(occurrence);
         return items.Any(item => ReferenceEquals(item.Occurrence, occurrence));
-    }
-
-    /// <summary>Remember gained Surge on continuations owned by one exact reveal.</summary>
-    /// <remarks>Pending authored abilities share the reveal's non-numeric keyword grant.
-    /// A later reveal of the same physical card has a distinct occurrence and grant.</remarks>
-    public void MarkSurgeGained(int source, Occurrence reveal)
-    {
-        ArgumentNullException.ThrowIfNull(reveal);
-        for (int index = 0; index < items.Count; index++)
-        {
-            var (step, stage, occurrence) = items[index];
-            AgendaOperation updated = step.Operation switch
-            {
-                AbilityContinuationAgendaOperation ability when step.Subject == source
-                    && ReferenceEquals(ability.Origin, reveal) =>
-                    ability with { SurgeGained = true },
-                CharacterAttackOperation { Attack: { } attack } operation when attack.Source == source
-                    && ReferenceEquals(attack.Origin, reveal) =>
-                    operation with { Attack = attack with { SurgeGained = true } },
-                CharacterThwartOperation { Thwart: { } thwart } operation when thwart.Source == source
-                    && ReferenceEquals(thwart.Origin, reveal) =>
-                    operation with { Thwart = thwart with { SurgeGained = true } },
-                _ => step.Operation,
-            };
-            items[index] = (step with { Operation = updated }, stage, occurrence);
-        }
-    }
-
-    /// <summary>Persist one per-card result on every frame of a rules procedure.</summary>
-    /// <remarks>
-    /// Correctness cannot depend on several steps retaining one shared
-    /// collection reference. The containing occurrence identifies the frames;
-    /// the dictionary spelling is an engine representation choice.
-    /// </remarks>
-    public void RecordProcedureAmount(Occurrence procedure, int card, long amount)
-    {
-        ArgumentNullException.ThrowIfNull(procedure);
-        for (int index = 0; index < items.Count; index++)
-        {
-            var (step, stage, occurrence) = items[index];
-            if (step.Operation is not IndirectDamageOperation operation
-                || !ReferenceEquals(operation.Origin, procedure))
-            {
-                continue;
-            }
-
-            var amounts = operation.Amounts is { } existing
-                ? new Dictionary<int, long>(existing)
-                : [];
-            amounts[card] = amount;
-            items[index] = (step with { Operation = operation with { Amounts = amounts } }, stage, occurrence);
-        }
     }
 
     /// <summary>Put a step at the end of the list.</summary>
