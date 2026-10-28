@@ -70,6 +70,8 @@ public sealed class MomentOfTriumphActualSimultaneousTests
         int selected = second ? other.ObjectId : first.ObjectId;
         var choice = Assert.Single(game.Pending!.Affordances,
             option => option.AnchorId == response!.ObjectId && option.ContextCardIds.Contains(selected));
+        Assert.Contains($"up to {healed}", choice.Description);
+        Assert.Contains("limited by damage present", choice.Description);
         game.Resolve(Decision.Take(choice.Id));
         Assert.Equal(6 - healed, world.Seats[0].IdentityCard.Damage);
         Assert.Equal(DeckType.DiscardPile, response!.Area.Type);

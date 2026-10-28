@@ -15,7 +15,8 @@ public sealed class AffordanceContextTests
         int secret = world.Seats[1].Hand.Cards[0].ObjectId;
         var ids = new[] { publicId, secret };
         var offer = new Affordance(7, "Interrupt", publicId, 0, "Observe")
-        { ContextCardIds = ids, DisplayLabel = "Observe secret", CommitLabel = "Commit secret" };
+        { ContextCardIds = ids, DisplayLabel = "Observe secret", CommitLabel = "Commit secret",
+            Description = "Heal up to 3 damage; the amount depends on damage present." };
         var prompt = new Prompt(0, Question.Opportunity, TimingPriority.Interrupt, "Synthetic", "Observe", true, [offer]);
         ViewScope own = new RestrictedVisibilityPolicy(0).Authorize(null, 2);
         var visible = WorldProjection.For(world, prompt, [], own);
@@ -23,6 +24,7 @@ public sealed class AffordanceContextTests
         Assert.Equal([publicId], copied.ContextCardIds);
         Assert.Null(copied.DisplayLabel);
         Assert.Null(copied.CommitLabel);
+        Assert.Equal(offer.Description, copied.Description);
         ids[0] = -999;
         Assert.Equal([publicId], copied.ContextCardIds);
         ((IList<int>)copied.ContextCardIds)[0] = -1;

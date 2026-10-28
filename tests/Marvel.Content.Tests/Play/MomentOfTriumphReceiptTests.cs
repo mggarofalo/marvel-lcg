@@ -66,6 +66,9 @@ public sealed class MomentOfTriumphReceiptTests
         Assert.Equal(DeckType.EngagedEnemiesArea, enemy.Area.Type);
         Assert.Equal(0, enemy.Damage);
         var response = Assert.Single(prompt!.Affordances, option => option.AnchorId == moment.ObjectId);
+        Assert.Empty(response.ContextCardIds);
+        Assert.Contains("Armored Guard", response.DisplayLabel);
+        Assert.Contains("up to 3", response.Description);
         Sequence.Answer(world, world.Facts, runner, prompt, Decision.Take(response.Id), []);
         Sequence.Finish(world, world.Facts, runner, []);
         Assert.Equal(1, hero.Damage);
@@ -116,6 +119,8 @@ public sealed class MomentOfTriumphReceiptTests
             return;
         }
         var response = Assert.Single(prompt!.Affordances, option => option.AnchorId == eventCard.ObjectId);
+        Assert.Contains($"up to {expected}", response.Description);
+        Assert.Contains("limited by damage present", response.Description);
         Sequence.Answer(world, world.Facts, runner, prompt, Decision.Take(response.Id), []);
         Sequence.Finish(world, world.Facts, runner, []);
         Assert.Equal(Math.Max(0, damage - expected), hero.Damage);
@@ -141,6 +146,37 @@ public sealed class MomentOfTriumphReceiptTests
         var prompt = Sequence.Work(world, world.Facts, runner, [])!;
         var response = Assert.Single(prompt.Affordances, option => option.AnchorId == moment.ObjectId);
         Assert.Contains("3", response.Description ?? "", StringComparison.Ordinal);
+        Assert.Equal([enemy.ObjectId], response.ContextCardIds);
+        Assert.Contains("up to 3", response.Description);
+        Assert.Contains("intervening effects", response.Description);
+    }
+
+    [Fact]
+    public void ConstantHealingResponseDoesNotBorrowAttackExcess()
+    {
+        // Synthetic ordinary healing response: its printed amount is independent of excess.
+        var runner = new AbilityRunner(AbilityCatalog.Parse("""
+            {"cards":[{"card":"01092","abilities":[{
+              "trigger":{"event":"WhenAttackEnds","timing":"Response","actor":"you","target":"enemy"},
+              "effect":{"heal":{"card":"you","amount":1}}
+            }]}]}
+            """));
+        var world = ThorActualFixture.Board("06001a");
+        var hero = world.Seats[0].IdentityCard;
+        hero.TakeDamage(4);
+        long attack = StateFields.Modified(world, hero, "attack", world.Facts, world.Players);
+        world.Effects.Register(new(EffectSource.LastingEffect, "attack", 5 - attack, Affects: hero.ObjectId));
+        var enemy = world.CreateCard("01120", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+        enemy.TakeDamage(DamagePlacement.Health(world, world.Facts, enemy) - 2);
+        var source = world.CreateCard("01092", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
+        BasicPowerInitiation.BasicAttack(world, world.Facts, 0, enemy, []);
+        var prompt = Sequence.Work(world, world.Facts, runner, [])!;
+        var response = Assert.Single(prompt.Affordances, option => option.AnchorId == source.ObjectId);
+        Assert.Equal([enemy.ObjectId], response.ContextCardIds);
+        Assert.DoesNotContain("up to 3", response.Description ?? "");
+        Sequence.Answer(world, world.Facts, runner, prompt, Decision.Take(response.Id), []);
+        Sequence.Finish(world, world.Facts, runner, []);
+        Assert.Equal(3, hero.Damage);
     }
 
     private static AbilityRunner WithMoment(AbilityBook book) => new(book with

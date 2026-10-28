@@ -55,11 +55,13 @@ public sealed class MomentOfTriumphActorTests
         {
             var prompt = Sequence.Work(world, world.Facts, runner, []);
             if (prompt is null) break;
-            sawControl |= prompt.Affordances.Any(option => option.AnchorId == control.ObjectId);
+            sawControl |= HasOrdinaryControl(prompt, control.ObjectId);
             var response = prompt.Affordances.SingleOrDefault(option => option.AnchorId == moment.ObjectId);
             if (response is not null)
             {
                 Assert.Equal(controller, prompt.Player);
+                Assert.Equal([enemy.ObjectId], response.ContextCardIds);
+                Assert.Contains("up to 1", response.Description);
                 sawMoment = true;
             }
             Sequence.Answer(world, world.Facts, runner, prompt,
@@ -70,5 +72,13 @@ public sealed class MomentOfTriumphActorTests
         Assert.Equal(DeckType.EncounterDiscardPile, enemy.Area.Type);
         Assert.Equal(expected ? DeckType.DiscardPile : DeckType.HandsArea, moment.Area.Type);
         Assert.Equal(expected ? 3 : 4, hero.Damage);
+    }
+
+    private static bool HasOrdinaryControl(Prompt prompt, int card)
+    {
+        var offer = prompt.Affordances.SingleOrDefault(option => option.AnchorId == card);
+        if (offer is null) return false;
+        Assert.DoesNotContain("Heal up to", offer.Description ?? "");
+        return true;
     }
 }

@@ -33,11 +33,10 @@ internal static class AbilityAffordanceDescription
             AnchorPlayer: ability.Player,
             Label: found.Name,
             Targets: recipients ?? AdmittedCostTargets(execution, world, card, found, ability.Player),
-            Costs: price is null ? null : [price], Description: Description(execution, world, card, ability.Player, found.Effect, contextual))
+            Costs: price is null ? null : [price], Description: Description(execution, world, card, ability, found.Effect, contextual))
         {
             Timing = found.Trigger.Timing,
-            ContextCardIds = ability.TriggeringWouldDefeat is { } imminent ? [imminent]
-                : ability.TriggeringDefeat is { } defeat ? [defeat.Card] : [],
+            ContextCardIds = ContextCards(world, ability),
             WindowChoices = AbilityWindowChoiceDescription.Describe(execution, world, card, found, ability.Player, ability),
             DisplayLabel = caption,
             CommitLabel = caption,
@@ -46,6 +45,14 @@ internal static class AbilityAffordanceDescription
             DirectRecipientCommit = CanCommitRecipient(recipients, EffectiveCards.Kind(card, world.Facts), found.Trigger.Timing),
             CostDescription = AbilityCostDescription.Summary(world, card, ability.Player, found.Cost),
         };
+    }
+
+    private static int[] ContextCards(World world, PendingAbility ability)
+    {
+        if (ability.TriggeringWouldDefeat is { } imminent) return [imminent];
+        if (ability.TriggeringAttack is { } attack)
+            return world.Cards[attack.Card].Incarnation == attack.Incarnation ? [attack.Card] : [];
+        return ability.TriggeringDefeat is { } defeat ? [defeat.Card] : [];
     }
 
     private static TargetRequest? AdmittedCostTargets(AbilityResolutionExecution execution,
@@ -80,11 +87,12 @@ internal static class AbilityAffordanceDescription
             : caption;
 
     private static string? Description(AbilityResolutionExecution execution, World world, Card source,
-        int player, AbilityEffect effect, string? contextual) =>
+        PendingAbility ability, AbilityEffect effect, string? contextual) =>
         AbilitySourceThreatDescription.Summary(execution.StructuralContext(
             new AbilityResolutionState(world, source, new Occurrence(0, [Steps.TurnAction],
-                Subject: source.ObjectId, Player: player), player, [])), effect)
-        ?? AbilityInvocationDescription.Summary(execution, world, player, effect)
+                Subject: source.ObjectId, Player: ability.Player), ability.Player, [])), effect)
+        ?? AbilityAttackHealingDescription.Summary(effect, ability.TriggeringAttack)
+        ?? AbilityInvocationDescription.Summary(execution, world, ability.Player, effect)
         ?? (contextual is not null
             ? contextual + ". Damage prevention and interrupts can change the result."
             : AbilityEffectDescription.Summary(effect) ?? AbilitySourceActionDescription.Caption(effect));
