@@ -120,6 +120,27 @@ public sealed class GiantStrengthPeriodTests
         else Assert.Equal(0, game.Active);
     }
 
+    [Fact]
+    [Rule("rr:lasting-effects.5")]
+    [Rule("rr:player-turn.6")]
+    public void EliminatedActivePlayersTurnExpiresSurvivorsStrength()
+    {
+        // rr:lasting-effects.5: a lasting effect expires when its timing point is reached.
+        var (game, world, _, _) = Board(players: 2);
+        var otherSource = world.Cards.Single(c => c.FaceId == "01006" && c.Owner == 1);
+        var strength = world.Cards.Single(c => c.FaceId == "12009" && c.Owner == 1);
+        var lethal = world.CreateCard("01007", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+        var offTurn = Assert.Single(game.PromptFor(1)!.Affordances, a => a.AnchorId == otherSource.ObjectId);
+        game.Resolve(Decision.Take(offTurn.Id));
+        var response = Assert.Single(game.Pending!.Affordances, a => a.AnchorId == strength.ObjectId);
+        game.Resolve(Decision.Take(response.Id));
+        Assert.Equal(4, CardValues.Evaluate(world, world.Seats[1].IdentityCard, "attack", world.Facts, 2).CurrentValue);
+        var action = Assert.Single(game.Pending!.Affordances, a => a.AnchorId == lethal.ObjectId);
+        game.Resolve(Decision.Take(action.Id));
+        Assert.Equal(1, game.Active);
+        Assert.Equal(3, CardValues.Evaluate(world, world.Seats[1].IdentityCard, "attack", world.Facts, 2).CurrentValue);
+    }
+
     private static (Game Game, World World, Card Source, Card Strength) Board(
         string boundary = "WhenVillainPhaseBegins", string timing = "ForcedResponse", int players = 1, bool lethal = false)
     {
