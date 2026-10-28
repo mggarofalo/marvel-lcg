@@ -76,6 +76,7 @@ internal static class AbilityWindowAdmission
         AbilityQueryProjection? projection)
     {
         var (card, ability, controller, _) = candidate;
+        if (!EventTeamUpPermitted(world, card)) return false;
         // rr:when-completed-abilities.1: "When this scheme is completed..."
         if (!TriggerIsLive(world, ability, card, occurrence)) return false;
         occurrence = candidate.TriggeringThreat ?? occurrence;
@@ -90,6 +91,11 @@ internal static class AbilityWindowAdmission
             && AbilityAvailability.Available(world, card, ability,
                 AbilityAvailability.IndexOf(program, card, ability), occurrence);
     }
+
+    private static bool EventTeamUpPermitted(World world, Card card) =>
+        EffectiveCards.Kind(card, world.Facts) != CardKind.Event
+        || DeckTypes.IsInPlay(card.Area.Type)
+        || CardPlayLegality.TeamedUp(world, world.Facts, card);
 
     private static bool CostsPayable(AbilityProgram program, World world, Candidate candidate,
         IResourceCardAbilities resources, AbilityQueryProjection? projection)
