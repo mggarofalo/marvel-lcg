@@ -141,8 +141,88 @@ public sealed class GiantStrengthPeriodTests
         Assert.Equal(3, CardValues.Evaluate(world, world.Seats[1].IdentityCard, "attack", world.Facts, 2).CurrentValue);
     }
 
+    [Fact]
+    [Rule("rr:lasting-effects.5")]
+    [Rule("rr:player-elimination.step.5")]
+    public void EliminatingAnotherSeatDoesNotEndTheActiveTurnOrExpireStrength()
+    {
+        // rr:player-elimination.step.5: "the remaining players continue to play the game."
+        // rr:lasting-effects.5: expiration waits for the specified timing point.
+        var (game, world, source, strength) = Board(players: 2);
+        var lethal = world.CreateCard("01007", world.AreaOf(DeckType.AlliesArea,
+            PlayArea.Of(1), cardOwner: 1));
+        game.Resolve(Decision.Take(Assert.Single(game.Pending!.Affordances,
+            a => a.AnchorId == source.ObjectId).Id));
+        game.Resolve(Decision.Take(Assert.Single(game.Pending!.Affordances,
+            a => a.AnchorId == strength.ObjectId).Id));
+        game.Resolve(Decision.Take(Assert.Single(game.PromptFor(1)!.Affordances,
+            a => a.AnchorId == lethal.ObjectId).Id));
+        Assert.True(world.Seats[1].Eliminated);
+        Assert.Equal(0, game.Active);
+        Assert.Equal(GamePhase.PlayerTurn, game.Phase);
+        Assert.True(world.Agenda.PlayerTurnOpen);
+        Assert.Equal(4, CardValues.Evaluate(world, world.Seats[0].IdentityCard,
+            "attack", world.Facts, 2).CurrentValue);
+        game.Resolve(Decision.Decline);
+        Assert.Equal(GamePhase.EndPhase, game.Phase);
+        Assert.Equal(3, CardValues.Evaluate(world, world.Seats[0].IdentityCard,
+            "attack", world.Facts, 2).CurrentValue);
+    }
+
+    [Fact]
+    [Rule("rr:lasting-effects.5")]
+    public void EliminatingTheFinalTurnSeatExpiresSurvivorsStrengthBeforePhaseEnd()
+    {
+        // rr:lasting-effects.5: "expires as soon as the timing point specified by its duration is reached."
+        var (game, world, source, strength) = Board(players: 2, lethal: true);
+        game.Resolve(Decision.Decline);
+        game.Resolve(Decision.Take(Assert.Single(game.PromptFor(0)!.Affordances,
+            a => a.AnchorId == source.ObjectId).Id));
+        game.Resolve(Decision.Take(Assert.Single(game.Pending!.Affordances,
+            a => a.AnchorId == strength.ObjectId).Id));
+        Assert.Equal(4, CardValues.Evaluate(world, world.Seats[0].IdentityCard,
+            "attack", world.Facts, 2).CurrentValue);
+        game.Resolve(Decision.Take(Assert.Single(game.Pending!.Affordances,
+            a => world.Cards[a.AnchorId].FaceId == "01007").Id));
+        Assert.True(world.Seats[1].Eliminated);
+        Assert.Equal(GamePhase.EndPhase, game.Phase);
+        Assert.False(world.Agenda.PlayerTurnOpen);
+        Assert.Equal(3, CardValues.Evaluate(world, world.Seats[0].IdentityCard,
+            "attack", world.Facts, 2).CurrentValue);
+    }
+
+    [Theory]
+    [InlineData("ForcedInterrupt", true)]
+    [InlineData("ForcedResponse", false)]
+    [Rule("rr:interrupt.3")]
+    [Rule("rr:lasting-effects.6")]
+    public void EliminatedActiveSeatsTurnRetainsSurvivorsEndingWindows(string timing, bool beforeEnding)
+    {
+        // rr:interrupt.3: "before that triggering condition resolves."
+        // rr:lasting-effects.6: "can only be initiated during that time period."
+        var (game, world, _, _) = Board("WhenPlayerTurnEnds", timing, players: 2, lethal: true, lethalSeat: 0);
+        var strength = world.Cards.Single(c => c.FaceId == "12009" && c.Owner == 1);
+        var lethal = world.Cards.Single(c => c.FaceId == "01007");
+        game.Resolve(Decision.Take(Assert.Single(game.Pending!.Affordances,
+            a => a.AnchorId == lethal.ObjectId).Id));
+        Assert.True(world.Seats[0].Eliminated);
+        Assert.Equal("12001c", world.Seats[1].IdentityCard.FaceId);
+        if (beforeEnding)
+        {
+            Assert.Equal(0, game.Active);
+            Assert.True(world.Agenda.PlayerTurnOpen);
+            game.Resolve(Decision.Take(Assert.Single(game.Pending!.Affordances,
+                a => a.AnchorId == strength.ObjectId).Id));
+        }
+        Assert.Equal(1, game.Active);
+        Assert.DoesNotContain(game.Pending!.Affordances, a => a.AnchorId == strength.ObjectId);
+        Assert.Equal(3, CardValues.Evaluate(world, world.Seats[1].IdentityCard,
+            "attack", world.Facts, 2).CurrentValue);
+    }
+
     private static (Game Game, World World, Card Source, Card Strength) Board(
-        string boundary = "WhenVillainPhaseBegins", string timing = "ForcedResponse", int players = 1, bool lethal = false)
+        string boundary = "WhenVillainPhaseBegins", string timing = "ForcedResponse", int players = 1,
+        bool lethal = false, int? lethalSeat = null)
     {
         var cards = CardCatalog.Parse(File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")));
         var runner = Runner(boundary, timing);
@@ -166,7 +246,7 @@ public sealed class GiantStrengthPeriodTests
             world.CreateCard("12009", world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(1), cardOwner: 1));
         }
         if (lethal) world.CreateCard("01007", world.AreaOf(DeckType.AlliesArea,
-            PlayArea.Of(players - 1), cardOwner: players - 1));
+            PlayArea.Of(lethalSeat ?? players - 1), cardOwner: lethalSeat ?? players - 1));
         world.Abilities = runner;
         var game = Game.Begin(world, cards, runner);
         for (int i = 0; i < players; i++)
