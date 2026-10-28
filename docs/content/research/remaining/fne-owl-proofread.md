@@ -1,0 +1,23 @@
+# Fear No Evil: independent Owl proofread
+
+MARVEL-697; 2026-10-27. Repository baseline `1677ebcdf26bc44b1f092b91af4b973689c1f92f`. This is research review of the supplied Owl transcription, not dataset admission, gameplay verification or whole-product reconciliation.
+
+**Verdict: accepted for the supplied Owl source transcription.** Candidate SHA-256 `99b055ff028c50577d844d8fbfe12c24c098e7369892081aa594424d16094318`. No transcription or source-region corrections were found. The candidate retains its pre-review administrative status; this report records independent acceptance of those exact bytes.
+
+All five pinned original JPGs were individually viewed at original resolution (710 × 1030), including every title, type, trait, rules paragraph, emphasis, punctuation, stat, modifier, reminder star, boost glyph, flavor, credit, copyright, product pictogram, printed number and set-position footer. Every candidate field-source region was compared with the actual layout, including the horizontal minion/treachery titles and the vertical attachment title. Absence claims were checked across the full faces. The two Flight Serum originals were individually reviewed, including their different footer numerators.
+
+| Original | Independently reviewed distinguishing facts | SHA-256 |
+|---|---|---|
+| `60191.jpg` | Flight Serum; Attachment; SUPERPOWER.; separate +1 SCH and +1 ATK badges; non-AERIAL attachment condition; AERIAL gain; ATTACK event cost and arrow; italic Owl quotation; no boost icons; 191, THE OWL (1/5). | `ff5848f1e8389b0399e689a59c8177f89cbcf57136862541a4336681d5510e3f` |
+| `60191_2.jpg` | Same printed face and fields as the other Flight Serum original; 191, THE OWL (2/5). | `a93ad7b13bd8fcbde8f8b0638efbb3b73a709f9dcf23d20fcd431c930da961de` |
+| `60192.jpg` | Unique Mister Fish; Minion; CRIMINAL. MAGGIA.; SCH 1, ATK 2 with reminder star, HP 4; piercing and ranged; fewest remaining identity hit points engagement; italic quotation; two boost icons; 192, THE OWL (3/5). | `546059c288185719d2b33d88c5a1121cbbaa09afc71e8cf40a7828b1a9bcc10d` |
+| `60193.jpg` | Unique The Owl; Minion; AERIAL. CRIMINAL.; SCH 3, ATK 2 with reminder star, HP 5; Quickstrike in rules box; piercing; divided Boost attack-piercing paragraph; separate red boost star and no numeric boost icons; Afif Khaled; 193, THE OWL (4/5). | `f26432fc38cde10470549b729adcb997aed362d947b56420d581f9d5659e785a` |
+| `60194.jpg` | Swoop Down; Treachery; no trait line; Alter-Ego schemes/+2 SCH and Hero attacks/+2 ATK paragraphs, each applying the bonus to AERIAL enemies for its activation; three boost icons; 194, THE OWL (5/5). | `5a5ee2d8a233842dc85270e05301662908ef90d185fca50cbbfcc583d6a23bf5` |
+
+All five show © MARVEL © 2026 FFG and a white product pictogram before the printed card number. Only The Owl prints an illustrator credit. No resource icons, starting-threat boxes, crisis, hazard, acceleration or amplify glyphs appear. No opposite gameplay face was supplied. Four distinct faces with quantities 2/1/1/1 cover all five supplied physical footer positions. The manifest family is exactly **The Owel**; the printed footer is **THE OWL**.
+
+For glyph identity, I independently viewed the retained official RR v1.7 page 22 key at original resolution, SHA-256 `65efd0d7160acfdbf2c2a07382b081f2fc81d6ebb5e9d35af8927213a5e2d157`, and read current vendored RR v1.8 `rr:icons.9`, `.10`, `.12`, `.14`. The three-pronged boost, five-point star, cost arrow and four-point unique glyph shapes match the originals. Stat reminder stars and the separate red Owl boost star are distinguished. Editorial token spelling, title-case names, HTML emphasis, slugs and the card-ID prefix remain conventions rather than printed rules.
+
+The independently recomputed manifest SHA-256 is `feac2f63e3153339d11c427fc72724834d13c4530f6dc8965f4d1b8a34067ccb`. Separate offline checks matched every original file length and hash against the manifest, then checked all 166 source references across 133 field paths for the correct original, hash, family, printed number and footer position. All nonadministrative card fields and individual attributes/stat annotations are covered. Those checks support provenance; the independent visual inspection establishes text and layout agreement.
+
+Detailed observations and per-field provenance are retained externally at `C:/Users/mggar/Source/evidence/fne-acquisition/owl-proofread-findings.json`. Its manually recorded source regions include approximate original-image coordinates. Builder/validator output was not used as semantic authority. No unresolved transcription issues remain. Acquisition and redistribution rights, dataset admission and executable behavior remain outside this review.
