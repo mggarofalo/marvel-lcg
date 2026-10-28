@@ -1,5 +1,6 @@
 using Marvel.Content.Tests.Cards;
 using Marvel.Rules.Play;
+using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
 using Marvel.Tests;
 using Xunit;
@@ -16,11 +17,11 @@ public sealed class AntManIdentityActualTests
     [InlineData("12001c", "12001a")]
     [InlineData("12001c", "12001b")]
     [Rule("rr:form-change-form.2")]
-    [Rule("rr:response.1")]
+    [Rule("rr:ability.11")]
     public void AllDirectedChangesOfferOnlyTheDestinationResponse(string from, string to)
     {
-        // rr:form-change-form.2: a changing identity retains damage and other state.
-        // rr:response.1: a response may be triggered after its condition resolves.
+        // rr:form-change-form.2: "When a player changes form, only the form changes."
+        // rr:ability.11: "all interrupt and response abilities are optional" unless forced.
         var cards = CardCatalog.Parse(File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")));
         string observer = $$$$$"""{"card":"01006","abilities":[{"trigger":{"event":"WhenActionTriggered","timing":"Action","subject":"this"},"effect":{"changeForm":{"player":"you","to":{"face":"{{{{{to}}}}}"}}}}]}""";
         var runner = AntManF1Fixture.Runner(["12001a", "12001b", "12001c"], observer);
@@ -43,6 +44,12 @@ public sealed class AntManIdentityActualTests
         Assert.True(prompt.Cancellable);
         var response = Assert.Single(prompt.Affordances, item => item.AnchorId == seat.IdentityCard.ObjectId);
         int[] targets = to == "12001a" ? [scheme.ObjectId] : to == "12001c" ? [villain.ObjectId] : [];
+        if (to != "12001b")
+        {
+            int wrong = to == "12001a" ? villain.ObjectId : scheme.ObjectId;
+            Assert.False(DecisionAssessment.Assess(prompt, Decision.Take(response.Id, [wrong], [])).IsAccepted);
+            Assert.True(DecisionAssessment.Assess(prompt, Decision.Take(response.Id, targets, [])).IsAccepted);
+        }
         Sequence.Answer(world, cards, runner, prompt, Decision.Take(response.Id, targets, []), events);
         Sequence.Finish(world, cards, runner, events);
         Assert.Equal(to == "12001b" ? 2 : 3, seat.IdentityCard.Damage);
