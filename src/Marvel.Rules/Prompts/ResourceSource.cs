@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace Marvel.Rules.Prompts;
 
 /// <summary>Something that can generate resources toward a cost.</summary>
@@ -15,6 +17,14 @@ namespace Marvel.Rules.Prompts;
 /// </remarks>
 public readonly record struct ResourceSource(int Effect, string Generates)
 {
+    /// <summary>Additional output when this source pays one of the indicated components.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public ConditionalResourceBonus? ConditionalBonus { get; init; }
+
+    /// <summary>All icons that may be assigned, including conditional output.</summary>
+    [JsonIgnore]
+    public string PossibleResources => Generates + (ConditionalBonus?.Generates ?? string.Empty);
+
     /// <summary>Printed spending restriction, evaluated by the engine against the cost's card.</summary>
     public ResourceRestriction Restriction { get; init; }
 

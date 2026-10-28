@@ -176,6 +176,14 @@ internal sealed class DecisionPaymentRenderer
             };
             panel.BindAnchors(choose, source.Effect);
             panel.AddContent(choose);
+            if (source.ConditionalBonus is { } bonus)
+            {
+                string costs = string.Join(" or ", Enumerable.Range(0, cost.ResourceCosts.Count)
+                    .Where(bonus.AppliesTo).Select(index => $"cost {index + 1}"));
+                panel.AddContent(ResourceIconRendering.Row(
+                    $"Additional resources when this source pays {costs}",
+                    bonus.Generates, GodotThemeVariations.Body));
+            }
         }
     }
     private void AddPaymentProgress()

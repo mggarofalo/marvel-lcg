@@ -24,7 +24,7 @@ public static class ResourcePaymentProgress
         foreach (int effect in paying)
         {
             ResourceSource[] matches = [.. option.Generators.Where(source => source.Effect == effect)];
-            if (matches.Length != 1) return null;
+            if (matches.Length != 1 || matches[0].ConditionalBonus is not null) return null;
             generated += matches[0].Generates.Length;
         }
         return Math.Max(0, required - generated);
@@ -44,7 +44,7 @@ public static class ResourcePaymentProgress
         foreach (int effect in paying)
         {
             ResourceSource[] matches = [.. option.Generators.Where(source => source.Effect == effect)];
-            if (matches.Length != 1) return null;
+            if (matches.Length != 1 || matches[0].ConditionalBonus is not null) return null;
             sources.Add(matches[0]);
         }
         var slots = ResourcePaymentRequirements.Slots(option.ResourceCosts, values);

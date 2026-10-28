@@ -39,9 +39,9 @@ internal sealed class DecisionPaymentResourceAssignmentRenderer
         foreach (ResourceSource source in cost.Generators.Where(generator =>
                      composer.Resources.Contains(generator.Effect)))
         {
-            for (int icon = 0; icon < source.Generates.Length; icon++)
+            for (int icon = 0; icon < source.PossibleResources.Length; icon++)
             {
-                AddAllocation(source, icon, source.Generates[icon], cost.ResourceCosts.Count);
+                AddAllocation(source, icon, source.PossibleResources[icon], cost.ResourceCosts.Count);
             }
         }
     }
@@ -119,8 +119,8 @@ internal sealed class DecisionPaymentResourceAssignmentRenderer
             panel.AddContent(ResourceIconRendering.Row(
                 $"{PromptPresentation.Describe(source.Effect, world)}"
                 + $"  ·  {assigned} APPLIED"
-                + (source.Generates.Length > assigned
-                    ? $"  ·  {source.Generates.Length - assigned} EXCESS" : string.Empty),
+                + (source.PossibleResources.Length > assigned
+                    ? $"  ·  {source.PossibleResources.Length - assigned} EXCESS" : string.Empty),
                 source.Generates, GodotThemeVariations.StatusText));
         }
     }

@@ -227,3 +227,30 @@ See [the source record](event-allocation-commit.md) and
 inconsistent generator probe does not establish a reachable authored failure or
 rollback after costs commit. Conditional Power generation remains MARVEL-878;
 this prerequisite adds no Ant-Man faces or public admission.
+
+Attack-excess source `672ac1ad`, independently accepted at `3b3f3558`, retains
+settled excess for each exact attack recipient through basic, authored and
+simultaneous damage. The integration branch fast-forwarded to the reviewed tree;
+`roars-attack-excess-identical-tree.txt` records the tree comparison. Independent
+review passes 52 affected tests, including prevention and repeated placements,
+and distinguishes a compiled requested-damage mutation. Replacement and further
+causality cases remain explicit limits in
+[the review](attack-excess-independent-review.md). No actual Moment of Triumph
+row is admitted by this prerequisite.
+
+Conditional-resource source `19795428` was rejected at `c00af293` for malformed
+bonus admission and its missing protocol boundary. Repair `aaedbb07`, accepted
+at `01f9ebca`, requires and validates the bonus fields and establishes protocol
+43 with protocol 42 rejected before gameplay through both transports. The
+ordinary resource JSON spelling is preserved. Suspended capture, composer parity
+and malformed-field controls pass; see
+[the closure](conditional-resource-independent-review.md). Actual Power-card
+generation and native evidence for its reachable interaction remain outstanding.
+
+The combined excess/conditional candidate passes 101 selected Content, 54 Rules,
+45 Server and one Decisions test, with no failures or skips. Logs are
+`roars-conditional-excess-{content,rules,server,decisions}.log`; the tested tree
+is in `roars-conditional-excess-tested-tree.txt`. The book remains at 748 rows
+and 25 Ant-Man faces. New attack-recipient metadata and conditional payment
+behavior enter the final MARVEL-870 replay assessment; no engine replay version
+change or historical archive compatibility is claimed here.

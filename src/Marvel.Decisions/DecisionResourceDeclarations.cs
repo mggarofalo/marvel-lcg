@@ -11,7 +11,7 @@ public static class DecisionResourceDeclarations
         if (cost is null || !composer.Resources.Contains(source)
             || component < 0 || component >= cost.ResourceCosts.Count) return [];
         var matches = cost.Generators.Where(generator => generator.Effect == source).ToArray();
-        if (matches.Length != 1 || icon < 0 || icon >= matches[0].Generates.Length) return [];
-        return cost.ResourceCosts[component].Declarations(matches[0].Generates[icon]);
+        if (matches.Length != 1 || icon < 0 || icon >= matches[0].PossibleResources.Length) return [];
+        return cost.ResourceCosts[component].Declarations(matches[0].PossibleResources[icon]);
     }
 }

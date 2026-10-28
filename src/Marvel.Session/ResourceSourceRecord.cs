@@ -11,6 +11,10 @@ public readonly record struct ResourceSourceRecord(
     [property: JsonRequired] int Effect,
     [property: JsonRequired] string Generates)
 {
+    /// <summary>Additional output and qualifying component mask.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public ConditionalResourceBonus? ConditionalBonus { get; init; }
+
     /// <summary>The authored ability name retained with the offered generator.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? AbilityName { get; init; }
@@ -23,6 +27,7 @@ public readonly record struct ResourceSourceRecord(
     public static ResourceSourceRecord From(ResourceSource source) =>
         new(source.Effect, source.Generates)
         {
+            ConditionalBonus = source.ConditionalBonus,
             AbilityName = source.AbilityName,
             CostDescription = source.CostDescription,
         };

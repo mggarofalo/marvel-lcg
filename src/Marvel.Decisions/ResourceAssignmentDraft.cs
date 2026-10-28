@@ -35,6 +35,7 @@ internal sealed class ResourceAssignmentDraft
                 return false;
             }
 
+            if (matches[0].ConditionalBonus is not null) return false;
             hasWild |= matches[0].Generates.Contains(
                 Marvel.Rules.Play.Resources.Wild);
             return true;
@@ -116,14 +117,14 @@ internal sealed class ResourceAssignmentDraft
     }
 
     private static bool IconIsOffered(ResourceSource generator, int icon) =>
-        icon >= 0 && icon < generator.Generates.Length;
+        icon >= 0 && icon < generator.PossibleResources.Length;
 
     private static bool CostIsOffered(CostOption option, int? cost) =>
         cost is null || cost >= 0 && cost < option.ResourceCosts.Count;
 
     private static bool PaidTypeIsOffered(
         CostOption option, ResourceSource generator, int icon, int? cost, char? paidAs) =>
-        paidAs is null || option.ResourceCosts[cost!.Value].Declarations(generator.Generates[icon])
+        paidAs is null || option.ResourceCosts[cost!.Value].Declarations(generator.PossibleResources[icon])
             .Contains(paidAs.Value);
 
     internal IReadOnlyList<ResourceAllocation> CollapseAssignments()
@@ -165,11 +166,11 @@ internal sealed class ResourceAssignmentDraft
             var used = new HashSet<int>();
             foreach (char paidAs in payment.PaidAs)
             {
-                int icon = Enumerable.Range(0, source.Generates.Length)
+                int icon = Enumerable.Range(0, source.PossibleResources.Length)
                     .Where(index => !used.Contains(index))
-                    .OrderBy(index => source.Generates[index] == paidAs ? 0 : 1)
-                    .First(index => source.Generates[index] == paidAs
-                        || source.Generates[index] == Marvel.Rules.Play.Resources.Wild);
+                    .OrderBy(index => source.PossibleResources[index] == paidAs ? 0 : 1)
+                    .First(index => source.PossibleResources[index] == paidAs
+                        || source.PossibleResources[index] == Marvel.Rules.Play.Resources.Wild);
                 used.Add(icon);
                 assignments.Add(new ResourceIconAssignment(
                     source.Effect, icon, payment.Cost, paidAs));

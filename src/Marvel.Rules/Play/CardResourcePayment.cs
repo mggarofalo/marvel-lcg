@@ -1,5 +1,6 @@
 using System.Text;
 using Marvel.Rules.Events;
+using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
 using Marvel.Rules.Timing;
 
@@ -67,6 +68,19 @@ internal sealed class CardResourcePayment(
                 proposed.Append(abilities.ResourcesGeneratedBy(world, card, request.PayingFor));
             }
         }
+        if (request.Price is { } price)
+        {
+            if (request.Allocations.Count == 0 && request.Cost > 0
+                && price.Generators.Any(source => request.Paying.Contains(source.Effect)
+                    && source.ConditionalBonus is not null))
+                throw new RulesNotImplementedException("conditional resource generation requires the player's allocation");
+            foreach (int id in request.Paying)
+            {
+                var source = price.Generators.Single(candidate => candidate.Effect == id);
+                string quoted = ResourcePayment.GeneratedBy(source, request.Allocations);
+                proposed.Append(quoted.AsSpan(source.Generates.Length));
+            }
+        }
         RequireEnough(proposed.ToString());
         RequireAllocation(request.Price);
     }
@@ -83,8 +97,10 @@ internal sealed class CardResourcePayment(
         {
             if (!previous.Execution.IsComplete || !previous.Generation.IsComplete)
                 throw new InvalidOperationException("payment resumed before its resource generator completed");
-            generated.Append(previous.Generation.Resources);
-            actualResources[contributions[next - 1].Card.ObjectId] = previous.Generation.Resources;
+            int id = contributions[next - 1].Card.ObjectId;
+            string produced = Produced(id, previous.Generation.Resources);
+            generated.Append(produced);
+            actualResources[id] = produced;
             pending = null;
         }
         while (next < contributions.Length)
@@ -100,7 +116,7 @@ internal sealed class CardResourcePayment(
         RequireEnough(generated.ToString());
         RequireAllocation(request.Price is { } price ? price with
         { Sources = [.. price.Generators.Select(source => source with
-            { Generates = actualResources.GetValueOrDefault(source.Effect, source.Generates) })] } : null);
+            { Generates = actualResources.GetValueOrDefault(source.Effect, source.Generates), ConditionalBonus = null })] } : null);
         CompleteDiscardBatch(events);
         return Execution.Finish(events);
     }
@@ -118,13 +134,14 @@ internal sealed class CardResourcePayment(
             var result = abilities.ExecuteResource(world, payers[card.ObjectId], card.ObjectId);
             events.AddRange(result.Execution.Events);
             if (!result.Execution.IsComplete) { pending = result; return false; }
-            generated.Append(result.Generation.Resources);
-            actualResources[card.ObjectId] = result.Generation.Resources;
+            string produced = Produced(card.ObjectId, result.Generation.Resources);
+            generated.Append(produced);
+            actualResources[card.ObjectId] = produced;
         }
         else
         {
             RequireHand(card);
-            string produced = abilities.ResourcesGeneratedBy(world, card, request.PayingFor);
+            string produced = Produced(card.ObjectId, abilities.ResourcesGeneratedBy(world, card, request.PayingFor));
             generated.Append(produced);
             actualResources[card.ObjectId] = produced;
             // rr:resource.1: generate resources "by discarding cards from their hand".
@@ -134,6 +151,15 @@ internal sealed class CardResourcePayment(
             Discard.Card(world, card, CardPlay.Verb, events);
         }
         return true;
+    }
+
+    private string Produced(int id, string actual)
+    {
+        ResourceSource? quoted = request.Price?.Generators.SingleOrDefault(source => source.Effect == id);
+        if (quoted is not { ConditionalBonus: not null } source) return actual;
+        if (!string.Equals(source.Generates, actual, StringComparison.Ordinal))
+            throw new RulesNotImplementedException("the conditional resource source changed before generation");
+        return ResourcePayment.GeneratedBy(source, request.Allocations);
     }
 
     private void CompleteDiscardBatch(List<GameEvent> events)

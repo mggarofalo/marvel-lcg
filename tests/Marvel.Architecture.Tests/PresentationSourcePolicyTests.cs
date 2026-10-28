@@ -220,6 +220,7 @@ public sealed class PresentationSourcePolicyTests
             // Snapshot stored requirements; View never calls ResourceCost.Declarations.
             "Marvel.Rules.Prompts.ResourceCost.Rule",
             "Marvel.Rules.Prompts.ResourceSource.AbilityName",
+            "Marvel.Rules.Prompts.ResourceSource.ConditionalBonus",
             "Marvel.Rules.Prompts.ResourceSource.CostDescription",
             "Marvel.Rules.Prompts.ResourceSource.Effect",
             "Marvel.Rules.Prompts.ResourceSource.Generates",
