@@ -78,6 +78,9 @@ public sealed class CaptainAmericaReprintTests
         var power = world.CreateCard("03018", world.Seats[0].Hand);
         var generator = Assert.Single(CardPayment.Generators(world, world.Facts, world.Seats[0], runner, card),
             item => item.Effect == power.ObjectId);
-        Assert.Equal(resources, generator.Generates);
+        Assert.Equal("G", generator.Generates);
+        Assert.Equal(resources, generator.PossibleResources);
+        Assert.Equal(resources == "GG" ? new ConditionalResourceBonus("G", 1) : null,
+            generator.ConditionalBonus);
     }
 }

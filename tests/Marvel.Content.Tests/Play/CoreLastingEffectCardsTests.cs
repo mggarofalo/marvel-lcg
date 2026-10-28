@@ -196,6 +196,8 @@ public sealed class CoreLastingEffectCardsTests
         Assert.Equal(DeckType.DiscardPile, singleResource.Area.Type);
     }
 
+    [Rule("rr:cost.3")]
+    [Rule("rr:cost.4.1")]
     [Theory]
     [InlineData("01071", "01072")]
     [InlineData("03016", "03018")]
@@ -204,6 +206,8 @@ public sealed class CoreLastingEffectCardsTests
         // The official FAQ for 01071 says Make the Call pays the ally's own
         // cost. A matching Power of Aspect card therefore generates two
         // resources even though Make the Call, rather than the ally, is played.
+        // rr:cost.3 pays costs with generated resources; rr:cost.4.1 says
+        // resources beyond the cost "were not paid for that cost."
         var world = Board();
         var source = world.CreateCard(callFace, world.Seats[0].Hand);
         var power = world.CreateCard(powerFace, world.Seats[0].Hand);
@@ -211,6 +215,7 @@ public sealed class CoreLastingEffectCardsTests
         var theirDiscard = world.AreaOf(
             DeckType.DiscardPile, PlayArea.Of(1), cardOwner: 1);
         var maria = world.CreateCard("01067", theirDiscard);
+        var hulk = world.CreateCard("01050", theirDiscard);
         var runner = AuthoredCards.Runner();
         world.Abilities = runner;
 
@@ -222,12 +227,19 @@ public sealed class CoreLastingEffectCardsTests
 
         Assert.Equal(maria.ObjectId, offer.AnchorId);
         Assert.Equal("2", price.Cost);
-        Assert.Equal("GG", Assert.Single(price.Generators).Generates);
+        var quote = Assert.Single(price.Generators);
+        Assert.Equal("G", quote.Generates);
+        Assert.Equal(new ConditionalResourceBonus("G", 1), quote.ConditionalBonus);
 
-        runner.Chose(world, step, Decision.Take(maria.ObjectId, [], [power.ObjectId], new Dictionary<string, long>(),
-            Assert.IsAssignableFrom<IReadOnlyList<ResourceAllocation>>(
-                ResourcePayment.Allocate(price, [power.ObjectId]))));
+        var allocation = Assert.IsAssignableFrom<IReadOnlyList<ResourceAllocation>>(
+            ResourcePayment.Allocate(price, [power.ObjectId]));
+        Assert.Equal(new ResourceAllocation(power.ObjectId, 0, "GG"), Assert.Single(allocation));
+        Assert.Equal("GG", ResourcePayment.GeneratedBy(quote, allocation));
+        runner.Chose(world, step, Decision.Take(maria.ObjectId, [], [power.ObjectId],
+            new Dictionary<string, long>(), allocation));
 
+        Assert.Equal(1, maria.Owner);
+        Assert.Equal(DeckType.DiscardPile, hulk.Area.Type);
         Assert.Equal(DeckType.AlliesArea, maria.Area.Type);
         Assert.Equal(PlayArea.Of(0), maria.Area.PlayArea);
         Assert.Equal(DeckType.DiscardPile, power.Area.Type);

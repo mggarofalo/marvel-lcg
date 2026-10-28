@@ -3,7 +3,38 @@
 The canonical delivery records are MARVEL-568 (Kang) and MARVEL-569 (Ant-Man),
 within MARVEL-703. This candidate combines reviewed engine prerequisites; neither
 pack has complete executable content or public admission. The production book
-contains 750 rows, including 27 of Ant-Man's 35 faces and no Kang faces.
+contains 752 rows, including 29 of Ant-Man's 35 faces and no Kang faces.
+
+Yellowjacket and Size Increase source `8f4053ba`, independently reviewed at
+`6f508f74`, add two actual nemesis faces. Review includes both physical Size
+Increase copies on one host and passes 61 focused checks. The spent-resource
+response mechanism `8c6c04df`, independently reviewed at `1ba9161d`, is integrated
+for Pym-style spent-source responses; its 15 independent checks cover nested
+payment, multiplayer priority and incarnation rejection. The actual Pym row is
+still unauthored. See [nemesis evidence](ant-man-nemesis-cards.md) and
+[spent-resource review](resource-card-spend-independent-review.md).
+
+The full Content run on the spent-resource source exposed 50 inherited Power
+failures: Make the Call affordability, dependent Core transcripts, and an obsolete
+For Justice quote assertion. Baseline comparison reproduced the affected cases
+before this mechanism and passed them before Power activation. Repair `07e6b32f`,
+independently accepted at `8836ebba`, uses allocation-based affordability and
+restores the explicit resource-port contract. Independent verification passes
+18 affected Content and 129 Architecture tests, with a compiled old-default
+mutation rejected by the architecture gate. See [repair review](power-regression-repair-independent-review.md).
+Combined full Content verification reports 8,752 passed, one failed and no skips
+in `roars-29-combined-content.log`. The sole failure is another obsolete Power
+quote assertion in Captain America's reprint test, also present in the earlier
+full-run log. Its corrected assertion checks the base icon, possible output and
+exact conditional bonus/mask for matching and nonmatching cards. Restored focused verification passes 96 affected Content/data tests; the
+combined full Rules and Architecture suites pass 1,202 and 129 respectively.
+Logs are `roars-29-combined-{focused,rules,architecture}.log` under the external
+evidence directory. The full Content run preceded the assertion-only correction;
+these results do not claim a second complete Content run. The earlier
+50 failures comprise 46 dependent transcripts, two Make the Call cases and two
+obsolete quote assertions (For Justice and Captain America).
+
+Six Ant-Man faces remain: `12006`, `12011`, `12024`, `12025`, `12026`, and `12029`.
 
 Stinger and Moment of Triumph are independently accepted at `ef9ff6f8`, after
 the response explanation repair `1eccb891` and its independent review `c868fa51`.
