@@ -90,3 +90,27 @@ Complete
 remaining Ant-Man and Kang content, setup,
 publication/replay boundary MARVEL-870, public journeys and relevant native/UI
 evidence before claiming either pack complete.
+
+Recipient source `deac79b5`, independently reviewed at `89702db2`, repairs the
+bounded fixed-target attack case: every recipient retains an attack-end response
+and retaliation eligibility, while repeated damage accumulates for the same
+physical incarnation. Independent verification passes 34 affected Content tests;
+Tough-prevention probes and a compiled omitted-retaliation mutation distinguish
+zero damage from not attacking. [The review](research/remaining/attack-recipient-review.md)
+records code-review and behavioral evidence limits. The live-choice continuation
+and its Guard interaction remain unsupported, and MARVEL-870 includes the changed
+responses/retaliation in its final compatibility assessment.
+
+The combined 22-face/recipient-repair tree
+`3f4d306e3d7a9a4f12c4838b400e91ea9d30e4c1` completes full Content with
+8,564 passes and one failure, and full Rules with 1,193 passes, no skips.
+The sole failure is the explicit authored-face inventory omitting `12009`,
+`12016` and `12031`. The earlier packet's `~AbilityDataTests` filter did not
+select that split class. Its independent expected set now includes those three
+reviewed rows; no gameplay or completeness assertion is weakened. Logs are
+`roars-22faces-full-content.log` and `roars-22faces-full-rules.log`.
+This run is not an uninterrupted green suite. After the inventory correction,
+all 72 selected ability-data, form-response, turn-period and Giant Stomp
+composition tests pass (`roars-22faces-inventory-corrected.log`). The next full
+run remains part of final combined verification. The pack-delivery skill now
+names the filter covering every split ability-data class; its validator passes.

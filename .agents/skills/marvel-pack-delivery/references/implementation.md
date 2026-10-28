@@ -54,7 +54,9 @@ playerless scenario setup. Evaluate resolving-player context only on paths whose
 printed instruction requires it.
 
 After authoring rows, run the ability-data tests as well as characteristic card
-tests. Reconcile explicit authored-face and starting-counter inventories with the
+tests. Use `FullyQualifiedName~AbilityData` to include the split test classes;
+`~AbilityDataTests` misses the separately named authored-face inventory class.
+Reconcile explicit authored-face and starting-counter inventories with the
 printed facts, and keep unknown-card negative controls genuinely unauthored.
 Do not permit an entire incomplete pack merely to satisfy a face-inventory gate.
 

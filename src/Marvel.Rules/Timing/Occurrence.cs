@@ -256,8 +256,8 @@ public sealed record Occurrence
     /// <summary>Ordered recipient facts for one multi-target attack.</summary>
     public IReadOnlyList<State.Attacked> Attacks => attacks.Items;
 
-    /// <summary>Record a recipient without creating another attack or window.</summary>
-    public void Also(State.Attacked what) => attacks.Add(what);
+    /// <summary>Record or accumulate a recipient without creating another attack or window.</summary>
+    public void Also(State.Attacked what, bool accumulate = false) => attacks.Add(what, accumulate);
 
     /// <summary>Ability and card resolution state accumulated in this occurrence.</summary>
     /// <remarks>
