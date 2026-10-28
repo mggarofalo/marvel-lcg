@@ -23349,6 +23349,105 @@
       }
     }
   ]
+},
+{
+  "card": "12032",
+  "name": "Muster Courage",
+  "note": "Printed Hero Action requires an Avenger identity and gives tough to up to the current villain stage number of friendly characters, maximum three. Fixed recipient bounds selected by stage conditions are engine-chosen composition.",
+  "abilities": [
+    {
+      "trigger": {
+        "event": "WhenActionTriggered",
+        "timing": "Action",
+        "subject": "this",
+        "form": "hero"
+      },
+      "when": {
+        "and": [
+          {
+            "hasTrait": {
+              "card": "you",
+              "trait": "AVENGER"
+            }
+          },
+          {
+            "atLeast": {
+              "value": {
+                "modified": {
+                  "card": {
+                    "query": "villain"
+                  },
+                  "field": "printed_stage"
+                }
+              },
+              "count": 1
+            }
+          }
+        ]
+      },
+      "effect": {
+        "if": {
+          "test": {
+            "atLeast": {
+              "value": {
+                "modified": {
+                  "card": {
+                    "query": "villain"
+                  },
+                  "field": "printed_stage"
+                }
+              },
+              "count": 3
+            }
+          },
+          "then": {
+            "chooseStatusRecipients": {
+              "from": {
+                "query": "heroesAndAllies"
+              },
+              "status": "tough",
+              "maximum": 3
+            }
+          },
+          "else": {
+            "if": {
+              "test": {
+                "atLeast": {
+                  "value": {
+                    "modified": {
+                      "card": {
+                        "query": "villain"
+                      },
+                      "field": "printed_stage"
+                    }
+                  },
+                  "count": 2
+                }
+              },
+              "then": {
+                "chooseStatusRecipients": {
+                  "from": {
+                    "query": "heroesAndAllies"
+                  },
+                  "status": "tough",
+                  "maximum": 2
+                }
+              },
+              "else": {
+                "chooseStatusRecipients": {
+                  "from": {
+                    "query": "heroesAndAllies"
+                  },
+                  "status": "tough",
+                  "maximum": 1
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
 }
   ]
 }
