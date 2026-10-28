@@ -49,9 +49,16 @@ internal sealed class AttackDamageResolution
     {
         world.Agenda.Executions.RequireActive(Execution);
         if (placed is null && !Place(events)) { Suspend(events); return; }
+        if (world.IsOver) { Suspend(events); return; }
         CompleteDefeatAndBeginSpill(events);
+        if (world.IsOver) { Suspend(events); return; }
         if (spill is { IsComplete: false }) { Suspend(events); return; }
         if (!CompleteExcessThreat(events)) return;
+        Finish(events);
+    }
+
+    private void Finish(List<GameEvent> events)
+    {
         if (policy.Retaliate && request.Target.Incarnation == incarnation)
             DamageAttacks.Retaliate(world, facts, request.Target, request.Attacker, request.Trigger, events);
         Result.Publish(placed!, spill?.Amount ?? 0, outcome == Damage.Outcome.Defeated ? Excess : 0);
@@ -84,14 +91,7 @@ internal sealed class AttackDamageResolution
 
     private bool Place(List<GameEvent> events)
     {
-        if (request.Prepared is { } prepared)
-        {
-            remaining = prepared.RemainingHealth;
-            kind = prepared.Kind;
-            controller = prepared.Controller;
-            placed = prepared.Placement;
-            return Settle(events);
-        }
+        if (request.Prepared is { } prepared) return PlacePrepared(prepared, events);
         PrepareReplacement(events);
         if (!replacement!.IsComplete) return false;
         if (request.Target.Incarnation != incarnation || !DeckTypes.IsInPlay(request.Target.Area.Type))
@@ -119,39 +119,28 @@ internal sealed class AttackDamageResolution
         return Settle(events);
     }
 
+    private bool PlacePrepared(PreparedAttackDamage prepared, List<GameEvent> events)
+    {
+        remaining = prepared.RemainingHealth;
+        kind = prepared.Kind;
+        controller = prepared.Controller;
+        placed = prepared.Placement;
+        if (prepared.SettledOutcome is { } settled)
+        {
+            outcome = settled;
+            return true;
+        }
+        return Settle(events);
+    }
+
     private bool Settle(List<GameEvent> events)
     {
         if (request.Target.Incarnation != incarnation || !DeckTypes.IsInPlay(request.Target.Area.Type))
             return true;
-        RecordDamage(placed!);
-        if (placed!.Landed && attacker.IsEnemy && (request.EnemyAttack is not null || spillOnly))
-            world.Attack?.Defeats.Register(Execution.Occurrence, request.Target);
-        DamageAttacks.ResolveLandedDamage(world, request.ActivationId, request.Target, placed!, events);
+        AttackDamageAccounting.RecordDamage(world, request, Execution, attacker, placed!, spillOnly, events);
         outcome = DamagePlacement.FinishPlaced(world, facts, request.Source, placed!, request.Trigger,
             request.Verb, events, LabeledAbilities.IdentityPlayer(world, request.Attacker), Execution.Occurrence);
         return outcome != Damage.Outcome.Suspended;
-    }
-
-    private void RecordDamage(Damage.PlacedDamage damage)
-    {
-        if (request.EnemyAttack is not null || spillOnly)
-            AttackDamageAccounting.RecordPlacement(world, request.ActivationId, damage);
-        if (damage.Landed && request.EnemyAttack is null && !spillOnly)
-            Execution.Occurrence.Also(Steps.DamageDealt);
-        RecordReceivedDamage(damage);
-        if (!spillOnly && request.EnemyAttack is { } attack)
-            AttackDamageAccounting.RecordAttackDamage(world, attack, damage);
-        AttackDamageAccounting.RecordRecipient(world, request.Source, request.Target, damage.Dealt);
-        if (request.EnemyAttack is not null || spillOnly)
-            AttackDamageAccounting.RecordIdentityDamage(world, request.Source, damage);
-    }
-
-    private void RecordReceivedDamage(Damage.PlacedDamage damage)
-    {
-        // rr:damage.3.2: prevention changes damage taken, not damage dealt.
-        // rr:overkill.2: excess damage is part of the same attack.
-        if (damage.Landed && attacker.IsEnemy && (request.EnemyAttack is not null || spillOnly))
-            AttackDamageReceipts.Record(world, attacker, damage);
     }
 
     private void PrepareReplacement(List<GameEvent> events)

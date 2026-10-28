@@ -29,8 +29,9 @@ The active Ant-Man/Kang candidate is recorded in
 [the cycle checkpoint](roars-cycle-integration.md). It has 23 independently
 reviewed Ant-Man faces out of 35, with 746 total authored rows, and reviewed Kang
 engine foundations. Neither pack is publicly admitted. Giant Stomp's live-choice
-draft is withheld pending the shared simultaneous attack-defeat repair in
-MARVEL-627 and its independent review; MARVEL-875 owns the remaining continuation.
+draft is withheld pending continuation verification in MARVEL-875. The shared
+simultaneous attack-defeat prerequisite in MARVEL-627 is independently accepted
+at `c9515472` and ready for that draft to consume.
 Swarm Tactics' form-change/ready prerequisite is MARVEL-876. MARVEL-870 owns the
 final replay publication boundary, and final combined verification remains open.
 

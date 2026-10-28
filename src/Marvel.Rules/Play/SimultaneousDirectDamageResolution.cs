@@ -38,21 +38,7 @@ internal sealed class SimultaneousDirectDamageResolution
     private void ContinueSegment(List<GameEvent> events)
     {
         world.Agenda.Executions.RequireActive(Execution);
-        while (replacementIndex < recipients.Length)
-        {
-            if (!recipients[replacementIndex].Replace(world, events)) { Suspend(events); return; }
-            replacementIndex++;
-        }
-        while (interruptIndex < recipients.Length)
-        {
-            if (!recipients[interruptIndex].Interrupt(world, facts, events))
-            {
-                preventionSuspended = true;
-                Suspend(events);
-                return;
-            }
-            interruptIndex++;
-        }
+        if (!PrepareRecipients(events)) return;
         if (!placed)
         {
             // ruling:3eb442853617fe14: "all damage is dealt simultaneously";
@@ -64,13 +50,34 @@ internal sealed class SimultaneousDirectDamageResolution
         }
         defeats ??= new(world, facts, recipients);
         if (!defeats.Continue(events)) { Suspend(events); return; }
+        if (world.IsOver) { Suspend(events); return; }
         while (settlementIndex < recipients.Length)
         {
             if (!recipients[settlementIndex].Settle(world, facts, Execution, events)) { Suspend(events); return; }
+            if (world.IsOver) { Suspend(events); return; }
             settlementIndex++;
         }
         Result.Publish(recipients.Select(recipient => recipient.Result!));
         Execution.Finish(events);
+    }
+    private bool PrepareRecipients(List<GameEvent> events)
+    {
+        while (replacementIndex < recipients.Length)
+        {
+            if (!recipients[replacementIndex].Replace(world, events)) { Suspend(events); return false; }
+            replacementIndex++;
+        }
+        while (interruptIndex < recipients.Length)
+        {
+            if (!recipients[interruptIndex].Interrupt(world, facts, events))
+            {
+                preventionSuspended = true;
+                Suspend(events);
+                return false;
+            }
+            interruptIndex++;
+        }
+        return true;
     }
     private void Suspend(List<GameEvent> events)
     {

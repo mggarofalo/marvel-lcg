@@ -1,5 +1,6 @@
 using Marvel.Rules.Events;
 using Marvel.Rules.State;
+using Marvel.Rules.Timing;
 
 namespace Marvel.Rules.Play;
 
@@ -12,6 +13,7 @@ internal sealed class SimultaneousAttackDamageResolution
     private int replacementIndex;
     private int settlementIndex;
     private bool placed;
+    private SimultaneousCharacterDefeats? defeats;
 
     internal SimultaneousAttackDamageResolution(World world, ICardFacts facts,
         SimultaneousAttackDamageRequest request, AbilityExecution execution, AbilityExecution? completion)
@@ -21,7 +23,10 @@ internal sealed class SimultaneousAttackDamageResolution
         Execution = execution;
         Result = new(completion ?? execution);
         recipients = [.. request.Targets.Select(target => new SimultaneousAttackRecipient(
-            new(request.Attacker, request.Source, target, request.Amount, request.Trigger, request.Verb, request.Retaliate)))];
+            new(request.Attacker, request.Source, target, request.Amount, request.Trigger, request.Verb, request.Retaliate),
+            new DamageRequest(request.Source, target, request.Amount, request.Trigger, request.Verb,
+                LabeledAbilities.IdentityPlayer(world, request.Attacker)) { RecordDefeatOn = execution.Occurrence, FromAttack = true },
+            OccurrenceCard.Capture(request.Attacker, facts)))];
     }
 
     internal AbilityExecution Execution { get; }
@@ -30,9 +35,32 @@ internal sealed class SimultaneousAttackDamageResolution
     internal void Continue(List<GameEvent> events)
     {
         world.Agenda.Executions.RequireActive(Execution);
+        if (!PrepareAndPlace(events)) return;
+        defeats ??= new(world, facts, recipients);
+        if (!defeats.Continue(events)) { Suspend(events); return; }
+        if (world.IsOver) { Suspend(events); return; }
+        while (settlementIndex < recipients.Length)
+        {
+            if (!recipients[settlementIndex].Settle(world, facts, Execution, events)) { Suspend(events); return; }
+            if (world.IsOver) { Suspend(events); return; }
+            settlementIndex++;
+        }
+        // rr:attack-player-ability-type.5.1: each surviving attacked enemy
+        // retaliates after the attack resolves, not between recipient defeats.
+        foreach (var recipient in recipients)
+        {
+            recipient.Retaliate(world, facts, events);
+            if (world.IsOver) { Suspend(events); return; }
+        }
+        Result.Publish(recipients.Select(recipient => recipient.Result!));
+        Execution.Finish(events);
+    }
+
+    private bool PrepareAndPlace(List<GameEvent> events)
+    {
         while (replacementIndex < recipients.Length)
         {
-            if (!recipients[replacementIndex].Replace(world, Execution, events)) { Suspend(events); return; }
+            if (!recipients[replacementIndex].Replace(world, Execution, events)) { Suspend(events); return false; }
             replacementIndex++;
         }
         if (!placed)
@@ -41,18 +69,10 @@ internal sealed class SimultaneousAttackDamageResolution
             // or attack aftermath may change another recipient's placement.
             foreach (var recipient in recipients) recipient.Prepare(world, facts, events);
             foreach (var recipient in recipients) recipient.Place(world, facts, events);
+            foreach (var recipient in recipients) recipient.RecordPlacement(world, Execution, events);
             placed = true;
         }
-        while (settlementIndex < recipients.Length)
-        {
-            if (!recipients[settlementIndex].Settle(world, facts, Execution, events)) { Suspend(events); return; }
-            settlementIndex++;
-        }
-        // rr:attack-player-ability-type.5.1: each surviving attacked enemy
-        // retaliates after the attack resolves, not between recipient defeats.
-        foreach (var recipient in recipients) recipient.Retaliate(world, facts, events);
-        Result.Publish(recipients.Select(recipient => recipient.Result!));
-        Execution.Finish(events);
+        return true;
     }
 
     private void Suspend(List<GameEvent> events)

@@ -96,12 +96,14 @@ acceptance does not settle replay compatibility.
 
 ## Next delivery
 
-Verify Muster Courage and updated main on the combined candidate. Test-only probe
+Muster Courage and updated main have passed the combined focused checks above.
+Test-only probe
 `364660e1` establishes two Giant Stomp
 boundaries under MARVEL-875: nested live choice inside one attack is refused,
 and a splash followed by fixed villain damage omits that villain's per-enemy
 attack-end response. A damage/completion control is not full attack correctness.
-Repair and independently review recipient facts, then the live-choice continuation.
+Recipient facts have since been repaired and independently reviewed below. Complete
+the live-choice continuation after applying the accepted shared defeat repair.
 Complete
 remaining Ant-Man and Kang content, setup,
 publication/replay boundary MARVEL-870, public journeys and relevant native/UI
@@ -130,3 +132,21 @@ all 72 selected ability-data, form-response, turn-period and Giant Stomp
 composition tests pass (`roars-22faces-inventory-corrected.log`). The next full
 run remains part of final combined verification. The pack-delivery skill now
 names the filter covering every split ability-data class; its validator passes.
+
+Shared simultaneous defeat source `62269caa`, independently accepted at
+`c9515472`, groups attack recipients through would-defeat, when-defeated and
+departure windows. Production Shield Toss against two Hydra Soldiers establishes
+the original missing order prompt without relying on a draft card. Independent
+verification passes all 1,193 Rules tests and the 1,015 existing affected Content
+cases. An added reentry fixture required an assertion correction; its corrected
+case passes and kills a compiled stale-incarnation mutant after restoration.
+The broader Content filter was not repeated after that test-only correction.
+[The review](simultaneous-attack-defeat-review.md) records exact limits and logs.
+This closure unblocks Giant Stomp's continuation work, not its production row or
+pack admission. MARVEL-870 must account for the new order prompt and potentially
+changed encounter-card assignments before main merge or publication. Internal
+candidate integration proceeds with that gate explicitly open.
+The integrated staged tree `15d345cc31856e30caa5deca9ec84e005aa23f3a` passes
+48 simultaneous-attack and ability-data checks in
+`roars-sim-defeat-merged-focused.log`. This focused result supplements the
+source review; a final complete combined run remains required.
