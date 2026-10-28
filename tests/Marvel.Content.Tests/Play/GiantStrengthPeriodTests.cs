@@ -1,4 +1,3 @@
-using Marvel.Cards.Dsl;
 using Marvel.Cards.Run;
 using Marvel.Content.Tests.Cards;
 using Marvel.Rules.Play;
@@ -8,12 +7,11 @@ using Xunit;
 
 namespace Marvel.Content.Tests.Play;
 
-// Test-local Giant Strength interpretation; this does not admit the Ant-Man pack.
+// Actual production Giant Strength on synthetic boards; no Ant-Man pack admission.
 public sealed class GiantStrengthPeriodTests
 {
-    private static AbilityRunner Runner(string boundary, string timing) => new(AbilityCatalog.Parse("""
+    private static AbilityRunner Runner(string boundary, string timing) => AntManFormResponseFixture.Runner("""
         {"cards":[
-          {"card":"12009","abilities":[{"trigger":{"event":"WhenFormChanged","timing":"Response","subject":"you","form":"hero"},"when":{"hasTrait":{"card":"you","trait":"GIANT"}},"effect":{"grantUntil":{"card":"you","keyword":"attack","amount":1,"until":"EndOfTurn"}}}]},
           {"card":"01007","abilities":[{"trigger":{"event":"WhenActionTriggered","timing":"Action","subject":"this"},"effect":{"dealDamage":{"cards":"you","amount":99}}}]},
           {"card":"01006","abilities":[
             {"trigger":{"event":"WhenActionTriggered","timing":"Action","subject":"this"},"effect":{"changeForm":{"player":"you","to":{"face":"12001c"}}}},
@@ -21,7 +19,7 @@ public sealed class GiantStrengthPeriodTests
           ]}
         ]}
         """.Replace("WhenVillainPhaseBegins", boundary, StringComparison.Ordinal)
-            .Replace("ForcedResponse", timing, StringComparison.Ordinal)));
+            .Replace("ForcedResponse", timing, StringComparison.Ordinal));
 
     [Theory]
     [InlineData("WhenVillainPhaseBegins")]

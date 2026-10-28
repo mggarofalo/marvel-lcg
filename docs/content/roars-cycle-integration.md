@@ -3,7 +3,7 @@
 The canonical delivery records are MARVEL-568 (Kang) and MARVEL-569 (Ant-Man),
 within MARVEL-703. This candidate combines reviewed engine prerequisites; neither
 pack has complete executable content or public admission. The production book
-contains 742 rows, including 19 of Ant-Man's 35 faces and no Kang faces.
+contains 745 rows, including 22 of Ant-Man's 35 faces and no Kang faces.
 
 The integrated sources are Kang `07fd360d`, Ant-Man `f6357d29`, the independently
 strengthened baseline fixture repair `3a7bb2ec`, and the Resize projection closure
@@ -16,7 +16,7 @@ adds Ant-Man's three identity faces, Resize and Helmet. Its 62 focused review
 checks cover target legality, response and draw ordering, all six form changes,
 and multiplayer ownership. Synthetic blank-reading controls do not establish a
 reachable effect that blanks these card kinds. The merged exact inventory retains
-Power Gloves and all five new faces. Giant Strength remains unauthored.
+Power Gloves and all five new faces.
 
 Signature-action source `9e51ef2e`, independently reviewed at `cd1763139`, adds
 Wasp, Hive Mind, Army of Ants and Wrist Gauntlets. Source verification passes
@@ -24,6 +24,17 @@ Wasp, Hive Mind, Army of Ants and Wrist Gauntlets. Source verification passes
 22 focused cases, including declined Wasp responses, wrong-target retry and
 invalid wild-resource declarations through `Game.Resolve`. The four rows leave
 the previous book entries unchanged. See [source and independent review](ant-man-signature-actions.md).
+Merged revision `9f93ee9d` passes all 138 selected Ant-Man, ability-data,
+form-destination and Giant Strength period checks; normal commit hooks pass.
+The result is recorded in `roars-signature-merged-focused.log`.
+
+Form-response source `8650fb4a`, independently accepted at `575a462c`, adds
+Giant Strength, Moxie and Lay Down the Law. All 13 turn-period cases now use the
+production Giant Strength row. The review observes Moxie's three bonuses during
+a real villain phase and their expiry in the next live player turn, and verifies
+Lay Down the Law's selected scheme. Six source behavior mutations and the
+reviewer's omitted-round-expiry mutation are distinguished; restored independent
+checks pass 83/83. See [the review](ant-man-form-response-independent-review.md).
 
 ## Combined verification
 
@@ -63,16 +74,19 @@ closes MARVEL-874's engine prerequisite. Eliminating the active player now runs
 the ordinary end-turn windows and expiry before advancing. Independent checks
 pass 52 Content and 44 Rules tests; the merged Resize and Giant Strength fixture
 classes pass all 18 tests (`roars-end-turn-merged-focused.log`). Giant Strength's
-production row remains unauthored. The changed post-elimination action occurrence
+production row is included in the later form-response packet. The changed post-elimination action occurrence
 sequence remains part of publication/replay gate MARVEL-870; this narrow engine
 acceptance does not settle replay compatibility.
 
 ## Next delivery
 
-Verify the signature-action packet on the combined candidate, then author Giant
-Strength, Moxie and Lay Down the Law against the accepted form/turn-period engine.
-Verify Giant Stomp's sequential
-targeting composition before assigning any engine expansion. Complete
+Verify the form-response packet on the combined candidate. Test-only probe
+`364660e1` establishes two Giant Stomp
+boundaries under MARVEL-875: nested live choice inside one attack is refused,
+and a splash followed by fixed villain damage omits that villain's per-enemy
+attack-end response. A damage/completion control is not full attack correctness.
+Repair and independently review recipient facts, then the live-choice continuation.
+Complete
 remaining Ant-Man and Kang content, setup,
 publication/replay boundary MARVEL-870, public journeys and relevant native/UI
 evidence before claiming either pack complete.

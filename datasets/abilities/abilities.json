@@ -23228,6 +23228,127 @@
           }
         }
       ]
+    },
+{
+  "card": "12009",
+  "name": "Giant Strength",
+  "note": "Hero Response: after changing to Giant hero form, gain +1 ATK until this turn ends. Current RR 1.8 lasting-effects.6 restricts initiation to a player turn; no turn is taken during the villain phase.",
+  "abilities": [
+    {
+      "trigger": {
+        "event": "WhenFormChanged",
+        "timing": "Response",
+        "subject": "you",
+        "form": "hero"
+      },
+      "when": {
+        "hasTrait": {
+          "card": "you",
+          "trait": "GIANT"
+        }
+      },
+      "effect": {
+        "grantUntil": {
+          "card": "you",
+          "keyword": "attack",
+          "amount": 1,
+          "until": "EndOfTurn"
+        }
+      }
     }
+  ]
+},
+{
+  "card": "12016",
+  "name": "Moxie",
+  "note": "Hero Response after the controller changes form: the controller's hero gains +1 THW, ATK and DEF until round end. The lasting bonuses persist after the event is discarded; they do not create a recurring form-change trigger.",
+  "abilities": [
+    {
+      "trigger": {
+        "event": "WhenFormChanged",
+        "timing": "Response",
+        "subject": "you",
+        "form": "hero"
+      },
+      "effect": {
+        "seq": [
+          {
+            "grantUntil": {
+              "card": "yourHero",
+              "keyword": "thwart",
+              "amount": 1,
+              "until": "EndOfRound"
+            }
+          },
+          {
+            "grantUntil": {
+              "card": "yourHero",
+              "keyword": "attack",
+              "amount": 1,
+              "until": "EndOfRound"
+            }
+          },
+          {
+            "grantUntil": {
+              "card": "yourHero",
+              "keyword": "defense",
+              "amount": 1,
+              "until": "EndOfRound"
+            }
+          }
+        ]
+      }
+    }
+  ]
+},
+{
+  "card": "12031",
+  "name": "Lay Down the Law",
+  "note": "Hero Response (thwart) after the controller changes form: remove 3 threat from one chosen scheme, or 4 when the committed payment contains mental. Generated but unallocated excess does not qualify.",
+  "abilities": [
+    {
+      "trigger": {
+        "event": "WhenFormChanged",
+        "timing": "Response",
+        "subject": "you",
+        "form": "hero"
+      },
+      "labels": [
+        "thwart"
+      ],
+      "effect": {
+        "chooseCard": {
+          "from": {
+            "query": "schemes"
+          },
+          "effect": {
+            "thwart": {
+              "target": "chosen",
+              "effect": {
+                "if": {
+                  "test": {
+                    "paidWithResource": "B"
+                  },
+                  "then": {
+                    "removeThreat": {
+                      "scheme": "chosen",
+                      "amount": 4
+                    }
+                  },
+                  "else": {
+                    "removeThreat": {
+                      "scheme": "chosen",
+                      "amount": 3
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}
   ]
 }

@@ -28,7 +28,7 @@ All rows below require their own authored face, including reprints. A packet may
 | 12001b (identity) | F1: Scott response heals 1 after change to alter ego; preserve physical identity state. |
 | 12001c (identity) | F1: Giant entry response deals 1 to chosen enemy, not Tiny's response. |
 | 12002 (1) | F2: Wasp enters; Giant deals 2 damage or Tiny removes 2 threat using current form, neither in alter ego; verify entry and ally consequential stats. |
-| 12003 (2) | F2: Giant-only attack, 1 each minion then 8 to selected enemy; test simultaneous damage/defeat and separate targeted attack. |
+| 12003 (2) | F2: Giant-only attack, 1 each minion then 8 to an enemy selected after splash settlement; both sentences are one attack (RR 1.8 `rr:attack-player-ability-type.2.1`). Test simultaneous damage/defeat, live Guard eligibility and every attacked recipient's facts. |
 | 12004 (1) | F2: Tiny-only thwart 2 plus one per controlled Army of Ants; test multiple controllers and live count. |
 | 12005 (2) | F1: change to other hero face then draw 1; no voluntary receipt consumed, resolve correct response windows and replay. |
 | 12006 (2) | R1/F: exact spent-card response; Giant heals 2 or Tiny draws 1; discard without spending is not a trigger. |
