@@ -1,5 +1,7 @@
 # Release identity, signing and compatibility
 
+Protocol 43 adds conditional resource bonus facts to cost offers. Protocol 42 peers are rejected before gameplay. Replay compatibility of the integrated candidate remains a separate MARVEL-870 decision; this protocol change alone does not bump the replay identity.
+
 Protocol 42 adds typed public Invocation deck/discard area relationships.
 Protocol 41 peers are rejected before interpreting these response fields. This
 metadata change retains replay v27, session schema 7, RNG and state digest.

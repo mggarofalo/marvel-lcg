@@ -49,6 +49,9 @@ public static class EngineJson
             throw new JsonException("response error code was missing or invalid");
         }
 
+        if (!ConditionalResourceContract.IsValid(response.Prompt))
+            throw new JsonException("response conditional resource bonus is invalid");
+
         if (response.World is { } world && !EncounterGroupContract.IsValid(world))
             throw new JsonException("response encounter groups contain invalid references");
         if (response.World is { } invocationWorld && !InvocationDeckContract.IsValid(invocationWorld))

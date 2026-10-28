@@ -271,7 +271,7 @@ internal static class ClientResponseValidation
 
     private static bool CompletePaymentInputs(CostOption cost) =>
         (cost.Sources is null || cost.Sources.All(source => source.Generates is not null
-            && (source.ConditionalBonus is null || source.ConditionalBonus.Generates is not null)))
+            && (source.ConditionalBonus is not { } bonus || bonus.IsValid(cost.ResourceCosts.Count))))
         && (cost.Variables is null || cost.Variables.All(variable => variable.Name is not null));
 
     private static bool CompleteComponent(ResourceCost component) =>
