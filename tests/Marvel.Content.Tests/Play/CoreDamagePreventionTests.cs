@@ -51,6 +51,7 @@ public sealed class CoreDamagePreventionTests : CoreCardTestBase
         // Prevention "modif[ies] the amount of damage before it is taken".
         // Both interrupts apply to this instance; neither persists into another.
         var world = Hero("01010a");
+        world.CreateCard("01087", world.Seats[0].Deck);
         var hero = world.Seats[0].IdentityCard;
         var villain = world.CreateCard("01134", world.AreaOf(DeckType.VillainArea));
         for (int index = 0; index < 2; index++)
@@ -62,7 +63,10 @@ public sealed class CoreDamagePreventionTests : CoreCardTestBase
         var interrupts = runner.Waiting(world, occurrence, WindowKind.Interrupt);
         Assert.Equal(2, interrupts.Count);
         foreach (var interrupt in interrupts)
+        {
             runner.ResolveWindow(world, occurrence, interrupt, new Decision(interrupt.Card, [], []));
+            Assert.Equal(Outcome.Unfinished, world.Result);
+        }
         Assert.Equal(0, runner.WouldTake(world, hero, villain, 5, []));
         Assert.DoesNotContain(world.Effects.Active(), effect => effect.Kind == "preventDamage");
         Assert.Equal(2, runner.WouldTake(world, hero, villain, 2, []));

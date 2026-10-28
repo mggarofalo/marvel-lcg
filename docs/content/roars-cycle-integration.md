@@ -38,19 +38,22 @@ stunned-target Press the Advantage (`StageEntryContinuationTests`), Lead from th
 Front (`CoreLastingEffectCardsTests`), stacked Cosmic Flights
 (`CoreDamagePreventionTests`), and the pinned Core winning-transcript digest.
 
-Read-only investigation traces several sparse fixtures through player-deck reset
-and an empty encounter deck into a genuine terminal loss, after which the reviewed
-interpreter guards suppress further effects. Reproduction and minimal legal-fixture
-repairs remain pending. The genuine winning transcript requires a separate causal
-state/event comparison before any digest pin changes; it must not be relabeled a
-fixture failure or silently updated to match the new output.
+Source `54a8869f` proves that all nine sparse fixtures terminate through
+player-deck reset and an empty encounter deck. Minimal reserve cards preserve
+their original hands, maximum-X values and behavioral assertions. Independent
+review `e8e49d10` passes 81 relevant tests, including the complete fixture and
+defeat-transcript classes and terminal cleanup controls. The genuine winning
+transcript has one reviewed state difference: final Uppercut remains in the
+resolving area because victory stops its cleanup discard. Its pin and explicit
+event checks now reflect that authority-derived result; the transcript and
+historical artifacts are unchanged. See [the repair and review](roars-terminal-fixture-repair.md).
+The final combined suite still needs to run after integration.
 
 ## Next delivery
 
-Close the combined regression findings, then integrate independently reviewed
-actual Ant-Man rows. The first pending packet contains the three identity faces,
-Resize and Helmet. Giant Strength has a separate villain-phase lasting-effect
-probe; it remains unauthored until any required engine repair is proved and
-independently reviewed. Complete remaining Ant-Man and Kang content, setup,
+Verify the reviewed regression repairs and five-face packet together. Giant
+Strength has a separate villain-phase lasting-effect prerequisite, MARVEL-874;
+it remains unauthored until the engine repair passes independent review. Complete
+remaining Ant-Man and Kang content, setup,
 publication/replay boundary MARVEL-870, public journeys and relevant native/UI
 evidence before claiming either pack complete.

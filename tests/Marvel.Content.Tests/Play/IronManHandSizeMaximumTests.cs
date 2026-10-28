@@ -56,12 +56,15 @@ public sealed class IronManHandSizeMaximumTests : CoreCardTestBase
     public void MultipleAssessCopiesAndNegativeModifiersApplyBeforeTheMaximum()
     {
         var world = Hero("01029a,01029b");
+        world.CreateCard("01088", world.Seats[0].Deck);
         var runner = Runner();
         world.Abilities = runner;
         Card hero = world.Seats[0].IdentityCard;
         AddTech(world, 6);
         PlayAssess(world, runner);
+        Assert.Equal(Outcome.Unfinished, world.Result);
         PlayAssess(world, runner);
+        Assert.Equal(Outcome.Unfinished, world.Result);
         Assert.Equal(7, Modified(world, hero, "hand_size"));
         world.Effects.Register(new ContinuousEffect(EffectSource.LastingEffect, "hand_size", -2,
             Affects: hero.ObjectId, Lasts: Duration.UntilEndOf(TimingPoints.EndOfPhase)));
