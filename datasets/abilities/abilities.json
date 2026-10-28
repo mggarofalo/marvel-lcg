@@ -23489,6 +23489,215 @@
         "when": { "wasDefeated": "trigger.target" },
         "effect": { "heal": { "card": "you", "amount": { "attackExcessDamage": "trigger.target" } } }
       }]
+    },
+    {
+      "card": "12027",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "and": [
+                  {
+                    "inForm": {
+                      "player": "engagedPlayer",
+                      "form": "hero"
+                    }
+                  },
+                  {
+                    "exists": {
+                      "withTrait": {
+                        "cards": {
+                          "inPlayerArea": {
+                            "area": "identity",
+                            "player": "engagedPlayer"
+                          }
+                        },
+                        "trait": "GIANT"
+                      }
+                    }
+                  }
+                ]
+              },
+              "then": {
+                "grant": {
+                  "card": "this",
+                  "trait": "GIANT"
+                }
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "timing": "Constant"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "and": [
+                  {
+                    "inForm": {
+                      "player": "engagedPlayer",
+                      "form": "hero"
+                    }
+                  },
+                  {
+                    "exists": {
+                      "withTrait": {
+                        "cards": {
+                          "inPlayerArea": {
+                            "area": "identity",
+                            "player": "engagedPlayer"
+                          }
+                        },
+                        "trait": "GIANT"
+                      }
+                    }
+                  }
+                ]
+              },
+              "then": {
+                "grant": {
+                  "card": "this",
+                  "keyword": "retaliate",
+                  "amount": 1
+                }
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "timing": "Constant"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "and": [
+                  {
+                    "inForm": {
+                      "player": "engagedPlayer",
+                      "form": "hero"
+                    }
+                  },
+                  {
+                    "exists": {
+                      "withTrait": {
+                        "cards": {
+                          "inPlayerArea": {
+                            "area": "identity",
+                            "player": "engagedPlayer"
+                          }
+                        },
+                        "trait": "TINY"
+                      }
+                    }
+                  }
+                ]
+              },
+              "then": {
+                "grant": {
+                  "card": "this",
+                  "trait": "TINY"
+                }
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "timing": "Constant"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "and": [
+                  {
+                    "inForm": {
+                      "player": "engagedPlayer",
+                      "form": "hero"
+                    }
+                  },
+                  {
+                    "exists": {
+                      "withTrait": {
+                        "cards": {
+                          "inPlayerArea": {
+                            "area": "identity",
+                            "player": "engagedPlayer"
+                          }
+                        },
+                        "trait": "TINY"
+                      }
+                    }
+                  }
+                ]
+              },
+              "then": {
+                "grant": {
+                  "card": "this",
+                  "keyword": "attack",
+                  "amount": 1
+                }
+              }
+            }
+          }
+        }
+      ],
+      "note": "Live engaged-player hero form controls Yellowjacket's Giant/retaliate or Tiny/ATK constants."
+    },
+    {
+      "card": "12028",
+      "attachTo": {
+        "firstAvailable": [
+          {
+            "titled": "Yellowjacket"
+          },
+          {
+            "query": "villain"
+          }
+        ]
+      },
+      "startingCounters": {
+        "type": "size",
+        "count": 3,
+        "uses": true
+      },
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenAttackEnds",
+            "timing": "ForcedResponse",
+            "actor": "attachedTo"
+          },
+          "effect": {
+            "removeCounters": {
+              "card": "this",
+              "counter": "size",
+              "count": 1
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenSchemeEnds",
+            "timing": "ForcedResponse",
+            "subject": "attachedTo"
+          },
+          "effect": {
+            "removeCounters": {
+              "card": "this",
+              "counter": "size",
+              "count": 1
+            }
+          }
+        }
+      ],
+      "note": "Prefer Yellowjacket, otherwise the villain; printed attachment stats apply once. Each completed attack or scheme removes one use."
     }
   ]
 }
