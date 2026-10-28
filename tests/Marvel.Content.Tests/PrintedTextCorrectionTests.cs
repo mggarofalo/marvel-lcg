@@ -1,5 +1,7 @@
+extern alias extractor;
+
 using System.Text.Json;
-using Marvel.Cards.Extract;
+using PrintedTextCorrection = extractor::Marvel.Cards.Extract.PrintedTextCorrection;
 using Marvel.Tests;
 using Xunit;
 

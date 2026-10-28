@@ -50,12 +50,17 @@ internal sealed class Supplement
         }
 
         using var document = JsonDocument.Parse(File.ReadAllText(path));
+        return Read(document.RootElement);
+    }
+
+    internal static Supplement Read(JsonElement root)
+    {
         var found = new Dictionary<string, Entry>(StringComparer.Ordinal);
         var only = new List<Card>();
-        ReadGroups(document.RootElement, found, only);
+        ReadGroups(root, found, only);
         return new Supplement(found, only)
         {
-            Dropped = ReadDropped(document.RootElement),
+            Dropped = ReadDropped(root),
         };
     }
 
@@ -82,7 +87,10 @@ internal sealed class Supplement
                 id, Field(element, "name"), Field(element, "subname"),
                 kind.GetString() ?? "", traits, attributes, [],
                 Field(element, "text"), Field(element, "pack"),
-                Field(element, "set")));
+                Field(element, "set"))
+            {
+                StatAnnotations = StatAnnotations.Read(element),
+            });
             return;
         }
         MergeCorrection(element, id, attributes, traits, found);
