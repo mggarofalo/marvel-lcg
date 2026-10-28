@@ -1,5 +1,6 @@
 using Marvel.Cards.Dsl;
 using Marvel.Cards.Run;
+using Marvel.Content.Tests.Cards;
 using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
@@ -17,7 +18,7 @@ public sealed class AttackExcessIncarnationControlTests
     {
         // rr:leaves-play.1: a card returning is a new copy. The interrupt
         // defeats that new copy with nonattack damage, not the original recipient.
-        var runner = new AbilityRunner(AbilityCatalog.Parse("""
+        var book = AbilityCatalog.Parse("""
             {"cards":[
               {"card":"01003","abilities":[{
                 "trigger":{"event":"WhenActionTriggered","timing":"Action","subject":"game"},
@@ -34,14 +35,14 @@ public sealed class AttackExcessIncarnationControlTests
               {"card":"01007","abilities":[{
                 "trigger":{"event":"WhenAttackEnds","timing":"ForcedResponse","target":"enemy"},
                 "effect":{"placeCounters":{"card":"you","counter":"attack_completed","count":1}}
-              }]},
-              {"card":"12030","abilities":[{
-                "trigger":{"event":"WhenAttackEnds","timing":"Response","actor":"you","target":"enemy","form":"hero"},
-                "when":{"wasDefeated":"trigger.target"},
-                "effect":{"heal":{"card":"you","amount":{"attackExcessDamage":"trigger.target"}}}
               }]}
             ]}
-            """));
+            """);
+        var runner = new AbilityRunner(book with
+        {
+            Abilities = [.. book.Abilities, .. AuthoredCards.Book.On("12030")],
+            Authored = book.Authored.Append("12030").ToHashSet(StringComparer.Ordinal),
+        });
         Card? source = null;
         Card? enemy = null;
         Card? response = null;

@@ -23472,5 +23472,23 @@
         ] }
       }]
     }
+,
+    {
+      "card": "12014",
+      "note": "Stinger does not count against her controller's ally limit; the printed identity-trait restriction governs play.",
+      "abilities": [{
+        "trigger": { "timing": "Constant" },
+        "effect": { "grant": { "card": "this", "keyword": "ally_limit_excluded" } }
+      }]
+    },
+    {
+      "card": "12030",
+      "note": "Hero response: heal your hero by the attack's excess damage to the defeated enemy.",
+      "abilities": [{
+        "trigger": { "event": "WhenAttackEnds", "timing": "Response", "actor": "you", "target": "enemy", "form": "hero" },
+        "when": { "wasDefeated": "trigger.target" },
+        "effect": { "heal": { "card": "you", "amount": { "attackExcessDamage": "trigger.target" } } }
+      }]
+    }
   ]
 }

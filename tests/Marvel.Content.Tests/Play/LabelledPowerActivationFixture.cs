@@ -54,16 +54,9 @@ internal sealed class LabelledPowerActivationFixture
         };
         if (includeMoment)
         {
-            var moment = AbilityCatalog.Parse("""
-                {"cards":[{"card":"12030","abilities":[{
-                  "trigger":{"event":"WhenAttackEnds","timing":"Response","actor":"you","target":"enemy","form":"hero"},
-                  "when":{"wasDefeated":"trigger.target"},
-                  "effect":{"heal":{"card":"you","amount":{"attackExcessDamage":"trigger.target"}}}
-                }]}]}
-                """);
             book = book with
             {
-                Abilities = [.. book.Abilities, .. moment.Abilities],
+                Abilities = [.. book.Abilities, .. AuthoredCards.Book.On("12030")],
                 Authored = book.Authored.Append("12030").ToHashSet(StringComparer.Ordinal),
             };
         }

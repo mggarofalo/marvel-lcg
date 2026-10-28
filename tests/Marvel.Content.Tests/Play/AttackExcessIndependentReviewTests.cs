@@ -1,5 +1,6 @@
 using Marvel.Cards.Dsl;
 using Marvel.Cards.Run;
+using Marvel.Content.Tests.Cards;
 using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
@@ -9,7 +10,7 @@ using Xunit;
 
 namespace Marvel.Content.Tests.Play;
 
-// Synthetic local responses and attacks; this does not admit expansion content.
+// Actual Moment of Triumph with synthetic controls and prepared attacks; the pack remains excluded.
 public sealed class AttackExcessIndependentReviewTests
 {
     [Theory]
@@ -22,16 +23,17 @@ public sealed class AttackExcessIndependentReviewTests
     {
         // rr:prevent.1.1: prevention reduces damage taken. rr:overkill.3 counts
         // the same excess as overkill, which requires defeat under rr:overkill.1.
-        var runner = new AbilityRunner(AbilityCatalog.Parse("""
-            {"cards":[{"card":"12030","abilities":[{
-              "trigger":{"event":"WhenAttackEnds","timing":"Response","actor":"you","target":"enemy","form":"hero"},
-              "when":{"wasDefeated":"trigger.target"},
-              "effect":{"heal":{"card":"you","amount":{"attackExcessDamage":"trigger.target"}}}
-            }]},{"card":"01003","abilities":[{
+        var book = AbilityCatalog.Parse("""
+            {"cards":[{"card":"01003","abilities":[{
               "trigger":{"event":"WhenAttackEnds","timing":"Response","actor":"you","target":"enemy","form":"hero"},
               "effect":{"placeCounters":{"card":"you","counter":"control","count":1}}
             }]}]}
-            """));
+            """);
+        var runner = new AbilityRunner(book with
+        {
+            Abilities = [.. book.Abilities, .. AuthoredCards.Book.On("12030")],
+            Authored = book.Authored.Append("12030").ToHashSet(StringComparer.Ordinal),
+        });
         var world = ThorActualFixture.Board("06001a");
         world.Abilities = runner;
         var hero = world.Seats[0].IdentityCard;
@@ -93,19 +95,20 @@ public sealed class AttackExcessIndependentReviewTests
     {
         // rr:damage.step.6 opens would-be-defeated interrupts before defeat;
         // rr:overkill.1 requires that the enemy actually be defeated.
-        var runner = new AbilityRunner(AbilityCatalog.Parse("""
+        var book = AbilityCatalog.Parse("""
             {"cards":[{"card":"01092","abilities":[{
               "trigger":{"event":"WhenCardWouldBeDefeated","timing":"ForcedInterrupt","subject":"game"},
               "effect":{"choose":{"options":[{"heal":{"card":"trigger.subject","amount":20}},{"draw":{"player":"you","count":1}}]}}
-            }]},{"card":"12030","abilities":[{
-              "trigger":{"event":"WhenAttackEnds","timing":"Response","actor":"you","target":"enemy","form":"hero"},
-              "when":{"wasDefeated":"trigger.target"},
-              "effect":{"heal":{"card":"you","amount":{"attackExcessDamage":"trigger.target"}}}
             }]},{"card":"01003","abilities":[{
               "trigger":{"event":"WhenAttackEnds","timing":"Response","actor":"you","target":"enemy","form":"hero"},
               "effect":{"placeCounters":{"card":"you","counter":"control","count":1}}
             }]}]}
-            """));
+            """);
+        var runner = new AbilityRunner(book with
+        {
+            Abilities = [.. book.Abilities, .. AuthoredCards.Book.On("12030")],
+            Authored = book.Authored.Append("12030").ToHashSet(StringComparer.Ordinal),
+        });
         var world = ThorActualFixture.Board("06001a");
         world.Abilities = runner;
         var hero = world.Seats[0].IdentityCard;
