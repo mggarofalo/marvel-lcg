@@ -31,3 +31,9 @@ Release -m:1 --no-incremental`; the same Content selection then passed 104/104
 with `dotnet test ... --no-build`. All runs set `MSBUILDDISABLENODEREUSE=1`.
 Logs are at `C:/Users/mggar/stinger-stale-*.log`, outside the source tree.
 Independent closure review and integration gates remain.
+
+## Independent closure verdict
+
+Reviewed repair `6ac0b2f42a842f4032f642a08663548e0340a45a` and reran the independent, candidate exclusion, Ant ally support and ally-entry payment classes: 29/29 passed (`C:/Users/mggar/Source/ally-exclusion-independent-closure.log`). The original stale-choice assertion is unchanged; its rule quotation was corrected to match RR 1.8. The live limit is read when the queued plan applies, so a limit reduced again still prompts, and the unchanged offer includes all controlled allies. The synthetic continuation demonstrates that skipping an obsolete plan retains the entry response. The author's compiled exception mutant distinguishes the two stale-choice tests, and the restored source was rebuilt non-incrementally.
+
+The stale-choice contract finding is closed for this prerequisite. The synthetic interpositions have no demonstrated supported gameplay route, ally blanking is synthetic, and no actual Stinger ability row or UI/pack acceptance is claimed. Set-value limit modifiers remain outside scope. Integration gates remain separate.

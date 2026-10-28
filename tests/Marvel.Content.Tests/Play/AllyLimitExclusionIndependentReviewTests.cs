@@ -26,7 +26,7 @@ public sealed class AllyLimitExclusionIndependentReviewTests
     [Rule("rr:ally-limit")]
     public void RestoredLimitDoesNotLeaveAMandatoryDiscard()
     {
-        // "until the number of allies they control is equal to their ally limit."
+        // "until they have a number of allies in play equal to their ally limit."
         var world = ThorActualFixture.Board("06001a");
         var runner = Runner();
         world.Abilities = runner;
