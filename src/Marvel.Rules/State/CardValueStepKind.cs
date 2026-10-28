@@ -13,4 +13,6 @@ public enum CardValueStepKind
     MinimumZero,
     /// <summary>Resolve the intrinsic base before applying modifiers.</summary>
     DefineBase,
+    /// <summary>A source limits the completed quantity to this maximum.</summary>
+    Maximum,
 }

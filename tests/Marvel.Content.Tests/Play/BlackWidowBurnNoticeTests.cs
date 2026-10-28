@@ -71,7 +71,7 @@ public sealed class BlackWidowBurnNoticeTests
     {
         using var book = System.Text.Json.JsonDocument.Parse(AuthoredCards.Text);
         var rows = book.RootElement.GetProperty("cards").EnumerateArray().ToArray();
-        Assert.Equal(723, rows.Length);
+        Assert.Equal(AuthoredCards.ExpectedFaceCount, rows.Length);
         string[] added = ["08023", "08025", "08026", "08029"];
         Assert.Equal(added,
             rows.Skip(628).Take(4).Select(row => row.GetProperty("card").GetString()));

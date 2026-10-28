@@ -40,6 +40,7 @@ public static class GameResolution
         if (!assessment.IsAccepted)
             throw new ArgumentException(assessment.Reason ?? assessment.Rejection.ToString(), nameof(input));
         ValidateLiveCardPlay(game, input);
+        GameFormChanges.Validate(game, input);
         game.world.ClearInformationSignals();
 
         // Rules questions and windows retain their sequence owner across phases.
@@ -138,7 +139,7 @@ public static class GameResolution
         string verb = game.Pending!.Affordances
             .FirstOrDefault(affordance => affordance.Id == input.Affordance)?.Verb
             ?? $"affordance {input.Affordance}";
-        if (verb == ChangeForm) return game.ChangeFormNow();
+        if (verb == ChangeForm) return game.ChangeFormNow(input);
         if (game.Phase == GamePhase.Mulligan && verb == ResolveMulligans)
             return game.Mulligan(input);
         if (game.Phase == GamePhase.PlayerTurn) return ResolveTurnAffordance(game, input, verb);

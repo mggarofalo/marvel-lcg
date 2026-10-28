@@ -63,10 +63,20 @@ public sealed class CoreEffectiveValueTests
         Assert.Equal(1, value.BaseValue);
         Assert.Equal(7, value.CurrentValue);
         Assert.Equal(PhaseEnd.HandSize(world, world.Seats[0], Cards), value.CurrentValue);
-        CardValueCalculation step = Assert.Single(value.Calculation);
-        Assert.Equal(6, step.Amount);
-        Assert.Equal("Iron Man", step.Source!.Title);
-        Assert.Contains("maximum", step.Source.RulesText, StringComparison.OrdinalIgnoreCase);
+        Assert.Collection(value.Calculation,
+            bonus =>
+            {
+                Assert.Equal("Add", bonus.Operation);
+                Assert.Equal(7, bonus.Amount);
+                Assert.Equal("Iron Man", bonus.Source!.Title);
+            },
+            maximum =>
+            {
+                Assert.Equal("Maximum", maximum.Operation);
+                Assert.Equal(7, maximum.Amount);
+                Assert.Equal("Iron Man", maximum.Source!.Title);
+                Assert.Contains("maximum", maximum.Source.RulesText, StringComparison.OrdinalIgnoreCase);
+            });
         World.MoveToTop(reactor, world.AreaOf(DeckType.DiscardPile, PlayArea.Of(0)));
         Assert.Equal(7, Face(world, hero).EffectiveValues["HS"].CurrentValue);
     }

@@ -9,6 +9,7 @@ internal static class AbilityProjectedRelationQueries
     internal static List<Card>? Select(
         AbilityCardQuery query, AreaProjectionState state, AbilityAdmissionContext context) => query switch
     {
+        AbilityCardQuery.UpgradesOnThis => UpgradesOnSource(state, context),
         AbilityCardQuery.VillainAndMinionsEngagedWithYou =>
             AbilityProjectedDamageRecipients.Select(state, context),
         AbilityCardQuery.OtherVillainSideSchemes =>
@@ -21,4 +22,15 @@ internal static class AbilityProjectedRelationQueries
             [.. AbilityEncounterSchemeQueries.InAreas(query, context.World, state)],
         _ => null,
     };
+    private static List<Card> UpgradesOnSource(AreaProjectionState state, AbilityAdmissionContext context)
+    {
+        if (!state.SourceReferenceCurrent || context.Query.SourceReference is not { } source
+            || state.Departed.Contains(source.ObjectId)) return [];
+        return [.. context.World.Cards.Where(card =>
+            !state.Departed.Contains(card.ObjectId)
+            && (DeckTypes.IsInPlay(card.Area.Type) || state.Entered.Contains(card.ObjectId))
+            && state.Hosts.GetValueOrDefault(card.ObjectId, card.Area.Host) == source.ObjectId
+            && EffectiveCards.Kind(card, context.World.Facts) == CardKind.Upgrade)
+            .OrderBy(card => card.ObjectId)];
+    }
 }

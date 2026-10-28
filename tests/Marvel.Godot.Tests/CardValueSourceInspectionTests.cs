@@ -20,6 +20,7 @@ public sealed class CardValueSourceInspectionTests
     }
 
     [Theory]
+    [InlineData("Maximum", 7, "Maximum 7")]
     [InlineData("DefineBase", 6, "Base 6")]
     [InlineData("Add", 6, "+6")]
     [InlineData("Add", -2, "-2")]

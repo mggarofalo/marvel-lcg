@@ -2154,7 +2154,10 @@
       "abilities": [
         {
           "trigger": { "timing": "Constant", "subject": "this" },
-          "effect": { "grant": { "card": "you", "keyword": "hand_size", "amount": { "min": [ 6, { "count": { "withTrait": { "cards": { "query": "upgradesYouControl" }, "trait": "TECH" } } } ] } } }
+          "effect": { "seq": [
+            { "grant": { "card": "you", "keyword": "hand_size", "amount": { "count": { "withTrait": { "cards": { "query": "upgradesYouControl" }, "trait": "TECH" } } } } },
+            { "grant": { "card": "you", "keyword": "hand_size_maximum", "amount": 7 } }
+          ] }
         }
       ]
     },
@@ -22819,6 +22822,132 @@
               }
             }
           }
+        }
+      ]
+    },
+    {
+      "card": "12019",
+      "name": "First Aid",
+      "note": "The action chooses any character and heals 2 damage from it.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "characters"
+              },
+              "effect": {
+                "heal": {
+                  "card": "chosen",
+                  "amount": 2
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "12021",
+      "name": "Energy",
+      "note": "This resource card has no ability. Its two printed energy resources are read from datasets/cards by the resource rules.",
+      "abilities": []
+    },
+    {
+      "card": "12022",
+      "name": "Genius",
+      "note": "This resource card has no ability. Its two printed mental resources are read from datasets/cards by the resource rules.",
+      "abilities": []
+    },
+    {
+      "card": "12023",
+      "name": "Strength",
+      "note": "This resource card has no ability. Its two printed physical resources are read from datasets/cards by the resource rules.",
+      "abilities": []
+    },
+    {
+      "card": "12012",
+      "name": "Giant-Man",
+      "note": "Giant-Man gets +2 ATK while his current remaining hit points are at least 3. The conditional grant spelling is an engine choice.",
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant", "subject": "this" },
+          "effect": { "if": {
+            "test": { "atLeast": { "value": { "remainingHealth": "this" }, "count": 3 } },
+            "then": { "grant": { "card": "this", "keyword": "attack", "amount": 2 } }
+          } }
+        }
+      ]
+    },
+    {
+      "card": "12018",
+      "name": "Reinforced Suit",
+      "note": "Attach to an ally, maximum one per ally. The attached ally gets +2 hit points.",
+      "attachTo": { "withoutAnotherCopyAttached": { "query": "allies" } },
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant", "subject": "this" },
+          "effect": { "grant": { "card": "attachedTo", "keyword": "health", "amount": 2 } }
+        }
+      ]
+    },
+    {
+      "card": "12013",
+      "name": "Ronin",
+      "note": "Ronin gets +1 THW and +1 ATK while at least one upgrade is attached to them. upgradesOnThis and conditional grants are engine spellings; multiple upgrades do not multiply this bonus.",
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant", "subject": "this" },
+          "effect": { "if": {
+            "test": { "exists": { "query": "upgradesOnThis" } },
+            "then": { "seq": [
+              { "grant": { "card": "this", "keyword": "thwart", "amount": 1 } },
+              { "grant": { "card": "this", "keyword": "attack", "amount": 1 } }
+            ] }
+          } }
+        }
+      ]
+    },
+    {
+      "card": "12033",
+      "name": "Assess the Situation",
+      "note": "The Action grants its player +1 hand size until phase end, including the end-player draw before phase expiration. grantUntil and EndOfPhase are engine spellings.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this" },
+          "effect": { "grantUntil": { "card": "you", "keyword": "hand_size", "amount": 1, "until": "EndOfPhase" } }
+        }
+      ]
+    },
+    {
+      "card": "12015",
+      "name": "Call for Aid",
+      "note": "Hero Action discards from your deck until an Avenger ally, then adds that exact physical ally to your hand. The bounded discard operation retains the normal immediate empty-deck reset and does not continue through the replacement deck. DSL spellings are engine choices.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" },
+          "effect": { "discardUntil": { "from": "yourDeck", "kind": "ally", "trait": "AVENGER", "then": "addToHand" } }
+        }
+      ]
+    },
+    {
+      "card": "12017",
+      "name": "Power Gloves",
+      "note": "Attach to an Avenger ally, maximum one per ally. After that exact ally attacks or thwarts, its controller may deal 1 damage to an enemy. Trigger and selector spellings are engine choices.",
+      "attachTo": { "withoutAnotherCopyAttached": { "withTrait": { "cards": { "query": "allies" }, "trait": "AVENGER" } } },
+      "abilities": [
+        {
+          "trigger": { "event": "WhenAttackEnds", "timing": "Response", "actor": "attachedTo" },
+          "effect": { "chooseCard": { "from": { "query": "enemies" }, "effect": { "dealDamage": { "cards": "chosen", "amount": 1 } } } }
+        },
+        {
+          "trigger": { "event": "WhenThwartEnds", "timing": "Response", "actor": "attachedTo" },
+          "effect": { "chooseCard": { "from": { "query": "enemies" }, "effect": { "dealDamage": { "cards": "chosen", "amount": 1 } } } }
         }
       ]
     }

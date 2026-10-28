@@ -14,7 +14,7 @@ internal static class SequenceWindow
     {
         var kind = world.Agenda.Stage == Stage.Interrupts
             ? WindowKind.Interrupt : WindowKind.Response;
-        if (SharedThreatWindowHandles(step, kind))
+        if (SuppressWindow(step, kind))
         {
             world.Agenda.Advance();
             return null;
@@ -114,6 +114,13 @@ internal static class SequenceWindow
     private static bool SharedThreatWindowHandles(PhaseStep step, WindowKind kind) =>
         (kind == WindowKind.Response && step.Operation is ThreatPlacementOperation { Responses: not null })
         || (kind == WindowKind.Interrupt && step.Operation is CompletedCardEffectOperation { Occurrence: not null });
+
+    private static bool SuppressWindow(PhaseStep step, WindowKind kind) =>
+        SharedThreatWindowHandles(step, kind)
+        // rr:response: response abilities resolve after their triggering condition occurs.
+        // An ineffective form change creates no after-change condition.
+        || (kind == WindowKind.Response && step.Operation is IdentityFormChangeOperation form
+            && form.Completion.IsComplete && form.Completion.Applied == 0);
 
     private static PendingAbility AcceptedAbility(
         World world, IWindowAbilities abilities, Window window, Prompt asked, Decision input)

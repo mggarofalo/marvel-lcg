@@ -125,8 +125,8 @@ internal static class AbilityImmediateExecution
                 + "while a cost is paid rather than resolved as an effect");
         }
         var change = (AbilityEffect.ChangeForm)effect;
-        ChangeForm(change, context, context.Admission.Evaluator().Seat);
-        return new(true, false);
+        var completion = ChangeForm(change, context, context.Admission.Evaluator().Seat);
+        return new(true, false) { ProcedureScheduled = completion is not null, Completion = completion };
     }
 
     private static AbilityImmediateResult RunPlayerEffect(
@@ -217,17 +217,19 @@ internal static class AbilityImmediateExecution
         return new(true, true);
     }
 
-    private static void ChangeForm(AbilityEffect.ChangeForm change, AbilityImmediateContext context, Func<AbilityPlayer, int> seatOf)
+    private static EffectCompletion? ChangeForm(AbilityEffect.ChangeForm change, AbilityImmediateContext context, Func<AbilityPlayer, int> seatOf)
     {
         World world = context.Admission.World;
         var seat = world.Seats[seatOf(change.Player)];
-        if (!AbilityAdmissionFacts.CanChangeForm(world, seatOf(change.Player), change.Form)) return;
-        string was = seat.IdentityCard.FaceId;
-        Forms.Change(seat, world.Facts);
-        context.Events.Add(new CardsFlipped([seat.IdentityCard.ObjectId], true)
-        { Trigger = context.Trigger, Verb = "Change_Form" });
-        if (!Forms.In(world, seat, world.Facts, change.Form))
-            throw new RulesNotImplementedException($"flipping '{was}' did not reach {change.Form}");
+        string? destination = AbilityAdmissionFacts.FormDestination(world, seat.Index, change.Destination);
+        if (destination is null || !FormChangePermissions.CanChange(world, seat.IdentityCard)) return null;
+        var completion = new EffectCompletion(1, 1);
+        world.Agenda.Then(new PhaseStep(
+            new IdentityFormChangeOperation(seat.IdentityCard.ObjectId, seat.IdentityCard.Incarnation,
+                destination, context.Trigger, completion),
+            world.Agenda.Current?.Round ?? 0, 0,
+            Index: seat.Index, Subject: seat.IdentityCard.ObjectId, Seat: seat.Index));
+        return completion;
     }
 
     private static void DrawToHandSize(AbilityEffect.DrawToHandSize draw, AbilityImmediateContext context, Func<AbilityPlayer, int> seatOf)

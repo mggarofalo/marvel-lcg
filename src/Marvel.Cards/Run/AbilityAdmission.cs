@@ -171,6 +171,7 @@ internal static class AbilityAdmission
     /// <summary>Whether every choice required to initiate this effect has an answer.</summary>
     internal static bool CanInitiate(AbilityEffect node, AbilityAdmissionScope cast)
     {
+        AbilityFormDestinationResolver.RequireStandalone(node);
         if (HasNestedEachPlayer(
             node, cast, bindingMayChange: cast.Reachability.PriorBindingMayChange))
         {

@@ -36,8 +36,8 @@ internal static class AbilityResolutionStructure
         (AbilityEffect.ChangeForm)node;
 
     internal static bool AlreadyInForm(this AbilityResolutionExecution execution, AbilityEffect.ChangeForm change, AbilityResolutionState cast) =>
-        AbilityAdmissionFacts.AlreadyInForm(
-            cast.World, execution.Seat(change.Player, cast), change.Form);
+        AbilityAdmissionFacts.FormDestination(
+            cast.World, execution.Seat(change.Player, cast), change.Destination) is null;
 
     /// <summary>"Exhaust …" — <c>rr:exhausted</c>.</summary>
     /// <remarks>

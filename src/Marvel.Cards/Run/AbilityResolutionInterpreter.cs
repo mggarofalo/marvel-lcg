@@ -113,6 +113,7 @@ internal static class AbilityResolutionInterpreter
 
     internal static void Run(this AbilityResolutionExecution execution, CompiledCardAbility ability, AbilityResolutionState cast)
     {
+        AbilityFormDestinationResolver.RequireStandalone(ability.Effect);
         var labels = ability.Labels;
         if (labels.Length > 0)
         {

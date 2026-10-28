@@ -28,8 +28,8 @@ namespace Marvel.Rules.State;
 /// </para>
 /// <para>
 /// A foldable identity with more than two faces is a different case again.
-/// See <see cref="Change"/>, which refuses to choose a destination the general
-/// rule does not settle.
+    /// Its destination must be selected explicitly when more than one is legal.
+    /// Selecting a face preserves the same physical identity and its state.
 /// </para>
 /// </remarks>
 public static class Forms
@@ -192,7 +192,7 @@ public static class Forms
     /// </remarks>
     /// <param name="seat">Whose identity flips.</param>
     /// <param name="facts">The printed card data.</param>
-    /// <returns>The face that is showing afterwards.</returns>
+    /// <returns>The face that was showing before the change.</returns>
     /// <exception cref="RulesNotImplementedException">
     /// The identity has more than two faces.
     /// </exception>
@@ -213,8 +213,24 @@ public static class Forms
                 + "is not implemented");
         }
 
-        string was = identity.FaceId;
-        identity.TurnTo(identity.Faces[identity.FaceIndex == 0 ? 1 : 0]);
+        return Change(seat, facts, identity.Faces[identity.FaceIndex == 0 ? 1 : 0]);
+    }
+
+    /// <summary>Other identity faces, in deterministic printed-face order.</summary>
+    /// <remarks>mc12/mc13 permit alter-ego to either hero and hero to either other face.</remarks>
+    public static IReadOnlyList<string> Destinations(Seat seat, ICardFacts facts) =>
+        seat.IdentityCard.Faces.Where(face => face != seat.IdentityCard.FaceId
+            && OfFace(face, facts) is not null).ToArray();
+
+    /// <summary>Change to the explicitly selected face of this physical identity.</summary>
+    public static string Change(Seat seat, ICardFacts facts, string destination)
+    {
+        ArgumentNullException.ThrowIfNull(seat);
+        ArgumentNullException.ThrowIfNull(facts);
+        if (!Destinations(seat, facts).Contains(destination, StringComparer.Ordinal))
+            throw new ArgumentException("the destination must be another face of this identity", nameof(destination));
+        string was = seat.IdentityCard.FaceId;
+        seat.IdentityCard.TurnTo(destination);
         return was;
     }
 
@@ -225,11 +241,12 @@ public static class Forms
     /// interrupt and response windows, so an ability on the newly showing face
     /// is active when the response window is read.
     /// </remarks>
-    public static string ChangeAndSchedule(World world, Seat seat, ICardFacts facts, int round)
+    public static string ChangeAndSchedule(World world, Seat seat, ICardFacts facts, int round,
+        string? destination = null)
     {
         ArgumentNullException.ThrowIfNull(world);
         FormChangePermissions.Require(world, seat.IdentityCard);
-        string was = Change(seat, facts);
+        string was = destination is null ? Change(seat, facts) : Change(seat, facts, destination);
         world.Agenda.Then(new PhaseStep(
             new LifecycleOperation(LifecycleKind.FormChanged),
             round,

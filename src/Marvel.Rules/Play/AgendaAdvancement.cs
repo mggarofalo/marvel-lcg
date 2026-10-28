@@ -148,6 +148,8 @@ public static class AgendaAdvancement
 
         if (agenda.items[at].Step.Operation is LifecycleOperation { EventInitiation: { } initiation })
             initiation.Cancel();
+        if (agenda.items[at].Step.Operation is IdentityFormChangeOperation form)
+            form.Completion.Complete(0, 0);
         if (agenda.items[at].Step.Operation is ThreatPlacementOperation threat)
             threat.Completion.Complete(threat.Part, 0);
         if (agenda.items[at].Step.Operation is EncounterEntryOperation entry && !entry.Completion.IsComplete)

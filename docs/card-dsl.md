@@ -7,6 +7,22 @@ forced and optional attack-end responses and is zero without a completed attack.
 
 `playersWin: "game"` ends the game with a player victory. The spelling is an engine choice; Kang III uses it in its When Defeated ability. The terminal result abandons remaining ability text and agenda work, including suspended continuations. A direct `playersWin` option in `choose` remains unsupported: partial-resolution admission raises before offering the prompt.
 
+Player-deck `discardUntil` uses either `set` for an identity-set match or `kind`
+with an optional `trait`; when both kind and trait are supplied, both must match.
+`from: "yourDeck"` and `then: "addToHand"` retrieve the exact discarded physical
+card for the resolving player (or explicitly named `player`), including when the
+match was shuffled by the immediate empty-deck reset. The instruction stops at
+the original deck boundary. These vocabulary spellings are engine choices.
+Mixing an identity set with kind or trait, or supplying trait without kind, is
+rejected. This mechanism does not admit additional production cards.
+
+`grant` with `keyword: "hand_size_maximum"`, a positive constant amount and
+`card: "you"` expresses a total hand-size maximum from the current face's
+constant ability. This engine-chosen spelling applies after all additive
+modifiers; multiple maxima use the smallest. It is distinct from a limit on
+one ability's bonus. The maximum ends when its source's text is inactive.
+
+
 `handResourceForm: "hero"` is card-level metadata restricting the printed hand
 resource source to its owner's current hero form. The engine chooses this spelling;
 only `hero` is admitted, and the face must have a complete authored `abilities`
@@ -537,6 +553,20 @@ undefendedAttack until upgradesAndSupportsYouControl
 upgradesYouControl wasDefeated withStatus withTrait within withoutAnotherCopyAttached
 yourAsideMinion yourAsidePile yourAsideSideScheme
 ```
+
+### Identity form destinations
+
+The engine chooses `changeForm.to` spellings. `hero` and `alter-ego` name a
+form; `other-hero` names the other hero face when a hero face is active; and
+`{"face":"12001c"}` names an exact face of the changing physical identity.
+A current destination has no effect. A foreign face or a generic form with
+multiple possible destinations is unsupported and raises rather than choosing.
+Form-change effects do not consume the voluntary form-change receipt.
+
+Exact and other-hero destinations are currently admitted only as standalone
+instructions. A composed ability containing either raises during preflight:
+the existing dependent and repeated traces do not yet project an exact face or
+its traits. This boundary does not admit Ant-Man content.
 
 ## Generic selection and temporary identities
 
@@ -1790,7 +1820,7 @@ two threat, while the enemy activation's ally defeat does not satisfy it.
 
 `captureKangStageOneDefeat: "this"`, `splitKangStageTwo: "this"` and
 `createKangGameArea: "this"` are engine-chosen scenario instructions for Kang's
-nonpublic two-seat first split. They capture the actual own When Defeated event,
+nonpublic 1–4-player split. They capture the actual own When Defeated event,
 resolve central 2A, and create a selected 3A's local scheme/villain/deal through
 the retained phase-owned controller. Calling a reveal instruction without that
 controller raises. No production card rows or product admission are added by
@@ -1806,7 +1836,7 @@ production card row or scenario admission is added. See
 
 
 `revealKangStageThree: "this"` and `putKangNemesesIntoPlay: "this"` are
-engine-chosen scenario instructions for the nonpublic two-seat central reunion.
+engine-chosen scenario instructions for the nonpublic 1–4-player central reunion.
 The phase-owned 4A reveal waits for the final villain's entry and reveal before
 4B flips. The 4B instruction searches each associated physical nemesis in player
 order, schedules non-reveal encounter entry, then shuffles the encounter deck.
@@ -1824,3 +1854,13 @@ continuation. Storage permits only that out-of-play physical pair and refuses a
 4A host that has already entered play. Ordered 4A reveals retain stored physical
 incarnations across suspension. No production rows or public admission are added.
 See `content/kang-dominion-storage-evidence.md` for evidence and remaining limits.
+
+`upgradesOnThis` selects in-play cards of effective Upgrade kind attached to the
+source’s current incarnation. It excludes encounter Attachment cards and cards
+stored beneath the source. Its name is an engine choice; `rr:upgrade.3` and
+`rr:attach-to.1` distinguish attached upgrades from the Attachment card type.
+Projected selection follows projected host, entry and departure changes. The engine
+chooses ascending physical object-id order for this new selector in both live and
+projected evaluation. The printed condition requires existence, not attachment
+chronology; `last` therefore selects the greatest matching object id. Other
+queries retain their existing order.

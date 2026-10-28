@@ -29,6 +29,11 @@ internal static class AbilityResolutionImmediateEffects
         if (effect is AbilityEffect.Fixed { Instruction: AbilityFixedInstruction.CancelBoostAbility
             or AbilityFixedInstruction.CancelOccurrence })
             cast.CompletedOutcome = result.ResolveEffect ? AbilityStructuralOutcome.Full : AbilityStructuralOutcome.None;
+        if (effect is AbilityEffect.ChangeForm)
+        {
+            cast.PendingCompletion = result.Completion;
+            cast.CompletedOutcome = AbilityStructuralOutcome.None;
+        }
         if (result.ResolveEffect) cast.ResolveEffect();
     }
 
@@ -41,7 +46,7 @@ internal static class AbilityResolutionImmediateEffects
         if (declaredDefense) cast.CompletedOutcome = AbilityStructuralOutcome.Full;
         bool kang = effect is AbilityEffect.Fixed { Instruction: AbilityFixedInstruction.RevealKangStageThree
             or AbilityFixedInstruction.PutKangNemesesIntoPlay };
-        if (result.ProcedureScheduled && (declaredDefense || kang || effect is AbilityEffect.GainSurge))
+        if (result.ProcedureScheduled && (declaredDefense || kang || effect is AbilityEffect.GainSurge or AbilityEffect.ChangeForm))
             execution.SuspendAfterProcedure(effect, cast, owner, occurrence);
     }
 }

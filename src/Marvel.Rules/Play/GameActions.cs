@@ -27,13 +27,13 @@ internal static class GameActions
     /// </para>
     /// <para>
     /// <c>rr:form-change-form.3</c> is why this counter lives on the seat and
-    /// not inside <see cref="Forms.Change"/>: "if a card ability causes a player
+    /// not inside <see cref="Forms.Change(Seat, ICardFacts)"/>: "if a card ability causes a player
     /// to change forms, it does not count against the one voluntary form change
     /// the player is permitted". An ability calls the flip without touching the
     /// count, so the count belongs to the permission and not to the flip.
     /// </para>
     /// </remarks>
-    internal static Resolution ChangeFormNow(this Game game)
+    internal static Resolution ChangeFormNow(this Game game, Decision input)
     {
         var seat = game.world.Seats[game.Active];
         if (seat.FormChangedInRound == game.Round)
@@ -43,23 +43,14 @@ internal static class GameActions
                 + "rr:form-change-form.1 permits one voluntary change each round");
         }
 
-        string was = Forms.ChangeAndSchedule(game.world, seat, game.facts, game.Round);
-        seat.FormChangedInRound = game.Round;
-
-        var happened = new List<GameEvent>
-        {
-            new CardFormChanged(seat.IdentityCard.ObjectId, was, seat.IdentityCard.FaceId)
-            {
-                // The moment and the action, as every other event carries them.
-                // A client is told a card changed face and, without these, not
-                // why -- and `rr:player-turn.1` makes changing form one of the
-                // six things a turn offers rather than something that merely
-                // happens.
-                Trigger = TurnTrigger, Verb = ChangeForm,
-            },
-        };
-
-        return game.Turn(happened);
+        string destination = GameFormChanges.Destination(game, input)
+            ?? Forms.Destinations(seat, game.facts).Single();
+        var identity = seat.IdentityCard;
+        game.world.Agenda.Then(new PhaseStep(
+            new IdentityFormChangeOperation(identity.ObjectId, identity.Incarnation,
+                destination, TurnTrigger, new EffectCompletion(1, 1), Voluntary: true),
+            game.Round, 0, Index: seat.Index, Subject: identity.ObjectId, Seat: seat.Index));
+        return game.Turn([]);
     }
 
     /// <summary>
