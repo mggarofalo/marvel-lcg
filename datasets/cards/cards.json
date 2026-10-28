@@ -5,7 +5,7 @@
   "note": "Printed card text and stats, derived from the vendored MarvelSDB snapshot and from datasets/cards/supplement.json where MarvelSDB records nothing. Regenerate rather than edit: `-- check` fails the build on a hand edit.",
   "counts": {
     "cards": 4422,
-    "supplemented": 69,
+    "supplemented": 70,
     "engine_only": 44
   },
   "cards": [
@@ -82190,8 +82190,8 @@
         "RES": "R",
         "Unique": "1"
       },
-      "text": "<b>Hero Action</b>: Exhaust this card and deal 1 damage to Daredeveil → choose:\n• Choose any upgrade from the [[Sense]] deck and play it, ignoring its resource cost. <i>(Do not shuffle.)</i>\n• Ready Daredevil.",
-      "text_plain": "Hero Action: Exhaust this card and deal 1 damage to Daredeveil → choose:\n• Choose any upgrade from the Sense deck and play it, ignoring its resource cost. (Do not shuffle.)\n• Ready Daredevil.",
+      "text": "<b>Hero Action</b>: Exhaust this card and deal 1 damage to Daredevil → choose:\n• Choose any upgrade from the [[Sense]] deck and play it, ignoring its resource cost. <i>(Do not shuffle.)</i>\n• Ready Daredevil.",
+      "text_plain": "Hero Action: Exhaust this card and deal 1 damage to Daredevil → choose:\n• Choose any upgrade from the Sense deck and play it, ignoring its resource cost. (Do not shuffle.)\n• Ready Daredevil.",
       "pack": "fne",
       "set": "daredevil"
     },
