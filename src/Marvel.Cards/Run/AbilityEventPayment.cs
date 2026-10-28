@@ -25,6 +25,8 @@ internal sealed class AbilityEventPayment
     private readonly long total;
     private readonly string required;
     private readonly string paid;
+    private readonly CostOption? price;
+    private readonly ImmutableArray<ResourceAllocation> allocations;
     private ResourcePaymentReceipt? payment;
     private bool completed;
     internal long? Energy { get; private init; }
@@ -44,6 +46,8 @@ internal sealed class AbilityEventPayment
         total = quote.Total;
         required = quote.Required;
         paid = quote.Paid;
+        price = quote.Price;
+        allocations = quote.Allocations;
     }
 
     internal static AbilityEventPayment? Prepare(
@@ -87,10 +91,15 @@ internal sealed class AbilityEventPayment
             card, ability.Effect, sources.Generators, paying, assigned, generated, requirements);
 
         return new AbilityEventPayment(world, card, player, resourceAbilities, paying, sources,
-            new EventPaymentQuote(adjusted, requirements.Total, requirements.Required, paid)) { Energy = energy };
+            new EventPaymentQuote(adjusted, requirements.Total, requirements.Required, paid,
+                assigned.Length == 0 ? null : new CostOption(card.ObjectId,
+                    requirements.Total.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                    Sources: [.. sources.Generators], Components: [.. requirements.Components]),
+                [.. assigned])) { Energy = energy };
     }
 
-    private sealed record EventPaymentQuote(AdjustedCardCost Adjusted, long Total, string Required, string Paid);
+    private sealed record EventPaymentQuote(AdjustedCardCost Adjusted, long Total, string Required, string Paid,
+        CostOption? Price, ImmutableArray<ResourceAllocation> Allocations);
 
     private static string GeneratedResources(
         IReadOnlyList<ResourceSource> generators, IReadOnlyList<int> paying)
@@ -235,12 +244,12 @@ internal sealed class AbilityEventPayment
             Verb = CardPlay.Verb,
         });
 
-        payment = CardPlay.Spend(
-            world, world.Facts, resourceAbilities, hands, paying,
-            total,
-            required, card.ObjectId,
-            player, events, payingFor: card,
-            resourcePayers: resourcePayers);
+        payment = CardResourcePayments.Spend(world, resourceAbilities, new CardResourcePaymentRequest
+        {
+            Hands = hands, Paying = paying, Cost = total, Required = required, Itself = card.ObjectId,
+            Payer = player, PayingFor = card, ResourcePayers = resourcePayers,
+            Price = price, Allocations = allocations,
+        }, events);
     }
 
     private static string AllocatedResources(
