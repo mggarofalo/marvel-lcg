@@ -70,6 +70,10 @@ public class NoCardAbilities : ICardAbilities
         EffectiveCards.HasProfile(source) ? string.Empty : Resources.GeneratedBy(source.FaceId, world.Facts);
 
     /// <inheritdoc/>
+    public virtual ResourceSource QuoteHandResources(World world, Card source, Card? costOwner, ulong qualifyingComponents = 1) =>
+        new(source.ObjectId, ResourcesGeneratedBy(world, source, costOwner));
+
+    /// <inheritdoc/>
     public virtual DefenderChoice Defenders(
         World world, EnemyAttack attack, IReadOnlyList<Card> candidates) =>
         new(candidates, Required: false);

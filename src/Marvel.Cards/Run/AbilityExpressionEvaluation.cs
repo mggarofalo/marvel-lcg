@@ -260,14 +260,21 @@ internal sealed class AbilityExpressionEvaluation(
         var resources = resourceAbilities
             ?? throw new InvalidOperationException(
                 "canMakeTheCall requires the initiating resource capability");
-        return AlliesInPlayerDiscards(context.World).Any(ally => Resources.Pays(
-            string.Concat(MakeTheCallSources(
-                    context.World, context.Player, context.Source, ally,
-                    resources)
-                .Select(source => source.Generates)),
-            Resources.Cost(ally.FaceId, context.World.Facts, context.World.Players) ?? 0,
-            Resources.Required(context.World, ally, context.World.Facts)));
+        return AlliesInPlayerDiscards(context.World).Any(ally =>
+            MakeTheCallAffordable(context.World, ally, MakeTheCallSources(
+                context.World, context.Player, context.Source, ally, resources)));
     }
+
+    internal static CostOption MakeTheCallPrice(World world, Card ally, IReadOnlyList<ResourceSource> sources) =>
+        new(ally.ObjectId,
+            (Resources.Cost(ally.FaceId, world.Facts, world.Players) ?? 0)
+                .ToString(System.Globalization.CultureInfo.InvariantCulture),
+            Resources.Required(world, ally, world.Facts) is { Length: > 0 } rule ? [rule] : null,
+            Sources: sources);
+
+    internal static bool MakeTheCallAffordable(World world, Card ally, IReadOnlyList<ResourceSource> sources) =>
+        ResourcePayment.Allocate(MakeTheCallPrice(world, ally, sources),
+            sources.Select(source => source.Effect).ToArray()) is not null;
 
     internal static IReadOnlyList<ResourceSource> MakeTheCallSources(
         World world, int player, Card source, Card ally,

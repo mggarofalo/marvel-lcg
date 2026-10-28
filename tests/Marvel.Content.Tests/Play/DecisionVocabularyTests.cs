@@ -56,7 +56,8 @@ public sealed class DecisionVocabularyTests
         Assert.Equal("B", cost.PreferredResourceTypes);
         Assert.Contains(cost.Generators,
             source => source.Effect == powerOfJustice!.ObjectId
-                && source.Generates == "GG");
+                && source.Generates == "G"
+                && source.ConditionalBonus == new ConditionalResourceBonus("G", 1));
     }
 
     [Fact]

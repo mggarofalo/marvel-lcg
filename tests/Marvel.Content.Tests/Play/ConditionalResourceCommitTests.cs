@@ -83,7 +83,7 @@ public sealed class ConditionalResourceCommitTests
     private sealed class MutableHandQuote : NoCardAbilities, IResourceCardAbilities
     {
         public bool Conditional { get; set; }
-        public ResourceSource QuoteHandResources(World world, Card source, Card? owner, ulong qualifyingComponents = 1) =>
+        public override ResourceSource QuoteHandResources(World world, Card source, Card? owner, ulong qualifyingComponents = 1) =>
             new(source.ObjectId, "G")
             { ConditionalBonus = Conditional ? new("G", qualifyingComponents) : null };
     }
