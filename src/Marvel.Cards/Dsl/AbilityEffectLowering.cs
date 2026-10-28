@@ -29,6 +29,7 @@ internal static class AbilityEffectLowering
             "resolveInvocation" => AbilityInvocationLowering.Resolve(argument, child),
             "returnInvocation" => AbilityInvocationLowering.Return(argument, child),
             "attackAnotherEnemy" => AbilityStagedAttackLowering.Lower(argument, child),
+            "attackAnyEnemy" => AbilityStagedAttackLowering.Lower(argument, child, anyEnemy: true),
             "boostBasicUse" => argument is AbilityValue.Word { Value: "overkill" }
                 ? new AbilityEffect.BoostBasicUse(0, Overkill: true)
                 : argument is AbilityValue.Word { Value: "exhaustedAllyPower" }

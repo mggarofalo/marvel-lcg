@@ -24,7 +24,8 @@ internal static class AbilityStagedAttack
         if (power.Kind != BasicPowers.AttackVerb)
             throw new RulesNotImplementedException("attackAnotherEnemy requires an attack");
         return BasicPowers.Attackable(cast.World, cast.World.Facts, cast.AbilityPlayer)
-            .Where(card => (!power.ExcludedEnemyStages.Contains(card.ObjectId)
+            .Where(card => (AbilityStagedAttackLowering.IsSplashBody(power.Decoded.Body)
+                    || !power.ExcludedEnemyStages.Contains(card.ObjectId)
                     || (!CardKinds.IsVillain(EffectiveCards.Kind(card, cast.World.Facts))
                         && card.Incarnation != power.FirstEnemyIncarnation))
                 && AbilityProgramQueries.CanTakeDamage(cast.World, program, card, cast.Source)).ToArray();
@@ -44,7 +45,7 @@ internal static class AbilityStagedAttack
 
     internal static Prompt Describe(AbilityResolutionState cast, AbilityEffect.AttackAnotherEnemy effect,
         AbilityProgram program) => new(cast.AbilityPlayer, Question.Element,
-            TimingPriority.Untimed, Steps.TurnAction, $"{cast.Source.FaceId}: choose another enemy", false,
+            TimingPriority.Untimed, Steps.TurnAction, $"{cast.Source.FaceId}: choose {(effect.AnyEnemy ? "an" : "another")} enemy", false,
             OfferedCandidates(cast, program).Select(card => new Affordance(card.ObjectId,
                 AbilityStructuralExecution.ChooseVerb, card.ObjectId, card.Owner, card.FaceId)
             {
@@ -52,8 +53,8 @@ internal static class AbilityStagedAttack
                 CommitLabel = "Deal attack damage",
             }).ToArray())
         {
-            DisplayQuestion = "Choose another enemy",
-            Description = $"Deal {effect.Amount} attack damage before modifiers to another enemy.",
+            DisplayQuestion = effect.AnyEnemy ? "Choose an enemy" : "Choose another enemy",
+            Description = $"Deal {effect.Amount} attack damage before modifiers to {(effect.AnyEnemy ? "an" : "another")} enemy.",
             ContextCardIds = [cast.Source.ObjectId],
         };
 

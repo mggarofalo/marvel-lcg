@@ -107,6 +107,14 @@ a departed and reentered minion is a new copy. Both sentences retain one attack
 context and consume a whole-attack modifier once. Arbitrary choice-inside-power
 shapes remain unsupported. This spelling is an engine choice for Melee.
 
+`attackAnyEnemy: { "amount": <positive constant> }` is the second sentence
+of a targetless attack whose first sentence deals simultaneous constant attack
+damage to every minion. The second selection is made against the settled live
+board and may name a surviving first-sentence recipient. Both sentences share
+one attack and its response and retaliation facts. This engine-chosen spelling
+is restricted to that exact two-sentence shape; other targetless attack bodies
+and arbitrary suspended choices remain unsupported.
+
 `forEachDiscarded` uses the `eachTime` fields (`effect`, `when`, `then`) for an
 encounter-deck `discardTop`, but finishes that discard before traversing its own
 ordered physical receipt. `that` binds each discarded card, including after an
