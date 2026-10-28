@@ -17,11 +17,17 @@ public sealed class KangElimination
     internal static void Preflight(World world, int player)
     {
         var source = world.GameAreaOf(PlayArea.Of(player));
-        if (source is not null && world.Cards.Any(card => KangLocalCompletion.IsLocal(card)
-            && card.Area.Type == DeckType.MainSchemesArea
-            && ReferenceEquals(Places.GameAreaOf(world, card), source))
-            && world.Agenda.Outstanding.Any(step => step.Operation is KangJoinOperation or KangDepartureOrderOperation))
+        // Engine boundary: the suspended batch owns its captured sources and
+        // possible destinations even after its local schemes and Pending entries leave.
+        if (source is not null && world.Agenda.Outstanding.Any(step => step.Operation switch
+        {
+            KangJoinOperation join => world.Agenda.IsOutstanding(join.Owner, join.Origin),
+            KangDepartureOrderOperation order => world.Agenda.IsOutstanding(order.Owner, order.Origin),
+            _ => false,
+        }))
             throw new RulesNotImplementedException("Kang local elimination during a suspended departure choice is not implemented");
+        KangPhaseTransitions.RequireGroups(world.Agenda.KangTransitions.Pending
+            .Where(item => ReferenceEquals(item.Source, source)));
     }
 
     internal GameArea? Capture(World world, int player)

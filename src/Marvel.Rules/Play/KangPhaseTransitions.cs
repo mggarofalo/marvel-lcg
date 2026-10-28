@@ -11,13 +11,14 @@ public sealed class KangPhaseTransitions
 
     internal KangElimination Elimination { get; } = new();
 
-    internal void PlayerDeparted(World world, GameArea source)
+    internal void PlayerDeparted(World world, GameArea source, int player)
     {
         for (int index = 0; index < pending.Count; index++)
             if (ReferenceEquals(pending[index].Source, source))
                 pending[index] = pending[index] with
                 {
-                    Group = Array.AsReadOnly(source.PlayAreas.OrderBy(area => area.Player).ToArray()),
+                    // Only the engine-eliminated member leaves the validated capture.
+                    Group = Array.AsReadOnly(pending[index].Group.Where(area => area != PlayArea.Of(player)).ToArray()),
                 };
         var scheme = world.Cards.SingleOrDefault(card => KangLocalCompletion.IsLocal(card)
             && card.Area.Type == DeckType.MainSchemesArea

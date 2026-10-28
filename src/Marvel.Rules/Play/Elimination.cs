@@ -143,7 +143,7 @@ public static class Elimination
         {
             world.Finish(Outcome.PlayersLose, PlayerLossReason.AllPlayersEliminated);
         }
-        else if (kangArea is not null) world.Agenda.KangTransitions.PlayerDeparted(world, kangArea);
+        else if (kangArea is not null) world.Agenda.KangTransitions.PlayerDeparted(world, kangArea, player);
     }
 
     /// <summary>

@@ -188,13 +188,70 @@ public sealed class KangLocalEliminationTests : CoreCardTestBase
         KangPlayerCountFixture.Defeat(world, Local(world, 0, DeckType.VillainArea), events);
         var source = world.GameAreaOf(PlayArea.Of(0))!;
         world.Join(PlayArea.Of(2), source, "uncontrolled topology change", events);
-        Elimination.Eliminate(world, Cards, 0, "actual player elimination", events);
+        string before = KangPlayerCountFixture.Snapshot(world, events);
+        var captured = Assert.Single(world.Agenda.KangTransitions.Pending);
+        Assert.Throws<RulesNotImplementedException>(() =>
+            Elimination.Eliminate(world, Cards, 0, "actual player elimination", events));
+        Assert.Equal(before, KangPlayerCountFixture.Snapshot(world, events));
+        Assert.Same(captured, Assert.Single(world.Agenda.KangTransitions.Pending));
+        Assert.False(world.Seats[0].Eliminated);
         KangPlayerCountFixture.Boundary(world, 2, events);
         Assert.Throws<RulesNotImplementedException>(() => Sequence.Work(world, Cards, world.Abilities, events));
     }
 
     private static Card Local(World world, int player, DeckType type) =>
         Assert.Single(world.AreaOf(type, PlayArea.Of(player)).Cards);
+
+    [Fact]
+    public void SuspendedDepartureOrderingRejectsEliminationOfSourcesAndDestination()
+    {
+        // Engine boundary: the retained batch owns both sources and possible destinations.
+        var (world, events) = Split(3, false);
+        KangPlayerCountFixture.Defeat(world, Local(world, 0, DeckType.VillainArea), events);
+        KangPlayerCountFixture.Defeat(world, Local(world, 1, DeckType.VillainArea), events);
+        KangPlayerCountFixture.Boundary(world, 2, events);
+        var prompt = Assert.IsType<Prompt>(Sequence.Work(world, Cards, world.Abilities, events));
+        Assert.Equal(KangDepartureOrderOperation.Order, prompt.Trigger);
+        var outstanding = world.Agenda.Outstanding.ToArray();
+        string before = KangPlayerCountFixture.Snapshot(world, events);
+        for (int player = 0; player < 3; player++)
+        {
+            var error = Assert.Throws<RulesNotImplementedException>(() =>
+                Elimination.Eliminate(world, Cards, player, "suspended departure ordering", events));
+            Assert.Contains("suspended departure choice", error.Message);
+            Assert.False(world.Seats[player].Eliminated);
+        }
+        Assert.Equal(before, KangPlayerCountFixture.Snapshot(world, events));
+        Assert.Equal(outstanding, world.Agenda.Outstanding);
+    }
+
+    [Fact]
+    public void RepeatedValidEliminationsRemoveOnlyTheirCapturedMembers()
+    {
+        // Engine-managed elimination shrinks an unchanged capture one member at a time.
+        var (world, events) = Split(3, false);
+        var source = world.GameAreaOf(PlayArea.Of(0))!;
+        KangPlayerCountFixture.Defeat(world, Local(world, 1, DeckType.VillainArea), events);
+        KangPlayerCountFixture.Boundary(world, 2, events);
+        var firstJoin = Assert.IsType<Prompt>(Sequence.Work(world, Cards, world.Abilities, events));
+        Sequence.Answer(world, Cards, world.Abilities, firstJoin, Decision.Take(source.Id), events);
+        Sequence.Finish(world, Cards, world.Abilities, events);
+        KangPlayerCountFixture.Defeat(world, Local(world, 0, DeckType.VillainArea), events);
+        Assert.Equal(2, Assert.Single(world.Agenda.KangTransitions.Pending).Group.Count);
+
+        Eliminate(world, 0, events);
+        Assert.Equal(PlayArea.Of(1), Assert.Single(Assert.Single(world.Agenda.KangTransitions.Pending).Group));
+        Eliminate(world, 1, events);
+        Assert.Empty(Assert.Single(world.Agenda.KangTransitions.Pending).Group);
+        KangPlayerCountFixture.Boundary(world, 3, events);
+        var prompt = Assert.IsType<Prompt>(Sequence.Work(world, Cards, world.Abilities, events));
+        Sequence.Answer(world, Cards, world.Abilities, prompt,
+            Decision.Take(Assert.Single(prompt.Affordances).Id), events);
+        Sequence.Finish(world, Cards, world.Abilities, events);
+        Assert.Empty(world.Agenda.Outstanding);
+        Assert.Empty(world.Agenda.KangTransitions.Pending);
+        Assert.Equal(Outcome.Unfinished, world.Result);
+    }
 
     private static void Eliminate(World world, int player, List<GameEvent> events)
     {
