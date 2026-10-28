@@ -47,3 +47,31 @@ distinct retained source during suspension.
 Complete Kang, eliminated players, competing delayed effects, public session or
 replay, native interaction, Linux, and broad managed gates remain outside this
 review. A test result does not establish product readiness.
+
+## Closure review of repair `64dc045f198d2d05074a421c51ca579cdaa5ca22`
+
+**Verdict: the retained-group finding above is closed for this bounded
+capability.** The original rejection remains the record of the reviewed source.
+The repair checks every retained capture before an order or join choice commits,
+before completed local cards are removed, and before scheduling. The join path
+validates again before producing a prompt or moving the selected group. After a
+managed join, only the capture at that destination is extended and the updated
+batch is validated, preserving the permitted whole-group continuation.
+
+The imported regression matches the original external probe after normalizing
+line endings. The raw working-tree hashes differ because this Windows checkout
+uses CRLF; the source evidence's unqualified identical-SHA256 statement does not
+hold for those working-tree bytes. The regression now refuses the unique discard
+with state, topology, events, agenda and RNG unchanged. Three additional
+synthetic cases cover a different retained source during destination selection,
+and work before a unique prompt or a physical join. Existing actual-card
+multi-group cases exercise managed rebase and central reunion.
+
+An independent Windows Release build and `FullyQualifiedName~Kang` run passed
+152/152 at the repaired source; log:
+`C:/Users/mggar/Source/evidence/kang-retained-independent-built-closure.log`.
+The preceding `--no-build` attempt used a stale 148-test assembly and is not
+closure evidence. The source-author selected-only mutant failed all four retained
+cases, followed by restored 152/152; its logs are linked in the repair evidence.
+No additional control was needed for the identified boundary. The scope and
+unverified product, platform and other timing boundaries above remain unchanged.
