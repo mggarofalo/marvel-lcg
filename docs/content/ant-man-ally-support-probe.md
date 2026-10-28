@@ -1,3 +1,8 @@
+> Historical diagnostic: the initial failing probe used the production ability book.
+> The prerequisite branch replaces that one probe's runner with a **synthetic**
+> self-exclusion constant; this does not constitute a production Stinger row or
+> a passing test result. See `AllyLimitExclusionTests` for the candidate coverage.
+
 # Ant-Man ally and support composition probe
 
 Baseline: `3f622aee8a69e29d3325a3a09c804d08caa00ac9`. Research-only synthetic boards with canonical printed cards; no pack admission. The focused probe was compiled and run on this baseline; it intentionally fails and is not green integration evidence.
@@ -22,3 +27,26 @@ For Exercise, `withTrait` accepts a fixed trait and queries current traits, but 
 
 On baseline `3f622aee`, with `MSBUILDDISABLENODEREUSE=1`, `dotnet test tests/Marvel.Content.Tests/Marvel.Content.Tests.csproj -c Release -m:1 --filter FullyQualifiedName~AntAllySupportProbeTests --logger 'console;verbosity=normal'` restored and compiled successfully, then returned exit 1: three cases, two passed, one failed. Stinger (12014) reached the ally area and four-card area count before the final assertion, which observed a limit choice contrary to the printed exclusion. Blade (21019), a printed cost-1 ally, passed the same entry test with a mandatory choice; the Thor/Odinson restriction case passed. Full log: `C:/Users/mggar/Source/ant-ally-support-probe-test.log`. Canonical catalog confirms all initial occupants 01067, 01068 and 01041 are allies, 01003 is a zero-cost event with a resource icon in hand, and both candidate allies cost 1. The fixture uses actual cards in legal hand and ally areas, though it is a synthetic board rather than a played game. No other interaction above is established by this run.
 
+
+## Exclusion prerequisite candidate
+
+The synthetic constant excludes Stinger from the count, not from the mandatory
+choice. RR 1.8 `rr:ally-limit` says to choose controlled ally cards until the
+count is legal; neither that rule nor Stinger's printed text limits the choice
+to counted allies. Choosing Stinger can therefore leave another discard due.
+No Stinger-specific contrary ruling was identified. Fixtures use printed allies
+in ally areas, a printed cost-1 Blade control, and a printed resource-bearing
+event in hand; they are prepared boards, not pack admission. The live blank
+fixture injects a synthetic lasting blank because the supported player action
+only blanks nonpermanent minions. Set-value ally-limit modifiers are not
+implemented by the current value evaluator; additive modifiers are covered.
+
+Before the final Game-path test was added, the restored, non-incrementally
+rebuilt candidate passed 97 Content tests and 76 Rules tests. Three separately
+compiled mutants were detected: counting the excluded ally, omitting settlement
+on starting a limit reduction, and omitting settlement on expiration of a limit
+increase. The ordinary Blade control passed under the counting mutant. Logs are
+under `C:/Users/mggar/stinger-*.log`, outside the source tree. The Game-path
+Stinger/Blade theory passed separately after correcting its fixture's required
+identity target. Expiration occurring within a suspended ally entry before its
+entry response remains untested; independent review and integration gates remain.

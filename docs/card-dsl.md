@@ -5,6 +5,15 @@ forced and optional attack-end responses and is zero without a completed attack.
 
 # The card DSL
 
+`grant` with `card: "this"` and `keyword: "ally_limit_excluded"` expresses
+an unconditional standalone constant excluding that ally from its controller's
+ally-limit count. The mandatory choice still includes every controlled ally. This spelling is an engine choice;
+it does not increase the player's limit. It is admitted only as a standalone
+constant on the source, with the default amount of one. The live source and
+controller are read at each check. This prerequisite does not author Stinger or
+admit the Ant-Man product.
+
+
 `playersWin: "game"` ends the game with a player victory. The spelling is an engine choice; Kang III uses it in its When Defeated ability. The terminal result abandons remaining ability text and agenda work, including suspended continuations. A direct `playersWin` option in `choose` remains unsupported: partial-resolution admission raises before offering the prompt.
 
 Player-deck `discardUntil` uses either `set` for an identity-set match or `kind`

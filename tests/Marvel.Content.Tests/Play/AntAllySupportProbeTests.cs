@@ -1,4 +1,6 @@
 using Marvel.Content.Tests.Cards;
+using Marvel.Cards.Dsl;
+using Marvel.Cards.Run;
 using Marvel.Rules.Play;
 using Marvel.Rules.State;
 using Marvel.Rules.Timing;
@@ -39,7 +41,14 @@ public sealed class AntAllySupportProbeTests
         // The excess choice happens "before abilities that resolve upon entering play".
         // A constant ability becomes active "as soon as its card enters play".
         var world = ThorActualFixture.Board("06001a");
-        var runner = AuthoredCards.Runner();
+        // Synthetic interpretation of Stinger's printed exclusion; not an authored row.
+        var runner = new AbilityRunner(AbilityCatalog.Parse("""
+            {"cards":[{"card":"12014","abilities":[{
+              "trigger":{"timing":"Constant"},
+              "effect":{"grant":{"card":"this","keyword":"ally_limit_excluded"}}
+            }]}]}
+            """));
+        world.Abilities = runner;
         var seat = world.Seats[0];
         var area = world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0);
         world.CreateCard("01067", area);

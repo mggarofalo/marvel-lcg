@@ -14,7 +14,7 @@ internal static class PlayerLimitProcedure
         var allies = ControlledAllies(world, player);
         long limit = StateFields.Modified(
             world, world.Seats[player].IdentityCard, "ally_limit", facts, world.Players);
-        if (allies.Count <= limit)
+        if (CountedAllies(world, player).Count <= limit)
         {
             throw new InvalidOperationException(
                 $"player {player} no longer exceeds their ally limit");
@@ -46,7 +46,7 @@ internal static class PlayerLimitProcedure
 
         long limit = StateFields.Modified(
             world, world.Seats[player].IdentityCard, "ally_limit", facts, world.Players);
-        if (ControlledAllies(world, player).Count > limit)
+        if (CountedAllies(world, player).Count > limit)
         {
             world.Agenda.Then(new PhaseStep(
                 new PlayerLimitOperation(PlayerLimitKind.ChooseAllyForLimit),
@@ -56,6 +56,13 @@ internal static class PlayerLimitProcedure
                 Plan: true
             ));
         }
+    }
+
+    internal static List<Card> CountedAllies(World world, int player)
+    {
+        var effects = world.Effects.Active();
+        return [.. ControlledAllies(world, player).Where(card => !effects.Any(effect =>
+            effect.Kind == AllyLimitExclusion.Modifier && effect.AppliesTo(world, card)))];
     }
 
     private static List<Card> ControlledAllies(World world, int player) =>

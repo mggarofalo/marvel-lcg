@@ -39,6 +39,7 @@ internal static class AbilityBookLowering
         };
         AbilityProfileReferences.Validate(book, program.Profiles);
         AbilityPrintedTextLowering.Validate(program);
+        AbilityAllyLimitExclusionLowering.Validate(program);
         return program;
     }
 
