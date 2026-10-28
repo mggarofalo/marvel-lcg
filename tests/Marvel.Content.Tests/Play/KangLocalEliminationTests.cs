@@ -166,6 +166,33 @@ public sealed class KangLocalEliminationTests : CoreCardTestBase
         Assert.Equal(Outcome.Unfinished, world.Result);
     }
 
+    [Fact]
+    public void EliminatingDepartingPlayerDuringSuspendedJoinRejectsBeforeMutation()
+    {
+        var (world, events) = Split(2, false);
+        KangPlayerCountFixture.Defeat(world, Local(world, 0, DeckType.VillainArea), events);
+        KangPlayerCountFixture.Boundary(world, 2, events);
+        var prompt = Assert.IsType<Prompt>(Sequence.Work(world, Cards, world.Abilities, events));
+        string before = KangPlayerCountFixture.Snapshot(world, events);
+        var error = Assert.Throws<RulesNotImplementedException>(() =>
+            Elimination.Eliminate(world, Cards, 0, "suspended departing player", events));
+        Assert.Contains("suspended departure choice", error.Message);
+        Assert.Equal(before, KangPlayerCountFixture.Snapshot(world, events));
+        Assert.False(world.Seats[0].Eliminated);
+    }
+
+    [Fact]
+    public void EliminationMustNotRebaseUnrelatedChangesToCapturedGroup()
+    {
+        var (world, events) = Split(3, false);
+        KangPlayerCountFixture.Defeat(world, Local(world, 0, DeckType.VillainArea), events);
+        var source = world.GameAreaOf(PlayArea.Of(0))!;
+        world.Join(PlayArea.Of(2), source, "uncontrolled topology change", events);
+        Elimination.Eliminate(world, Cards, 0, "actual player elimination", events);
+        KangPlayerCountFixture.Boundary(world, 2, events);
+        Assert.Throws<RulesNotImplementedException>(() => Sequence.Work(world, Cards, world.Abilities, events));
+    }
+
     private static Card Local(World world, int player, DeckType type) =>
         Assert.Single(world.AreaOf(type, PlayArea.Of(player)).Cards);
 
