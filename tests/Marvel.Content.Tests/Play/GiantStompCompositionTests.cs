@@ -46,7 +46,7 @@ public sealed class GiantStompCompositionTests
         // the supported fixed-target control. Payment cannot explain refusal.
         world.Abilities = Runner(FixedDamage);
         Assert.Contains(((AbilityRunner)world.Abilities).Actions(world, 0), action => action.Card == source.ObjectId);
-        Assert.DoesNotContain("12003", AuthoredCards.Book.Authored);
+        Assert.Contains("12003", AuthoredCards.Book.Authored);
     }
 
     [Rule("rr:attack-player-ability-type.2.1")]
@@ -170,7 +170,9 @@ public sealed class GiantStompCompositionTests
         rows.Remove(rows.Single(row => row!["card"]!.GetValue<string>() == "01093"));
         if (interrupt) rows.Remove(rows.Single(row => row!["card"]!.GetValue<string>() == "01091"));
         string target = targetless ? "" : "\"target\":{\"query\":\"villain\"},";
-        root["cards"]!.AsArray().Add(JsonNode.Parse($$$$"""
+        bool actual = targetless && tail == """{"attackAnyEnemy":{"amount":8}}""";
+        if (!actual) rows.Remove(rows.Single(row => row!["card"]!.GetValue<string>() == "12003"));
+        if (!actual) root["cards"]!.AsArray().Add(JsonNode.Parse($$$$"""
             {"card":"12003","abilities":[{
               "trigger":{"event":"WhenActionTriggered","timing":"Action","subject":"this","form":"hero"},
               "when":{"hasTrait":{"card":"you","trait":"GIANT"}},

@@ -26,14 +26,16 @@ The existing Content Expansion module defines these **11 planning waves**. Range
 ## Current integration checkpoint
 
 The active Ant-Man/Kang candidate is recorded in
-[the cycle checkpoint](roars-cycle-integration.md). It has 23 independently
-reviewed Ant-Man faces out of 35, with 746 total authored rows, and reviewed Kang
+[the cycle checkpoint](roars-cycle-integration.md). It has 25 independently
+reviewed Ant-Man faces out of 35, with 748 total authored rows, and reviewed Kang
 engine foundations. Neither pack is publicly admitted. Giant Stomp's live-choice
 capability is independently accepted at `38ce4bca` and integrated at `78b62715`,
 including the shared simultaneous attack-defeat repair and corrected View wording.
 Swarm Tactics' form-change/ready prerequisite is independently accepted at
 `a7973b01`; the separate event Team-Up check is accepted at `1c21233a`.
-Both cards still need production rows and content review. MARVEL-870 owns the
+Actual Giant Stomp and Swarm Tactics rows are independently accepted at `62eac154`.
+MARVEL-878 now owns the confirmed Power resource generation gap; spent-card
+response and Hank entry/overpayment mechanisms remain pending. MARVEL-870 owns the
 final replay publication boundary, and final combined verification remains open.
 
 Fear No Evil's printed catalog is published in PR #465, merged as `0dbd5824`

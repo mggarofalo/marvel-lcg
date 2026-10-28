@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using Marvel.Cards.Dsl;
 using Marvel.Cards.Run;
 using Marvel.Content.Tests.Cards;
@@ -10,7 +11,7 @@ using Xunit;
 
 namespace Marvel.Content.Tests.Play;
 
-// Printed cards on a nonpublic research board; the event effects are synthetic.
+// Actual action row and synthetic window/control effects on a nonpublic research board.
 public sealed class TeamUpEventAdmissionTests
 {
     private static readonly CardCatalog Cards = CardCatalog.Parse(
@@ -208,13 +209,21 @@ public sealed class TeamUpEventAdmissionTests
         string effect = timing == "Action"
             ? """{"seq":[{"changeForm":{"player":"you","to":"other-hero"}},{"draw":{"player":"you","count":1}}]}"""
             : """{"draw":{"player":"you","count":1}}""";
-        return new AbilityRunner(AbilityCatalog.Parse($$"""
+        var root = JsonNode.Parse($$"""
             {"cards":[
               {"card":"12020","abilities":[{"trigger":{"event":"{{trigger}}","timing":"{{timing}}","subject":"{{subject}}"},"effect":{{effect}}}]},
               {"card":"01004","abilities":[{"trigger":{"event":"{{trigger}}","timing":"{{timing}}","subject":"{{subject}}"},"effect":{{effect}}}]}
               {{(storage ? ", {\"card\":\"01006\",\"abilities\":[{\"trigger\":{\"timing\":\"Constant\",\"subject\":\"this\"},\"effect\":{\"allowPlayBeneath\":{\"kind\":\"Event\",\"trait\":\"TACTIC\"}}}]}" : "")}}
             ]}
-            """));
+            """)!;
+        if (timing == "Action")
+        {
+            var rows = root["cards"]!.AsArray();
+            rows.RemoveAt(0);
+            rows.Add(JsonNode.Parse(AuthoredCards.Text)!["cards"]!.AsArray()
+                .Single(row => row!["card"]!.GetValue<string>() == "12020")!.DeepClone());
+        }
+        return new AbilityRunner(AbilityCatalog.Parse(root.ToJsonString()));
     }
 
     private static (World World, Card Source, Card Payment, Card? Wasp) Board(

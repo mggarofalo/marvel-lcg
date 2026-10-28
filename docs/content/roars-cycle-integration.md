@@ -3,7 +3,7 @@
 The canonical delivery records are MARVEL-568 (Kang) and MARVEL-569 (Ant-Man),
 within MARVEL-703. This candidate combines reviewed engine prerequisites; neither
 pack has complete executable content or public admission. The production book
-contains 746 rows, including 23 of Ant-Man's 35 faces and no Kang faces.
+contains 748 rows, including 25 of Ant-Man's 35 faces and no Kang faces.
 
 The integrated sources are Kang `07fd360d`, Ant-Man `f6357d29`, the independently
 strengthened baseline fixture repair `3a7bb2ec`, and the Resize projection closure
@@ -103,7 +103,7 @@ boundaries under MARVEL-875: nested live choice inside one attack is refused,
 and a splash followed by fixed villain damage omits that villain's per-enemy
 attack-end response. A damage/completion control is not full attack correctness.
 Recipient facts and the live-choice continuation have since been repaired and
-independently reviewed below. Author and review the actual card after integration.
+independently reviewed below, followed by the actual-card packet.
 Complete
 remaining Ant-Man and Kang content, setup,
 publication/replay boundary MARVEL-870, public journeys and relevant native/UI
@@ -158,9 +158,9 @@ The reviewer adds stale-incarnation rejection and retry evidence, and accepts
 the targetless attack description correction `2fa6b3d4`. Restored independent
 verification passes 57 affected Content and 66 View checks; normal hooks pass.
 See [the exact review and limits](giant-stomp-live-choice-review.md).
-Card `12003` still needs its production row and content review. Swarm's separate
-form/ready and Team-Up prerequisites are recorded below. Neither
-new capability changes the current 23-face Ant-Man inventory or public admission.
+The actual `12003` row follows in the content packet below. Swarm's separate
+form/ready and Team-Up prerequisites are recorded below. These engine packets
+retain the 23-face inventory preceding that content packet and add no public admission.
 
 The Giant Stomp integration `78b62715` passes 90 selected Giant Stomp, Melee,
 counted-attack and ability-data checks and normal commit hooks. The focused log is
@@ -178,7 +178,7 @@ stored-event action/interrupt eligibility. Restored review passes 50 affected
 Content and 69 normal card-play checks, with a distinguishing compiled stored-zone
 mutant and normal hooks. [The record](team-up-event-admission-evidence.md) covers
 the captured-offer rejection and in-play-trigger boundaries. These sources are
-combined for full Content and Rules verification; actual `12020` remains unauthored.
+combined for full Content and Rules verification before the actual `12020` row.
 
 The combined staged tree `33bba469c53c6944f75c1a46e7edfac22d135085` completes
 Content with 8,640 passes and one failure, and Rules with all 1,193 passing,
@@ -196,3 +196,22 @@ form/projection, Giant Stomp and ability-data tests pass in
 also inspected the fixture-only change and found no weakened assertion or
 production defect: the former refusal no longer applies to this supported shape,
 and the retained draw control distinguishes both final face and readiness.
+
+Actual-card source `6a10f07a`, independently accepted at `62eac154`, adds Giant
+Stomp `12003` and Swarm Tactics `12020`. The previous 746 ability objects and
+their 755,307-byte prefix are unchanged; the book now has 748 rows and 25 Ant-Man
+faces. Tests use the actual rows for live-choice, form/response and Team-Up action
+behavior; unrelated synthetic variants remain explicitly replaced and labeled.
+Source restored verification passes 192 selected checks after distinguishing both
+row mutations. Independent review passes 104 Content/data and 12 server catalog
+and admission cases, including both transports' exclusion of these incomplete-pack
+cards. Compiled catalog-leak controls distinguish that exclusion.
+See [the content review](ant-man-giant-swarm-independent-review.md).
+The remaining Ant-Man faces are `12006`, `12011`, `12014`, `12024`, and
+`12025` through `12030`. Resource generation prerequisite MARVEL-878 is confirmed
+by a separate diagnostic; spent-card responses and Hank's entry receipt still
+need their own implementation and proof. No public pack admission is added here.
+The merged two-row candidate passes all 192 selected Content/data checks in
+`roars-25-faces-focused.log`; its tested staged tree is recorded in
+`roars-25-faces-tested-tree.txt`. Final complete verification remains scheduled
+after the remaining content and shared engine work is integrated.

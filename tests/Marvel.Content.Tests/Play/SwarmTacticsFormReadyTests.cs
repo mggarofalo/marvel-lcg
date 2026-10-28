@@ -15,9 +15,33 @@ namespace Marvel.Content.Tests.Play;
 // Printed 12020 and response rows on a nonpublic research board.
 public sealed class SwarmTacticsFormReadyTests
 {
-    private const string Effect = """{"seq":[{"changeForm":{"player":"you","to":"other-hero"}},{"ready":"yourHero"}]}""";
     private static readonly CardCatalog Cards = CardCatalog.Parse(
         File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")));
+
+    [Theory]
+    [InlineData("12001a", "12001c")]
+    [InlineData("12001c", "12001a")]
+    [Rule("rr:ability.4")]
+    public void FullAuthoredBookChangesFormThenReadies(string from, string to)
+    {
+        // Resolve the ability "one sentence at a time".
+        var runner = AuthoredCards.Runner();
+        var (world, source, payment, _) = Board(runner, from);
+        var hero = world.Seats[1].IdentityCard;
+        hero.Exhaust();
+        var game = Game.Begin(world, Cards, runner);
+        for (int i = 0; i < 2; i++)
+            game.Resolve(Decision.Take(Assert.Single(game.Pending!.Affordances,
+                a => a.Verb == Game.ResolveMulligans).Id));
+        var offer = Assert.Single(game.PromptFor(1)!.Affordances, a => a.AnchorId == source.ObjectId);
+        game.Resolve(PaidDecision.Take(offer, [payment.ObjectId]));
+        Assert.Equal(to, hero.FaceId);
+        Assert.False(hero.Ready);
+        game.Resolve(Decision.Decline);
+        Assert.True(hero.Ready);
+        Assert.Equal(DeckType.DiscardPile, source.Area.Type);
+        Assert.Equal(DeckType.DiscardPile, payment.Area.Type);
+    }
 
     [Theory]
     [InlineData("12001a", "12001c", false)]
@@ -208,12 +232,9 @@ public sealed class SwarmTacticsFormReadyTests
     }
     private static AbilityRunner Runner(bool responses = false)
     {
-        var root = JsonNode.Parse($$"""
-            {"cards":[{"card":"12020","abilities":[{
-              "trigger":{"event":"WhenActionTriggered","timing":"Action","subject":"this","form":"hero"},
-              "effect":{{Effect}}
-            }]}]}
-            """)!;
+        var root = JsonNode.Parse("""{"cards":[]}""")!;
+        root["cards"]!.AsArray().Add(JsonNode.Parse(AuthoredCards.Text)!["cards"]!.AsArray()
+            .Single(row => row!["card"]!.GetValue<string>() == "12020")!.DeepClone());
         if (responses)
             foreach (var row in JsonNode.Parse(AuthoredCards.Text)!["cards"]!.AsArray())
                 if (row!["card"]!.GetValue<string>() is "12001a" or "12001c" or "12008" or "12016")
