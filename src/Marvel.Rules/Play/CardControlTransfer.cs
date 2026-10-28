@@ -47,6 +47,8 @@ public static class CardControlTransfer
         {
             TakeScenarioCardOwnership(facts, controlled, player);
         }
+        foreach (int seat in world.PlayerOrder)
+            CardEntry.CheckAllyLimit(world, facts, seat);
     }
 
     /// <summary>Returns a temporarily controlled card to its owner's control.</summary>

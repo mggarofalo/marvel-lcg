@@ -135,10 +135,7 @@ public static class CardEntry
             return false;
         }
 
-        int controlled = world.Areas
-            .Where(area => area.Type == DeckType.AlliesArea
-                && area.PlayArea == PlayArea.Of(player))
-            .Sum(area => area.Cards.Count);
+        int controlled = PlayerLimitProcedure.CountedAllies(world, player).Count;
         long limit = StateFields.Modified(
             world, seat.IdentityCard, "ally_limit", facts, world.Players);
         if (controlled <= limit)

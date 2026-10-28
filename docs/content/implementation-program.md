@@ -44,8 +44,9 @@ repair `aaedbb07` is independently accepted at `01f9ebca`; its protocol 43
 boundary rejects protocol 42 peers before gameplay. The combined candidate
 passes 201 selected checks across Content, Rules, Server and Decisions. Actual
 Power-card generation remains in progress. The ally-limit prerequisite is
-independently accepted at `9e7290e2` and awaits integration before Stinger's row;
-Moment of Triumph's actual row also remains outstanding.
+independently accepted at `9e7290e2` and integrated with 211 selected Content
+and Rules checks passing. Stinger and Moment of Triumph's actual rows remain
+outstanding; their accepted prerequisites are now available together.
 
 Fear No Evil's printed catalog is published in PR #465, merged as `0dbd5824`
 after all eleven checks passed on `b3e457ff`; source and squash trees match.

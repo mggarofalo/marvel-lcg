@@ -9,15 +9,17 @@ namespace Marvel.Rules.Play;
 
 internal static class PlayerLimitProcedure
 {
-    internal static Prompt ChooseAlly(World world, ICardFacts facts, int player)
+    internal static Prompt? ChooseAlly(World world, ICardFacts facts, int player)
     {
         var allies = ControlledAllies(world, player);
         long limit = StateFields.Modified(
             world, world.Seats[player].IdentityCard, "ally_limit", facts, world.Players);
-        if (allies.Count <= limit)
+        if (CountedAllies(world, player).Count <= limit)
         {
-            throw new InvalidOperationException(
-                $"player {player} no longer exceeds their ally limit");
+            // rr:ally-limit requires a discard only while the live count exceeds
+            // the limit. A queued plan may become obsolete before it applies;
+            // returning no prompt lets the agenda complete this frame normally.
+            return null;
         }
 
         return new Prompt(
@@ -46,7 +48,7 @@ internal static class PlayerLimitProcedure
 
         long limit = StateFields.Modified(
             world, world.Seats[player].IdentityCard, "ally_limit", facts, world.Players);
-        if (ControlledAllies(world, player).Count > limit)
+        if (CountedAllies(world, player).Count > limit)
         {
             world.Agenda.Then(new PhaseStep(
                 new PlayerLimitOperation(PlayerLimitKind.ChooseAllyForLimit),
@@ -56,6 +58,13 @@ internal static class PlayerLimitProcedure
                 Plan: true
             ));
         }
+    }
+
+    internal static List<Card> CountedAllies(World world, int player)
+    {
+        var effects = world.Effects.Active();
+        return [.. ControlledAllies(world, player).Where(card => !effects.Any(effect =>
+            effect.Kind == AllyLimitExclusion.Modifier && effect.AppliesTo(world, card)))];
     }
 
     private static List<Card> ControlledAllies(World world, int player) =>

@@ -254,3 +254,15 @@ is in `roars-conditional-excess-tested-tree.txt`. The book remains at 748 rows
 and 25 Ant-Man faces. New attack-recipient metadata and conditional payment
 behavior enter the final MARVEL-870 replay assessment; no engine replay version
 change or historical archive compatibility is claimed here.
+
+Ally-limit source `c4ac17bf` was independently challenged at `eaeebd0f` by a
+queued choice whose limit was restored before it ran. Repair `6ac0b2f`, accepted
+at `9e7290e2`, completes that obsolete plan without losing its entry continuation.
+Excluded allies do not count, but remain eligible discard choices; discarding
+one can leave another discard required. The integrated prerequisite passes 101
+selected Content and 110 Rules checks in `roars-stinger-integration-*.log`.
+The tested tree is recorded in `roars-stinger-tested-tree.txt`.
+[Independent closure](ally-limit-exclusion-independent-review.md) distinguishes
+the synthetic interposed timing and blanking probes from demonstrated gameplay.
+The actual Stinger row is the next content task; the shared prerequisite does
+not itself change the 25-face count or admit the pack.

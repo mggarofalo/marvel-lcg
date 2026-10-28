@@ -50,9 +50,19 @@ internal static class AbilityModifierLowering
         var amount = fields.TryGetValue("amount", out var number)
             ? Number(number, location.Child("amount")) : new AbilityNumber.Constant(lasting ? 0 : 1);
         ValidateHandSizeMaximum(field, cards, amount, lasting, each, location);
+        ValidateAllyLimitExclusion(field, cards, amount, lasting, each, location);
         var attackRestriction = AbilityAttackKeywordLowering.Restriction(fields, location, cards, field, each);
         return new AbilityEffect.GrantField(cards, field, amount, each, until)
         { AttackRestriction = attackRestriction };
+    }
+
+    private static void ValidateAllyLimitExclusion(string field, AbilityCardSelection cards,
+        AbilityNumber amount, bool lasting, bool each, AbilityLocation location)
+    {
+        if (field != AllyLimitExclusion.Modifier) return;
+        if (lasting || each || cards is not AbilityCardSelection.Bound { Binding: AbilityCardBinding.This }
+            || amount is not AbilityNumber.Constant { Value: 1 })
+            throw location.Error("ally-limit exclusion requires a constant self grant of 1");
     }
 
     private static void ValidateHandSizeMaximum(string field, AbilityCardSelection cards,
@@ -92,7 +102,7 @@ internal static class AbilityModifierLowering
         string name = Text(value, location);
         return StateFieldCatalog.IsModifiable(name) || keyword && (Keywords.Granted.Contains(name)
             || name == ExcessDamageThreat.Modifier || name == RevealRepetitions.Modifier
-            || name == "hand_size_maximum")
+            || name == "hand_size_maximum" || name == AllyLimitExclusion.Modifier)
             ? name : throw location.Error($"'{name}' is not a modifier implemented by the engine");
     }
 
