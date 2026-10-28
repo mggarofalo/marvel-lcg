@@ -12,11 +12,14 @@ internal sealed class ResourceAllocationSearch
     private readonly IReadOnlyList<ResourceSource> sources;
     private readonly Choice[] choices;
     private readonly bool[] assigned;
+    private readonly Func<IReadOnlyList<ResourceAllocation>, bool>? accepts;
 
-    internal ResourceAllocationSearch(List<Slot> slots, IReadOnlyList<ResourceSource> sources)
+    internal ResourceAllocationSearch(List<Slot> slots, IReadOnlyList<ResourceSource> sources,
+        Func<IReadOnlyList<ResourceAllocation>, bool>? accepts = null)
     {
         this.slots = slots;
         this.sources = sources;
+        this.accepts = accepts;
         icons = sources.SelectMany(source => source.PossibleResources.Select(resource =>
             new Icon(source.Effect, resource))).ToList();
         used = new bool[icons.Count];
@@ -34,7 +37,7 @@ internal sealed class ResourceAllocationSearch
         if (slotIndex == slots.Count)
         {
             var allocation = Collapse();
-            return sources.All(source =>
+            return (accepts is null || accepts(allocation)) && sources.All(source =>
             {
                 string generated = ResourcePayment.GeneratedBy(source, allocation);
                 return icons.Select((icon, index) => (icon, index))
@@ -44,8 +47,11 @@ internal sealed class ResourceAllocationSearch
             });
         }
         Slot slot = slots[slotIndex];
+        var considered = new HashSet<Icon>();
         foreach (int index in Candidates(slot))
         {
+            // Identical physical icons from the same source have identical effects.
+            if (!considered.Add(icons[index])) continue;
             used[index] = true;
             foreach (char declared in Declarations(slot, icons[index]))
             {

@@ -15,7 +15,8 @@ internal sealed class AbilityPaymentValidation(
 {
     internal void Validate(
         AbilityCost? cost, IReadOnlyList<int> paying, IReadOnlyList<int> chosen,
-        IReadOnlyDictionary<string, long>? values, AbilityCost? completeCost = null)
+        IReadOnlyDictionary<string, long>? values, AbilityCost? completeCost = null,
+        IReadOnlyList<ResourceAllocation>? allocations = null)
     {
         if (cost is null)
         {
@@ -23,6 +24,22 @@ internal sealed class AbilityPaymentValidation(
         }
 
         IReadOnlyList<AbilityCost> steps = AbilityCostOrder.Flatten(cost).ToArray();
+        ValidateCombinedCosts(steps, paying, chosen);
+        var spends = steps.OfType<AbilityCost.Spend>().ToList();
+        ValidateResourceSpend(
+            spends, paying, chosen, allocations ?? []);
+
+        foreach (var step in steps.Where(
+                     step => step is not AbilityCost.Spend))
+        {
+            ValidateNonResourceCost(
+                step, paying, chosen, values, completeCost ?? cost, allocations ?? []);
+        }
+    }
+
+    private void ValidateCombinedCosts(
+        IReadOnlyList<AbilityCost> steps, IReadOnlyList<int> paying, IReadOnlyList<int> chosen)
+    {
         if (steps.Any(step => step is AbilityCost.DiscardFromHand) && paying.Intersect(chosen).Any())
             throw new RulesNotImplementedException(
                 $"'{source.FaceId}' cannot discard the same hand card for resources and an arrow cost");
@@ -41,20 +58,11 @@ internal sealed class AbilityPaymentValidation(
                 $"'{source.FaceId}' is an event with a take-damage cost; "
                 + "atomic printed and damage payment is not implemented");
         }
-        var spends = steps.OfType<AbilityCost.Spend>().ToList();
-        ValidateResourceSpend(
-            spends, paying, chosen);
-
-        foreach (var step in steps.Where(
-                     step => step is not AbilityCost.Spend))
-        {
-            ValidateNonResourceCost(
-                step, paying, chosen, values, completeCost ?? cost);
-        }
     }
 
     private void ValidateResourceSpend(
-        List<AbilityCost.Spend> spends, IReadOnlyList<int> paying, IReadOnlyList<int> chosen)
+        List<AbilityCost.Spend> spends, IReadOnlyList<int> paying, IReadOnlyList<int> chosen,
+        IReadOnlyList<ResourceAllocation> allocations)
     {
         if (spends.Count == 0) return;
         if (paying.Distinct().Count() != paying.Count || paying.Intersect(chosen).Any())
@@ -71,7 +79,8 @@ internal sealed class AbilityPaymentValidation(
         if (paying.Any(id => generators.All(candidate => candidate.Effect != id)))
             throw new RulesNotImplementedException(
                 $"'{source.FaceId}' names a resource source that is not available");
-        string generated = GeneratedResources(generators, paying);
+        string generated = string.Concat(generators.Where(generator => paying.Contains(generator.Effect))
+            .Select(generator => ResourcePayment.GeneratedBy(generator, allocations)));
         string required = string.Concat(spends.Select(step => step.Resources));
         bool pays = printed
             ? Resources.PaysPrinted(generated, spends.Sum(step => step.Amount), required)
@@ -81,18 +90,10 @@ internal sealed class AbilityPaymentValidation(
                 $"'{source.FaceId}' has simultaneous resource costs requiring '{required}' and the payment generates '{generated}'");
     }
 
-    private static string GeneratedResources(
-        IEnumerable<ResourceSource> generators, IReadOnlyList<int> paying)
-    {
-        var selected = paying.ToHashSet();
-        return string.Concat(generators
-            .Where(source => selected.Contains(source.Effect))
-            .Select(source => source.Generates));
-    }
-
     private void ValidateNonResourceCost(
         AbilityCost step, IReadOnlyList<int> paying, IReadOnlyList<int> chosen,
-        IReadOnlyDictionary<string, long>? values, AbilityCost? completeCost)
+        IReadOnlyDictionary<string, long>? values, AbilityCost? completeCost,
+        IReadOnlyList<ResourceAllocation> allocations)
     {
         if (ValidateChoiceCost(step, paying, chosen)) return;
         if (step is AbilityCost.Heal heal)
@@ -101,7 +102,7 @@ internal sealed class AbilityPaymentValidation(
             return;
         }
         if (step is AbilityCost.SpendEnergy)
-            ValidateEnergySpend(step, paying, values);
+            ValidateEnergySpend(step, paying, values, allocations);
         else if (step is AbilityCost.DiscardFromHand discard)
             ValidateHandDiscard(discard, chosen);
         else if (step is AbilityCost.ExhaustChosen exhaust)
@@ -132,7 +133,8 @@ internal sealed class AbilityPaymentValidation(
     }
 
     private void ValidateEnergySpend(
-        AbilityCost step, IReadOnlyList<int> paying, IReadOnlyDictionary<string, long>? values)
+        AbilityCost step, IReadOnlyList<int> paying, IReadOnlyDictionary<string, long>? values,
+        IReadOnlyList<ResourceAllocation> allocations)
     {
         long x = DefinedVariable(values, "X", source);
         var request = Price(world, source, player, step, resourceAbilities)!
@@ -145,7 +147,8 @@ internal sealed class AbilityPaymentValidation(
         if (paying.Count == 0 || paying.Distinct().Count() != paying.Count
             || paying.Any(id => generators.All(candidate => candidate.Effect != id)))
             throw new RulesNotImplementedException($"'{source.FaceId}' names an invalid generator for X");
-        string generated = GeneratedResources(generators, paying);
+        string generated = string.Concat(generators.Where(generator => paying.Contains(generator.Effect))
+            .Select(generator => ResourcePayment.GeneratedBy(generator, allocations)));
         if (!Resources.Pays(generated, x, new string(Resources.Energy, checked((int)x))))
             throw new RulesNotImplementedException(
                 $"'{source.FaceId}' defines X as {x}, but the payment generates '{generated}'");

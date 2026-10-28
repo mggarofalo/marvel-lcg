@@ -40,7 +40,7 @@ public sealed class MsMarvelResourceReprintTests
         var power = world.CreateCard("05016", world.Seats[0].Hand);
         var extra = world.CreateCard("01003", world.Seats[0].Hand);
         Assert.Equal(resources, Assert.Single(CardPayment.Generators(world, world.Facts, world.Seats[0], runner, card),
-            item => item.Effect == power.ObjectId).Generates);
+            item => item.Effect == power.ObjectId).PossibleResources);
         // Same-cost Med Team / Mockingbird distinguish printed Protection from a generic multiplier.
         if (face == "05003") return;
         var before = world.Digest().Canonical();

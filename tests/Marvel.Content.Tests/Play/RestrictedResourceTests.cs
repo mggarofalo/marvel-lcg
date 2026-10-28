@@ -145,17 +145,17 @@ public sealed class RestrictedResourceTests
 
     [Fact]
     [Rule("rr:resource-ability.1")]
-    public void AspectAbilityContextDoesNotDoublePowerOfAggressionHandResources()
+    public void AspectAbilityContextQualifiesPowerOfAggressionHandResources()
     {
-        // 01055 doubles only while paying for an Aggression card, not an ability cost.
+        // rr:cost.3.1: paying for an ability on a card counts as paying for that card.
         var fixture = RestrictedResourceFixture.Create("aspectCard", "01057");
         var world = fixture.World;
         Card power = world.CreateCard("01055", world.Seats[0].Hand);
         var playing = CardPayment.Generators(world, world.Facts, world.Seats[0], fixture.Runner, fixture.Action);
         var ability = CardPayment.Generators(world, world.Facts, world.Seats[0], fixture.Runner,
             abilitySource: fixture.Action);
-        Assert.Equal("GG", playing.Single(source => source.Effect == power.ObjectId).Generates);
-        Assert.Equal("G", ability.Single(source => source.Effect == power.ObjectId).Generates);
+        Assert.Equal("GG", playing.Single(source => source.Effect == power.ObjectId).PossibleResources);
+        Assert.Equal("GG", ability.Single(source => source.Effect == power.ObjectId).PossibleResources);
         Assert.Contains(ability, source => source.Effect == fixture.Generator.ObjectId);
     }
 

@@ -21,6 +21,7 @@ internal sealed class AbilityCostPreparation
     private readonly int incarnation;
     private readonly AbilityPaymentSelection selection;
     private Marvel.Rules.Prompts.CostOption? resourcePrice;
+    private IReadOnlyList<ResourceAllocation> effectiveAllocations = [];
     private AbilityCost? completeCost;
     private readonly ImmutableArray<Step>.Builder ordered =
         ImmutableArray.CreateBuilder<Step>();
@@ -40,6 +41,7 @@ internal sealed class AbilityCostPreparation
         variables = selection.Values;
         resourcesPaidByEvent = selection.ResourcesPaidByEvent;
         incarnation = source.Incarnation;
+        effectiveAllocations = selection.Allocations;
     }
 
     internal AbilityCostPayment Build(AbilityCost? cost)
@@ -48,19 +50,43 @@ internal sealed class AbilityCostPreparation
         completeCost = cost;
         AttachedUpgradeCostBound.Validate(world, source, player, cost, paying);
         var price = AbilityPaymentPricing.Price(world, source, player, cost, resourceAbilities);
+        PrepareResourcePrice(cost, price);
+        PrepareSteps(cost);
+        return new AbilityCostPayment(
+            world, source, player, resourceAbilities, paying, ordered.ToImmutable());
+    }
+
+    private void PrepareResourcePrice(AbilityCost? cost, Marvel.Rules.Prompts.CostOption? price)
+    {
+        ValidateDiscardSourceCost(cost);
+        if (!resourcesPaidByEvent && price is not null
+            && price.ResourceCosts.Any(component => component.DistinctTypes)
+            && !Marvel.Rules.Prompts.ResourcePayment.Allows(price, paying, variables, selection.Allocations))
+            throw new RulesNotImplementedException("the selected allocation does not pay the distinct resource cost");
+        bool conditional = PrepareConditionalAllocations(price);
+        resourcePrice = conditional || price?.ResourceCosts.Any(component => component.DistinctTypes) == true ? price : null;
+    }
+
+    private void ValidateDiscardSourceCost(AbilityCost? cost)
+    {
         // Engine choice: a standalone discard-source arrow cannot consume resource generators.
         // Events retain their separately validated printed-price payment.
         if (cost is AbilityCost.Discard { Card: AbilityCostCard.Source } && paying.Length > 0
             && EffectiveCards.Kind(source, world.Facts) != CardKind.Event)
             throw new RulesNotImplementedException("this ability has no resource cost to pay");
-        if (!resourcesPaidByEvent && price is not null
-            && price.ResourceCosts.Any(component => component.DistinctTypes)
-            && !Marvel.Rules.Prompts.ResourcePayment.Allows(price, paying, variables, selection.Allocations))
-            throw new RulesNotImplementedException("the selected allocation does not pay the distinct resource cost");
-        resourcePrice = price?.ResourceCosts.Any(component => component.DistinctTypes) == true ? price : null;
-        PrepareSteps(cost);
-        return new AbilityCostPayment(
-            world, source, player, resourceAbilities, paying, ordered.ToImmutable());
+    }
+
+    private bool PrepareConditionalAllocations(Marvel.Rules.Prompts.CostOption? price)
+    {
+        bool conditional = price?.Generators.Any(generator => paying.Contains(generator.Effect)
+            && generator.ConditionalBonus is not null) == true;
+        if (!resourcesPaidByEvent && conditional && effectiveAllocations.Count == 0)
+            effectiveAllocations = Marvel.Rules.Prompts.ResourcePayment.AllocateUnambiguousGeneration(price!, paying, variables)
+                ?? throw new RulesNotImplementedException("conditional resource generation requires the player's allocation");
+        if (!resourcesPaidByEvent && conditional && !Marvel.Rules.Prompts.ResourcePayment.Allows(
+                price!, paying, variables, effectiveAllocations))
+            throw new RulesNotImplementedException("the selected allocation does not pay the resource cost");
+        return conditional;
     }
 
     private BoundCard Bind(AbilityCostCard binding) => binding switch
@@ -74,8 +100,9 @@ internal sealed class AbilityCostPreparation
 
     private void PrepareSteps(AbilityCost? component)
     {
+        var validationAllocations = ValidationAllocations();
         new AbilityPaymentValidation(world, source, player, program, resourceAbilities)
-            .Validate(component, paying, selected, variables, completeCost);
+            .Validate(component, paying, selected, variables, completeCost, validationAllocations);
         if (component is null or AbilityCost.ChooseFromDiscard or AbilityCost.ChooseScheme) return;
         if (component is AbilityCost.Sequence sequence)
         {
@@ -87,11 +114,31 @@ internal sealed class AbilityCostPreparation
             PrepareResource(component);
             return;
         }
+        ValidateBasicUse(component);
+        PreparePhysical(component);
+    }
+
+    private void ValidateBasicUse(AbilityCost component)
+    {
         if (component is AbilityCost.ExhaustChosen { CaptureBasicUsePower: true }
             && (world.Agenda.Occurrence?.BasicUse is not { } use || !use.IsCurrent(world)
                 || selected.Length != 1 || BasicUseAllyReceipt.Power(world, world.Cards[selected[0]], use) <= 0))
             throw new RulesNotImplementedException("matching basic power requires a current positive selected ally power");
-        PreparePhysical(component);
+    }
+
+    private IReadOnlyList<ResourceAllocation> ValidationAllocations()
+    {
+        // The event's shared allocation is validated separately before commitment.
+        // Both components belong to this card; the arrow-only validation has one component.
+        IReadOnlyList<ResourceAllocation> validationAllocations = resourcesPaidByEvent
+            ? effectiveAllocations.Select(allocation => allocation with { Cost = 0 }).ToArray()
+            : effectiveAllocations;
+        if (resourcesPaidByEvent && validationAllocations.Count == 0)
+            validationAllocations = CardPayment.Generators(world, world.Facts, world.Seats[player], resourceAbilities,
+                    abilitySource: source).Where(generator => paying.Contains(generator.Effect)
+                        && generator.ConditionalBonus is not null)
+                .Select(generator => new ResourceAllocation(generator.Effect, 0, "G")).ToArray();
+        return validationAllocations;
     }
 
     private void PrepareSequence(AbilityCost.Sequence sequence)
@@ -106,7 +153,7 @@ internal sealed class AbilityCostPreparation
         if (!resourcesPaidByEvent && spends.Count > 0)
             ordered.Add(new Spend(string.Concat(spends.Select(step => step.Resources)),
                 Generic: spends.Sum(step => step.Generic))
-                { Price = resourcePrice, Allocations = selection.Allocations });
+                { Price = resourcePrice, Allocations = effectiveAllocations.ToImmutableArray() });
         foreach (var remaining in components.Where(step =>
                      step is not (AbilityCost.Spend
                          or AbilityCost.Damage { MustTakeAll: true })))
@@ -119,12 +166,21 @@ internal sealed class AbilityCostPreparation
         if (component is AbilityCost.Spend spend)
         {
             ordered.Add(new Spend(spend.Resources, Generic: spend.Generic)
-                { Price = resourcePrice, Allocations = selection.Allocations });
+                { Price = resourcePrice, Allocations = effectiveAllocations.ToImmutableArray() });
             return;
         }
         long x = AbilityPaymentValidation.DefinedVariable(variables, "X", source);
+        var resolvedPrice = resourcePrice is null ? null : resourcePrice with
+        {
+            Cost = x.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            Variables = null,
+            Components = [new Marvel.Rules.Prompts.ResourceCost(
+                x.ToString(System.Globalization.CultureInfo.InvariantCulture))
+                { RepeatedResource = Resources.Energy }],
+        };
         ordered.Add(new Spend(
-            new string(Resources.Energy, checked((int)x)), Energy: x));
+            new string(Resources.Energy, checked((int)x)), Energy: x)
+            { Price = resolvedPrice, Allocations = effectiveAllocations.ToImmutableArray() });
     }
 
     private void PrepareDamage(AbilityCost.Damage damage) =>

@@ -143,10 +143,10 @@ public static class CardPayment
         foreach (var card in seat.Hand.Cards)
         {
             if (!resourceAbilities.CanUseHandResources(world, card)) continue;
-            string generates = resourceAbilities.ResourcesGeneratedBy(world, card, payingFor);
-            if (generates.Length > 0)
+            var quote = resourceAbilities.QuoteHandResources(world, card, payingFor ?? abilitySource);
+            if (quote.Generates.Length > 0)
             {
-                sources.Add(new ResourceSource(card.ObjectId, generates));
+                sources.Add(quote);
             }
         }
 
@@ -257,12 +257,12 @@ public static class CardPayment
         // spending all of them is a payment. The types matter as well as the
         // count -- `rr:requirement-resources` makes a card with a requirement
         // unplayable without those resources, however many cards are in hand.
-        string pool = string.Concat(sources.SelectMany(source => source.Generates));
-        return !Resources.Pays(pool, cost, Resources.Required(world, card, facts))
-            ? null
-            : new CostOption(
-                Target: attachmentHost ?? card.ObjectId,
-                Cost: cost.ToString(System.Globalization.CultureInfo.InvariantCulture),
-                Sources: sources);
+        var price = new CostOption(
+            Target: attachmentHost ?? card.ObjectId,
+            Cost: cost.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            Sources: sources);
+        var requiredPrice = price with { Rule = [Resources.Required(world, card, facts)] };
+        return ResourcePayment.Allocate(requiredPrice, sources.Select(source => source.Effect).ToArray()) is null
+            ? null : price;
     }
 }

@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Marvel.Cards.Dsl;
 using Marvel.Rules.Play;
+using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
 using Marvel.Rules.Timing;
 
@@ -32,17 +33,24 @@ internal static class AbilityProgramQueries
 
         string printed = EffectiveCards.HasProfile(source) ? string.Empty
             : Resources.GeneratedBy(source.FaceId, world.Facts);
-        if (payingFor is null) return printed;
+        return printed;
+    }
 
-        string classes = world.Facts.Attributes(payingFor.FaceId)
+    internal static ResourceSource QuoteHandResources(
+        World world, AbilityProgram program, Card source, Card? costOwner, ulong qualifyingComponents)
+    {
+        string printed = ResourcesGeneratedBy(world, program, source, costOwner);
+        var quote = new ResourceSource(source.ObjectId, printed);
+        if (costOwner is null || printed.Length == 0) return quote;
+        string classes = world.Facts.Attributes(costOwner.FaceId)
             .GetValueOrDefault("Class", string.Empty);
         bool doubles = ActiveOn(world, program, source).Any(ability =>
             ability.Trigger.Timing == AbilityType.Constant
             && ability.Effect is AbilityEffect.DoubleResourceFor multiplier
-            && classes.Split(';').Contains(
-                multiplier.Classification, StringComparer.Ordinal));
-
-        return doubles ? printed + printed : printed;
+            && classes.Split(';').Contains(multiplier.Classification, StringComparer.Ordinal));
+        // rr:cost.3.1: resources paid for an ability on a card count as paid for that card.
+        // Component zero is the card's one resource cost; combined prices expand this mask.
+        return doubles ? quote with { ConditionalBonus = new(printed, qualifyingComponents) } : quote;
     }
 
     internal static DefenderChoice Defenders(

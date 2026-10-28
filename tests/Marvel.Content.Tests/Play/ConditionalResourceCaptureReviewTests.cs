@@ -50,6 +50,7 @@ public sealed class ConditionalResourceCaptureReviewTests
             Price = new CostOption(0, "3", Sources: sources), Allocations = allocations,
         }, events);
         Assert.False(receipt.IsComplete);
+        Assert.Throws<InvalidOperationException>(() => receipt.Generated);
         var asked = Assert.IsType<Prompt>(Sequence.Work(world, world.Facts, runner, events));
         Assert.Equal(Question.Opportunity, asked.Asking);
         Assert.Equal(DeckType.HandsArea, hand.Area.Type);
@@ -59,6 +60,7 @@ public sealed class ConditionalResourceCaptureReviewTests
         Assert.Null(Sequence.Work(world, world.Facts, runner, events));
         Assert.True(receipt.IsComplete);
         Assert.Equal("YGG", receipt.Paid);
+        Assert.Equal("YGG", receipt.Generated);
         Assert.Equal(DeckType.DiscardPile, hand.Area.Type);
         Assert.False(world.Agenda.IsBusy);
     }

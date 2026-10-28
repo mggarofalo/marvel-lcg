@@ -62,7 +62,7 @@ public sealed class HulkStarterCardTests
         var runner = AuthoredCards.Runner();
         var power = world.CreateCard("10017", world.Seats[1].Hand);
         var source = world.CreateCard(face, world.Seats[1].Hand);
-        Assert.Equal(expected, runner.ResourcesGeneratedBy(world, power, source));
+        Assert.Equal(expected, runner.QuoteHandResources(world, power, source).PossibleResources);
         Assert.Equal("2", world.Facts.Attributes("10017")["MaxPerDeck"]);
     }
 }

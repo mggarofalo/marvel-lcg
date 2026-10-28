@@ -14,6 +14,9 @@ public interface IResourceCardAbilities
     /// <remarks>Eligibility is independent of generated quantity, including an empty contribution.</remarks>
     bool CanUseHandResources(World world, Card source);
     string ResourcesGeneratedBy(World world, Card source, Card? payingFor);
+    /// <summary>Quote a hand contribution for the named card cost or its ability cost.</summary>
+    ResourceSource QuoteHandResources(World world, Card source, Card? costOwner, ulong qualifyingComponents = 1) =>
+        new(source.ObjectId, ResourcesGeneratedBy(world, source, costOwner));
     IReadOnlyList<ResourceSource> PrintedResourceAbilities(World world, int player);
     IReadOnlyList<ResourceSource> ResourceAbilities(World world, int player);
     string ResourceGeneratorName(World world, int player, int card);

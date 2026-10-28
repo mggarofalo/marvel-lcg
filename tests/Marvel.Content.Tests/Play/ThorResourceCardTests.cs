@@ -65,7 +65,7 @@ public sealed class ThorResourceCardTests : CoreCardTestBase
         var runner = AuthoredCards.Runner();
         var card = world.CreateCard(target, world.Seats[0].Hand);
         var power = world.CreateCard("06016", world.Seats[0].Hand);
-        Assert.Equal(expected, Assert.Single(CardPayment.Generators(world, world.Facts, world.Seats[0], runner, card), g => g.Effect == power.ObjectId).Generates);
+        Assert.Equal(expected, Assert.Single(CardPayment.Generators(world, world.Facts, world.Seats[0], runner, card), g => g.Effect == power.ObjectId).PossibleResources);
         Assert.Equal("G", Assert.Single(CardPayment.Generators(world, world.Facts, world.Seats[0], runner), g => g.Effect == power.ObjectId).Generates);
         var extra = world.CreateCard("01003", world.Seats[0].Hand);
         if (expected == "G")

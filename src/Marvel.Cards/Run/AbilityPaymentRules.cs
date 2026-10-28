@@ -225,8 +225,12 @@ internal static class AbilityPaymentRules
         cost += ResourceRequirement(ability.Cost, card).Length + GenericResourceAmount(ability.Cost);
         var generators = AbilityPaymentPricing.EventGenerators(world, card, player, ability.Effect, resourceAbilities);
         if (discarded is not null)
-            return Resources.Pays(new string([.. generators
-                .Where(source => !discarded.Contains(source.Effect)).SelectMany(source => source.Generates)]), cost, required);
+        {
+            var available = generators.Where(source => !discarded.Contains(source.Effect)).ToArray();
+            var price = new CostOption(0, cost.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                Rule: [required], Sources: available);
+            return ResourcePayment.Allocate(price, available.Select(source => source.Effect).ToArray()) is not null;
+        }
         return AbilityHandDiscardAvailability.CanPay(ability.Cost,
             AbilityCostSelection.HandCandidates(world, card, player), generators, cost, required, discardCount);
     }

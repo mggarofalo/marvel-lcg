@@ -29,7 +29,7 @@ internal static class AbilityPaymentPricing
         {
             long maximum = CardPayment.Generators(
                     world, world.Facts, world.Seats[player], resourceAbilities, abilitySource: card)
-                .Sum(source => source.Generates.LongCount(resource =>
+                .Sum(source => source.PossibleResources.LongCount(resource =>
                     resource is Resources.Energy or Resources.Wild));
             return new CostOption(
                 card.ObjectId, "X",
@@ -106,7 +106,7 @@ internal static class AbilityPaymentPricing
             card.ObjectId, total.ToString(System.Globalization.CultureInfo.InvariantCulture),
             Rule: [string.Concat(prices.SelectMany(price => price.Rule ?? []))],
             Sources: prices.SelectMany(price => price.Generators)
-                .GroupBy(source => source.Effect).Select(group => group.First()).ToList(),
+                .GroupBy(source => source.Effect).Select(group => ExpandMask(world, card, resourceAbilities, group.First(), components.Count)).ToList(),
             Components: components);
     }
 
@@ -122,7 +122,7 @@ internal static class AbilityPaymentPricing
         }
 
         if (ability.Cost is AbilityCost.SpendEnergy)
-            return VariableEventPrice(printed);
+            return VariableEventPrice(world, card, resourceAbilities, printed);
 
         if (!TryCombinedAmounts(printed, arrow, out long printedAmount, out long arrowAmount))
         {
@@ -143,7 +143,7 @@ internal static class AbilityPaymentPricing
             Sources: printed.Generators
                 .Concat(arrow.Generators)
                 .GroupBy(source => source.Effect)
-                .Select(group => group.First())
+                .Select(group => ExpandMask(world, card, resourceAbilities, group.First(), 2))
                 .ToList(),
             // Engine choice: event allocation uses the printed price and one
             // aggregate arrow price, matching the committed payment ledger.
@@ -154,20 +154,33 @@ internal static class AbilityPaymentPricing
             ]);
     }
 
-    private static CostOption VariableEventPrice(CostOption printed)
+    private static CostOption VariableEventPrice(World world, Card card, IResourceCardAbilities resourceAbilities, CostOption printed)
     {
         // Engine choice: display the sum; allocation evaluates its separate components.
         long amount = long.Parse(printed.Cost, System.Globalization.CultureInfo.InvariantCulture);
-        long energy = printed.Generators.Sum(source => source.Generates.LongCount(
+        long energy = printed.Generators.Sum(source => source.PossibleResources.LongCount(
             icon => icon is Resources.Energy or Resources.Wild));
-        long total = printed.Generators.Sum(source => (long)source.Generates.Length);
+        long total = printed.Generators.Sum(source => (long)source.PossibleResources.Length);
         return printed with
         {
             Cost = printed.Cost + "+X",
             Variables = [new VariableRequest("X", 1, Math.Min(energy, Math.Max(0, total - amount)))],
+            Sources = [.. printed.Generators.Select(source => ExpandMask(world, card, resourceAbilities, source, 2))],
             Components = [printed.ResourceCosts.Single(),
                 new ResourceCost("X") { RepeatedResource = Resources.Energy }],
         };
+    }
+
+    private static ResourceSource ExpandMask(World world, Card owner, IResourceCardAbilities abilities,
+        ResourceSource source, int components)
+    {
+        if (source.ConditionalBonus is null || source.Effect < 0 || source.Effect >= world.Cards.Count
+            || world.Cards[source.Effect].Area.Type != DeckType.HandsArea) return source;
+        if (components > 64) throw new RulesNotImplementedException("too many conditional cost components");
+        var card = world.Cards[source.Effect];
+        if (abilities.QuoteHandResources(world, card, owner) != source) return source;
+        ulong mask = components == 64 ? ulong.MaxValue : (1UL << components) - 1;
+        return abilities.QuoteHandResources(world, card, owner, mask);
     }
 
     private static bool TryCombinedAmounts(
