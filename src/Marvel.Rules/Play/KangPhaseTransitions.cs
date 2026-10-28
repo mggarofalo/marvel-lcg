@@ -75,24 +75,28 @@ public sealed class KangPhaseTransitions
     {
         var ready = Ready(owner);
         if (ready.Length == 0) return;
-        if (ready.Length != 1)
-            throw new RulesNotImplementedException("simultaneous Kang phase-end departures require ordering");
-        RequireParticipatingGroup(world, ready[0]);
-        if (ready[0].CompletedScheme is { } completed)
-        {
-            var scheme = world.Cards[completed.Card];
-            var villain = world.Cards[ready[0].Defeated.Card];
-            if (scheme.Incarnation != completed.Incarnation || scheme.Area.Type != DeckType.MainSchemesArea
-                || villain.Incarnation != ready[0].Defeated.Incarnation || villain.Area.Type != DeckType.VillainArea)
-                throw new RulesNotImplementedException("the completed Kang stage or villain departed before phase end");
-        }
-        KangCentral.Preflight(world, ready[0]);
+        if (ready.Select(item => item.Source).Distinct().Count() != ready.Length)
+            throw new RulesNotImplementedException("Kang departures require distinct local source areas");
+        foreach (var departure in ready) PreflightDeparture(world, departure);
         string[] conditions = owner.Require<PhaseTransitionOperation>().Kind == PhaseTransitionKind.EndPlayerPhase
             ? [PhaseEnd.PlayerPhaseEnds] : [PhaseEnd.VillainPhaseEnds, PhaseEnd.RoundEnds];
-        // The prepared controller has no accepted ordering policy for co-due
-        // delayed work. Refuse before PhaseEnd expires or consumes any effect.
+        // Ordering Kang's local departures does not admit competing registered work.
         if (world.Effects.HasDue(conditions))
             throw new RulesNotImplementedException("Kang phase-end departure and competing delayed effects require ordering");
+    }
+
+    internal static void PreflightDeparture(World world, KangDeparture departure)
+    {
+        RequireParticipatingGroup(world, departure);
+        if (departure.CompletedScheme is { } completed)
+        {
+            var scheme = world.Cards[completed.Card];
+            var villain = world.Cards[departure.Defeated.Card];
+            if (scheme.Incarnation != completed.Incarnation || scheme.Area.Type != DeckType.MainSchemesArea
+                || villain.Incarnation != departure.Defeated.Incarnation || villain.Area.Type != DeckType.VillainArea)
+                throw new RulesNotImplementedException("the completed Kang stage or villain departed before phase end");
+        }
+        KangCentral.Preflight(world, departure);
     }
 
     private static void RequireParticipatingGroup(World world, KangDeparture departure)
@@ -117,21 +121,11 @@ public sealed class KangPhaseTransitions
     {
         var ready = Ready(owner);
         if (ready.Length == 0) return;
-        if (ready.Length != 1)
-            throw new RulesNotImplementedException("simultaneous Kang phase-end departures require ordering");
         var origin = world.Agenda.Occurrence
             ?? throw new InvalidOperationException("the Kang phase boundary has no occurrence");
-        if (ready[0].CompletedScheme is { } scheme)
-        {
-            KangFirstSplit.Remove(world, world.Cards[ready[0].Defeated.Card], "Kang local completion", events);
-            KangFirstSplit.Remove(world, world.Cards[scheme.Card], "Kang local completion", events);
-        }
-        world.Agenda.ContinueBeforeOwner(origin, owner, owner with
-        {
-            Operation = new KangJoinOperation(ready[0], owner, origin),
-            Subject = ready[0].Defeated.Card,
-        });
-        pending.Remove(ready[0]);
+        if (ready.Length == 1) KangDepartureOrderProcedure.BeginJoin(world, ready[0], [], owner, origin, events);
+        else KangDepartureOrderProcedure.Schedule(world, ready, owner, origin);
+        pending.RemoveAll(ready.Contains);
     }
 
     internal void CaptureCompletion(World world, Card villain, Card scheme)

@@ -64,6 +64,8 @@ public static class AgendaProcedures
                 KangCentral.Apply(world, step, events),
             AgendaProcedureKind.PhaseTransition when step.Operation is KangSplitOperation =>
                 KangSplitProcedure.Apply(world, step, events),
+            AgendaProcedureKind.PhaseTransition when step.Operation is KangDepartureOrderOperation =>
+                KangDepartureOrderProcedure.Apply(world, step, events),
             AgendaProcedureKind.PhaseTransition => step.Operation is KangJoinOperation
                 ? KangJoinProcedure.Apply(world, step, events)
                 : PhaseTransitionProcedure.Apply(world, facts, step, events),
@@ -111,6 +113,9 @@ public static class AgendaProcedures
 
         switch (step.Operation.Procedure)
         {
+            case AgendaProcedureKind.PhaseTransition when step.Operation is KangDepartureOrderOperation:
+                KangDepartureOrderProcedure.Answer(world, step, input, events);
+                break;
             case AgendaProcedureKind.PhaseTransition when step.Operation is KangJoinOperation:
                 KangJoinProcedure.Answer(world, step, input, events);
                 break;

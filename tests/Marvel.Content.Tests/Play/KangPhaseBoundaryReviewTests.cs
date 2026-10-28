@@ -128,7 +128,8 @@ public sealed class KangPhaseBoundaryReviewTests : CoreCardTestBase
     }
 
     [Fact]
-    public void SimultaneousDeparturesFailClosed()
+    [Rule("rr:first-player.3")]
+    public void SimultaneousDeparturesRequireTheFirstPlayersOrder()
     {
         var (world, kang, _, _) = Split();
         var other = world.CreateCard("11003", world.AreaOf(DeckType.VillainArea, PlayArea.Of(1)));
@@ -136,11 +137,15 @@ public sealed class KangPhaseBoundaryReviewTests : CoreCardTestBase
         world.Agenda.KangTransitions.CaptureJoin(world, other, 7, PhaseTransitionKind.EndPlayerPhase);
         AddBoundary(world);
 
-        var error = Assert.Throws<RulesNotImplementedException>(() =>
+        // "If two or more effects would resolve simultaneously, the first player
+        // decides the order in which to resolve them."
+        var prompt = Assert.IsType<Marvel.Rules.Prompts.Prompt>(
             Sequence.Work(world, Cards, new NoCardAbilities(), []));
 
-        Assert.Contains("simultaneous", error.Message);
-        Assert.Equal(2, world.Agenda.KangTransitions.Pending.Count);
+        Assert.Equal(KangDepartureOrderOperation.Order, prompt.Trigger);
+        Assert.Equal(world.FirstPlayer, prompt.Player);
+        Assert.Equal(new[] { kang.ObjectId, other.ObjectId }, prompt.Affordances.Select(offer => offer.Id));
+        Assert.Empty(world.Agenda.KangTransitions.Pending);
     }
 
     [Fact]
