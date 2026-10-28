@@ -65,15 +65,23 @@ public sealed class CountedAttackIncarnationTests
               {"card":"01006","abilities":[{
                 "trigger":{"event":"WhenAttackEnds","timing":"ForcedResponse","target":"enemy"},
                 "effect":{"giveStatus":{"card":"trigger.target","status":"stunned"}}
+              }]},
+              {"card":"12030","abilities":[{
+                "trigger":{"event":"WhenAttackEnds","timing":"Response","actor":"you","target":"enemy","form":"hero"},
+                "when":{"wasDefeated":"trigger.target"},
+                "effect":{"heal":{"card":"you","amount":{"attackExcessDamage":"trigger.target"}}}
               }]}
             ]}
             """.Replace("TRIGGER", trigger, StringComparison.Ordinal)
                 .Replace("POOL", onlyMinion ? "minions" : "attackableEnemies", StringComparison.Ordinal)));
         Card? source = null;
         Card? minion = null;
+        Card? moment = null;
         var (game, world) = Playing(board =>
         {
             source = board.CreateCard("01003", board.Seats[0].Hand);
+            moment = board.CreateCard("12030", board.Seats[0].Hand);
+            board.Seats[0].IdentityCard.TakeDamage(4);
             minion = board.CreateCard("01172", board.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
             foreach (string face in Supports)
                 InPlay(board, face);
@@ -91,10 +99,12 @@ public sealed class CountedAttackIncarnationTests
         var occurrence = world.Agenda.Occurrence!;
         Assert.Equal(targets, occurrence.Attacks.Select(recipient => recipient.Card));
         var original = Assert.Single(occurrence.Attacks, recipient => recipient.Card == minion.ObjectId);
+        Assert.DoesNotContain(game.Pending.Affordances, option => option.AnchorId == moment!.ObjectId);
         Assert.Equal(incarnation, original.Incarnation);
         Assert.Equal(0, original.DamageTaken);
         while (game.Pending!.Asking == Question.Order)
             game.Resolve(Decision.Take(game.Pending.Affordances[0].Id));
+        Assert.DoesNotContain(game.Pending!.Affordances, option => option.AnchorId == moment!.ObjectId);
         Assert.True(minion.Incarnation > incarnation);
         Assert.Equal(DeckType.EngagedEnemiesArea, minion.Area.Type);
         Assert.Equal(0, minion.Damage);
@@ -103,7 +113,8 @@ public sealed class CountedAttackIncarnationTests
         Assert.Equal(damaged, villain.Damage);
         Assert.Equal(!onlyMinion, Statuses.Has(world, villain, Statuses.Stunned));
         var hero = world.Seats[0].IdentityCard;
-        Assert.Equal(0, hero.Damage);
+        Assert.Equal(4, hero.Damage);
+        Assert.Equal(DeckType.HandsArea, moment!.Area.Type);
         Assert.Equal(targets.Length, hero.Tokens.GetValueOrDefault("c_attacked"));
         Assert.Equal(damaged, hero.Tokens.GetValueOrDefault("c_damaged"));
         Assert.Equal(1, hero.Tokens.GetValueOrDefault("c_whole"));

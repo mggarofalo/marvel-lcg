@@ -13,8 +13,7 @@ public sealed class LabelledPowerActivationContinuationTests
     [Fact]
     public void UninterruptedRepeatedDamageKeepsItsOrdinarySingularTargetWithoutDuplicateRecipients()
     {
-        // Engine contract: ordinary single-target powers retain singular target
-        // facts. Their repeated damage instructions do not invent batch recipients.
+        // One attack retains one recipient while both damage instructions contribute.
         string body = LabelledPowerActivationFixture.Body.Replace(
             "{\"enemyAttacks\":{\"enemies\":\"chosen\"}}",
             "{\"dealAttackDamage\":{\"cards\":\"chosen\",\"amount\":5}}", StringComparison.Ordinal);
@@ -25,7 +24,10 @@ public sealed class LabelledPowerActivationContinuationTests
         Assert.Equal(f.World.Seats[1].IdentityCard.ObjectId, occurrence.Actor);
         Assert.Equal(f.Enemy.ObjectId, occurrence.Target);
         Assert.True(occurrence.Is(Steps.DamageDealt));
-        Assert.Empty(occurrence.Attacks);
+        var recipient = Assert.Single(occurrence.Attacks);
+        Assert.Equal(f.Enemy.ObjectId, recipient.Card);
+        Assert.Equal(10, recipient.DamageTaken);
+        Assert.Equal(0, recipient.ExcessDamage);
         f.Finish();
         Assert.Equal(DeckType.DiscardPile, f.Source.Area.Type);
     }
@@ -40,6 +42,36 @@ public sealed class LabelledPowerActivationContinuationTests
         var control = Run(probe: false);
         var probed = Run(probe: true);
         Assert.Equal(control, probed);
+    }
+
+    [Fact]
+    [Rule("rr:overkill.3")]
+    [Rule("rr:labeled-ability.2")]
+    public void ResumedHeroAttackResponseReadsItsOwnDefeatedEnemyExcess()
+    {
+        // rr:overkill.3 counts the same excess as overkill. The nested enemy
+        // attack finishes before the original labelled attack deals its damage.
+        var f = new LabelledPowerActivationFixture(villain: false, includeMoment: true);
+        var hero = f.World.Seats[1].IdentityCard;
+        hero.TakeDamage(4);
+        f.Enemy.TakeDamage(DamagePlacement.Health(f.World, f.World.Facts, f.Enemy) - 2);
+        int incarnation = f.Enemy.Incarnation;
+        var moment = f.World.CreateCard("12030", f.World.Seats[1].Hand);
+        f.Start();
+        Assert.Equal(Question.Defender, f.Pending!.Asking);
+        f.Answer(Decision.Take(f.Ally.ObjectId));
+        if (f.Pending!.Asking == Question.Opportunity
+            && f.Pending.Affordances.All(option => option.AnchorId != moment.ObjectId))
+            f.Answer(Decision.Take(Assert.Single(f.Pending.Affordances).Id));
+        Assert.Equal(Question.Opportunity, f.Pending!.Asking);
+        Assert.Contains(f.World.Agenda.Occurrence!.Defeats,
+            defeat => defeat.Card == f.Enemy.ObjectId && defeat.Incarnation == incarnation);
+        var response = Assert.Single(f.Pending.Affordances, option => option.AnchorId == moment.ObjectId);
+        f.Answer(Decision.Take(response.Id));
+        Assert.Equal(1, hero.Damage);
+        Assert.Equal(DeckType.EncounterDiscardPile, f.Enemy.Area.Type);
+        Assert.Equal(DeckType.DiscardPile, moment.Area.Type);
+        f.Finish();
     }
 
     private static string Run(bool probe)

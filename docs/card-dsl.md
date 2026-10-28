@@ -1568,6 +1568,14 @@ Both branches retain the same outer thwart label and its whole-ability cancellat
 Other power suspension and conditional admission shapes retain their existing gates.
 
 
+### Player attack excess damage
+
+`{"attackExcessDamage":"trigger.target"}` reads the settled excess on the
+bound attack-end recipient. The spelling is an engine choice. The value uses
+the same calculation as overkill (`rr:overkill.3`) and is zero without a
+matching recipient or an actual defeat. It survives the recipient leaving play
+and is independent of overkill damage subsequently prevented on its spill target.
+
 ### Received enemy-attack damage
 
 `{"receivedAttackDamage":"game"}` reads the positive damage actually taken by

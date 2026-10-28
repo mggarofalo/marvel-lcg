@@ -55,7 +55,7 @@ internal sealed class AbilityDamageCompletion(Occurrence occurrence)
         // Snapshot facts survive defeat and departure; settlement supplies damage taken.
         if (published || item.Recipient is not { } recipient) return;
         var attack = item.Occurrence ?? throw new InvalidOperationException("A retained recipient has no attack occurrence.");
-        attack.Also(recipient with { DamageTaken = item.Result.Taken }, accumulate: true);
+        attack.Also(recipient with { DamageTaken = item.Result.Taken, ExcessDamage = item.Result.Excess }, accumulate: true);
         if (item.Result.Taken > 0) attack.Also(Steps.DamageDealt);
     }
 

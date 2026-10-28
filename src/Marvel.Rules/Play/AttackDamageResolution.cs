@@ -62,6 +62,9 @@ internal sealed class AttackDamageResolution
         if (policy.Retaliate && request.Target.Incarnation == incarnation)
             DamageAttacks.Retaliate(world, facts, request.Target, request.Attacker, request.Trigger, events);
         Result.Publish(placed!, spill?.Amount ?? 0, outcome == Damage.Outcome.Defeated ? Excess : 0);
+        if (!spillOnly && request.BasicRecipient is { } recipient)
+            Execution.Occurrence.Also(recipient with
+            { DamageTaken = placed!.Taken, ExcessDamage = outcome == Damage.Outcome.Defeated ? Excess : 0 }, accumulate: true);
         Execution.Finish(events);
     }
 
@@ -172,7 +175,7 @@ internal sealed class AttackDamageResolution
         if (onto is not null)
             spill = DamageAttacks.Begin(world, facts,
                 request with { Target = onto, Amount = Excess, Verb = Keywords.Overkill, Retaliate = false,
-                    Replacement = null, EnemyAttack = null, Prepared = null },
+                    Replacement = null, EnemyAttack = null, Prepared = null, BasicRecipient = null },
                 events, spillOnly: true);
     }
 

@@ -22,7 +22,9 @@ internal sealed class AttackRecipients
             long previous = items[index].DamageTaken;
             long total = recipient.DamageTaken > long.MaxValue - previous
                 ? long.MaxValue : previous + recipient.DamageTaken;
-            items[index] = items[index] with { DamageTaken = total };
+            long excess = recipient.ExcessDamage > long.MaxValue - items[index].ExcessDamage
+                ? long.MaxValue : items[index].ExcessDamage + recipient.ExcessDamage;
+            items[index] = items[index] with { DamageTaken = total, ExcessDamage = excess };
         }
     }
 

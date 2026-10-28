@@ -33,7 +33,7 @@ internal sealed class LabelledPowerActivationFixture
     internal readonly Card Observer;
     internal Prompt? Pending;
 
-    internal LabelledPowerActivationFixture(bool villain = true, string? body = null, bool includeChase = false)
+    internal LabelledPowerActivationFixture(bool villain = true, string? body = null, bool includeChase = false, bool includeMoment = false)
     {
         var book = AbilityCatalog.Parse("""
             {"cards":[{"card":"10015","abilities":[{
@@ -52,6 +52,21 @@ internal sealed class LabelledPowerActivationFixture
             Abilities = [.. book.Abilities, .. AuthoredCards.Book.On("01052")],
             Authored = book.Authored.Append("01052").ToHashSet(StringComparer.Ordinal),
         };
+        if (includeMoment)
+        {
+            var moment = AbilityCatalog.Parse("""
+                {"cards":[{"card":"12030","abilities":[{
+                  "trigger":{"event":"WhenAttackEnds","timing":"Response","actor":"you","target":"enemy","form":"hero"},
+                  "when":{"wasDefeated":"trigger.target"},
+                  "effect":{"heal":{"card":"you","amount":{"attackExcessDamage":"trigger.target"}}}
+                }]}]}
+                """);
+            book = book with
+            {
+                Abilities = [.. book.Abilities, .. moment.Abilities],
+                Authored = book.Authored.Append("12030").ToHashSet(StringComparer.Ordinal),
+            };
+        }
         Runner = new AbilityRunner(book);
         for (int player = 0; player < 2; player++)
         {

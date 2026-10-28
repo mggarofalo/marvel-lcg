@@ -32,7 +32,7 @@ internal sealed class AbilitySimultaneousDamageCompletion(
     private void Publish(Attacked recipient, AttackDamageResult? damage)
     {
         if (published) return;
-        occurrence.Also(recipient with { DamageTaken = damage?.Taken ?? 0 });
+        occurrence.Also(recipient with { DamageTaken = damage?.Taken ?? 0, ExcessDamage = damage?.Excess ?? 0 }, accumulate: true);
         if (damage is { Taken: > 0 }) occurrence.Also(Steps.DamageDealt);
     }
 

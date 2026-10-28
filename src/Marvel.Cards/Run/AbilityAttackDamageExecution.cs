@@ -48,7 +48,7 @@ internal static class AbilityAttackDamageExecution
             // facts and settled recipient throughout that suspension.
             bool retained = context.ActivationAttack && context.PowerOccurrence is { } power
                 && !ReferenceEquals(power, context.World.Agenda.Occurrence);
-            var recipient = CaptureRecipient(context, retained)
+            var recipient = context.Power == BasicPowers.AttackVerb && context.PowerOccurrence is not null
                 ? Attacked.Capture(target, context.World.Facts) : null;
             if (context.PowerOccurrence?.Retaliation is { } retaliation)
                 context.PowerOccurrence.Retaliation = retaliation.Include(target, context.World.Facts);
@@ -61,8 +61,5 @@ internal static class AbilityAttackDamageExecution
         }
         return suspended;
     }
-
-    private static bool CaptureRecipient(AbilityDamageAndThreatContext context, bool retained) =>
-        context.StagedAttack || retained || context.PowerOccurrence?.Attacks.Count > 0;
 
 }
