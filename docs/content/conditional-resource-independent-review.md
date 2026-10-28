@@ -16,3 +16,11 @@ All observations below used Windows Release and candidate source, with logs unde
 - `ConditionalResourceWireReviewTests`: 1 failed as intended on missing `component_mask`; valid serialization was checked before removing the field. This red test is retained as a repair control, not a passing certification.
 
 The candidate author's earlier allocation and unconditional-shape evidence remains separate. The suspended control proves capture through the shared payment entry point, not every possible caller. Actual Power activation, native conditional display and final compatible replay evidence remain integration requirements before publication. The renderer's automatic excess count is guarded against selected conditional sources; it is not a finding in this review.
+
+## Repair closure review
+
+**Accepted for the synthetic internal contract at `aaedbb07ca59a49666d0f9ac0140c3f7a23ac768`.** The two findings above are closed: required JSON members reject omission; the Rules-owned validity check rejects empty or invalid bonus icons and zero or out-of-range component masks at protocol and direct-client boundaries. Protocol 43 is documented, and protocol 42 requests are rejected before game creation on both embedded and socket paths. Unconditional source JSON retains its previous shape. This is not a replay compatibility verdict.
+
+Independent Windows Release reruns with `-m:1` and `MSBUILDDISABLENODEREUSE=1` passed: Server wire and transport classes 15/15, including the unchanged missing-mask control, added null and negative masks, unconditional shape, valid conditional round trip, and old-version rejection on both transports; suspended capture 1/1; composer parity 1/1; direct-client conditional validation 5/5. Logs are under `Source/evidence/conditional-closure-*`. The repair author's compiled mask-guard and protocol-version mutants and restored non-incremental build are recorded in `conditional-resource-wire-repair.md`.
+
+Actual Power activation, native conditional interaction and the final MARVEL-870 replay assessment remain required before reachable publication. This synthetic contract does not resolve MARVEL-878 or authorize a replay version change by itself.

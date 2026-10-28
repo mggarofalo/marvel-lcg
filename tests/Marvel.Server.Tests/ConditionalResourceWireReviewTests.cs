@@ -28,6 +28,8 @@ public sealed class ConditionalResourceWireReviewTests
     [InlineData("\"generates\":\"G\"", "\"generates\":null")]
     [InlineData("\"generates\":\"G\"", "\"generates\":\"\"")]
     [InlineData("\"generates\":\"G\"", "\"generates\":\"?\"")]
+    [InlineData("\"component_mask\":1", "\"component_mask\":null")]
+    [InlineData("\"component_mask\":1", "\"component_mask\":-1")]
     [InlineData("\"component_mask\":1", "\"component_mask\":0")]
     [InlineData("\"component_mask\":1", "\"component_mask\":2")]
     public void MalformedConditionalBonusIsRejected(string original, string replacement)
