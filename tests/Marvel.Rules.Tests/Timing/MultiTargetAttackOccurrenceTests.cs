@@ -67,6 +67,30 @@ public sealed class MultiTargetAttackOccurrenceTests
         Assert.Single(occurrence.Attacks);
     }
 
+    [Rule("rr:attack-player-ability-type.2.1")]
+    [Rule("rr:attack-player-ability-type.5")]
+    [Rule("rr:leaves-play.1")]
+    [Fact]
+    public void MultipleDamageSentencesRetainOneRecipientAndItsTotalDamage()
+    {
+        // "a single attack, even if that attack deals multiple instances of
+        // damage"; the attacker "attacked each of those enemies".
+        var occurrence = new Occurrence(7, Steps.AttackEnds);
+        var first = Target(10, 1, CardKind.Minion) with { DamageTaken = 1 };
+        var other = Target(11, 1, CardKind.Minion) with { DamageTaken = 2 };
+        occurrence.Also(first, accumulate: true);
+        occurrence.Also(other, accumulate: true);
+        occurrence.Also(first with { DamageTaken = 8 }, accumulate: true);
+        // rr:leaves-play.1: a card returning to play is "a new copy".
+        occurrence.Also(first with { Incarnation = 2, DamageTaken = 3 }, accumulate: true);
+        Assert.Collection(occurrence.Attacks,
+            item => { Assert.Equal(9, item.DamageTaken); Assert.Equal(1, item.Incarnation); },
+            item => { Assert.Equal(2, item.DamageTaken); Assert.Equal(1, item.Incarnation); },
+            item => { Assert.Equal(3, item.DamageTaken); Assert.Equal(2, item.Incarnation); });
+        occurrence.Also(first with { DamageTaken = long.MaxValue }, accumulate: true);
+        Assert.Equal(long.MaxValue, occurrence.Attacks[0].DamageTaken);
+    }
+
     private static Attacked Target(int card, int incarnation, CardKind kind) =>
         new(card, incarnation, new OccurrenceCard(card, kind, World.Scenario, World.Scenario), 0);
 }
