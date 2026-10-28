@@ -215,3 +215,15 @@ The merged two-row candidate passes all 192 selected Content/data checks in
 `roars-25-faces-focused.log`; its tested staged tree is recorded in
 `roars-25-faces-tested-tree.txt`. Final complete verification remains scheduled
 after the remaining content and shared engine work is integrated.
+
+Event allocation source `983ae1f0`, independently accepted at `f75ca018`, now
+preserves resolved costs and source allocations through shared payment and
+validates actual generated resources before publishing successful paid facts.
+The independent control preserves resources paid for an event's arrow cost as
+resources paid for that card. The merged candidate passes all 190 selected
+payment and continuation checks in `roars-event-allocation-integration.log`.
+See [the source record](event-allocation-commit.md) and
+[independent review](event-allocation-independent-review.md). The deliberately
+inconsistent generator probe does not establish a reachable authored failure or
+rollback after costs commit. Conditional Power generation remains MARVEL-878;
+this prerequisite adds no Ant-Man faces or public admission.

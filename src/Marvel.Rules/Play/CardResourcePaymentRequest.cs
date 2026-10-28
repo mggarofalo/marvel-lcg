@@ -2,18 +2,20 @@ using Marvel.Rules.State;
 
 namespace Marvel.Rules.Play;
 
-/// <summary>Engine-local immutable arguments for one resource payment instruction.</summary>
-internal sealed record CardResourcePaymentRequest
+#pragma warning disable CS1591
+
+/// <summary>Engine-local arguments captured on commitment for one resource payment instruction.</summary>
+public sealed record CardResourcePaymentRequest
 {
-    internal required IReadOnlyList<Area> Hands { get; init; }
-    internal required IReadOnlyList<int> Paying { get; init; }
-    internal required long Cost { get; init; }
-    internal required string Required { get; init; }
-    internal required int Itself { get; init; }
-    internal required int Payer { get; init; }
-    internal Marvel.Rules.Prompts.CostOption? Price { get; init; }
-    internal IReadOnlyList<ResourceAllocation> Allocations { get; init; } = [];
-    internal Card? PayingFor { get; init; }
-    internal Card? AbilitySource { get; init; }
-    internal IReadOnlyDictionary<int, int>? ResourcePayers { get; init; }
+    public required IReadOnlyList<Area> Hands { get; init; }
+    public required IReadOnlyList<int> Paying { get; init; }
+    public required long Cost { get; init; }
+    public required string Required { get; init; }
+    public required int Itself { get; init; }
+    public required int Payer { get; init; }
+    public Marvel.Rules.Prompts.CostOption? Price { get; init; }
+    public IReadOnlyList<ResourceAllocation> Allocations { get; init; } = [];
+    public Card? PayingFor { get; init; }
+    public Card? AbilitySource { get; init; }
+    public IReadOnlyDictionary<int, int>? ResourcePayers { get; init; }
 }
