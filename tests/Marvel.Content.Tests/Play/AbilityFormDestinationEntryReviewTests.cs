@@ -123,6 +123,48 @@ public sealed class AbilityFormDestinationEntryReviewTests
         Assert.NotNull(world.AbilityRuntime);
     }
 
+    [Fact]
+    public void OrderedSetRejectsLaterCompositeBeforeEarlierAbilityRuns()
+    {
+        var runner = SetupPair("""{"and":[{"changeForm":{"player":"you","to":{"face":"12001c"}}}]}""");
+        var (world, source) = Board(runner, "01006");
+        string before = world.Digest().Canonical();
+        var pending = world.Agenda.Outstanding.ToArray();
+        var random = world.Random.Generator.GetState();
+        long words = world.Random.Generator.WordsConsumed;
+
+        var error = Record.Exception(() => runner.ExecuteSetup(world, source));
+
+        Assert.Contains("composed", Assert.IsType<RulesNotImplementedException>(error).Message);
+        Assert.Equal(before, world.Digest().Canonical());
+        Assert.Equal(pending, world.Agenda.Outstanding);
+        Assert.Equal(random.Index, world.Random.Generator.GetState().Index);
+        Assert.Equal(random.Words, world.Random.Generator.GetState().Words);
+        Assert.Equal(words, world.Random.Generator.WordsConsumed);
+        Assert.Null(world.AbilityRuntime);
+    }
+
+    [Fact]
+    public void OrderedSetRunsSupportedDrawBeforeStandaloneDestination()
+    {
+        var runner = SetupPair("""{"changeForm":{"player":"you","to":{"face":"12001c"}}}""");
+        var (world, source) = Board(runner, "01006");
+        int handBefore = world.Seats[0].Hand.Cards.Count;
+
+        runner.ExecuteSetup(world, source);
+
+        Assert.Equal(handBefore + 1, world.Seats[0].Hand.Cards.Count);
+        Assert.Equal("12001c", Assert.Single(world.Agenda.Outstanding)
+            .Require<IdentityFormChangeOperation>().Destination);
+    }
+
+    private static AbilityRunner SetupPair(string second) => new(AbilityCatalog.Parse("""
+        {"cards":[{"card":"01006","abilities":[
+          {"trigger":{"timing":"Setup"},"effect":{"draw":{"player":"you","count":1}}},
+          {"trigger":{"timing":"Setup"},"effect":SECOND}
+        ]}]}
+        """.Replace("SECOND", second, StringComparison.Ordinal)));
+
     private static void Enter(string path, AbilityRunner runner, World world, Card source)
     {
         if (path == "setup") runner.ExecuteSetup(world, source);
