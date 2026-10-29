@@ -34,7 +34,7 @@ internal static class AbilityResolutionActions
     }
 
     internal static AbilityExecutionResult Act(this AbilityResolutionExecution execution,
-        World world, AbilityExecution invocation, Decision answer)
+        World world, AbilityExecution invocation, Decision answer, ScopedCardCostReduction? reduction = null)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(invocation);
@@ -69,7 +69,7 @@ internal static class AbilityResolutionActions
         // game element. `rr:cost.6` and `rr:event.3` make target availability
         // part of whether the cost may be paid at all.
         var admission = execution.offerQueries.ActionAdmission(
-            world, card, found, ability.Player, occurrence, chosen);
+            world, card, found, ability.Player, occurrence, chosen, reduction);
         if (admission is null)
         {
             throw new RulesNotImplementedException(
@@ -96,7 +96,7 @@ internal static class AbilityResolutionActions
                 resourcesPaidByEvent: EventPaysResources(world, card, found.Cost), allocations: allocations));
         var eventPayment = AbilityEventPayment.Prepare(
             world, card, cast.Player, found, execution.resourceAbilities,
-            AbilityPaymentSelection.Capture(paying, [], values, allocations: allocations));
+            AbilityPaymentSelection.Capture(paying, [], values, allocations: allocations), reduction);
         // rr:cost.5: costs "must be paid simultaneously". Capture the chosen
         // physical incarnation before exhaustion and retain it through cost work.
         if (AbilityCostSelection.BindsChosen(found.Cost))
