@@ -1,9 +1,10 @@
 # Rise of Red Skull cycle integration
 
 The canonical delivery records are MARVEL-568 (Kang) and MARVEL-569 (Ant-Man),
-within MARVEL-703. This candidate combines reviewed engine prerequisites; neither
-pack has complete executable content or public admission. The production book
-contains 757 rows, including 34 of Ant-Man's 35 faces and no Kang faces.
+within MARVEL-703. This candidate combines reviewed engine prerequisites and all
+35 authored Ant-Man faces. Ant-Man now has reviewed public setup and complete
+product admission in this candidate; Kang does not. The production book contains
+758 rows and no Kang faces.
 Hank's reviewed entry cases are supported. The owner resolved MARVEL-885:
 defeat the zero-HP entering ally before enforcing the ally limit. Source `338cf0fb` and independent review `9598e36d` implement and verify that
 adjudication, including the mandatory limit check if an interrupt saves the ally.
@@ -78,13 +79,20 @@ Tech blanking source `95021926` has independent review `c8e1bcb5`. The source pa
 
 Actual `12026` source `891a1be2` and independent review `d0e7234a` are now combined. The source passes 68 focused checks and distinguishes a no-op row mutation; the review passes 36 checks and independently verifies all 756 preceding objects and their 767,344-byte prefix. Its additional control removes threat through scheme defeat and verifies blanking ends only on defeat. See [actual Tech Theft evidence](tech-theft-actual.md). The combined full Content run passes 8,898 cases and fails one stale Ant-Man reprint inventory list that omits the new12026 row, with no skips (9m55s, `roars-34-combined-content.log`). Adding only12026 to that strict expected list leaves gameplay assertions unchanged; all103 affected inventory, Hank, Tech and Plan checks then pass (`roars-34-inventory-corrected.log`). This is not a claim of a subsequent all-green full run; final complete-pack verification remains. See [the protection review](tech-blanking-independent-review.md).
 
-Team-Building Exercise's scoped permanent-play prerequisite source `73363f70` is independently reviewed at `bff0af9c`. The reviewed source passes 1,216 Rules and 66 focused Content checks; the final independent scoped-cost class passes seven checks, including ordinary subsequent full-cost play and one-use modifier consumption. The combined candidate passes90 focused Content/data checks and all1,217 Rules checks (`roars-team-permanent-{content,rules}.log`). Action-event dispatch source `8db24131` is independently reviewed at `5d19b7ee`; the combined candidate passes 144 affected Content checks and all 1,217 Rules checks (`roars-team-event-{content,rules}.log`). The current reachable event inventory is covered by the bounded implementation. Actual `12024` and its Hank Pym overpayment integration remain outstanding. See [event review](team-building-event-invoke-checkpoint.md#independent-event-review). See [the permanent-path review](team-building-permanent-independent-review.md).
+Team-Building Exercise's scoped permanent-play prerequisite source `73363f70` is independently reviewed at `bff0af9c`. The reviewed source passes 1,216 Rules and 66 focused Content checks; the final independent scoped-cost class passes seven checks, including ordinary subsequent full-cost play and one-use modifier consumption. The combined candidate passes90 focused Content/data checks and all1,217 Rules checks (`roars-team-permanent-{content,rules}.log`). Action-event dispatch source `8db24131` is independently reviewed at `5d19b7ee`; the combined candidate passes 144 affected Content checks and all 1,217 Rules checks (`roars-team-event-{content,rules}.log`). The current reachable event inventory is covered by the bounded implementation. Actual `12024` source `92e708fb` and independent review `627cef15` are now combined. The reviewed gameplay tree passes 127 affected checks, including below-cap actual Hank overpayment and an extra-counter mutant. Root integration changes only documentation relative to that tested tree. See [actual-card evidence](team-building-actual.md). See [event review](team-building-event-invoke-checkpoint.md#independent-event-review). See [the permanent-path review](team-building-permanent-independent-review.md).
 
-Only Team-Building Exercise (`12024`) remains unauthored. MARVEL-885 has an
+All 35 Ant-Man faces are authored and independently reviewed. MARVEL-885 has a
 verified defeat-first implementation; no further human decision is pending on
 that ordering. Actual Plan-to-Tech Theft reveal is verified in the card packet;
-complete pack/starter admission, native interaction and MARVEL-870 replay
-publication evidence remain required before delivery to main.
+starter and public admission source `c526e9d7` is independently reviewed at
+`08ff9b12`. Its reviewed gameplay tree passes 130 Content, 29 Server and 25
+authority checks; root integration changes only documentation relative to that
+tested tree. The three-face setup prerequisite `55d41d26` is independently
+reviewed at `39a0ae35`, including all 1,230 Rules tests and an actual catalog
+blueprint check. See [admission evidence](ant-man-public-admission.md).
+Characteristic response resolution, fresh-host save/restart/undo/replay, native
+interaction, complete games and final integrated managed/platform checks remain
+required before delivery to main. MARVEL-870 still gates replay publication.
 
 Earlier integration checkpoints below describe the revision tested at that
 point; their older inventory counts and pending tasks are historical.

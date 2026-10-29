@@ -83,6 +83,10 @@ func _open_form_menu() -> bool:
     var giant = Locator.button(menu, "Change to Ant-Man (AVENGER, GIANT)", false)
     if not await ui.expect_fully_visible_enabled(tiny): return false
     if not await ui.expect_fully_visible_enabled(giant): return false
+    for choice in [tiny.all()[0], giant.all()[0]]:
+        if not await ui.expect(func(): return "Uses your voluntary form change this round." in choice.text and \
+            "12001a" not in choice.text and "12001c" not in choice.text,
+            "destination explains the voluntary commitment without internal face IDs"): return false
     return await ui.expect(func(): return not tiny.all()[0].get_global_rect().intersects(giant.all()[0].get_global_rect()),
         "Tiny and Giant are distinct, nonoverlapping destination choices")
 

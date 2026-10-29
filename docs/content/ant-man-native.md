@@ -28,10 +28,24 @@ pwsh tools/godot-acceptance.ps1 -Script res://smoke/automation/ant_man_public_ac
 The rendered setup, opening, destinations, response, target and result images
 were inspected in the `ant-man-native-r3/artifacts` directory. The choices are
 separate and legible, and the response shows the player, optional pass, one
-damage and Rhino's predicted health. The destination menu also visibly exposes
-the internal face IDs `12001a` and `12001c` in its engine-supplied descriptions;
-this is an outstanding engine copy defect, reported for a separate fix. This
-focused pass does not establish product readiness or other platforms and scales.
+damage and Rhino's predicted health. The destination menu visibly exposed the
+internal face IDs `12001a` and `12001c` in engine-supplied descriptions. Engine
+copy fix `3d2d463d` removes those IDs while retaining the destination labels and
+the voluntary-change explanation.
+
+An independent retest of that fix, merged with the native packet and its new
+no-ID assertion, passed after rebuilding Debug with the command above:
+
+```powershell
+pwsh tools/godot-acceptance.ps1 -Script res://smoke/automation/ant_man_public_acceptance.gd -NoBuild -ResultsDirectory C:/Users/mggar/Source/evidence/ant-man-copy-h1
+pwsh tools/godot-acceptance.ps1 -Script res://smoke/automation/ant_man_public_acceptance.gd -NoBuild -Rendered -ResultsDirectory C:/Users/mggar/Source/evidence/ant-man-copy-r1
+```
+
+The rendered destination, response, target and result images in
+`ant-man-copy-r1/artifacts` were inspected. Both destinations name the form and
+say the voluntary change is used this round, without internal IDs; the response
+and result remain visible. This focused pass does not establish product readiness
+or other platforms and scales.
 
 The existing generic native payment cases do not establish Team-Building
 Exercise's scoped quote and optional overpayment. A separate public seeded

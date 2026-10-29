@@ -76,7 +76,7 @@ independent identities do:
 
 | Identity | Current value | Changes when |
 |---|---:|---|
-| Engine protocol | `42` | A request, response, affordance, event or descriptor change is not understood by the prior endpoint. |
+| Engine protocol | `43` | A request, response, affordance, event or descriptor change is not understood by the prior endpoint. |
 | Session schema | `7` | The strict persisted JSON shape changes. |
 | Engine replay contract | `engine-replay-v28` | The same setup and decision trace may resolve differently. |
 | RNG contract | `mt19937-iso-cxx` | The seeded random stream changes. |
@@ -90,14 +90,14 @@ current-content saves, have no named admission and remain quarantined unchanged.
 Only the exact frozen Core/RoRS v19/v20/v21 content triple has explicit routes to
 `engine-replay-v28`, verifying every original recorded fact before provenance
 changes; frozen-content v28 additive upgrades use the unchanged replay route.
-Historical named destinations remain exact. Protocol 42, schema 7, RNG and state
-digest formats retain their identities.
+Historical named destinations remain exact. At replay v28 publication, protocol 42,
+schema 7, RNG and state digest formats retained their identities.
 
 Replay v27 evaluates dynamic lasting amounts against current state and preserves
 captured actor incarnation across suspended responses. These corrections can change
 accepted Core/RoRS outcomes. V26 saves have no named source admission; original
 saves remain unchanged. Explicit frozen v19/v20/v21 routes verify every historical
-fact before changing compatibility metadata. Protocol 42 and save schema 7 apply.
+fact before changing compatibility metadata. That release used protocol 42 and save schema 7.
 
 Replay v26 completes minion Quickstrike before optional engagement and entry
 responses. Real Core Hawkeye and Vulture can therefore reach the same optional
