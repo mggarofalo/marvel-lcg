@@ -41,7 +41,7 @@ internal static class AbilityAffordanceDescription
             ContextCardIds = ContextCards(world, ability),
             WindowChoices = AbilityWindowChoiceDescription.Describe(execution, world, card, found, ability.Player, ability),
             DisplayLabel = caption,
-            CommitLabel = caption,
+            CommitLabel = AbilitySourceActionDescription.CommitCaption(found.Effect, caption, world, card),
             PlaysCard = EffectiveCards.Kind(card, world.Facts) == CardKind.Event,
             DeferredTargetSelection = recipients is null && StartsWithTargetSelection(found.Effect),
             DirectRecipientCommit = CanCommitRecipient(recipients, EffectiveCards.Kind(card, world.Facts), found.Trigger.Timing),

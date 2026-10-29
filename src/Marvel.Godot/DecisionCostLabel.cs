@@ -12,7 +12,8 @@ internal static class DecisionCostLabel
         if (offer.CostOptions is not [var cost] || cost.HasAlternative
             || cost.ResourceCosts is not [var component]) return;
         string label = button.Text;
-        HBoxContainer row = ResourceIconRendering.Row($"{label} · {component.Cost}",
+        int end = label.IndexOf('\n', StringComparison.Ordinal);
+        HBoxContainer row = ResourceIconRendering.Row(OfferCaption(end < 0 ? label : label[..end], component),
             Symbols(component), GodotThemeVariations.Caption);
         if (compact && row.GetChild(0) is Label caption)
         {
@@ -21,8 +22,21 @@ internal static class DecisionCostLabel
         }
         string accessible = $"{label}. {Accessible(cost)}. {button.TooltipText}";
         button.Text = string.Empty;
-        ResourceIconRendering.ButtonContent(button, row, accessible);
+        // Only the caption row carries control weight; the explanation reads as body copy.
+        ResourceIconRendering.ButtonContent(button, end < 0 ? row : WithExplanation(row, label[(end + 1)..]), accessible, row);
     }
+
+    // The price stays on the choice's first line, so explanation lines below it
+    // cannot push it out of a compact caption.
+    private static VBoxContainer WithExplanation(HBoxContainer row, string explanation)
+    {
+        var content = new VBoxContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
+        content.AddChild(row);
+        content.AddChild(DecisionPanel.Text(explanation, GodotThemeVariations.Caption, wrap: true));
+        return content;
+    }
+
+    internal static string OfferCaption(string label, ResourceCost component) => $"{label} · Pay {component.Cost}";
 
     internal static HBoxContainer Create(CostOption cost, WorldDescriptor world, string prefix = "", bool showTarget = true)
     {

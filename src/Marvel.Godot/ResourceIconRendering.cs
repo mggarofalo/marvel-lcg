@@ -81,11 +81,11 @@ internal static class ResourceIconRendering
         }.Where(text => text.Length > 0));
     }
 
-    internal static void ButtonContent(Button button, Control content, string accessibleName)
+    internal static void ButtonContent(Button button, Control content, string accessibleName, Control? caption = null)
     {
         button.AccessibilityName = accessibleName;
         button.TooltipText = string.Empty;
-        ButtonContentTypography.Apply(content);
+        ButtonContentTypography.Apply(caption ?? content);
         ButtonContentLayout.Attach(button, content);
     }
 

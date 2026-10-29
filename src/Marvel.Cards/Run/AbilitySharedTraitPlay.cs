@@ -71,12 +71,24 @@ internal static class AbilitySharedTraitPlay
                 offers.Add(new Affordance(card.ObjectId, AbilityStructuralExecution.ChooseVerb,
                     card.ObjectId, seat.Index, card.FaceId,
                     Targets: hosts is null ? null : new TargetRequest(prices.Select(price => price.Target).ToArray(), 1, 1),
-                    Costs: prices) { PlaysCard = true, SelectionSourceId = source.ObjectId });
+                    Costs: prices, Description: PlayDescription(world, program, card, source))
+                { PlaysCard = true, SelectionSourceId = source.ObjectId });
             }
         }
         return new Prompt(player, Question.Element, TimingPriority.Untimed, Steps.TurnAction,
-            $"{source.FaceId}: choose a card to play", false, offers);
+            $"{source.FaceId}: choose a card to play", false, offers)
+        {
+            DisplayQuestion = "Choose a matching card to play",
+            Description = $"{EffectiveCards.Title(source, world.Facts)} was exhausted. Play a card from your hand that shares a trait with your hero; reduce its cost by 1. The shown payment is the current cost.",
+            ContextCardIds = [source.ObjectId],
+        };
     }
+
+    // The engine price already applies every modifier, so the copy only names
+    // this source's share and the floor that can absorb it.
+    internal static string PlayDescription(World world, AbilityProgram program, Card card, Card source) =>
+        $"This price already includes {EffectiveCards.Title(source, world.Facts)}'s reduction of 1 (a cost can't go below 0)."
+        + (AbilityEntryCounterDescription.PlaySummary(world, program, card) is { } entry ? $" {entry}" : string.Empty);
 
     private static bool CanPayWithoutSource(World world, Card card, CostOption price, Card source)
     {

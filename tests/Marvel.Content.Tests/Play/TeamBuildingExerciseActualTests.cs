@@ -26,11 +26,21 @@ public sealed class TeamBuildingExerciseActualTests
         var actions = game.Pending!.Affordances.Where(a => a.AnchorId == source!.ObjectId).ToArray();
         Assert.Equal(hero, actions.Length == 1);
         if (!hero) { Assert.True(source!.Ready); return; }
+        Assert.Equal("Play a matching card", actions[0].DisplayLabel);
+        Assert.Equal("Play a matching card with Team-Building Exercise", actions[0].CommitLabel);
+        Assert.Equal("Exhaust Team-Building Exercise", actions[0].CostDescription);
+        Assert.Equal("Play a card from your hand that shares a trait with your hero, reducing its cost by 1", actions[0].Description);
         var ordinary = Assert.Single(game.Pending.Affordances, a => a.AnchorId == matching!.ObjectId);
         Assert.Equal("1", Assert.Single(ordinary.CostOptions).Cost);
         game.Resolve(Decision.Take(actions[0].Id));
         Assert.False(source!.Ready);
-        var offer = Assert.Single(game.Pending!.Affordances, a => a.AnchorId == matching!.ObjectId);
+        Assert.Equal("Choose a matching card to play", game.Pending!.DisplayQuestion);
+        Assert.Contains("Team-Building Exercise was exhausted", game.Pending.Description);
+        Assert.Contains("shown payment is the current cost", game.Pending.Description);
+        Assert.False(game.Pending.Cancellable);
+        var offer = Assert.Single(game.Pending.Affordances, a => a.AnchorId == matching!.ObjectId);
+        Assert.Contains("This price already includes Team-Building Exercise's reduction of 1", offer.Description);
+        Assert.True(offer.PlaysCard);
         Assert.DoesNotContain(game.Pending.Affordances, a => a.AnchorId == other!.ObjectId);
         Assert.Equal("0", Assert.Single(offer.CostOptions).Cost);
         game.Resolve(Decision.Take(offer.Id));
@@ -66,6 +76,8 @@ public sealed class TeamBuildingExerciseActualTests
         var offer = Assert.Single(game.Pending!.Affordances, a => a.AnchorId == card!.ObjectId);
         var price = Assert.Single(offer.CostOptions);
         Assert.Equal(cost.ToString(), price.Cost);
+        Assert.Contains("This price already includes Team-Building Exercise's reduction of 1", offer.Description);
+        Assert.True(offer.PlaysCard);
         int[] payment = second is null ? [first!.ObjectId] : [first!.ObjectId, second.ObjectId];
         game.Resolve(new Decision(offer.Id, [], payment, Allocations: ResourcePayment.Allocate(price, payment)));
         Assert.Equal(DeckType.RevealingArea, card!.Area.Type);
@@ -128,6 +140,8 @@ public sealed class TeamBuildingExerciseActualTests
         var offer = Assert.Single(game.Pending!.Affordances, a => a.AnchorId == hank!.ObjectId);
         var price = Assert.Single(offer.CostOptions);
         Assert.Equal("0", price.Cost);
+        Assert.Contains("Optional entry interrupt", offer.Description);
+        Assert.Contains("overpaid", offer.Description);
         int[] payment = resources.Select(c => c.ObjectId).ToArray();
         game.Resolve(new Decision(offer.Id, [], payment, Allocations: ResourcePayment.Allocate(price, payment)));
         Assert.False(source.Ready);
