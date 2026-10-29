@@ -182,7 +182,7 @@ func _click_row(library: Window, row: Control, ctrl: bool, shift: bool) -> void:
 func _check_bulk_edits(library: Window) -> bool:
 	await _menu_action(library, "DeckActions", "Clear deck")
 	var search := library.find_child("CardSearch", true, false) as LineEdit
-	search.text = 'Haymaker|"First Aid"'
+	search.text = 'Haymaker|"First Aid" e:core'
 	search.text_changed.emit(search.text)
 	await _menu_action(library, "PoolActions", "Select page")
 	if not await _wait(func(): return not library.find_child("DeckAdd", true, false).disabled): return false
@@ -232,7 +232,7 @@ func _check_unique_row(library: Window, search: LineEdit) -> bool:
 	return await _wait(func(): return _text_contains(library, "15 cards"))
 
 func _check_drag(library: Window, search: LineEdit) -> bool:
-	search.text = 'Haymaker|"First Aid"'
+	search.text = 'Haymaker|"First Aid" e:core'
 	search.text_changed.emit(search.text)
 	await _menu_action(library, "PoolActions", "Select page")
 	var browser := library.find_child("CardBrowser", true, false) as ScrollContainer
