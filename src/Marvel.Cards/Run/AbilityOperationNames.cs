@@ -194,6 +194,7 @@ internal static class AbilityOperationNames
             AbilityFixedInstruction.PlaceAccelerationToken => "placeAccelerationToken",
             AbilityFixedInstruction.GenerateTopDiscard => "generateTopDiscard",
             AbilityFixedInstruction.MakeTheCall => "makeTheCall",
+            AbilityFixedInstruction.PlaySharedHeroTraitPermanent => "playSharedHeroTraitPermanent",
             AbilityFixedInstruction.DiscardOtherEnvironments => "discardOtherEnvironments",
             AbilityFixedInstruction.BlankTechPlayerCards => "blankTechPlayerCards",
             AbilityFixedInstruction.GainEnvironmentTraits => "gainEnvironmentTraits",

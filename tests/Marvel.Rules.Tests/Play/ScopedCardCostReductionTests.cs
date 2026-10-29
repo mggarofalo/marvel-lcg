@@ -1,4 +1,5 @@
 using Marvel.Rules.Play;
+using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
 using Marvel.Tests;
 using Xunit;
@@ -7,6 +8,49 @@ namespace Marvel.Rules.Tests.Play;
 
 public sealed class ScopedCardCostReductionTests : CardPlayTestBase
 {
+    [Rule("rr:play-put-into-play")]
+    [Fact]
+    public void ScopedPlayPaysReducedCostAndDoesNotDiscountNextCard()
+    {
+        // rr:play-put-into-play: playing pays the cost and places the card in play.
+        var printed = Cards();
+        var world = Board(printed);
+        var seat = world.Seats[0];
+        var card = InHand(world, "ally");
+        var next = InHand(world, "ally");
+        var reduction = new ScopedCardCostReduction(world, seat, card, 1);
+        var request = new ScopedCardPlayRequest(printed, new Silent(), seat, card,
+            new Decision(card.ObjectId, [], []), reduction);
+
+        ScopedPermanentPlay.Validate(world, request);
+        CardPlay.PlayScoped(world, request, []);
+        Assert.Null(Sequence.Work(world, printed, new Silent(), []));
+
+        Assert.Equal(DeckType.AlliesArea, card.Area.Type);
+        Assert.Equal(1, CardPayment.CostOf(world, printed, seat, next).Amount);
+        Assert.Equal(4, seat.Hand.Cards.Count(c => c.FaceId == "res"));
+    }
+
+    [Fact]
+    public void ScopedPlayRejectsAStalePaymentBeforeMutation()
+    {
+        var printed = Cards();
+        var world = Board(printed);
+        var seat = world.Seats[0];
+        var card = InHand(world, "bruiser");
+        var spent = seat.Hand.Cards[0];
+        var request = new ScopedCardPlayRequest(printed, new Silent(), seat, card,
+            new Decision(card.ObjectId, [], [spent.ObjectId]), new(world, seat, card, 1));
+        World.MoveToTop(spent, world.AreaOf(DeckType.DiscardPile, PlayArea.Of(0), cardOwner: 0));
+        var before = world.Digest().Canonical();
+        var agenda = world.Agenda.Count;
+
+        Assert.Throws<ArgumentException>(() => CardPlay.PlayScoped(world, request, []));
+        Assert.Equal(before, world.Digest().Canonical());
+        Assert.Equal(agenda, world.Agenda.Count);
+        Assert.Same(seat.Hand, card.Area);
+    }
+
     [Rule("rr:modifiers.4")]
     [Fact]
     public void ScopedReductionFloorsAtZeroAndDoesNotChangeAnotherQuote()

@@ -13,6 +13,15 @@ internal static class AbilityResolutionChoices
     private static readonly System.Collections.Immutable.ImmutableArray<string> SpecialChoiceOperations =
         ["chooseCardsToHand", "resolveSpecials", "chooseTopForHand", "chooseDiscardToShuffle", "discardHandCards", "discardResourceIcons"];
 
+    internal static void ValidateChoice(this AbilityResolutionExecution execution, World world, PhaseStep step, Decision input)
+    {
+        var cast = RestoreChoice(execution, world, step);
+        var choice = AbilityContinuations.Choice(execution.program, cast.Source, cast.Tier,
+            step.Index, step, execution.AdmissionContext(cast));
+        if (choice.OperationName() == "playSharedHeroTraitPermanent")
+            _ = AbilitySharedTraitPlay.Validate(execution.StructuralContext(cast), input);
+    }
+
     internal static Prompt? Choosing(this AbilityResolutionExecution execution, World world, PhaseStep step)
     {
         var cast = RestoreChoice(execution, world, step);
@@ -95,6 +104,7 @@ internal static class AbilityResolutionChoices
                 AbilityPaymentChoiceDescription.Describe(
                     structural, (AbilityEffect.PayOrEffect)choice),
             "makeTheCall" => AbilityStructuralExecution.DescribeMakeTheCall(structural),
+            "playSharedHeroTraitPermanent" => AbilitySharedTraitPlay.Describe(structural),
             _ => null,
         };
         if (prompt is not null) return prompt;

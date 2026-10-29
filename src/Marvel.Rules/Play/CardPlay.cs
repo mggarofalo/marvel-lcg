@@ -132,41 +132,11 @@ public static class CardPlay
     public static void PlayAllocated(
         World world, ICardFacts facts, ICardPlayAbilities abilities, Seat seat,
         Card card, Decision choice, List<GameEvent> events)
-    {
-        ArgumentNullException.ThrowIfNull(world);
-        ArgumentNullException.ThrowIfNull(facts);
-        ArgumentNullException.ThrowIfNull(abilities);
-        ArgumentNullException.ThrowIfNull(seat);
-        ArgumentNullException.ThrowIfNull(card);
-        ArgumentNullException.ThrowIfNull(choice);
-        ArgumentNullException.ThrowIfNull(events);
-        var targets = choice.Targets;
-        var paying = choice.Spent;
+        => PlayScoped(world, new ScopedCardPlayRequest(facts, abilities, seat, card, choice), events);
 
-        // Admission checks precede committed changes; the accepted card is exposed
-        // faceup outside play before any generator cost can open an interrupt.
-        // Step 2. Play restrictions.
-        if (!Permitted(world, facts, seat, card, targets, abilities))
-        {
-            throw new RulesNotImplementedException(
-                $"card {card.ObjectId} ('{card.FaceId}') in {card.Area.Type} cannot be played "
-                + $"by {seat.Name} right now");
-        }
-
-        // Steps 3 and 4. Determine the cost and apply modifiers. The same
-        // operation prices the affordance, so what was offered and what is
-        // charged cannot disagree.
-        var adjusted = CardPayment.CostOf(world, facts, seat, card, targets is { Count: 1 } ? targets[0] : null);
-
-        // Step 5. Pay it -- "if this step is reached and the cost(s) cannot be
-        // paid, **abort this process without paying any costs**", so the whole
-        // payment is checked before a single card is discarded.
-        // `rr:alliance` -- for an alliance card this is every player's hand,
-        // and for every other card it is only this player's.
-        CardPlayPayment.Play(world,
-            new CardPlayInitiation(facts, abilities, seat, card, adjusted, [.. targets], [.. paying])
-            { Allocations = [.. choice.Allocated] }, events);
-    }
+    /// <summary>Plays a card with a reduction supplied by the resolving effect.</summary>
+    public static void PlayScoped(World world, ScopedCardPlayRequest request, List<GameEvent> events) =>
+        ScopedPermanentPlay.Play(world, request, events);
 
     /// <summary>Plays a card while an effect ignores its resource cost.</summary>
     /// <remarks>

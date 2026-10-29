@@ -67,7 +67,7 @@ internal static class AbilityChoiceAnalysis
         node is AbilityEffect.Damage { Maximum: not null } or AbilityEffect.AttackAnotherEnemy or AbilityEffect.MoveThreat or AbilityEffect.Power { TargetCount: not null } || node.OperationName() is "choose" or "chooseCard" or "indirectDamage"
             or "resolveSpecials" or "payOrExhaust" or "chooseTopForHand" or "peekTop" or "inspectEncounterTop" or "inspectDiscardOrderEncounterTop"
             or "discardHandCards" or "discardResourceIcons" or "chooseStatusRecipients" or "chooseCardsToHand" or "chooseDiscardToShuffle" or "distributeThreat" or "thwartDifferentSchemes" or "makeTheCall"
-            or "legalPractice" or "payOrEffect" or "enemyAttacks" or "enemySchemes";
+            or "playSharedHeroTraitPermanent" or "legalPractice" or "payOrEffect" or "enemyAttacks" or "enemySchemes";
 
     /// <summary>Choice nodes on the control-flow path that can execute now.</summary>
     internal static IEnumerable<AbilityEffect> ActiveChoices(AbilityEffect node, AbilityAdmissionScope cast)

@@ -34,7 +34,13 @@ internal sealed class AbilityChoiceAnswer(
             return ApplyPayment(choice);
         if (operation is "distributeThreat" or "thwartDifferentSchemes" or "legalPractice")
             return ApplyThwartChoice(choice);
+        return ApplyRemaining(choice, operation);
+    }
+
+    private List<Marvel.Rules.Events.GameEvent> ApplyRemaining(AbilityEffect choice, string operation)
+    {
         if (operation == "makeTheCall") return ApplyMakeTheCall(choice);
+        if (operation == "playSharedHeroTraitPermanent") return AbilitySharedTraitPlay.Commit(execution, cast, choice, input);
         if (operation == "indirectDamage") return ApplyIndirectDamage(choice);
         if (operation == "attack") return ApplyCountedAttack((AbilityEffect.Power)choice);
         return ApplyResumableEffectChoice(choice);
