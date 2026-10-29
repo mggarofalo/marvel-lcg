@@ -49,3 +49,19 @@ classes passed all 16 cases. The future-discard check is a conservative, shallow
 recognition of pending receipts and direct fixed-zero bounds, not a general
 symbolic analysis. This review does not establish canonical Hank admission or a
 complete pack journey.
+
+Integrated Content regression exposed two counter-admission interactions. A
+pending positive healing cost can supply `result.healed` after payment, while
+unwritten results with no preceding producer remain zero. Counter admission
+recognizes named pending producers and fixed zero min/product operands; this is
+a conservative reachability check, not a general symbolic proof. Energy retains
+its existing payment receipt projection. Unstable singular area targets defer
+admission to the existing continuation guard, which refuses an unsupported hand
+selection before committing it. Exhaustion projection retains its explicit
+uncommitted-receipt refusal.
+
+The focused healing, ordered payment, selection guard, entry excess and counter
+classes passed 63 cases. Removing healing-cost recognition killed a compiled
+mutant (15 failures in 25); removing singular-area deferral killed another
+(two failures in two). Sources were restored for nonincremental verification.
+Independent review of this repair remains pending.
