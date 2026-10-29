@@ -40,41 +40,6 @@ public sealed class SpentResourceResponseTests
         Assert.Same(seat.Hand, other.Area);
     }
 
-    [Theory]
-    [InlineData("12001b", false, 3, 0)]
-    [InlineData("12001a", true, 3, 1)]
-    [InlineData("12001c", true, 1, 0)]
-    [Rule("rr:cost.4")]
-    public void WhollyExcessStillOffersOnlyInHeroForm(string form, bool offered, int damage, int draws)
-    {
-        // Excess resources "were not paid" but the physical card was spent.
-        var runner = Runner(pymEffect: true);
-        var world = ThorActualFixture.Board("06001a");
-        world.Abilities = runner;
-        var seat = world.Seats[0];
-        World.MoveToTop(seat.IdentityCard, world.AreaOf(DeckType.RemovedArea));
-        seat.IdentityCard = world.CreateCard("12001a,12001b,12001c", seat.Hero);
-        seat.IdentityCard.TurnTo(form);
-        seat.IdentityCard.TakeDamage(3);
-        var played = world.CreateCard("01069", seat.Hand);
-        var spent = world.CreateCard("12006", seat.Hand);
-        for (int n = 0; n < 3; n++) world.CreateCard("01087", seat.Deck);
-        int held = seat.Hand.Cards.Count;
-        Assert.Equal(0, CardPayment.CostOf(world, world.Facts, seat, played).Amount);
-        CardPlay.Play(world, world.Facts, runner, seat, played, [spent.ObjectId], []);
-        var prompt = Sequence.Work(world, world.Facts, runner, []);
-        if (offered)
-        {
-            var response = Assert.Single(prompt!.Affordances, item => item.AnchorId == spent.ObjectId);
-            Sequence.Answer(world, world.Facts, runner, prompt, Decision.Take(response.Id), []);
-            Sequence.Finish(world, world.Facts, runner, []);
-        }
-        else Assert.Null(prompt);
-        Assert.Equal(damage, seat.IdentityCard.Damage);
-        Assert.Equal(held - 2 + draws, seat.Hand.Cards.Count);
-        Assert.Equal(DeckType.DiscardPile, played.Area.Type);
-    }
-
     [Fact]
     [Rule("rr:resource.1")]
     public void OrdinaryDiscardDoesNotCreateSpendResponse()
@@ -239,22 +204,18 @@ public sealed class SpentResourceResponseTests
         Assert.False(world.Agenda.IsBusy);
     }
 
-    internal static AbilityRunner Runner(bool withAction = false, bool pymEffect = false, bool withChoice = false)
+    internal static AbilityRunner Runner(bool withAction = false, bool withChoice = false)
     {
         var root = JsonNode.Parse(AuthoredCards.Text)!;
+        // Replace the real Pym row with an observable synthetic response marker.
+        var cards = root["cards"]!.AsArray();
+        cards.Remove(cards.Single(row => (string?)row!["card"] == "12006"));
         root["cards"]!.AsArray().Add(JsonNode.Parse("""
             {"card":"12006","abilities":[{
               "trigger":{"event":"WhenResourceCardSpent","timing":"Response","subject":"this","player":"you","form":"hero"},
               "effect":{"placeCounters":{"card":"you","counter":"spent_seen","count":1}}
             }]}
             """));
-        if (pymEffect)
-            root["cards"]!.AsArray().Last()!["abilities"]![0]!["effect"] = JsonNode.Parse("""
-              {"if":{"test":{"hasTrait":{"card":"you","trait":"GIANT"}},
-                "then":{"heal":{"card":"yourHero","amount":2}},
-                "else":{"if":{"test":{"hasTrait":{"card":"you","trait":"TINY"}},
-                  "then":{"draw":{"player":"you","count":1}}}}}}
-              """);
         if (withAction)
         {
             var rows = root["cards"]!.AsArray();

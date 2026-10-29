@@ -23698,6 +23698,53 @@
         }
       ],
       "note": "Prefer Yellowjacket, otherwise the villain; printed attachment stats apply once. Each completed attack or scheme removes one use."
+    },
+    {
+      "card": "12006",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenResourceCardSpent",
+            "timing": "Response",
+            "subject": "this",
+            "player": "you",
+            "form": "hero"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "hasTrait": {
+                  "card": "you",
+                  "trait": "GIANT"
+                }
+              },
+              "then": {
+                "heal": {
+                  "card": "yourHero",
+                  "amount": 2
+                }
+              },
+              "else": {
+                "if": {
+                  "test": {
+                    "hasTrait": {
+                      "card": "you",
+                      "trait": "TINY"
+                    }
+                  },
+                  "then": {
+                    "draw": {
+                      "player": "you",
+                      "count": 1
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "note": "The spent physical card responds after the completed cost and before the paid effect or entry; wholly excess generation is still a spend."
     }
   ]
 }
