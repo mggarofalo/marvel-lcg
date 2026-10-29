@@ -3,7 +3,20 @@
 The canonical delivery records are MARVEL-568 (Kang) and MARVEL-569 (Ant-Man),
 within MARVEL-703. This candidate combines reviewed engine prerequisites; neither
 pack has complete executable content or public admission. The production book
-contains 755 rows, including 32 of Ant-Man's 35 faces and no Kang faces.
+contains 756 rows, including 33 of Ant-Man's 35 faces and no Kang faces.
+Hank's reviewed entry cases are supported; its MARVEL-885 edge remains
+explicitly unsupported.
+
+Hank Pym source `b10fc2fd`, independently reviewed at `ca6693d2`, preserves
+the preceding 755 objects and their raw prefix. Source actual/inventory checks
+pass 70 cases; independent checks pass 45 after a nonincremental rebuild.
+The cap and health-grant mutations fail their intended controls. Actual entry
+with a wholly overpaid Power card yields one counter, while a printed double
+resource yields two, consistent with the current cost rule and ruling. See
+[the actual-card review](hank-pym-independent-review.md). The combined candidate passes all 8,871 Content tests with no failures or
+skips (`roars-33-combined-content.log`, 10 minutes 15 seconds). The entry
+production code also has the 1,210 Rules and 22 selected replay results below.
+Final pack admission, native interaction and publication checks remain open.
 
 Care for Cassie source `11ec5c48`, independently accepted at `1910cf57`,
 preserves all 754 preceding objects and their raw prefix. Source verification
@@ -47,7 +60,8 @@ answer path instead of leaving consumed continuations queued. The initial
 90-case focused run passes 86; after those two fixture corrections all nine
 Core lasting-effect cases pass. The final combined focused run passes all
 157 cases (`roars-entry-combined-final-focused.log`), including the repaired
-counter paths and entry fixtures. Full Content verification remains due.
+counter paths and entry fixtures. The subsequent full Content run including
+Hank passes all 8,871 tests, closing these regressions.
 
 Full Rules verification initially passes 1,195 and fails fifteen. Synthetic
 allies now have explicit positive health and tests advance queued entry before
@@ -57,7 +71,7 @@ and retained negative controls. Twenty-two selected Server entry/payment,
 variable-resource and live-effect replay checks pass
 (`roars-entry-combined-replay.log`). These do not close MARVEL-870 publication.
 
-Three Ant-Man faces remain: `12011`, `12024`, and `12026`. MARVEL-885 asks only
+Two Ant-Man faces remain unauthored: `12024` and `12026`. MARVEL-885 asks only
 about the simultaneous zero-HP/fourth-ally framework ordering; it is not a
 human acceptance gate for ordinary content. Actual Plan-to-Tech Theft play,
 complete pack/starter admission, native interaction and MARVEL-870 replay
