@@ -25,7 +25,7 @@ internal static class GamePrompts
             Affordances: game.TurnOptions(seat))
         {
             DeclineLabel = "End turn",
-            Description = $"Player phase · Round {game.Round}. Take actions or end your turn. "
+            Description = $"Player phase Â· Round {game.Round}. Take actions or end your turn. "
                 + "After every player finishes, choose hand discards, draw up to hand size and ready cards.",
         };
     }
@@ -63,12 +63,12 @@ internal static class GamePrompts
     }
 
     /// <summary>
-    /// What a player may do on their turn — <c>rr:player-turn</c>.
+    /// What a player may do on their turn â€” <c>rr:player-turn</c>.
     /// </summary>
     /// <remarks>
     /// <para>
     /// Only what is offered <i>and</i> can be taken. An affordance that would
-    /// throw when taken is worse than an absent one — the original investigation is that same
+    /// throw when taken is worse than an absent one â€” the original investigation is that same
     /// defect on the action menu.
     /// </para>
     /// <para>
@@ -186,7 +186,7 @@ internal static class GamePrompts
     }
 
     /// <summary>
-    /// Actions available directly or by game.asking another player —
+    /// Actions available directly or by game.asking another player â€”
     /// <c>rr:player-turn.5</c> and <c>rr:player-turn.6</c>.
     /// </summary>
     /// <remarks>
@@ -240,7 +240,7 @@ internal static class GamePrompts
             Targets: attachmentTargets is not null
                 ? new TargetRequest(attachmentTargets, Min: 1, Max: 1)
                 : new TargetRequest([seat.IdentityCard.ObjectId], Min: 1, Max: 1),
-            Costs: [price]);
+            Costs: [price], Description: game.world.CardPlayAbilities.DescribeCardPlay(game.world, card));
     }
 
     internal static Affordance Anchored(this Game game, string verb, Seat seat) =>
@@ -253,7 +253,7 @@ internal static class GamePrompts
     /// <b>Every affordance in a prompt this class builds comes through here</b>,
     /// and that is the point rather than tidiness. <c>Affordance.Id</c> is what
     /// <see cref="GameResolution.Resolve"/> looks the answer up by, and it looks it up with
-    /// <c>First</c> — so two options sharing an id in one prompt do not fail,
+    /// <c>First</c> â€” so two options sharing an id in one prompt do not fail,
     /// they silently resolve the wrong one. An ability's own affordance arrives
     /// carrying the card's object id (<c>IAbilityDescriptions.Describe</c> has no
     /// allocator to ask), and a card play carries a counter, and the two number

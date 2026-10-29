@@ -25,7 +25,9 @@ internal static class AbilityAffordanceDescription
             world, card, ability.Player, found, execution.resourceAbilities);
         TargetRequest? recipients = AbilityRecipientCommitment.Targets(execution, world, card, found, ability.Player, ability);
         string? contextual = AbilityReplacementDescription.Caption(execution, world, card, found, ability.Player);
-        string? caption = Caption(world, found, ability, contextual);
+        string? entry = AbilityEntryCounterDescription.Summary(execution, world, card, found, ability.Player);
+        string? caption = AbilityEntryCounterDescription.Caption(found.Effect, entry)
+            ?? Caption(world, found, ability, contextual);
         return new Affordance(
             Id: ability.OfferId ?? ability.Card,
             Verb: found.Name,
@@ -33,7 +35,7 @@ internal static class AbilityAffordanceDescription
             AnchorPlayer: ability.Player,
             Label: found.Name,
             Targets: recipients ?? AdmittedCostTargets(execution, world, card, found, ability.Player),
-            Costs: price is null ? null : [price], Description: Description(execution, world, card, ability, found.Effect, contextual))
+            Costs: price is null ? null : [price], Description: Description(execution, world, card, ability, found.Effect, contextual, entry))
         {
             Timing = found.Trigger.Timing,
             ContextCardIds = ContextCards(world, ability),
@@ -87,7 +89,8 @@ internal static class AbilityAffordanceDescription
             : caption;
 
     private static string? Description(AbilityResolutionExecution execution, World world, Card source,
-        PendingAbility ability, AbilityEffect effect, string? contextual) =>
+        PendingAbility ability, AbilityEffect effect, string? contextual, string? entry) =>
+        entry ??
         AbilitySourceThreatDescription.Summary(execution.StructuralContext(
             new AbilityResolutionState(world, source, new Occurrence(0, [Steps.TurnAction],
                 Subject: source.ObjectId, Player: ability.Player), ability.Player, [])), effect)
