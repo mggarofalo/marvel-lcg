@@ -29,7 +29,7 @@ internal static class GameFormChanges
                 Label = destination,
                 DisplayLabel = display,
                 CommitLabel = display,
-                Description = $"Change your identity to {destination}. Uses your voluntary form change this round.",
+                Description = "Uses your voluntary form change this round.",
             });
         }
     }
