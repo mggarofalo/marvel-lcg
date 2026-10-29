@@ -1,5 +1,6 @@
 using Marvel.Rules.Events;
 using Marvel.Rules.State;
+using Marvel.Rules.Timing;
 using static Marvel.Rules.Play.CardEntry;
 using static Marvel.Rules.Play.CardPlayLegality;
 
@@ -68,7 +69,9 @@ public static class AllyCardEntry
         var into = world.AreaOf(
             DeckType.AlliesArea, PlayArea.Of(controller), cardOwner: ally.Owner);
 
+        var (blankTransition, blankDeparture) = ContinuousBlankingEntry.Preflight(world.Effects, ally, into);
         World.MoveToTop(ally, into);
+        using var blanking = ContinuousBlankingEntry.Begin(blankDeparture);
         events.Add(new CardsMoved(
             Places.Reference(from), Places.Reference(into),
             [new Landing(ally.ObjectId, into.Cards.Count - 1)])
@@ -87,7 +90,7 @@ public static class AllyCardEntry
         }
 
         afterMove?.Invoke();
-        if (AllyEntryHealth.Settle(world, facts, ally, controller, events))
+        if (AllyEntryHealth.Settle(world, facts, ally, events))
         {
             FinalizeAllyEntry(world, ally, controller);
         }
@@ -99,6 +102,7 @@ public static class AllyCardEntry
         {
             Reveal.EnterPlay(world, facts, ally, events, abilities: abilities);
         }
+        ContinuousBlankingEntry.Complete(blankTransition, blankDeparture, trigger, events);
         return true;
     }
     private static bool ValidateEntry(World world, ICardFacts facts, AllyEntryRequest request)

@@ -1,3 +1,5 @@
+using Marvel.Rules.Timing;
+
 namespace Marvel.Rules.State;
 
 /// <summary>Characteristic loss shared by traits, keywords, and ability fields.</summary>
@@ -19,6 +21,8 @@ public static class Characteristics
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(card);
         ArgumentException.ThrowIfNullOrEmpty(characteristic);
+
+        if (characteristic == "uses" && PrintedText.IsBlanked(world, card)) return true;
 
         string loss = LossOf(characteristic);
         return world.Effects.Active().Any(effect =>

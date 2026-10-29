@@ -4,8 +4,10 @@ The canonical delivery records are MARVEL-568 (Kang) and MARVEL-569 (Ant-Man),
 within MARVEL-703. This candidate combines reviewed engine prerequisites; neither
 pack has complete executable content or public admission. The production book
 contains 756 rows, including 33 of Ant-Man's 35 faces and no Kang faces.
-Hank's reviewed entry cases are supported; its MARVEL-885 edge remains
-explicitly unsupported.
+Hank's reviewed entry cases are supported. The owner resolved MARVEL-885:
+defeat the zero-HP entering ally before enforcing the ally limit. Source `338cf0fb` and independent review `9598e36d` implement and verify that
+adjudication, including the mandatory limit check if an interrupt saves the ally.
+See [the independent ordering review](hank-entry-defeat-first-independent-review.md).
 
 Hank Pym source `b10fc2fd`, independently reviewed at `ca6693d2`, preserves
 the preceding 755 objects and their raw prefix. Source actual/inventory checks
@@ -13,7 +15,7 @@ pass 70 cases; independent checks pass 45 after a nonincremental rebuild.
 The cap and health-grant mutations fail their intended controls. Actual entry
 with a wholly overpaid Power card yields one counter, while a printed double
 resource yields two, consistent with the current cost rule and ruling. See
-[the actual-card review](hank-pym-independent-review.md). The combined candidate passes all 8,871 Content tests with no failures or
+[the actual-card review](hank-pym-independent-review.md). The earlier candidate `0d5703bc` passes all 8,871 Content tests with no failures or
 skips (`roars-33-combined-content.log`, 10 minutes 15 seconds). The entry
 production code also has the 1,210 Rules and 22 selected replay results below.
 Final pack admission, native interaction and publication checks remain open.
@@ -35,8 +37,9 @@ The separate MARVEL-887 entry operation is now independently accepted at
 at `5b7e2b48` from `f0198165`. Both are combined with the excess-resource expression and its reviewed
 admission repair in the working candidate. Own-source interrupts precede entry and
 the ally-limit choice precedes responses; a lethal entering ally follows the
-existing defeat lifecycle. The exact zero-health/excess-limit collision still
-raises MARVEL-885. See [entry timing review](ally-entry-interrupt-independent-review.md)
+existing defeat lifecycle. The zero-health/excess-limit collision is now governed
+by the owner's defeat-first adjudication in MARVEL-885, implemented in this
+candidate after independent review. See [entry timing review](ally-entry-interrupt-independent-review.md)
 and [health review](ally-entry-health-independent-review.md).
 The combined Cassie/receipt candidate passes 121 focused Content/data checks
 and all 1,210 Rules tests. Logs are `roars-32-combined-{content,rules}.log`
@@ -71,9 +74,11 @@ and retained negative controls. Twenty-two selected Server entry/payment,
 variable-resource and live-effect replay checks pass
 (`roars-entry-combined-replay.log`). These do not close MARVEL-870 publication.
 
-Two Ant-Man faces remain unauthored: `12024` and `12026`. MARVEL-885 asks only
-about the simultaneous zero-HP/fourth-ally framework ordering; it is not a
-human acceptance gate for ordinary content. Actual Plan-to-Tech Theft play,
+Tech blanking source `95021926` has independent review `c8e1bcb5`. The source passes 68 focused Content checks and 1,210 Rules checks; the independent protection review passes 43 checks after a compiled cross-set Permanent mutation and exact restoration. This mechanism is combined with the defeat-first implementation. The combined candidate passes 134 focused Content/data checks, all 1,210 Rules checks and 22 selected Server replay checks (`roars-defeat-tech-combined-{content,rules,replay}.log`). The actual `12026` row, subsequent full Content rerun and final pack gates remain. See [the protection review](tech-blanking-independent-review.md).
+
+Two Ant-Man faces remain unauthored: `12024` and `12026`. MARVEL-885 has an
+verified defeat-first implementation; no further human decision is pending on
+that ordering. Actual Plan-to-Tech Theft play,
 complete pack/starter admission, native interaction and MARVEL-870 replay
 publication evidence remain required before delivery to main.
 

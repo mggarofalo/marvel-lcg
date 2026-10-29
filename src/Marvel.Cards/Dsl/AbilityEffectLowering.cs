@@ -117,6 +117,7 @@ internal static class AbilityEffectLowering
             "generateTopDiscard" => FixedEffect(argument, child, "printed", AbilityFixedInstruction.GenerateTopDiscard),
             "makeTheCall" => FixedEffect(argument, child, "game", AbilityFixedInstruction.MakeTheCall),
             "discardOtherEnvironments" => FixedEffect(argument, child, "game", AbilityFixedInstruction.DiscardOtherEnvironments),
+            "blankTechPlayerCards" => FixedEffect(argument, child, "game", AbilityFixedInstruction.BlankTechPlayerCards),
             "gainEnvironmentTraits" => FixedEffect(argument, child, "this", AbilityFixedInstruction.GainEnvironmentTraits),
             "preventSideSchemeDeparture" => FixedEffect(argument, child, "this", AbilityFixedInstruction.PreventSideSchemeDeparture),
             "requireAllyDefender" => FixedEffect(argument, child, "engagedPlayer", AbilityFixedInstruction.RequireAllyDefender),

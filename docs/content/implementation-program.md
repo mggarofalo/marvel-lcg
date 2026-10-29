@@ -28,7 +28,9 @@ The existing Content Expansion module defines these **11 planning waves**. Range
 The active Ant-Man/Kang candidate is recorded in
 [the cycle checkpoint](roars-cycle-integration.md). It has 33 authored
 Ant-Man faces out of 35 and 756 total rows, including Hank's reviewed entry
-cases and its explicit MARVEL-885 exception, plus reviewed Kang foundations. Neither pack is publicly admitted. Giant Stomp's live-choice
+cases, plus reviewed Kang foundations. The owner resolved MARVEL-885 in favor of
+zero-HP defeat before ally-limit enforcement. Source `338cf0fb` and independent
+review `9598e36d` implement and verify that ordering. Neither pack is publicly admitted. Giant Stomp's live-choice
 capability is independently accepted at `38ce4bca` and integrated at `78b62715`,
 including the shared simultaneous attack-defeat repair and corrected View wording.
 Swarm Tactics' form-change/ready prerequisite is independently accepted at
@@ -38,8 +40,8 @@ MARVEL-878's Power resource generation source is independently reviewed at
 `cadf296e`, with the regression repair independently accepted at `8836ebba`.
 MARVEL-882's spent-card response mechanism is accepted at `1ba9161d`; its actual
 Pym row is independently accepted at `fee19693`. Nemesis rows are accepted at `6f508f74`. Hank
-entry/overpayment is independently reviewed, with the narrow MARVEL-885
-collision still unresolved. MARVEL-870 owns the
+entry/overpayment is independently reviewed, with the MARVEL-885 defeat-first
+adjudication implemented and independently verified. MARVEL-870 owns the
 final replay publication boundary, and final combined verification remains open.
 The earlier 29-face integration passes 96 affected Content/data, 1,202 full Rules
 and 129 full Architecture checks. Its full Content run passed 8,752 cases with
@@ -52,11 +54,12 @@ provenance is accepted at `1b4eed16`; the separate entry interrupt/counter
 operation is independently accepted at `77f4559a`, and entry health at
 `5b7e2b48`. The excess-resource expression and its admission repair are independently
 accepted at `b86db252`; the combined Rules suite passes 1,210 checks and the
-selected Server replay suite passes 22. The combined full Content run with
+selected Server replay suite passes 22. The earlier combined full Content run at `0d5703bc` with
 Hank passes all 8,871 tests after the counter-admission and fixture repairs. Hank's actual row is independently reviewed at `ca6693d2`; its source
 passes 70 focused checks and its review passes 45, with cap/health mutations
-distinguished. It is combined in the working candidate with full Content verification green;
-final pack admission, native interaction and publication checks remain open.
+distinguished. The newer defeat-first and Tech blanking integration passes 134 focused Content/data,
+1,210 Rules and 22 selected Server replay checks. The full Content rerun and final
+pack admission, native interaction and publication checks remain open.
 Remaining unauthored faces are Team-Building Exercise and Tech Theft. MARVEL-888 owns live TECH-player-card blanking and
 MARVEL-889 owns trait-matching discounted nested play. Their researched
 implementation and evidence requirements are recorded under the canonical

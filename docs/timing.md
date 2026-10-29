@@ -656,5 +656,6 @@ Deferred entry initialization retains that exact incarnation. An entering
 ally with positive live health follows the ordinary ally-limit procedure.
 
 When zero-health defeat and an excess ally limit apply simultaneously, the
-available authorities do not settle their ordering. The engine raises for this
-exact collision (MARVEL-885) rather than choosing one of the obligations.
+owner adjudicated defeat first (MARVEL-885); this is a project choice, not an
+official ruling. If the entering ally survives the defeat lifecycle, the engine
+then enforces the ally limit before entry responses.

@@ -195,6 +195,7 @@ internal static class AbilityOperationNames
             AbilityFixedInstruction.GenerateTopDiscard => "generateTopDiscard",
             AbilityFixedInstruction.MakeTheCall => "makeTheCall",
             AbilityFixedInstruction.DiscardOtherEnvironments => "discardOtherEnvironments",
+            AbilityFixedInstruction.BlankTechPlayerCards => "blankTechPlayerCards",
             AbilityFixedInstruction.GainEnvironmentTraits => "gainEnvironmentTraits",
             AbilityFixedInstruction.PreventSideSchemeDeparture => "preventSideSchemeDeparture",
             AbilityFixedInstruction.RequireAllyDefender => "requireAllyDefender",

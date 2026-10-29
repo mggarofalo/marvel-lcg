@@ -58,6 +58,8 @@ public enum AbilityFixedInstruction
     RequireAttackedPlayerAllyDefender,
     /// <summary>Continuously gain the effective traits of every environment in play.</summary>
     GainEnvironmentTraits,
+    /// <summary>Blank each in-play TECH player card.</summary>
+    BlankTechPlayerCards,
     /// <summary>Keep this side scheme in play while the enclosing constant applies.</summary>
     PreventSideSchemeDeparture,
     /// <summary>Discard every live environment except the triggering entrant.</summary>

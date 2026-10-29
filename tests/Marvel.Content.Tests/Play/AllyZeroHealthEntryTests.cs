@@ -111,8 +111,10 @@ public sealed class AllyZeroHealthEntryTests
             take ? Decision.Take(offer.Id) : Decision.Decline, []);
         if (!take)
         {
-            var error = Assert.Throws<RulesNotImplementedException>(() => Sequence.Work(world, world.Facts, runner, []));
-            Assert.Contains("zero-health defeat and ally-limit", error.Message);
+            Assert.Null(Sequence.Work(world, world.Facts, runner, []));
+            Assert.Equal(DeckType.DiscardPile, ally.Area.Type);
+            Assert.Equal(3, area.Cards.Count);
+            Assert.Equal(DeckType.AlliesArea, old.Area.Type);
             return;
         }
         var limit = Assert.IsType<Prompt>(Sequence.Work(world, world.Facts, runner, []));
@@ -177,6 +179,9 @@ public sealed class AllyZeroHealthEntryTests
         var world = ThorActualFixture.Board("06001a");
         world.Abilities = runner;
         world.CreateCard("01092", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
+        var area = world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0);
+        var old = new[] { world.CreateCard("01067", area), world.CreateCard("01068", area),
+            world.CreateCard("01041", area) };
         var ally = world.CreateCard("12011", world.Seats[0].Hand);
         CardPlay.PutAllyIntoPlay(world, world.Facts, runner, ally, 0, "synthetic", []);
         var interrupt = Assert.IsType<Prompt>(Sequence.Work(world, world.Facts, runner, []));
@@ -185,6 +190,7 @@ public sealed class AllyZeroHealthEntryTests
         Assert.Null(Sequence.Work(world, world.Facts, runner, []));
         Assert.Equal(DeckType.DiscardPile, ally.Area.Type);
         Assert.Equal(0, ally.Tokens.GetValueOrDefault("c_response"));
+        Assert.All(old, card => Assert.Equal(DeckType.AlliesArea, card.Area.Type));
     }
 
     [Fact]
@@ -229,9 +235,9 @@ public sealed class AllyZeroHealthEntryTests
     }
 
     [Fact]
-    public void SimultaneousZeroHealthAndExcessAllyLimitFailsClosed()
+    public void SimultaneousZeroHealthAndExcessAllyLimitDefeatsEnteringAlly()
     {
-        // MARVEL-885 tracks the unresolved ordering of these framework obligations.
+        // MARVEL-885 owner adjudication settles zero-health defeat first.
         var runner = Runner();
         var world = ThorActualFixture.Board("06001a");
         world.Abilities = runner;
@@ -240,10 +246,9 @@ public sealed class AllyZeroHealthEntryTests
         world.CreateCard("01068", area);
         world.CreateCard("01041", area);
         var ally = world.CreateCard("12011", world.Seats[0].Hand);
-        Assert.Throws<RulesNotImplementedException>(() =>
-        {
-            CardPlay.PutAllyIntoPlay(world, world.Facts, runner, ally, 0, "synthetic", []);
-            Sequence.Work(world, world.Facts, runner, []);
-        });
+        CardPlay.PutAllyIntoPlay(world, world.Facts, runner, ally, 0, "synthetic", []);
+        Assert.Null(Sequence.Work(world, world.Facts, runner, []));
+        Assert.Equal(DeckType.DiscardPile, ally.Area.Type);
+        Assert.Equal(3, area.Cards.Count);
     }
 }

@@ -15,7 +15,9 @@ internal static class AbilityPrintedTextLowering
         {
             var nodes = program.Effects.Where(pair => pair.Key.Card == ability.Card
                 && pair.Key.Ability == ability.Address.Ability).Select(pair => pair.Value);
-            if (!nodes.Any(node => node is AbilityEffect.GrantField { Field: PrintedText.Blanked })) continue;
+            var all = nodes.ToArray();
+            ValidateTech(ability, all);
+            if (!all.Any(node => node is AbilityEffect.GrantField { Field: PrintedText.Blanked })) continue;
             if (ability.Trigger.Timing != AbilityType.Action)
                 throw new AbilityException("printed-text blanking is admitted only as a standalone action");
             if (ability.Effect is not AbilityEffect.GrantField
@@ -24,6 +26,16 @@ internal static class AbilityPrintedTextLowering
                     EachCard: false, Amount: AbilityNumber.Constant { Value: 1 } })
                 throw new AbilityException("printed-text blanking requires a standalone body; projected later effects are unsupported");
         }
+    }
+
+    private static void ValidateTech(CompiledCardAbility ability, AbilityEffect[] nodes)
+    {
+        if (!nodes.Any(node => node is AbilityEffect.Fixed { Instruction: AbilityFixedInstruction.BlankTechPlayerCards }))
+            return;
+        if (ability.Trigger.Timing != AbilityType.Constant || ability.Cost is not null
+            || ability.When is not null || ability.Limit is not null || ability.Maximum is not null
+            || ability.Effect is not AbilityEffect.Fixed { Instruction: AbilityFixedInstruction.BlankTechPlayerCards })
+            throw new AbilityException("blankTechPlayerCards requires a standalone unconditional cost-free constant");
     }
 
     internal static AbilityEffect Lower(AbilityValue value, AbilityLocation location)

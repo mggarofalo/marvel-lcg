@@ -21,7 +21,22 @@ internal static class ContinuousEffectRegistry
         ArgumentNullException.ThrowIfNull(effect);
         effect = DelayedEffects.CaptureTarget(effects.world, effects.BindCurrentActivation(effect));
         var entry = new ContinuousEffectEntry(effect, CardEffectSources.Capture(effects.world, effect));
+        bool changesTraits = effect.Kind.StartsWith(Traits.Granted, StringComparison.Ordinal)
+            || effect.Kind.StartsWith(Characteristics.Lost + Traits.Granted, StringComparison.Ordinal);
+        var transition = changesTraits ? new ContinuousBlankingTransition(effects) : null;
         effects.entries.Add(entry);
+        ContinuousEffectDeparture? departure;
+        try
+        {
+            departure = transition?.Preflight();
+        }
+        catch
+        {
+            effects.entries.Remove(entry);
+            throw;
+        }
+        using (departure?.Begin()) departure?.Complete("trait changed", []);
+        transition?.RecheckLimits();
         if (effect.Kind is "ally_limit" or PrintedText.Blanked)
             RecheckAllyLimits(effects);
         return new ContinuousEffects.Registration(effects, entry);
@@ -112,7 +127,7 @@ internal static class ContinuousEffectRegistry
         return [.. registered, .. constants];
     }
 
-    private static IReadOnlyList<ContinuousEffect> ExcludingSuppressedConstants(
+    internal static IReadOnlyList<ContinuousEffect> ExcludingSuppressedConstants(
         this ContinuousEffects effects,
         IReadOnlyList<ContinuousEffect> constants)
     {
@@ -212,15 +227,21 @@ internal static class ContinuousEffectRegistry
             return;
         }
 
+        var blanksBefore = effects.CapturePrintedBlanks();
         Card[] candidates = effects.LostUsesCandidates();
+        var healthBefore = effects.CaptureCharacterHealthCore();
         ContinuousEffectDeparture constantsEnding;
         effects.suppressed.UnionWith(ending);
         try
         {
             var restoredUses = effects.RestoredUsesAfter(candidates);
-            constantsEnding = effects.PreflightDepartures(
-                [.. restoredUses, .. effects.LethalAfterHealthEnds(
-                    ending.Select(entry => entry.Effect))],
+            var lethal = effects.LethalAfterDerivedChange(healthBefore);
+            if (lethal.Length > 0 && effects.world.Agenda.Occurrence is null
+                && !blanksBefore.SequenceEqual(effects.CapturePrintedBlanks()))
+                throw new RulesNotImplementedException(
+                    "printed blanking health defeat requires an enclosing occurrence");
+            constantsEnding = new ContinuousEffectCascadePreflight(effects).PreflightDepartures(
+                [.. restoredUses, .. lethal],
                 includeHostedCards: true, moveRoots: true);
         }
         finally
@@ -236,6 +257,7 @@ internal static class ContinuousEffectRegistry
         var sink = events ?? [];
         using var departure = constantsEnding.Begin();
         constantsEnding.Complete(trigger, sink);
+        effects.RecheckAllyLimitsAfterBlanking(blanksBefore);
         if (ending.Any(entry => entry.Effect.Kind is "ally_limit" or PrintedText.Blanked))
             RecheckAllyLimits(effects);
     }

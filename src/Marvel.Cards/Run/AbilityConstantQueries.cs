@@ -57,7 +57,7 @@ internal sealed class AbilityConstantQueries
         return found;
     }
 
-    private static void Grants(
+    private void Grants(
         AbilityEffect effect, AbilityQueryContext bindings,
         AbilitySelectorEvaluation selectors, AbilityExpressionEvaluation expressions,
         List<ContinuousEffect> found)
@@ -67,7 +67,7 @@ internal sealed class AbilityConstantQueries
         RefuseUnsupportedConstant(effect, bindings);
     }
 
-    private static bool GrantStructural(
+    private bool GrantStructural(
         AbilityEffect effect, AbilityQueryContext bindings,
         AbilitySelectorEvaluation selectors, AbilityExpressionEvaluation expressions,
         List<ContinuousEffect> found)
@@ -90,7 +90,7 @@ internal sealed class AbilityConstantQueries
         }
     }
 
-    private static bool GrantContinuous(
+    private bool GrantContinuous(
         AbilityEffect effect, AbilityQueryContext bindings,
         AbilitySelectorEvaluation selectors, AbilityExpressionEvaluation expressions,
         List<ContinuousEffect> found)
@@ -101,6 +101,9 @@ internal sealed class AbilityConstantQueries
                 found.Add(new ContinuousEffect(EffectSource.ConstantAbility,
                     Kind: SideSchemeDeparture.Prohibited, Card: bindings.Source.ObjectId,
                     Affects: bindings.Source.ObjectId, Lasts: Duration.WhileInPlay));
+                return true;
+            case AbilityEffect.Fixed { Instruction: AbilityFixedInstruction.BlankTechPlayerCards }:
+                found.AddRange(TechBlankingGrants.For(program, bindings));
                 return true;
             case AbilityEffect.Fixed { Instruction: AbilityFixedInstruction.GainEnvironmentTraits }:
                 found.AddRange(EnvironmentTraitGrants.For(bindings.World, bindings.Source));

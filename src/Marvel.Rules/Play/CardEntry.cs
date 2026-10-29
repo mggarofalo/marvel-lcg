@@ -39,8 +39,10 @@ public static class CardEntry
 
         var (into, upgradeHost) = PlayedCardDestination.Resolve(world, abilities, seat, card, kind, targets);
 
+        var (blankTransition, blankDeparture) = ContinuousBlankingEntry.Preflight(world.Effects, card, into);
         var from = card.Area;
         World.MoveToTop(card, into);
+        using var blanking = ContinuousBlankingEntry.Begin(blankDeparture);
         events.Add(new CardsMoved(
             Places.Reference(from), Places.Reference(into),
             [new Landing(card.ObjectId, into.Cards.Count - 1)])
@@ -64,7 +66,7 @@ public static class CardEntry
         // not care how it got there. Eighteen allies in the pool print
         // `rr:toughness`, and before this a played one got no tough status card
         // -- only a *revealed* card ran them.
-        if (kind == CardKind.Ally && AllyEntryHealth.Settle(world, facts, card, seat.Index, events))
+        if (kind == CardKind.Ally && AllyEntryHealth.Settle(world, facts, card, events))
         {
             FinalizeAllyEntry(world, card, seat.Index);
         }
@@ -76,6 +78,7 @@ public static class CardEntry
         {
             Reveal.EnterPlay(world, facts, card, events, abilities: abilities);
         }
+        ContinuousBlankingEntry.Complete(blankTransition, blankDeparture, Verb, events);
         if (!choices.ApplyingAlly)
             Played(world, seat, card, new PlayedCardPayment(card.ObjectId, card.Incarnation, seat.Index, choices.Paid), choices.EntryPayment);
         Restricted(world, facts, seat, card, events);
