@@ -1,11 +1,11 @@
 # Team-Building Exercise engine checkpoint
 
-The synthetic `playSharedHeroTraitPermanent` instruction implements a bounded
-permanent-card branch. It is an engine-chosen DSL spelling, not an authored
+The synthetic `playSharedHeroTraitCard` instruction implements a bounded
+permanent-card branch and a separately bounded event-action branch. It is an engine-chosen DSL spelling, not an authored
 12024 ability or public product admission. Its source must be an Action with
 exhaust-this as its sole cost; the instruction must be the first effect. Other
-source cost and effect shapes fail lowering. Event actions require a separate
-invocation, admission, pricing and continuation implementation.
+source cost and effect shapes fail lowering. The event-action checkpoint and its explicit limits are recorded in
+[team-building-event-invoke-checkpoint.md](team-building-event-invoke-checkpoint.md).
 
 The source Action offers only affordable legal permanents in its controller's
 hand sharing a live trait with their hero. Admission excludes the source as a
@@ -32,6 +32,5 @@ Focused Rules and Content/payment/host regression runs and a compiled mutant
 omitting suspension are recorded in `C:/Users/mggar/Source/evidence/` under
 `team-building-permanent-finish-*`. The mutant failed the suspended-generator
 continuation test. Additional final verification is recorded under
-`team-building-permanent-close-*`. The actual 12024 row, event branch, canonical
-ability book and public inventory remain outside this checkpoint. Independent
+`team-building-permanent-close-*`. The actual 12024 row, canonical ability book and public inventory remain outside this checkpoint. Independent
 review is required before integration.

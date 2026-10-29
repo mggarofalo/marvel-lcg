@@ -53,7 +53,7 @@ public enum AbilityFixedInstruction
     /// <summary>Ask to play an ally from a player's discard pile.</summary>
     MakeTheCall,
     /// <summary>Choose a shared-trait permanent to play at a reduced cost.</summary>
-    PlaySharedHeroTraitPermanent,
+    PlaySharedHeroTraitCard,
     /// <summary>Require an ally defender for the engaged player.</summary>
     RequireAllyDefender,
     /// <summary>Require the attacked player's legal ally during this activation.</summary>

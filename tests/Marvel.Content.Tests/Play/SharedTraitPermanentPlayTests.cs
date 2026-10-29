@@ -15,7 +15,7 @@ public sealed class SharedTraitPermanentPlayTests
     [Fact]
     public void DoesNotOfferActionWhenMatchingPermanentCannotBePaidFor()
     {
-        var runner = Runner(AuthoredCards.AuntMay, "Action", """{"playSharedHeroTraitPermanent":"game"}""",
+        var runner = Runner(AuthoredCards.AuntMay, "Action", """{"playSharedHeroTraitCard":"game"}""",
             cost: """{"exhaust":"this"}""");
         Card? source = null;
         var (game, _) = Playing(board =>
@@ -32,7 +32,7 @@ public sealed class SharedTraitPermanentPlayTests
     [Fact]
     public void ExhaustsSourceAndPlaysMatchingPermanentAtReducedCost()
     {
-        var runner = Runner(AuthoredCards.AuntMay, "Action", """{"playSharedHeroTraitPermanent":"game"}""",
+        var runner = Runner(AuthoredCards.AuntMay, "Action", """{"playSharedHeroTraitCard":"game"}""",
             cost: """{"exhaust":"this"}""");
         Card? source = null;
         Card? matching = null;
@@ -66,7 +66,7 @@ public sealed class SharedTraitPermanentPlayTests
     [Fact]
     public void PaysTheRemainingCostWithARealResource()
     {
-        var runner = Runner(AuthoredCards.AuntMay, "Action", """{"playSharedHeroTraitPermanent":"game"}""",
+        var runner = Runner(AuthoredCards.AuntMay, "Action", """{"playSharedHeroTraitCard":"game"}""",
             cost: """{"exhaust":"this"}""");
         Card? source = null;
         Card? card = null;
@@ -95,7 +95,7 @@ public sealed class SharedTraitPermanentPlayTests
     [Fact]
     public void ParentContinuesExactlyOnceAfterThePermanentEnters()
     {
-        var runner = Runner(AuthoredCards.AuntMay, "Action", """{"seq":[{"playSharedHeroTraitPermanent":"game"},{"draw":{"player":"you","count":1}}]}""",
+        var runner = Runner(AuthoredCards.AuntMay, "Action", """{"seq":[{"playSharedHeroTraitCard":"game"},{"draw":{"player":"you","count":1}}]}""",
             cost: """{"exhaust":"this"}""");
         Card? source = null;
         Card? card = null;
@@ -125,7 +125,7 @@ public sealed class SharedTraitPermanentPlayTests
         var runner = new AbilityRunner(AbilityCatalog.Parse("""
             {"cards":[
               {"card":"01006","abilities":[{"trigger":{"event":"WhenActionTriggered","timing":"Action","subject":"game"},
-                "cost":{"exhaust":"this"},"effect":{"seq":[{"playSharedHeroTraitPermanent":"game"},{"draw":{"player":"you","count":1}}]}}]},
+                "cost":{"exhaust":"this"},"effect":{"seq":[{"playSharedHeroTraitCard":"game"},{"draw":{"player":"you","count":1}}]}}]},
               {"card":"01030","abilities":[{"trigger":{"event":"WhenActionTriggered","timing":"Resource","subject":"game"},
                 "cost":{"dealDamage":{"cards":"this","amount":2}},"effect":{"generate":"Y"}}]},
               {"card":"01092","abilities":[{"trigger":{"event":"WhenCardWouldBeDefeated","timing":"Interrupt","subject":"game"},
@@ -165,7 +165,7 @@ public sealed class SharedTraitPermanentPlayTests
     [Fact]
     public void RejectsChangedFormAfterSourceExhaustWithoutFurtherMutation()
     {
-        var runner = Runner(AuthoredCards.AuntMay, "Action", """{"playSharedHeroTraitPermanent":"game"}""",
+        var runner = Runner(AuthoredCards.AuntMay, "Action", """{"playSharedHeroTraitCard":"game"}""",
             cost: """{"exhaust":"this"}""");
         Card? source = null;
         var (game, world) = Playing(board =>
@@ -200,7 +200,7 @@ public sealed class SharedTraitPermanentPlayTests
     [Fact]
     public void RejectsStalePaymentBeforeClearingInformationOrPendingWork()
     {
-        var runner = Runner(AuthoredCards.AuntMay, "Action", """{"playSharedHeroTraitPermanent":"game"}""",
+        var runner = Runner(AuthoredCards.AuntMay, "Action", """{"playSharedHeroTraitCard":"game"}""",
             cost: """{"exhaust":"this"}""");
         Card? source = null, card = null, payment = null;
         var (game, world) = Playing(board =>
