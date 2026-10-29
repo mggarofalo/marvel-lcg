@@ -26,8 +26,8 @@ The existing Content Expansion module defines these **11 planning waves**. Range
 ## Current integration checkpoint
 
 The active Ant-Man/Kang candidate is recorded in
-[the cycle checkpoint](roars-cycle-integration.md). It has 29 independently
-reviewed Ant-Man faces out of 35, with 752 total authored rows, and reviewed Kang
+[the cycle checkpoint](roars-cycle-integration.md). It has 30 independently
+reviewed Ant-Man faces out of 35, with 753 total authored rows, and reviewed Kang
 engine foundations. Neither pack is publicly admitted. Giant Stomp's live-choice
 capability is independently accepted at `38ce4bca` and integrated at `78b62715`,
 including the shared simultaneous attack-defeat repair and corrected View wording.
@@ -37,13 +37,15 @@ Actual Giant Stomp and Swarm Tactics rows are independently accepted at `62eac15
 MARVEL-878's Power resource generation source is independently reviewed at
 `cadf296e`, with the regression repair independently accepted at `8836ebba`.
 MARVEL-882's spent-card response mechanism is accepted at `1ba9161d`; its actual
-Pym row remains pending. Nemesis rows are accepted at `6f508f74`. Hank
+Pym row is independently accepted at `fee19693`. Nemesis rows are accepted at `6f508f74`. Hank
 entry/overpayment remains pending. MARVEL-870 owns the
 final replay publication boundary, and final combined verification remains open.
 The current 29-face integration passes 96 affected Content/data, 1,202 full Rules
 and 129 full Architecture checks. Its full Content run passed 8,752 cases with
 one obsolete Captain America quote assertion; the corrected assertion passes in
-the focused run. Final complete-pack verification remains required.
+the focused run. Final complete-pack verification remains required. MARVEL-883 encounter-set
+discard is independently accepted at `14b2a06e`; actual Yellowjacket's Plan is
+the next content task.
 
 The attack-excess prerequisite is independently accepted at `3b3f3558` and
 integrated by an identical-tree fast-forward. Conditional-resource contract

@@ -25,6 +25,11 @@ the original deck boundary. These vocabulary spellings are engine choices.
 Mixing an identity set with kind or trait, or supplying trait without kind, is
 rejected. This mechanism does not admit additional production cards.
 
+Encounter-deck `discardUntil` can instead specify `set` and `then: "reveal"`.
+It matches the printed encounter set across card types and reveals the exact
+discarded card, including after an immediate reset. Set cannot be combined with
+kind or trait. This vocabulary is an engine choice; it admits no production card.
+
 `grant` with `keyword: "hand_size_maximum"`, a positive constant amount and
 `card: "you"` expresses a total hand-size maximum from the current face's
 constant ability. This engine-chosen spelling applies after all additive

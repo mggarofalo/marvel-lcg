@@ -3,15 +3,14 @@
 The canonical delivery records are MARVEL-568 (Kang) and MARVEL-569 (Ant-Man),
 within MARVEL-703. This candidate combines reviewed engine prerequisites; neither
 pack has complete executable content or public admission. The production book
-contains 752 rows, including 29 of Ant-Man's 35 faces and no Kang faces.
+contains 753 rows, including 30 of Ant-Man's 35 faces and no Kang faces.
 
 Yellowjacket and Size Increase source `8f4053ba`, independently reviewed at
 `6f508f74`, add two actual nemesis faces. Review includes both physical Size
 Increase copies on one host and passes 61 focused checks. The spent-resource
 response mechanism `8c6c04df`, independently reviewed at `1ba9161d`, is integrated
 for Pym-style spent-source responses; its 15 independent checks cover nested
-payment, multiplayer priority and incarnation rejection. The actual Pym row is
-still unauthored. See [nemesis evidence](ant-man-nemesis-cards.md) and
+payment, multiplayer priority and incarnation rejection. The actual Pym row is now independently accepted at `fee19693`. See [nemesis evidence](ant-man-nemesis-cards.md) and
 [spent-resource review](resource-card-spend-independent-review.md).
 
 The full Content run on the spent-resource source exposed 50 inherited Power
@@ -34,7 +33,25 @@ these results do not claim a second complete Content run. The earlier
 50 failures comprise 46 dependent transcripts, two Make the Call cases and two
 obsolete quote assertions (For Justice and Captain America).
 
-Six Ant-Man faces remain: `12006`, `12011`, `12024`, `12025`, `12026`, and `12029`.
+Five Ant-Man faces remain: `12011`, `12024`, `12025`, `12026`, and `12029`.
+
+Actual Pym Particles source `3d16f976` is independently accepted at `fee19693`.
+All 752 prior objects and their raw prefix are unchanged. Source verification
+passes 61 Content/data and 12 Server catalog/admission tests; independent review
+passes nine actual-card cases including non-first-player effects. Valid runtime
+row mutations distinguish healing, drawing and recipient ownership, followed by
+restored non-incremental builds. See [the content review](pym-particles-actual-independent-review.md).
+
+Encounter-set discard source `c8e19d94`, independently reviewed at `14b2a06e`,
+adds MARVEL-883's prerequisite for Yellowjacket's Plan. Source 29 Content/nine
+Rules and independent 25 Content/11 Rules checks pass. The review distinguishes
+a compiled wrong-deck routing mutation with paired-deck controls. These are
+synthetic prerequisite probes; no actual `12029` row or played Kang scenario is
+claimed. See [the review](encounter-set-discard-independent-review.md).
+The combined candidate passes 98 focused Content/data checks and all 1,205
+Rules tests in `roars-30-combined-{content,rules}.log`. The tested tree is
+recorded in `roars-30-combined-tested-tree.txt`; full Content/native/publication
+checks remain scheduled at the complete-pack boundary.
 
 Stinger and Moment of Triumph are independently accepted at `ef9ff6f8`, after
 the response explanation repair `1eccb891` and its independent review `c868fa51`.
