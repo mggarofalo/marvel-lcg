@@ -52,7 +52,7 @@ internal sealed class AbilityEventPayment
 
     internal static AbilityEventPayment? Prepare(
         World world, Card card, int player, CompiledCardAbility ability,
-        IResourceCardAbilities resourceAbilities, AbilityPaymentSelection selection)
+        IResourceCardAbilities resourceAbilities, AbilityPaymentSelection selection, ScopedCardCostReduction? reduction = null)
     {
         if (EffectiveCards.Kind(card, world.Facts) != CardKind.Event)
         {
@@ -67,15 +67,15 @@ internal sealed class AbilityEventPayment
 
         var paying = selection.Paying;
         var allocations = selection.Allocations;
-        long? energy = ValidateVariableEnergy(world, card, player, ability, resourceAbilities, selection);
+        long? energy = ValidateVariableEnergy(world, card, player, ability, resourceAbilities, selection, reduction);
         var adjusted = CardPayment.CostOf(
-            world, world.Facts, world.Seats[player], card);
+            world, world.Facts, world.Seats[player], card, attachmentHost: null, reduction: reduction);
         var sources = EventPaymentSources.Find(world, card, player, resourceAbilities);
         ValidateSelectedSources(card, paying, sources.Generators);
 
         var requirements = EventPaymentRequirements.Create(
             world, card, adjusted, AbilityInvocationPayment.Expand(world, player, ability.Cost), energy, ability);
-        var price = AbilityPaymentPricing.CombinedPrice(world, card, player, ability, resourceAbilities)!;
+        var price = AbilityPaymentPricing.CombinedPrice(world, card, player, ability, resourceAbilities, reduction)!;
         price = RestrictSingleComponent(price, requirements);
         var resolved = ResolveAllocations(card, price, requirements, paying, allocations);
         var generatedSources = ResolveSources(price.Generators, paying, resolved, requirements.Total);
@@ -127,13 +127,13 @@ internal sealed class AbilityEventPayment
 
     private static long? ValidateVariableEnergy(
         World world, Card card, int player, CompiledCardAbility ability,
-        IResourceCardAbilities resourceAbilities, AbilityPaymentSelection selection)
+        IResourceCardAbilities resourceAbilities, AbilityPaymentSelection selection, ScopedCardCostReduction? reduction)
     {
         long? energy = null;
         if (ability.Cost is AbilityCost.SpendEnergy)
         {
             energy = AbilityPaymentValidation.DefinedVariable(selection.Values, "X", card);
-            var variablePrice = AbilityPaymentPricing.CombinedPrice(world, card, player, ability, resourceAbilities)!;
+            var variablePrice = AbilityPaymentPricing.CombinedPrice(world, card, player, ability, resourceAbilities, reduction)!;
             if (!variablePrice.VariableRequests.Single().Allows(energy.Value)
                 || !ResourcePayment.Allows(variablePrice, selection.Paying, selection.Values, selection.Allocations))
                 throw new RulesNotImplementedException("the allocation does not pay the printed and variable energy costs");

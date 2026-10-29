@@ -15,7 +15,7 @@ public sealed class SharedTraitPermanentLegalityTests
     [Fact]
     public void LostSharedTraitRejectsThePublishedAnswerWithoutMutation()
     {
-        var runner = Runner(AuthoredCards.AuntMay, "Action", """{"playSharedHeroTraitPermanent":"game"}""", cost: """{"exhaust":"this"}""");
+        var runner = Runner(AuthoredCards.AuntMay, "Action", """{"playSharedHeroTraitCard":"game"}""", cost: """{"exhaust":"this"}""");
         Card? source = null, card = null;
         var (game, world) = Playing(board => {
             source = InPlay(board, AuthoredCards.AuntMay);
@@ -46,7 +46,7 @@ public sealed class SharedTraitPermanentLegalityTests
     {
         var runner = new AbilityRunner(AbilityCatalog.Parse("""
             {"cards":[{"card":"01006","abilities":[
-              {"trigger":{"event":"WhenActionTriggered","timing":"Action","subject":"game"},"cost":{"exhaust":"this"},"effect":{"playSharedHeroTraitPermanent":"game"}},
+              {"trigger":{"event":"WhenActionTriggered","timing":"Action","subject":"game"},"cost":{"exhaust":"this"},"effect":{"playSharedHeroTraitCard":"game"}},
               {"trigger":{"event":"WhenActionTriggered","timing":"Resource","subject":"game"},"cost":{"exhaust":"this"},"effect":{"generate":"Y"}}]},
               {"card":"01030","abilities":[{"trigger":{"event":"WhenActionTriggered","timing":"Resource","subject":"game"},"cost":{"exhaust":"this"},"effect":{"generate":"Y"}}]}]}
             """));
@@ -71,7 +71,7 @@ public sealed class SharedTraitPermanentLegalityTests
     {
         var runner = new AbilityRunner(AbilityCatalog.Parse("""
             {"cards":[
-              {"card":"01006","abilities":[{"trigger":{"event":"WhenActionTriggered","timing":"Action","subject":"game"},"cost":{"exhaust":"this"},"effect":{"playSharedHeroTraitPermanent":"game"}}]},
+              {"card":"01006","abilities":[{"trigger":{"event":"WhenActionTriggered","timing":"Action","subject":"game"},"cost":{"exhaust":"this"},"effect":{"playSharedHeroTraitCard":"game"}}]},
               {"card":"09039","abilities":[{"trigger":{"timing":"Constant","subject":"this"},"effect":{"reduceUpgradeCostOnThis":1}}]},
               {"card":"01093","attachTo":{"query":"allies"},"abilities":[]},
               {"card":"01067","abilities":[]}]}
@@ -114,10 +114,10 @@ public sealed class SharedTraitPermanentLegalityTests
     }
 
     [Theory]
-    [InlineData("Action", "{}", "{\"playSharedHeroTraitPermanent\":\"game\"}")]
-    [InlineData("Action", "{\"seq\":[{\"exhaust\":\"this\"},{\"spend\":\"Y\"}]}", "{\"playSharedHeroTraitPermanent\":\"game\"}")]
-    [InlineData("Resource", "{\"exhaust\":\"this\"}", "{\"playSharedHeroTraitPermanent\":\"game\"}")]
-    [InlineData("Action", "{\"exhaust\":\"this\"}", "{\"seq\":[{\"draw\":{\"player\":\"you\",\"count\":1}},{\"playSharedHeroTraitPermanent\":\"game\"}]}")]
+    [InlineData("Action", "{}", "{\"playSharedHeroTraitCard\":\"game\"}")]
+    [InlineData("Action", "{\"seq\":[{\"exhaust\":\"this\"},{\"spend\":\"Y\"}]}", "{\"playSharedHeroTraitCard\":\"game\"}")]
+    [InlineData("Resource", "{\"exhaust\":\"this\"}", "{\"playSharedHeroTraitCard\":\"game\"}")]
+    [InlineData("Action", "{\"exhaust\":\"this\"}", "{\"seq\":[{\"draw\":{\"player\":\"you\",\"count\":1}},{\"playSharedHeroTraitCard\":\"game\"}]}")]
     public void UnsupportedSourceShapesFailLowering(string timing, string cost, string effect)
     {
         string json = "{\"cards\":[{\"card\":\"01006\",\"abilities\":[{\"trigger\":{\"timing\":\"" + timing

@@ -9,14 +9,14 @@ namespace Marvel.Cards.Run;
 internal static class AbilityPaymentReceiptAdmission
 {
     internal static AbilityAdmissionResult? Admit(CompiledCardAbility ability,
-        AbilityAdmissionContext context, IReadOnlyList<int>? selected)
+        AbilityAdmissionContext context, IReadOnlyList<int>? selected, ScopedCardCostReduction? reduction = null)
     {
         if (ability.Cost is AbilityCost.SpendEnergy)
-            return AdmitEnergy(ability, context, selected);
+            return AdmitEnergy(ability, context, selected, reduction);
         if (!Applies(ability, context))
             return AbilityDiscardReceiptAdmission.Admit(ability, context, selected);
         var price = AbilityPaymentPricing.CombinedPrice(context.World, context.Source,
-            context.Query.Player, ability, context.ResourceAbilities)!;
+            context.Query.Player, ability, context.ResourceAbilities, reduction)!;
         int cost = int.Parse(price.Cost, System.Globalization.CultureInfo.InvariantCulture);
         string generated = string.Concat(price.Generators.Select(source => source.PossibleResources));
         foreach (string receipt in Receipts(generated, cost))
@@ -43,10 +43,10 @@ internal static class AbilityPaymentReceiptAdmission
     }
 
     private static AbilityAdmissionResult? AdmitEnergy(CompiledCardAbility ability,
-        AbilityAdmissionContext context, IReadOnlyList<int>? selected)
+        AbilityAdmissionContext context, IReadOnlyList<int>? selected, ScopedCardCostReduction? reduction)
     {
         var price = AbilityPaymentPricing.CombinedPrice(context.World, context.Source,
-            context.Query.Player, ability, context.ResourceAbilities)!;
+            context.Query.Player, ability, context.ResourceAbilities, reduction)!;
         var request = price.VariableRequests.Single();
         int[] sources = [.. price.Generators.Select(source => source.Effect)];
         foreach (long x in EnergyValues(request))

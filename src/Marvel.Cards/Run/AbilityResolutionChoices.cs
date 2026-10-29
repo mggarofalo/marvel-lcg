@@ -18,7 +18,7 @@ internal static class AbilityResolutionChoices
         var cast = RestoreChoice(execution, world, step);
         var choice = AbilityContinuations.Choice(execution.program, cast.Source, cast.Tier,
             step.Index, step, execution.AdmissionContext(cast));
-        if (choice.OperationName() == "playSharedHeroTraitPermanent")
+        if (choice.OperationName() == "playSharedHeroTraitCard")
             _ = AbilitySharedTraitPlay.Validate(execution.StructuralContext(cast), input);
     }
 
@@ -104,7 +104,7 @@ internal static class AbilityResolutionChoices
                 AbilityPaymentChoiceDescription.Describe(
                     structural, (AbilityEffect.PayOrEffect)choice),
             "makeTheCall" => AbilityStructuralExecution.DescribeMakeTheCall(structural),
-            "playSharedHeroTraitPermanent" => AbilitySharedTraitPlay.Describe(structural),
+            "playSharedHeroTraitCard" => AbilitySharedTraitPlay.Describe(structural),
             _ => null,
         };
         if (prompt is not null) return prompt;

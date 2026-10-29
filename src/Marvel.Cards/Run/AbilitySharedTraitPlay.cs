@@ -7,16 +7,26 @@ using Marvel.Rules.Timing;
 
 namespace Marvel.Cards.Run;
 
-// This choice is limited to ordinary permanent plays. Event actions require their own lifecycle.
+// The choice routes each supported card kind through its ordinary play lifecycle.
 internal static class AbilitySharedTraitPlay
 {
     internal static List<GameEvent> Commit(AbilityResolutionExecution execution, AbilityResolutionState cast,
         AbilityEffect choice, Decision input)
     {
-        var request = Validate(execution.StructuralContext(cast), input);
+        var context = execution.StructuralContext(cast);
+        var request = Validate(context, input);
         var owner = cast.World.Agenda.Current;
         var occurrence = cast.World.Agenda.Occurrence;
-        CardPlay.PlayScoped(cast.World, request, cast.Events);
+        if (EffectiveCards.Kind(request.Card, cast.World.Facts) == CardKind.Event)
+        {
+            var pending = AbilitySharedTraitEvent.Action(context.Program, cast.World, request.Card, cast.Player);
+            var occurrenceForEvent = new Occurrence(0, [Steps.TurnAction],
+                Subject: request.Card.ObjectId, Player: cast.Player);
+            var result = cast.World.Agenda.Executions.Run(occurrenceForEvent, pending,
+                invocation => execution.Act(cast.World, invocation, input, request.Reduction));
+            cast.Events.AddRange(result.Events);
+        }
+        else CardPlay.PlayScoped(cast.World, request, cast.Events);
         // The continuation settles this outcome after the child play completes.
         cast.CompletedOutcome = AbilityStructuralOutcome.Full;
         execution.SuspendAfterProcedure(choice, cast, owner, occurrence);
@@ -24,12 +34,15 @@ internal static class AbilitySharedTraitPlay
     }
 
     internal static Prompt Describe(AbilityStructuralContext context) =>
-        Describe(context.Expressions.World, context.Player, context.Expressions.Source, false);
+        Describe(context.Expressions.World, context.Player, context.Expressions.Source, false,
+            context.Program, context.ResourceAbilities);
 
-    internal static bool CanInitiate(World world, int player, Card source) =>
-        Describe(world, player, source, true).Affordances.Count > 0;
+    internal static bool CanInitiate(AbilityAdmissionContext context) =>
+        Describe(context.World, context.Query.Player, context.Source, true,
+            context.Program, context.ResourceAbilities).Affordances.Count > 0;
 
-    private static Prompt Describe(World world, int player, Card source, bool excludeSource)
+    private static Prompt Describe(World world, int player, Card source, bool excludeSource,
+        AbilityProgram program, IResourceCardAbilities resourceAbilities)
     {
         var seat = world.Seats[player];
         var offers = new List<Affordance>();
@@ -40,6 +53,13 @@ internal static class AbilitySharedTraitPlay
             {
                 if (!Traits.Of(world, card, world.Facts).Intersect(heroTraits).Any()) continue;
                 var reduction = new ScopedCardCostReduction(world, seat, card, 1);
+                if (EffectiveCards.Kind(card, world.Facts) == CardKind.Event)
+                {
+                    var offer = AbilitySharedTraitEvent.Offer(world, player, card, source, program,
+                        resourceAbilities, excludeSource);
+                    if (offer is not null) offers.Add(offer);
+                    continue;
+                }
                 var hosts = CardPlayLegality.LegalAttachmentTargets(world, world.Facts, seat, card, world.CardPlayAbilities);
                 var prices = hosts is null
                     ? new[] { CardPayment.Price(world, world.Facts, seat, card, null, reduction) }.OfType<CostOption>().ToArray()
@@ -76,7 +96,9 @@ internal static class AbilitySharedTraitPlay
         var card = world.Cards[input.Affordance];
         var request = new ScopedCardPlayRequest(world.Facts, world.CardPlayAbilities, seat, card, input,
             new ScopedCardCostReduction(world, seat, card, 1));
-        ScopedPermanentPlay.Validate(world, request);
+        if (EffectiveCards.Kind(card, world.Facts) == CardKind.Event)
+            AbilitySharedTraitEvent.Validate(context, card, input, request.Reduction!);
+        else ScopedPermanentPlay.Validate(world, request);
         return request;
     }
 }

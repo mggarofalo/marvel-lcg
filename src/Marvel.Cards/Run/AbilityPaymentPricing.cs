@@ -112,9 +112,9 @@ internal static class AbilityPaymentPricing
 
     internal static CostOption? CombinedPrice(
         World world, Card card, int player, CompiledCardAbility ability,
-        IResourceCardAbilities resourceAbilities)
+        IResourceCardAbilities resourceAbilities, ScopedCardCostReduction? reduction = null)
     {
-        var printed = EventPrice(world, card, player, ability, resourceAbilities);
+        var printed = EventPrice(world, card, player, ability, resourceAbilities, reduction);
         var arrow = Price(world, card, player, ability.Cost, resourceAbilities);
         if (printed is null || arrow is null)
         {
@@ -197,7 +197,7 @@ internal static class AbilityPaymentPricing
 
     internal static CostOption? EventPrice(
         World world, Card card, int player, CompiledCardAbility ability,
-        IResourceCardAbilities resourceAbilities)
+        IResourceCardAbilities resourceAbilities, ScopedCardCostReduction? reduction = null)
     {
         var effect = ability.Effect;
         if (EffectiveCards.Kind(card, world.Facts) != CardKind.Event)
@@ -206,7 +206,7 @@ internal static class AbilityPaymentPricing
         }
 
         long cost = CardPayment.CostOf(
-            world, world.Facts, world.Seats[player], card).Amount;
+            world, world.Facts, world.Seats[player], card, attachmentHost: null, reduction: reduction).Amount;
         return new CostOption(
             Target: card.ObjectId,
             Cost: cost.ToString(System.Globalization.CultureInfo.InvariantCulture),

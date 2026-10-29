@@ -58,7 +58,7 @@ internal sealed class AbilityOfferQueries
 
     internal AbilityAdmissionResult? ActionAdmission(
         World world, Card card, CompiledCardAbility ability, int player, Occurrence? occurrence,
-        IReadOnlyList<int>? costSelection = null)
+        IReadOnlyList<int>? costSelection = null, ScopedCardCostReduction? reduction = null)
     {
         int index = AbilityAvailability.IndexOf(program, card, ability);
         if (!MayInitiate(world, ability, card, player)
@@ -75,7 +75,7 @@ internal sealed class AbilityOfferQueries
             return new AbilityAdmissionResult(true, []);
         }
 
-        return AbilityPaymentReceiptAdmission.Admit(ability, context, costSelection);
+        return AbilityPaymentReceiptAdmission.Admit(ability, context, costSelection, reduction);
     }
 
     internal IReadOnlyList<ResourceSource> ResourceAbilities(World world, int player)
