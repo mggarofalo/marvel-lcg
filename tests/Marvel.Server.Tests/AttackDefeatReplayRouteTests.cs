@@ -60,7 +60,7 @@ public sealed class AttackDefeatReplayRouteTests
                 { ReplayContract = "engine-replay-v27" };
             var original = previous.Save with { Compatibility = source };
             string bytes = SessionSaveJson.Write(original);
-            Assert.Equal("engine-replay-v28", factory.Compatibility.ReplayContract);
+            Assert.Equal("engine-replay-v29", factory.Compatibility.ReplayContract);
             Assert.Null(factory.ContentUpgrade(source));
             bool opened = false;
             var failure = Assert.Throws<SessionCompatibilityException>(() =>
@@ -84,11 +84,12 @@ public sealed class AttackDefeatReplayRouteTests
         AdditiveContentUpgradeTests.WithAddedScenario((root, _) =>
         {
             var (previous, factory) = ReplayContractUpgradeTests.Fixture(root);
+            var v28 = factory.Compatibility with { ReplayContract = "engine-replay-v28" };
             var target = contract switch
             {
-                "downgrade" => factory.Compatibility with { Application = "0.0.0" },
-                "rng" => factory.Compatibility with { RngContract = "unknown" },
-                _ => factory.Compatibility with { StateDigest = "unknown" },
+                "downgrade" => v28 with { Application = "0.0.0" },
+                "rng" => v28 with { RngContract = "unknown" },
+                _ => v28 with { StateDigest = "unknown" },
             };
             bool opened = false;
             var failure = Assert.Throws<SessionCompatibilityException>(() =>

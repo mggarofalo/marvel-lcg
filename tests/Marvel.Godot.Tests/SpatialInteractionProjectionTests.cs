@@ -104,7 +104,7 @@ public sealed class SpatialInteractionProjectionTests
         string summary = Assert.IsType<string>(TableDraftSummary.From(composer, Prompt([Visible(3, 19)])));
 
         Assert.Contains("2 resources selected", summary);
-        Assert.Contains("1 excess resource will be lost", summary);
+        Assert.Contains("1 excess resource not applied to the cost", summary);
     }
 
     [Fact]
@@ -133,7 +133,7 @@ public sealed class SpatialInteractionProjectionTests
         composer.ToggleResource(42);
         Assert.True(composer.Progress().Payment.CanCoverCost);
         Assert.True(composer.TryBuild(out _, out _));
-        Assert.Contains("1 excess resource will be lost", TableDraftSummary.From(composer, prompt));
+        Assert.Contains("1 excess resource not applied to the cost", TableDraftSummary.From(composer, prompt));
     }
 
     [Fact]

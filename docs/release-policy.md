@@ -78,12 +78,21 @@ independent identities do:
 |---|---:|---|
 | Engine protocol | `43` | A request, response, affordance, event or descriptor change is not understood by the prior endpoint. |
 | Session schema | `7` | The strict persisted JSON shape changes. |
-| Engine replay contract | `engine-replay-v28` | The same setup and decision trace may resolve differently. |
+| Engine replay contract | `engine-replay-v29` | The same setup and decision trace may resolve differently. |
 | RNG contract | `mt19937-iso-cxx` | The seeded random stream changes. |
 | State digest | `state-digest-v3` | The canonical hidden-state serialization changes. |
 | Runtime datasets | Three SHA-256 values | Any byte in `cards.json`, `setup.json` or `abilities.json` changes. |
 
-Replay v28 completes an ordinary enemy attack before offering its defeat
+Replay v29 covers the combined Ant-Man delivery's changes to persisted prompt
+facts and existing-card resolution order. Published v28 saves have no named
+v29 admission and remain quarantined without publication or replacement. The
+exact frozen Core/RoRS v19/v20/v21 triples retain named v29 routes, subject
+to unchanged admitted entries and complete original-history verification;
+frozen-content v29 additive upgrades use the unchanged replay route. Historical
+v22–v28 destinations retain their explicit routes. Protocol 43, schema 7, RNG
+and digest identities are unchanged. See [the comparison evidence](content/ant-man-replay-v29.md).
+
+Historically, replay v28 completes an ordinary enemy attack before offering its defeat
 responses. The same legal attack with Black Widow Rapid Response (08031) can
 therefore produce different prompt and event timing. V27 sources, including
 current-content saves, have no named admission and remain quarantined unchanged.

@@ -100,8 +100,27 @@ passes headless and inspected rendered public form/response play; its engine
 copy fix removes raw face IDs from destination explanations. See
 [native evidence](ant-man-native.md). The public native case is registered in
 both CI profiles; manifest checks pass three cases, with platform execution still
-pending. Team-Building/Hank payment interaction evidence, final integrated
-managed/platform checks and MARVEL-870 replay publication remain open.
+pending. Team-Building/Hank payment interaction evidence and final integrated
+managed/platform checks remain open. Native Hank overpayment reaches its entry
+interrupt, but inspection found an internal card ID and missing counter/health
+explanation. That repair and complete payment journeys remain outstanding.
+
+Replay boundary source `9994b4f6` and independent review `a10e3469` establish
+v29. The review passes 105 focused Server cases, including genuine predecessor
+process continuation and authenticated v28 rejection with original bytes
+preserved, plus eight release-policy cases. Published v28 has no production
+migration route; specifically frozen v19/v20/v21 routes remain subject to exact
+replay and fingerprints. See [replay evidence](ant-man-replay-v29.md) and
+[independent review](ant-man-replay-v29-independent-review.md). Final combined
+verification and publication remain open; this is not a compatible v28 migration
+claim.
+
+The generic payment warning now describes excess resources as not applied to
+the cost rather than lost. This preserves the displayed quantity without
+claiming that an excess-dependent card effect cannot use it. Forty affected
+Godot copy/context/projection checks pass (`ant-payment-copy-tests.log`). Hank's
+specific prepayment and entry explanation is a separate owning-layer repair in
+MARVEL-890 and still needs integration and native verification.
 
 Earlier integration checkpoints below describe the revision tested at that
 point; their older inventory counts and pending tasks are historical.
