@@ -6,6 +6,7 @@ namespace Marvel.Rules.Play;
 /// <summary>State owned by the RevealStage procedure.</summary>
 public sealed record RevealStageOperation(RevealStageKind Kind, EncounterRevealOrigin? Origin = null) : AgendaOperation
 {
+    internal int? AllyIncarnation { get; init; }
     /// <inheritdoc/>
     public override string What => Kind switch
     {

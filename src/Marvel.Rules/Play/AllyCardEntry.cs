@@ -87,7 +87,11 @@ public static class AllyCardEntry
         }
 
         afterMove?.Invoke();
-        if (AllyLimit(world, facts, world.Seats[controller], ally))
+        if (AllyEntryHealth.Settle(world, facts, ally, controller, events))
+        {
+            FinalizeAllyEntry(world, ally, controller);
+        }
+        else if (AllyLimit(world, facts, world.Seats[controller], ally))
         {
             FinalizeAllyEntry(world, ally, controller);
         }

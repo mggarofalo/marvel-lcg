@@ -64,7 +64,11 @@ public static class CardEntry
         // not care how it got there. Eighteen allies in the pool print
         // `rr:toughness`, and before this a played one got no tough status card
         // -- only a *revealed* card ran them.
-        if (AllyLimit(world, facts, seat, card))
+        if (kind == CardKind.Ally && AllyEntryHealth.Settle(world, facts, card, seat.Index, events))
+        {
+            FinalizeAllyEntry(world, card, seat.Index);
+        }
+        else if (AllyLimit(world, facts, seat, card))
         {
             FinalizeAllyEntry(world, card, seat.Index);
         }
@@ -133,7 +137,7 @@ public static class CardEntry
 
     internal static void FinalizeAllyEntry(World world, Card ally, int player) =>
         world.Agenda.Then(new PhaseStep(
-            new RevealStageOperation(RevealStageKind.FinalizeAllyEntry),
+            new RevealStageOperation(RevealStageKind.FinalizeAllyEntry) { AllyIncarnation = ally.Incarnation },
             world.Agenda.Current?.Round ?? 0,
             0,
             Subject: ally.ObjectId,
