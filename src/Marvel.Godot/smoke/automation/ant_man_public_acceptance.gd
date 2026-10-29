@@ -36,9 +36,9 @@ func _public_setup() -> bool:
     return true
 
 func _seed_setup() -> bool:
-    if not await ui.click(ui.button("Connection and seed")): return false
+    if not await ui.click_revealed(ui.button("Connection and seed")): return false
     var seed := _node("Setup/Selections/Fields/Grid/Seed") as LineEdit
-    if not await ui.click(Locator.control(seed)): return false
+    if not await ui.click_revealed(Locator.control(seed)): return false
     if not await ui.press_key(KEY_A, false, true): return false
     for pressed in [true, false]:
         var event := InputEventKey.new()

@@ -71,6 +71,37 @@ func click(locator: RefCounted, button_index: MouseButton = MOUSE_BUTTON_LEFT) -
     await viewport.get_tree().process_frame
     return true
 
+# Players scroll a long panel with the wheel; the driver uses the same input
+# rather than moving the scroll position directly.
+func scroll_into_view(locator: RefCounted) -> bool:
+    if not failure.is_empty(): return false
+    steps.append("scroll into view: " + locator.description)
+    if not await expect_visible(locator): return false
+    var control: Control = locator.all()[0]
+    var scroller := _scroll_ancestor(control)
+    for attempt in range(60):
+        if _fully_visible_enabled(control): return true
+        if scroller == null: break
+        var visible := Rect2(scroller.get_global_transform_with_canvas().origin, scroller.size).intersection(viewport.get_visible_rect())
+        var top := (control.get_global_transform_with_canvas() * Vector2.ZERO).y
+        var wheel := MOUSE_BUTTON_WHEEL_UP if top < visible.position.y else MOUSE_BUTTON_WHEEL_DOWN
+        _move(visible.get_center())
+        _mouse_button(visible.get_center(), wheel, true)
+        _mouse_button(visible.get_center(), wheel, false)
+        await viewport.get_tree().process_frame
+    return _fail("Scrolling did not fully reveal " + locator.description)
+
+func click_revealed(locator: RefCounted) -> bool:
+    if not await scroll_into_view(locator): return false
+    return await click(locator)
+
+func _scroll_ancestor(control: Control) -> ScrollContainer:
+    var ancestor: Node = control.get_parent()
+    while ancestor != null and not ancestor is Viewport:
+        if ancestor is ScrollContainer: return ancestor
+        ancestor = ancestor.get_parent()
+    return null
+
 func hover(locator: RefCounted) -> bool:
     if not failure.is_empty(): return false
     steps.append("hover: " + locator.description)

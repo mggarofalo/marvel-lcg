@@ -43,7 +43,7 @@ func _play_exercise(source: int, helmet: int, army: int) -> bool:
     if not await ui.click(_menu_choice("Play Team-Building Exercise")): return false
     if not await ui.expect(func(): return witness.Revision() == 1 and "Pay 2" in _visible_text(main), "ordinary Exercise payment requires two resources"): return false
     for id in [helmet, army]:
-        if not await ui.click(ui.named("Resource%d" % id)): return false
+        if not await ui.click_revealed(ui.named("Resource%d" % id)): return false
     if not await ui.expect(func(): return witness.Revision() == 1 and Array(payment_witness.DraftResources()) == [helmet, army], "exact two physical cards staged without commitment"): return false
     if not await _capture_checkpoint("exercise-payment"): return false
     if not await ui.click(ui.named("Submit")): return false
