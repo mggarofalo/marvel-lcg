@@ -23853,6 +23853,15 @@
           "effect": { "placeCounters": { "card": "this", "counter": "pym", "count": { "min": [ 4, { "entryResourceExcess": "this" } ] } } }
         }
       ]
+    },
+    {
+      "card": "12026",
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant", "subject": "this" },
+          "effect": { "blankTechPlayerCards": "game" }
+        }
+      ]
     }
   ]
 }

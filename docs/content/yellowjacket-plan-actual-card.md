@@ -18,9 +18,9 @@ no-match exhaustion finish with one reset and the correct physical result.
 The same-trait Rhino minion is deliberately skipped. Tests distinguish the two
 physical Size Increase copies and assert outer treachery cleanup.
 
-These actual-row tests cover Yellowjacket and Size Increase. Tech Theft is still
-unauthored and continues to fail closed if reached. Its actual reveal/blanking
-integration remains a complete-pack requirement. Recursive same-title searches
+These actual-row tests cover Yellowjacket and Size Increase. Actual Tech Theft is now authored and its full Plan-to-Tech reveal and blanking
+are verified in the [Tech Theft packet](tech-theft-actual.md), independently
+reviewed at `d0e7234a`. Recursive same-title searches
 and all four printed card kinds have separate synthetic prerequisite evidence;
 that does not establish a complete actual nemesis journey.
 

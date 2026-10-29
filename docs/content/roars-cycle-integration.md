@@ -3,7 +3,7 @@
 The canonical delivery records are MARVEL-568 (Kang) and MARVEL-569 (Ant-Man),
 within MARVEL-703. This candidate combines reviewed engine prerequisites; neither
 pack has complete executable content or public admission. The production book
-contains 756 rows, including 33 of Ant-Man's 35 faces and no Kang faces.
+contains 757 rows, including 34 of Ant-Man's 35 faces and no Kang faces.
 Hank's reviewed entry cases are supported. The owner resolved MARVEL-885:
 defeat the zero-HP entering ally before enforcing the ally limit. Source `338cf0fb` and independent review `9598e36d` implement and verify that
 adjudication, including the mandatory limit check if an interrupt saves the ally.
@@ -74,11 +74,13 @@ and retained negative controls. Twenty-two selected Server entry/payment,
 variable-resource and live-effect replay checks pass
 (`roars-entry-combined-replay.log`). These do not close MARVEL-870 publication.
 
-Tech blanking source `95021926` has independent review `c8e1bcb5`. The source passes 68 focused Content checks and 1,210 Rules checks; the independent protection review passes 43 checks after a compiled cross-set Permanent mutation and exact restoration. This mechanism is combined with the defeat-first implementation. The combined candidate passes 134 focused Content/data checks, all 1,210 Rules checks and 22 selected Server replay checks (`roars-defeat-tech-combined-{content,rules,replay}.log`). The actual `12026` row, subsequent full Content rerun and final pack gates remain. See [the protection review](tech-blanking-independent-review.md).
+Tech blanking source `95021926` has independent review `c8e1bcb5`. The source passes 68 focused Content checks and 1,210 Rules checks; the independent protection review passes 43 checks after a compiled cross-set Permanent mutation and exact restoration. This mechanism is combined with the defeat-first implementation. The prerequisite candidate `d5df33de` passes 134 focused Content/data checks, all 1,210 Rules checks and 22 selected Server replay checks (`roars-defeat-tech-combined-{content,rules,replay}.log`).
 
-Two Ant-Man faces remain unauthored: `12024` and `12026`. MARVEL-885 has an
+Actual `12026` source `891a1be2` and independent review `d0e7234a` are now combined. The source passes 68 focused checks and distinguishes a no-op row mutation; the review passes 36 checks and independently verifies all 756 preceding objects and their 767,344-byte prefix. Its additional control removes threat through scheme defeat and verifies blanking ends only on defeat. See [actual Tech Theft evidence](tech-theft-actual.md). The combined full Content run passes 8,898 cases and fails one stale Ant-Man reprint inventory list that omits the new12026 row, with no skips (9m55s, `roars-34-combined-content.log`). Adding only12026 to that strict expected list leaves gameplay assertions unchanged; all103 affected inventory, Hank, Tech and Plan checks then pass (`roars-34-inventory-corrected.log`). This is not a claim of a subsequent all-green full run; final complete-pack verification remains. See [the protection review](tech-blanking-independent-review.md).
+
+Only Team-Building Exercise (`12024`) remains unauthored. MARVEL-885 has an
 verified defeat-first implementation; no further human decision is pending on
-that ordering. Actual Plan-to-Tech Theft play,
+that ordering. Actual Plan-to-Tech Theft reveal is verified in the card packet;
 complete pack/starter admission, native interaction and MARVEL-870 replay
 publication evidence remain required before delivery to main.
 

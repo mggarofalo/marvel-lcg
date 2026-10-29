@@ -28,8 +28,8 @@ The source artifact's JSON records the author's check; this comparison was
 performed separately.
 
 The vendored Ant-Man encounter inventory has one Plan, so the prior synthetic
-recursive-copy test is not an actual legal two-copy nemesis-set scenario. Tech
-Theft `12026` remains unauthored; actual Plan to Tech Theft reveal and blanking
-must be verified after authoring before pack admission. Public admission,
+recursive-copy test is not an actual legal two-copy nemesis-set scenario. At this reviewed revision Tech Theft `12026` was unauthored. The subsequent
+[Tech Theft packet](tech-theft-actual.md), independently reviewed at `d0e7234a`,
+verifies actual Plan-to-Tech reveal and blanking. Public admission,
 complete pack, native interaction, replay and cross-platform verification are
 outside this review.
