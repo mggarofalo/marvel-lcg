@@ -99,6 +99,10 @@ public sealed record Occurrence
     [JsonIgnore]
     public Play.PlayedCardPayment? CardPlayPayment { get; init; }
 
+    /// <summary>The exact entry cost snapshot, reconstructed by replay.</summary>
+    [JsonIgnore]
+    public Play.EntryPayment? EntryPayment { get; init; }
+
     /// <summary>Physical cards spent in this completed cost, reconstructed by replay.</summary>
     [JsonIgnore]
     public IReadOnlyList<Play.SpentResourceCard> SpentResourceCards { get; init; } = [];

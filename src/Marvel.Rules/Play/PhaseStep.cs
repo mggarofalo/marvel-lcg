@@ -205,5 +205,6 @@ public readonly record struct PhaseStep(
             {
                 EventRemovesThreat = (Operation as LifecycleOperation)?.EventRemovesThreat,
                 CardPlayPayment = (Operation as LifecycleOperation)?.Payment,
+                EntryPayment = (Operation as LifecycleOperation)?.EntryPayment,
             };
 }

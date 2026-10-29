@@ -68,13 +68,14 @@ internal sealed class CardResourcePayment(
 
     internal ResourcePaymentReceipt Commit(List<GameEvent> events)
     {
+        var origin = ResourceCostOrigin.For(request.PayingFor, request.Payer);
         world.Agenda.Executions.RunBatch(
             new Occurrence(0, ["ResourcePayment"], Subject: request.Itself, Player: request.Payer),
             entry => { Execution = entry; return Continue(events); });
         return new(Execution, () => explicitAllocations
             ? string.Concat(allocations.Select(allocation => allocation.PaidAs))
             : Resources.Paid(generated.ToString(), request.Cost, request.Required),
-            () => generated.ToString(), () => spentCards.ToArray());
+            () => generated.ToString(), () => spentCards.ToArray(), origin);
     }
 
     private void Validate()

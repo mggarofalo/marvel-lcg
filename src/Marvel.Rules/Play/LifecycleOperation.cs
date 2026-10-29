@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Marvel.Rules.State;
 using Marvel.Rules.Timing;
 
@@ -14,6 +15,10 @@ public sealed record LifecycleOperation(LifecycleKind Kind) : AgendaOperation
 
     /// <summary>The original card price retained through its entry response window.</summary>
     public PlayedCardPayment? Payment { get; init; }
+
+    /// <summary>The exact entry cost snapshot, reconstructed by replay.</summary>
+    [JsonIgnore]
+    public EntryPayment? EntryPayment { get; init; }
 
     /// <inheritdoc/>
     public override string What => Kind switch

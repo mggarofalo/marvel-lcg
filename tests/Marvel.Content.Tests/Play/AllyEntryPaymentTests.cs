@@ -143,7 +143,15 @@ public sealed class AllyEntryPaymentTests
         var limit = Sequence.Work(world, world.Facts, runner, [])!;
         Assert.Equal(Question.Element, limit.Asking);
         Sequence.Answer(world, world.Facts, runner, limit, Decision.Take(discard.ObjectId), []);
-        Respond(world, runner, ally);
+        var response = Sequence.Work(world, world.Facts, runner, [])!;
+        var entry = Assert.IsType<EntryPayment>(world.Agenda.Occurrence!.EntryPayment);
+        Assert.Equal(3, entry.Generated.Length);
+        Assert.Equal(3, entry.Paid.Length);
+        Assert.Equal(0, entry.Excess);
+        Assert.True(entry.MatchesEntered(ally, 0));
+        var offer = Assert.Single(response.Affordances, a => a.AnchorId == ally.ObjectId);
+        Sequence.Answer(world, world.Facts, runner, response, Decision.Take(offer.Id), []);
+        Sequence.Finish(world, world.Facts, runner, []);
         Assert.Equal(3, ally.Tokens["c_test"]);
         Assert.Equal(DeckType.DiscardPile, generator.Area.Type);
     }

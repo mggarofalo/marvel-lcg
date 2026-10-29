@@ -230,15 +230,13 @@ internal sealed class AbilityChoiceAnswer(
             execution.StructuralContext(cast), input);
         ThrowIfUnsupported(answer);
         var ally = cast.World.Cards[((MakeTheCallCommand)answer).Ally];
-        long cost = Resources.Cost(ally.FaceId, cast.World.Facts, cast.World.Players) ?? 0;
+        int allyIncarnation = ally.Incarnation;
+        int allyArea = ally.Area.Id;
         var owner = cast.World.Agenda.Current;
         var occurrence = cast.World.Agenda.Occurrence;
-        var payment = CardPlay.Spend(
-            cast.World, cast.World.Facts, execution.resourceAbilities,
-            [cast.World.Seats[player].Hand], input.Spent, cost,
-            Resources.Required(cast.World, ally, cast.World.Facts), cast.Source.ObjectId,
-            player, cast.Events, payingFor: ally);
-        var plan = new AbilityChoicePayment(payment, ally);
+        var payment = MakeTheCallPayment.Spend(cast.World, execution.resourceAbilities,
+            input, cast.Source, ally, player, cast.Events);
+        var plan = new AbilityChoicePayment(payment, ally, allyIncarnation, allyArea);
         if (!payment.IsComplete || !plan.Commit(execution, cast))
         {
             cast.PendingPayment = plan;

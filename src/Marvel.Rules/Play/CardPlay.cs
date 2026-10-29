@@ -242,7 +242,7 @@ public static class CardPlay
     public static void PutAllyIntoPlay(
         World world, ICardFacts facts, ICardPlayAbilities abilities, Card ally,
         int controller, string trigger, List<GameEvent> events) =>
-        AllyCardEntry.Put(world, facts, abilities, ally, controller, trigger, events);
+        AllyCardEntry.Put(world, facts, abilities, new AllyEntryRequest(ally, controller, trigger), events);
 
     /// <summary>
     /// Spends resources to pay a cost — <c>rr:initiating-abilities.step.5</c>.

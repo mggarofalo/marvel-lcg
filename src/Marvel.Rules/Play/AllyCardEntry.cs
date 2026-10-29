@@ -18,10 +18,24 @@ public static class AllyCardEntry
             || Forms.In(world, world.Seats[controller], world.Facts, form))
         && !Uniqueness.IsBlocked(world, world.Facts, ally, PlayArea.Of(controller));
 
-    internal static void Put(
-        World world, ICardFacts facts, ICardPlayAbilities abilities, Card ally,
-        int controller, string trigger, List<GameEvent> events)
+    /// <summary>Put into play the exact ally whose entry cost was paid.</summary>
+    public static void PutPaid(
+        World world, ICardFacts facts, ICardPlayAbilities abilities, EntryPayment payment,
+        string trigger, List<GameEvent> events)
     {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(payment);
+        if (payment.Card < 0 || payment.Card >= world.Cards.Count)
+            throw new RulesNotImplementedException("the paid ally does not exist in this game");
+        var ally = world.Cards[payment.Card];
+        Put(world, facts, abilities, new AllyEntryRequest(ally, payment.Player, trigger, payment), events);
+    }
+
+    internal static void Put(
+        World world, ICardFacts facts, ICardPlayAbilities abilities, AllyEntryRequest request,
+        List<GameEvent> events)
+    {
+        var (ally, controller, trigger, payment) = request;
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
         ArgumentNullException.ThrowIfNull(abilities);
@@ -31,30 +45,7 @@ public static class AllyCardEntry
         ArgumentOutOfRangeException.ThrowIfNegative(controller);
         ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(controller, world.Players);
 
-        if (EffectiveCards.Kind(ally, facts) != CardKind.Ally)
-        {
-            throw new RulesNotImplementedException(
-                $"card {ally.ObjectId} is not an ally and cannot enter an allies area");
-        }
-
-        if (DeckTypes.IsInPlay(ally.Area.Type))
-        {
-            throw new RulesNotImplementedException(
-                $"ally {ally.ObjectId} is already in play and cannot be put into play again");
-        }
-
-        if (facts.RequiredForm(ally.FaceId) is { } form
-            && !Forms.In(world, world.Seats[controller], facts, form))
-        {
-            throw new RulesNotImplementedException(
-                $"ally {ally.ObjectId} can only be put into play in {form} form");
-        }
-
-        if (Uniqueness.IsBlocked(world, facts, ally, PlayArea.Of(controller)))
-        {
-            // `rr:unique-icon.4.1`: an attempted put-into-play has no effect.
-            return;
-        }
+        if (!ValidateEntry(world, facts, request)) return;
 
         var from = ally.Area;
         int previousController = from.PlayArea.IsPlayers
@@ -92,6 +83,40 @@ public static class AllyCardEntry
         // rr:triggering-condition.1: each response triggers once per occurrence.
         // This path owns the entry window; ordinary play owns its combined
         // played/entry window. Both wait for the mandatory ally-limit choice.
-        Entered(world, ally, controller);
+        Entered(world, ally, controller, payment);
     }
+    private static bool ValidateEntry(World world, ICardFacts facts, AllyEntryRequest request)
+    {
+        var (ally, controller, _, payment) = request;
+        if (EffectiveCards.Kind(ally, facts) != CardKind.Ally)
+        {
+            throw new RulesNotImplementedException(
+                $"card {ally.ObjectId} is not an ally and cannot enter an allies area");
+        }
+
+        if (DeckTypes.IsInPlay(ally.Area.Type))
+        {
+            throw new RulesNotImplementedException(
+                $"ally {ally.ObjectId} is already in play and cannot be put into play again");
+        }
+
+        if (facts.RequiredForm(ally.FaceId) is { } form
+            && !Forms.In(world, world.Seats[controller], facts, form))
+        {
+            throw new RulesNotImplementedException(
+                $"ally {ally.ObjectId} can only be put into play in {form} form");
+        }
+
+        if (Uniqueness.IsBlocked(world, facts, ally, PlayArea.Of(controller)))
+        {
+            // `rr:unique-icon.4.1`: an attempted put-into-play has no effect.
+            return false;
+        }
+
+        if (payment is not null && !payment.MatchesPending(ally, controller))
+            throw new RulesNotImplementedException("the paid ally changed before entry completed");
+
+        return true;
+    }
+
 }
