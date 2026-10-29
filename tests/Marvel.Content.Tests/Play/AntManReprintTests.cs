@@ -20,7 +20,7 @@ public sealed class AntManReprintTests : CoreCardTestBase
         string[] faces = ["12019", "12021", "12022", "12023"];
         Assert.Equal(AuthoredCards.ExpectedFaceCount, rows.Length);
         Assert.Equal(faces, rows.Skip(723).Take(4).Select(row => row.GetProperty("card").GetString()));
-        string[] allFaces = ["12001a", "12001b", "12001c", "12002", "12003", "12004", "12005", "12006", "12007", "12008", "12009", "12010", "12011", "12012", "12013", "12014", "12015", "12016", "12017", "12018", "12019", "12020", "12021", "12022", "12023", "12025", "12026", "12027", "12028", "12029", "12030", "12031", "12032", "12033"];
+        string[] allFaces = ["12001a", "12001b", "12001c", "12002", "12003", "12004", "12005", "12006", "12007", "12008", "12009", "12010", "12011", "12012", "12013", "12014", "12015", "12016", "12017", "12018", "12019", "12020", "12021", "12022", "12023", "12024", "12025", "12026", "12027", "12028", "12029", "12030", "12031", "12032", "12033"];
         Assert.Equal(allFaces, AuthoredCards.Book.Authored.Where(face => face.StartsWith("12", StringComparison.Ordinal)).Order());
         Assert.All(rows.Skip(724).Take(3), row => Assert.Empty(row.GetProperty("abilities").EnumerateArray()));
     }

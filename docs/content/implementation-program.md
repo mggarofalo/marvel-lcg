@@ -26,8 +26,8 @@ The existing Content Expansion module defines these **11 planning waves**. Range
 ## Current integration checkpoint
 
 The active Ant-Man/Kang candidate is recorded in
-[the cycle checkpoint](roars-cycle-integration.md). It has 34 authored
-Ant-Man faces out of 35 and 757 total rows, including Hank's reviewed entry
+[the cycle checkpoint](roars-cycle-integration.md). It has all 35 authored
+Ant-Man faces and 758 total rows, including Hank's reviewed entry
 cases, plus reviewed Kang foundations. The owner resolved MARVEL-885 in favor of
 zero-HP defeat before ally-limit enforcement. Source `338cf0fb` and independent
 review `9598e36d` implement and verify that ordering. Neither pack is publicly admitted. Giant Stomp's live-choice
@@ -60,7 +60,7 @@ passes 70 focused checks and its review passes 45, with cap/health mutations
 distinguished. The newer defeat-first and Tech blanking integration passes 134 focused Content/data,
 1,210 Rules and 22 selected Server replay checks. The subsequent34-face full Content run passes8,898 and finds one stale face inventory list; adding12026 to that expected list is followed by103 passing affected checks. Final
 pack admission, full verification, native interaction and publication checks remain open.
-Only Team-Building Exercise remains unauthored. Its permanent-play prerequisite source `73363f70` is independently reviewed at `bff0af9c` and combined with90 focused Content/data and1,217 Rules checks passing. Event dispatch source `8db24131` is independently reviewed at `5d19b7ee`; the combined candidate passes 144 affected Content and 1,217 Rules checks. Actual Team-Building Exercise authoring and Hank Pym overpayment integration remain before pack admission. Actual Tech Theft source `891a1be2` is independently reviewed at `d0e7234a`, including full Plan reveal and scheme-defeat restoration. MARVEL-888 owns live TECH-player-card blanking and
+Team-Building Exercise source `92e708fb` is independently reviewed at `627cef15`, completing all 35 authored faces. The reviewed gameplay tree passes 127 affected checks, including below-cap Hank overpayment with a distinguishing extra-counter mutant. Public admission is the next packet. Its permanent-play prerequisite source `73363f70` is independently reviewed at `bff0af9c` and combined with90 focused Content/data and1,217 Rules checks passing. Event dispatch source `8db24131` is independently reviewed at `5d19b7ee`; the combined candidate passes 144 affected Content and 1,217 Rules checks. Actual Team-Building Exercise and Hank Pym overpayment integration are verified in the card packet; complete starter and public admission remain. Actual Tech Theft source `891a1be2` is independently reviewed at `d0e7234a`, including full Plan reveal and scheme-defeat restoration. MARVEL-888 owns live TECH-player-card blanking and
 MARVEL-889 owns trait-matching discounted nested play. Their researched
 implementation and evidence requirements are recorded under the canonical
 Ant-Man parent. The combined Cassie/payment revision passes 121 focused Content/data and all 1,210 Rules checks; final pack/native/replay gates remain open.
