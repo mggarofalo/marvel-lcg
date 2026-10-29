@@ -1283,6 +1283,13 @@ interpretation of "this attack". Combine it with the player's form condition and
 `afterActivation`; it neither moves the active counter nor schedules an attack.
 Activations remain sequential under rr:activation.8.
 
+`grantUntil` accepts `EndOfNextPlayerTurn` only for a unit
+`form_change_prohibited` grant to `you`. It applies immediately and expires
+at the end of that player's next turn, including when it starts during another
+player's turn or the villain phase. It remains after the source leaves play.
+The current turn is not the next turn. Other targets, amounts and fields are not
+admitted for this duration.
+
 `grantCharactersWithTrait` registers a live lasting combat bonus:
 `{"trait":"AVENGER","fields":["attack","thwart"],"amount":1,"until":"EndOfPhase"}`.
 The affected set includes all in-play characters with the current effective

@@ -3,7 +3,27 @@
 The canonical delivery records are MARVEL-568 (Kang) and MARVEL-569 (Ant-Man),
 within MARVEL-703. This candidate combines reviewed engine prerequisites; neither
 pack has complete executable content or public admission. The production book
-contains 753 rows, including 30 of Ant-Man's 35 faces and no Kang faces.
+contains 754 rows, including 31 of Ant-Man's 35 faces and no Kang faces.
+
+Actual Yellowjacket's Plan source `76758101`, independently accepted at
+`872b6d0a`, preserves all 753 previous objects and their byte prefix. Source
+verification passes 98 focused checks and a wrong-set runtime row mutation;
+independent actual-card verification passes seven cases including cancellation
+and cleanup. The actual Plan-to-Tech Theft path remains a complete-pack
+requirement once `12026` is authored. See [the content review](yellowjacket-plan-independent-review.md).
+
+MARVEL-884 next-own-turn prohibition source `5a64ab1d`, independently accepted
+at `836db363`, uses the existing beginning/end occurrence bodies, keeps each
+registration tied to its seat, and combines expiry with existing settlement.
+Source verification passes 38 affected Content and 43 Rules cases; independent
+staggered-registration/reentry checks pass two and distinguish a compiled
+premature-arming mutation. The beginning-interrupt boundary is derived from the
+current general timing rules, not a card-specific ruling. Independent review
+explicitly accepts that derivation; it is not a human approval requirement.
+See [the review](marvel-884-duration-review.md). No actual `12025` row is added
+by this prerequisite. The combined candidate passes 113 focused Content/data
+checks and all 1,210 Rules tests in `roars-31-combined-{content,rules}.log`.
+The tested tree is recorded in `roars-31-combined-tested-tree.txt`.
 
 Yellowjacket and Size Increase source `8f4053ba`, independently reviewed at
 `6f508f74`, add two actual nemesis faces. Review includes both physical Size
@@ -33,7 +53,7 @@ these results do not claim a second complete Content run. The earlier
 50 failures comprise 46 dependent transcripts, two Make the Call cases and two
 obsolete quote assertions (For Justice and Captain America).
 
-Five Ant-Man faces remain: `12011`, `12024`, `12025`, `12026`, and `12029`.
+Four Ant-Man faces remain: `12011`, `12024`, `12025`, and `12026`.
 
 Actual Pym Particles source `3d16f976` is independently accepted at `fee19693`.
 All 752 prior objects and their raw prefix are unchanged. Source verification
