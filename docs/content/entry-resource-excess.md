@@ -64,7 +64,7 @@ The focused healing, ordered payment, selection guard, entry excess and counter
 classes passed 63 cases. Removing healing-cost recognition killed a compiled
 mutant (15 failures in 25); removing singular-area deferral killed another
 (two failures in two). Sources were restored for nonincremental verification.
-Independent review of this repair remains pending.
+The follow-up review identified the no-op heal described below.
 
 Independent review reproduced an undamaged heal incorrectly creating a future
 positive counter result. The paired control uses one damage and observes one
@@ -74,4 +74,12 @@ prior heal replaces the payment receipt. Controls cover a damage cost, damage
 then healing costs, a healing-only cost, and an earlier damage effect. Known
 ready/exhausted, threat movement and threat removal targets use their existing
 admission checks; hidden search outcomes remain uncertain. The projection is not
-a general proof for every nested result writer. Independent review is pending.
+a general proof for every nested result writer.
+
+Independent review of `056559cb` checked the healing result against
+`rr:target.3` and cost ordering against `rr:initiating-abilities.step.5`.
+The review reran the paired no-damage/damaged control and the affected healing,
+ordered-payment, entry and counter classes: 51 cases passed. The implementation's
+compiled no-op-heal and final-damage mutants failed their intended controls;
+the restored nonincremental run passed. This accepts the bounded repair, not a
+general result-expression reachability solver or a complete pack journey.
