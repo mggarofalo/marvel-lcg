@@ -87,7 +87,7 @@ public static class AllyCardEntry
         }
 
         afterMove?.Invoke();
-        if (AllyEntryHealth.Settle(world, facts, ally, controller, events))
+        if (AllyEntryHealth.Settle(world, facts, ally, events))
         {
             FinalizeAllyEntry(world, ally, controller);
         }

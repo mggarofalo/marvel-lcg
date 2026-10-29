@@ -240,7 +240,11 @@ internal static class RevealProcedure
         var ally = world.Cards[allyId];
         if (ally.Area.Type == DeckType.AlliesArea && ally.Incarnation == incarnation)
         {
-            Reveal.EnterPlay(world, facts, ally, events, abilities: world.CardPlayAbilities);
+            int controller = ally.Area.PlayArea.Player;
+            if (CardEntry.CheckAllyLimit(world, facts, controller, allyId))
+                CardEntry.FinalizeAllyEntry(world, ally, controller);
+            else
+                Reveal.EnterPlay(world, facts, ally, events, abilities: world.CardPlayAbilities);
         }
     }
 }

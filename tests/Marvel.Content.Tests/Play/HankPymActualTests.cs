@@ -164,23 +164,39 @@ public sealed class HankPymActualTests : CoreCardTestBase
         Assert.Equal(DeckType.AlliesArea, hank.Area.Type);
     }
 
-    [Fact]
-    public void FourthAllyWithZeroHealthRemainsExplicitlyUnsupported()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    [Rule("rr:hit-points.3")]
+    [Rule("rr:ally-limit")]
+    public void FourthHankAtZeroHealthIsDefeatedBeforeAllyLimit(bool declinePaymentInterrupt)
     {
-        // MARVEL-885 tracks the unresolved simultaneous framework obligations.
+        // An ally with zero or fewer remaining hit points is defeated; the ally limit
+        // requires discarding controlled allies until the player is at their limit.
+        // MARVEL-885 records the owner's choice to resolve defeat first.
         var runner = AuthoredCards.Runner();
-        var world = ThorActualFixture.Board("06001a");
+        var world = ThorActualFixture.Board("06001a", 2);
         world.Abilities = runner;
-        var area = world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0);
-        world.CreateCard("01067", area);
-        world.CreateCard("01068", area);
-        world.CreateCard("01041", area);
-        var hank = world.CreateCard("12011", world.Seats[0].Hand);
-        var error = Assert.Throws<RulesNotImplementedException>(() =>
+        var seat = world.Seats[1];
+        var area = world.AreaOf(DeckType.AlliesArea, PlayArea.Of(1), cardOwner: 1);
+        var old = new[] { world.CreateCard("01067", area), world.CreateCard("01068", area),
+            world.CreateCard("01041", area) };
+        var hank = world.CreateCard("12011", seat.Hand);
+        var payment = declinePaymentInterrupt ? world.CreateCard("01088", seat.Hand) : null;
+        CardPlay.Play(world, world.Facts, runner, seat, hank, payment is null ? [] : [payment.ObjectId], []);
+        if (declinePaymentInterrupt)
         {
-            CardPlay.Play(world, world.Facts, runner, world.Seats[0], hank, [], []);
-            Sequence.Work(world, world.Facts, runner, []);
-        });
-        Assert.Contains("zero-health defeat and ally-limit", error.Message);
+            var interrupt = Assert.IsType<Prompt>(Sequence.Work(world, world.Facts, runner, []));
+            Assert.Equal(1, interrupt.Player);
+            Assert.Contains(interrupt.Affordances, item => item.AnchorId == hank.ObjectId);
+            Sequence.Answer(world, world.Facts, runner, interrupt, Decision.Decline, []);
+        }
+        Assert.Null(Sequence.Work(world, world.Facts, runner, []));
+        Assert.Equal(DeckType.DiscardPile, hank.Area.Type);
+        Assert.Equal(0, hank.Tokens.GetValueOrDefault("c_pym"));
+        Assert.All(old, card => Assert.Equal(DeckType.AlliesArea, card.Area.Type));
+        Assert.Equal(3, area.Cards.Count);
+        if (payment is not null) Assert.Equal(DeckType.DiscardPile, payment.Area.Type);
+        Assert.Empty(world.Agenda.Outstanding);
     }
 }

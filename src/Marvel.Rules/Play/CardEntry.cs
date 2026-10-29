@@ -64,7 +64,7 @@ public static class CardEntry
         // not care how it got there. Eighteen allies in the pool print
         // `rr:toughness`, and before this a played one got no tough status card
         // -- only a *revealed* card ran them.
-        if (kind == CardKind.Ally && AllyEntryHealth.Settle(world, facts, card, seat.Index, events))
+        if (kind == CardKind.Ally && AllyEntryHealth.Settle(world, facts, card, events))
         {
             FinalizeAllyEntry(world, card, seat.Index);
         }

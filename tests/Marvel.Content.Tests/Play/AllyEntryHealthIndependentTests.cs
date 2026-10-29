@@ -11,10 +11,12 @@ namespace Marvel.Content.Tests.Play;
 
 public sealed class AllyEntryHealthIndependentTests
 {
-    [Fact]
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
     [Rule("rr:hit-points.3")]
     [Rule("rr:interrupt.3.1")]
-    public void DefeatInterruptCanIncreaseHealthAndTheSurvivingAllyGetsItsEntryResponse()
+    public void DefeatInterruptCanIncreaseHealthAndTheSurvivingAllyGetsItsEntryResponse(bool atLimit)
     {
         // A would-interrupt resolves before its imminent triggering condition;
         // an ally with zero remaining hit points is defeated.
@@ -34,11 +36,25 @@ public sealed class AllyEntryHealthIndependentTests
         var world = ThorActualFixture.Board("06001a");
         world.Abilities = runner;
         var observer = world.CreateCard("01092", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
+        var area = world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0);
+        Card? old = null;
+        if (atLimit)
+        {
+            old = world.CreateCard("01067", area);
+            world.CreateCard("01068", area);
+            world.CreateCard("01041", area);
+        }
         var ally = world.CreateCard("12011", world.Seats[0].Hand);
         CardPlay.PutAllyIntoPlay(world, world.Facts, runner, ally, 0, "synthetic", []);
         var interrupt = Assert.IsType<Prompt>(Sequence.Work(world, world.Facts, runner, []));
         var rescue = Assert.Single(interrupt.Affordances, item => item.AnchorId == observer.ObjectId);
         Sequence.Answer(world, world.Facts, runner, interrupt, Decision.Take(rescue.Id), []);
+        if (atLimit)
+        {
+            var limit = Assert.IsType<Prompt>(Sequence.Work(world, world.Facts, runner, []));
+            Assert.Equal(Steps.ChooseAllyForLimit, limit.Trigger);
+            Sequence.Answer(world, world.Facts, runner, limit, Decision.Take(old!.ObjectId), []);
+        }
         var response = Assert.IsType<Prompt>(Sequence.Work(world, world.Facts, runner, []));
         Assert.Equal(DeckType.AlliesArea, ally.Area.Type);
         Assert.Equal(1, DamagePlacement.Health(world, world.Facts, ally));
