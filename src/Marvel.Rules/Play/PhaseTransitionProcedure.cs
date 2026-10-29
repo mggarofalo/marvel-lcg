@@ -33,7 +33,8 @@ internal static class PhaseTransitionProcedure
                 PhaseEnd.ReadyCards(world, events);
                 break;
             case PlayerTurnTiming.Begins:
-                // The scheduled occurrence owns the beginning windows; no state changes at its body.
+                // rr:interrupt: interrupts resolve before the triggering condition resolves.
+                world.Effects.BeginNextTurn(step.Seat);
                 break;
             case PlayerTurnTiming.Ends:
                 world.Agenda.PlayerTurnOpen = false;

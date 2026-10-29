@@ -15,6 +15,9 @@ public static class TimingPoints
     /// </summary>
     public const string EndOfTurn = "EndOfTurn";
 
+    /// <summary>The end of the affected player's next turn.</summary>
+    public const string EndOfNextPlayerTurn = "EndOfNextPlayerTurn";
+
     /// <summary>
     /// The end of the player phase — <c>rr:end-of-player-phase.step.4</c>.
     /// </summary>

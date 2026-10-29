@@ -15,6 +15,8 @@ internal static class GameTurnBeginning
             game.world.Agenda.Add(new PhaseStep(new PhaseTransitionOperation(PhaseTransitionKind.BeginPlayerTurn),
                 game.Round, 0, Seat: game.Active)
             { OccurrenceId = game.world.Agenda.nextPlayerActionOccurrence-- });
+        else
+            game.world.Effects.BeginNextTurn(game.Active);
         return game.Turn(events);
     }
 }

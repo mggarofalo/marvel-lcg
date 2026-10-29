@@ -40,7 +40,7 @@ internal static class AbilityModifierLowering
         {
             throw location.Error("expected exactly one of 'trait' and 'keyword'");
         }
-        string? until = lasting ? TimingPoint(Required(fields, "until", location), location.Child("until")) : null;
+        string? until = lasting ? GrantTiming(Required(fields, "until", location), location.Child("until")) : null;
         var cards = Selected(fields, target, location);
         if (fields.TryGetValue("trait", out var trait))
             return TraitGrant(fields, cards, trait, location, each, until);
@@ -49,11 +49,26 @@ internal static class AbilityModifierLowering
         // modifier conventions; they are not inferred from a card's title.
         var amount = fields.TryGetValue("amount", out var number)
             ? Number(number, location.Child("amount")) : new AbilityNumber.Constant(lasting ? 0 : 1);
+        ValidateNextTurnGrant(until, field, cards, amount, each, location);
         ValidateHandSizeMaximum(field, cards, amount, lasting, each, location);
         ValidateAllyLimitExclusion(field, cards, amount, lasting, each, location);
         var attackRestriction = AbilityAttackKeywordLowering.Restriction(fields, location, cards, field, each);
         return new AbilityEffect.GrantField(cards, field, amount, each, until)
         { AttackRestriction = attackRestriction };
+    }
+
+    private static string GrantTiming(AbilityValue value, AbilityLocation location) =>
+        Text(value, location) == TimingPoints.EndOfNextPlayerTurn
+            ? TimingPoints.EndOfNextPlayerTurn : TimingPoint(value, location);
+
+    private static void ValidateNextTurnGrant(string? until, string field, AbilityCardSelection cards,
+        AbilityNumber amount, bool each, AbilityLocation location)
+    {
+        if (until == TimingPoints.EndOfNextPlayerTurn
+            && (field != FormChangePermissions.ProhibitedField || each
+                || cards is not AbilityCardSelection.Bound { Binding: AbilityCardBinding.You }
+                || amount is not AbilityNumber.Constant { Value: 1 }))
+            throw location.Error("next-turn duration requires a form-change prohibition on you");
     }
 
     private static void ValidateAllyLimitExclusion(string field, AbilityCardSelection cards,
@@ -78,6 +93,8 @@ internal static class AbilityModifierLowering
     private static AbilityEffect.GrantTrait TraitGrant(IReadOnlyDictionary<string, AbilityValue> fields,
         AbilityCardSelection cards, AbilityValue trait, AbilityLocation location, bool each, string? until)
     {
+        if (until == TimingPoints.EndOfNextPlayerTurn)
+            throw location.Error("next-turn duration does not support trait grants");
         if (fields.ContainsKey("amount") || fields.ContainsKey("attackScope"))
             throw location.Error("a trait grant has no numeric amount or attack scope");
         return new(cards, Text(trait, location.Child("trait")), each, until);

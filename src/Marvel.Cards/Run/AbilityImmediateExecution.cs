@@ -267,7 +267,7 @@ internal static class AbilityImmediateExecution
             throw new RulesNotImplementedException($"live lasting field '{kind}' is not implemented");
         world.Effects.Register(new ContinuousEffect(EffectSource.LastingEffect, Kind: kind,
             Amount: liveAmount is null ? resolveAmount(amount) : 0, Card: context.Admission.Source.ObjectId,
-            Affects: target.ObjectId, Lasts: Duration.UntilEndOf(until)) { LiveAmount = liveAmount });
+            Affects: target.ObjectId, Lasts: AbilityLastingDuration.For(world, target, until)) { LiveAmount = liveAmount });
         if (string.Equals(kind, "stalwart", StringComparison.Ordinal))
             Statuses.RemoveAfflictionsIfStalwart(world, world.Facts, target, context.Trigger, context.Events);
     }

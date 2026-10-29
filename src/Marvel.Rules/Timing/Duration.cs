@@ -68,11 +68,17 @@ public sealed record Duration(string? Until = null, string? OnCondition = null, 
     public static readonly Duration WhileInPlay = new();
 
     /// <summary>Whether nothing bounds this but its card staying in play.</summary>
-    public bool IsWhileInPlay => Until is null && OnCondition is null && Uses is null;
+    public bool IsWhileInPlay => Until is null && OnCondition is null && Uses is null && NextTurnSeat is null;
 
     /// <summary>"Until the end of the round", and its like.</summary>
     /// <param name="timingPoint">One of <see cref="TimingPoints"/>.</param>
     public static Duration UntilEndOf(string timingPoint) => new(Until: timingPoint);
+
+    /// <summary>The seat whose next turn bounds this effect, when specified.</summary>
+    public int? NextTurnSeat { get; init; }
+
+    /// <summary>Remain in force until the next turn of the specified seat ends.</summary>
+    public static Duration UntilNextTurnEnds(int seat) => new() { NextTurnSeat = seat };
 
     /// <summary>"The next card you play", and its like.</summary>
     /// <param name="uses">How many times it may apply.</param>
