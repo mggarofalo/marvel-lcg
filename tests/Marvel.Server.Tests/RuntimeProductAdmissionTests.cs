@@ -72,6 +72,7 @@ public sealed class RuntimeProductAdmissionTests
             }
             string setupPath = Path.Combine(root, "datasets", "setup", "setup.json");
             var setup = JsonNode.Parse(File.ReadAllText(setupPath))!;
+            setup["heroes"]!.AsObject().Remove("ant_man");
             // Synthetic ownership recipes, not a claim about the pack's starter or scenario.
             var hero = setup["heroes"]!["spider_man"]!.DeepClone();
             hero["hero"] = new JsonArray("12001a,12001b");

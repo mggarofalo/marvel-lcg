@@ -73655,6 +73655,24 @@
       ]
     },
     {
+      "id": "setup:hero:ant_man",
+      "fingerprint": "sha256:9c5b9553a5be1c12e78ec74daa2d68f550b38c6839f4773a07561ee9dbffb974",
+      "obligations": [
+        {
+          "key": "ant-man-setup",
+          "summary": "The Ant-Man hero record supplies the printed starter deck, obligation and nemesis set.",
+          "disposition": "outside-core",
+          "reason": "This record requires the Ant-Man hero pack, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
       "id": "setup:hero:black_panther",
       "fingerprint": "sha256:cfb64a5ec8edef779f2d799cac67681fb366909edd25bc117c144e2fe79ddb42",
       "obligations": [

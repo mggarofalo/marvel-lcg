@@ -60,7 +60,7 @@ a later product executable.
 The executable ability book contains the 209 Core Set, 181 Rise of Red Skull,
 35 Captain America and 60 Wrecking Crew faces, plus the candidates' 57 Green
 Goblin, 34 Ms. Marvel, 35 Thor, 34 Black Widow, 40 Doctor Strange and 33 Hulk faces
-and five Ronan Kree Fanatic faces (723 total). Product admission requires complete
+five Ronan Kree Fanatic faces and 35 Ant-Man faces (758 total). Product admission requires complete
 playable content and the verified published starter; physical packaging copy
 quantities are outside that requirement. Language support for a later card pattern
 does not admit that product.
@@ -99,7 +99,7 @@ Doctor Strange has candidate public admission for all 40 printed faces
 The typed Invocation recipe has one each of 09032-09036, outside the ordinary
 40-card deck. Missing any required face or changing the pinned recipe closes
 the entire product. Extra cards 09037-09039 remain outside the starter and enter
-legal custom decks at printed copy limits. Discovery now has thirteen heroes,
+legal custom decks at printed copy limits. Discovery now has fourteen heroes,
 39 scenario/mode recipes and fourteen encounter sets. Public setup and focused
 action evidence are recorded in `docs/content/doctor-strange-public-admission.md`;
 complete-game, fresh-host replay and final combined acceptance belong to the
@@ -113,7 +113,7 @@ Identity, Inner Demons (10025 ×1) and the five-card nemesis set
 (10026 ×1, 10027 ×1, 10028 ×3) are separate. Missing any required authored or
 catalog face, changed pack membership or an incorrect required recipe closes
 the complete pack. Extras 10029–10032 stay outside the starter and enter legal
-custom decks at printed copy limits. Public discovery has thirteen heroes,
+custom decks at printed copy limits. Public discovery has fourteen heroes,
 39 scenario/mode recipes and fourteen encounter sets. Focused setup/admission
 evidence is recorded in `docs/content/hulk-public-admission.md`; this candidate
 does not establish complete-game, native or final combined acceptance.
@@ -127,8 +127,14 @@ exact pack membership, modular role and the complete seven-copy recipe are requi
 together. A missing face or malformed recipe closes the entire set while preserving
 predecessor products. Standard and Expert scenario slots accept its normal modular
 selection with starter or legal custom player decks. Recommended defaults remain
-scenario-owned. Discovery has thirteen heroes, 39 scenario/mode recipes and fifteen
+scenario-owned. Discovery has fourteen heroes, 39 scenario/mode recipes and fifteen
 encounter sets, thirteen of them modular. The separate Galaxy’s Most Wanted Ronan
 scenario remains unsupported. Focused evidence is in
 `docs/content/ronan-public-admission.md`; this gate does not establish complete-game,
 fresh-host or native acceptance.
+
+Ant-Man has candidate public admission for all 35 printed faces and its exact
+40-card starter, obligation and nemesis composition. The three identity faces
+represent one physical card. Four extra customization cards are outside the
+starter. Missing a face or changing a required recipe closes the pack.
+Complete-game, replay, native and final combined acceptance remain separate.
