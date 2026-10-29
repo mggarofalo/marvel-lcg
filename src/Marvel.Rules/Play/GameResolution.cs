@@ -42,6 +42,7 @@ public static class GameResolution
         ValidateLiveTeamUp(game, input);
         ValidateLiveCardPlay(game, input);
         GameFormChanges.Validate(game, input);
+        ValidateContinuation(game, input);
         game.world.ClearInformationSignals();
 
         // Rules questions and windows retain their sequence owner across phases.
@@ -56,6 +57,16 @@ public static class GameResolution
         }
 
         return ResolveDeclineOrVillain(game, input);
+    }
+
+    private static void ValidateContinuation(Game game, Decision input)
+    {
+        if (game.asking == Asker.Sequence && game.Pending!.ExecutionBinding is { Window: null }
+            && game.world.Agenda.Current is { What: Steps.ChooseOption } continuation)
+        {
+            PromptExecutionBinding.RequireCurrent(game.world, game.Pending);
+            game.world.ContinuationAbilities.ValidateChoice(game.world, continuation, input);
+        }
     }
 
     private static void ValidateLiveTeamUp(Game game, Decision input)

@@ -132,6 +132,11 @@ public sealed class AbilityRunner : ICardAbilities
             : resolution.Choosing(world, continuation);
     public Prompt? PreviewChoice(World world, Card source, int player, int position, AbilityType? tier = null, bool finalStep = false) =>
         AbilityChoicePreview.Describe(resolution, world, source, player, position, tier, finalStep);
+    public void ValidateChoice(World world, PhaseStep continuation, Decision input)
+    {
+        if (continuation.Operation is not AbilityContinuationAgendaOperation { Continuation: DamageReplacementContinuation })
+            resolution.ValidateChoice(world, continuation, input);
+    }
     public AbilityExecutionResult Act(World world, AbilityExecution invocation, Decision answer) => resolution.Act(world, invocation, answer);
     public IReadOnlyList<GameEvent> Chose(World world, PhaseStep continuation, Decision input) =>
         continuation.Operation is AbilityContinuationAgendaOperation { Continuation: DamageReplacementContinuation }

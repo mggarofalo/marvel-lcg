@@ -116,6 +116,7 @@ internal static class AbilityEffectLowering
             "placeAccelerationToken" => FixedEffect(argument, child, 1, AbilityFixedInstruction.PlaceAccelerationToken),
             "generateTopDiscard" => FixedEffect(argument, child, "printed", AbilityFixedInstruction.GenerateTopDiscard),
             "makeTheCall" => FixedEffect(argument, child, "game", AbilityFixedInstruction.MakeTheCall),
+            "playSharedHeroTraitPermanent" => FixedEffect(argument, child, "game", AbilityFixedInstruction.PlaySharedHeroTraitPermanent),
             "discardOtherEnvironments" => FixedEffect(argument, child, "game", AbilityFixedInstruction.DiscardOtherEnvironments),
             "blankTechPlayerCards" => FixedEffect(argument, child, "game", AbilityFixedInstruction.BlankTechPlayerCards),
             "gainEnvironmentTraits" => FixedEffect(argument, child, "this", AbilityFixedInstruction.GainEnvironmentTraits),

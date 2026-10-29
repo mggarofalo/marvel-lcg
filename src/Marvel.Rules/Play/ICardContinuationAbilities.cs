@@ -14,6 +14,7 @@ public interface ICardContinuationAbilities
     AbilityExecutionResult ResolveSpecial(World world, AbilityExecution entry, Card card, int player, bool finalStep);
     IReadOnlyList<GameEvent> ResolveEachPlayer(World world, PhaseStep continuation);
     Prompt? Choosing(World world, PhaseStep continuation);
+    void ValidateChoice(World world, PhaseStep continuation, Decision input) { }
     IReadOnlyList<GameEvent> Chose(World world, PhaseStep continuation, Decision input);
 }
 #pragma warning restore CS1591
