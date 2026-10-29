@@ -1582,6 +1582,13 @@ Both branches retain the same outer thwart label and its whole-ability cancellat
 Other power suspension and conditional admission shapes retain their existing gates.
 
 
+### Entry resource excess
+
+`{"entryResourceExcess":"this"}` reads resources generated beyond those paid
+for the bound source card's completed entry cost (`rr:cost.4.1`). Its spelling
+is an engine choice. The payer and physical card incarnation must match the
+entry receipt; an unpaid entry, unrelated source or reentered copy reads zero.
+The expression composes with numeric operators such as `min` for a printed cap.
 ### Player attack excess damage
 
 `{"attackExcessDamage":"trigger.target"}` reads the settled excess on the
