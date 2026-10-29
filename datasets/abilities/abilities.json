@@ -23840,6 +23840,19 @@
           }
         }
       ]
+    },
+    {
+      "card": "12011",
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant", "subject": "this" },
+          "effect": { "grant": { "card": "this", "keyword": "health", "amount": { "countersOn": { "card": "this", "counter": "pym" } } } }
+        },
+        {
+          "trigger": { "event": "WhenCardEntersPlay", "timing": "Interrupt", "subject": "this" },
+          "effect": { "placeCounters": { "card": "this", "counter": "pym", "count": { "min": [ 4, { "entryResourceExcess": "this" } ] } } }
+        }
+      ]
     }
   ]
 }

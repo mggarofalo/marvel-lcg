@@ -3,15 +3,30 @@ using static Marvel.Cards.Run.AbilityAdmission;
 
 namespace Marvel.Cards.Run;
 
-/// <summary>Recognizes a discard receipt that an earlier effect has not produced yet.</summary>
+/// <summary>Recognizes a discard receipt that a cost or earlier effect has not produced yet.</summary>
 internal static class AbilityFutureDiscardAdmission
 {
-    internal static bool MayDealDamage(AbilityNumber number, AbilityAdmissionScope scope) =>
+    internal static bool MayHavePositiveAmount(AbilityNumber number, AbilityAdmissionScope scope) =>
         AbilityInitiationPrimitives.Amount(number, scope) > 0 || HasPendingAmount(number, scope);
 
     private static bool HasPendingAmount(AbilityNumber number, AbilityAdmissionScope scope) =>
-        UsesDiscardReceipt(number) && scope.Reachability.PriorSteps.Any(effect =>
-            ProducesReceipt(effect, scope));
+        UsesDiscardReceipt(number) && !HasFixedZeroBound(number)
+        && (scope.Reachability.PriorSteps.Any(effect => ProducesReceipt(effect, scope))
+            || scope.Reachability.PaymentMayMutate && ProducesReceipt(scope.Reachability.PaymentCost));
+
+    private static bool ProducesReceipt(AbilityCost? cost) => cost switch
+    {
+        AbilityCost.DiscardTop { Count: > 0 } => true,
+        AbilityCost.Sequence sequence => sequence.Costs.Any(ProducesReceipt),
+        _ => false,
+    };
+
+    private static bool HasFixedZeroBound(AbilityNumber number) => number switch
+    {
+        AbilityNumber.Minimum minimum => minimum.Operands.Any(operand => operand is AbilityNumber.Constant { Value: <= 0 }),
+        AbilityNumber.Product product => product.Operands.Any(operand => operand is AbilityNumber.Constant { Value: 0 }),
+        _ => false,
+    };
 
     private static bool ProducesReceipt(AbilityEffect effect, AbilityAdmissionScope scope) => effect switch
     {
