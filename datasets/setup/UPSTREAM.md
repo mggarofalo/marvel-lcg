@@ -129,7 +129,7 @@ The typed Invocation recipe has one each of 09032-09036, outside the ordinary
 40-card deck. Missing any required face or changing the pinned recipe closes
 the entire product. Extra cards 09037-09039 remain outside the starter and enter
 legal custom decks at printed copy limits. Discovery now has fourteen heroes,
-39 scenario/mode recipes and fourteen encounter sets. Public setup and focused
+39 scenario/mode recipes and fifteen encounter sets. Public setup and focused
 action evidence are recorded in `docs/content/doctor-strange-public-admission.md`;
 complete-game, fresh-host replay and final combined acceptance belong to the
 separate MARVEL-838 packet.
@@ -143,7 +143,7 @@ Identity, Inner Demons (10025 ×1) and the five-card nemesis set
 catalog face, changed pack membership or an incorrect required recipe closes
 the complete pack. Extras 10029–10032 stay outside the starter and enter legal
 custom decks at printed copy limits. Public discovery has fourteen heroes,
-39 scenario/mode recipes and fourteen encounter sets. Focused setup/admission
+39 scenario/mode recipes and fifteen encounter sets. Focused setup/admission
 evidence is recorded in `docs/content/hulk-public-admission.md`; this candidate
 does not establish complete-game, native or final combined acceptance.
 
