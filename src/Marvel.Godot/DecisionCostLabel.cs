@@ -12,7 +12,7 @@ internal static class DecisionCostLabel
         if (offer.CostOptions is not [var cost] || cost.HasAlternative
             || cost.ResourceCosts is not [var component]) return;
         string label = button.Text;
-        HBoxContainer row = ResourceIconRendering.Row($"{label} · {component.Cost}",
+        HBoxContainer row = ResourceIconRendering.Row(OfferCaption(label, component),
             Symbols(component), GodotThemeVariations.Caption);
         if (compact && row.GetChild(0) is Label caption)
         {
@@ -23,6 +23,8 @@ internal static class DecisionCostLabel
         button.Text = string.Empty;
         ResourceIconRendering.ButtonContent(button, row, accessible);
     }
+
+    internal static string OfferCaption(string label, ResourceCost component) => $"{label} · Pay {component.Cost}";
 
     internal static HBoxContainer Create(CostOption cost, WorldDescriptor world, string prefix = "", bool showTarget = true)
     {

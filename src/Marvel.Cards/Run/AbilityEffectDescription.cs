@@ -21,6 +21,8 @@ internal static class AbilityEffectDescription
             $"Increase each {(modifier.Kind == "eventDamage" ? "damage" : "threat removal")} instance of this event by {modifier.Amount} until this play finishes",
         AbilityPricingEffect.IncreaseNextEventCost increase => $"Your next event costs {increase.Amount} additional resources; discard this obligation after that event",
         AbilityEffect.ResolveInvocation => "Resolve your captured Invocation top Special",
+        AbilityEffect.Fixed { Instruction: AbilityFixedInstruction.PlaySharedHeroTraitCard } =>
+            "Play a card from your hand that shares a trait with your hero, reducing its cost by 1",
         AbilityEffect.Damage { Maximum: { } maximum } damage =>
             AbilityBoundedDamageDescription.Instruction(damage.Amount, maximum),
         AbilityEffect.ChooseCard choice => ChoiceSummary(choice),

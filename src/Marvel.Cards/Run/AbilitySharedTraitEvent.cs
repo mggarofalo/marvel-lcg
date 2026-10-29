@@ -36,7 +36,9 @@ internal static class AbilitySharedTraitEvent
         var generators = price.Generators.Where(item => !excludeSource || item.Effect != source.ObjectId).ToArray();
         if (ResourcePayment.Allocate(price, generators.Select(item => item.Effect).ToArray()) is null) return null;
         return new Affordance(card.ObjectId, AbilityStructuralExecution.ChooseVerb, card.ObjectId, player,
-            ability.Name, Costs: [price]) { PlaysCard = true, SelectionSourceId = source.ObjectId,
+            ability.Name, Costs: [price], Description: AbilitySharedTraitPlay.PlayDescription(world, program, card)
+                + (AbilityEffectDescription.Summary(ability.Effect) is { } effect ? $" {effect}" : string.Empty))
+            { PlaysCard = true, SelectionSourceId = source.ObjectId,
                 DeferredTargetSelection = ability.Effect is AbilityEffect.ChooseCard };
     }
 

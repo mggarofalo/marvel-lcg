@@ -10,6 +10,27 @@ namespace Marvel.View.Tests;
 public sealed class ResponseReceiptPresentationTests : EventPresentationTestBase
 {
     [Fact]
+    public void MatchingPlayPromptAndReceiptsKeepReadableEngineMeaning()
+    {
+        WorldDescriptor world = World() with { Areas =
+        [new AreaDescriptor(1, "SupportsArea", 0, -1, [Readable(8, "Team-Building Exercise")], []),
+         new AreaDescriptor(2, "HandsArea", 0, -1, [Readable(9, "Army of Ants")], [])] };
+        var action = new Affordance(3, "12024", 8, 0, "12024")
+        { DisplayLabel = "Play a matching card", CommitLabel = "Play a matching card with Team-Building Exercise" };
+        var turn = new Prompt(0, Question.TurnOption, TimingPriority.Untimed, "test", "test", true, [action]);
+        Assert.Contains("Play a matching card with Team-Building Exercise", DecisionReceiptContext.From(turn, world, 3, [], [])!.Commitment);
+        var play = new Affordance(9, "Choose", 9, 0, "03019", Costs: [new CostOption(0, "0")],
+            Description: "The current cost includes a reduction of 1") { PlaysCard = true };
+        var child = new Prompt(0, Question.Element, TimingPriority.Untimed, "test", "12024", false, [play])
+        { DisplayQuestion = "Choose a matching card to play", ContextCardIds = [8], Description = "Team-Building Exercise was exhausted." };
+        var presentation = PromptPresentation.From(child, world);
+        Assert.Equal("Choose a matching card to play", presentation.Heading);
+        Assert.Contains("Team-Building Exercise was exhausted", presentation.Resolution);
+        Assert.Contains("Cost 0", Assert.Single(presentation.Affordances).Costs[0]);
+        Assert.Contains("Play Army of Ants", DecisionReceiptContext.From(child, world, 9, [], [])!.Commitment);
+    }
+
+    [Fact]
     public void WindowEventReceiptNamesItsSourceAndCleanupDoesNotExposeInternalArea()
     {
         WorldDescriptor world = World() with { Areas =

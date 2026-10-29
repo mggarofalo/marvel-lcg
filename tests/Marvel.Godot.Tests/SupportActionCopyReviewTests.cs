@@ -22,6 +22,17 @@ public sealed class SupportActionCopyReviewTests
     }
 
     [Fact]
+    public void MatchingPlayExplainsBothExhaustionAndEffectBeforeCommitment()
+    {
+        var offer = new AffordancePresentation(1, "12024", "Play a card from your hand that shares a trait with your hero, reducing its cost by 1",
+            "Action", "Team-Building Exercise", 8, 0, null, "", [])
+        { SourceName = "Team-Building Exercise", DisplayLabel = "Play a matching card", CostDescription = "Exhaust Team-Building Exercise" };
+        Assert.Equal("Play a matching card  ·  Team-Building Exercise", DecisionCopy.Choice(offer));
+        Assert.Contains(offer.CostDescription!, DecisionCopy.ActionSummary(offer));
+        Assert.Contains(offer.Description!, DecisionCopy.ActionSummary(offer));
+    }
+
+    [Fact]
     public void CostDoesNotReplacePlayIntentOrExplicitActionMeaning()
     {
         var offer = new AffordancePresentation(1, "Prepared source", null, "Action", "Prepared source", 8, 0, null, "", [])

@@ -88,6 +88,7 @@ public sealed class SharedTraitPermanentLegalityTests
         game.Resolve(Decision.Take(Assert.Single(game.Pending!.Affordances, a => a.AnchorId == source!.ObjectId).Id));
         var prompt = game.Pending!;
         var offer = Assert.Single(prompt.Affordances, a => a.AnchorId == upgrade!.ObjectId);
+        Assert.Contains("reduction of 1", offer.Description);
         Assert.Equal("0", Assert.Single(offer.CostOptions, c => c.Target == iron!.ObjectId).Cost);
         Assert.Equal("1", Assert.Single(offer.CostOptions, c => c.Target == ordinary!.ObjectId).Cost);
         if (stale)
