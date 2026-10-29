@@ -58,7 +58,13 @@ public static class CardPayment
     /// because pricing a card is not playing it.
     /// </remarks>
     public static AdjustedCardCost CostOf(
-        World world, ICardFacts facts, Seat seat, Card card, int? attachmentHost = null)
+        World world, ICardFacts facts, Seat seat, Card card, int? attachmentHost = null) =>
+        CostOf(world, facts, seat, card, attachmentHost, null);
+
+    /// <summary>Prices one play with an explicitly scoped resource-cost reduction.</summary>
+    public static AdjustedCardCost CostOf(
+        World world, ICardFacts facts, Seat seat, Card card, int? attachmentHost,
+        ScopedCardCostReduction? reduction)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
@@ -83,6 +89,11 @@ public static class CardPayment
         amount = Math.Max(0, amount - world.CardPlayAbilities.SelfPlayCostReduction(world, card, seat.Index));
         amount = AllyPlayHistory.AdjustCost(world, card, amount);
         amount = UpgradeHostCost.Adjust(world, card, attachmentHost, amount);
+        if (reduction is not null)
+        {
+            reduction.Validate(world, seat, card);
+            amount = Math.Max(0, amount - reduction.Amount);
+        }
         return new AdjustedCardCost(amount, [.. modifiers, .. increases]);
     }
 
@@ -208,7 +219,12 @@ public static class CardPayment
     /// <param name="seat">Whose card.</param>
     /// <param name="card">The card in hand.</param>
     /// <param name="attachmentHost">The selected physical attachment host, when pricing one destination.</param>
-    public static CostOption? Price(World world, ICardFacts facts, Seat seat, Card card, int? attachmentHost = null)
+    public static CostOption? Price(World world, ICardFacts facts, Seat seat, Card card, int? attachmentHost = null) =>
+        Price(world, facts, seat, card, attachmentHost, null);
+
+    /// <summary>Prices a permanent play using a reduction scoped to that card.</summary>
+    public static CostOption? Price(World world, ICardFacts facts, Seat seat, Card card,
+        int? attachmentHost, ScopedCardCostReduction? reduction)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
@@ -241,7 +257,7 @@ public static class CardPayment
             if (targets is null || !targets.Contains(target)) return null;
         }
 
-        long cost = CostOf(world, facts, seat, card, attachmentHost).Amount;
+        long cost = CostOf(world, facts, seat, card, attachmentHost, reduction).Amount;
 
         // The card being played cannot also pay for itself: `rr:cost.3` spends
         // resources "by discarding cards from their hand", and this one is

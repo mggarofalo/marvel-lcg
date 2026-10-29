@@ -33,7 +33,7 @@ public static class CardPlay
         World world, Card source, int player, long amount) =>
         CardPayment.ReduceNextCardCost(world, source, player, amount);
 
-    /// <inheritdoc cref="CardPayment.CostOf"/>
+    /// <inheritdoc cref="CardPayment.CostOf(World, ICardFacts, Seat, Card, int?)"/>
     public static AdjustedCardCost CostOf(
         World world, ICardFacts facts, Seat seat, Card card) =>
         CardPayment.CostOf(world, facts, seat, card);
@@ -58,7 +58,7 @@ public static class CardPlay
         World world, ICardFacts facts, Seat seat, Card card) =>
         CardPayment.Paying(world, facts, seat, card);
 
-    /// <inheritdoc cref="CardPayment.Price"/>
+    /// <inheritdoc cref="CardPayment.Price(World, ICardFacts, Seat, Card, int?)"/>
     public static CostOption? Price(World world, ICardFacts facts, Seat seat, Card card) =>
         CardPayment.Price(world, facts, seat, card);
 
