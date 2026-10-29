@@ -5,7 +5,10 @@ routes it to Scott Lang even when another player reveals it. Scott may change to
 alter-ego, then either pay the exhaust arrow cost to remove the obligation or
 choose and discard a hand card, receive the next-own-turn prohibition, and
 discard the obligation. The second branch has no arrow or dependent "then": an
-empty hand does not prevent the remaining effect (`rr:ability.7.1`). The first
+empty hand does not prevent the remaining effect: the complete option still has
+valid identity and obligation targets, and its sentences resolve in order
+(`rr:choose-option.1`, `rr:ability.4`). This is an interpretation of the whole
+option, not a card-specific ruling. `rr:ability.7.1` makes the initial flip optional. The first
 branch preserves the existing dependent exhaust/remove pattern.
 
 The reviewed MARVEL-884 duration owns timing and form-change permission. This
@@ -32,5 +35,5 @@ refusal cases with four controls passing. Each original byte was restored.
 Logs are `cassie-actual-{focused,duration-mutant,alter-ego-mutant,restored-build,
 restored-tests,catalog}.log` under `C:/Users/mggar/Source/evidence/`.
 
-Independent review remains pending. No complete public journey, native
+Independent review is recorded in `care-for-cassie-independent-review.md`. No complete public journey, native
 interaction or replay publication claim is made here.

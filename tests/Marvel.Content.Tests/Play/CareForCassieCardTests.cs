@@ -45,11 +45,13 @@ public sealed class CareForCassieCardTests
     [InlineData("12001a", 2)]
     [InlineData("12001c", 0)]
     [Rule("rr:obligation.4")]
-    [Rule("rr:ability.7.1")]
+    [Rule("rr:ability.4")]
+    [Rule("rr:choose-option.1")]
     [Rule("rr:lasting-effects.1")]
     public void DiscardChoiceUsesScottsHandAndStillProhibitsWithNoHand(string form, int handSize)
     {
-        // Resolve "as much as possible"; a lasting effect persists independently of its source.
+        // "Resolve the ability one sentence at a time"; the option still affects Scott and itself.
+        // A lasting effect continues "whether or not the card" that created it is in play.
         var world = CareForCassieFixture.Board(form, handSize);
         var runner = AuthoredCards.Runner();
         var scott = world.Seats[1];
@@ -96,10 +98,11 @@ public sealed class CareForCassieCardTests
     }
 
     [Fact]
-    [Rule("rr:cost.3")]
+    [Rule("rr:cost-arrow-icon")]
+    [Rule("rr:exhausted.1")]
     public void ExhaustedScottCannotPayTheRemovalArrowCost()
     {
-        // Costs before the arrow must be paid before resolving the effect.
+        // Text before the arrow must be "paid and/or resolved in full"; an exhausted card cannot exhaust again.
         var world = CareForCassieFixture.Board("12001b", 0);
         var runner = AuthoredCards.Runner();
         world.Seats[1].IdentityCard.Exhaust();
