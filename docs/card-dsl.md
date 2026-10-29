@@ -5,6 +5,9 @@ forced and optional attack-end responses and is zero without a completed attack.
 
 # The card DSL
 
+`blankTechPlayerCards: "game"` is an engine-chosen spelling for a standalone, unconditional constant. It targets the live in-play TECH player-card set. Permanent targets from another known set are protected; missing set facts and same-set Permanent targets refuse. A target with an admitted `playersWin` instruction also refuses. This is not a general implementation of protected alternate victory or loss text: unsupported printed outcomes and protected partial text require separate admission and protection. The canonical card inventory has no printed TECH player card containing an alternate win or loss instruction; SP//dr Suit (31001b) is Permanent in another set. This vocabulary does not admit Tech Theft into the canonical ability book.
+
+
 `grant` with `card: "this"` and `keyword: "ally_limit_excluded"` expresses
 an unconditional standalone constant excluding that ally from its controller's
 ally-limit count. The mandatory choice still includes every controlled ally. This spelling is an engine choice;

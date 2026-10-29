@@ -49,6 +49,7 @@ public sealed class LifecycleRulesAHostedAccelerationTokenLeavesTests : Lifecycl
         Assert.True(ally.Ready);
         Assert.Equal(0, ally.Tokens["c_charge"]);
         CardPlay.PutAllyIntoPlay(world, facts, new NoCardAbilities(), ally, 0, "test", []);
+        Assert.Null(Sequence.Work(world, facts, new NoCardAbilities(), []));
         Assert.Equal(incarnation + 1, ally.Incarnation);
         Assert.Equal(0, ally.Damage);
         Assert.True(ally.Ready);
@@ -244,6 +245,7 @@ public sealed class LifecycleRulesAHostedAccelerationTokenLeavesTests : Lifecycl
         var world = Board(facts, players: 2);
         var ally = world.CreateCard("ally", world.AreaOf(DeckType.AsideDeck));
         CardPlay.PutAllyIntoPlay(world, facts, new NoCardAbilities(), ally, 0, "test", []);
+        Assert.Null(Sequence.Work(world, facts, new NoCardAbilities(), []));
         Assert.Equal(0, ally.Owner);
         Assert.Equal(PlayArea.Of(0), ally.Area.PlayArea);
         CardControlTransfer.TakeControl(world, facts, ally, 1);

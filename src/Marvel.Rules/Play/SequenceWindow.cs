@@ -84,9 +84,11 @@ internal static class SequenceWindow
         // the answer, not something the engine picks for them. Empty when the
         // affordance was free, which is almost all of them.
         var healthBefore = world.Effects.CaptureCharacterHealth();
+        var blanksBefore = world.Effects.CapturePrintedBlanks();
         ActivityBatches.Append(events, abilities.ResolveWindow(
             world, window.Occurrence, ability, input,
             () => window.Occurrence.Trigger(window.Kind, ability)).Events);
+        world.Effects.RecheckAllyLimitsAfterBlanking(blanksBefore);
         Statuses.RemoveAfflictionsIfStalwart(
             world, facts, "stalwart", events);
         world.Effects.SettleLostHealth(healthBefore, asked.Trigger, events);

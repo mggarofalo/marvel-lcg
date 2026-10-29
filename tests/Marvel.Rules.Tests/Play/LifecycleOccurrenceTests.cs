@@ -218,6 +218,6 @@ public sealed class LifecycleOccurrenceTests
 
         public long PrintedValue(
             string faceId, string attribute, int players, long fallback = 0) =>
-            attribute == "Cost" ? 0 : fallback;
+            faceId == "ally" && attribute == "HP" ? 3 : attribute == "Cost" ? 0 : fallback;
     }
 }

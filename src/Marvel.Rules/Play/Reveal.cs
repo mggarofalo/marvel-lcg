@@ -114,8 +114,10 @@ public static class Reveal
             return;
         }
 
+        var (blankTransition, blankDeparture) = ContinuousBlankingEntry.Preflight(world.Effects, card, into);
         var from = card.Area;
         World.MoveToTop(card, into);
+        using var blanking = ContinuousBlankingEntry.Begin(blankDeparture);
         events.Add(new CardsMoved(
             Places.Reference(from), Places.Reference(into),
             [new Landing(card.ObjectId, into.Cards.Count - 1)])
@@ -134,6 +136,7 @@ public static class Reveal
         }
         MinionEngagement.RecordEntry(card, facts, occurrence);
         EnterPlay(world, facts, card, events, occurrence);
+        ContinuousBlankingEntry.Complete(blankTransition, blankDeparture, "enter play", events);
     }
 
     /// <summary>

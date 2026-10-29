@@ -359,7 +359,8 @@ public sealed class DiscardAndAllyLimitTests
 
         public long PrintedValue(
             string faceId, string attribute, int players, long fallback = 0) =>
-            faceId == "permanent" && attribute == "Permanent" ? 1
+            faceId is "ally" or "toughally" && attribute == "HP" ? 3
+                : faceId == "permanent" && attribute == "Permanent" ? 1
                 : faceId == "toughally" && attribute == "Toughness" ? 1
                 : attribute == "Cost" ? 0
                 : fallback;

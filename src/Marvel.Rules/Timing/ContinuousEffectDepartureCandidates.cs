@@ -24,29 +24,17 @@ internal static class ContinuousEffectDepartureCandidates
         return restored.Where(card => !effects.HasHostedAncestor(card, restoredIds)).ToArray();
     }
 
-    internal static Card[] LethalAfterHealthEnds(this ContinuousEffects effects, IEnumerable<ContinuousEffect> ending)
-    {
-        var health = ending.Where(effect =>
-                string.Equals(effect.Kind, "health", StringComparison.Ordinal)
-                && effect.Amount > 0)
-            .ToArray();
-        if (health.Length == 0)
-        {
-            return [];
-        }
-
-        return effects.world.Cards.Where(card =>
-                DeckTypes.IsInPlay(card.Area.Type)
-                && CardKinds.IsCharacter(EffectiveCards.Kind(card, effects.world.Facts))
-                && StateFields.Modified(
-                    effects.world, card, "is_infinite_health", effects.world.Facts, effects.world.Players) <= 0
-                && health.Where(effect => effect.AppliesTo(effects.world, card))
-                    .Sum(effect => effect.Amount) is long lost and > 0
-                && card.Damage < Play.DamagePlacement.Health(effects.world, effects.world.Facts, card) + lost
-                && card.Damage >= Play.DamagePlacement.Health(effects.world, effects.world.Facts, card))
-            .ToArray();
-    }
-
+    internal static Card[] LethalAfterDerivedChange(
+        this ContinuousEffects effects, IReadOnlyDictionary<int, long> before) =>
+        before.Where(pair => pair.Key >= 0 && pair.Key < effects.world.Cards.Count)
+            .Select(pair => (Card: effects.world.Cards[pair.Key], Former: pair.Value))
+            .Where(item => DeckTypes.IsInPlay(item.Card.Area.Type)
+                && StateFields.Modified(effects.world, item.Card, "is_infinite_health",
+                    effects.world.Facts, effects.world.Players) <= 0
+                && item.Card.Damage < item.Former
+                && Play.DamagePlacement.Health(effects.world, effects.world.Facts, item.Card) is long current
+                && current < item.Former && item.Card.Damage >= current)
+            .Select(item => item.Card).ToArray();
 
     internal static bool HasHostedAncestor(this ContinuousEffects effects, Card card, HashSet<int> candidates)
     {

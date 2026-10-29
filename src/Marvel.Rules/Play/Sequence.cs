@@ -146,7 +146,9 @@ public static class Sequence
             ?? throw new InvalidOperationException(
                 $"an applying '{step.What}' agenda step has no occurrence");
         var healthBefore = world.Effects.CaptureCharacterHealth();
+        var blanksBefore = world.Effects.CapturePrintedBlanks();
         Prompt? question = AgendaProcedures.ApplyWithWorldAbilities(world, facts, step, events);
+        world.Effects.RecheckAllyLimitsAfterBlanking(blanksBefore);
         if (question is not null) return AttackPromptContext.WithAttackContext(world, facts, step, question);
         Statuses.RemoveAfflictionsIfStalwart(world, facts, "stalwart", events);
         world.Effects.SettleLostHealth(healthBefore, step.What, events);

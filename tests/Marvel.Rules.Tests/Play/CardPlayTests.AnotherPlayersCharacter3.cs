@@ -253,6 +253,7 @@ public sealed class CardPlayAnotherPlayersCharacterTests : CardPlayTestBase
         var seat = world.Seats[0];
         var ally = InHand(world, "bruiser");
         CardPlay.Play(world, printed, new Silent(), seat, ally, [], []);
+        Assert.Null(Sequence.Work(world, printed, new Silent(), []));
         Assert.True(Statuses.Has(world, ally, Statuses.Tough));
         var upgrade = InHand(world, "gadget");
         CardPlay.Play(world, printed, new Silent(), seat, upgrade, [], []);

@@ -63,7 +63,7 @@ public abstract class CardPlayTestBase
         return world;
     }
 
-    protected static Printed Cards() => new Printed().With("res", ("RES", "GG")).With("ally", ("Cost", "1"), ("RES", "R")).With("bruiser", ("Cost", "3"), ("HP", "3"), ("Toughness", "1")).With("upgrade", ("Cost", "2"), ("RES", "B")).With("support", ("Cost", "0"), ("RES", "B")).With("event", ("Cost", "0"), ("RES", "Y")).With("free", ("Cost", "0"), ("RES", "Y")).With("expensive", ("Cost", "9"), ("RES", "B")).With("suited2", ("Form", "Suit"))// `rr:requirement-resources` -- thirteen cards in the pool print one.
+    protected static Printed Cards() => new Printed().With("res", ("RES", "GG")).With("ally", ("Cost", "1"), ("RES", "R"), ("HP", "3")).With("bruiser", ("Cost", "3"), ("HP", "3"), ("Toughness", "1")).With("upgrade", ("Cost", "2"), ("RES", "B")).With("support", ("Cost", "0"), ("RES", "B")).With("event", ("Cost", "0"), ("RES", "Y")).With("free", ("Cost", "0"), ("RES", "Y")).With("expensive", ("Cost", "9"), ("RES", "B")).With("suited2", ("Form", "Suit"))// `rr:requirement-resources` -- thirteen cards in the pool print one.
     // `27006` requires a mental, `27016` a physical, `27049` one of each of
     // energy, mental and physical.
     .With("physical", ("RES", "R")).With("mental", ("RES", "B")).With("demanding", ("Cost", "1"), ("RES", "R"), ("Requirement", "R"))// `rr:team-up` -- 28 cards print one, and every one names two heroes.

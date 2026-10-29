@@ -9,18 +9,22 @@ public static class PrintedText
     /// <summary>The engine-chosen persisted spelling of a printed-text blank.</summary>
     public const string Blanked = "printedTextBlanked";
 
-    /// <summary>Reads only registered blanks, avoiding recursive constant derivation.</summary>
+    /// <summary>Reads registered blanks and the settled (or prior-pass) constant grants.</summary>
     public static bool IsBlanked(World world, Card card)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(card);
+        if (!DeckTypes.IsInPlay(card.Area.Type)) return false;
         return world.Effects.entries.Any(entry =>
             !world.Effects.suppressed.Contains(entry)
             && entry.Effect.Source == EffectSource.LastingEffect
             && entry.Effect.Kind == Blanked
             && entry.Effect.Affects == card.ObjectId
             && entry.Effect.TargetIncarnation == card.Incarnation
-            && DeckTypes.IsInPlay(card.Area.Type));
+            && DeckTypes.IsInPlay(card.Area.Type))
+            || world.Effects.ExcludingSuppressedConstants(world.Effects.deriving
+                ? world.Effects.assumedConstants : ConstantEffectDerivation.Settle(world.Effects))
+                .Any(effect => effect.Kind == Blanked && effect.Affects == card.ObjectId);
     }
 
     /// <summary>Printed keyword quantities; basic powers and icons outside the text box remain.</summary>
