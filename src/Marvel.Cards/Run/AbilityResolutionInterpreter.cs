@@ -117,7 +117,7 @@ internal static class AbilityResolutionInterpreter
         var labels = ability.Labels;
         if (labels.Length > 0)
         {
-            if (!cast.LabelsPreflighted)
+            if (!cast.InitiationEvidence.LabelsPreflighted)
             {
                 if (!AbilityInitiation.LabelsCanInitiate(ability, execution.AdmissionContext(cast)))
                 {
@@ -125,7 +125,7 @@ internal static class AbilityResolutionInterpreter
                         $"'{cast.Source.FaceId}' cannot initiate its labeled ability "
                         + "in the current state");
                 }
-                cast.LabelsPreflighted = true;
+                cast.InitiationEvidence.LabelsPreflighted = true;
             }
 
             var performer = LabeledAbilities.Begin(

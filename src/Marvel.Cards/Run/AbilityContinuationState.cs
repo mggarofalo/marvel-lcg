@@ -16,5 +16,6 @@ internal sealed record AbilityContinuationState(
     internal AbilityStructuralOutcome? CompletedOutcome { get; init; }
     internal AbilityPowerExecutionState? PowerExecution { get; init; }
     internal AbilityPaymentPlan? Payment { get; init; }
+    internal AllyEntryBinding? AllyEntryBinding { get; init; }
     internal DamageReplacement? DamageReplacement { get; init; }
 }

@@ -38,14 +38,17 @@ public sealed class EmergencyTeleporterTests
         Assert.True(Assert.Single(world.Campaign!.Cards).Removed);
         Assert.Equal(DeckType.DiscardPile, reward!.Area.Type);
         var choice = Assert.Single(game.Pending!.Affordances, offer => offer.AnchorId == ally!.ObjectId);
+        int originIncarnation = ally!.Incarnation;
         game.Resolve(Decision.Take(choice.Id));
         if (entryMove > 0)
         {
             Assert.Equal(entryMove == 1 ? DeckType.HandsArea : DeckType.AlliesArea, ally!.Area.Type);
+            if (entryMove == 2) Assert.True(ally.Incarnation > originIncarnation + 1);
             Assert.False(Statuses.Has(world, ally, Statuses.Tough));
             return;
         }
         Assert.Equal(DeckType.AlliesArea, ally!.Area.Type);
+        Assert.Equal(originIncarnation + 1, ally.Incarnation);
         Assert.False(Statuses.Has(world, ally, Statuses.Tough));
         var response = Assert.Single(game.Pending!.Affordances, offer => offer.AnchorId == ally.ObjectId);
         game.Resolve(Decision.Take(response.Id));

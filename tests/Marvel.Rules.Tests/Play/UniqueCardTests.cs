@@ -78,6 +78,7 @@ public sealed class UniqueCardTests
 
         CardPlay.PutAllyIntoPlay(world, facts, new NoCardAbilities(), waiting, 1, "test", []);
 
+        Assert.Null(Sequence.Work(world, facts, new NoCardAbilities(), []));
         Assert.Equal(DeckType.AlliesArea, waiting.Area.Type);
         Assert.Equal(PlayArea.Of(1), waiting.Area.PlayArea);
     }
@@ -117,6 +118,7 @@ public sealed class UniqueCardTests
 
         CardPlay.PutAllyIntoPlay(world, facts, new NoCardAbilities(), waiting, 1, "test", []);
 
+        Assert.Null(Sequence.Work(world, facts, new NoCardAbilities(), []));
         Assert.Equal(DeckType.AlliesArea, waiting.Area.Type);
         Assert.Equal(PlayArea.Of(1), waiting.Area.PlayArea);
         Assert.Equal(0, waiting.Owner);

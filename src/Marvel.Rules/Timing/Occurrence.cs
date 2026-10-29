@@ -95,13 +95,9 @@ public sealed record Occurrence
     [JsonIgnore]
     public bool? EventRemovesThreat { get; init; }
 
-    /// <summary>Original card-play payment for this exact entry, reconstructed by replay.</summary>
+    /// <summary>The entry provenance for this occurrence, reconstructed by replay.</summary>
     [JsonIgnore]
-    public Play.PlayedCardPayment? CardPlayPayment { get; init; }
-
-    /// <summary>The exact entry cost snapshot, reconstructed by replay.</summary>
-    [JsonIgnore]
-    public Play.EntryPayment? EntryPayment { get; init; }
+    public OccurrenceEntry Entry { get; init; } = new();
 
     /// <summary>Physical cards spent in this completed cost, reconstructed by replay.</summary>
     [JsonIgnore]

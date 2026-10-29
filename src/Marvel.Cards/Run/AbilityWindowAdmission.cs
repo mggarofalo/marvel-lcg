@@ -68,10 +68,14 @@ internal static class AbilityWindowAdmission
         // cards are out of play." Explicit event-play origins remain separate:
         // hand cards need not be faceup to be played.
         return DeckTypes.IsInPlay(card.Area.Type) && card.FaceUp || playableEvent
-            || card.Area.Type == DeckType.DiscardPile && occurrence.Is(ResourceSpentWindow.Condition)
-                && occurrence.SpentResourceCards.Any(spent => spent.Card == card.ObjectId
-                    && spent.Incarnation == card.Incarnation);
+            || AbilityPendingEntryAdmission.OwnEntry(card, occurrence)
+            || IsSpentResource(card, occurrence);
     }
+
+    private static bool IsSpentResource(Card card, Occurrence occurrence) =>
+        card.Area.Type == DeckType.DiscardPile && occurrence.Is(ResourceSpentWindow.Condition)
+        && occurrence.SpentResourceCards.Any(spent => spent.Card == card.ObjectId
+            && spent.Incarnation == card.Incarnation);
 
     private static bool IsWaitingCandidate(
         AbilityProgram program, World world, Candidate candidate,
@@ -79,9 +83,7 @@ internal static class AbilityWindowAdmission
         AbilityQueryProjection? projection)
     {
         var (card, ability, controller, _) = candidate;
-        if (!EventTeamUpPermitted(world, card)) return false;
-        // rr:when-completed-abilities.1: "When this scheme is completed..."
-        if (!TriggerIsLive(world, ability, card, occurrence)) return false;
+        if (!TriggerEligible(world, card, ability, occurrence)) return false;
         occurrence = candidate.TriggeringThreat ?? occurrence;
         if (!Answers(program, world, candidate, occurrence, window,
                 ability.AnyPlayer ? controller : null)
@@ -94,6 +96,12 @@ internal static class AbilityWindowAdmission
             && AbilityAvailability.Available(world, card, ability,
                 AbilityAvailability.IndexOf(program, card, ability), occurrence);
     }
+
+    private static bool TriggerEligible(World world, Card card, CompiledCardAbility ability, Occurrence occurrence) =>
+        AbilityPendingEntryAdmission.Allows(card, ability, occurrence)
+        && EventTeamUpPermitted(world, card)
+        // rr:when-completed-abilities.1: "When this scheme is completed..."
+        && TriggerIsLive(world, ability, card, occurrence);
 
     private static bool EventTeamUpPermitted(World world, Card card) =>
         EffectiveCards.Kind(card, world.Facts) != CardKind.Event
@@ -191,6 +199,7 @@ internal static class AbilityWindowAdmission
         Card card, Occurrence occurrence) =>
         RestrictedPlayer(program, world, ability, card) is { } restricted
             ? restricted
+            : AbilityPendingEntryAdmission.OwnEntry(card, occurrence) ? occurrence.Player
             : occurrence.Is(ResourceSpentWindow.Condition)
                 && occurrence.SpentResourceCards.FirstOrDefault(spent => spent.Card == card.ObjectId) is { } spent
                 ? spent.Player

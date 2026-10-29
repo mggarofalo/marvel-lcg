@@ -19,7 +19,7 @@ public static class AllyCardEntry
         && !Uniqueness.IsBlocked(world, world.Facts, ally, PlayArea.Of(controller));
 
     /// <summary>Put into play the exact ally whose entry cost was paid.</summary>
-    public static void PutPaid(
+    public static bool PutPaid(
         World world, ICardFacts facts, ICardPlayAbilities abilities, EntryPayment payment,
         string trigger, List<GameEvent> events)
     {
@@ -28,14 +28,19 @@ public static class AllyCardEntry
         if (payment.Card < 0 || payment.Card >= world.Cards.Count)
             throw new RulesNotImplementedException("the paid ally does not exist in this game");
         var ally = world.Cards[payment.Card];
-        Put(world, facts, abilities, new AllyEntryRequest(ally, payment.Player, trigger, payment), events);
+        return Put(world, facts, abilities, new AllyEntryRequest(ally, payment.Player, trigger, payment), events);
     }
 
-    internal static void Put(
+    /// <summary>Put an ally and capture its exact entering incarnation for an ability continuation.</summary>
+    public static bool PutFollowing(World world, ICardPlayAbilities abilities, Card ally, int controller,
+        string trigger, List<GameEvent> events, AllyEntryBinding binding) =>
+        Put(world, world.Facts, abilities, new AllyEntryRequest(ally, controller, trigger, Binding: binding), events);
+
+    internal static bool Put(
         World world, ICardFacts facts, ICardPlayAbilities abilities, AllyEntryRequest request,
-        List<GameEvent> events)
+        List<GameEvent> events, bool applying = false, Action? afterMove = null)
     {
-        var (ally, controller, trigger, payment) = request;
+        var (ally, controller, trigger, payment, _) = request;
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
         ArgumentNullException.ThrowIfNull(abilities);
@@ -45,7 +50,16 @@ public static class AllyCardEntry
         ArgumentOutOfRangeException.ThrowIfNegative(controller);
         ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(controller, world.Players);
 
-        if (!ValidateEntry(world, facts, request)) return;
+        if (!ValidateEntry(world, facts, request))
+        {
+            if (applying) throw new RulesNotImplementedException("the pending ally entry became ineligible");
+            return false;
+        }
+        if (!applying)
+        {
+            PlayerAllyEntry.SchedulePut(world, request);
+            return true;
+        }
 
         var from = ally.Area;
         int previousController = from.PlayArea.IsPlayers
@@ -72,6 +86,7 @@ public static class AllyCardEntry
             });
         }
 
+        afterMove?.Invoke();
         if (AllyLimit(world, facts, world.Seats[controller], ally))
         {
             FinalizeAllyEntry(world, ally, controller);
@@ -80,14 +95,11 @@ public static class AllyCardEntry
         {
             Reveal.EnterPlay(world, facts, ally, events, abilities: abilities);
         }
-        // rr:triggering-condition.1: each response triggers once per occurrence.
-        // This path owns the entry window; ordinary play owns its combined
-        // played/entry window. Both wait for the mandatory ally-limit choice.
-        Entered(world, ally, controller, payment);
+        return true;
     }
     private static bool ValidateEntry(World world, ICardFacts facts, AllyEntryRequest request)
     {
-        var (ally, controller, _, payment) = request;
+        var (ally, controller, _, payment, _) = request;
         if (EffectiveCards.Kind(ally, facts) != CardKind.Ally)
         {
             throw new RulesNotImplementedException(
