@@ -77,6 +77,7 @@ public sealed class WinterSoldierSelfPlayCostTests
         Assert.Equal("3", CardPayment.Price(world, world.Facts, world.Seats[0], ally)!.Cost);
         CardPlay.Play(world, world.Facts, runner, world.Seats[0], ally,
             paying.Concat(Resources(world, 0, 1)).ToArray(), events);
+        Assert.Null(Sequence.Work(world, world.Facts, runner, events));
         Assert.Equal(DeckType.AlliesArea, ally.Area.Type);
         Assert.NotEmpty(events);
     }
@@ -136,6 +137,7 @@ public sealed class WinterSoldierSelfPlayCostTests
         Assert.Equal("0", CardPayment.Price(world, world.Facts, world.Seats[0], ally)!.Cost);
         var events = new List<GameEvent>();
         CardPlay.Play(world, world.Facts, runner, world.Seats[0], ally, [], events);
+        Assert.Null(Sequence.Work(world, world.Facts, runner, events));
         Assert.Equal(DeckType.AlliesArea, ally.Area.Type);
         var duplicate = world.CreateCard("08002", world.Seats[0].Hand);
         Assert.Null(CardPayment.Price(world, world.Facts, world.Seats[0], duplicate));
@@ -145,6 +147,7 @@ public sealed class WinterSoldierSelfPlayCostTests
             world.CreateCard(face, world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0)));
         Assert.Equal("1", CardPayment.Price(world, world.Facts, world.Seats[0], duplicate)!.Cost);
         CardPlay.Play(world, world.Facts, runner, world.Seats[0], duplicate, Resources(world, 0, 1), events);
+        Assert.NotNull(Sequence.Work(world, world.Facts, runner, events));
         Assert.Contains(world.Agenda.Outstanding, step => step.What == Steps.ChooseAllyForLimit);
     }
 

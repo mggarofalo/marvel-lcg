@@ -216,6 +216,7 @@ public sealed class UniqueCardTests
         public string Subtitle(string faceId) => cards[faceId].Subtitle;
         public IReadOnlyList<string> Traits(string faceId) => [];
         public IReadOnlyDictionary<string, string> Attributes(string faceId) => attributes[faceId];
-        public long PrintedValue(string faceId, string attribute, int players, long fallback = 0) => fallback;
+        public long PrintedValue(string faceId, string attribute, int players, long fallback = 0) =>
+            Kind(faceId) == CardKind.Ally && attribute == "HP" ? 3 : fallback;
     }
 }

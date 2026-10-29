@@ -117,18 +117,17 @@ internal static class AbilityEffectTargetAdmission
             "moveDamage" or "moveAttackDamage" => MoveDamageTargetLegality((AbilityEffect.MoveDamage)node, cast),
             "dealEncounterCard" => Find(EffectOf<AbilityEffect.DealEncounterCard>(node, cast).Card, cast) is null
                 ? TargetLegality.Invalid : TargetLegality.Valid,
-            "heal" => Find(EffectOf<AbilityEffect.Heal>(node, cast).Card, cast) is { Damage: > 0 }
-                && Amount(EffectOf<AbilityEffect.Heal>(node, cast).Amount, cast) > 0
+            "heal" => AbilityFutureResultAdmission.HealCanProduce(EffectOf<AbilityEffect.Heal>(node, cast), cast)
                     ? TargetLegality.Valid : TargetLegality.Invalid,
             "setHitPoints" => AbilityHitPointAssignment.TargetLegalityOf(node, cast),
             "dealDamage" when node is AbilityEffect.Damage { Maximum: not null } group =>
                 AbilityDamageRecipients.Candidates(group, cast.Context).Count > 0
                     ? TargetLegality.Valid : TargetLegality.Invalid,
             "dealDamage" or "dealAttackDamage" =>
-                AbilityFutureDiscardAdmission.MayDealDamage(DamageAmountOf(node, cast), cast)
+                AbilityFutureDiscardAdmission.MayHavePositiveAmount(DamageAmountOf(node, cast), cast)
                     ? CardsLegality(DamageTargets(DamageSelectionOf(node, cast), cast))
                     : TargetLegality.Invalid,
-            "indirectDamage" => (AbilityFutureDiscardAdmission.MayDealDamage(
+            "indirectDamage" => (AbilityFutureDiscardAdmission.MayHavePositiveAmount(
                 EffectOf<AbilityEffect.IndirectDamage>(node, cast).Amount, cast)
                 || AbilityEventModifiers.DamageAmount(cast.World, cast.Source,
                     Amount(EffectOf<AbilityEffect.IndirectDamage>(node, cast).Amount, cast)) > 0)
@@ -156,6 +155,7 @@ internal static class AbilityEffectTargetAdmission
             // ruling:8c9c9d30f4c01189: an Invocation can affect itself by
             // entering its discard pile even when its other targets are invalid.
             "discardInvocation" => InvocationDiscardTargetLegality(cast),
+            "placeCounters" => AbilityCounterTargetAdmission.Of((AbilityEffect.PlaceCounters)node, cast),
             // rr:target.3.4: "at least one of those effects must be able to
             // affect the target." Deferring resolution retains the bound target.
             "cancelBoostIcons" or "cancelBoostAbility" => BoostCancellationTargetLegality(node, cast),

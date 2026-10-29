@@ -67,6 +67,7 @@ public sealed class SelfPlayCostReviewTests
             Assert.Empty(events);
         }
         CardPlay.Play(world, world.Facts, runner, world.Seats[0], candidate, payment, events);
+        Assert.Null(Sequence.Work(world, world.Facts, runner, events));
         Assert.Equal(DeckType.AlliesArea, candidate.Area.Type);
         Assert.All(payment, id => Assert.Equal(DeckType.DiscardPile, world.Cards.Single(c => c.ObjectId == id).Area.Type));
         Assert.Equal(6, CardPayment.CostOf(world, world.Facts, world.Seats[0], candidate).Amount);

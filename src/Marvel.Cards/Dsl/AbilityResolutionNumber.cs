@@ -31,4 +31,6 @@ public enum AbilityResolutionNumber
     ReceivedAttackDamage,
     /// <summary>Settled excess for the bound attack-end recipient.</summary>
     AttackExcessDamage,
+    /// <summary>Resources generated beyond the exact source card's entry cost.</summary>
+    EntryResourceExcess,
 }

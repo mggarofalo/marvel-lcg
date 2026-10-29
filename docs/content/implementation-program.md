@@ -49,8 +49,10 @@ accepted at `872b6d0a`. MARVEL-884's next-turn prohibition is accepted at
 `836db363`; actual Care for Cassie is accepted at `1910cf57`. Hank entry-payment
 provenance is accepted at `1b4eed16`; the separate entry interrupt/counter
 operation is independently accepted at `77f4559a`, and entry health at
-`5b7e2b48`. Their combined regression and the excess-resource expression remain
-pending. Remaining actual faces are Hank Pym, Team-Building
+`5b7e2b48`. The excess-resource expression and its admission repair are independently
+accepted at `b86db252`; the combined Rules suite passes 1,210 checks and the
+selected Server replay suite passes 22. Full Content regression remains pending
+after repairing its counter-admission failures and entry fixtures. Remaining actual faces are Hank Pym, Team-Building
 Exercise and Tech Theft. MARVEL-888 owns live TECH-player-card blanking and
 MARVEL-889 owns trait-matching discounted nested play. Their researched
 implementation and evidence requirements are recorded under the canonical

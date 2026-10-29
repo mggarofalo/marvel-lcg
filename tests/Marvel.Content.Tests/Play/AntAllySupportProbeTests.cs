@@ -50,6 +50,7 @@ public sealed class AntAllySupportProbeTests
         var payment = world.CreateCard("01003", seat.Hand);
         Assert.Equal("1", CardPayment.Price(world, world.Facts, seat, played)!.Cost);
         CardPlay.Play(world, world.Facts, runner, seat, played, [payment.ObjectId], []);
+        Assert.Equal(requiresChoice, Sequence.Work(world, world.Facts, runner, []) is not null);
         Assert.Equal(DeckType.AlliesArea, played.Area.Type);
         Assert.Equal(4, area.Cards.Count);
         Assert.Equal(requiresChoice, world.Agenda.Outstanding.Any(step => step.What == Steps.ChooseAllyForLimit));

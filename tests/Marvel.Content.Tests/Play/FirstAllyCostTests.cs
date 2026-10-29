@@ -71,6 +71,7 @@ public sealed class FirstAllyCostTests
         var source = InPlay(world, AuthoredCards.AuntMay);
         var action = Assert.Single(runner.Actions(world, 0), offer => offer.Card == source.ObjectId);
         runner.ExecuteAction(world, new PlayerAction(action, [], []));
+        Assert.Null(Sequence.Work(world, world.Facts, runner, []));
         Assert.Equal(DeckType.AlliesArea, ally.Area.Type);
         var first = world.CreateCard("01067", world.Seats[0].Hand);
         Assert.Equal(1, CardPayment.CostOf(world, world.Facts, world.Seats[0], first).Amount);

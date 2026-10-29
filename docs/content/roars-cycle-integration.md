@@ -19,8 +19,8 @@ pass 20 cases. The Make the Call path now forwards the accepted resource
 allocation. See [payment review](hank-entry-payment-independent-review.md).
 The separate MARVEL-887 entry operation is now independently accepted at
 `77f4559a` from source `39927976`; health settlement is independently accepted
-at `5b7e2b48` from `f0198165`. Both are combined in the working candidate, with
-combined verification still pending. Own-source interrupts precede entry and
+at `5b7e2b48` from `f0198165`. Both are combined with the excess-resource expression and its reviewed
+admission repair in the working candidate. Own-source interrupts precede entry and
 the ally-limit choice precedes responses; a lethal entering ally follows the
 existing defeat lifecycle. The exact zero-health/excess-limit collision still
 raises MARVEL-885. See [entry timing review](ally-entry-interrupt-independent-review.md)
@@ -29,6 +29,33 @@ The combined Cassie/receipt candidate passes 121 focused Content/data checks
 and all 1,210 Rules tests. Logs are `roars-32-combined-{content,rules}.log`
 under the external evidence directory; the tested tree is recorded in
 `roars-32-combined-tested-tree.txt`. Final pack/native/replay checks remain open.
+
+The entry excess expression is independently reviewed at `fc300a97`. A full
+combined Content run then reports 8,814 passes, 31 failures and no skips
+(`roars-entry-combined-content.log`). Sixteen failures concern counter-target
+admission before a future healing result or unstable area selection. Repair
+`48a0d2f9` was rejected by a paired undamaged/damaged healing control; refinement
+`056559cb`, independently accepted at `b86db252`, passes 93 affected source
+checks and 51 independent checks, with compiled mutations distinguished. See
+[repair review](entry-resource-excess.md).
+
+The other fifteen failures concern entry fixtures asserting state before queued
+entry completes. Their timing corrections retain placement, pricing, control
+and limit assertions. One invalid event in an ally fixture is replaced by an
+actual ally. Two low-level Make the Call tests now use the complete sequence
+answer path instead of leaving consumed continuations queued. The initial
+90-case focused run passes 86; after those two fixture corrections all nine
+Core lasting-effect cases pass. The final combined focused run passes all
+157 cases (`roars-entry-combined-final-focused.log`), including the repaired
+counter paths and entry fixtures. Full Content verification remains due.
+
+Full Rules verification initially passes 1,195 and fails fifteen. Synthetic
+allies now have explicit positive health and tests advance queued entry before
+asserting its outcome; the restored full Rules suite passes all 1,210 cases
+(`roars-entry-rules-fixtures-run1.log`). The lead reviewed this test-only diff
+and retained negative controls. Twenty-two selected Server entry/payment,
+variable-resource and live-effect replay checks pass
+(`roars-entry-combined-replay.log`). These do not close MARVEL-870 publication.
 
 Three Ant-Man faces remain: `12011`, `12024`, and `12026`. MARVEL-885 asks only
 about the simultaneous zero-HP/fourth-ally framework ordering; it is not a

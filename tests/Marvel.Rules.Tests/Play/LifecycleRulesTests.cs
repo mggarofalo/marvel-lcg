@@ -73,7 +73,7 @@ public abstract class LifecycleRulesTestBase
             return attributes;
         }
 
-        public long PrintedValue(string faceId, string attribute, int players, long fallback = 0) => Maxima.TryGetValue(faceId, out long maximum) && attribute == "MaxPerUnit" ? maximum : faceId == "permanent" && attribute == "Permanent" ? 1 : attribute == "Cost" ? 0 : fallback;
+        public long PrintedValue(string faceId, string attribute, int players, long fallback = 0) => faceId == "ally" && attribute == "HP" ? 3 : Maxima.TryGetValue(faceId, out long maximum) && attribute == "MaxPerUnit" ? maximum : faceId == "permanent" && attribute == "Permanent" ? 1 : attribute == "Cost" ? 0 : fallback;
         public string? FormKeyword(string faceId) => Forms.GetValueOrDefault(faceId);
     }
 }
