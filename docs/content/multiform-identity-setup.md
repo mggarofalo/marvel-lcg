@@ -7,3 +7,5 @@
 Focused Rules tests use kinds read from the generated card catalog, exercise both hero orders, ordinary two-face identities, and malformed controls. Removing duplicate validation caused the duplicate-hero control to fail. This is a setup prerequisite, not public admission of Ant-Man or evidence of a complete game.
 
 Verification: `IdentityFacesTests` passed 13 cases after restoration; `SetupAdmissionTests` passed 11 existing cases. Logs are `C:/Users/mggar/Source/multiform-setup-restored.log`, `multiform-setup-mutant.log`, and `multiform-setup-admission.log`.
+
+Independent review at `55d41d26` found no production defect in this prerequisite. The mc12 rulesheet and generated card facts were checked against the implementation and malformed controls. `MultiformIdentityBlueprintTests` exercises the actual `CardCatalog` and `Blueprints.From` path for the printed three-face identity without admitting the pack. The full Rules lane passed 1,230 tests; the focused Content blueprint and setup admission tests passed 12. Logs are `C:/Users/mggar/Source/multiform-independent-rules.log` and `multiform-independent-content.log`.
