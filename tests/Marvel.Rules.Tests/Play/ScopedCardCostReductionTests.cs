@@ -29,6 +29,14 @@ public sealed class ScopedCardCostReductionTests : CardPlayTestBase
         Assert.Equal(DeckType.AlliesArea, card.Area.Type);
         Assert.Equal(1, CardPayment.CostOf(world, printed, seat, next).Amount);
         Assert.Equal(4, seat.Hand.Cards.Count(c => c.FaceId == "res"));
+
+        var payment = seat.Hand.Cards.First(c => c.FaceId == "res");
+        CardPlay.PlayAllocated(world, printed, new Silent(), seat, next,
+            new Decision(next.ObjectId, [], [payment.ObjectId]), []);
+        Assert.Null(Sequence.Work(world, printed, new Silent(), []));
+        Assert.Equal(DeckType.AlliesArea, next.Area.Type);
+        Assert.Equal(DeckType.DiscardPile, payment.Area.Type);
+        Assert.Equal(3, seat.Hand.Cards.Count(c => c.FaceId == "res"));
     }
 
     [Fact]
@@ -92,6 +100,33 @@ public sealed class ScopedCardCostReductionTests : CardPlayTestBase
         Assert.Single(adjusted.Modifiers);
         Assert.Single(world.Effects.Active());
         Assert.Equal(2, CardPayment.CostOf(world, printed, seat, card).Amount);
+    }
+
+    [Rule("rr:modifiers.2")]
+    [Fact]
+    public void ScopedPlayConsumesAnExistingOneUseModifierOnlyForThatPlay()
+    {
+        // rr:modifiers.2: the calculation treats modifiers as simultaneous.
+        var printed = Cards();
+        var world = Board(printed);
+        var seat = world.Seats[0];
+        var source = world.CreateCard("free", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
+        var card = InHand(world, "bruiser");
+        var next = InHand(world, "ally");
+        var payment = seat.Hand.Cards.First(c => c.FaceId == "res");
+        CardPayment.ReduceNextCardCost(world, source, 0, 1);
+        var reduction = new ScopedCardCostReduction(world, seat, card, 1);
+        var price = CardPayment.Price(world, printed, seat, card, null, reduction)!;
+        var spent = new[] { payment.ObjectId };
+
+        CardPlay.PlayScoped(world, new ScopedCardPlayRequest(printed, new Silent(), seat, card,
+            new Decision(card.ObjectId, [], spent, Allocations: ResourcePayment.Allocate(price, spent)), reduction), []);
+        Assert.Null(Sequence.Work(world, printed, new Silent(), []));
+
+        Assert.Equal(DeckType.AlliesArea, card.Area.Type);
+        Assert.Equal(DeckType.DiscardPile, payment.Area.Type);
+        Assert.Empty(world.Effects.Active());
+        Assert.Equal(1, CardPayment.CostOf(world, printed, seat, next).Amount);
     }
 
     [Fact]
