@@ -200,6 +200,9 @@ public class NoCardAbilities : ICardAbilities
     public virtual Prompts.Prompt? Choosing(World world, PhaseStep continuation) => null;
 
     /// <inheritdoc/>
+    public virtual void ValidateChoice(World world, PhaseStep continuation, Decision input) { }
+
+    /// <inheritdoc/>
     public virtual IReadOnlyList<GameEvent> Chose(World world, PhaseStep continuation, Decision input) =>
         throw new RulesNotImplementedException("no authored choice is installed");
 
