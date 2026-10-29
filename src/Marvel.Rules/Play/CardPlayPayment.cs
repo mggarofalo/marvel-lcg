@@ -15,11 +15,13 @@ internal static class CardPlayPayment
             execution =>
             {
                 PlayedCardExposure.Expose(world, play.Card, play.Seat.Index, events);
+                int incarnation = play.Card.Incarnation;
+                int area = play.Card.Area.Id;
                 var receipt = payment.Commit(events);
                 var entry = new CardPaymentEntry
                 {
                     World = world, Execution = execution, Facts = play.Facts, Abilities = play.Abilities,
-                    Seat = play.Seat, Card = play.Card, Incarnation = play.Card.Incarnation,
+                    Seat = play.Seat, Card = play.Card, Incarnation = incarnation, OriginArea = area,
                     Cost = play.Cost, Targets = play.Targets, Payment = receipt,
                 };
                 if (receipt.IsComplete) return entry.Apply(world, events);

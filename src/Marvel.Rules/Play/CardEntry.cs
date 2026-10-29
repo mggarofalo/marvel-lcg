@@ -105,7 +105,7 @@ public static class CardEntry
         {
             Reveal.EnterPlay(world, facts, card, events, abilities: abilities);
         }
-        Played(world, seat, card, new PlayedCardPayment(card.ObjectId, card.Incarnation, seat.Index, choices.Paid));
+        Played(world, seat, card, new PlayedCardPayment(card.ObjectId, card.Incarnation, seat.Index, choices.Paid), choices.EntryPayment);
         Restricted(world, facts, seat, card, events);
     }
 
@@ -174,14 +174,14 @@ public static class CardEntry
         ));
 
     /// <summary>Schedules the response window for an ally put into play.</summary>
-    internal static void Entered(World world, Card ally, int player)
+    internal static void Entered(World world, Card ally, int player, EntryPayment? entryPayment = null)
     {
         // `rr:enters-play`: putting a card into play by a card ability is one
         // way it enters play. The transition therefore creates the same
         // after-entry response window as a card played from hand, but not the
         // `WhenCardPlayed` condition that rr:play-put-into-play.3 excludes.
         world.Agenda.Then(new PhaseStep(
-            new LifecycleOperation(LifecycleKind.CardEntersPlay),
+            new LifecycleOperation(LifecycleKind.CardEntersPlay) { EntryPayment = entryPayment },
             world.Agenda.Current?.Round ?? 0,
             0,
             Subject: ally.ObjectId,
@@ -189,14 +189,15 @@ public static class CardEntry
         ));
     }
 
-    internal static void Played(World world, Seat seat, Card card, PlayedCardPayment? payment = null)
+    internal static void Played(World world, Seat seat, Card card, PlayedCardPayment? payment = null,
+        EntryPayment? entryPayment = null)
     {
         // The card has moved and all state it enters with has been applied.
         // The agenda supplies the ordinary response window, including the
         // optional responses `rr:ability.11` says must be chosen rather than
         // silently resolved or refused.
         world.Agenda.Then(new PhaseStep(
-            new LifecycleOperation(LifecycleKind.CardPlayed) { Payment = payment },
+            new LifecycleOperation(LifecycleKind.CardPlayed) { Payment = payment, EntryPayment = entryPayment },
             world.Agenda.Current?.Round ?? 0,
             0,
             Index: seat.Index,

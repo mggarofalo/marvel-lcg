@@ -3,7 +3,35 @@
 The canonical delivery records are MARVEL-568 (Kang) and MARVEL-569 (Ant-Man),
 within MARVEL-703. This candidate combines reviewed engine prerequisites; neither
 pack has complete executable content or public admission. The production book
-contains 754 rows, including 31 of Ant-Man's 35 faces and no Kang faces.
+contains 755 rows, including 32 of Ant-Man's 35 faces and no Kang faces.
+
+Care for Cassie source `11ec5c48`, independently accepted at `1910cf57`,
+preserves all 754 preceding objects and their raw prefix. Source verification
+passes 86 Content/data and 12 catalog/admission checks; independent restored
+verification passes 56 checks. The reviewer corrected two source citations and
+added a physical-card choice control that catches a wrong-first-card mutant
+which the six original actual-card cases did not catch. See [actual-card review](care-for-cassie-independent-review.md).
+
+Hank's entry-payment foundation source `f00c8676`, independently accepted at
+`1b4eed16`, retains generated and paid resources on the exact entry occurrence,
+including Make the Call's separately paid ally. Independent receipt controls
+pass 20 cases. The Make the Call path now forwards the accepted resource
+allocation. See [payment review](hank-entry-payment-independent-review.md).
+This foundation does not implement Hank's pre-entry interrupt, counters or
+zero-HP settlement; that separate MARVEL-887 operation remains in development.
+The combined Cassie/receipt candidate passes 121 focused Content/data checks
+and all 1,210 Rules tests. Logs are `roars-32-combined-{content,rules}.log`
+under the external evidence directory; the tested tree is recorded in
+`roars-32-combined-tested-tree.txt`. Final pack/native/replay checks remain open.
+
+Three Ant-Man faces remain: `12011`, `12024`, and `12026`. MARVEL-885 asks only
+about the simultaneous zero-HP/fourth-ally framework ordering; it is not a
+human acceptance gate for ordinary content. Actual Plan-to-Tech Theft play,
+complete pack/starter admission, native interaction and MARVEL-870 replay
+publication evidence remain required before delivery to main.
+
+Earlier integration checkpoints below describe the revision tested at that
+point; their older inventory counts and pending tasks are historical.
 
 Actual Yellowjacket's Plan source `76758101`, independently accepted at
 `872b6d0a`, preserves all 753 previous objects and their byte prefix. Source
@@ -53,7 +81,7 @@ these results do not claim a second complete Content run. The earlier
 50 failures comprise 46 dependent transcripts, two Make the Call cases and two
 obsolete quote assertions (For Justice and Captain America).
 
-Four Ant-Man faces remain: `12011`, `12024`, `12025`, and `12026`.
+At that earlier checkpoint, four Ant-Man faces remained: `12011`, `12024`, `12025`, and `12026`.
 
 Actual Pym Particles source `3d16f976` is independently accepted at `fee19693`.
 All 752 prior objects and their raw prefix are unchanged. Source verification

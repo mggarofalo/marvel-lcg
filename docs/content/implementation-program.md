@@ -26,8 +26,8 @@ The existing Content Expansion module defines these **11 planning waves**. Range
 ## Current integration checkpoint
 
 The active Ant-Man/Kang candidate is recorded in
-[the cycle checkpoint](roars-cycle-integration.md). It has 31 independently
-reviewed Ant-Man faces out of 35, with 754 total authored rows, and reviewed Kang
+[the cycle checkpoint](roars-cycle-integration.md). It has 32 independently
+reviewed Ant-Man faces out of 35, with 755 total authored rows, and reviewed Kang
 engine foundations. Neither pack is publicly admitted. Giant Stomp's live-choice
 capability is independently accepted at `38ce4bca` and integrated at `78b62715`,
 including the shared simultaneous attack-defeat repair and corrected View wording.
@@ -46,7 +46,13 @@ one obsolete Captain America quote assertion; the corrected assertion passes in
 the focused run. Final complete-pack verification remains required. MARVEL-883 encounter-set
 discard is independently accepted at `14b2a06e`; actual Yellowjacket's Plan is
 accepted at `872b6d0a`. MARVEL-884's next-turn prohibition is accepted at
-`836db363`; actual Care for Cassie is the next content task.
+`836db363`; actual Care for Cassie is accepted at `1910cf57`. Hank entry-payment
+provenance is accepted at `1b4eed16`; the separate entry interrupt/counter
+operation is MARVEL-887. Remaining actual faces are Hank Pym, Team-Building
+Exercise and Tech Theft. MARVEL-888 owns live TECH-player-card blanking and
+MARVEL-889 owns trait-matching discounted nested play. Their researched
+implementation and evidence requirements are recorded under the canonical
+Ant-Man parent. The combined Cassie/payment revision passes 121 focused Content/data and all 1,210 Rules checks; final pack/native/replay gates remain open.
 
 The attack-excess prerequisite is independently accepted at `3b3f3558` and
 integrated by an identical-tree fast-forward. Conditional-resource contract
