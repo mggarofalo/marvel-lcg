@@ -1,4 +1,5 @@
 using Marvel.Cards.Dsl;
+using Marvel.Rules.Play;
 using static Marvel.Cards.Run.AbilityAdmission;
 
 namespace Marvel.Cards.Run;
@@ -74,8 +75,10 @@ internal static class AbilityFutureResultAdmission
         AbilityEffect.RemoveThreat remove when name == "schemesCleared" =>
             AbilityEffectTargetAdmission.DamageAndThreatTargetLegality(remove, scope) == AbilityTargetAdmission.TargetLegality.Valid,
         AbilityEffect.Search or AbilityEffect.RecruitDiscarded when name == "found" => true,
-        AbilityEffect.InspectEncounterTop inspect when name == inspect.Result && inspect.Count > 0 => true,
-        AbilityEffect.InspectDiscardOrderEncounterTop when name == "discarded" => true,
+        AbilityEffect.InspectEncounterTop inspect when name == inspect.Result =>
+            AbilityEncounterInspection.Cards(scope.World, inspect).Count > 0,
+        AbilityEffect.InspectDiscardOrderEncounterTop when name == "discarded" =>
+            EncounterRouting.Deck(scope.World).Cards.Count > 0,
         AbilityEffect.ActivateEnemies when name.StartsWith("activation", StringComparison.Ordinal) => true,
         _ => false,
     };
