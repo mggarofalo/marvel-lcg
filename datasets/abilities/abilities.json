@@ -23862,6 +23862,16 @@
           "effect": { "blankTechPlayerCards": "game" }
         }
       ]
+    },
+    {
+      "card": "12024",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "game", "form": "hero" },
+          "cost": { "exhaust": "this" },
+          "effect": { "playSharedHeroTraitCard": "game" }
+        }
+      ]
     }
   ]
 }

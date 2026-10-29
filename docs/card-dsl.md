@@ -5,6 +5,16 @@ forced and optional attack-end responses and is zero without a completed attack.
 
 # The card DSL
 
+`playSharedHeroTraitCard: "game"` offers the resolving player a card in their hand
+that shares a live trait with their hero, played at a cost reduced by one. The
+spelling is an engine choice. It is admitted once in an Action whose sole cost
+is exhausting its source, either as the entire effect or as the first instruction
+of a sequence. The normal play and payment procedures apply. An eligible event must
+have exactly one ordinary Action, with no arrow cost or paid-resource-dependent
+effect; unsupported matching Action shapes raise rather than guessing. Event
+conditions, form and targets remain subject to ordinary Action admission.
+
+
 `blankTechPlayerCards: "game"` is an engine-chosen spelling for a standalone, unconditional constant. It targets the live in-play TECH player-card set. Permanent targets from another known set are protected; missing set facts and same-set Permanent targets refuse. A target with an admitted `playersWin` instruction also refuses. This is not a general implementation of protected alternate victory or loss text: unsupported printed outcomes and protected partial text require separate admission and protection. The canonical card inventory has no printed TECH player card containing an alternate win or loss instruction; SP//dr Suit (31001b) is Permanent in another set. This vocabulary does not admit Tech Theft into the canonical ability book.
 
 
