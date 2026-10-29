@@ -176,8 +176,11 @@ public sealed class TableContractTests
         World world = Board(out _, out Card remoteDefender, out _);
         Card controlled = world.CreateCard("duplicate", world.AreaOf(
             DeckType.DiscardPile, PlayArea.Of(1), cardOwner: 1));
-        CardPlay.PutAllyIntoPlay(world, world.Facts, new NoCardAbilities(), controlled,
+        var abilities = new NoCardAbilities();
+        CardPlay.PutAllyIntoPlay(world, world.Facts, abilities, controlled,
             controller: 0, trigger: "test", events: []);
+        // The entry is scheduled so that its interrupts precede the move; finish it before projecting.
+        Assert.Null(Sequence.Work(world, world.Facts, abilities, []));
         Area scenarioAside = world.CreateArea(DeckType.AsideDeck, World.Scenario, PlayArea.Of(0));
         Card scenario = world.CreateCard("villain", scenarioAside);
         Area attachment = world.CreateArea(DeckType.UpgradesArea, cardOwner: 0,
