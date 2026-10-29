@@ -65,3 +65,13 @@ classes passed 63 cases. Removing healing-cost recognition killed a compiled
 mutant (15 failures in 25); removing singular-area deferral killed another
 (two failures in two). Sources were restored for nonincremental verification.
 Independent review of this repair remains pending.
+
+Independent review reproduced an undamaged heal incorrectly creating a future
+positive counter result. The paired control uses one damage and observes one
+counter. Admission now checks the actual heal target and uses the existing
+ordered health-cost projection when payment can change its damage; the latest
+prior heal replaces the payment receipt. Controls cover a damage cost, damage
+then healing costs, a healing-only cost, and an earlier damage effect. Known
+ready/exhausted, threat movement and threat removal targets use their existing
+admission checks; hidden search outcomes remain uncertain. The projection is not
+a general proof for every nested result writer. Independent review is pending.

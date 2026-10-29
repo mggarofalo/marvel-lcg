@@ -117,8 +117,7 @@ internal static class AbilityEffectTargetAdmission
             "moveDamage" or "moveAttackDamage" => MoveDamageTargetLegality((AbilityEffect.MoveDamage)node, cast),
             "dealEncounterCard" => Find(EffectOf<AbilityEffect.DealEncounterCard>(node, cast).Card, cast) is null
                 ? TargetLegality.Invalid : TargetLegality.Valid,
-            "heal" => Find(EffectOf<AbilityEffect.Heal>(node, cast).Card, cast) is { Damage: > 0 }
-                && Amount(EffectOf<AbilityEffect.Heal>(node, cast).Amount, cast) > 0
+            "heal" => AbilityFutureResultAdmission.HealCanProduce(EffectOf<AbilityEffect.Heal>(node, cast), cast)
                     ? TargetLegality.Valid : TargetLegality.Invalid,
             "setHitPoints" => AbilityHitPointAssignment.TargetLegalityOf(node, cast),
             "dealDamage" when node is AbilityEffect.Damage { Maximum: not null } group =>

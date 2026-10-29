@@ -33,6 +33,7 @@ internal sealed class AbilityHealingCostProjection(
         return true;
     }
 
+    internal bool LeavesDamage(AbilityCost cost) => CanPay(cost) && State(target).Damage > 0;
     private AbilityHealingTarget State(Card card)
     {
         if (!targets.TryGetValue(card.ObjectId, out var state))
