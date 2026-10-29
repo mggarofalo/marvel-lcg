@@ -38,3 +38,14 @@ Earlier compiled mutations distinguished generated-versus-paid excess (three
 failures, eight controls passing) and zero-counter admission (two failures,
 nine controls passing). After the repair, omitting pending discard-cost receipt recognition produced three failures in nine cases; bypassing the fixed-zero bound produced two failures in four cases. Restored sources were rebuilt non-incrementally without warnings; the expanded regression passed all 545 cases. Independent review remains pending. No canonical Hank
 row, zero-HP settlement or pack admission is included. The expression uses MARVEL-887's cohesive `Occurrence.Entry` context.
+
+Independent review checked the vendored `rr:cost.4.1`, `rr:target.3`, Hank
+Pym's printed interrupt and the Make the Call ruling. A synthetic Make the Call
+case pays a different owner's ally price and takes its pending-entry interrupt;
+one excess resource places one counter that survives entry. Suppressing pending
+receipt matching compiled and failed this case while three entered-response
+controls passed. A non-incremental restored build and the three affected test
+classes passed all 16 cases. The future-discard check is a conservative, shallow
+recognition of pending receipts and direct fixed-zero bounds, not a general
+symbolic analysis. This review does not establish canonical Hank admission or a
+complete pack journey.
