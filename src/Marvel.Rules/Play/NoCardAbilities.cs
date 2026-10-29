@@ -26,6 +26,9 @@ public class NoCardAbilities : ICardAbilities
 
     /// <inheritdoc/>
     public virtual bool RequiresAllyPlayHistory(World world) => false;
+
+    /// <inheritdoc/>
+    public virtual string? DescribeCardPlay(World world, Card card) => null;
     /// <inheritdoc/>
     public virtual long SelfPlayCostReduction(World world, Card card, int player) => 0;
 

@@ -48,6 +48,8 @@ public sealed class AbilityRunner : ICardAbilities
     public bool ObservesVillainStepOneCompletion(World world) => AbilityVillainPhaseTiming.Observed(world, program);
     /// <inheritdoc/>
     public bool ObservesVillainPhaseBeginning(World world) => AbilityVillainPhaseTiming.Observed(world, program, VillainPhaseBeginning.Begins);
+    public string? DescribeCardPlay(World world, Card card) => AbilityEntryCounterDescription.PlaySummary(world, program, card);
+
     public bool RequiresAllyPlayHistory(World world) => AbilityAllyPlayHistory.Required(world, program);
     public long SelfPlayCostReduction(World world, Card card, int player) => AbilitySelfPlayCost.Reduction(world, program, card, player);
     public bool CanPlayFromStorage(World world, Card card, int player) => AbilityStoragePermission.CanPlay(world, program, card, player);

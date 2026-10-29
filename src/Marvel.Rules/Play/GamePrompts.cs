@@ -240,7 +240,7 @@ internal static class GamePrompts
             Targets: attachmentTargets is not null
                 ? new TargetRequest(attachmentTargets, Min: 1, Max: 1)
                 : new TargetRequest([seat.IdentityCard.ObjectId], Min: 1, Max: 1),
-            Costs: [price]);
+            Costs: [price], Description: game.world.CardPlayAbilities.DescribeCardPlay(game.world, card));
     }
 
     internal static Affordance Anchored(this Game game, string verb, Seat seat) =>
