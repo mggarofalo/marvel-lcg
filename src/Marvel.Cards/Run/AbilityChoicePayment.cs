@@ -11,18 +11,21 @@ internal sealed class AbilityChoicePayment(ResourcePaymentReceipt payment, Card?
     private readonly int incarnation = originIncarnation ?? ally?.Incarnation ?? -1;
     private readonly int area = originArea ?? ally?.Area.Id ?? -1;
     private bool windowOpened;
+    private bool entryScheduled;
     private EntryPayment? entryPayment;
 
     internal override bool Commit(AbilityResolutionExecution execution, AbilityResolutionState cast)
     {
         if (!payment.IsComplete)
             throw new InvalidOperationException("payment choice resumed before its resource costs completed");
-        if (ally is not null)
+        if (entryScheduled)
         {
-            if (ally.Incarnation != incarnation || ally.Area.Id != area)
-                throw new RulesNotImplementedException("the ally selected for the paid effect moved before entry");
-            entryPayment ??= EntryPayment.Capture(ally, cast.Player, payment);
+            if (entryPayment!.MatchesPending(ally!, cast.Player))
+                throw new InvalidOperationException("paid ally entry has not completed");
+            cast.ResolveEffect();
+            return true;
         }
+        CaptureEntryPayment(cast);
         if (!windowOpened)
         {
             windowOpened = true;
@@ -32,14 +35,31 @@ internal sealed class AbilityChoicePayment(ResourcePaymentReceipt payment, Card?
                 return false;
             }
         }
-        if (ally is not null)
-        {
-            // rr:leaves-play.1: a returning card is "a new copy of the card."
-            if (ally.Incarnation != incarnation)
-                throw new RulesNotImplementedException("the ally selected for the paid effect changed incarnation");
-            AllyCardEntry.PutPaid(cast.World, cast.World.Facts, execution.cardPlayAbilities,
-                entryPayment!, cast.Trigger, cast.Events);
-        }
+        return ally is null ? Finish(cast) : ScheduleEntry(execution, cast);
+    }
+
+    private void CaptureEntryPayment(AbilityResolutionState cast)
+    {
+        if (ally is null) return;
+        if (ally.Incarnation != incarnation || ally.Area.Id != area)
+            throw new RulesNotImplementedException("the ally selected for the paid effect moved before entry");
+        entryPayment ??= EntryPayment.Capture(ally, cast.Player, payment);
+    }
+
+    private bool ScheduleEntry(AbilityResolutionExecution execution, AbilityResolutionState cast)
+    {
+        // rr:leaves-play.1: a returning card is "a new copy of the card."
+        if (ally!.Incarnation != incarnation)
+            throw new RulesNotImplementedException("the ally selected for the paid effect changed incarnation");
+        if (!AllyCardEntry.PutPaid(cast.World, cast.World.Facts, execution.cardPlayAbilities,
+                entryPayment!, cast.Trigger, cast.Events)) return Finish(cast);
+        entryScheduled = true;
+        cast.Suspend();
+        return false;
+    }
+
+    private static bool Finish(AbilityResolutionState cast)
+    {
         cast.ResolveEffect();
         return true;
     }

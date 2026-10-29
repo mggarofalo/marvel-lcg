@@ -144,7 +144,7 @@ public sealed class AllyEntryPaymentTests
         Assert.Equal(Question.Element, limit.Asking);
         Sequence.Answer(world, world.Facts, runner, limit, Decision.Take(discard.ObjectId), []);
         var response = Sequence.Work(world, world.Facts, runner, [])!;
-        var entry = Assert.IsType<EntryPayment>(world.Agenda.Occurrence!.EntryPayment);
+        var entry = Assert.IsType<EntryPayment>(world.Agenda.Occurrence!.Entry.EntryPayment);
         Assert.Equal(3, entry.Generated.Length);
         Assert.Equal(3, entry.Paid.Length);
         Assert.Equal(0, entry.Excess);

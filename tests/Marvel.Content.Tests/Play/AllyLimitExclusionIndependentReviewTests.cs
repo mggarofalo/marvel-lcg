@@ -59,6 +59,9 @@ public sealed class AllyLimitExclusionIndependentReviewTests
         var ally = world.CreateCard("06012", world.Seats[0].Hand);
         var events = new List<GameEvent>();
         CardPlay.PutAllyIntoPlay(world, world.Facts, runner, ally, 0, "synthetic", events);
+        var initialLimit = Sequence.Work(world, world.Facts, runner, events);
+        Assert.NotNull(initialLimit);
+        Assert.Equal(Steps.ChooseAllyForLimit, initialLimit.Trigger);
         Assert.Contains(world.Agenda.Outstanding, step => step.What == Steps.ChooseAllyForLimit);
         using var increase = world.Effects.Register(new ContinuousEffect(
             EffectSource.LastingEffect, "ally_limit", Amount: 1,
@@ -170,6 +173,9 @@ public sealed class AllyLimitExclusionIndependentReviewTests
         var ally = world.CreateCard("06012", world.Seats[0].Hand);
         var events = new List<GameEvent>();
         CardPlay.PutAllyIntoPlay(world, world.Facts, runner, ally, 0, "synthetic", events);
+        var initialLimit = Sequence.Work(world, world.Facts, runner, events);
+        Assert.NotNull(initialLimit);
+        Assert.Equal(Steps.ChooseAllyForLimit, initialLimit.Trigger);
         Assert.Contains(world.Agenda.Outstanding, step => step.What == Steps.ChooseAllyForLimit);
         increase.Dispose(); // Synthetic interposition, not a claimed reachable timing point.
         var prompt = Sequence.Work(world, world.Facts, runner, events)!;

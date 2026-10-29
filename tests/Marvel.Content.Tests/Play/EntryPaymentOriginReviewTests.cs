@@ -44,8 +44,8 @@ public sealed class EntryPaymentOriginReviewTests
         var ally = world.CreateCard("06012", seat.Hand);
         CardPlay.PlayIgnoringResourceCost(world, world.Facts, runner, seat, ally, []);
         var prompt = Assert.IsType<Prompt>(Sequence.Work(world, world.Facts, runner, []));
-        Assert.Null(world.Agenda.Occurrence!.EntryPayment);
-        Assert.Equal("", Assert.IsType<PlayedCardPayment>(world.Agenda.Occurrence.CardPlayPayment).Paid);
+        Assert.Null(world.Agenda.Occurrence!.Entry.EntryPayment);
+        Assert.Equal("", Assert.IsType<PlayedCardPayment>(world.Agenda.Occurrence.Entry.CardPlayPayment).Paid);
         Sequence.Answer(world, world.Facts, runner, prompt, Decision.Decline, []);
         Sequence.Finish(world, world.Facts, runner, []);
     }

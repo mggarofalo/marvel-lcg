@@ -77,7 +77,7 @@ internal static class AbilityResolutionActions
         }
         foreach (var thwart in admission.CrisisIgnoringThwarts)
         {
-            cast.ValidateCrisisIgnoringThwart(thwart);
+            cast.InitiationEvidence.ValidateCrisisIgnoringThwart(thwart);
         }
         if (!CounterCostsPayable(world, card, ability.Player, found.Cost))
         {

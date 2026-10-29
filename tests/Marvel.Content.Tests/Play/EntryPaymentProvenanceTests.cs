@@ -38,21 +38,21 @@ public sealed class EntryPaymentProvenanceTests
         CardPlay.Play(world, world.Facts, runner, seat, ally, [first.ObjectId, second.ObjectId], []);
         var prompt = Assert.IsType<Prompt>(Sequence.Work(world, world.Facts, runner, []));
         var occurrence = Assert.IsType<Occurrence>(world.Agenda.Occurrence);
-        var receipt = Assert.IsType<EntryPayment>(occurrence.EntryPayment);
+        var receipt = Assert.IsType<EntryPayment>(occurrence.Entry.EntryPayment);
         Assert.Equal(4, receipt.Generated.Length);
         Assert.Equal(3, receipt.Paid.Length);
         Assert.Equal(1, receipt.Excess);
         Assert.True(receipt.MatchesEntered(ally, 0));
         Assert.False(receipt.MatchesEntered(other, 0));
         Assert.False(receipt.MatchesEntered(ally, 1));
-        Assert.Equal(receipt.Paid, Assert.IsType<PlayedCardPayment>(occurrence.CardPlayPayment).Paid);
+        Assert.Equal(receipt.Paid, Assert.IsType<PlayedCardPayment>(occurrence.Entry.CardPlayPayment).Paid);
         Sequence.Answer(world, world.Facts, runner, prompt, Decision.Decline, []);
         Sequence.Finish(world, world.Facts, runner, []);
         Discard.Card(world, ally, "test", []);
         CardPlay.PutAllyIntoPlay(world, world.Facts, runner, ally, 0, "test", []);
         prompt = Assert.IsType<Prompt>(Sequence.Work(world, world.Facts, runner, []));
-        Assert.Null(world.Agenda.Occurrence!.EntryPayment);
-        Assert.Null(world.Agenda.Occurrence.CardPlayPayment);
+        Assert.Null(world.Agenda.Occurrence!.Entry.EntryPayment);
+        Assert.Null(world.Agenda.Occurrence.Entry.CardPlayPayment);
         Assert.False(receipt.MatchesEntered(ally, 0));
         Sequence.Answer(world, world.Facts, runner, prompt, Decision.Decline, []);
         Sequence.Finish(world, world.Facts, runner, []);
@@ -87,7 +87,7 @@ public sealed class EntryPaymentProvenanceTests
         prompt = Assert.IsType<Prompt>(Sequence.Work(world, world.Facts, runner, []));
         Assert.Contains(prompt.Affordances, item => item.AnchorId == ally.ObjectId);
         var occurrence = Assert.IsType<Occurrence>(world.Agenda.Occurrence);
-        var entry = Assert.IsType<EntryPayment>(occurrence.EntryPayment);
+        var entry = Assert.IsType<EntryPayment>(occurrence.Entry.EntryPayment);
         Assert.Equal("G", entry.Generated);
         Assert.Equal("G", entry.Paid);
         Assert.Equal(0, entry.Excess);
@@ -116,17 +116,19 @@ public sealed class EntryPaymentProvenanceTests
         Assert.False(receipt.MatchesPending(other, 0));
     }
 
-    [Fact]
+    [Theory]
+    [InlineData("Response")]
+    [InlineData("Interrupt")]
     [Rule("rr:play-put-into-play.3")]
     [Rule("rr:cost.4.1")]
-    public void MakeTheCallCarriesChosenAllyPriceRatherThanEventPrice()
+    public void MakeTheCallCarriesChosenAllyPriceRatherThanEventPrice(string timing)
     {
         // Putting a card into play is not playing it; excess was not paid for the cost.
         var root = JsonNode.Parse(AuthoredCards.Text)!;
         var cards = root["cards"]!.AsArray();
         var previous = cards.SingleOrDefault(row => (string?)row!["card"] == "06012");
         if (previous is not null) cards.Remove(previous);
-        cards.Add(JsonNode.Parse(Observer));
+        cards.Add(JsonNode.Parse(Observer.Replace("Response", timing, StringComparison.Ordinal)));
         var runner = new AbilityRunner(AbilityCatalog.Parse(root.ToJsonString()));
         Card? source = null;
         Card? ally = null;
@@ -151,15 +153,23 @@ public sealed class EntryPaymentProvenanceTests
             Allocations: ResourcePayment.Allocate(Assert.Single(choice.CostOptions), allyPayment)));
         Assert.Contains(game.Pending!.Affordances, item => item.AnchorId == ally!.ObjectId);
         var occurrence = Assert.IsType<Occurrence>(world.Agenda.Occurrence);
-        var receipt = Assert.IsType<EntryPayment>(occurrence.EntryPayment);
+        var receipt = Assert.IsType<EntryPayment>(occurrence.Entry.EntryPayment);
         Assert.Equal("YYYY", receipt.Generated);
         Assert.Equal("YYY", receipt.Paid);
         Assert.Equal(1, receipt.Excess);
-        Assert.True(receipt.MatchesEntered(ally!, 0));
+        if (timing == "Interrupt")
+        {
+            Assert.True(receipt.MatchesPending(ally!, 0));
+            Assert.NotEqual(DeckType.DiscardPile, source!.Area.Type);
+        }
+        else Assert.True(receipt.MatchesEntered(ally!, 0));
         Assert.Equal(1, ally!.Owner);
-        Assert.Null(occurrence.CardPlayPayment);
+        Assert.Null(occurrence.Entry.CardPlayPayment);
         game.Resolve(Decision.Decline);
         Assert.Equal(DeckType.DiscardPile, eventResource!.Area.Type);
+        Assert.Equal(DeckType.DiscardPile, source!.Area.Type);
+        Assert.Equal(DeckType.AlliesArea, ally!.Area.Type);
+        Assert.DoesNotContain(world.Agenda.Outstanding, item => item.What == Steps.CardEntersPlay);
     }
 
     [Theory]
@@ -179,8 +189,7 @@ public sealed class EntryPaymentProvenanceTests
         var power = world.CreateCard("01072", seat.Hand);
         var physical = world.CreateCard("06022", seat.Hand);
         runner.ExecuteAction(world, new PlayerAction(new PendingAbility(source.ObjectId, AbilityType.Action, 0), [], []));
-        var step = Assert.Single(world.Agenda.Outstanding);
-        var prompt = Assert.IsType<Prompt>(runner.Choosing(world, step));
+        var prompt = Assert.IsType<Prompt>(Sequence.Work(world, world.Facts, runner, []));
         var offer = Assert.Single(prompt.Affordances, item => item.AnchorId == ally.ObjectId);
         ResourceAllocation[] allocation = powerPays
             ? [new(power.ObjectId, 0, "G"), new(physical.ObjectId, 0, "Y")]
@@ -188,23 +197,30 @@ public sealed class EntryPaymentProvenanceTests
         string before = world.Digest().Canonical();
         var random = world.Random.Generator.GetState();
         ResourceAllocation[] invalid = [new(physical.ObjectId, 0, "GG")];
-        Assert.Throws<ArgumentException>(() => runner.Chose(world, step,
+        Assert.Throws<ArgumentException>(() => Sequence.Answer(world, world.Facts, runner, prompt,
             Decision.Take(ally.ObjectId, [], [power.ObjectId, physical.ObjectId],
-                new Dictionary<string, long>(), invalid)));
+                new Dictionary<string, long>(), invalid), []));
         Assert.Equal(before, world.Digest().Canonical());
         Assert.Equal(random.Index, world.Random.Generator.GetState().Index);
         Assert.Equal(random.Words, world.Random.Generator.GetState().Words);
         Assert.True(ResourcePayment.Allows(Assert.Single(offer.CostOptions), [power.ObjectId, physical.ObjectId], null, allocation));
-        runner.Chose(world, step, Decision.Take(ally.ObjectId, [], [power.ObjectId, physical.ObjectId],
-            new Dictionary<string, long>(), allocation));
+        Sequence.Answer(world, world.Facts, runner, prompt,
+            Decision.Take(ally.ObjectId, [], [power.ObjectId, physical.ObjectId],
+                new Dictionary<string, long>(), allocation), []);
         var entryStep = Assert.Single(world.Agenda.Outstanding, item => item.What == Steps.CardEntersPlay);
         var occurrence = Assert.IsType<Occurrence>(entryStep.ScheduledOccurrence);
-        var entry = Assert.IsType<EntryPayment>(occurrence.EntryPayment);
+        var entry = Assert.IsType<EntryPayment>(occurrence.Entry.EntryPayment);
         Assert.Equal(generated, entry.Generated);
         Assert.Equal(paid, entry.Paid);
         Assert.Equal(excess, entry.Excess);
+        Assert.True(entry.MatchesPending(ally, 0));
+        Assert.Null(occurrence.Entry.CardPlayPayment);
+        var response = Assert.IsType<Prompt>(Sequence.Work(world, world.Facts, runner, []));
+        Assert.Contains(response.Affordances, item => item.AnchorId == ally.ObjectId);
         Assert.True(entry.MatchesEntered(ally, 0));
-        Assert.Null(occurrence.CardPlayPayment);
+        Sequence.Answer(world, world.Facts, runner, response, Decision.Decline, []);
+        Assert.Null(Sequence.Work(world, world.Facts, runner, []));
+        Assert.Empty(world.Agenda.Outstanding);
     }
 
     [Fact]
@@ -256,7 +272,7 @@ public sealed class EntryPaymentProvenanceTests
         var response = Assert.Single(game.Pending!.Affordances, item => item.AnchorId == spent.ObjectId);
         game.Resolve(Decision.Take(response.Id));
         Assert.Contains(game.Pending!.Affordances, item => item.AnchorId == ally.ObjectId);
-        var entry = Assert.IsType<EntryPayment>(world.Agenda.Occurrence!.EntryPayment);
+        var entry = Assert.IsType<EntryPayment>(world.Agenda.Occurrence!.Entry.EntryPayment);
         Assert.Equal(3, entry.Generated.Length);
         Assert.Equal(3, entry.Paid.Length);
         Assert.Equal(0, entry.Excess);

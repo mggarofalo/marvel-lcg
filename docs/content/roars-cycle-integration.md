@@ -17,8 +17,14 @@ Hank's entry-payment foundation source `f00c8676`, independently accepted at
 including Make the Call's separately paid ally. Independent receipt controls
 pass 20 cases. The Make the Call path now forwards the accepted resource
 allocation. See [payment review](hank-entry-payment-independent-review.md).
-This foundation does not implement Hank's pre-entry interrupt, counters or
-zero-HP settlement; that separate MARVEL-887 operation remains in development.
+The separate MARVEL-887 entry operation is now independently accepted at
+`77f4559a` from source `39927976`; health settlement is independently accepted
+at `5b7e2b48` from `f0198165`. Both are combined in the working candidate, with
+combined verification still pending. Own-source interrupts precede entry and
+the ally-limit choice precedes responses; a lethal entering ally follows the
+existing defeat lifecycle. The exact zero-health/excess-limit collision still
+raises MARVEL-885. See [entry timing review](ally-entry-interrupt-independent-review.md)
+and [health review](ally-entry-health-independent-review.md).
 The combined Cassie/receipt candidate passes 121 focused Content/data checks
 and all 1,210 Rules tests. Logs are `roars-32-combined-{content,rules}.log`
 under the external evidence directory; the tested tree is recorded in

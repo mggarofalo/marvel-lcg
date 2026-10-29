@@ -26,13 +26,22 @@ internal static class AbilityAllyEntry
         }
         var owner = cast.World.Agenda.Current;
         var occurrence = cast.World.Agenda.Occurrence;
-        CardPlay.PutAllyIntoPlay(cast.World, cast.World.Facts, execution.cardPlayAbilities,
-            card, cast.Player, cast.Trigger, cast.Events);
-        // The instruction follows this physical card into play. Later entry windows
-        // may still make that new incarnation stale before the suffix resumes.
-        if (entry.Card is AbilityCardSelection.Bound { Binding: AbilityCardBinding.Chosen }
-            or AbilityCardSelection.DefeatedAllyInYourDiscardPile)
-            cast.ChooseSelection(card);
+        bool follow = entry.Card is AbilityCardSelection.Bound { Binding: AbilityCardBinding.Chosen }
+            or AbilityCardSelection.DefeatedAllyInYourDiscardPile;
+        if (follow)
+        {
+            var binding = new AllyEntryBinding();
+            if (!AllyCardEntry.PutFollowing(cast.World, execution.cardPlayAbilities,
+                    card, cast.Player, cast.Trigger, cast.Events, binding))
+            {
+                cast.CompletedOutcome = AbilityStructuralOutcome.None;
+                return true;
+            }
+            cast.PendingAllyEntryBinding = binding;
+        }
+        else
+            CardPlay.PutAllyIntoPlay(cast.World, cast.World.Facts, execution.cardPlayAbilities,
+                card, cast.Player, cast.Trigger, cast.Events);
         cast.CompletedOutcome = AbilityStructuralOutcome.Full;
         cast.ResolveEffect();
         execution.SuspendAfterProcedure(effect, cast, owner, occurrence);

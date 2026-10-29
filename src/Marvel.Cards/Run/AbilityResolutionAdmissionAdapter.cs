@@ -22,7 +22,7 @@ internal static class AbilityResolutionAdmissionAdapter
             cast.Source.FaceId, cast.AbilityFace,
             cast.Player, cast.Position, cast.HasContinuation, cast.Tier,
             cast.Power, cast.AbilityActor, cast.HasPendingDependency,
-            cast.ValidatedCrisisIgnoringThwarts, cast.RestoredCrisisIgnoringThwarts,
+            cast.InitiationEvidence.ValidatedCrisisIgnoringThwarts, cast.InitiationEvidence.RestoredCrisisIgnoringThwarts,
             [.. cast.StructuralPath]);
 
     internal static bool CanInitiate(this AbilityResolutionExecution execution, CompiledCardAbility ability, AbilityResolutionState cast)
@@ -34,7 +34,7 @@ internal static class AbilityResolutionAdmissionAdapter
             return false;
         }
 
-        cast.LabelsPreflighted = true;
+        cast.InitiationEvidence.LabelsPreflighted = true;
         if (ability.Labels.Length > 0
             && Marvel.Rules.Play.LabeledAbilities.WouldBeCancelled(
                 cast.World, cast.World.Facts, execution.Resolver(cast),
@@ -97,7 +97,7 @@ internal static class AbilityResolutionAdmissionAdapter
     {
         foreach (var thwart in result.CrisisIgnoringThwarts)
         {
-            cast.ValidateCrisisIgnoringThwart(thwart);
+            cast.InitiationEvidence.ValidateCrisisIgnoringThwart(thwart);
         }
         return result.IsAdmissible;
     }

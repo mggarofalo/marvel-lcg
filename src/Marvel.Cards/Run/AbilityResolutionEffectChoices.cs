@@ -258,7 +258,7 @@ internal static class AbilityResolutionEffectChoices
     {
         var ability = execution.AbilityAt(cast.Source, cast.Tier, ordinal, cast.AbilityFace);
         var crisis = AbilityContinuations.CrisisIgnoringThwartOrdinals(
-            ability, cast.ValidatedCrisisIgnoringThwarts, cast.RestoredCrisisIgnoringThwarts);
+            ability, cast.InitiationEvidence.ValidatedCrisisIgnoringThwarts, cast.InitiationEvidence.RestoredCrisisIgnoringThwarts);
         var selected = chosen ?? cast.CaptureCurrentSelection();
         var binding = selected is null ? null : new AbilityContinuationCardBinding(
             selected.Card.ObjectId, selected.Area, selected.Incarnation);
@@ -276,7 +276,7 @@ internal static class AbilityResolutionEffectChoices
             { ExhaustedForCost = cast.ExhaustedForCost.ToImmutableHashSet(), DamageDefeats = cast.DamageDefeats,
                 SourceWasPublicInPlay = cast.SourceWasPublicInPlay })
         { Execution = cast.Execution, ThreatMovePairs = cast.ThreatMovePairs, ThreatMove = cast.PendingThreatMove, ThreatMoveRequested = cast.ThreatMoveRequested, Completion = cast.PendingCompletion, DamageCompletion = cast.PendingDamageCompletion,
-            CompletedOutcome = cast.CompletedOutcome, Payment = cast.PendingPayment, DamageReplacement = cast.DamageReplacement,
+            CompletedOutcome = cast.CompletedOutcome, Payment = cast.PendingPayment, AllyEntryBinding = cast.PendingAllyEntryBinding, DamageReplacement = cast.DamageReplacement,
             PowerExecution = cast.PowerExecution is { } power
                 ? power with { Attacked = [.. cast.Attacked.Select(card => card.ObjectId)] } : null };
 

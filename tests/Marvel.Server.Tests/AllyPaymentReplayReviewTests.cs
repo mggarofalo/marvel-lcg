@@ -85,8 +85,8 @@ public sealed class AllyPaymentReplayReviewTests
 
     private static void EntryPaymentEqual(Game expected, Game actual, int ally)
     {
-        var original = Assert.IsType<EntryPayment>(expected.State.Agenda.Occurrence!.EntryPayment);
-        var restored = Assert.IsType<EntryPayment>(actual.State.Agenda.Occurrence!.EntryPayment);
+        var original = Assert.IsType<EntryPayment>(expected.State.Agenda.Occurrence!.Entry.EntryPayment);
+        var restored = Assert.IsType<EntryPayment>(actual.State.Agenda.Occurrence!.Entry.EntryPayment);
         Assert.Equal(original.Generated, restored.Generated);
         Assert.Equal(original.Paid, restored.Paid);
         Assert.Equal(original.Excess, restored.Excess);

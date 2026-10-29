@@ -90,7 +90,7 @@ internal static class AbilityResolutionRestoration
         {
             cast.Results[name] = value;
         }
-        cast.RestoreCrisisIgnoringThwarts(state.CrisisIgnoringThwarts);
+        cast.InitiationEvidence.RestoreCrisisIgnoringThwarts(state.CrisisIgnoringThwarts);
         cast.RestoreSourceIncarnation(state.SourceIncarnation);
         cast.RestoreSourceState(state.SourceState);
         cast.RestoreSourcePublicState(state.SourceWasPublicInPlay);

@@ -7,7 +7,7 @@ internal static class AbilityPaidResourceQuery
     {
         // Entry responses on the played card inspect its original price receipt,
         // independently of resources paid for the response itself.
-        if (context.Occurrence.CardPlayPayment is { } entryPayment
+        if (context.Occurrence.Entry.CardPlayPayment is { } entryPayment
             && entryPayment.Card == context.Source.ObjectId)
             return entryPayment.Includes(context.Source, context.Player, resource);
 

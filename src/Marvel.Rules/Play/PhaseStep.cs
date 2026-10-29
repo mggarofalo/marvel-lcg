@@ -204,7 +204,9 @@ public readonly record struct PhaseStep(
                 OccurrenceId ?? Moment.Id(Round, Number, Index), Conditions, Subject, Seat)
             {
                 EventRemovesThreat = (Operation as LifecycleOperation)?.EventRemovesThreat,
-                CardPlayPayment = (Operation as LifecycleOperation)?.Payment,
-                EntryPayment = (Operation as LifecycleOperation)?.EntryPayment,
+                Entry = new OccurrenceEntry(
+                    (Operation as LifecycleOperation)?.Payment ?? (Operation as PlayerAllyEntryOperation)?.PlayedPayment,
+                    (Operation as LifecycleOperation)?.EntryPayment ?? (Operation as PlayerAllyEntryOperation)?.Payment,
+                    Operation as PlayerAllyEntryOperation),
             };
 }

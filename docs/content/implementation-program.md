@@ -48,7 +48,9 @@ discard is independently accepted at `14b2a06e`; actual Yellowjacket's Plan is
 accepted at `872b6d0a`. MARVEL-884's next-turn prohibition is accepted at
 `836db363`; actual Care for Cassie is accepted at `1910cf57`. Hank entry-payment
 provenance is accepted at `1b4eed16`; the separate entry interrupt/counter
-operation is MARVEL-887. Remaining actual faces are Hank Pym, Team-Building
+operation is independently accepted at `77f4559a`, and entry health at
+`5b7e2b48`. Their combined regression and the excess-resource expression remain
+pending. Remaining actual faces are Hank Pym, Team-Building
 Exercise and Tech Theft. MARVEL-888 owns live TECH-player-card blanking and
 MARVEL-889 owns trait-matching discounted nested play. Their researched
 implementation and evidence requirements are recorded under the canonical

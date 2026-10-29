@@ -645,3 +645,16 @@ preserves the card's numeric contribution and the next boost card's ability.
 A successful cancellation resolves an effect and therefore publishes the usual
 completed Preparation receipt after its discard cost. Pending windows and receipts
 are reconstructed by accepted-decision replay; no new persisted field is introduced.
+
+## Entering allies with no remaining health
+
+An ally's entry interrupt finishes before movement. Staged counters move with
+the ally; its live constant modifiers apply when it enters. If its remaining
+health is then zero or less, the entry occurrence owns the normal would-be-
+defeated and defeat procedures before entry responses (`rr:hit-points.3`).
+Deferred entry initialization retains that exact incarnation. An entering
+ally with positive live health follows the ordinary ally-limit procedure.
+
+When zero-health defeat and an excess ally limit apply simultaneously, the
+available authorities do not settle their ordering. The engine raises for this
+exact collision (MARVEL-885) rather than choosing one of the obligations.
