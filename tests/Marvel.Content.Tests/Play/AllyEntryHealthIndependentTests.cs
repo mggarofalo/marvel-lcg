@@ -11,6 +11,49 @@ namespace Marvel.Content.Tests.Play;
 
 public sealed class AllyEntryHealthIndependentTests
 {
+    [Fact]
+    [Rule("rr:ally-limit")]
+    [Rule("rr:interrupt.3.1")]
+    public void RescuedAllyControlledByAnotherPlayerCanBeDiscardedForTheirLimit()
+    {
+        // The controlling player chooses an ally to discard above their limit;
+        // a would-interrupt resolves before its imminent triggering condition.
+        // These synthetic abilities rescue the entering ally and expose its response.
+        var runner = new AbilityRunner(AbilityCatalog.Parse("""
+            {"cards":[{"card":"12011","abilities":[
+              {"trigger":{"timing":"Constant","subject":"this"},
+               "effect":{"grant":{"card":"this","keyword":"health",
+                 "amount":{"countersOn":{"card":"this","counter":"pym"}}}}},
+              {"trigger":{"event":"WhenCardEntersPlay","timing":"Response","subject":"this"},
+               "effect":{"placeCounters":{"card":"this","counter":"response","count":1}}}
+            ]},{"card":"01092","abilities":[{
+              "trigger":{"event":"WhenCardWouldBeDefeated","timing":"Interrupt","subject":"game"},
+              "effect":{"placeCounters":{"card":{"titled":"Ant-Man"},"counter":"pym","count":1}}
+            }]}]}
+            """));
+        var world = ThorActualFixture.Board("06001a", 2);
+        world.Abilities = runner;
+        var observer = world.CreateCard("01092", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(1), cardOwner: 1));
+        var area = world.AreaOf(DeckType.AlliesArea, PlayArea.Of(1), cardOwner: 1);
+        var old = new[] { world.CreateCard("01067", area), world.CreateCard("01068", area),
+            world.CreateCard("01041", area) };
+        var ally = world.CreateCard("12011", world.Seats[0].Hand);
+        CardPlay.PutAllyIntoPlay(world, world.Facts, runner, ally, 1, "synthetic", []);
+        var interrupt = Assert.IsType<Prompt>(Sequence.Work(world, world.Facts, runner, []));
+        var rescue = Assert.Single(interrupt.Affordances, item => item.AnchorId == observer.ObjectId);
+        Sequence.Answer(world, world.Facts, runner, interrupt, Decision.Take(rescue.Id), []);
+        var limit = Assert.IsType<Prompt>(Sequence.Work(world, world.Facts, runner, []));
+        Assert.Equal(Steps.ChooseAllyForLimit, limit.Trigger);
+        Assert.Equal(1, limit.Player);
+        Assert.Contains(limit.Affordances, item => item.AnchorId == ally.ObjectId);
+        Sequence.Answer(world, world.Facts, runner, limit, Decision.Take(ally.ObjectId), []);
+        Assert.Null(Sequence.Work(world, world.Facts, runner, []));
+        Assert.Same(world.AreaOf(DeckType.DiscardPile, PlayArea.Of(0), cardOwner: 0), ally.Area);
+        Assert.All(old, card => Assert.Equal(DeckType.AlliesArea, card.Area.Type));
+        Assert.Equal(0, ally.Tokens.GetValueOrDefault("c_response"));
+        Assert.Empty(world.Agenda.Outstanding);
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
