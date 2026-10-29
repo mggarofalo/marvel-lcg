@@ -226,7 +226,7 @@ public sealed class NextPlayerTurnProhibitionTests
         for (int player = 0; player < players; player++)
         {
             var seat = world.CreateSeat($"p{player}");
-            seat.IdentityCard = world.CreateCard("12001a,12001b,12001c", seat.Hero);
+            seat.IdentityCard = world.CreateCard(player == 0 ? "12001a,12001b,12001c" : "06001a,06001b", seat.Hero);
             for (int i = 0; i < 20; i++) world.CreateCard("01087", seat.Deck);
             world.CreateCard("01087", seat.Hand);
         }

@@ -23765,6 +23765,81 @@
         }
       ],
       "note": "Discard only through the current encounter-deck boundary, then reveal the exact physical Ant-Man nemesis-set card found."
+    },
+    {
+      "card": "12025",
+      "name": "Care for Cassie",
+      "note": "Give to Scott Lang through the printed obligation routing. The discard is not an arrow cost; resolve the lasting prohibition and cleanup even with an empty hand.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "choose": {
+                  "descriptions": [
+                    "Change to alter-ego form",
+                    "Remain in your current form"
+                  ],
+                  "options": [
+                    {
+                      "changeForm": {
+                        "player": "you",
+                        "to": "alter-ego"
+                      }
+                    },
+                    {
+                      "seq": []
+                    }
+                  ]
+                }
+              },
+              {
+                "choose": {
+                  "descriptions": [
+                    "Exhaust Scott Lang and remove Care for Cassie from the game",
+                    "Choose and discard 1 card from your hand; you cannot change form until your next turn ends; discard Care for Cassie"
+                  ],
+                  "options": [
+                    {
+                      "then": {
+                        "effect": {
+                          "exhaust": "yourAlterEgo"
+                        },
+                        "then": {
+                          "removeFromGame": "this"
+                        }
+                      }
+                    },
+                    {
+                      "seq": [
+                        {
+                          "discardHandCards": 1
+                        },
+                        {
+                          "grantUntil": {
+                            "card": "you",
+                            "keyword": "form_change_prohibited",
+                            "amount": 1,
+                            "until": "EndOfNextPlayerTurn"
+                          }
+                        },
+                        {
+                          "discard": "this"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      ]
     }
   ]
 }
