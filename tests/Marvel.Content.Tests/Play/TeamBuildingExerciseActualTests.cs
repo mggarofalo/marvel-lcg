@@ -39,7 +39,7 @@ public sealed class TeamBuildingExerciseActualTests
         Assert.Contains("shown payment is the current cost", game.Pending.Description);
         Assert.False(game.Pending.Cancellable);
         var offer = Assert.Single(game.Pending.Affordances, a => a.AnchorId == matching!.ObjectId);
-        Assert.Contains("reduction of 1", offer.Description);
+        Assert.Contains("This price already includes Team-Building Exercise's reduction of 1", offer.Description);
         Assert.True(offer.PlaysCard);
         Assert.DoesNotContain(game.Pending.Affordances, a => a.AnchorId == other!.ObjectId);
         Assert.Equal("0", Assert.Single(offer.CostOptions).Cost);
@@ -76,7 +76,7 @@ public sealed class TeamBuildingExerciseActualTests
         var offer = Assert.Single(game.Pending!.Affordances, a => a.AnchorId == card!.ObjectId);
         var price = Assert.Single(offer.CostOptions);
         Assert.Equal(cost.ToString(), price.Cost);
-        Assert.Contains("reduction of 1", offer.Description);
+        Assert.Contains("This price already includes Team-Building Exercise's reduction of 1", offer.Description);
         Assert.True(offer.PlaysCard);
         int[] payment = second is null ? [first!.ObjectId] : [first!.ObjectId, second.ObjectId];
         game.Resolve(new Decision(offer.Id, [], payment, Allocations: ResourcePayment.Allocate(price, payment)));

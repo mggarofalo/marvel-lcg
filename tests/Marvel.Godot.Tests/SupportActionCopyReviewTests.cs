@@ -21,6 +21,8 @@ public sealed class SupportActionCopyReviewTests
         Assert.Equal(expected, DecisionCopy.Choice(offer));
     }
 
+    // Synthetic contract: the copy keeps an engine-supplied cost and effect
+    // together; the engine wording itself is proven by content tests.
     [Fact]
     public void MatchingPlayExplainsBothExhaustionAndEffectBeforeCommitment()
     {

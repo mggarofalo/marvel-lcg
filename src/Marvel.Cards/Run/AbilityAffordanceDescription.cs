@@ -41,17 +41,13 @@ internal static class AbilityAffordanceDescription
             ContextCardIds = ContextCards(world, ability),
             WindowChoices = AbilityWindowChoiceDescription.Describe(execution, world, card, found, ability.Player, ability),
             DisplayLabel = caption,
-            CommitLabel = CommitCaption(found.Effect, caption, world, card),
+            CommitLabel = AbilitySourceActionDescription.CommitCaption(found.Effect, caption, world, card),
             PlaysCard = EffectiveCards.Kind(card, world.Facts) == CardKind.Event,
             DeferredTargetSelection = recipients is null && StartsWithTargetSelection(found.Effect),
             DirectRecipientCommit = CanCommitRecipient(recipients, EffectiveCards.Kind(card, world.Facts), found.Trigger.Timing),
             CostDescription = AbilityCostDescription.Summary(world, card, ability.Player, found.Cost),
         };
     }
-
-    private static string? CommitCaption(AbilityEffect effect, string? caption, World world, Card source) =>
-        effect is AbilityEffect.Fixed { Instruction: AbilityFixedInstruction.PlaySharedHeroTraitCard }
-            ? $"Play a matching card with {EffectiveCards.Title(source, world.Facts)}" : caption;
 
     private static int[] ContextCards(World world, PendingAbility ability)
     {
@@ -76,10 +72,7 @@ internal static class AbilityAffordanceDescription
     private static string? Caption(World world, CompiledCardAbility found,
         PendingAbility ability, string? contextual)
     {
-        string? caption = contextual ?? (found.Effect is AbilityEffect.Fixed
-            { Instruction: AbilityFixedInstruction.PlaySharedHeroTraitCard }
-                ? "Play a matching card" : null)
-            ?? AbilitySourceActionDescription.Caption(found.Effect)
+        string? caption = contextual ?? AbilitySourceActionDescription.Caption(found.Effect)
             ?? AbilitySearchDescription.Action(found.Effect);
         if (ability.TriggeringWouldDefeat is { } imminent)
             return $"{caption ?? found.Name} before {EffectiveCards.Title(world.Cards[imminent], world.Facts)} would be defeated";

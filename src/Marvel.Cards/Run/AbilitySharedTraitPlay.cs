@@ -71,7 +71,7 @@ internal static class AbilitySharedTraitPlay
                 offers.Add(new Affordance(card.ObjectId, AbilityStructuralExecution.ChooseVerb,
                     card.ObjectId, seat.Index, card.FaceId,
                     Targets: hosts is null ? null : new TargetRequest(prices.Select(price => price.Target).ToArray(), 1, 1),
-                    Costs: prices, Description: PlayDescription(world, program, card))
+                    Costs: prices, Description: PlayDescription(world, program, card, source))
                 { PlaysCard = true, SelectionSourceId = source.ObjectId });
             }
         }
@@ -84,8 +84,10 @@ internal static class AbilitySharedTraitPlay
         };
     }
 
-    internal static string PlayDescription(World world, AbilityProgram program, Card card) =>
-        "The current cost includes a reduction of 1; other modifiers and minimums may affect the final price."
+    // The engine price already applies every modifier, so the copy only names
+    // this source's share and the floor that can absorb it.
+    internal static string PlayDescription(World world, AbilityProgram program, Card card, Card source) =>
+        $"This price already includes {EffectiveCards.Title(source, world.Facts)}'s reduction of 1 (a cost can't go below 0)."
         + (AbilityEntryCounterDescription.PlaySummary(world, program, card) is { } entry ? $" {entry}" : string.Empty);
 
     private static bool CanPayWithoutSource(World world, Card card, CostOption price, Card source)

@@ -9,6 +9,9 @@ namespace Marvel.View.Tests;
 
 public sealed class ResponseReceiptPresentationTests : EventPresentationTestBase
 {
+    // Synthetic contract: hand-built engine strings prove the view carries them
+    // into headings, costs and receipts. TeamBuildingExerciseActualTests proves
+    // the engine authors them; this is not a played scenario.
     [Fact]
     public void MatchingPlayPromptAndReceiptsKeepReadableEngineMeaning()
     {
@@ -20,7 +23,7 @@ public sealed class ResponseReceiptPresentationTests : EventPresentationTestBase
         var turn = new Prompt(0, Question.TurnOption, TimingPriority.Untimed, "test", "test", true, [action]);
         Assert.Contains("Play a matching card with Team-Building Exercise", DecisionReceiptContext.From(turn, world, 3, [], [])!.Commitment);
         var play = new Affordance(9, "Choose", 9, 0, "03019", Costs: [new CostOption(0, "0")],
-            Description: "The current cost includes a reduction of 1") { PlaysCard = true };
+            Description: "This price already includes Team-Building Exercise's reduction of 1 (a cost can't go below 0).") { PlaysCard = true };
         var child = new Prompt(0, Question.Element, TimingPriority.Untimed, "test", "12024", false, [play])
         { DisplayQuestion = "Choose a matching card to play", ContextCardIds = [8], Description = "Team-Building Exercise was exhausted." };
         var presentation = PromptPresentation.From(child, world);

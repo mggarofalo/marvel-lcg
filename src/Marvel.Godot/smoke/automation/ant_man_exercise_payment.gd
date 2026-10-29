@@ -74,6 +74,8 @@ func _offer_child(source: int, child: int) -> bool:
     var actions: Array = menu.find_children("Menu*Item*", "Button", true, false).filter(func(n):
         return n.is_visible_in_tree() and not n.disabled and "Inspect card" not in n.text)
     if not await ui.expect(func(): return actions.size() == 1, "one offered Exercise action"): return false
+    if not await ui.expect(func(): return "Play a matching card" in _visible_text(menu) and \
+        "12024" not in _visible_text(menu), "Exercise action is named for the player, not by face id"): return false
     if not await _capture_checkpoint("exercise-action"): return false
     if not await ui.click(Locator.control(actions[0])): return false
     if not await ui.expect(func(): return witness.Revision() == 4 and witness.CanResolve() and \
@@ -88,8 +90,11 @@ func _select_child(source: int, child: int, helmet: int, spent_army: int) -> boo
     if choice.all().is_empty():
         if not await ui.click(ui.named("CompleteChoiceSheet")): return false
     if not await ui.expect_visible(choice): return false
-    if not await ui.expect(func(): return "Play Army of Ants · 0" in _visible_text(main) and \
-        Array(payment_witness.DraftResources()).is_empty(), "child offer displays zero cost without resource selection"): return false
+    if not await ui.expect(func(): return "Choose a matching card to play" in _visible_text(main) and \
+        "12024" not in _visible_text(main), "child prompt asks for a matching card without exposing a face id"): return false
+    if not await ui.expect(func(): return _first_caption(choice.all()[0]).begins_with("Play Army of Ants · Pay 0") and \
+        "reduction of 1" in _visible_text(choice.all()[0]) and \
+        Array(payment_witness.DraftResources()).is_empty(), "child offer leads with its zero payment, explains the reduction and selects no resource"): return false
     if not await _capture_checkpoint("exercise-child-payment"): return false
     if not await ui.click(choice): return false
     if not await ui.expect(func(): return witness.Revision() == 5 and witness.DecisionKind() == "PlayerAction" and \
@@ -99,3 +104,7 @@ func _select_child(source: int, child: int, helmet: int, spent_army: int) -> boo
         payment_witness.InArea(spent_army, "DiscardPile", 0) and witness.HandCount() == 2, \
         "zero-cost child enters once, Exercise remains exhausted, and no other hand card is spent"): return false
     return await _capture_checkpoint("exercise-child-result")
+
+func _first_caption(button: Control) -> String:
+    var labels: Array = button.find_children("*", "Label", true, false)
+    return "" if labels.is_empty() else labels[0].text
