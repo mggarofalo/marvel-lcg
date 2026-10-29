@@ -90,11 +90,7 @@ func _select_child(source: int, child: int, helmet: int, spent_army: int) -> boo
     if choice.all().is_empty():
         if not await ui.click(ui.named("CompleteChoiceSheet")): return false
     if not await ui.expect_visible(choice): return false
-    if not await ui.expect(func(): return "Choose a matching card to play" in _visible_text(main) and \
-        "12024" not in _visible_text(main), "child prompt asks for a matching card without exposing a face id"): return false
-    if not await ui.expect(func(): return _first_caption(choice.all()[0]).begins_with("Play Army of Ants · Pay 0") and \
-        "reduction of 1" in _visible_text(choice.all()[0]) and \
-        Array(payment_witness.DraftResources()).is_empty(), "child offer leads with its zero payment, explains the reduction and selects no resource"): return false
+    if not await _expect_child_offer(choice.all()[0]): return false
     if not await _capture_checkpoint("exercise-child-payment"): return false
     if not await ui.click(choice): return false
     if not await ui.expect(func(): return witness.Revision() == 5 and witness.DecisionKind() == "PlayerAction" and \
@@ -105,6 +101,18 @@ func _select_child(source: int, child: int, helmet: int, spent_army: int) -> boo
         "zero-cost child enters once, Exercise remains exhausted, and no other hand card is spent"): return false
     return await _capture_checkpoint("exercise-child-result")
 
+func _expect_child_offer(offer: Control) -> bool:
+    if not await ui.expect(func(): return "Choose a matching card to play" in _visible_text(main) and \
+        "12024" not in _visible_text(main), "child prompt asks for a matching card without exposing a face id"): return false
+    if not await ui.expect(func(): return _first_caption(offer).begins_with("Play Army of Ants · Pay 0") and \
+        "reduction of 1" in _visible_text(offer) and \
+        Array(payment_witness.DraftResources()).is_empty(), "child offer leads with its zero payment, explains the reduction and selects no resource"): return false
+    return await ui.expect(func(): return _caption_weights(offer) == [true, false], \
+        "only the price caption is bold; the explanation reads as body text")
+
 func _first_caption(button: Control) -> String:
     var labels: Array = button.find_children("*", "Label", true, false)
     return "" if labels.is_empty() else labels[0].text
+
+func _caption_weights(button: Control) -> Array:
+    return button.find_children("*", "Label", true, false).map(func(label): return label.has_theme_font_override("font"))

@@ -22,7 +22,8 @@ internal static class DecisionCostLabel
         }
         string accessible = $"{label}. {Accessible(cost)}. {button.TooltipText}";
         button.Text = string.Empty;
-        ResourceIconRendering.ButtonContent(button, end < 0 ? row : WithExplanation(row, label[(end + 1)..]), accessible);
+        // Only the caption row carries control weight; the explanation reads as body copy.
+        ResourceIconRendering.ButtonContent(button, end < 0 ? row : WithExplanation(row, label[(end + 1)..]), accessible, row);
     }
 
     // The price stays on the choice's first line, so explanation lines below it
