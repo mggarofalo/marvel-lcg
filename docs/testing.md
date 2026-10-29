@@ -158,6 +158,11 @@ and exit nonzero on failure. Owner acceptance remains separate from automation.
 
 ### Selecting additional native evidence
 
+`ant-man-public-form-100-reduced` exercises public Ant-Man setup, distinct Tiny/Giant
+choices, menu dismissal, the Giant response and its target through viewport input
+in both native profiles. The manifest runs it headless; inspected rendered
+evidence is recorded in `docs/content/ant-man-native.md`.
+
 `contract-preemptive-strike-100-reduced` runs in both native profiles at 100%,
 1920×1080, one player and reduced motion. It uses a prepared cross-pack scene
 with actual authored 05014 from the full ability book; it does not admit the

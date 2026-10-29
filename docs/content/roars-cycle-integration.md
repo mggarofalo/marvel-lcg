@@ -90,9 +90,18 @@ authority checks; root integration changes only documentation relative to that
 tested tree. The three-face setup prerequisite `55d41d26` is independently
 reviewed at `39a0ae35`, including all 1,230 Rules tests and an actual catalog
 blueprint check. See [admission evidence](ant-man-public-admission.md).
-Characteristic response resolution, fresh-host save/restart/undo/replay, native
-interaction, complete games and final integrated managed/platform checks remain
-required before delivery to main. MARVEL-870 still gates replay publication.
+Public journey source `767691e3` and independent review `a602f39a` now prove the
+pending Giant response through a fresh host, invalid/stale rejection, authorized
+undo/redo and subsequent attack against an uninterrupted control. Seven complete
+public games replay identically; all are defeats, not victory evidence. Source
+passes eight cases and the strengthened independent restart control passes.
+See [public journey evidence](ant-man-public-journey.md). Native `add0dfdf`
+passes headless and inspected rendered public form/response play; its engine
+copy fix removes raw face IDs from destination explanations. See
+[native evidence](ant-man-native.md). The public native case is registered in
+both CI profiles; manifest checks pass three cases, with platform execution still
+pending. Team-Building/Hank payment interaction evidence, final integrated
+managed/platform checks and MARVEL-870 replay publication remain open.
 
 Earlier integration checkpoints below describe the revision tested at that
 point; their older inventory counts and pending tasks are historical.
