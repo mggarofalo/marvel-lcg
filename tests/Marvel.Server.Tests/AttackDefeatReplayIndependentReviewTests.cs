@@ -35,9 +35,11 @@ public sealed class AttackDefeatReplayIndependentReviewTests
                 "digest" => source with { StateDigest = "unknown" },
                 _ => source with { ReplayContract = changed },
             };
-            Assert.Equal("engine-replay-v28", factory.Compatibility.ReplayContract);
-            Assert.NotNull(factory.ContentUpgrade(source));
-            Assert.Null(factory.ContentUpgrade(rejected));
+            Assert.Equal("engine-replay-v29", factory.Compatibility.ReplayContract);
+            var admission = ReplayContractUpgradeTests.Admission(root, factory.Compatibility with
+                { ReplayContract = "engine-replay-v28" });
+            Assert.NotNull(admission.For(source));
+            Assert.Null(admission.For(rejected));
         });
     }
 
@@ -61,7 +63,7 @@ public sealed class AttackDefeatReplayIndependentReviewTests
 
             var current = Assert.Single(store.Load());
             Assert.Equal(factory.Compatibility, current.Save.Compatibility);
-            Assert.Equal("engine-replay-v28", current.Save.Compatibility.ReplayContract);
+            Assert.Equal("engine-replay-v29", current.Save.Compatibility.ReplayContract);
             Assert.Equal(original, StoredSessionJson.Write(current with
                 { Save = current.Save with { Compatibility = previous.Save.Compatibility } }));
             Assert.Equal(session, File.ReadAllBytes(Path.Combine(directory,

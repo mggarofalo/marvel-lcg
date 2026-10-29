@@ -696,7 +696,7 @@ Campaign schema 1 and protocol 37 are strict compatibility boundaries. No
 migration invents missing campaign meaning. Complete content admission is
 required before the host advertises a campaign or starts its first attempt.
 
-The current replay identity is `engine-replay-v28`. Ordinary enemy attacks complete
+The historical replay identity was `engine-replay-v28`. Ordinary enemy attacks complete
 before their defeat responses are offered. Real Black Widow Rapid Response (08031)
 can therefore change prompt and event timing with identical datasets. V27 sources
 have no named admission to v28 and remain unchanged. Exact frozen v19/v20/v21
@@ -776,3 +776,9 @@ records. False is omitted, so existing ordinary prompt records and their replay
 semantics remain unchanged under replay v24 and save schema 7. True is preserved
 when captured. There is no authored ability using this contract in this mechanism
 packet. Public wire support is protocol 38 and rejects protocol 37 peers.
+
+The current replay identity is `engine-replay-v29`. Genuine published v28
+traces diverge in persisted prompt representation and event order under the
+combined candidate; v28 has no production admission and is quarantined unchanged.
+The frozen v19/v20/v21 routes to v29 retain strict verification of the complete
+original history, including any redo suffix. See [replay evidence](content/ant-man-replay-v29.md).
