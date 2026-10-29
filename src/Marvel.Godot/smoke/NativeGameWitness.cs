@@ -21,6 +21,10 @@ public sealed partial class NativeGameWitness : RefCounted
     public int Anchor(string title) => table?.CurrentGame?.World?.Areas.SelectMany(area => area.Cards)
         .FirstOrDefault(card => card.Face?.Title == title)?.Id ?? -1;
 
+    /// <summary>Reports the authorized current face of one physical card.</summary>
+    public string Face(int anchor) => table?.CurrentGame?.World?.Areas.SelectMany(area => area.Cards)
+        .SingleOrDefault(card => card.Id == anchor)?.Face?.Id ?? string.Empty;
+
     /// <summary>Locates a readable face in the requested displayed area when pile copies share its title.</summary>
     public int AreaAnchor(string title, string zone) => table?.CurrentGame?.World?.Areas
         .Where(area => area.Zone == zone).SelectMany(area => area.Cards)
