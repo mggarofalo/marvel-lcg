@@ -28,5 +28,7 @@ bytes were restored; a forced non-incremental rebuild and the same 61 tests pass
 These are authored-row mutations, not compiled engine mutations. Logs are under
 `Source/evidence/pym-actual-{focused,heal-mutant,draw-mutant,restored-build,restored-tests,catalog}.log`.
 
-Independent review and normal commit hooks remain pending. No complete-pack,
-native or replay acceptance is claimed.
+Normal commit hooks passed on `3d16f976`: architecture policy (66 tests),
+complexity and file length. The independent review is recorded in
+`pym-particles-actual-independent-review.md`. No complete-pack, native or
+replay acceptance is claimed.

@@ -2,6 +2,7 @@ using Marvel.Content.Tests.Cards;
 using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
+using Marvel.Rules.Timing;
 using Marvel.Tests;
 using Xunit;
 
@@ -112,6 +113,45 @@ public sealed class PymParticlesCardTests
         Assert.Equal(3, seat.IdentityCard.Damage);
         Assert.Equal(held - 2, seat.Hand.Cards.Count);
         Assert.Equal(DeckType.AlliesArea, played.Area.Type);
+        Assert.False(world.Agenda.IsBusy);
+    }
+
+    [Theory]
+    [InlineData("12001a", 3, 1)]
+    [InlineData("12001c", 1, 0)]
+    [Rule("rr:response.1")]
+    public void ContributingPlayerResolvesActualEffectOnTheirOwnIdentityOrHand(string form, int damage, int draws)
+    {
+        // Players can only trigger responses on cards they control.
+        var runner = AuthoredCards.Runner();
+        var world = ThorActualFixture.Board("06001a", 2);
+        world.Abilities = runner;
+        var first = world.Seats[0];
+        var contributor = world.Seats[1];
+        World.MoveToTop(contributor.IdentityCard, world.AreaOf(DeckType.RemovedArea));
+        contributor.IdentityCard = world.CreateCard("12001a,12001b,12001c", contributor.Hero);
+        contributor.IdentityCard.TurnTo(form);
+        first.IdentityCard.TakeDamage(3);
+        contributor.IdentityCard.TakeDamage(3);
+        for (int n = 0; n < 3; n++) world.CreateCard("01087", contributor.Deck);
+        var played = world.CreateCard("21019", first.Hand);
+        world.Effects.Register(new ContinuousEffect(EffectSource.LastingEffect, "alliance", 1, Affects: played.ObjectId));
+        var spent = world.CreateCard("12006", contributor.Hand);
+        int firstHeld = first.Hand.Cards.Count;
+        int contributorHeld = contributor.Hand.Cards.Count;
+        CardPlay.Play(world, world.Facts, runner, first, played, [spent.ObjectId], []);
+        var prompt = Assert.IsType<Prompt>(Sequence.Work(world, world.Facts, runner, []));
+        Assert.Equal(1, prompt.Player);
+        Assert.NotEqual(DeckType.AlliesArea, played.Area.Type);
+        var response = Assert.Single(prompt.Affordances, item => item.AnchorId == spent.ObjectId);
+        Sequence.Answer(world, world.Facts, runner, prompt, Decision.Take(response.Id), []);
+        Sequence.Finish(world, world.Facts, runner, []);
+        Assert.Equal(3, first.IdentityCard.Damage);
+        Assert.Equal(damage, contributor.IdentityCard.Damage);
+        Assert.Equal(firstHeld - 1, first.Hand.Cards.Count);
+        Assert.Equal(contributorHeld - 1 + draws, contributor.Hand.Cards.Count);
+        Assert.Equal(DeckType.AlliesArea, played.Area.Type);
+        Assert.Equal(DeckType.DiscardPile, spent.Area.Type);
         Assert.False(world.Agenda.IsBusy);
     }
 
