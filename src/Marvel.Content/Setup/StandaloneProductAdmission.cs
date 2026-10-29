@@ -60,6 +60,12 @@ public static class StandaloneProductAdmission
         && setup.HeroNames.Contains("hulk")
         && HulkRecipe.Complete(setup.Hero("hulk"));
 
+    /// <summary>Admits Ant-Man's complete face inventory and published starter.</summary>
+    public static bool AntMan(SetupCatalog setup, CardCatalog cards, IReadOnlySet<string> authored) =>
+        Complete("ant", ["12001a", "12001b", "12001c", .. Enumerable.Range(2, 32).Select(number => $"12{number:000}")], cards, authored)
+        && setup.HeroNames.Contains("ant_man")
+        && AntManRecipe.Complete(setup.Hero("ant_man"));
+
     /// <summary>Admits the complete seven-card Kree Fanatic modular set.</summary>
     public static bool KreeFanatic(SetupCatalog setup, CardCatalog cards, IReadOnlySet<string> authored) =>
         Complete("ron", ["90001", "90002", "90003", "90004", "90005"], cards, authored)

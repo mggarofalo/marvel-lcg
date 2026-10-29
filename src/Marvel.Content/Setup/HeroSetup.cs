@@ -5,7 +5,7 @@ namespace Marvel.Content.Setup;
 /// </summary>
 /// <param name="Name">The printed name, e.g. <c>Spider-Man</c>.</param>
 /// <param name="Hero">
-/// The identity. One entry, and that entry is one card with two faces:
+/// The identity. One entry represents one physical card and its faces, for example:
 /// <c>01001a,01001b</c>. The engine selects its starting alter-ego face by kind.
 /// </param>
 /// <param name="HeroDeck">The identity's signature cards.</param>

@@ -13,7 +13,7 @@ namespace Marvel.Content.Tests.Play;
 public sealed class AntManReprintTests : CoreCardTestBase
 {
     [Fact]
-    public void FourActualFacesAreAdmittedWithoutAdmittingThePack()
+    public void FourReprintedFacesRetainTheirAuthoredInventoryAndResources()
     {
         using var book = JsonDocument.Parse(AuthoredCards.Text);
         var rows = book.RootElement.GetProperty("cards").EnumerateArray().ToArray();

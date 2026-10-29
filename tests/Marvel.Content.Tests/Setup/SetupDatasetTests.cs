@@ -145,26 +145,18 @@ public sealed class SetupDatasetTests
     }
 
     [Fact]
-    public void AHeroOpensAsAnIdentityWithTwoSides()
+    public void AHeroOpensAsOnePhysicalIdentityWithHeroAndAlterEgoFaces()
     {
-        // `rr:identity` -- "each hero has two identities, a hero form and an
-        // alter-ego form", printed as the two sides of one card. The dataset
-        // writes them as one comma-joined entry, which is what
-        // `World.CreateCard` splits.
+        // rr:identity: "each hero has two identities, a hero form and an alter-ego form".
+        // The Ant-Man pack adds a second hero face to the same physical identity.
         foreach (var (name, hero) in Heroes())
         {
+            Assert.Single(hero.Hero);
             var faces = hero.Hero.SelectMany(Faces).ToList();
-
-            Assert.True(
-                faces.Count == 2,
-                $"heroes.{name} has {faces.Count} identity faces, not 2");
-
-            // Hero side first. `rr:appendix-ii-setup.step.2` has each player
-            // "choose a hero and place it hero-side faceup", so the order the
-            // dataset writes them in is the order they are dealt.
+            Assert.Equal(name == "ant_man" ? 3 : 2, faces.Count);
             Assert.Equal(CardKind.Hero, Cards.Kind(faces[0]));
-
             Assert.Equal(CardKind.AlterEgo, Cards.Kind(faces[1]));
+            if (name == "ant_man") Assert.Equal(CardKind.Hero, Cards.Kind(faces[2]));
         }
     }
 

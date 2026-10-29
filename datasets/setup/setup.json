@@ -3204,7 +3204,7 @@
   "counts": {
     "campaigns": 39,
     "encounter_sets": 15,
-    "heroes": 13
+    "heroes": 14
   },
   "encounter_sets": {
     "running_interference": {
@@ -4099,6 +4099,67 @@
         "10028"
       ],
       "nemesis_set_icon": "hulk_nemesis"
+    },
+    "ant_man": {
+      "name": "Ant-Man",
+      "hero": [
+        "12001a,12001b,12001c"
+      ],
+      "hero_deck": [
+        "12002",
+        "12003",
+        "12003",
+        "12004",
+        "12005",
+        "12005",
+        "12006",
+        "12006",
+        "12007",
+        "12007",
+        "12007",
+        "12008",
+        "12009",
+        "12009",
+        "12010"
+      ],
+      "player_deck": [
+        "12011",
+        "12012",
+        "12013",
+        "12014",
+        "12015",
+        "12015",
+        "12015",
+        "12016",
+        "12016",
+        "12016",
+        "12017",
+        "12017",
+        "12017",
+        "12018",
+        "12018",
+        "12018",
+        "12019",
+        "12019",
+        "12020",
+        "12021",
+        "12022",
+        "12023",
+        "12024",
+        "12024",
+        "12024"
+      ],
+      "obligations": [
+        "12025"
+      ],
+      "nemesis_set": [
+        "12026",
+        "12027",
+        "12028",
+        "12028",
+        "12029"
+      ],
+      "nemesis_set_icon": "ant_nemesis"
     }
   },
   "note": "Authored scenario, hero, and encounter-set setup recipes, admitted by complete-product runtime gates: what a scenario is dealt from is printed in its rules insert rather than on any card, so there is nothing to derive it from and no upstream to copy it from. Gated by SetupDatasetTests -- see datasets/setup/UPSTREAM.md.",
