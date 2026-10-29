@@ -67,7 +67,7 @@ internal sealed class AntManRestartJourney
         string state = Observation();
         var rejected = Host.Exchange(EngineRequest.ResolveGame("rejected-" + stale,
             gameId, capability, answer, Current.Revision - (stale ? 1 : 0)));
-        Assert.NotNull(rejected.Error);
+        Assert.Equal(stale ? "stale_decision" : "invalid_decision", rejected.Error?.Code);
         Assert.Equal(bytes, Stored());
         Assert.Equal(state, Observation());
     }
