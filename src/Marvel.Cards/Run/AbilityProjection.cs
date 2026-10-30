@@ -47,6 +47,7 @@ internal static class AbilityProjection
             or AbilityCardQuery.VillainAndMinionsEngagedWithYou or AbilityCardQuery.MinionsEngagedWithYou
             or AbilityCardQuery.EnemiesEngagedWithChosenPlayer or AbilityCardQuery.UpgradesYouControl
             or AbilityCardQuery.SupportsYouControl or AbilityCardQuery.UpgradesAndSupportsYouControl
+            or AbilityCardQuery.AlliesAndSupportsYouControl
             or AbilityCardQuery.CardsYouControl or AbilityCardQuery.OtherVillainSideSchemes or AbilityCardQuery.ActiveVillainSideScheme or AbilityCardQuery.VillainOfAttachedScheme
             || AbilityEncounterSchemeQueries.IsRanked(query.Kind),
         _ => false,

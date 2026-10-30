@@ -149,6 +149,8 @@ internal sealed class AbilitySelectorEvaluation(
         AbilityPlayer.Defeater => AbilityCardQueries.DefeatingPlayer(context),
         AbilityPlayer.TriggerPlayer => context.Occurrence.Player,
         AbilityPlayer.EngagedPlayer => context.Source.Area.PlayArea.Player,
+        AbilityPlayer.ActivatedOrEngagedPlayer => AbilityCardQueries.ActivatedAgainst(context.World, context.Source)
+            ?? context.Source.Area.PlayArea.Player,
         _ => throw new InvalidOperationException("Unknown player relation"),
     };
 

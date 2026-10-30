@@ -66,6 +66,8 @@ public enum AbilityCardQuery
     YourAsidePile,
     /// <summary>The authored upgradesAndSupportsYouControl relation.</summary>
     UpgradesAndSupportsYouControl,
+    /// <summary>The authored alliesAndSupportsYouControl relation.</summary>
+    AlliesAndSupportsYouControl,
     /// <summary>The authored identitySpecificInYourHand relation.</summary>
     IdentitySpecificInYourHand,
     /// <summary>The authored supportsYouControl relation.</summary>

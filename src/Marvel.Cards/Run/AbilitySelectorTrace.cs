@@ -90,6 +90,9 @@ internal static class AbilitySelectorTrace
                 or AbilityCardQuery.UpgradesAndSupportsYouControl
         } => [.. cast.World.Areas.Where(area => area.Type is DeckType.UpgradesArea or DeckType.SupportsArea)
             .SelectMany(area => area.Cards)],
+        AbilityCardSelection.Query { Kind: AbilityCardQuery.AlliesAndSupportsYouControl } =>
+            [.. cast.World.Areas.Where(area => area.Type is DeckType.AlliesArea or DeckType.SupportsArea)
+                .SelectMany(area => area.Cards)],
         _ => [.. Every(selector, cast)],
     };
 

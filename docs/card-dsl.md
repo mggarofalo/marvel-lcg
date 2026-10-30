@@ -557,7 +557,8 @@ query, selector, and value names. This compact index is intentionally exhaustive
 language without documentation.
 
 ```text
-addToHand afterActivation allies alliesYouControl alsoAttackEachOtherHero among
+addToHand afterActivation allies alliesAndSupportsYouControl alliesYouControl
+alsoAttackEachOtherHero among
 atLeast attachedToThis attackDamaged attackableEnemies attackableMinions
 automaticTarget canAutomaticThwart canLegalPractice
 canMakeTheCall cancelOccurrence cancelWhenRevealed cardsIn changeForm characters
@@ -1034,8 +1035,9 @@ play. Other grants and losses on those environments participate in the same
 constant-effect fixed point. Leaving play ends that environment's contribution;
 independent trait grants remain. This operation does not copy abilities.
 Encounter discard searches distinguish `then: reveal`, `putIntoPlayFirstPlayer`,
-`putIntoPlay` (the printed encounter destination without When Revealed), and
-`attachToThis` (the resolving source overrides the attachment's printed host).
+`putIntoPlay` (the printed encounter destination without When Revealed),
+`putIntoPlayEngaged` (engaged with the required `player`, without When Revealed),
+and `attachToThis` (the resolving source overrides the attachment's printed host).
 Their `kind` also accepts `attachment` and `environment`.
 
 Card ranking accepts `remainingHealth`, including current HP modifiers and damage,
@@ -1049,6 +1051,11 @@ Deck arrow costs use `discardTop: { from: "yourDeck" | "encounterDeck", count: N
 recipient differs from the resolving player. `attachCards: {cards, host}` attaches
 selected encounter attachments to the specified host without revealing them or
 re-running their printed host selection.
+
+`{"query":"alliesAndSupportsYouControl"}` selects the allies and supports in the
+resolving player's play area (rr:you-your.10), excluding other players' cards,
+upgrades and identities. Its spelling is an engine choice, parallel to
+`upgradesAndSupportsYouControl`.
 
 `floorDiv` takes a numeric `value` and a positive integer `divisor`, returning
 mathematical floor division. Stall Tactics uses complete pairs of delay counters.
@@ -1078,6 +1085,11 @@ cards only; upgrades and status cards are different types (ruling:81bce25b60d865
 `releaseBeneath` optionally takes `rescue: "true"` for CAPTIVE allies: the player credited with the triggering defeat becomes their physical owner, the campaign records that rescue when present, and they enter that player's hand before host removal. Ordinary release preserves each card's existing owner.
 
 The player relation `defeater` reads the triggering defeat's credited seat, including when a scenario-owned When Defeated ability has no resolving player. It refuses an uncredited defeat rather than choosing the first player.
+
+The player relation `activatedOrEngagedPlayer` reads the seat the source is
+activating against while it is the activating enemy, and its engaged player
+otherwise. Ruling 13454feafb65378b reads Kang (Master of Time)'s "your play
+area" this way. Its spelling is an engine choice.
 
 ### Trait-qualified Avengers costs
 
@@ -1128,7 +1140,7 @@ and enters-play lifecycle, and resumes the containing ability after that work.
 A `chosen` ally retains its new entry provenance for a later instruction; if it
 leaves during entry responses, that instruction cannot affect a returned copy.
 
-`WhenPlayerTurnEnds` is the active player's end-of-turn occurrence, before advancing to the next player. Its player binding identifies that player. `inPlayerArea` accepts `identity` for the identity occupying the selected player's play area; encounter constants can select `engagedPlayer` without assuming player ownership.
+`WhenPlayerTurnEnds` is the active player's end-of-turn occurrence, before advancing to the next player. Its player binding identifies that player. `inPlayerArea` accepts `identity` for the identity occupying the selected player's play area and `obligations` for the obligations in it (rr:obligation.5 places a revealed obligation there); encounter constants can select `engagedPlayer` without assuming player ownership.
 `distributeThreat` takes `schemes` and a positive integer `amount`. It allocates a total threat removal through the engine repeated-target contract, caps each scheme at its removable threat, applies event modifiers to the total once, and schedules one thwart with one removal instance per assigned scheme. Its ordered assignments remain in the existing power continuation for deterministic replay.
 
 
