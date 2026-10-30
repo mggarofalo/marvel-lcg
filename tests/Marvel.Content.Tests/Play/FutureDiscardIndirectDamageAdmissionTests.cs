@@ -85,6 +85,57 @@ public sealed class FutureDiscardIndirectDamageAdmissionTests
         Assert.Equal(2, world.AreaOf(DeckType.EncounterDeck).Cards.Count);
     }
 
+    [Theory]
+    [InlineData("01121", 0)]
+    [InlineData("02042", 2)]
+    [InlineData("02041", 3)]
+    [Rule("rr:cost-arrow-icon")]
+    [Rule("rr:target.3.3")]
+    public void SequenceCostDiscardAdmitsUnknownIndirectDamageAndResolvesTheActualReceipt(string face, int expected)
+    {
+        // rr:cost-arrow-icon: the cost "must be paid and/or resolved in full before the text
+        // after the cost arrow icon can be resolved"; rr:target.3.3: "The cost of an ability
+        // ... is not considered when determining if that ability ... can affect a target."
+        // A deck discard in any step of a combined cost supplies the receipt the effect reads.
+        var runner = Response(Damage, $$"""{"seq":[{"exhaust":"this"},{{Discard}}]}""");
+        var (world, source, occurrence) = Board(runner, face);
+        string digest = world.Digest().Canonical();
+        long words = world.Random.Generator.WordsConsumed;
+        var offered = Assert.Single(runner.Waiting(world, occurrence, WindowKind.Response));
+        Assert.Equal(source.ObjectId, offered.Card);
+        Assert.Equal(digest, world.Digest().Canonical());
+        Assert.Equal(words, world.Random.Generator.WordsConsumed);
+
+        runner.ResolveWindow(world, occurrence, offered, Decision.Take(offered.Card));
+        Sequence.Finish(world, world.Facts, runner, []);
+        Assert.False(source.Ready);
+        Assert.Equal(expected, world.Seats[1].IdentityCard.Damage);
+        Assert.Equal(0, world.Seats[0].IdentityCard.Damage);
+        Assert.Single(world.AreaOf(DeckType.EncounterDeck).Cards);
+        Assert.Equal(face, Assert.Single(world.AreaOf(DeckType.EncounterDiscardPile).Cards).FaceId);
+    }
+
+    [Theory]
+    [InlineData("exhaust")]
+    [InlineData("dealEncounterCard")]
+    [Rule("rr:target.2")]
+    public void SequenceCostWithoutADiscardDoesNotCreateATarget(string shape)
+    {
+        // "... can only be initiated if it has at least one valid target." Neither cost
+        // discards a card, so the effect has no receipt and deals no damage. A deck discard
+        // cost always names a positive count, which the cost grammar enforces.
+        string second = shape == "exhaust" ? "" : """,{"dealEncounterCard":"you"}""";
+        var runner = Response(Damage, $$"""{"seq":[{"exhaust":"this"}{{second}}]}""");
+        var (world, source, occurrence) = Board(runner, "02041");
+        string digest = world.Digest().Canonical();
+        long words = world.Random.Generator.WordsConsumed;
+        Assert.Empty(runner.Waiting(world, occurrence, WindowKind.Response));
+        Assert.Equal(digest, world.Digest().Canonical());
+        Assert.Equal(words, world.Random.Generator.WordsConsumed);
+        Assert.True(source.Ready);
+        Assert.Equal(2, world.AreaOf(DeckType.EncounterDeck).Cards.Count);
+    }
+
     [Fact]
     public void UnsafeSuffixIsRejectedBeforeDiscardOrDamageCommits()
     {
@@ -107,11 +158,15 @@ public sealed class FutureDiscardIndirectDamageAdmissionTests
         Assert.Equal(0, world.Seats[1].IdentityCard.Damage);
         Assert.Empty(world.AreaOf(DeckType.EncounterDiscardPile).Cards);
     }
-    private static AbilityRunner Response(string effect) => new(AbilityCatalog.Parse($$"""
-        {"cards":[{"card":"02042","abilities":[{
-          "trigger":{"event":"WhenAttackEnds","timing":"ForcedResponse","actor":"this","player":"trigger.player"},
-          "effect":{{effect}}}]}]}
-        """));
+    private static AbilityRunner Response(string effect, string? cost = null)
+    {
+        string costField = cost is null ? "" : $$""","cost":{{cost}}""";
+        return new(AbilityCatalog.Parse($$"""
+            {"cards":[{"card":"02042","abilities":[{
+              "trigger":{"event":"WhenAttackEnds","timing":"ForcedResponse","actor":"this","player":"trigger.player"},
+              "effect":{{effect}}{{costField}}}]}]}
+            """));
+    }
 
     private static (World World, Card Source, Occurrence Occurrence) Board(AbilityRunner runner, string face)
     {
