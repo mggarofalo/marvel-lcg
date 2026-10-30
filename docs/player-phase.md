@@ -107,7 +107,7 @@ the eliminated player.
 |---|---|
 | 1. discard cards and come down to hand size | one prompt per nonempty hand, in player order |
 | 2. draw up to hand size | one simultaneous table step |
-| 3. ready all cards | one simultaneous table step, including encounter cards |
+| 3. ready all cards | one simultaneous table step, including encounter cards, after any observed would-ready window |
 | 4. expire effects ending with the phase | `PhaseEnd.EndPlayerPhase` |
 | 5. resolve abilities triggered by the phase ending | the phase-end occurrence |
 

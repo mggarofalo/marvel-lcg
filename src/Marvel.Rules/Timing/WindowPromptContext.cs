@@ -19,7 +19,7 @@ internal static class WindowPromptContext
                 + $"Current {use.Field} bonus: {use.Bonus}. Resolve an interrupt or pass before the power resolves.",
             ContextCardIds = [use.Actor, occurrence.Target],
         };
-        if (occurrence.Threat is { } threat) return Threat(world, threat, prompt);
+        if (Imminent(world, occurrence, prompt) is { } imminent) return imminent;
         if (occurrence.Is(Steps.CardRevealed) && occurrence.Subject >= 0
             && world.Cards[occurrence.Subject] is { FaceUp: true } card)
         {
@@ -47,6 +47,23 @@ internal static class WindowPromptContext
             DisplayQuestion = $"{hero} is defending — interrupt?",
             Description = $"{hero} is defending against {enemy}. Resolve an interrupt or pass to continue.",
             ContextCardIds = [occurrence.Actor, occurrence.Target],
+        };
+    }
+
+    private static Prompt? Imminent(World world, Occurrence occurrence, Prompt prompt) =>
+        occurrence.Threat is { } threat ? Threat(world, threat, prompt)
+            : occurrence.Readying is { } readying ? Readying(world, readying, prompt) : null;
+
+    private static Prompt Readying(World world, CardReadyBatch readying, Prompt prompt)
+    {
+        var cards = readying.Targets.Select(target => world.Cards[target])
+            .Where(card => readying.WouldReady(world, card)).ToArray();
+        string titles = string.Join(", ", cards.Select(card => EffectiveCards.Title(card, world.Facts)));
+        return prompt with
+        {
+            DisplayQuestion = $"{titles} would ready — interrupt?",
+            Description = $"{titles} would ready. Resolve an interrupt or pass before readying.",
+            ContextCardIds = [.. cards.Select(card => card.ObjectId)],
         };
     }
 

@@ -45,10 +45,13 @@ public static class UndamagedDefenseReady
 
     internal static void Resolve(World world, ContinuousEffect effect, string condition, List<GameEvent> events)
     {
-        var hero = UndamagedHero(world, effect);
-        if (hero is null || !CanReady(world, hero, effect)) return;
-        hero.Refresh();
-        events.Add(new FieldSet(hero.ObjectId, "is_exhaust", 1, 0) { Trigger = condition, Verb = "Ready" });
+        if (UndamagedHero(world, effect) is not { } hero) return;
+        var source = world.Cards[effect.Card!.Value];
+        if (!CardReadying.CanReady(world, hero, source)) return;
+        // rr:delayed-effect.1 resolves this "before responses to that point or
+        // condition may be used"; an observed would-ready window is scheduled
+        // ahead of the attack-end response window for the same reason.
+        CardReadying.Ready(world, new CardReadyBatch([hero], source, condition), events);
     }
 
     private static Card? UndamagedHero(World world, ContinuousEffect effect)
@@ -65,8 +68,4 @@ public static class UndamagedDefenseReady
     private static bool TookDamage(EnemyAttack attack, ContinuousEffect effect, int id) =>
         attack.ReceivedDamage.Any(item => item.Recipient.Card == id
             && item.Recipient.Incarnation == effect.TargetIncarnation);
-
-    private static bool CanReady(World world, Card hero, ContinuousEffect effect) =>
-        !hero.Ready && ReadinessPermissions.CanReady(world, hero)
-        && world.ReadinessAbilities.CanReady(world, hero, world.Cards[effect.Card!.Value]);
 }

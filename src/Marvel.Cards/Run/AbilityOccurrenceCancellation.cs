@@ -29,6 +29,10 @@ internal static class AbilityOccurrenceCancellation
         // rr:then.2: "If the pre-”then” text of an effect does not fully resolve,
         // the post-”then” text does not attempt to resolve."
         if (!world.Agenda.IsOutstanding(occurrence)) return false;
+        // A would-ready occurrence can hold several cards' readies; replaceReady
+        // replaces one of them. Cancelling all of them is not implemented.
+        if (occurrence.Readying is not null)
+            throw new RulesNotImplementedException("cancelling a whole would-ready occurrence is not implemented");
         world.Agenda.Cancel(occurrence);
         return true;
     }
