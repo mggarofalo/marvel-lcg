@@ -174,6 +174,7 @@ internal static class AbilityPlayerBindingAnalysis
         AbilityEffect.ChooseCardsToHand group => Contains(group.From),
         AbilityEffect.ReleaseBeneath or AbilityPricingEffect.IncreaseNextEventCost => false,
         AbilityEffect.StoreBeneath store => Contains(store.Cards) || Contains(store.Host),
+        AbilityEffect.StoreDeckTopBeneath => true,
         AbilityEffect.InitializeAuxiliaryDeck initialize => Contains(initialize.Cards),
         AbilityEffect.RevealAuxiliaryTop => false,
         AbilityEffect.Shuffle shuffle => shuffle.Area == AbilitySearchArea.YourDeck,

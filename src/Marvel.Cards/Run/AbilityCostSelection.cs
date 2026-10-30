@@ -67,11 +67,18 @@ internal static class AbilityCostSelection
         [.. world.Seats[player].Hand.Cards.Where(card => card != source)];
 
     // rr:wild-resource.3: outside a cost being generated, a wild icon is not another type,
-    // so a typed discard needs that printed icon (ruling:437680ffd6d92fb8).
+    // so a typed discard needs that printed icon (ruling:437680ffd6d92fb8). A classed
+    // discard needs that printed classification.
     internal static IReadOnlyList<Card> HandCandidates(World world, Card source, int player, AbilityCost? cost) =>
-        HandDiscard(cost)?.Resource is { } resource
-            ? [.. HandCandidates(world, source, player).Where(card =>
-                Resources.GeneratedBy(card.FaceId, world.Facts).Contains(resource))]
+        HandDiscard(cost)?.Filter is { } filter
+            ? [.. HandCandidates(world, source, player).Where(card => filter switch
+            {
+                AbilityHandFilter.PrintedResource printed =>
+                    Resources.GeneratedBy(card.FaceId, world.Facts).Contains(printed.Resource),
+                AbilityHandFilter.PrintedClass printed =>
+                    CardClassification.Is(world.Facts, card.FaceId, printed.Class),
+                _ => throw new InvalidOperationException("Unknown hand-discard filter"),
+            })]
             : HandCandidates(world, source, player);
 
     private static AbilityCost.DiscardFromHand? HandDiscard(AbilityCost? cost) => cost switch

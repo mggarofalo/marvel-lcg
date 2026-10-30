@@ -41,6 +41,7 @@ internal static class AbilityAdmissionAreaDependencies
         typeof(AbilityEffect.PlaceAtRandom), typeof(AbilityEffect.Search),
         typeof(AbilityEffect.PutIntoPlay), typeof(AbilityEffect.PlaceCounters),
         typeof(AbilityEffect.RemoveCounters), typeof(AbilityEffect.StoreBeneath), typeof(AbilityEffect.AttachCards),
+        typeof(AbilityEffect.StoreDeckTopBeneath),
     ];
 
     private static readonly ImmutableArray<Type> NumberDependencyTypes =
@@ -166,8 +167,8 @@ internal static class AbilityAdmissionAreaDependencies
                 CollectCardsInDependencies(attach.Host, context, areas);
                 CollectCardsInDependencies(attach.Cards, context, areas);
                 break;
-            case AbilityEffect.StoreBeneath store:
-                CollectCardsInDependencies(store.Host, context, areas);
+            case AbilityEffect.StoreBeneath or AbilityEffect.StoreDeckTopBeneath:
+                CollectCardsInDependencies(StorageHost(effect), context, areas);
                 break;
             case AbilityEffect.DelayedDiscard delayed:
                 CollectCardsInDependencies(delayed.Card, context, areas);
@@ -196,6 +197,13 @@ internal static class AbilityAdmissionAreaDependencies
                 throw new InvalidOperationException("Unknown card-mutation area dependency");
         }
     }
+
+    private static AbilityCardSelection StorageHost(AbilityEffect effect) => effect switch
+    {
+        AbilityEffect.StoreBeneath store => store.Host,
+        AbilityEffect.StoreDeckTopBeneath store => store.Host,
+        _ => throw new InvalidOperationException("Unknown beneath-storage effect"),
+    };
 
     private static void CollectNumberDependencies(
         AbilityEffect effect, AbilityAdmissionContext context,

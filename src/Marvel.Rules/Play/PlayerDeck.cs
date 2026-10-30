@@ -52,6 +52,33 @@ public static class PlayerDeck
         return discarded;
     }
 
+    /// <summary>Stores cards from the top of a player's deck facedown beneath a host.</summary>
+    /// <remarks>
+    /// Ruling a31d988626f0879e (Stolen Memories): with fewer cards in the
+    /// deck than the count, "you would continue placing cards from the newly
+    /// shuffled deck". The reset of <c>rr:player-deck.1</c> deals the encounter
+    /// card as the deck empties, as it does between draws. <c>rr:player-deck.4</c>:
+    /// with an empty discard pile there is no new deck, and placement stops; a
+    /// deck is never empty beside a nonempty discard pile, so placement starts
+    /// from the current deck.
+    /// </remarks>
+    public static IReadOnlyList<Card> StoreTopBeneath(
+        World world, int player, int count, Card host, string trigger, List<GameEvent> events)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(events);
+        var deck = world.Seats[player].Deck;
+        var stored = new List<Card>();
+        for (int placed = 0; placed < count && deck.Cards.Count > 0; placed++)
+        {
+            var card = deck.Cards[^1];
+            BeneathCards.Place(world, card, host, faceUp: false, trigger, events);
+            stored.Add(card);
+            Reset(world, player, events);
+        }
+        return stored;
+    }
+
     /// <summary>Discard from the current deck until a printed identity-set card is discarded.</summary>
     /// <remarks>
     /// rr:player-deck.3: "no further cards are discarded from the newly shuffled deck."

@@ -63,7 +63,8 @@ internal sealed class AbilityOfferQueries
         int index = AbilityAvailability.IndexOf(program, card, ability);
         if (!MayInitiate(world, ability, card, player)
             || !AbilityAvailability.Available(world, card, ability, index, occurrence)
-            || !InForm(world, player, ability.Trigger.Form)) return null;
+            || !InForm(world, player, ability.Trigger.Form)
+            || ObligationAlterEgoActionProhibited(world, card, ability, player)) return null;
 
         var context = TurnAction(world, card, player, occurrence, ability.Cost);
         if (ability.When is { } condition && !context.Evaluator().Test(condition)) return null;
@@ -190,6 +191,12 @@ internal sealed class AbilityOfferQueries
             Power: null);
     }
 
+    private static bool ObligationAlterEgoActionProhibited(
+        World world, Card card, CompiledCardAbility ability, int player) =>
+        ability.Trigger.Form == Forms.AlterEgo
+        && EffectiveCards.Kind(card, world.Facts) == CardKind.Obligation
+        && !ObligationActionPermissions.CanTriggerAlterEgoAction(world, player);
+
     private static bool InForm(World world, int player, string? form) =>
         form is null || Forms.In(world, world.Seats[player], world.Facts, form);
 
@@ -197,7 +204,8 @@ internal sealed class AbilityOfferQueries
     {
         if (EffectiveCards.Kind(card, world.Facts) == CardKind.Event
             && (!CardPlayOrigin.CanPlayEvent(world, card, player)
-                || !CardPlayLegality.TeamedUp(world, world.Facts, card))) return false;
+                || !CardPlayLegality.TeamedUp(world, world.Facts, card)
+                || !HeroSpecificPlayPermissions.CanPlay(world, card, player))) return false;
         bool cardPermits = AbilityCardQueries.ControllerOf(world, card) == player
             || card.Owner == World.Scenario || ability.AnyPlayer;
         return cardPermits && (RestrictedPlayer(world, ability, card) is not { } restricted

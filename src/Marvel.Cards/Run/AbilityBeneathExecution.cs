@@ -7,6 +7,18 @@ namespace Marvel.Cards.Run;
 
 internal static class AbilityBeneathExecution
 {
+    internal static AbilityDeckAndRevealResult Run(AbilityEffect.StoreDeckTopBeneath store, AbilityDeckAndRevealContext context)
+    {
+        var selection = new AbilitySelectorEvaluation(context.Expressions.Bindings);
+        var hostResult = selection.Result(selection.Find(store.Host));
+        foreach (var observation in hostResult.Information)
+            context.World.RecordInformation(observation);
+        var host = hostResult.Value ?? throw new RulesNotImplementedException("stored cards have no bound host");
+        var stored = PlayerDeck.StoreTopBeneath(
+            context.World, context.Player, store.Count, host, context.Trigger, context.Events);
+        return new(true, stored.Count > 0, null, ImmutableDictionary<string, long>.Empty);
+    }
+
     internal static AbilityDeckAndRevealResult Run(AbilityEffect.StoreBeneath store, AbilityDeckAndRevealContext context)
     {
         var selection = new AbilitySelectorEvaluation(context.Expressions.Bindings);

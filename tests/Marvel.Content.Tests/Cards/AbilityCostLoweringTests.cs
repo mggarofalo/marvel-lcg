@@ -77,8 +77,8 @@ public sealed class AbilityCostLoweringTests
     {
         var discard = Assert.IsType<AbilityCost.DiscardFromHand>(Lower("""{"discardResourceFromHand":"R"}"""));
         Assert.Equal(new AbilityCostRange.Exact(1), discard.Range);
-        Assert.Equal('R', discard.Resource);
-        Assert.Null(Assert.IsType<AbilityCost.DiscardFromHand>(Lower("""{"discardFromHand":1}""")).Resource);
+        Assert.Equal(new AbilityHandFilter.PrintedResource('R'), discard.Filter);
+        Assert.Null(Assert.IsType<AbilityCost.DiscardFromHand>(Lower("""{"discardFromHand":1}""")).Filter);
     }
 
     [Theory]

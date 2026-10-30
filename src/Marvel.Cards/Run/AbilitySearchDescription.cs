@@ -1,4 +1,5 @@
 using Marvel.Cards.Dsl;
+using Marvel.Rules.State;
 
 namespace Marvel.Cards.Run;
 
@@ -66,7 +67,8 @@ internal static class AbilitySearchDescription
                 area.Kind is { } kind ? $"the {title} {kind.ToString().ToLowerInvariant()}" : title,
             AbilityCardSelection.InAreas { Title: null } area when SearchExtent(area) is not null =>
                 Article(string.Join(" ", new[] { area.AspectOnly ? "aspect" : null,
-                    area.CardClass == "Hero" ? "hero-specific" : area.CardClass?.ToLowerInvariant(), area.Trait?.Replace('_', ' '),
+                    area.CardClass is { } printedClass ? CardClassification.Describe(printedClass).ToLowerInvariant() : null,
+                    area.Trait?.Replace('_', ' '),
                     area.Kind?.ToString().ToLowerInvariant() ?? "card" }.Where(value => value is not null))),
             _ => null,
         };

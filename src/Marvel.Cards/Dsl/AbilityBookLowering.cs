@@ -66,22 +66,19 @@ internal static class AbilityBookLowering
         AbilityStagedAttackLowering.ValidatePlacement(effect, location);
         var address = new AbilityEffectAddress(ability.Card, ordinal, "effect");
         Index(effect, address, effects);
-        AbilityStoragePermissionLowering.Validate(ability, effect, location, effects
-            .Where(pair => pair.Key.Card == ability.Card && pair.Key.Ability == ordinal).Select(pair => pair.Value));
-        AbilitySelfPlayCostLowering.Validate(ability, effect, location, effects
-            .Where(pair => pair.Key.Card == ability.Card && pair.Key.Ability == ordinal).Select(pair => pair.Value));
-        AbilityAllyCostLowering.Validate(ability, effect, location, effects
-            .Where(pair => pair.Key.Card == ability.Card && pair.Key.Ability == ordinal).Select(pair => pair.Value));
+        var nodes = OwnNodes(effects, ability.Card, ordinal);
+        AbilityStoragePermissionLowering.Validate(ability, effect, location, nodes);
+        AbilitySelfPlayCostLowering.Validate(ability, effect, location, nodes);
+        AbilityAllyCostLowering.Validate(ability, effect, location, nodes);
         AbilityBasicUseLowering.Validate(ability, effect, location);
         AbilityAttackKeywordLowering.Validate(ability, ordinal, effects, location);
-        AbilityExcessDamageLowering.Validate(ability, effect, location, effects
-            .Where(pair => pair.Key.Card == ability.Card && pair.Key.Ability == ordinal).Select(pair => pair.Value));
+        AbilityExcessDamageLowering.Validate(ability, effect, location, nodes);
         var compiledCost = ability.Cost is { } syntaxCost
             ? LowerCost(Syntax(syntaxCost), location with { Path = "cost" }) : null;
         AbilityDiscardChoiceLowering.Validate(ability, compiledCost, effect, location);
         AbilitySchemeChoiceLowering.Validate(ability, compiledCost, effect, location);
-        AbilitySharedTraitPlayLowering.Validate(ability, compiledCost, effect, location, effects
-            .Where(pair => pair.Key.Card == ability.Card && pair.Key.Ability == ordinal).Select(pair => pair.Value));
+        AbilitySharedTraitPlayLowering.Validate(ability, compiledCost, effect, location, nodes);
+        AbilityRevealMemoryLowering.Validate(ability, location, nodes);
         return new CompiledCardAbility(ability.Card, ability.Name, ability.Trigger, effect,
         compiledCost,
         ability.When is { } when ? LowerCondition(Syntax(when), location with { Path = "when" }) : null,
@@ -93,6 +90,10 @@ internal static class AbilityBookLowering
         PrintedCostResource = AbilityPrintedCostResource.Validate(ability),
     };
     }
+
+    private static List<AbilityEffect> OwnNodes(
+        ImmutableDictionary<AbilityEffectAddress, AbilityEffect>.Builder effects, string card, int ordinal) =>
+        [.. effects.Where(pair => pair.Key.Card == card && pair.Key.Ability == ordinal).Select(pair => pair.Value)];
 
     private static ImmutableDictionary<string, AbilityCardSelection> LowerAttachments(
         IReadOnlyDictionary<string, AbilityValue>? attachTo)

@@ -181,8 +181,16 @@ internal sealed class AbilitySelectorEvaluation(
                 context.World.Facts.Attributes(card.FaceId).GetValueOrDefault("Class"), StringComparison.Ordinal))
             .Where(card => selection.Kind is null || EffectiveCards.Kind(card, context.World.Facts) == selection.Kind)
             .Where(card => selection.Trait is null || Rules.State.Traits.Has(context.World, card, selection.Trait, context.World.Facts))
-            .Where(card => selection.Title is null || string.Equals(context.World.Facts.Title(card.FaceId), selection.Title, StringComparison.Ordinal))];
+            .Where(card => selection.Title is null || string.Equals(context.World.Facts.Title(card.FaceId), selection.Title, StringComparison.Ordinal))
+            .Where(card => !selection.DifferentTitleFromRevealed || !RevealedTitle(card))];
     }
+
+    private bool RevealedTitle(Card card) => (context.RevealedThisResolution
+        ?? throw new RulesNotImplementedException(
+            "differentTitleFromRevealed outside an ability invocation has no reveals to compare"))
+        .Any(revealed =>
+        string.Equals(context.World.Facts.Title(context.World.Cards[revealed].FaceId),
+            context.World.Facts.Title(card.FaceId), StringComparison.Ordinal));
 
     private IEnumerable<Card> SearchRange(AbilitySearchArea area, int? top) => top is { } count
         ? AreaCards(area).Reverse().Take(count) : AreaCards(area);

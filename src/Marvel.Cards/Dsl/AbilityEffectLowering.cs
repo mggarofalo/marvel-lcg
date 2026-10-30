@@ -133,6 +133,7 @@ internal static class AbilityEffectLowering
             "releaseBeneath" => AbilityBeneathLowering.Release(argument, child),
             "chooseCardsToHand" => AbilityBeneathLowering.ChooseToHand(argument, child),
             "storeBeneath" => AbilityBeneathLowering.Store(argument, child),
+            "storeDeckTopBeneath" => AbilityBeneathLowering.StoreDeckTop(argument, child),
             "initializeAuxiliaryDeck" => AbilityAuxiliaryDeckLowering.Initialize(argument, child),
             "revealAuxiliaryTop" => new AbilityEffect.RevealAuxiliaryTop(AbilityAuxiliaryDeckLowering.Deck(argument, child)),
             "shuffle" => new AbilityEffect.Shuffle(SearchArea(argument, child)),
