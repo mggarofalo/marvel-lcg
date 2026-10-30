@@ -1174,7 +1174,7 @@ A recipient the attacking character cannot attack, such as a Kang for the holder
 of Fear of Kang, is not dealt the damage (`rr:cannot`). A recipient the attack
 reaches only after its initiation window -- a splash recipient or a later-chosen
 enemy -- raises when a card in play answers that card being attacked
-(`target: "this"` or `"attachedTo"` on an attack-initiated trigger), because the
+(`target: "attachedTo"` on an attack-initiated trigger), because the
 engine opens no initiation window for it.
 
 `reflectAttackDamage: "attack"` installs a replacement on the active player attack for this attachment's host. Every damage instance against that target during the attack is prevented and dealt to the attacking player's identity instead. The replacement survives the attachment leaving play and ends with the owning attack.

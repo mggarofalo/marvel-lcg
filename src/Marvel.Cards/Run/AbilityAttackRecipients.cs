@@ -54,12 +54,9 @@ internal static class AbilityAttackRecipients
         context.World.Cards.FirstOrDefault(card => DeckTypes.IsInPlay(card.Area.Type) && card.FaceUp
             && context.Program.On(card.FaceId).Any(ability => AnswersAttackOn(ability.Trigger, card, target)));
 
+    // Temporal Shield's "When Kang is attacked" is the only such trigger the
+    // book holds: an attachment keyed to its host.
     private static bool AnswersAttackOn(AbilityTrigger trigger, Card card, Card target) =>
         (trigger.Event == Steps.AttackInitiated || trigger.Also == Steps.AttackInitiated)
-        && trigger.Target switch
-        {
-            AbilityRoles.This => card.ObjectId == target.ObjectId,
-            AbilityRoles.AttachedTo => card.Area.Host == target.ObjectId,
-            _ => false,
-        };
+        && trigger.Target == AbilityRoles.AttachedTo && card.Area.Host == target.ObjectId;
 }
