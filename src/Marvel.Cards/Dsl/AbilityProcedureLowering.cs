@@ -7,6 +7,7 @@ using static Marvel.Cards.Dsl.AbilityModifierLowering;
 using static Marvel.Cards.Dsl.AbilityProcedureLowering;
 using static Marvel.Cards.Dsl.AbilitySelectorLowering;
 using System.Collections.Immutable;
+using Marvel.Rules.State;
 
 namespace Marvel.Cards.Dsl;
 
@@ -70,7 +71,12 @@ internal static class AbilityProcedureLowering
         bool set = fields.ContainsKey("set");
         var result = EncounterDiscardResult(fields, location);
         string? setName = EncounterDiscardSet(fields, location, result);
-        return new(set ? null : ConditionCardKind(Required(fields, "kind", location), location.Child("kind")),
+        CardKind? kind = set ? null : ConditionCardKind(Required(fields, "kind", location), location.Child("kind"));
+        // rr:engage: "When a minion enters play in a player's play area, it engages
+        // that player." Only a minion engages, so any other kind is refused.
+        if (result == AbilityDiscardUntilResult.PutIntoPlayEngaged && kind != CardKind.Minion)
+            throw location.Child("kind").Error("putIntoPlayEngaged requires kind 'minion'");
+        return new(kind,
             OptionalText(fields, "trait", location), result)
         { Set = setName, Player = fields.TryGetValue("player", out var player) ? AbilityLowering.Player(player, location.Child("player")) : AbilityPlayer.You };
     }

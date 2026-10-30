@@ -16,17 +16,19 @@ internal static class KangTemporalFixture
         File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")));
 
     /// <summary>
-    /// Seat 0 is Captain Marvel and every later seat Spider-Man, each with twelve
+    /// Seat 0 is Captain Marvel and every later seat <paramref name="later"/>
+    /// (Spider-Man unless named), each with twelve
     /// Energy in deck; the encounter deck holds <paramref name="encounter"/> copies
     /// of Hard to Keep Down, which prints no boost field.
     /// </summary>
-    internal static (World World, RedSkullFixture Fixture) Board(int players, int encounter = 6, uint seed = 0)
+    internal static (World World, RedSkullFixture Fixture) Board(
+        int players, int encounter = 6, uint seed = 0, string later = "01001a,01001b")
     {
         var world = new World(Cards, players, seed);
         for (int player = 0; player < players; player++)
         {
             var seat = world.CreateSeat($"p{player}");
-            seat.IdentityCard = world.CreateCard(player == 0 ? "01010a,01010b" : "01001a,01001b", seat.Hero);
+            seat.IdentityCard = world.CreateCard(player == 0 ? "01010a,01010b" : later, seat.Hero);
             for (int i = 0; i < 12; i++) world.CreateCard("01088", seat.Deck);
         }
         world.CreateCard("01094", world.AreaOf(DeckType.VillainArea));

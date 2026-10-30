@@ -200,6 +200,41 @@ public sealed class KangMasterOfTimeEncounterTests : CoreCardTestBase
         Assert.False(world.Agenda.IsBusy);
     }
 
+    [Fact]
+    [Rule("rr:activation.7")]
+    [Rule("rr:retaliate-x")]
+    [Rule("rr:toughness.1")]
+    public void AncientGrudgeRefetchesAMasterOfTimeDefeatedDuringItsActivation()
+    {
+        // 11051 checks "If Kang (Master of Time) is not in play" in the sentence
+        // after his activation, and rr:activation.7: "An effect that initiates an
+        // enemy activation is considered resolved after that activation has fully
+        // resolved." He has 1 hit point left and attacks player 1, Black Panther;
+        // rr:retaliate-x: "After a character with the retaliate X keyword is
+        // attacked, deal X damage to the attacker." Defeated, he is in the discard
+        // pile when the check reads, so he returns engaged with player 1, undamaged,
+        // with a tough card from rr:toughness.1, and the deck is shuffled.
+        var (world, f) = KangTemporalFixture.Board(players: 2, encounter: 0, later: "01040a,01040b");
+        var deck = Distinct(world);
+        var kang = KangTemporalFixture.Engaged(world, MasterOfTime, 0);
+        kang.TakeDamage(5);
+        var boost = world.CreateCard("01104", world.AreaOf(DeckType.EncounterDeck));
+        var before = Order(world).Where(id => id != boost.ObjectId).ToList();
+        f.Reveal("11051", player: 1);
+
+        var events = f.Finish();
+
+        Assert.Single(events.OfType<AttackCompleted>(), e => e.Enemy == kang.ObjectId);
+        Assert.Equal(1, world.Seats[1].IdentityCard.Damage);
+        Assert.Equal([kang], world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(1)).Cards);
+        Assert.Empty(world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)).Cards);
+        Assert.Equal(0, kang.Damage);
+        Assert.Single(Statuses.On(world, kang, Statuses.Tough));
+        Assert.Equal(deck.Select(card => card.ObjectId).Order(), Order(world).Order());
+        Assert.NotEqual(before, Order(world));
+        Assert.False(world.Agenda.IsBusy);
+    }
+
     private static Card Sphere(World world)
     {
         var sphere = world.CreateCard("11050", world.AreaOf(DeckType.SideSchemesArea));

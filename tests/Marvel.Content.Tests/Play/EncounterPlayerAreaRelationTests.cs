@@ -48,6 +48,24 @@ public sealed class EncounterPlayerAreaRelationTests : CoreCardTestBase
     }
 
     [Theory]
+    [InlineData("attachment")]
+    [InlineData("environment")]
+    [InlineData("sideScheme")]
+    [Rule("rr:engage")]
+    public void PutIntoPlayEngagedRefusesAKindThatCannotEngage(string kind)
+    {
+        // rr:engage: "When a minion enters play in a player's play area, it engages
+        // that player." Any other kind would enter unengaged, so it is refused.
+        var thrown = Assert.Throws<AbilityException>(() => AbilityLowering.Book(AbilityCatalog.Parse($$$$"""
+            {"cards":[{"card":"01107","abilities":[{
+              "trigger":{"event":"WhenCardDefeated","timing":"WhenDefeated","subject":"this"},
+              "effect":{"discardUntil":{"from":"encounterDeck","kind":"{{{{kind}}}}",
+                "then":"putIntoPlayEngaged","player":"defeater"}}}]}]}
+            """)));
+        Assert.Contains("putIntoPlayEngaged requires kind 'minion'", thrown.Message, StringComparison.Ordinal);
+    }
+
+    [Theory]
     [InlineData(false)]
     [InlineData(true)]
     [Rule("rr:obligation.5")]
