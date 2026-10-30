@@ -49,9 +49,19 @@ internal static class EventMovementPresentation
             return $"{Player(moved.From.Owner, world)} discarded {cards}{origin}.";
         }
 
+        return Placement(moved, cards, world);
+    }
+
+    private static string Placement(CardsMoved moved, string cards, WorldDescriptor world)
+    {
         if (IsPlay(moved))
         {
             return $"{Player(moved.From.Owner, world)} played {cards}.";
+        }
+
+        if (IsEntryFromRevealing(moved))
+        {
+            return $"{cards} entered play.";
         }
 
         return $"Moved {cards} from {Area(moved.From, world)} to {Area(moved.To, world)}.";
@@ -88,6 +98,12 @@ internal static class EventMovementPresentation
         ZoneIs(moved.From, "HandsArea")
         && string.Equals(moved.Verb, "Play", StringComparison.Ordinal)
         && moved.From.Owner == moved.To.Owner;
+
+    // A played card waits in the revealing area until its entry resolves; that area is
+    // internal, so the entry names only the card.
+    private static bool IsEntryFromRevealing(CardsMoved moved) =>
+        ZoneIs(moved.From, "RevealingArea")
+        && string.Equals(moved.Verb, "Put_Into_Play", StringComparison.Ordinal);
 
     private static bool ZoneIs(AreaRef area, string zone) =>
         string.Equals(area.Zone, zone, StringComparison.Ordinal);
