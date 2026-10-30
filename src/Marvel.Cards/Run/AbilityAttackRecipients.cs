@@ -30,7 +30,8 @@ internal static class AbilityAttackRecipients
     /// Such a recipient is announced by its own attack-initiated occurrence
     /// before its damage (<see cref="LateAttackRecipientOperation"/>). The
     /// recipients the initiation window offered are the attack's enemy and any it
-    /// declared alongside it.
+    /// declared alongside it. Authored attack damage is always dealt within a
+    /// labelled attack; outside one there is no attack to announce a recipient in.
     /// </remarks>
     internal static bool IsLate(AbilityDamageAndThreatContext context, Card target)
     {
@@ -62,6 +63,8 @@ internal static class AbilityAttackRecipients
         context.World.Cards.FirstOrDefault(card => card.FaceUp && card.Area.Host == target.ObjectId
             && context.Program.On(card.FaceId).Any(ability => AnswersHostAttack(ability.Trigger)));
 
+    // The event clause restates the attack-initiated trigger; every authored
+    // attachedTo target on another event names its host's damage, not its attack.
     internal static bool AnswersHostAttack(AbilityTrigger trigger) =>
         (trigger.Event == Steps.AttackInitiated || trigger.Also == Steps.AttackInitiated)
         && trigger.Target == AbilityRoles.AttachedTo;

@@ -15,7 +15,9 @@ public static class PlayerAttackReflection
     /// The host may be the attack's first target, a recipient it declared beside
     /// it, or an enemy it reaches later (rr:attack-player-ability-type.5); the
     /// triggering ability's own match against <paramref name="occurrence"/> decides
-    /// that the host is the attacked enemy.
+    /// that the host is the attacked enemy. Every reflecting card is an attachment,
+    /// and its "Max 1 per attack" already keeps a second reflection off one attack;
+    /// the host and empty-reflection clauses restate those facts.
     /// </remarks>
     public static bool CanInstall(World world, Occurrence occurrence, Card source) =>
         world.Agenda.InitiatingPlayerAttack(occurrence) is { Reflection: null } && source.Area.Host >= 0;
