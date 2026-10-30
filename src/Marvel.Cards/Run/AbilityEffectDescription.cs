@@ -145,6 +145,8 @@ internal static class AbilityEffectDescription
         AbilityCardSelection.Query { Kind: AbilityCardQuery.OtherEnvironments } => "other environment",
         AbilityCardSelection.Query { Kind: AbilityCardQuery.UpgradesAndSupportsYouControl } =>
             "upgrade or support",
+        AbilityCardSelection.Query { Kind: AbilityCardQuery.AlliesAndSupportsYouControl } =>
+            "ally or support",
         AbilityCardSelection.Query { Kind: AbilityCardQuery.UpgradesYouControl } => "upgrade",
         AbilityCardSelection.Query { Kind: AbilityCardQuery.SupportsYouControl or AbilityCardQuery.Supports } => "support",
         AbilityCardSelection.Query { Kind: AbilityCardQuery.Enemies

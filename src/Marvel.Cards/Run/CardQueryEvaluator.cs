@@ -28,6 +28,7 @@ internal sealed class CardQueryEvaluator(
     private static readonly ImmutableArray<AbilityCardQuery> ControlledQueries =
     [
         AbilityCardQuery.UpgradesOnYourHero, AbilityCardQuery.UpgradesAndSupportsYouControl, AbilityCardQuery.CardsYouControl,
+        AbilityCardQuery.AlliesAndSupportsYouControl,
         AbilityCardQuery.IdentitySpecificInYourHand,
         AbilityCardQuery.SupportsYouControl,
         AbilityCardQuery.CharactersYouControl, AbilityCardQuery.CharactersYouControlExceptCost,
@@ -179,6 +180,8 @@ internal sealed class CardQueryEvaluator(
             DeckTypes.IsInPlay(card.Area.Type) && CardControl.ControllerOf(cast.World, card) == cast.Player)],
         AbilityCardQuery.UpgradesAndSupportsYouControl =>
             [.. ControlledAreas(DeckType.UpgradesArea, DeckType.SupportsArea)],
+        AbilityCardQuery.AlliesAndSupportsYouControl =>
+            [.. ControlledAreas(DeckType.AlliesArea, DeckType.SupportsArea)],
         // rr:identity-specific-card.3: the identity icon is extracted as Hero class.
         AbilityCardQuery.IdentitySpecificInYourHand =>
             [.. cast.World.Seats[cast.Player].Hand.Cards.Where(IsIdentitySpecific)],

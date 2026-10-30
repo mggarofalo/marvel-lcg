@@ -115,6 +115,7 @@ internal static class AbilitySelectorLowering
         "powerTargets" => AbilityCardQuery.PowerTargets,
         "yourAsidePile" => AbilityCardQuery.YourAsidePile,
         "upgradesAndSupportsYouControl" => AbilityCardQuery.UpgradesAndSupportsYouControl,
+        "alliesAndSupportsYouControl" => AbilityCardQuery.AlliesAndSupportsYouControl,
         "identitySpecificInYourHand" => AbilityCardQuery.IdentitySpecificInYourHand,
         "supportsYouControl" => AbilityCardQuery.SupportsYouControl,
         "supports" => AbilityCardQuery.Supports,

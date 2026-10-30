@@ -557,7 +557,8 @@ query, selector, and value names. This compact index is intentionally exhaustive
 language without documentation.
 
 ```text
-addToHand afterActivation allies alliesYouControl alsoAttackEachOtherHero among
+addToHand afterActivation allies alliesAndSupportsYouControl alliesYouControl
+alsoAttackEachOtherHero among
 atLeast attachedToThis attackDamaged attackableEnemies attackableMinions
 automaticTarget canAutomaticThwart canLegalPractice
 canMakeTheCall cancelOccurrence cancelWhenRevealed cardsIn changeForm characters
@@ -1049,6 +1050,11 @@ Deck arrow costs use `discardTop: { from: "yourDeck" | "encounterDeck", count: N
 recipient differs from the resolving player. `attachCards: {cards, host}` attaches
 selected encounter attachments to the specified host without revealing them or
 re-running their printed host selection.
+
+`{"query":"alliesAndSupportsYouControl"}` selects the allies and supports in the
+resolving player's play area (rr:you-your.10), excluding other players' cards,
+upgrades and identities. Its spelling is an engine choice, parallel to
+`upgradesAndSupportsYouControl`.
 
 `floorDiv` takes a numeric `value` and a positive integer `divisor`, returning
 mathematical floor division. Stall Tactics uses complete pairs of delay counters.

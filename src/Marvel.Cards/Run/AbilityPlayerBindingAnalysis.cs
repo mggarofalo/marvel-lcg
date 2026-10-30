@@ -205,6 +205,7 @@ internal static class AbilityPlayerBindingAnalysis
             AbilityCardQuery.YourAsideMinion or AbilityCardQuery.YourAsideSideScheme
             or AbilityCardQuery.VillainAndMinionsEngagedWithYou or AbilityCardQuery.MinionsEngagedWithYou or AbilityCardQuery.YourAsidePile
             or AbilityCardQuery.UpgradesAndSupportsYouControl or AbilityCardQuery.CardsYouControl
+            or AbilityCardQuery.AlliesAndSupportsYouControl
             or AbilityCardQuery.IdentitySpecificInYourHand
             or AbilityCardQuery.SupportsYouControl or AbilityCardQuery.CharactersYouControl
             or AbilityCardQuery.CharactersYouControlExceptCost
