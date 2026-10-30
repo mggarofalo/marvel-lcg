@@ -14,6 +14,11 @@ function Invoke-NativeProcess {
             '-Executable', $Executable, '-ArgumentsBase64', $encoded)
         $start = [Diagnostics.ProcessStartInfo]::new((Get-Process -Id $PID).Path)
     }
+    elseif ($IsMacOS) {
+        # macOS has no setsid(1). Perl's setsid() then exec keeps this pid as the new group leader.
+        $start = [Diagnostics.ProcessStartInfo]::new('perl')
+        $processArguments = @('-MPOSIX', '-e', 'POSIX::setsid() > 0 or die "setsid: $!"; exec { $ARGV[0] } @ARGV or die "exec: $!"', '--', $Executable) + $Arguments
+    }
     else {
         $start = [Diagnostics.ProcessStartInfo]::new('setsid')
         $processArguments = @('--wait', '--', $Executable) + $Arguments
