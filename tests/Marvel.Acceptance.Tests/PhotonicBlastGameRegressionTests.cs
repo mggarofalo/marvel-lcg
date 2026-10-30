@@ -6,7 +6,7 @@ namespace Marvel.Acceptance.Tests;
 public sealed class PhotonicBlastGameRegressionTests : SimulationHarnessTestBase
 {
     [Theory]
-    [InlineData(11u, 277u, 37, "04058")]
+    [InlineData(49u, 315u, 18, "04058")]
     [InlineData(1u, 267u, 14, "01182")]
     public void LethalPhotonicBlastCompletesALegalGameAndReplays(
         uint seed, uint policySeed, int targetStep, string targetFace)
@@ -31,6 +31,14 @@ public sealed class PhotonicBlastGameRegressionTests : SimulationHarnessTestBase
             Assert.Contains(events, item => item.GetProperty("kind").GetString() == "CardsMoved"
                 && item.GetProperty("from").GetProperty("zone").GetString() == "VillainDeck"
                 && item.GetProperty("to").GetProperty("zone").GetString() == "VillainArea");
+            // Crossbones II attaches his Machine Gun; it later fires against Captain Marvel.
+            Assert.Contains(records, record =>
+                record.GetProperty("type").GetString() == "step"
+                && record.GetProperty("step").GetInt32() > targetStep
+                && record.GetProperty("events").EnumerateArray().Any(item =>
+                    item.GetProperty("kind").GetString() == "AbilityWindowResult"
+                    && item.TryGetProperty("subject_faces", out var faces)
+                    && faces.EnumerateObject().Any(face => face.Value.GetString() == "04064")));
         }
         Assert.Contains(records, record =>
             record.GetProperty("type").GetString() == "step"

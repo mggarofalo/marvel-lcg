@@ -41,15 +41,38 @@ exact historical prefix and complete current legal route are documented in
 [the seed-13 replay evidence](../../../docs/content/doctor-strange-scheme-replay.md).
 
 A separate current legal game uses the seed-10 decision intentions, with Backflip
-at 31 applied to the ensuing minion's positive damage, and intentions 75/76
-ordered as minion selection followed by Backflip. It retains the exact support
-defeat events at 49, completes all 90 decisions, and replays every new prompt,
-event, RNG count and fingerprint to the same current terminal state. The new
-journal exists only in test memory; neither historical recording is rewritten.
+at 31 applied to the ensuing minion's positive damage. It retains the exact support
+defeat events at 49. The new journal exists only in test memory; neither historical
+recording is rewritten.
 
-`PhotonicBlastGameRegressionTests` uses generated current games. Comparing the
-11/277 game against `d649560f` first diverges at decision 7: defense reduces the
-attack to zero, so Cosmic Flight is not offered. The lethal first-stage
-Crossbones Photonic Blast now occurs at 37 (health 5 to 0), retains its draw and
-stage transition, and continues to the complete game's replay. The minion case
-at 1/267/14 remains, with explicit lethal damage and defeat checks for both cases.
+Both current legal games now meet Crossbones' Machine Gun (04064). Crossbones II's
+reveal attaches it (seed 10 at 68, seed 13 at 43), and its forced interrupt binds the
+attacked player (`rr:you-your.7`); the recordings come from a book whose trigger
+never matched. At seed-10 decision 72 the recorded first twelve events remain exact;
+Laser Rifle (04072) and the gun are then simultaneous forced interrupts, so the
+first player orders them (`rr:forced.5`). The explicit decision puts Laser Rifle
+first, keeping its recorded result, then the gun removes an ammo counter, discards
+card 78 and deals three indirect damage to Spider-Man. At seed-13 decision 45 the
+recorded nine events remain exact, followed by the gun: one ammo counter, card 57
+(04067) discarded, two indirect damage. Strict comparison rejects both changed event
+lists. The discard shifts every later encounter card, so the recorded intentions stop
+applying: the `acting` policy, seeded with the recording's policy seed, completes
+each game (77 and 71 decisions, both PlayersLose). Every new prompt, event, RNG count
+and fingerprint replays to the same terminal state. This continuation is a generated
+current game, not a derivation of the historical choices.
+
+The seed-13 ally thwart at 88 is no longer reached by a current game. A causal
+control reverts only the 04064 trigger binding to the scenario controller; every
+recorded fact after the obsolete step-17 answer, the ally thwart and the terminal
+digest then reproduce exactly. The control is not a current game and admits no
+recorded history. [The Machine Gun replay note](../../../docs/content/crossbones-machine-gun-replay.md)
+records the trace and compatibility decision.
+
+`PhotonicBlastGameRegressionTests` uses generated current games. With the corrected
+Machine Gun, the 11/277 game first differs from `1d78bc2d` at decision 18, where the
+gun fires at Crossbones' attack, and it no longer contains a lethal Photonic Blast.
+The first-stage case is now 49/315: its lethal Crossbones Photonic Blast at 18
+(health 2 to 0) retains the draw and stage transition, and the gun Crossbones II
+attaches later fires before the complete game replays. The minion case at 1/267/14
+never reaches the gun and remains, with explicit lethal damage and defeat checks for
+both cases.

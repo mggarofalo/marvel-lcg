@@ -1,5 +1,9 @@
 # Scheme-defeat replay evidence on the Doctor Strange candidate
 
+This review covers candidate `cec4af78`. With the corrected Crossbones' Machine Gun,
+both current legal games now change at the gun's first attack; see
+[the Machine Gun replay boundary](crossbones-machine-gun-replay.md).
+
 The seed-13 Crossbones/Spider-Man archive remains unchanged, with SHA-256
 `2BC9FEAF2A6E11B9ADA12343C09FCEFDACB029A85A10E2BADFB89FB0DC339F55`.
 It records 89 decisions selected by `campaign-research` v1, policy seed 279,

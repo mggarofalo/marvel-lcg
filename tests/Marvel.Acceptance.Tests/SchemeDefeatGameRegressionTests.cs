@@ -1,4 +1,6 @@
 using System.Security.Cryptography;
+using System.Text.Json.Nodes;
+using Marvel.Cards.Dsl;
 using Marvel.Rules.Events;
 using Marvel.Rules.Play;
 using Marvel.Rules.State;
@@ -71,27 +73,70 @@ public sealed class SchemeDefeatGameRegressionTests : SimulationHarnessTestBase
     }
 
     [Fact]
-    public void CurrentLegalSupportAndAllyThwartsCompleteWithExactResultsAndReplay()
+    [Rule("rr:you-your.7")]
+    [Rule("rr:forced.1")]
+    [Rule("rr:interrupt.3")]
+    [Rule("rr:indirect-damage.1")]
+    public void CurrentLegalGameMeetsTheMachineGunAtItsFirstAttackAndReplays()
     {
         var (lines, game) = OpenRecordedGame();
-        var journal = new List<JournalStep>();
+        var journal = new CurrentLegalJournal();
         // The current played route omits the obsolete effect-target answer at old step 17.
         // Every submitted answer must match its current prompt before it resolves.
-        foreach (int index in Enumerable.Range(0, 89).Where(index => index != 17))
+        foreach (int index in Enumerable.Range(0, 46).Where(index => index != 17))
         {
             var source = ReadStep(lines, index);
             var prompt = game.Pending!;
             FrozenPromptCompatibility.Require(source.Prompt, prompt, game.State, $"current source {index}");
             var durable = DecisionFor(game, source);
             var result = game.Resolve(durable.Resolve(prompt));
+            journal.Record(game, prompt, durable, result.Events);
+            if (index == 45)
+            {
+                AssertMachineGunFires(game, source, result.Events);
+                break;
+            }
             var expectedEvents = index == 16
                 ? source.Events.Concat(ReadStep(lines, 17).Events).ToList() : source.Events;
             JournalReplay.RequireEvents(expectedEvents, result.Events, $"current source {index}");
             JournalReplay.RequireFingerprint(ReadStep(lines, index == 16 ? 17 : index).Digest,
                 game.State.Digest().Fingerprint(), $"current source {index}");
-            journal.Add(new JournalStep(PromptRecord.From(prompt), durable,
-                result.Events.Select(JournalJson.Event).ToList(),
-                game.State.Random.Generator.WordsConsumed, game.State.Digest().Fingerprint()));
+        }
+        Assert.Equal(45, journal.Count);
+
+        // The discarded card shifts every later encounter card, so the recorded
+        // intentions stop applying. The acting policy completes the current game.
+        var header = SimulationRecordContract.Read<HeaderRecord>(lines[0], "header");
+        journal.CompleteWithActingPolicy(game, RepositoryRoot(), header.PolicySeed, header.DecisionLimit);
+        Assert.Equal(71, journal.Count);
+        Assert.Equal(Outcome.PlayersLose, game.State.Result);
+        string terminal = game.State.Digest().Canonical();
+
+        var (_, replay) = OpenRecordedGame();
+        journal.Replay(replay);
+        Assert.Equal(game.State.Result, replay.State.Result);
+        Assert.Equal(terminal, replay.State.Digest().Canonical());
+    }
+
+    [Fact]
+    public void PreCorrectionMachineGunRowReproducesTheFrozenAllyThwartGame()
+    {
+        // Causal control, not a current game: only the 04064 trigger reverts to the
+        // scenario-controller binding that never matched. Every recorded fact after
+        // the obsolete step-17 answer, including the ally thwart at 88 and the
+        // terminal digest, then reproduces exactly under the current engine.
+        var (lines, game) = OpenRecordedGame(PreCorrectionMachineGun);
+        foreach (int index in Enumerable.Range(0, 89).Where(index => index != 17))
+        {
+            var source = ReadStep(lines, index);
+            var prompt = game.Pending!;
+            FrozenPromptCompatibility.Require(source.Prompt, prompt, game.State, $"control source {index}");
+            var result = game.Resolve(DecisionFor(game, source).Resolve(prompt));
+            var expectedEvents = index == 16
+                ? source.Events.Concat(ReadStep(lines, 17).Events).ToList() : source.Events;
+            JournalReplay.RequireEvents(expectedEvents, result.Events, $"control source {index}");
+            JournalReplay.RequireFingerprint(ReadStep(lines, index == 16 ? 17 : index).Digest,
+                game.State.Digest().Fingerprint(), $"control source {index}");
             if (index == 87)
             {
                 Assert.Equal("01064: choose a card", prompt.Label);
@@ -100,26 +145,53 @@ public sealed class SchemeDefeatGameRegressionTests : SimulationHarnessTestBase
             }
             if (index == 88) AssertAllyDefeat(game, source, result.Events);
         }
-        Assert.Equal(88, journal.Count);
         var terminal = SimulationRecordContract.Read<ResultRecord>(lines[91], "result");
         Assert.Equal(89, terminal.Decisions);
         Assert.Equal("VillainWins", terminal.Outcome);
         Assert.Equal(terminal.Outcome, game.State.Result.ToString());
         Assert.Equal(terminal.TerminalDigest, game.State.Digest().Canonical());
         Assert.Null(game.Pending);
+    }
 
-        var (_, replay) = OpenRecordedGame();
-        foreach (var step in journal)
-        {
-            JournalReplay.RequirePrompt(step.Prompt, replay.Pending!, "current replay prompt");
-            var result = replay.Resolve(step.Decision.Resolve(replay.Pending!));
-            JournalReplay.RequireEvents(step.Events, result.Events, "current replay events");
-            JournalReplay.RequireRng(step.RngWords, replay.State.Random.Generator.WordsConsumed, "current replay RNG");
-            JournalReplay.RequireFingerprint(step.StateFingerprint, replay.State.Digest().Fingerprint(), "current replay state");
-        }
-        Assert.Null(replay.Pending);
-        Assert.Equal(game.State.Result, replay.State.Result);
-        Assert.Equal(terminal.TerminalDigest, replay.State.Digest().Canonical());
+    private static void AssertMachineGunFires(Game game, StepRecord step, IReadOnlyList<GameEvent> events)
+    {
+        // Crossbones II's reveal attached the gun at 43; this is his first attack since.
+        // The recorded nine events stay exact through his attack initiation.
+        Assert.Equal(9, step.Events.Count);
+        Assert.Equal(14, events.Count);
+        JournalReplay.RequireEvents(step.Events, events.Take(9).ToList(), "current source 45 prefix");
+        var attack = Assert.IsType<AttackBoundary>(events[8]);
+        Assert.Equal(52, attack.Source);
+        Assert.Equal(1, attack.Target);
+        Assert.Equal("04064", game.State.Cards[53].FaceId);
+        // "you" is the attacked player (rr:you-your.7). The forced interrupt pays its
+        // ammo and encounter-discard costs before the boost card is dealt.
+        var ammo = Assert.IsType<FieldSet>(events[9]);
+        Assert.Equal((53, "c_ammo", 2, 1), (ammo.Card, ammo.Field, ammo.From, ammo.To));
+        var discarded = Assert.IsType<CardsMoved>(events[10]);
+        Assert.Equal("EncounterDeck", discarded.From.Zone);
+        Assert.Equal("EncounterDiscardPile", discarded.To.Zone);
+        Assert.Equal(57, Assert.Single(discarded.Cards).Card);
+        Assert.Equal("04067", game.State.Cards[57].FaceId);
+        Assert.IsType<ActivityCompleted>(events[11]);
+        // Spider-Man controls no other character, so both boost icons' indirect damage is his.
+        var damage = Assert.IsType<FieldSet>(events[12]);
+        Assert.Equal((1, "health", 8, 6), (damage.Card, damage.Field, damage.From, damage.To));
+        Assert.Equal(53, Assert.IsType<AbilityWindowResult>(events[13]).Source);
+        Assert.Equal(1, game.State.Cards[53].Tokens["c_ammo"]);
+        var failure = Assert.Throws<ReplayDivergenceException>(() =>
+            JournalReplay.RequireEvents(step.Events, events, "step 45 events"));
+        Assert.Equal("step 45 events diverged: expected 9, got 14", failure.Message);
+    }
+
+    private static SimulationData PreCorrectionMachineGun(SimulationData data)
+    {
+        var book = JsonNode.Parse(File.ReadAllText(Path.Combine(RepositoryRoot(), "datasets", "abilities", "abilities.json")))!;
+        var trigger = book["cards"]!.AsArray().Single(row => row!["card"]!.GetValue<string>() == "04064")!
+            ["abilities"]![0]!["trigger"]!;
+        Assert.Equal("trigger.player", trigger["player"]!.GetValue<string>());
+        trigger["player"] = "you";
+        return data with { Abilities = AbilityCatalog.Parse(book.ToJsonString()) };
     }
 
     private static void AssertAllyDefeat(Game game, StepRecord step, IReadOnlyList<GameEvent> events)
@@ -168,7 +240,8 @@ public sealed class SchemeDefeatGameRegressionTests : SimulationHarnessTestBase
         DurableDecision.SimulationActor(game.Pending!, step.Decision), step.Decision,
         step.Targets, step.Resources, step.Values, step.Allocations);
 
-    private static (string[] Lines, Game Game) OpenRecordedGame()
+    private static (string[] Lines, Game Game) OpenRecordedGame(
+        Func<SimulationData, SimulationData>? content = null)
     {
         string path = Path.Combine(RepositoryRoot(), "tests", "Marvel.Acceptance.Tests",
             "Fixtures", "scheme-defeat-13.jsonl.gz");
@@ -184,7 +257,8 @@ public sealed class SchemeDefeatGameRegressionTests : SimulationHarnessTestBase
         var config = new SimulationConfig(header.Scenario, header.Difficulty, header.Heroes,
             header.ModularSets, 1, [start.Seed], null, null, header.PolicySeed,
             header.DecisionLimit, null, RepositoryRoot());
-        var opened = SimulationHarnessSupport.Open(SimulationData.Load(RepositoryRoot()), config, start.Seed);
+        var data = SimulationData.Load(RepositoryRoot());
+        var opened = SimulationHarnessSupport.Open(content is null ? data : content(data), config, start.Seed);
         Assert.Equal(start.InitialDigest, opened.Game.State.Digest().Canonical());
         JournalReplay.RequireEvents(start.SetupEvents, opened.SetupEvents, "setup");
         return (lines, opened.Game);
