@@ -70,12 +70,15 @@ internal static class AbilityCostSelection
     // so a typed discard needs that printed icon (ruling:437680ffd6d92fb8). A classed
     // discard needs that printed classification.
     internal static IReadOnlyList<Card> HandCandidates(World world, Card source, int player, AbilityCost? cost) =>
-        HandDiscard(cost) is { } discard
-            ? [.. HandCandidates(world, source, player).Where(card =>
-                (discard.Resource is not { } resource
-                    || Resources.GeneratedBy(card.FaceId, world.Facts).Contains(resource))
-                && (discard.CardClass is not { } printedClass
-                    || CardClassification.Is(world.Facts, card.FaceId, printedClass)))]
+        HandDiscard(cost)?.Filter is { } filter
+            ? [.. HandCandidates(world, source, player).Where(card => filter switch
+            {
+                AbilityHandFilter.PrintedResource printed =>
+                    Resources.GeneratedBy(card.FaceId, world.Facts).Contains(printed.Resource),
+                AbilityHandFilter.PrintedClass printed =>
+                    CardClassification.Is(world.Facts, card.FaceId, printed.Class),
+                _ => throw new InvalidOperationException("Unknown hand-discard filter"),
+            })]
             : HandCandidates(world, source, player);
 
     private static AbilityCost.DiscardFromHand? HandDiscard(AbilityCost? cost) => cost switch

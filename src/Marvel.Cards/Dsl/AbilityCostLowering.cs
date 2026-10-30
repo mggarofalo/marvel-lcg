@@ -44,9 +44,9 @@ internal static class AbilityCostLowering
             "discardRandomFromHand" => new AbilityCost.RandomDiscardFromHand(PositiveCount(argument, child)),
             "discardFromHand" => new AbilityCost.DiscardFromHand(new AbilityCostRange.Exact(PositiveCount(argument, child))),
             "discardResourceFromHand" => new AbilityCost.DiscardFromHand(new AbilityCostRange.Exact(1))
-                { Resource = Resource(argument, child) },
+                { Filter = new AbilityHandFilter.PrintedResource(Resource(argument, child)) },
             "discardClassFromHand" => new AbilityCost.DiscardFromHand(new AbilityCostRange.Exact(1))
-                { CardClass = CardClassName(argument, child) },
+                { Filter = new AbilityHandFilter.PrintedClass(CardClassName(argument, child)) },
             "discardUpToFromHand" => new AbilityCost.DiscardFromHand(new AbilityCostRange.UpTo(PositiveCount(argument, child))),
             "discardAnyFromHand" => AnyDiscardCost(argument, child),
             "exhaustChosen" => ExhaustChosenCost(argument, child),

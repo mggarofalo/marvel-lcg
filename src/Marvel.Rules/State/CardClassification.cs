@@ -9,10 +9,16 @@ public static class CardClassification
     /// </summary>
     public const string HeroSpecific = "Hero";
 
-    /// <summary>Whether the face prints <paramref name="classification"/>.</summary>
+    /// <summary>Whether the face prints <paramref name="classification"/> among its classes.</summary>
+    /// <remarks>The dataset separates several printed classes with <c>;</c>.</remarks>
     public static bool Is(ICardFacts facts, string faceId, string classification)
     {
         ArgumentNullException.ThrowIfNull(facts);
-        return string.Equals(facts.Attributes(faceId).GetValueOrDefault("Class"), classification, StringComparison.Ordinal);
+        return facts.Attributes(faceId).GetValueOrDefault("Class", string.Empty).Split(';')
+            .Contains(classification, StringComparer.Ordinal);
     }
+
+    /// <summary>The player-facing name of a printed classification.</summary>
+    public static string Describe(string classification) =>
+        classification == HeroSpecific ? "hero-specific" : classification;
 }

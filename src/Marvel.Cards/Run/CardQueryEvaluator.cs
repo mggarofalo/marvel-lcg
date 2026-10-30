@@ -205,9 +205,7 @@ internal sealed class CardQueryEvaluator(
             .SelectMany(area => area.Cards);
 
     private bool IsIdentitySpecific(Card card) =>
-        cast.World.Facts.Attributes(card.FaceId)
-            .GetValueOrDefault("Class", string.Empty).Split(';')
-            .Contains("Hero", StringComparer.Ordinal);
+        CardClassification.Is(cast.World.Facts, card.FaceId, CardClassification.HeroSpecific);
 
     private IReadOnlyList<Card> EvaluateBoard(AbilityCardQuery query) => query switch
     {

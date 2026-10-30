@@ -25,8 +25,7 @@ public sealed class KangObligationLoweringTests
         var program = AbilityLowering.Book(Action("""{"discardClassFromHand":"Hero"}"""));
         var discard = Assert.IsType<AbilityCost.DiscardFromHand>(Assert.Single(program.On("11019")).Cost);
         Assert.Equal(new AbilityCostRange.Exact(1), discard.Range);
-        Assert.Equal("Hero", discard.CardClass);
-        Assert.Null(discard.Resource);
+        Assert.Equal(new AbilityHandFilter.PrintedClass("Hero"), discard.Filter);
     }
 
     [Theory]

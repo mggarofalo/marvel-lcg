@@ -28,8 +28,8 @@ internal static class AbilityOperationNames
         AbilityCost.RandomDiscardFromHand => "discardRandomFromHand",
         AbilityCost.DiscardFromHand discard => discard.Range switch
         {
-            AbilityCostRange.Exact when discard.Resource is not null => "discardResourceFromHand",
-            AbilityCostRange.Exact when discard.CardClass is not null => "discardClassFromHand",
+            AbilityCostRange.Exact when discard.Filter is AbilityHandFilter.PrintedResource => "discardResourceFromHand",
+            AbilityCostRange.Exact when discard.Filter is AbilityHandFilter.PrintedClass => "discardClassFromHand",
             AbilityCostRange.Exact => "discardFromHand",
             AbilityCostRange.UpTo => "discardUpToFromHand",
             AbilityCostRange.Any => "discardAnyFromHand",
