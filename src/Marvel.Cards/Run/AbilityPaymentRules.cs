@@ -86,7 +86,7 @@ internal static class AbilityPaymentRules
             AbilityCost.RandomDiscardFromHand random => AbilityRandomHandCost.CanPay(world, card, player, random),
             AbilityCost.ChooseScheme => AbilitySchemeChoice.Candidates(world, card, player).Count > 0,
             AbilityCost.ChooseFromDiscard choice => AbilityCostSelection.DiscardCandidates(world, player, choice).Count > 0,
-            AbilityCost.DiscardFromHand discard => AbilityCostSelection.HandCandidates(world, card, player).Count
+            AbilityCost.DiscardFromHand discard => AbilityCostSelection.HandCandidates(world, card, player, discard).Count
                 >= AbilityCostSelection.Range(discard.Range, int.MaxValue).Min,
             AbilityCost.ExhaustChosen => AbilityExhaustionCostAvailability.CanPay(world, card, player, cost),
 
@@ -232,7 +232,7 @@ internal static class AbilityPaymentRules
             return ResourcePayment.Allocate(price, available.Select(source => source.Effect).ToArray()) is not null;
         }
         return AbilityHandDiscardAvailability.CanPay(ability.Cost,
-            AbilityCostSelection.HandCandidates(world, card, player), generators, cost, required, discardCount);
+            AbilityCostSelection.HandCandidates(world, card, player, ability.Cost), generators, cost, required, discardCount);
     }
 
     internal static bool EventPaysResources(World world, Card card, AbilityCost? cost) =>

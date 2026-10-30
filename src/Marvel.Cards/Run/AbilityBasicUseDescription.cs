@@ -32,7 +32,7 @@ internal static class AbilityBasicUseDescription
         _ => null,
     };
 
-    private static string Resource(char resource) => resource switch
+    internal static string Resource(char resource) => resource switch
     {
         'R' => "physical", 'B' => "mental", 'Y' => "energy", 'G' => "wild",
         _ => throw new InvalidOperationException("Unknown checked resource"),

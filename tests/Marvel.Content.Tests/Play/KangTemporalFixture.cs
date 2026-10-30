@@ -1,8 +1,12 @@
+using Marvel.Cards.Run;
 using Marvel.Content.Tests.Cards;
+using Marvel.Rules.Events;
 using Marvel.Rules.Play;
+using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
 using Marvel.Rules.Timing;
 using Marvel.Tests;
+using Xunit;
 
 namespace Marvel.Content.Tests.Play;
 
@@ -55,4 +59,22 @@ internal static class KangTemporalFixture
     internal static void Activate(World world, Card enemy, bool scheme, int player) =>
         world.Agenda.Add(new PhaseStep(scheme ? new EnemySchemeOperation() : new EnemyAttackOperation(),
             1, 2, Index: player, Subject: enemy.ObjectId, Seat: player));
+
+    /// <summary>
+    /// Drains pending work, answering with <paramref name="answer"/> where it
+    /// chooses and declining every other optional prompt.
+    /// </summary>
+    internal static void Drive(World world, AbilityRunner runner, Func<Prompt, Decision?> answer)
+    {
+        var events = new List<GameEvent>();
+        var prompt = Sequence.Work(world, world.Facts, runner, events);
+        for (int step = 0; prompt is not null; step++)
+        {
+            Assert.True(step < 60, prompt.Description);
+            var decision = answer(prompt)
+                ?? (prompt.Cancellable ? Decision.Decline : throw new InvalidOperationException(prompt.Description));
+            Sequence.Answer(world, world.Facts, runner, prompt, decision, events);
+            prompt = Sequence.Work(world, world.Facts, runner, events);
+        }
+    }
 }

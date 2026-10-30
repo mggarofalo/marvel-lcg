@@ -36,6 +36,7 @@ internal static class AbilityConditionLowering
             "inExpertMode" => Flag(argument, child, "expert", AbilityConditionFact.InExpertMode),
             "defeatedByYou" => Flag(argument, child, "you", AbilityConditionFact.DefeatedByYou),
             "heroDefended" => Flag(argument, child, "you", AbilityConditionFact.HeroDefended),
+            "heroBasicDefended" => Flag(argument, child, "you", AbilityConditionFact.HeroBasicDefended),
             "undefendedAttack" => Flag(argument, child, "you", AbilityConditionFact.UndefendedAttack),
             "defeatedBy" => Flag(argument, child, "consequentialDamage", AbilityConditionFact.DefeatedByConsequentialDamage),
             "paidWithResource" => new AbilityCondition.PaidWithResource(Resource(argument, child)),

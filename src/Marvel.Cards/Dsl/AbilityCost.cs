@@ -45,7 +45,11 @@ public abstract record AbilityCost
     /// <summary>Define and pay a positive X in energy resources.</summary>
     public sealed record SpendEnergy : AbilityCost;
     /// <summary>Discard selected cards from the resolving player's hand.</summary>
-    public sealed record DiscardFromHand(AbilityCostRange Range) : AbilityCost;
+    public sealed record DiscardFromHand(AbilityCostRange Range) : AbilityCost
+    {
+        /// <summary>A printed resource type every discarded card must show, or any card.</summary>
+        public char? Resource { get; init; }
+    }
 
     /// <summary>Discard a fixed number of random hand cards as an arrow cost.</summary>
     public sealed record RandomDiscardFromHand(int Count) : AbilityCost;

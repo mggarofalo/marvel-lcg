@@ -565,12 +565,12 @@ canMakeTheCall cancelOccurrence cancelWhenRevealed cardsIn changeForm characters
 charactersYouControl choose chooseCard chooseDiscardToShuffle chooseTopForHand
 countersOn damageOn dealAttackDamage dealDamage dealEncounterCards
 deck defeatedByYou delayUntil discardAtRandom discardAnyFromHand discardFromHand
-discardHandOfKind discardHandWithResource discardTop discardUntil discardable discardedWithResource
+discardHandOfKind discardHandWithResource discardResourceFromHand discardTop discardUntil discardable discardedWithResource
 doubleResourceFor drawToPrintedHandSize dynamic
 eachPlayer else encounterDeck encounterDiscardPile enemies
 enemiesEngagedWithChosenPlayer enemiesWithTrait enemyAttacks enemySchemes exists
 finalStep generate generateTopDiscard giveAdditionalBoost
-grantCharactersControlledBy grantEach grantUntil hasStatus hasTrait heroDefended
+grantCharactersControlledBy grantEach grantUntil hasStatus hasTrait heroBasicDefended heroDefended
 heroes heroesAndAllies heroAndAllyTargets identities
 identitiesWithinPerPlayerLimit inForm indirectDamage isEnemyAttacker isKind isTitle
 isYourIdentity keyword kind legalPractice mainScheme makeTheCall maxBy minions
@@ -1342,6 +1342,14 @@ reachable branch does not offer an unaffected candidate.
 `discardHandOfKind: "event"` discards every event in the resolving player's hand
 (rr:you-your.8) without a choice and records them in `result: "discarded"`, so
 "if no events are discarded this way" reads that result. Only `event` is admitted.
+
+The arrow cost `discardResourceFromHand: "R"` asks for exactly one hand card
+printing that resource. A wild icon does not qualify (rr:wild-resource.3;
+ruling:437680ffd6d92fb8). The condition `heroBasicDefended: "you"` is true when
+the resolver's identity made a basic defense against the completed attack. It
+is false for a defense-labeled ability (rr:defend-defense.4.3), unlike
+`heroDefended`. rr:defend-defense.7.2 times "after you use a basic power" for a
+defense after the attack.
 
 `discardHandCards: <number>` asks the resolving player to choose exactly the
 computed number of distinct cards from their own hand, capped by available

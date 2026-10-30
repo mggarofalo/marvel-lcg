@@ -257,7 +257,8 @@ internal static class AbilityPlayerBindingAnalysis
         AbilityCondition.Any any => any.Operands.Any(Contains),
         AbilityCondition.Negated negated => Contains(negated.Operand),
         AbilityCondition.Flag flag => flag.Kind is AbilityConditionFact.DefeatedByYou
-            or AbilityConditionFact.HeroDefended or AbilityConditionFact.UndefendedAttack,
+            or AbilityConditionFact.HeroDefended or AbilityConditionFact.HeroBasicDefended
+            or AbilityConditionFact.UndefendedAttack,
         AbilityCondition.Exists exists => Contains(exists.Cards),
         AbilityCondition.LegalPractice practice => Contains(practice.Schemes),
         AbilityCondition.AutomaticThwart thwart => Contains(thwart.Scheme),
