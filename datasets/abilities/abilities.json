@@ -24210,14 +24210,13 @@
     {
       "card": "11021",
       "name": "Time-Travel Hijinks",
-      "note": "When Revealed: Discard the highest-cost card you control, then place it facedown under this card. Alter-Ego Action: Discard a energy resource from your hand -> discard this obligation. (Discard each facedown card under this obligation.) rr:ownership-and-control.8 limits \"you control\" to cards in play. rr:target.3 leaves out a card the discard cannot affect before ranking by cost, and rr:first-player.1 gives tied highest choices to the first player. The placement depends on the discard. Ruling 437680ffd6d92fb8: only a printed energy resource pays.",
+      "note": "When Revealed: Discard the highest-cost card you control, then place it facedown under this card. Alter-Ego Action: Discard a energy resource from your hand -> discard this obligation. (Discard each facedown card under this obligation.) rr:ownership-and-control.8 limits \"you control\" to cards in play. rr:target.3 and rr:permanent.4.1 leave out a card the discard cannot affect before ranking by cost. The holder (rr:obligation.1) chooses among tied highest cards, as the controlling player does for Pile It On (ruling 1b7d17e679ddac86). The placement depends on the discard. Ruling 437680ffd6d92fb8: only a printed energy resource pays.",
       "abilities": [
         {
           "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
           "effect": { "if": {
             "test": { "exists": { "discardable": { "query": "cardsYouControl" } } },
             "then": { "chooseCard": {
-              "chooser": "firstPlayer",
               "from": { "maxBy": { "of": { "discardable": { "query": "cardsYouControl" } }, "by": "cost" } },
               "effect": { "then": { "effect": { "discard": "chosen" }, "then": { "storeBeneath": { "cards": "chosen", "host": "this" } } } }
             } }
@@ -24233,7 +24232,7 @@
     {
       "card": "11022",
       "name": "Corrupted Timestream",
-      "note": "Starting threat is engine-owned. Players cannot trigger \"Alter-Ego Action\" abilities on obligations. When Revealed: Each player must either discard 1 random card from hand, or place 2 threat here. rr:each-player.1 lets the first player order the players. rr:choose-option.1 bars the discard for a player with no card in hand.",
+      "note": "Starting threat is engine-owned. Players cannot trigger \"Alter-Ego Action\" abilities on obligations. When Revealed: Each player must either discard 1 random card from hand, or place 2 threat here. rr:each-player.1 lets the first player order the players. Ruling 304a4798e0b453b4: an encounter card's choice must be an option the player can fully resolve, so a player with no card in hand must place the threat (rr:choose-option.1; rulings b07fd059c9a3a50f and 373f4856a30aa44c).",
       "abilities": [
         {
           "trigger": { "timing": "Constant" },
@@ -24248,6 +24247,26 @@
               { "placeThreat": { "scheme": "this", "amount": 2 } }
             ]
           } } } }
+        }
+      ]
+    },
+    {
+      "card": "11029",
+      "name": "Past Machinations",
+      "note": "Incite is engine-owned. When Revealed: Each player searches the encounter deck and discard pile for a different obligation and reveals it. Shuffle the encounter deck. A different obligation is one whose title no earlier player revealed in this resolution (MARVEL-894). Ruling f9a6f072c87c1d0e lets the players order themselves as a group and the first player decide otherwise; the engine asks the first player (rr:each-player.1). A player who finds no eligible obligation reveals nothing. rr:search.3 shuffles the searched deck.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "seq": [
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "exists": { "cardsIn": { "areas": ["encounterDeck", "encounterDiscardPile"], "kind": "Obligation", "differentTitleFromRevealed": "true" } } },
+              "then": { "chooseCard": {
+                "from": { "cardsIn": { "areas": ["encounterDeck", "encounterDiscardPile"], "kind": "Obligation", "differentTitleFromRevealed": "true" } },
+                "effect": { "reveal": "chosen" }
+              } }
+            } } } },
+            { "shuffle": "encounterDeck" }
+          ] }
         }
       ]
     }

@@ -99,7 +99,7 @@ public sealed class DoctorStrangeSupportReprintTests
         Assert.Equal(AuthoredCards.ExpectedFaceCount, rows.Length);
         Assert.Equal(faces, rows.Skip(645).Take(6).Select(row => row.GetProperty("card").GetString()));
         Assert.Equal(faces.Concat(new List<string> { "09009", "09011", "09026", "09001a", "09001b", "09002", "09005", "09036", "09008", "09012", "09016", "09021", "09037", "09038", "09033", "09035", "09006", "09010", "09032", "09034", "09020", "09013", "09019", "09039", "09003", "09004", "09007", "09014", "09015", "09027", "09029", "09028", "09031", "09030" }).Order(), AuthoredCards.Book.Authored.Where(face => face.StartsWith("09", StringComparison.Ordinal)).Order());
-        Assert.DoesNotContain("11029", AuthoredCards.Book.Authored);
+        Assert.DoesNotContain("11017", AuthoredCards.Book.Authored);
         Assert.DoesNotContain("11001", AuthoredCards.Book.Authored);
     }
 }

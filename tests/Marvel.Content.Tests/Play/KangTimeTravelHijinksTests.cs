@@ -1,4 +1,5 @@
 using Marvel.Rules.Play;
+using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
 using Marvel.Tests;
 using Xunit;
@@ -28,7 +29,7 @@ public sealed class KangTimeTravelHijinksTests : CoreCardTestBase
         var mansion = Support(world, "01091", 0);
 
         var hijinks = f.Reveal(Hijinks, player: 1);
-        f.Finish();
+        f.Finish(prompt => TakeOnly(prompt, cat, holder: 1));
 
         Assert.Equal(world.AreaOf(DeckType.ObligationsArea, PlayArea.Of(1)), hijinks.Area);
         Assert.Equal([cat], Beneath(world, hijinks));
@@ -40,13 +41,14 @@ public sealed class KangTimeTravelHijinksTests : CoreCardTestBase
     }
 
     [Fact]
-    [Rule("rr:first-player.1")]
-    public void TheFirstPlayerChoosesAmongTiedHighestCostCards()
+    [Rule("rr:obligation.1")]
+    [Rule("rr:permanent.4.1")]
+    public void TheHolderChoosesAmongTiedHighestCostCards()
     {
-        // rr:first-player.1: "If an encounter card targets a specific player or
-        // card, and there are multiple eligible targets, the first player selects
-        // among the eligible options." Player 1's two cost-3 supports tie; player
-        // 0, the first player, chooses. The cost-1 Aunt May is not offered.
+        // rr:obligation.1: "you" is the player whose play area holds the obligation;
+        // ruling 1b7d17e679ddac86 (Pile It On) has that player choose among cards
+        // tied for the highest cost. Player 1's two cost-3 supports tie, and player
+        // 1, not the first player, chooses. The cost-1 Aunt May is not offered.
         var (world, f) = KangTemporalFixture.Board(players: 2);
         var helicarrier = Support(world, "01092", 1);
         var medTeam = Support(world, "01080", 1);
@@ -62,7 +64,7 @@ public sealed class KangTimeTravelHijinksTests : CoreCardTestBase
             return Decision.Take(prompt.Affordances.Single(option => option.AnchorId == medTeam.ObjectId).Id);
         });
 
-        Assert.Equal([0], askers);
+        Assert.Equal([1], askers);
         Assert.Equal([medTeam], Beneath(world, hijinks));
         Assert.Equal(DeckType.SupportsArea, helicarrier.Area.Type);
     }
@@ -98,7 +100,7 @@ public sealed class KangTimeTravelHijinksTests : CoreCardTestBase
         var (world, f) = KangTemporalFixture.Board(players: 2);
         var cat = Ally(world, "01002", player);
         var hijinks = f.Reveal(Hijinks, player);
-        f.Finish();
+        f.Finish(prompt => TakeOnly(prompt, cat, player));
         AlterEgo(world, player);
         var genius = InHand(world, "01089", player);
         var energy = InHand(world, "01088", player);
@@ -133,4 +135,13 @@ public sealed class KangTimeTravelHijinksTests : CoreCardTestBase
 
     private static Card Support(World world, string face, int player) =>
         world.CreateCard(face, world.AreaOf(DeckType.SupportsArea, PlayArea.Of(player), cardOwner: player));
+
+    // The holder answers the choice of highest-cost card even when one card has it.
+    private static Decision TakeOnly(Prompt prompt, Card card, int holder)
+    {
+        Assert.Equal(holder, prompt.Player);
+        var only = Assert.Single(prompt.Affordances);
+        Assert.Equal(card.ObjectId, only.AnchorId);
+        return Decision.Take(only.Id);
+    }
 }

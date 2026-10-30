@@ -76,14 +76,13 @@ public sealed class KangCorruptedTimestreamTests : CoreCardTestBase
 
     [Fact]
     [Rule("rr:choose-option.1")]
-    [Rule("rr:target.1")]
     public void APlayerWithAnEmptyHandIsOfferedOnlyTheThreat()
     {
-        // rr:choose-option.1: "When an encounter card requires a player to choose an
-        // option, they cannot choose an option that requires one or more targets if
-        // there are no valid targets for that option." rr:target.1 lists "a card";
-        // player 0's empty hand gives the random discard none. Player 1 holds a card
-        // and keeps both options, and discards it.
+        // Ruling 304a4798e0b453b4: "When an encounter card ability has a player
+        // choose between multiple options, they must choose the option they can
+        // fully resolve" (rr:choose-option.1; rulings b07fd059c9a3a50f and
+        // 373f4856a30aa44c). Player 0's empty hand cannot resolve the random
+        // discard. Player 1 holds a card and keeps both options, and discards it.
         var (world, f) = KangTemporalFixture.Board(players: 2);
         var held = InHand(world, "01088", 1);
         var offered = new Dictionary<int, int>();
