@@ -1,5 +1,4 @@
-using Marvel.Cards.Dsl;
-using Marvel.Cards.Run;
+using Marvel.Content.Tests.Cards;
 using Marvel.Rules.Events;
 using Marvel.Rules.Play;
 using Marvel.Rules.State;
@@ -8,7 +7,7 @@ using Xunit;
 
 namespace Marvel.Content.Tests.Play;
 
-// Research probe: the proposed row is local to this test and does not admit Kang.
+// The authored Time Portal row on both encounter topologies; Kang's public admission stays closed.
 public sealed class TimePortalDefeatPrerequisiteTests
 {
     [Theory]
@@ -27,15 +26,7 @@ public sealed class TimePortalDefeatPrerequisiteTests
         // of discarding it." ruling:22d159cabcc98d45 directs it to the encounter deck even
         // with Red Skull's separate side-scheme deck.
         var world = redSkull ? RedSkullFixture.Create().World : ThorActualFixture.Board("06001a");
-        var runner = new AbilityRunner(AbilityCatalog.Parse("""
-            {"cards":[
-              {"card":"11033","abilities":[{
-                "trigger":{"event":"WhenCardDefeated","timing":"ForcedInterrupt","subject":"this"},
-                "effect":{"shuffleInto":{"cards":"this","deck":"encounterDeck"}}
-              }]},
-              {"card":"01109","abilities":[]}
-            ]}
-            """));
+        var runner = AuthoredCards.Runner();
         world.Abilities = runner;
         var origin = world.AreaOf(redSkull ? DeckType.SideSchemeDeck : DeckType.EncounterDeck);
         var scheme = world.CreateCard(portal ? "11033" : "01109", origin);
