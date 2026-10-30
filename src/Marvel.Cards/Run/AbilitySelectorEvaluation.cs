@@ -185,7 +185,10 @@ internal sealed class AbilitySelectorEvaluation(
             .Where(card => !selection.DifferentTitleFromRevealed || !RevealedTitle(card))];
     }
 
-    private bool RevealedTitle(Card card) => context.RevealedThisResolution.Any(revealed =>
+    private bool RevealedTitle(Card card) => (context.RevealedThisResolution
+        ?? throw new RulesNotImplementedException(
+            "differentTitleFromRevealed outside an ability invocation has no reveals to compare"))
+        .Any(revealed =>
         string.Equals(context.World.Facts.Title(context.World.Cards[revealed].FaceId),
             context.World.Facts.Title(card.FaceId), StringComparison.Ordinal));
 

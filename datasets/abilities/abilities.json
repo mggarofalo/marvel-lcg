@@ -24210,7 +24210,7 @@
     {
       "card": "11021",
       "name": "Time-Travel Hijinks",
-      "note": "When Revealed: Discard the highest-cost card you control, then place it facedown under this card. Alter-Ego Action: Discard a energy resource from your hand -> discard this obligation. (Discard each facedown card under this obligation.) rr:ownership-and-control.8 limits \"you control\" to cards in play. rr:target.3 and rr:permanent.4.1 leave out a card the discard cannot affect before ranking by cost. The holder (rr:obligation.1) chooses among tied highest cards, as the controlling player does for Pile It On (ruling 1b7d17e679ddac86). The placement depends on the discard. Ruling 437680ffd6d92fb8: only a printed energy resource pays.",
+      "note": "When Revealed: Discard the highest-cost card you control, then place it facedown under this card. Alter-Ego Action: Discard a energy resource from your hand -> discard this obligation. (Discard each facedown card under this obligation.) rr:ownership-and-control.8 limits \"you control\" to cards in play. rr:target.3 and rr:permanent.4.1 leave out a card the discard cannot affect before ranking by cost. The holder chooses among tied highest cards: rr:obligation.5 \"That player must decide how to resolve the obligation.\" The placement depends on the discard. Ruling 437680ffd6d92fb8: only a printed energy resource pays.",
       "abilities": [
         {
           "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
@@ -24258,12 +24258,9 @@
         {
           "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
           "effect": { "seq": [
-            { "eachPlayer": { "effect": { "if": {
-              "test": { "exists": { "cardsIn": { "areas": ["encounterDeck", "encounterDiscardPile"], "kind": "Obligation", "differentTitleFromRevealed": "true" } } },
-              "then": { "chooseCard": {
-                "from": { "cardsIn": { "areas": ["encounterDeck", "encounterDiscardPile"], "kind": "Obligation", "differentTitleFromRevealed": "true" } },
-                "effect": { "reveal": "chosen" }
-              } }
+            { "eachPlayer": { "effect": { "chooseCard": {
+              "from": { "cardsIn": { "areas": ["encounterDeck", "encounterDiscardPile"], "kind": "Obligation", "differentTitleFromRevealed": "true" } },
+              "effect": { "reveal": "chosen" }
             } } } },
             { "shuffle": "encounterDeck" }
           ] }

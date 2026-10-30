@@ -41,14 +41,13 @@ public sealed class KangTimeTravelHijinksTests : CoreCardTestBase
     }
 
     [Fact]
-    [Rule("rr:obligation.1")]
-    [Rule("rr:permanent.4.1")]
+    [Rule("rr:obligation.5")]
     public void TheHolderChoosesAmongTiedHighestCostCards()
     {
-        // rr:obligation.1: "you" is the player whose play area holds the obligation;
-        // ruling 1b7d17e679ddac86 (Pile It On) has that player choose among cards
-        // tied for the highest cost. Player 1's two cost-3 supports tie, and player
-        // 1, not the first player, chooses. The cost-1 Aunt May is not offered.
+        // rr:obligation.5: the revealing player places the obligation in their play
+        // area, and "That player must decide how to resolve the obligation." Player
+        // 1's two cost-3 supports tie, and player 1, not the first player, chooses.
+        // The cost-1 Aunt May is not offered.
         var (world, f) = KangTemporalFixture.Board(players: 2);
         var helicarrier = Support(world, "01092", 1);
         var medTeam = Support(world, "01080", 1);
@@ -67,6 +66,24 @@ public sealed class KangTimeTravelHijinksTests : CoreCardTestBase
         Assert.Equal([1], askers);
         Assert.Equal([medTeam], Beneath(world, hijinks));
         Assert.Equal(DeckType.SupportsArea, helicarrier.Area.Type);
+    }
+
+    [Fact]
+    [Rule("rr:permanent.4.1")]
+    public void APermanentCardIsNotRankedForTheDiscard()
+    {
+        // rr:permanent.4.1: a permanent card cannot be discarded, so it is left out
+        // before ranking. Norn Stone (21187, Permanent) and Energy Channel (01018)
+        // both cost 0; only Energy Channel is offered and discarded.
+        var (world, f) = KangTemporalFixture.Board(players: 2);
+        var stone = Upgrade(world, "21187a,21187b", 1);
+        var channel = Upgrade(world, "01018", 1);
+
+        var hijinks = f.Reveal(Hijinks, player: 1);
+        f.Finish(prompt => TakeOnly(prompt, channel, holder: 1));
+
+        Assert.Equal([channel], Beneath(world, hijinks));
+        Assert.Equal(DeckType.UpgradesArea, stone.Area.Type);
     }
 
     [Fact]
@@ -132,6 +149,9 @@ public sealed class KangTimeTravelHijinksTests : CoreCardTestBase
 
     private static Card Ally(World world, string face, int player) =>
         world.CreateCard(face, world.AreaOf(DeckType.AlliesArea, PlayArea.Of(player), cardOwner: player));
+
+    private static Card Upgrade(World world, string face, int player) =>
+        world.CreateCard(face, world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(player), cardOwner: player));
 
     private static Card Support(World world, string face, int player) =>
         world.CreateCard(face, world.AreaOf(DeckType.SupportsArea, PlayArea.Of(player), cardOwner: player));

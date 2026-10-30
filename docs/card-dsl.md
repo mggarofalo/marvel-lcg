@@ -1260,7 +1260,10 @@ resolve (ruling 304a4798e0b453b4, `rr:choose-option.1`).
 `cardsIn` accepts `differentTitleFromRevealed: "true"`, which leaves out cards
 titled as any card the resolving invocation has already revealed, across all its
 `eachPlayer` frames. The invocation records each card its `reveal` instruction
-schedules. The field's spelling is an engine choice.
+schedules. The field's spelling is an engine choice. Lowering admits it only in
+the effect of an ability that also reveals a card, never in its `when` or cost.
+Initiation checks see an empty record; an evaluation that belongs to no ability
+resolution raises `RulesNotImplementedException`.
 
 `discardRandomFromHand: N` is a positive fixed-count arrow cost. Offer and
 admission queries inspect only affordability; commitment samples physical cards
