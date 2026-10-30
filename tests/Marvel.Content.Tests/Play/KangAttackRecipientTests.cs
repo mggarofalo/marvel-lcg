@@ -256,6 +256,40 @@ public sealed class KangAttackRecipientTests : CoreCardTestBase
     }
 
     [Fact]
+    [Rule("rr:triggering-condition.1")]
+    public void AnAttacksFirstTargetIsAttackedOnce()
+    {
+        // A synthetic Temporal Shield without its maximum or cost deals the attacker 1
+        // each time Rhino is attacked. Uppercut's target was offered at initiation, so
+        // its damage announces no second attack on Rhino: Spider-Man takes 1, not 2.
+        var book = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(RepositoryPaths.Dataset("abilities", "abilities.json")))!;
+        var rows = book["cards"]!.AsArray();
+        foreach (var row in rows.Where(row => row!["card"]!.GetValue<string>() == TemporalShield).ToArray()) rows.Remove(row);
+        rows.Add(System.Text.Json.Nodes.JsonNode.Parse("""
+            {"card":"11014","abilities":[{
+              "trigger":{"event":"WhenAttackInitiated","timing":"ForcedInterrupt","target":"attachedTo","player":"trigger.player"},
+              "effect":{"dealDamage":{"cards":"trigger.actor","amount":1}}
+            }]}
+            """));
+        var (world, _) = KangTemporalFixture.Board(players: 2);
+        var runner = new Marvel.Cards.Run.AbilityRunner(Marvel.Cards.Dsl.AbilityCatalog.Parse(book.ToJsonString()));
+        world.Abilities = runner;
+        var f = new RedSkullFixture(world, runner);
+        world.CreateCard(TemporalShield, world.AreaOf(DeckType.UpgradesArea, PlayArea.Villains, f.Villain.ObjectId));
+        var hand = world.Seats[1].Hand;
+        var uppercut = world.CreateCard("01054", hand);
+        int[] pay = [world.CreateCard("01089", hand).ObjectId, world.CreateCard("01088", hand).ObjectId];
+        var action = Assert.Single(runner.Actions(world, 1), ability => ability.Card == uppercut.ObjectId);
+
+        runner.ExecuteAction(world, new PlayerAction(action, pay, []));
+        f.Finish(prompt => Decision.Take(prompt.Affordances.Any(option => option.AnchorId == f.Villain.ObjectId)
+            ? f.Villain.ObjectId : prompt.Affordances[0].Id));
+
+        Assert.Equal(1, world.Seats[1].IdentityCard.Damage);
+        Assert.Equal(5, f.Villain.Damage);
+    }
+
+    [Fact]
     [Rule("rr:attack-player-ability-type.5")]
     public void GiantStompMayAvoidAShieldedVillain()
     {
