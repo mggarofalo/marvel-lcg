@@ -54,11 +54,16 @@ internal static class AbilityCardDiscardExecution
         }
     }
 
-    internal static void DiscardHandWithResource(AbilityEffect.DiscardHandWithResource discard, AbilityCardStateContext context)
+    internal static void DiscardHandWithResource(AbilityEffect.DiscardHandWithResource discard, AbilityCardStateContext context) =>
+        DiscardHandWhere(card => Resources.GeneratedBy(card.FaceId, context.World.Facts).Contains(discard.Resource), context);
+
+    internal static void DiscardHandOfKind(AbilityEffect.DiscardHandOfKind discard, AbilityCardStateContext context) =>
+        DiscardHandWhere(card => context.World.Facts.Kind(card.FaceId) == discard.Kind, context);
+
+    private static void DiscardHandWhere(Func<Card, bool> matches, AbilityCardStateContext context)
     {
         int start = context.Events.Count;
-        foreach (var card in context.World.Seats[context.Player].Hand.Cards.Where(card =>
-                     Resources.GeneratedBy(card.FaceId, context.World.Facts).Contains(discard.Resource)).ToList())
+        foreach (var card in context.World.Seats[context.Player].Hand.Cards.Where(matches).ToList())
         { Rules.Play.Discard.Card(context.World, card, context.Trigger, context.Events); context.Result.Discarded.Add(card); }
         ActivityBatches.Complete(context.Events, start, "Discard", context.Player);
         // `result.discarded` is resolution evidence: cards discarded by an
