@@ -232,6 +232,30 @@ public sealed class KangScenarioEncounterTests : CoreCardTestBase
         Assert.False(world.Agenda.IsBusy);
     }
 
+    [Fact]
+    [Rule("rr:defend-defense.5.2")]
+    public void TimeTravelTacticsBoostCountsTheDefendersObligations()
+    {
+        // rr:defend-defense.5.2: "Any constant or boost abilities that refer to 'you'
+        // refer to the defending player." Rhino (ATK 2) attacks player 0, who has
+        // three obligations; player 1, with two, defends with Spider-Man (DEF 3). The
+        // boost has 1 + 2 icons, so player 1 takes 2 + 3 - 3; counting player 0's
+        // obligations would make it 3.
+        var (world, f) = KangTemporalFixture.Board(players: 2, encounter: 2);
+        world.CreateCard(TimeTravelTactics, world.AreaOf(DeckType.EncounterDeck));
+        KangTemporalFixture.Obligations(world, 0, 3);
+        KangTemporalFixture.Obligations(world, 1, 2);
+        KangTemporalFixture.Attack(world, f.Villain, 0);
+
+        KangTemporalFixture.Drive(world, f.Runner, prompt => prompt.Player == 1
+            && prompt.Affordances.SingleOrDefault(a => a.Verb == "Defense") is { } defense
+            ? Decision.Take(defense.Id) : null);
+
+        Assert.Equal(2 + 3 - 3, world.Seats[1].IdentityCard.Damage);
+        Assert.Equal(0, world.Seats[0].IdentityCard.Damage);
+        Assert.False(world.Agenda.IsBusy);
+    }
+
     private static Decision First(Prompt prompt) => Decision.Take(prompt.Affordances[0].Id);
 
     private static Card InPlay(World world)

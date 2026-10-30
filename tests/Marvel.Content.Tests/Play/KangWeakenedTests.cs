@@ -85,6 +85,49 @@ public sealed class KangWeakenedTests : CoreCardTestBase
     }
 
     [Fact]
+    [Rule("rr:defend-defense.5")]
+    public void WeakenedFiresWhenItsHolderBasicDefendsAnAttackOnTheOtherPlayer()
+    {
+        // rr:defend-defense.5: "If a player defends against an enemy attack that
+        // targets a different player ... the defending player becomes the new target
+        // of that attack." Rhino (ATK 2) attacks player 0; player 1's Spider-Man
+        // (DEF 3) basic defends, takes no attack damage, then Weakened's 1.
+        var (world, f) = Board();
+        KangTemporalFixture.Attack(world, f.Villain, 0);
+
+        KangTemporalFixture.Drive(world, f.Runner, prompt => prompt.Player == 1
+            && prompt.Affordances.SingleOrDefault(a => a.Verb == "Defense") is { } defense
+            ? Decision.Take(defense.Id) : null);
+
+        Assert.Equal(1, world.Seats[1].IdentityCard.Damage);
+        Assert.False(world.Seats[1].IdentityCard.Ready);
+        Assert.Equal(0, world.Seats[0].IdentityCard.Damage);
+        Assert.False(world.Agenda.IsBusy);
+    }
+
+    [Fact]
+    [Rule("rr:stun-stunned.1")]
+    public void WeakenedIgnoresABasicAttackReplacedByStun()
+    {
+        // rr:stun-stunned.1: "When this character would attack, remove each stunned
+        // status card from it instead." Ruling 983ae8870c226cd4: "Stunned and confused status cards replace the
+        // usage of the basic power with their removal." Player 1's stunned
+        // Spider-Man attacks: the stun is removed, Rhino takes nothing, and no basic
+        // power was used.
+        var (world, f) = Board();
+        var identity = world.Seats[1].IdentityCard;
+        Statuses.Give(world, identity, Statuses.Stunned);
+
+        BasicPowers.BasicAttack(world, Cards, 1, f.Villain, []);
+        f.Finish();
+
+        Assert.False(Statuses.Has(world, identity, Statuses.Stunned));
+        Assert.Equal(0, f.Villain.Damage);
+        Assert.Equal(0, identity.Damage);
+        Assert.False(world.Agenda.IsBusy);
+    }
+
+    [Fact]
     [Rule("rr:defend-defense.4")]
     [Rule("rr:defend-defense.4.3")]
     public void WeakenedIgnoresADefenseLabeledAbility()
