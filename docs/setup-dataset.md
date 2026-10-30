@@ -25,7 +25,7 @@ The file has 3 groups:
 |---|---:|---:|
 | `campaigns` | 39 Core Set, Rise of Red Skull, Wrecking Crew and Green Goblin scenario/mode combinations | 39 |
 | `heroes` | 14 Core Set, Rise of Red Skull, Captain America, Ms. Marvel, Thor, Black Widow, Doctor Strange, Hulk and Ant-Man starter decks | 14 |
-| `encounter_sets` | 15 Core Set, Rise of Red Skull, Green Goblin and Kree Fanatic fixed/modular sets | 18 |
+| `encounter_sets` | 15 Core Set, Rise of Red Skull, Green Goblin and Kree Fanatic fixed/modular sets; the three declared Kang modular sets are not admitted | 18 |
 
 Ms. Marvel is admitted as a complete integration candidate. Her 40-card starter,
 obligation and nemesis set follow the pinned FFG divider in
@@ -270,10 +270,16 @@ authored. `KangModularSetupTests` gates composition and that exclusion.
 
 A Kang scenario recipe needs more than the campaign shape records. Stage 1A
 sets every Kang (II), Kang (III) and Kang's Dominion aside, so Kang (I) is the
-only villain in the villain deck (`pack:mc11:setup`). Stage 2A has each player
-reveal a random stage 3A, so the four stage-3 schemes are alternatives rather
-than a sequential main-scheme deck. Each stage 3A creates a game area with its
-own Kang (II), and stage 4A brings in Kang (III) and the stored Dominions.
+only villain in the villain deck (`pack:mc11:setup`), and removes each
+player's obligation cards from the game. Stages 1, 2 and 4 form the
+main-scheme deck in that order, so 4A is in play to hold the Dominions stage 3B
+places under it. The four stage-3 schemes are a separate facedown pool:
+neither the cards nor the insert place them, and this layout is our reading
+(MARVEL-894 Q13). Stage 2A places one acceleration token on itself per side
+scheme, discards every side scheme, has each player in turn order reveal a
+random stage 3A from the pool, and removes the unused stage-3 schemes from the
+game. Each stage 3A creates a game area with its own Kang (II), and stage 4A
+brings in Kang (III) and the stored Dominions.
 Expert replaces all six villains with 11034–11039 and adds the Expert set.
 The `schemes` list is always a sequential deck, so the setup dataset has no
 Kang key, and a request for one fails with `KeyNotFoundException`.
