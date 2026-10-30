@@ -25,7 +25,7 @@ The file has 3 groups:
 |---|---:|---:|
 | `campaigns` | 39 Core Set, Rise of Red Skull, Wrecking Crew and Green Goblin scenario/mode combinations | 39 |
 | `heroes` | 14 Core Set, Rise of Red Skull, Captain America, Ms. Marvel, Thor, Black Widow, Doctor Strange, Hulk and Ant-Man starter decks | 14 |
-| `encounter_sets` | 15 Core Set, Rise of Red Skull, Green Goblin and Kree Fanatic fixed/modular sets | 15 |
+| `encounter_sets` | 15 Core Set, Rise of Red Skull, Green Goblin and Kree Fanatic fixed/modular sets | 18 |
 
 Ms. Marvel is admitted as a complete integration candidate. Her 40-card starter,
 obligation and nemesis set follow the pinned FFG divider in
@@ -258,6 +258,25 @@ The runtime does not currently accept:
 
 A request that needs one of these surfaces fails at setup or card registration.
 It must not produce a partial board.
+
+The Once and Future Kang declares its three modular sets and no scenario
+recipe. Temporal has 11030×3, 11031×2, 11032 and 11033; Anachronauts has
+11040–11044, 11045×2 and 11046×2; Master of Time (key `mot`, the printed set
+code) has 11047, 11048×2, 11049×2, 11050 and 11051×2. The pinned MarvelSDB
+`pack/toafk_encounter.json` supplies the quantities, and
+`pack:mc11:adjustable-difficulty` makes each set usable in other scenarios.
+Complete-product admission excludes all three, even when every face is
+authored. `KangModularSetupTests` gates composition and that exclusion.
+
+A Kang scenario recipe needs more than the campaign shape records. Stage 1A
+sets every Kang (II), Kang (III) and Kang's Dominion aside, so Kang (I) is the
+only villain in the villain deck (`pack:mc11:setup`). Stage 2A has each player
+reveal a random stage 3A, so the four stage-3 schemes are alternatives rather
+than a sequential main-scheme deck. Each stage 3A creates a game area with its
+own Kang (II), and stage 4A brings in Kang (III) and the stored Dominions.
+Expert replaces all six villains with 11034–11039 and adds the Expert set.
+The `schemes` list is always a sequential deck, so the setup dataset has no
+Kang key, and a request for one fails with `KeyNotFoundException`.
 
 Mutagen Formula declares Standard and Expert recipes with 26 encounter cards,
 the selected I/II or II/III villain pair, and two physical double-sided main

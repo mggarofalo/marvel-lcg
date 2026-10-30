@@ -73221,6 +73221,24 @@
       ]
     },
     {
+      "id": "setup:encounter-set:anachronauts",
+      "fingerprint": "sha256:0e31a662a9663003672c4b6f46c0dc4b8e5a8caa8a660a572c9a8a1a458e6618",
+      "obligations": [
+        {
+          "key": "anachronauts-setup",
+          "summary": "The Anachronauts record supplies seven distinct faces and nine physical encounter cards.",
+          "disposition": "outside-core",
+          "reason": "This record requires The Once and Future Kang scenario pack, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
       "id": "setup:encounter-set:bomb_scare",
       "fingerprint": "sha256:7a64d598e2ac8dd9e60bcd8c7cd1718c4d6a2a6b33ca6009fa16c2573af2efe3",
       "obligations": [
@@ -73469,6 +73487,24 @@
       ]
     },
     {
+      "id": "setup:encounter-set:mot",
+      "fingerprint": "sha256:204d5badf312ffcd98d70d433aafeb41c2d948a6b221abadfc9d0ec0a6d55aaf",
+      "obligations": [
+        {
+          "key": "mot-setup",
+          "summary": "The Master of Time record supplies five distinct faces and eight physical encounter cards.",
+          "disposition": "outside-core",
+          "reason": "This record requires The Once and Future Kang scenario pack, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
       "id": "setup:encounter-set:power_drain",
       "fingerprint": "sha256:2f332b84596a7af344552d721be80d45622793f819740ed1dfa5c1ef56904f27",
       "obligations": [
@@ -73539,6 +73575,24 @@
           "summary": "name: \"Standard\"",
           "disposition": "no-independent-behavior",
           "reason": "The display label creates no game-state component independent of the setup record it names.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
+      "id": "setup:encounter-set:temporal",
+      "fingerprint": "sha256:818bfda44d3f2bf77799efc896d1481103679d5ae2f3badc9e1a9748a6f2da62",
+      "obligations": [
+        {
+          "key": "temporal-setup",
+          "summary": "The Temporal record supplies four distinct faces and seven physical encounter cards.",
+          "disposition": "outside-core",
+          "reason": "This record requires The Once and Future Kang scenario pack, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
           "target": null,
           "implementation": null,
           "work_item": null,
