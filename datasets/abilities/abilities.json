@@ -24085,6 +24085,79 @@
           ] }
         }
       ]
+    },
+    {
+      "card": "11018",
+      "name": "Weakened",
+      "note": "Forced Response: After you use a basic hero power, take 1 damage. Alter-Ego Action: Discard a [physical] resource from your hand → discard this obligation. rr:obligation.1: \"you\" is the player whose play area holds it. A hero's basic powers are attack, thwart and defense (rr:basic-power.1); recovery is the alter-ego's. rr:you-your.6 reads \"you use\" as the identity, so an ally's power and a card ability's attack or thwart do not count. rr:defend-defense.7.2: an ability after a basic power \"triggers after an attack in which a character made a basic defense resolves\"; a defense-labeled ability is not a basic defense (rr:defend-defense.4.3). rr:wild-resource.3 and ruling 437680ffd6d92fb8: the discarded card must print a physical resource; a wild icon does not qualify.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenBasicAttackEnds", "timing": "ForcedResponse", "actor": "you" },
+          "effect": { "dealDamage": { "cards": "you", "amount": 1 } }
+        },
+        {
+          "trigger": { "event": "WhenBasicThwartEnds", "timing": "ForcedResponse", "actor": "you" },
+          "effect": { "dealDamage": { "cards": "you", "amount": 1 } }
+        },
+        {
+          "trigger": { "event": "WhenAttackEnds", "timing": "ForcedResponse", "actor": "enemy", "target": "you" },
+          "when": { "heroBasicDefended": "you" },
+          "effect": { "dealDamage": { "cards": "you", "amount": 1 } }
+        },
+        {
+          "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "alter-ego" },
+          "cost": { "discardResourceFromHand": "R" },
+          "effect": { "discard": "this" }
+        }
+      ]
+    },
+    {
+      "card": "11025",
+      "name": "Rampage",
+      "note": "Starting threat and acceleration are engine-owned. When Defeated: Discard cards from the top of the encounter deck until a minion is discarded. Put that minion into play engaged with the player who defeated this scheme. rr:encounter-deck.2 ends the discard, fulfilled, when the encounter deck empties first. Putting into play is not revealing (rr:when-revealed-abilities.2).",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardDefeated", "timing": "WhenDefeated", "subject": "this" },
+          "effect": { "discardUntil": { "from": "encounterDeck", "kind": "minion", "then": "putIntoPlayEngaged", "player": "defeater" } }
+        }
+      ]
+    },
+    {
+      "card": "11027",
+      "name": "Manipulated Timestream",
+      "note": "When Revealed: Discard each event from your hand. If no events are discarded this way, this card gains surge. rr:you-your.8 discards from the revealing player's hand. The discard has no choice, so the surge reads the discarded result: it applies exactly when that hand held no event.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "seq": [
+            { "discardHandOfKind": "event" },
+            { "if": { "test": { "not": { "atLeast": { "value": { "result": "discarded" }, "count": 1 } } }, "then": { "gainSurge": 1 } } }
+          ] }
+        }
+      ]
+    },
+    {
+      "card": "11028",
+      "name": "Time-Travel Tactics",
+      "note": "Surge is engine-owned. When Revealed: Each player takes 1 indirect damage for each obligation in their play area. rr:each-player resolves the sentence once per player, so \"their\" is that player and the amount is their own obligation count. rr:obligation.5 places a revealed obligation in that player's play area. rr:you-your.3 lets each player assign their own indirect damage among the characters they control. star Boost: This card gains [boost] for each obligation in your play area. A boost ability's \"you\" is the player the activation is against (rr:you-your), and the gained icons are counted at step 3c after the boost ability (rr:attack-enemy-activation.step.3.c), so they last until the activation ends.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "eachPlayer": { "effect": { "indirectDamage": {
+            "among": { "query": "charactersYouControl" },
+            "amount": { "count": { "inPlayerArea": { "area": "obligations", "player": "you" } } }
+          } } } }
+        },
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "Boost", "subject": "this" },
+          "effect": { "grantUntil": {
+            "card": "this",
+            "keyword": "boost_const",
+            "amount": { "count": { "inPlayerArea": { "area": "obligations", "player": "you" } } },
+            "until": "EndOfActivation"
+          } }
+        }
+      ]
     }
   ]
 }
