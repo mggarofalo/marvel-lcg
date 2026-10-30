@@ -40,6 +40,13 @@ internal static class KangTemporalFixture
     internal static Card Engaged(World world, string face, int player) =>
         world.CreateCard(face, world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(player)));
 
+    /// <summary>Places <paramref name="count"/> copies of Zola's Algorithm in the player's obligations area.</summary>
+    internal static void Obligations(World world, int player, int count)
+    {
+        for (int i = 0; i < count; i++)
+            world.CreateCard("04163", world.AreaOf(DeckType.ObligationsArea, PlayArea.Of(player)));
+    }
+
     internal static void Attack(World world, Card enemy, int player) => Activate(world, enemy, false, player);
 
     /// <summary>Queues one enemy activation against <paramref name="player"/>.</summary>

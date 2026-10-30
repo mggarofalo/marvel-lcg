@@ -61,8 +61,8 @@ public sealed class EncounterPlayerAreaRelationTests : CoreCardTestBase
         var (world, _) = Board(CountingMinion, "01101");
         var minion = KangTemporalFixture.Engaged(world, "01101", 0);
         var other = KangTemporalFixture.Engaged(world, "01101", 1);
-        Obligations(world, 0, 2);
-        Obligations(world, 1, 1);
+        KangTemporalFixture.Obligations(world, 0, 2);
+        KangTemporalFixture.Obligations(world, 1, 1);
         world.Seats[1].IdentityCard.TurnTo("01001b");
         if (otherActivation) world.Activation = new EnemyActivation(other.ObjectId, 1, Attacking: true);
 
@@ -79,8 +79,8 @@ public sealed class EncounterPlayerAreaRelationTests : CoreCardTestBase
         // with player 0 reads player 1's single obligation and alter-ego form.
         var (world, _) = Board(CountingMinion, "01101");
         var minion = KangTemporalFixture.Engaged(world, "01101", 0);
-        Obligations(world, 0, 2);
-        Obligations(world, 1, 1);
+        KangTemporalFixture.Obligations(world, 0, 2);
+        KangTemporalFixture.Obligations(world, 1, 1);
         world.Seats[1].IdentityCard.TurnTo("01001b");
         world.Activation = new EnemyActivation(minion.ObjectId, 1, Attacking: false);
 
@@ -114,12 +114,6 @@ public sealed class EncounterPlayerAreaRelationTests : CoreCardTestBase
         Assert.Equal(DeckType.EncounterDeck, below.Area.Type);
         Assert.Single(world.Seats[1].Hand.Cards);
         Assert.False(world.Agenda.IsBusy);
-    }
-
-    private static void Obligations(World world, int player, int count)
-    {
-        for (int i = 0; i < count; i++)
-            world.CreateCard("04163", world.AreaOf(DeckType.ObligationsArea, PlayArea.Of(player)));
     }
 
     // The authored book with one row's abilities replaced by the synthetic ones.

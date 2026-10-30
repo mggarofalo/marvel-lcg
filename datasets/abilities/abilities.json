@@ -24021,6 +24021,70 @@
           "effect": { "discardUntil": { "from": "encounterDeck", "kind": "minion", "trait": "TEMPORAL", "then": "reveal" } }
         }
       ]
+    },
+    {
+      "card": "11047",
+      "name": "Kang (Master of Time)",
+      "note": "Toughness, Villainous and the unique icon are engine-owned. Kang (Master of Time) gets +1 SCH and +1 ATK for each obligation in your play area. rr:obligation.5 places a revealed obligation in that player's play area. Ruling 13454feafb65378b reads \"your\" as the player he is activating against, not necessarily the player he is engaged with, so activatedOrEngagedPlayer reads that player during his activation and his engaged player otherwise.",
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant", "subject": "this" },
+          "effect": { "seq": [
+            { "grant": { "card": "this", "keyword": "scheme", "amount": { "count": { "inPlayerArea": { "area": "obligations", "player": "activatedOrEngagedPlayer" } } } } },
+            { "grant": { "card": "this", "keyword": "attack", "amount": { "count": { "inPlayerArea": { "area": "obligations", "player": "activatedOrEngagedPlayer" } } } } }
+          ] }
+        }
+      ]
+    },
+    {
+      "card": "11048",
+      "name": "Time-Displaced Soldier",
+      "note": "Incite and Surge are engine-owned. star Boost: Deal yourself 1 facedown encounter card. A boost ability's \"you\" is the player the activation is against (rr:you-your).",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "Boost", "subject": "this" },
+          "effect": { "dealEncounterCards": { "player": "you", "count": 1 } }
+        }
+      ]
+    },
+    {
+      "card": "11050",
+      "name": "Light of Centuries Sphere",
+      "note": "Hazard and per-player starting threat are engine-owned. When Defeated: Discard cards from the top of the encounter deck until a minion is discarded. Put that minion into play engaged with the player who defeated this scheme. rr:encounter-deck.2 ends the discard, fulfilled, when the encounter deck empties first. Putting into play is not revealing (rr:when-revealed-abilities.2).",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardDefeated", "timing": "WhenDefeated", "subject": "this" },
+          "effect": { "discardUntil": { "from": "encounterDeck", "kind": "minion", "then": "putIntoPlayEngaged", "player": "defeater" } }
+        }
+      ]
+    },
+    {
+      "card": "11051",
+      "name": "Ancient Grudge",
+      "note": "When Revealed: Kang (Master of Time) activates against you. If Kang (Master of Time) is not in play, search the encounter deck and discard pile for Kang (Master of Time) and put him into play engaged with you. Shuffle the encounter deck. rr:activation.1 and rr:activation.2 read the form: an attack against a hero, a scheme against an alter-ego. rr:activation.7 completes the activation before the next sentence, so the in-play check follows it. With him absent nothing activates. rr:search.3 shuffles even when the search finds nothing, and the printed shuffle is its own sentence, so it resolves on every branch. Putting into play is not revealing (rr:when-revealed-abilities.2).",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "seq": [
+            { "if": {
+              "test": { "titleInPlay": "Kang (Master of Time)" },
+              "then": { "if": {
+                "test": { "inForm": { "player": "you", "form": "hero" } },
+                "then": { "enemyAttacks": { "enemies": { "titled": "Kang (Master of Time)" }, "against": "you" } },
+                "else": { "enemySchemes": { "enemies": { "titled": "Kang (Master of Time)" }, "against": "you" } }
+              } }
+            } },
+            { "if": {
+              "test": { "not": { "titleInPlay": "Kang (Master of Time)" } },
+              "then": { "if": {
+                "test": { "exists": { "cardsIn": { "areas": ["encounterDeck", "encounterDiscardPile"], "title": "Kang (Master of Time)" } } },
+                "then": { "putIntoPlay": { "card": { "cardsIn": { "areas": ["encounterDeck", "encounterDiscardPile"], "title": "Kang (Master of Time)" } }, "where": "engagedWithYou" } }
+              } }
+            } },
+            { "shuffle": "encounterDeck" }
+          ] }
+        }
+      ]
     }
   ]
 }
