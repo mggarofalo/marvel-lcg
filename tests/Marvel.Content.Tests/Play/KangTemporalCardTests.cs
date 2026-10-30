@@ -1,6 +1,7 @@
 using Marvel.Content.Tests.Cards;
 using Marvel.Rules.Events;
 using Marvel.Rules.Play;
+using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
 using Marvel.Rules.Timing;
 using Marvel.Tests;
@@ -24,7 +25,7 @@ public sealed class KangTemporalCardTests : CoreCardTestBase
     {
         // rr:boost-boost-icon: "If the boost field has a star icon ... resolve the
         // 'Boost' ability when the card is turned face up." 11030: "Boost: You are stunned."
-        var (world, f) = Board(players: 2);
+        var (world, f) = KangTemporalFixture.Board(players: 2);
         var card = world.CreateCard(boost, world.AreaOf(DeckType.EncounterDeck));
         world.Agenda.Add(new PhaseStep(scheme ? new EnemySchemeOperation() : new EnemyAttackOperation(),
             1, 2, Index: 1, Subject: f.Villain.ObjectId, Seat: 1));
@@ -50,7 +51,7 @@ public sealed class KangTemporalCardTests : CoreCardTestBase
         // player, it attacks that player." rr:boost-boost-icon.2: "Only the ability
         // text beneath the divider line is active on a card that is resolving as a
         // boost card", so a revealed Ancient Warrior does not stun.
-        var (world, f) = Board(players: 1);
+        var (world, f) = KangTemporalFixture.Board(players: 1);
         if (!hero) Forms.Change(world.Seats[0], Cards);
         var identity = world.Seats[0].IdentityCard;
         var warrior = f.Reveal("11030");
@@ -61,80 +62,6 @@ public sealed class KangTemporalCardTests : CoreCardTestBase
         Assert.Equal(hero ? 2 : 0, identity.Damage);
         Assert.Equal(hero ? 1 : 0, events.OfType<AttackCompleted>().Count(e => e.Enemy == warrior.ObjectId));
         Assert.False(Statuses.Has(world, identity, Statuses.Stunned));
-        Assert.False(world.Agenda.IsBusy);
-    }
-
-    [Theory]
-    [InlineData("01104", 0)] // No boost field.
-    [InlineData("11030", 0)] // A boost star and no boost icons.
-    [InlineData("01101", 1)]
-    [InlineData("11032", 3)]
-    [Rule("rr:indirect-damage.1")]
-    [Rule("rr:boost-boost-icon.1")]
-    public void ChitauriSoldierDiscardsTheTopCardAndDealsItsBoostIconsAsIndirectDamage(string top, int icons)
-    {
-        // 11031: "When Chitauri Soldier attacks you, discard the top card of the
-        // encounter deck → take indirect damage equal to the number of boost icons
-        // on that card." rr:boost-boost-icon.1: "A star icon is not itself
-        // considered a boost icon." Player 1 is not the first player.
-        var (world, f) = Board(players: 2);
-        var soldier = Engaged(world, "11031", 1);
-        var card = world.CreateCard(top, world.AreaOf(DeckType.EncounterDeck));
-        int deck = world.AreaOf(DeckType.EncounterDeck).Cards.Count;
-        Attack(world, soldier, 1);
-
-        var events = f.Finish();
-
-        Assert.Equal(DeckType.EncounterDiscardPile, card.Area.Type);
-        Assert.Equal(deck - 1, world.AreaOf(DeckType.EncounterDeck).Cards.Count);
-        Assert.Equal(1 + icons, world.Seats[1].IdentityCard.Damage);
-        Assert.Equal(0, world.Seats[0].IdentityCard.Damage);
-        Assert.False(Statuses.Has(world, world.Seats[1].IdentityCard, Statuses.Stunned));
-        Assert.Single(events.OfType<AttackCompleted>(), e => e.Enemy == soldier.ObjectId);
-        Assert.False(world.Agenda.IsBusy);
-    }
-
-    [Fact]
-    public void ChitauriSoldierIgnoresAnotherEnemysAttack()
-    {
-        // 11031 triggers only "When Chitauri Soldier attacks you."
-        var (world, f) = Board(players: 1);
-        Engaged(world, "11031", 0);
-        var mercenary = Engaged(world, "01101", 0);
-        var top = world.CreateCard("11032", world.AreaOf(DeckType.EncounterDeck));
-        Attack(world, mercenary, 0);
-
-        f.Finish();
-
-        Assert.Equal(DeckType.EncounterDeck, top.Area.Type);
-        Assert.Same(top, world.AreaOf(DeckType.EncounterDeck).Cards[^1]);
-        Assert.Empty(world.AreaOf(DeckType.EncounterDiscardPile).Cards);
-        Assert.Equal(1, world.Seats[0].IdentityCard.Damage);
-    }
-
-    [Fact]
-    [Rule("rr:encounter-deck.1")]
-    [Rule("rr:encounter-deck.2")]
-    public void ChitauriSoldierEmptyingTheEncounterDeckStillCountsTheDiscardedCard()
-    {
-        // rr:encounter-deck.1: "If the encounter deck is empty, the encounter discard
-        // pile is immediately shuffled to create a new encounter deck. When this
-        // occurs, place an acceleration token next to the main scheme deck."
-        // rr:encounter-deck.2: "If the encounter deck is emptied this way, that card
-        // ability is considered to be fulfilled."
-        var (world, f) = Board(players: 1, encounter: 0);
-        var soldier = Engaged(world, "11031", 0);
-        var last = world.CreateCard("11032", world.AreaOf(DeckType.EncounterDeck));
-        var discarded = world.CreateCard("01101", world.AreaOf(DeckType.EncounterDiscardPile));
-        Attack(world, soldier, 0);
-
-        f.Finish();
-
-        Assert.Equal(4, world.Seats[0].IdentityCard.Damage);
-        Assert.Empty(world.AreaOf(DeckType.EncounterDiscardPile).Cards);
-        Assert.Equal(new[] { discarded.ObjectId, last.ObjectId }.Order(),
-            world.AreaOf(DeckType.EncounterDeck).Cards.Select(card => card.ObjectId).Order());
-        Assert.Equal(1, f.Main.Tokens.GetValueOrDefault(EncounterDeck.AccelerationToken));
         Assert.False(world.Agenda.IsBusy);
     }
 
@@ -150,11 +77,11 @@ public sealed class KangTemporalCardTests : CoreCardTestBase
         // this attack deals damage to a character, discard each tough status card
         // from that character." rr:tough.1: "When this character would take damage,
         // remove a tough status card from it instead", which stops the control.
-        var (world, f) = Board(players: 1);
+        var (world, f) = KangTemporalFixture.Board(players: 1);
         var identity = world.Seats[0].IdentityCard;
-        var attacker = Engaged(world, enemy, 0);
+        var attacker = KangTemporalFixture.Engaged(world, enemy, 0);
         Statuses.Give(world, identity, Statuses.Tough);
-        Attack(world, attacker, 0);
+        KangTemporalFixture.Attack(world, attacker, 0);
 
         f.Finish();
 
@@ -170,7 +97,7 @@ public sealed class KangTemporalCardTests : CoreCardTestBase
     {
         // rr:toughness.1: "Forced Response: After this character enters play, give
         // it a tough status card."
-        var (world, f) = Board(players: 1);
+        var (world, f) = KangTemporalFixture.Board(players: 1);
         var rex = f.Reveal("11032");
 
         f.Finish();
@@ -195,7 +122,7 @@ public sealed class KangTemporalCardTests : CoreCardTestBase
         // "for each hazard icon on cards in play, deal one player one additional card."
         // rr:defeat: "if a side scheme has no threat on it, it is defeated." 11033:
         // "shuffle it into the encounter deck instead of discarding it."
-        var (world, f) = Board(players);
+        var (world, f) = KangTemporalFixture.Board(players);
         world.FirstPlayer = players - 1;
         var portal = f.Reveal("11033");
         f.Finish();
@@ -222,27 +149,38 @@ public sealed class KangTemporalCardTests : CoreCardTestBase
         Assert.False(world.Agenda.IsBusy);
     }
 
-    private static (World World, RedSkullFixture Fixture) Board(int players, int encounter = 6)
+    [Fact]
+    [Rule("rr:defeat")]
+    public void ShuffledTimePortalIsStillADefeatedSideScheme()
     {
-        var world = new World(Cards, players);
-        for (int player = 0; player < players; player++)
+        // 11033 replaces only the discard; the scheme is still defeated. Skilled
+        // Investigator (04047): "Hero Response: After a side scheme is defeated,
+        // exhaust Skilled Investigator → draw 1 card."
+        var (world, f) = KangTemporalFixture.Board(players: 1);
+        var identity = world.Seats[0].IdentityCard;
+        var investigator = world.CreateCard("04047",
+            world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), identity.ObjectId, cardOwner: 0));
+        var portal = f.Reveal("11033");
+        f.Finish();
+        int hand = world.Seats[0].Hand.Cards.Count;
+
+        BasicThwartPowers.BasicThwart(world, Cards, 0, portal, []);
+        int responses = 0;
+        var events = new List<GameEvent>();
+        for (var prompt = Sequence.Work(world, Cards, world.Abilities, events); prompt is not null;
+             prompt = Sequence.Work(world, Cards, world.Abilities, events))
         {
-            var seat = world.CreateSeat($"p{player}");
-            seat.IdentityCard = world.CreateCard(player == 0 ? "01010a,01010b" : "01001a,01001b", seat.Hero);
-            for (int i = 0; i < 12; i++) world.CreateCard("01088", seat.Deck);
+            Assert.True(responses < 2, prompt.Description);
+            var take = prompt.Affordances.SingleOrDefault(a => a.AnchorId == investigator.ObjectId);
+            if (take is not null) responses++;
+            Sequence.Answer(world, Cards, world.Abilities, prompt,
+                take is not null ? Decision.Take(take.Id) : Decision.Decline, events);
         }
-        world.CreateCard("01094", world.AreaOf(DeckType.VillainArea));
-        world.CreateCard("01097a", world.AreaOf(DeckType.MainSchemesArea));
-        for (int i = 0; i < encounter; i++) world.CreateCard("01104", world.AreaOf(DeckType.EncounterDeck));
-        var runner = AuthoredCards.Runner();
-        world.Abilities = runner;
-        return (world, new RedSkullFixture(world, runner));
+
+        Assert.Equal(1, responses);
+        Assert.Equal(DeckType.EncounterDeck, portal.Area.Type);
+        Assert.Equal(hand + 1, world.Seats[0].Hand.Cards.Count);
+        Assert.False(investigator.Ready);
+        Assert.False(world.Agenda.IsBusy);
     }
-
-    private static Card Engaged(World world, string face, int player) =>
-        world.CreateCard(face, world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(player)));
-
-    private static void Attack(World world, Card enemy, int player) =>
-        world.Agenda.Add(new PhaseStep(new EnemyAttackOperation(), 1, 2,
-            Index: player, Subject: enemy.ObjectId, Seat: player));
 }
