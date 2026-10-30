@@ -6,11 +6,15 @@ using Marvel.Rules.State;
 namespace Marvel.Sim;
 
 /// <summary>A deterministic research policy that plays cards and attacks.</summary>
-internal sealed class ActingPolicy(ICardFacts facts, IReadOnlyList<uint> seatSeeds)
+internal sealed class ActingPolicy(ICardFacts facts, IReadOnlyList<uint> seatSeeds) : ISimulationPolicy
 {
     public const string Name = "acting";
     public const int Version = 3;
     public const string Visibility = "full_state";
+
+    /// <summary>The harness's policy for every recorded game.</summary>
+    public static readonly SimulationPolicyFactory Create =
+        (facts, seatSeeds) => new ActingPolicy(facts, seatSeeds);
 
     private readonly IReadOnlyList<EngineRandom> random =
         [.. seatSeeds.Select(seed => new EngineRandom(seed))];
@@ -201,7 +205,7 @@ internal sealed class ActingPolicy(ICardFacts facts, IReadOnlyList<uint> seatSee
         var values = Values(option);
         return Decision.Take(
             option.Id,
-            targets ?? Targets(world, option),
+            targets ?? Targets(game, option),
             payment,
             values,
             Allocations(option, payment, values));
@@ -251,26 +255,12 @@ internal sealed class ActingPolicy(ICardFacts facts, IReadOnlyList<uint> seatSee
         return null;
     }
 
-    private static IReadOnlyList<int> Targets(World world, Affordance option)
+    private IReadOnlyList<int> Targets(Game game, Affordance option)
     {
-        if (option.Targets is not { } wanted)
-        {
-            return [];
-        }
-
-        if (wanted.IsGrouped && wanted.Groups is { Count: > 0 } groups)
-        {
-            return groups[0];
-        }
-
-        var selected = wanted.Legal.Take(wanted.Min).ToList();
+        var world = game.State;
+        int seat = DecisionAssessment.ActingSeat(game.Pending!, option);
         int villain = world.TheCardIn(DeckType.VillainArea)?.ObjectId ?? -1;
-        if (wanted.Min == 1 && wanted.Legal.Contains(villain))
-        {
-            selected[0] = villain;
-        }
-
-        return selected;
+        return ActingPolicyTargets.Select(option.Targets, villain, random[seat]);
     }
 
     private static IReadOnlyList<int> Excess(World world, int player)
