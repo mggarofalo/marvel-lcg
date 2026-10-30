@@ -23872,6 +23872,51 @@
           "effect": { "playSharedHeroTraitCard": "game" }
         }
       ]
+    },
+    {
+      "card": "11030",
+      "name": "Ancient Warrior",
+      "note": "Quickstrike is engine-owned. star Boost: You are stunned.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "Boost", "subject": "this" },
+          "effect": { "giveStatus": { "card": "you", "status": "stunned" } }
+        }
+      ]
+    },
+    {
+      "card": "11031",
+      "name": "Chitauri Soldier",
+      "note": "star Forced Interrupt: When Chitauri Soldier attacks you, discard the top card of the encounter deck -> take indirect damage equal to the number of boost icons on that card. The discard is the arrow cost; the damage counts the discarded card's printed boost icons. rr:you-your.7 makes \"you\" the attacked player, so the trigger binds trigger.player.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenAttackInitiated", "timing": "ForcedInterrupt", "actor": "this", "player": "trigger.player" },
+          "effect": { "indirectDamage": { "among": { "query": "charactersYouControl" }, "amount": { "printedBoostIconsDiscarded": "game" } } },
+          "cost": { "discardTop": { "from": "encounterDeck", "count": 1 } }
+        }
+      ]
+    },
+    {
+      "card": "11032",
+      "name": "Tyrannosaurus Rex",
+      "note": "Toughness is engine-owned. star Tyrannosaurus Rex's attacks gain piercing.",
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant", "subject": "this" },
+          "effect": { "grant": { "card": "this", "keyword": "piercing", "amount": 1 } }
+        }
+      ]
+    },
+    {
+      "card": "11033",
+      "name": "Time Portal",
+      "note": "Hazard and per-player starting threat are engine-owned. Forced Interrupt: When this scheme is defeated, shuffle it into the encounter deck instead of discarding it. Deferred defeat finalization discards only a card still in play with the defeated incarnation, so the shuffle replaces the discard; ruling:22d159cabcc98d45 keeps the encounter deck as its destination with Red Skull's side-scheme deck.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardDefeated", "timing": "ForcedInterrupt", "subject": "this" },
+          "effect": { "shuffleInto": { "cards": "this", "deck": "encounterDeck" } }
+        }
+      ]
     }
   ]
 }

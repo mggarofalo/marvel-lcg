@@ -1,6 +1,6 @@
 # Kang Temporal: Time Portal defeat prerequisite
 
-Research note for MARVEL-568. It records whether the engine can already express Time Portal's replacement before the four Temporal rows (11030 Ancient Warrior, 11031 Chitauri Soldier, 11032 Tyrannosaurus Rex, 11033 Time Portal) are authored. It does not admit Kang or any Temporal card.
+Research note for MARVEL-568. It records how the engine expresses Time Portal's replacement through the authored 11033 row, one of the four authored Temporal rows (11030 Ancient Warrior, 11031 Chitauri Soldier, 11032 Tyrannosaurus Rex, 11033 Time Portal). Kang's public admission stays closed.
 
 ## Authority
 
@@ -20,10 +20,10 @@ The defeated-card window suspends the scheme's defeat, so finalization is schedu
 
 ## Probe
 
-`tests/Marvel.Content.Tests/Play/TimePortalDefeatPrerequisiteTests.cs` uses a test-local 11033 row (`shuffleInto {cards: this, deck: encounterDeck}`) and the ability-less side scheme 01109 as a control, both on the ordinary encounter topology and on Red Skull's. It places threat and a counter on the scheme, defeats it, and finishes the agenda.
+`tests/Marvel.Content.Tests/Play/TimePortalDefeatPrerequisiteTests.cs` uses the authored book, whose 11033 row is `shuffleInto {cards: this, deck: encounterDeck}`, and the side scheme 01109, which has no defeat ability, as a control, both on the ordinary encounter topology and on Red Skull's. It places threat and a counter on the scheme, defeats it, and finishes the agenda.
 
 All four cases pass. The portal ends in the encounter deck, never in a discard pile, with exactly one `Shuffle_Into` move and no tokens left on it. The control goes to the matching discard pile. Removing the incarnation and in-play guard from `DefeatProcedure.FinalizeScheme` fails both portal cases, so the probe exercises the guard rather than passing vacuously.
 
 ## Result
 
-No engine prerequisite blocks the Temporal rows. The four rows can be authored with full-lifecycle tests through the existing `shuffleInto` effect, and the existing rows stay unchanged.
+No engine change is needed. The authored 11033 row uses the existing `shuffleInto` effect, and `tests/Marvel.Content.Tests/Play/KangTemporalCardTests.cs` covers the four Temporal rows through the full reveal, attack, deal and thwart procedures.
