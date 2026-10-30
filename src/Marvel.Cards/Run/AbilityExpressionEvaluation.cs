@@ -214,13 +214,17 @@ internal sealed class AbilityExpressionEvaluation(
         AbilityPlayer.You => AbilityCardQueries.Resolver(context.Bindings),
         AbilityPlayer.Controller => context.ProjectedPlayAreaPlayer ?? AbilityCardQueries.ControllerOf(context.World, context.Source),
         AbilityPlayer.ChosenPlayer => AbilityCardQueries.ChosenPlayer(context.Bindings).Owner,
-        AbilityPlayer.EngagedPlayer => context.ProjectedPlayAreaPlayer ?? (context.Source.Area.PlayArea.Player >= 0
-            ? context.Source.Area.PlayArea.Player
-            : throw new RulesNotImplementedException($"'{context.Source.FaceId}' asks for its engaged player outside a player's engaged area")),
+        AbilityPlayer.EngagedPlayer => context.ProjectedPlayAreaPlayer ?? EngagedSeat(),
+        AbilityPlayer.ActivatedOrEngagedPlayer => context.ProjectedPlayAreaPlayer
+            ?? AbilityCardQueries.ActivatedAgainst(context.World, context.Source) ?? EngagedSeat(),
         AbilityPlayer.FirstPlayer => context.World.FirstPlayer,
         AbilityPlayer.Defeater => AbilityCardQueries.DefeatingPlayer(context.Bindings),
         _ => throw new InvalidOperationException("Unknown compiled player relation"),
     };
+
+    private int EngagedSeat() => context.Source.Area.PlayArea.Player >= 0
+        ? context.Source.Area.PlayArea.Player
+        : throw new RulesNotImplementedException($"'{context.Source.FaceId}' asks for its engaged player outside a player's engaged area");
 
     private long StartingHealth(Card identity)
     {
