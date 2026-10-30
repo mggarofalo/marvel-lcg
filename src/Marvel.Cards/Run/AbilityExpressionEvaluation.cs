@@ -186,8 +186,8 @@ internal sealed class AbilityExpressionEvaluation(
         AbilityConditionFact.AttackDamagedYou => AttackDamagedIdentity(),
         AbilityConditionFact.InExpertMode => context.World.Expert,
         AbilityConditionFact.DefeatedByYou => context.Bindings.Defeat is { By: >= 0 } defeat && defeat.By == AbilityCardQueries.Resolver(context.Bindings),
-        AbilityConditionFact.HeroDefended => context.World.FinishedAttack is { } attack
-            && attack.Defender == context.World.Seats[AbilityCardQueries.Resolver(context.Bindings)].IdentityCard.ObjectId,
+        AbilityConditionFact.HeroDefended => YourIdentityDefended(basicOnly: false),
+        AbilityConditionFact.HeroBasicDefended => YourIdentityDefended(basicOnly: true),
         AbilityConditionFact.UndefendedAttack => context.Occurrence.Is(Steps.AttackEnds)
             ? context.World.FinishedAttack is { IsDefended: false } ended
                 && ended.Enemy == context.Occurrence.Actor && ended.Target == context.Occurrence.Target
@@ -196,6 +196,13 @@ internal sealed class AbilityExpressionEvaluation(
             && string.Equals(defeat.How, "Consequential_Damage", StringComparison.Ordinal),
         _ => throw new InvalidOperationException("Unknown compiled condition fact"),
     };
+
+    // rr:defend-defense.4.3: a defense-labeled ability "is not a basic defense".
+    private bool YourIdentityDefended(bool basicOnly)
+    {
+        if (context.World.FinishedAttack is not { } attack || basicOnly && !attack.BasicDefense) return false;
+        return attack.Defender == context.World.Seats[AbilityCardQueries.Resolver(context.Bindings)].IdentityCard.ObjectId;
+    }
 
     private bool RevealedFromEncounterDeck()
     {
@@ -214,13 +221,17 @@ internal sealed class AbilityExpressionEvaluation(
         AbilityPlayer.You => AbilityCardQueries.Resolver(context.Bindings),
         AbilityPlayer.Controller => context.ProjectedPlayAreaPlayer ?? AbilityCardQueries.ControllerOf(context.World, context.Source),
         AbilityPlayer.ChosenPlayer => AbilityCardQueries.ChosenPlayer(context.Bindings).Owner,
-        AbilityPlayer.EngagedPlayer => context.ProjectedPlayAreaPlayer ?? (context.Source.Area.PlayArea.Player >= 0
-            ? context.Source.Area.PlayArea.Player
-            : throw new RulesNotImplementedException($"'{context.Source.FaceId}' asks for its engaged player outside a player's engaged area")),
+        AbilityPlayer.EngagedPlayer => context.ProjectedPlayAreaPlayer ?? EngagedSeat(),
+        AbilityPlayer.ActivatedOrEngagedPlayer => context.ProjectedPlayAreaPlayer
+            ?? AbilityCardQueries.ActivatedAgainst(context.World, context.Source) ?? EngagedSeat(),
         AbilityPlayer.FirstPlayer => context.World.FirstPlayer,
         AbilityPlayer.Defeater => AbilityCardQueries.DefeatingPlayer(context.Bindings),
         _ => throw new InvalidOperationException("Unknown compiled player relation"),
     };
+
+    private int EngagedSeat() => context.Source.Area.PlayArea.Player >= 0
+        ? context.Source.Area.PlayArea.Player
+        : throw new RulesNotImplementedException($"'{context.Source.FaceId}' asks for its engaged player outside a player's engaged area");
 
     private long StartingHealth(Card identity)
     {

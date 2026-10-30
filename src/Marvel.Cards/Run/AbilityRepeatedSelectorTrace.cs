@@ -158,6 +158,8 @@ internal static class AbilityRepeatedSelectorTrace
                 candidate, DeckType.SupportsArea, cast.Player, engagement),
             AbilityCardQuery.UpgradesAndSupportsYouControl => IsControlledSupportOrUpgrade(
                 candidate, cast.Player, engagement),
+            AbilityCardQuery.AlliesAndSupportsYouControl => IsControlledAllyOrSupport(
+                candidate, cast.Player, engagement),
             _ => QueryCards(query, cast).Any(card =>
                 card.ObjectId == candidate.ObjectId),
         };
@@ -201,6 +203,11 @@ internal static class AbilityRepeatedSelectorTrace
     private static bool IsControlledSupportOrUpgrade(
         Card candidate, int player, Dictionary<int, int> engagement) =>
         candidate.Area.Type is DeckType.UpgradesArea or DeckType.SupportsArea
+        && TracePlayAreaPlayer(candidate, engagement) == player;
+
+    private static bool IsControlledAllyOrSupport(
+        Card candidate, int player, Dictionary<int, int> engagement) =>
+        candidate.Area.Type is DeckType.AlliesArea or DeckType.SupportsArea
         && TracePlayAreaPlayer(candidate, engagement) == player;
 
     internal static bool TraceEngagedWith(

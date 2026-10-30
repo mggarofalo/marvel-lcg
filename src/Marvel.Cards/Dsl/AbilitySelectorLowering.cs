@@ -115,6 +115,7 @@ internal static class AbilitySelectorLowering
         "powerTargets" => AbilityCardQuery.PowerTargets,
         "yourAsidePile" => AbilityCardQuery.YourAsidePile,
         "upgradesAndSupportsYouControl" => AbilityCardQuery.UpgradesAndSupportsYouControl,
+        "alliesAndSupportsYouControl" => AbilityCardQuery.AlliesAndSupportsYouControl,
         "identitySpecificInYourHand" => AbilityCardQuery.IdentitySpecificInYourHand,
         "supportsYouControl" => AbilityCardQuery.SupportsYouControl,
         "supports" => AbilityCardQuery.Supports,
@@ -168,6 +169,7 @@ internal static class AbilitySelectorLowering
         "allies" => DeckType.AlliesArea,
         "supports" => DeckType.SupportsArea,
         "engagedEnemies" => DeckType.EngagedEnemiesArea,
+        "obligations" => DeckType.ObligationsArea,
         var name => throw location.Error($"'{name}' is not a public player area"),
     };
 

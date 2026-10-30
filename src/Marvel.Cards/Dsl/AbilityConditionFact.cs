@@ -22,6 +22,8 @@ public enum AbilityConditionFact
     DefeatedByYou,
     /// <summary>The resolver's identity defended the completed attack.</summary>
     HeroDefended,
+    /// <summary>The resolver's identity made a basic defense against the completed attack.</summary>
+    HeroBasicDefended,
     /// <summary>The current attack has no defender.</summary>
     UndefendedAttack,
     /// <summary>The defeat was caused by consequential damage.</summary>

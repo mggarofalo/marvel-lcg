@@ -182,7 +182,7 @@ internal static class AbilityPlayerBindingAnalysis
             or AbilityEffect.AllowPlayBeneath or AbilityEffect.AllowPlayFromDiscard or AbilityPricingEffect.ReduceSelfCostPerEngagedMinion or AbilityPricingEffect.ReduceSelfCostPerControlledTrait or AbilityPricingEffect.ReduceFirstAllyCost or AbilityPricingEffect.ReduceUpgradeCostOnThis or AbilityEffect.DoubleResourceFor or AbilityEffect.PreventDamageFrom
             or AbilityEffect.DelayedStun
             or AbilityEffect.AttackAnotherEnemy or AbilityEffect.ChooseTopForHand or AbilityEffect.ChooseDiscardToShuffle
-            or AbilityEffect.DiscardHandWithResource
+            or AbilityEffect.DiscardHandWithResource or AbilityEffect.DiscardHandOfKind
             or AbilityEffect.RecoverDiscardedByResource or AbilityEffect.GrantTraitCharacters or AbilityEffect.ModifyPlayedEvent or AbilityEffect.BoostBasicUse => false,
         _ => throw new InvalidOperationException(
             "Unknown compiled effect in player-binding analysis"),
@@ -205,6 +205,7 @@ internal static class AbilityPlayerBindingAnalysis
             AbilityCardQuery.YourAsideMinion or AbilityCardQuery.YourAsideSideScheme
             or AbilityCardQuery.VillainAndMinionsEngagedWithYou or AbilityCardQuery.MinionsEngagedWithYou or AbilityCardQuery.YourAsidePile
             or AbilityCardQuery.UpgradesAndSupportsYouControl or AbilityCardQuery.CardsYouControl
+            or AbilityCardQuery.AlliesAndSupportsYouControl
             or AbilityCardQuery.IdentitySpecificInYourHand
             or AbilityCardQuery.SupportsYouControl or AbilityCardQuery.CharactersYouControl
             or AbilityCardQuery.CharactersYouControlExceptCost
@@ -256,7 +257,8 @@ internal static class AbilityPlayerBindingAnalysis
         AbilityCondition.Any any => any.Operands.Any(Contains),
         AbilityCondition.Negated negated => Contains(negated.Operand),
         AbilityCondition.Flag flag => flag.Kind is AbilityConditionFact.DefeatedByYou
-            or AbilityConditionFact.HeroDefended or AbilityConditionFact.UndefendedAttack,
+            or AbilityConditionFact.HeroDefended or AbilityConditionFact.HeroBasicDefended
+            or AbilityConditionFact.UndefendedAttack,
         AbilityCondition.Exists exists => Contains(exists.Cards),
         AbilityCondition.LegalPractice practice => Contains(practice.Schemes),
         AbilityCondition.AutomaticThwart thwart => Contains(thwart.Scheme),

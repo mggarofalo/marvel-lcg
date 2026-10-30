@@ -23872,6 +23872,292 @@
           "effect": { "playSharedHeroTraitCard": "game" }
         }
       ]
+    },
+    {
+      "card": "11030",
+      "name": "Ancient Warrior",
+      "note": "Quickstrike is engine-owned. star Boost: You are stunned.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "Boost", "subject": "this" },
+          "effect": { "giveStatus": { "card": "you", "status": "stunned" } }
+        }
+      ]
+    },
+    {
+      "card": "11031",
+      "name": "Chitauri Soldier",
+      "note": "star Forced Interrupt: When Chitauri Soldier attacks you, discard the top card of the encounter deck -> take indirect damage equal to the number of boost icons on that card. The discard is the arrow cost; the damage counts the discarded card's printed boost icons. rr:you-your.7 makes \"you\" the attacked player, so the trigger binds trigger.player.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenAttackInitiated", "timing": "ForcedInterrupt", "actor": "this", "player": "trigger.player" },
+          "effect": { "indirectDamage": { "among": { "query": "charactersYouControl" }, "amount": { "printedBoostIconsDiscarded": "game" } } },
+          "cost": { "discardTop": { "from": "encounterDeck", "count": 1 } }
+        }
+      ]
+    },
+    {
+      "card": "11032",
+      "name": "Tyrannosaurus Rex",
+      "note": "Toughness is engine-owned. star Tyrannosaurus Rex's attacks gain piercing.",
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant", "subject": "this" },
+          "effect": { "grant": { "card": "this", "keyword": "piercing", "amount": 1 } }
+        }
+      ]
+    },
+    {
+      "card": "11033",
+      "name": "Time Portal",
+      "note": "Hazard and per-player starting threat are engine-owned. Forced Interrupt: When this scheme is defeated, shuffle it into the encounter deck instead of discarding it. Deferred defeat finalization discards only a card still in play with the defeated incarnation, so the shuffle replaces the discard; ruling:22d159cabcc98d45 keeps the encounter deck as its destination with Red Skull's side-scheme deck.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardDefeated", "timing": "ForcedInterrupt", "subject": "this" },
+          "effect": { "shuffleInto": { "cards": "this", "deck": "encounterDeck" } }
+        }
+      ]
+    },
+    {
+      "card": "11040",
+      "name": "Apocryphus",
+      "note": "When Revealed: Discard an ally or support you control. star Boost: Exhaust a character you control. Give this enemy another boost card. rr:ability.3 initiates the discard only with a valid target, so a player controlling neither resolves nothing. The chosen card must be one the discard can remove, which leaves out a permanent card from another set (rr:permanent.4). A boost card's \"this enemy\" is the activating enemy.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "chooseCard": { "from": { "query": "alliesAndSupportsYouControl" }, "effect": { "discard": "chosen" } } }
+        },
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "Boost", "subject": "this" },
+          "effect": { "seq": [
+            { "chooseCard": { "from": { "query": "charactersYouControl" }, "effect": { "exhaust": "chosen" } } },
+            { "giveAdditionalBoost": { "enemy": "activatingEnemy" } }
+          ] }
+        }
+      ]
+    },
+    {
+      "card": "11041",
+      "name": "Deathunt 9000",
+      "note": "Toughness and Villainous are engine-owned. star Boost: Give this enemy a tough status card and another boost card. A boost card's \"this enemy\" is the enemy it was given to, which is the activating enemy.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "Boost", "subject": "this" },
+          "effect": { "seq": [
+            { "giveStatus": { "card": "activatingEnemy", "status": "tough" } },
+            { "giveAdditionalBoost": { "enemy": "activatingEnemy" } }
+          ] }
+        }
+      ]
+    },
+    {
+      "card": "11042",
+      "name": "Sir Raston",
+      "note": "Guard and Retaliate are engine-owned. star Boost: Take 1 damage. Give this enemy another boost card. rr:you-your.2 puts the damage on the identity of the player the activation is against.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "Boost", "subject": "this" },
+          "effect": { "seq": [
+            { "dealDamage": { "cards": "you", "amount": 1 } },
+            { "giveAdditionalBoost": { "enemy": "activatingEnemy" } }
+          ] }
+        }
+      ]
+    },
+    {
+      "card": "11043",
+      "name": "Terminatrix",
+      "note": "Quickstrike is engine-owned. star Terminatrix's attacks gain piercing. star Boost: Give this enemy 2 more boost cards.",
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant", "subject": "this" },
+          "effect": { "grant": { "card": "this", "keyword": "piercing", "amount": 1 } }
+        },
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "Boost", "subject": "this" },
+          "effect": { "seq": [
+            { "giveAdditionalBoost": { "enemy": "activatingEnemy" } },
+            { "giveAdditionalBoost": { "enemy": "activatingEnemy" } }
+          ] }
+        }
+      ]
+    },
+    {
+      "card": "11044",
+      "name": "Wildrun",
+      "note": "When Revealed: Discard 1 random card from your hand. star Boost: Discard 1 random card from your hand. Give this enemy another boost card. rr:you-your.8 makes \"your hand\" the resolving player's hand; the random pick draws on the seeded stream.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "discardAtRandom": { "player": "you", "count": 1 } }
+        },
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "Boost", "subject": "this" },
+          "effect": { "seq": [
+            { "discardAtRandom": { "player": "you", "count": 1 } },
+            { "giveAdditionalBoost": { "enemy": "activatingEnemy" } }
+          ] }
+        }
+      ]
+    },
+    {
+      "card": "11045",
+      "name": "The Anachronauts",
+      "note": "Hazard and per-player starting threat are engine-owned. When Defeated: Shuffle each Temporal card in the encounter discard pile into the encounter deck. rr:when-defeated-abilities.2.1 resolves this before the scheme leaves play.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardDefeated", "timing": "WhenDefeated", "subject": "this" },
+          "effect": { "shuffleInto": { "cards": { "cardsIn": { "area": "encounterDiscardPile", "trait": "TEMPORAL" } }, "deck": "encounterDeck" } }
+        }
+      ]
+    },
+    {
+      "card": "11046",
+      "name": "Kang's Chosen",
+      "note": "Incite is engine-owned. When Revealed: Discard cards from the top of the encounter deck until a Temporal minion is discarded. Reveal that minion. rr:encounter-deck.2 ends the discard, fulfilled, when the encounter deck empties first; \"Reveal that minion\" names no player, so the player resolving Kang's Chosen reveals it; that reading is ours.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "discardUntil": { "from": "encounterDeck", "kind": "minion", "trait": "TEMPORAL", "then": "reveal" } }
+        }
+      ]
+    },
+    {
+      "card": "11047",
+      "name": "Kang (Master of Time)",
+      "note": "Toughness, Villainous and the unique icon are engine-owned. Kang (Master of Time) gets +1 SCH and +1 ATK for each obligation in your play area. rr:obligation.5 places a revealed obligation in that player's play area. Ruling 13454feafb65378b reads \"your\" as the player he is activating against, not necessarily the player he is engaged with, so activatedOrEngagedPlayer reads that player during his activation and his engaged player otherwise.",
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant", "subject": "this" },
+          "effect": { "seq": [
+            { "grant": { "card": "this", "keyword": "scheme", "amount": { "count": { "inPlayerArea": { "area": "obligations", "player": "activatedOrEngagedPlayer" } } } } },
+            { "grant": { "card": "this", "keyword": "attack", "amount": { "count": { "inPlayerArea": { "area": "obligations", "player": "activatedOrEngagedPlayer" } } } } }
+          ] }
+        }
+      ]
+    },
+    {
+      "card": "11048",
+      "name": "Time-Displaced Soldier",
+      "note": "Incite and Surge are engine-owned. star Boost: Deal yourself 1 facedown encounter card. A boost ability's \"you\" is the player the activation is against (rr:you-your).",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "Boost", "subject": "this" },
+          "effect": { "dealEncounterCards": { "player": "you", "count": 1 } }
+        }
+      ]
+    },
+    {
+      "card": "11050",
+      "name": "Light of Centuries Sphere",
+      "note": "Hazard and per-player starting threat are engine-owned. When Defeated: Discard cards from the top of the encounter deck until a minion is discarded. Put that minion into play engaged with the player who defeated this scheme. rr:encounter-deck.2 ends the discard, fulfilled, when the encounter deck empties first. Putting into play is not revealing (rr:when-revealed-abilities.2).",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardDefeated", "timing": "WhenDefeated", "subject": "this" },
+          "effect": { "discardUntil": { "from": "encounterDeck", "kind": "minion", "then": "putIntoPlayEngaged", "player": "defeater" } }
+        }
+      ]
+    },
+    {
+      "card": "11051",
+      "name": "Ancient Grudge",
+      "note": "When Revealed: Kang (Master of Time) activates against you. If Kang (Master of Time) is not in play, search the encounter deck and discard pile for Kang (Master of Time) and put him into play engaged with you. Shuffle the encounter deck. rr:activation.1 and rr:activation.2 read the form: an attack against a hero, a scheme against an alter-ego. rr:activation.7 completes the activation before the next sentence, so the in-play check follows it. With him absent nothing activates. rr:search.3 shuffles even when the search finds nothing, and the printed shuffle is its own sentence, so it resolves on every branch. Putting into play is not revealing (rr:when-revealed-abilities.2).",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "seq": [
+            { "if": {
+              "test": { "titleInPlay": "Kang (Master of Time)" },
+              "then": { "if": {
+                "test": { "inForm": { "player": "you", "form": "hero" } },
+                "then": { "enemyAttacks": { "enemies": { "titled": "Kang (Master of Time)" }, "against": "you" } },
+                "else": { "enemySchemes": { "enemies": { "titled": "Kang (Master of Time)" }, "against": "you" } }
+              } }
+            } },
+            { "if": {
+              "test": { "not": { "titleInPlay": "Kang (Master of Time)" } },
+              "then": { "if": {
+                "test": { "exists": { "cardsIn": { "areas": ["encounterDeck", "encounterDiscardPile"], "title": "Kang (Master of Time)" } } },
+                "then": { "putIntoPlay": { "card": { "cardsIn": { "areas": ["encounterDeck", "encounterDiscardPile"], "title": "Kang (Master of Time)" } }, "where": "engagedWithYou" } }
+              } }
+            } },
+            { "shuffle": "encounterDeck" }
+          ] }
+        }
+      ]
+    },
+    {
+      "card": "11018",
+      "name": "Weakened",
+      "note": "Forced Response: After you use a basic hero power, take 1 damage. Alter-Ego Action: Discard a [physical] resource from your hand → discard this obligation. rr:obligation.1: \"you\" is the player whose play area holds it. A hero's basic powers are attack, thwart and defense (rr:basic-power.1); recovery is the alter-ego's. rr:you-your.6 reads \"you use\" as the identity, so an ally's power and a card ability's attack or thwart do not count. rr:defend-defense.7.2: an ability after a basic power \"triggers after an attack in which a character made a basic defense resolves\"; a defense-labeled ability is not a basic defense (rr:defend-defense.4.3). rr:wild-resource.3 and ruling 437680ffd6d92fb8: the discarded card must print a physical resource; a wild icon does not qualify.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenBasicAttackEnds", "timing": "ForcedResponse", "actor": "you" },
+          "effect": { "dealDamage": { "cards": "you", "amount": 1 } }
+        },
+        {
+          "trigger": { "event": "WhenBasicThwartEnds", "timing": "ForcedResponse", "actor": "you" },
+          "effect": { "dealDamage": { "cards": "you", "amount": 1 } }
+        },
+        {
+          "trigger": { "event": "WhenAttackEnds", "timing": "ForcedResponse", "actor": "enemy", "target": "you" },
+          "when": { "heroBasicDefended": "you" },
+          "effect": { "dealDamage": { "cards": "you", "amount": 1 } }
+        },
+        {
+          "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "alter-ego" },
+          "cost": { "discardResourceFromHand": "R" },
+          "effect": { "discard": "this" }
+        }
+      ]
+    },
+    {
+      "card": "11025",
+      "name": "Rampage",
+      "note": "Starting threat and acceleration are engine-owned. When Defeated: Discard cards from the top of the encounter deck until a minion is discarded. Put that minion into play engaged with the player who defeated this scheme. rr:encounter-deck.2 ends the discard, fulfilled, when the encounter deck empties first. Putting into play is not revealing (rr:when-revealed-abilities.2).",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardDefeated", "timing": "WhenDefeated", "subject": "this" },
+          "effect": { "discardUntil": { "from": "encounterDeck", "kind": "minion", "then": "putIntoPlayEngaged", "player": "defeater" } }
+        }
+      ]
+    },
+    {
+      "card": "11027",
+      "name": "Manipulated Timestream",
+      "note": "When Revealed: Discard each event from your hand. If no events are discarded this way, this card gains surge. rr:you-your.8 discards from the revealing player's hand. The discard has no choice, so the surge reads the discarded result: it applies exactly when that hand held no event.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "seq": [
+            { "discardHandOfKind": "event" },
+            { "if": { "test": { "not": { "atLeast": { "value": { "result": "discarded" }, "count": 1 } } }, "then": { "gainSurge": 1 } } }
+          ] }
+        }
+      ]
+    },
+    {
+      "card": "11028",
+      "name": "Time-Travel Tactics",
+      "note": "Surge is engine-owned. When Revealed: Each player takes 1 indirect damage for each obligation in their play area. rr:each-player resolves the sentence once per player, so \"their\" is that player and the amount is their own obligation count. rr:obligation.5 places a revealed obligation in that player's play area. rr:you-your.3 lets each player assign their own indirect damage among the characters they control. star Boost: This card gains [boost] for each obligation in your play area. A boost ability's \"you\" is the player the activation is against (rr:you-your), and the gained icons are counted at step 3c after the boost ability (rr:attack-enemy-activation.step.3.c), so they last until the activation ends.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "eachPlayer": { "effect": { "indirectDamage": {
+            "among": { "query": "charactersYouControl" },
+            "amount": { "count": { "inPlayerArea": { "area": "obligations", "player": "you" } } }
+          } } } }
+        },
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "Boost", "subject": "this" },
+          "effect": { "grantUntil": {
+            "card": "this",
+            "keyword": "boost_const",
+            "amount": { "count": { "inPlayerArea": { "area": "obligations", "player": "you" } } },
+            "until": "EndOfActivation"
+          } }
+        }
+      ]
     }
   ]
 }

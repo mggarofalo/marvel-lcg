@@ -236,7 +236,7 @@ internal static class AbilityAdmissionAreaDependencies
                 or AbilityEffect.InspectEncounterTop
                 or AbilityEffect.ChooseTopForHand
                 or AbilityEffect.ChooseDiscardToShuffle
-                or AbilityEffect.DiscardHandWithResource
+                or AbilityEffect.DiscardHandWithResource or AbilityEffect.DiscardHandOfKind
                 or AbilityEffect.RecoverDiscardedByResource or AbilityEffect.RecruitDiscarded
                 or AbilityEffect.ActivateEnemies or AbilityEffect.GrantTraitCharacters or AbilityEffect.ModifyPlayedEvent or AbilityEffect.BoostBasicUse or AbilityPricingEffect.IncreaseNextEventCost => true,
             _ => false,

@@ -20,4 +20,9 @@ public enum AbilityPlayer
     FirstPlayer,
     /// <summary>The player credited with the triggering card defeat.</summary>
     Defeater,
+    /// <summary>
+    /// The player the source is activating against while it activates; otherwise
+    /// the player it is engaged with.
+    /// </summary>
+    ActivatedOrEngagedPlayer,
 }

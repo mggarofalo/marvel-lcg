@@ -17,8 +17,8 @@ public sealed class AbilityDataAnUnauthoredCardSaysSoRatherThanDoingNothingTests
         // card produces a board that is plausible and wrong.
         var world = new World(Printed, players: 1);
         world.CreateSeat("p0");
-        // Time-Travel Tactics has printed reveal text and remains unauthored.
-        var card = world.CreateCard("11028", world.AreaOf(DeckType.RevealingArea));
+        // Past Machinations has printed reveal text and remains unauthored.
+        var card = world.CreateCard("11029", world.AreaOf(DeckType.RevealingArea));
         var thrown = Assert.Throws<RulesNotImplementedException>(() => AuthoredCards.Runner().ExecuteReveal(world, card, 0));
         Assert.Contains("no ability data", thrown.Message, StringComparison.Ordinal);
     }
@@ -231,6 +231,10 @@ public sealed class AbilityDataAnUnauthoredCardSaysSoRatherThanDoingNothingTests
         permitted.UnionWith(["10030", "10031", "10032"]);
         permitted.UnionWith(["10025", "10026", "10027", "10028"]);
         permitted.UnionWith(["10015", "10029"]);
+        permitted.UnionWith(["11030", "11031", "11032", "11033"]);
+        permitted.UnionWith(["11040", "11041", "11042", "11043", "11044", "11045", "11046"]);
+        permitted.UnionWith(["11047", "11048", "11050", "11051"]);
+        permitted.UnionWith(["11018", "11025", "11027", "11028"]);
         permitted.UnionWith(["12001a", "12001b", "12001c", "12002", "12004", "12007", "12010", "12011", "12005", "12008", "12012", "12013", "12015", "12017", "12018", "12019", "12021", "12022", "12023", "12032", "12033"]);
         permitted.UnionWith(["12003", "12009", "12016", "12020", "12031", "12014", "12030", "12027", "12028", "12006", "12029", "12025", "12026", "12024"]);
         permitted.UnionWith(["90001", "90002", "90003", "90004", "90005"]);

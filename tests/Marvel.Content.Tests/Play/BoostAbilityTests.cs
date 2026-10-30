@@ -67,7 +67,7 @@ public sealed class BoostAbilityTests
         // to silence is a villain who schemed for two instead of two and an
         // exhausted hero, and nothing anywhere says so.
         var world = Deal();
-        const string unauthoredBoost = "11028";
+        const string unauthoredBoost = "11017";
         Assert.True(Cards.HasBoostAbility(unauthoredBoost));
         Assert.DoesNotContain(unauthoredBoost, AuthoredCards.Book.Authored);
         var card = world.CreateCard(unauthoredBoost, world.AreaOf(DeckType.BoostingArea));

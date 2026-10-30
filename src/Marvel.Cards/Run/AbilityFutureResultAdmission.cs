@@ -68,7 +68,7 @@ internal static class AbilityFutureResultAdmission
         AbilityEffect.CardAction { Instruction: AbilityCardInstruction.Exhaust } exhausted when name == "exhausted" =>
             AbilityCardActionTargetAdmission.Of(exhausted, scope) == AbilityTargetAdmission.TargetLegality.Valid,
         AbilityEffect.DiscardAtRandom discard when name is "discarded" or "resourceTypes" => AbilityInitiationPrimitives.Amount(discard.Count, scope) > 0,
-        AbilityEffect.DiscardHandWithResource when name == "discarded" => true,
+        AbilityEffect.DiscardHandWithResource or AbilityEffect.DiscardHandOfKind when name == "discarded" => true,
         AbilityEffect.DiscardHandCards discard when name == "discarded" => AbilityInitiationPrimitives.Amount(discard.Count, scope) > 0,
         AbilityEffect.MoveThreat move when name is "threatMoved" or "threatRemovedByMove" or "destinationForcedResponseTriggered" =>
             AbilityThreatMovementAdmission.CanMove(move, scope),

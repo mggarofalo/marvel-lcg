@@ -23,8 +23,7 @@ internal static class AbilityDiscardUntilExecution
                     context.World.Seats[found.Owner].Hand, context.Trigger, context.Events, "Add_To_Hand");
                 break;
             case AbilityDiscardUntilResult.Reveal:
-                int player = new AbilityExpressionEvaluation(context.Expressions,
-                    new AbilitySelectorEvaluation(context.Expressions.Bindings)).Seat(effect.Player);
+                int player = Seat(effect, context);
                 var revealContext = context with
                 { Expressions = context.Expressions with { Bindings = context.Expressions.Bindings with { Player = player } } };
                 return AbilityDeckAndRevealExecution.RevealCard(found, revealContext);
@@ -49,17 +48,27 @@ internal static class AbilityDiscardUntilExecution
                     Entry = EncounterEntryRequest.For(found, context.World.FirstPlayer,
                         new CardEntryPlacement(Verb: "Put_Into_Play")),
                 };
+            case AbilityDiscardUntilResult.PutIntoPlayEngaged:
+                // rr:when-revealed-abilities.2: entry does not resolve When Revealed text.
+                return AbilityDeckAndRevealResult.Handled with
+                {
+                    Entry = EncounterEntryRequest.For(found, Seat(effect, context),
+                        new CardEntryPlacement(Verb: "Put_Into_Play")),
+                };
             default:
                 throw new InvalidOperationException("Unknown compiled discard-until result");
         }
         return AbilityDeckAndRevealResult.Handled;
     }
 
+    private static int Seat(AbilityEffect.DiscardUntil effect, AbilityDeckAndRevealContext context) =>
+        new AbilityExpressionEvaluation(context.Expressions,
+            new AbilitySelectorEvaluation(context.Expressions.Bindings)).Seat(effect.Player);
+
     private static Marvel.Rules.State.Card? DiscardPlayerDeck(
         AbilityEffect.DiscardUntil effect, AbilityDeckAndRevealContext context)
     {
-        int player = new AbilityExpressionEvaluation(context.Expressions,
-            new AbilitySelectorEvaluation(context.Expressions.Bindings)).Seat(effect.Player);
+        int player = Seat(effect, context);
         return effect.Set is { } set
             ? PlayerDeck.DiscardUntil(context.World, player, set, context.Trigger, context.Events)
             : PlayerDeck.DiscardUntil(context.World, player, effect.Kind!.Value, context.Trigger, context.Events, effect.Trait);

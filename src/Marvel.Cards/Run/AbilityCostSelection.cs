@@ -26,7 +26,7 @@ internal static class AbilityCostSelection
             return new TargetRequest([.. DiscardCandidates(world, player, choice).Select(card => card.ObjectId)], 1, 1);
         if (cost is AbilityCost.DiscardFromHand discard)
         {
-            var hand = HandCandidates(world, source, player);
+            var hand = HandCandidates(world, source, player, discard);
             var range = Range(discard.Range, hand.Count);
             return new TargetRequest([.. hand.Select(card => card.ObjectId)], range.Min, range.Max);
         }
@@ -65,6 +65,21 @@ internal static class AbilityCostSelection
 
     internal static IReadOnlyList<Card> HandCandidates(World world, Card source, int player) =>
         [.. world.Seats[player].Hand.Cards.Where(card => card != source)];
+
+    // rr:wild-resource.3: outside a cost being generated, a wild icon is not another type,
+    // so a typed discard needs that printed icon (ruling:437680ffd6d92fb8).
+    internal static IReadOnlyList<Card> HandCandidates(World world, Card source, int player, AbilityCost? cost) =>
+        HandDiscard(cost)?.Resource is { } resource
+            ? [.. HandCandidates(world, source, player).Where(card =>
+                Resources.GeneratedBy(card.FaceId, world.Facts).Contains(resource))]
+            : HandCandidates(world, source, player);
+
+    private static AbilityCost.DiscardFromHand? HandDiscard(AbilityCost? cost) => cost switch
+    {
+        AbilityCost.DiscardFromHand discard => discard,
+        AbilityCost.Sequence sequence => sequence.Costs.Select(HandDiscard).FirstOrDefault(discard => discard is not null),
+        _ => null,
+    };
 
     internal static IReadOnlyList<Card> Choices(World world, int player, AbilityCost.ExhaustChosen cost) =>
         [.. Choices(world, player, cost.From).Where(card => cost.Trait is null

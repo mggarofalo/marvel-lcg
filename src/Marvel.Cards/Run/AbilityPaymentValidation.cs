@@ -157,7 +157,7 @@ internal sealed class AbilityPaymentValidation(
     private void ValidateHandDiscard(
         AbilityCost.DiscardFromHand discard, IReadOnlyList<int> chosen)
     {
-        var candidates = AbilityCostSelection.HandCandidates(world, source, player);
+        var candidates = AbilityCostSelection.HandCandidates(world, source, player, discard);
         var (minimum, maximum) = AbilityCostSelection.Range(discard.Range, candidates.Count);
         if (chosen.Count < minimum || chosen.Count > maximum
             || chosen.Distinct().Count() != chosen.Count)

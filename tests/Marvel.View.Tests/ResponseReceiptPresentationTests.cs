@@ -53,6 +53,21 @@ public sealed class ResponseReceiptPresentationTests : EventPresentationTestBase
         Assert.DoesNotContain(batch.History, entry => entry.Summary.Contains("revealing", StringComparison.OrdinalIgnoreCase));
     }
 
+    [Fact]
+    public void AllyEntryAfterPlayNamesTheCardWithoutTheInternalArea()
+    {
+        WorldDescriptor world = World() with { Areas =
+        [new AreaDescriptor(1, "AlliesArea", 0, -1, [Readable(8, "Ant-Man")], [])] };
+        GameEvent[] events =
+        [
+            Move(8, "HandsArea", "RevealingArea", "Play"),
+            Move(8, "RevealingArea", "AlliesArea", "Put_Into_Play"),
+        ];
+        var batch = EventCuePlanner.Plan(events, world, Outcome.Unfinished);
+        Assert.Contains(batch.History, entry => entry.Summary == "Ant-Man entered play.");
+        Assert.DoesNotContain(batch.History, entry => entry.Summary.Contains("revealing", StringComparison.OrdinalIgnoreCase));
+    }
+
     [Theory]
     [InlineData(BasicPowers.AttackVerb, "attacked")]
     [InlineData(BasicPowers.ThwartVerb, "thwarted")]

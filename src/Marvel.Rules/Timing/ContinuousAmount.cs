@@ -14,6 +14,9 @@ public abstract record ContinuousAmount
     /// <summary>Engaged minions currently carrying the specified effective trait.</summary>
     public sealed record EngagedMinionsWithTrait(int Player, string Trait) : ContinuousAmount;
 
+    /// <summary>Every card currently in the captured player's named play-area zone.</summary>
+    public sealed record PlayerAreaCards(int Player, DeckType Area) : ContinuousAmount;
+
     /// <summary>A named counter pool on the current main scheme.</summary>
     public sealed record MainSchemeCounters(string Counter) : ContinuousAmount;
 
@@ -29,6 +32,9 @@ public abstract record ContinuousAmount
             && card.Area.PlayArea == PlayArea.Of(count.Player)
             && EffectiveCards.Kind(card, world.Facts) == CardKind.Minion
             && Traits.Has(world, card, count.Trait, world.Facts)),
+        PlayerAreaCards count => world.Areas
+            .Where(area => area.Type == count.Area && area.PlayArea == PlayArea.Of(count.Player))
+            .Sum(area => (long)area.Cards.Count),
         MainSchemeCounters count => CounterValue(world, count),
         _ => throw new RulesNotImplementedException("unknown live lasting amount"),
     };

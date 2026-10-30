@@ -246,6 +246,16 @@ internal static class AbilityCardQueries
     internal static int DefeatingPlayer(AbilityQueryContext cast) => cast.Defeat is { ResponsiblePlayer: >= 0 } defeat
         ? defeat.ResponsiblePlayer : throw new RulesNotImplementedException("the triggering defeat names no defeating player");
 
+    /// <summary>The seat the source is activating against, while it is the activating enemy.</summary>
+    /// <remarks>
+    /// <c>rr:activation.2</c>: a minion "activates against" a player. Ruling
+    /// 13454feafb65378b reads Kang (Master of Time)'s "your play area" from the
+    /// player "he was activating against, not necessarily the player he was
+    /// engaged with"; outside his activation no player is activated against.
+    /// </remarks>
+    internal static int? ActivatedAgainst(World world, Card source) =>
+        world.Activation is { } activation && activation.Enemy == source.ObjectId ? activation.Player : null;
+
     internal static int Resolver(AbilityQueryContext cast) => cast.Player >= 0
         ? cast.Player
         : throw new RulesNotImplementedException(
