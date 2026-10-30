@@ -5308,14 +5308,14 @@
     {
       "card": "04064",
       "name": "Crossbones' Machine Gun",
-      "note": "Attach to Crossbones. Uses (2per_hero ammo counters).\nstar Forced Interrupt: When Crossbones attacks you, remove 1 ammo counter from this card and discard the top card of the encounter deck → take indirect damage equal to the number of boost icons on the discarded card.",
+      "note": "Attach to Crossbones. Uses (2per_hero ammo counters).\nstar Forced Interrupt: When Crossbones attacks you, remove 1 ammo counter from this card and discard the top card of the encounter deck → take indirect damage equal to the number of boost icons on the discarded card. rr:you-your.7 makes \"you\" the attacked player, so the trigger binds the attack's player rather than the scenario controller.",
       "abilities": [
         {
           "trigger": {
             "event": "WhenAttackInitiated",
             "timing": "ForcedInterrupt",
             "actor": "attachedTo",
-            "player": "you"
+            "player": "trigger.player"
           },
           "effect": {
             "indirectDamage": {
