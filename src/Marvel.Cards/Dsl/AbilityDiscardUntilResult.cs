@@ -13,4 +13,6 @@ public enum AbilityDiscardUntilResult
     AttachToThis,
     /// <summary>Enter the printed encounter destination without revealing the card.</summary>
     PutIntoPlay,
+    /// <summary>Engage the declared player without revealing the minion.</summary>
+    PutIntoPlayEngaged,
 }

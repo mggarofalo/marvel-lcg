@@ -169,6 +169,7 @@ internal static class AbilitySelectorLowering
         "allies" => DeckType.AlliesArea,
         "supports" => DeckType.SupportsArea,
         "engagedEnemies" => DeckType.EngagedEnemiesArea,
+        "obligations" => DeckType.ObligationsArea,
         var name => throw location.Error($"'{name}' is not a public player area"),
     };
 

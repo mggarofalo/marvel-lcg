@@ -97,6 +97,8 @@ internal static class AbilityProcedureLowering
             "putIntoPlayFirstPlayer" => AbilityDiscardUntilResult.PutIntoPlayFirstPlayer,
             "attachToThis" => AbilityDiscardUntilResult.AttachToThis,
             "putIntoPlay" => AbilityDiscardUntilResult.PutIntoPlay,
+            "putIntoPlayEngaged" when fields.ContainsKey("player") => AbilityDiscardUntilResult.PutIntoPlayEngaged,
+            "putIntoPlayEngaged" => throw location.Error("putIntoPlayEngaged requires the engaged 'player'"),
             var name => throw location.Child("then").Error($"'{name}' is not a supported discard-until result"),
         };
 
