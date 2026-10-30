@@ -21,7 +21,7 @@ namespace Marvel.Rules.Play;
 /// </remarks>
 public static class PlayerAttackPrevention
 {
-    /// <summary>Whether <paramref name="occurrence"/> initiates a player attack and <paramref name="enemy"/> is in play.</summary>
+    /// <summary>Whether <paramref name="occurrence"/> initiates a player attack against a known <paramref name="enemy"/>.</summary>
     /// <remarks>
     /// rr:attack-player-ability-type.5: an attack against several enemies "is
     /// considered to have attacked each of those enemies", so the prevented enemy
@@ -33,7 +33,7 @@ public static class PlayerAttackPrevention
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(occurrence);
         return world.Agenda.PlayerAttackOperation(occurrence) is not null
-            && enemy is not null && DeckTypes.IsInPlay(enemy.Area.Type);
+            && enemy is not null;
     }
 
     /// <summary>Retains the prevention on that player attack for this incarnation of <paramref name="enemy"/>.</summary>

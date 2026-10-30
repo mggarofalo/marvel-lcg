@@ -51,7 +51,7 @@ internal static class AbilityAttackRecipients
     }
 
     private static Card? AnswersItsAttack(AbilityDamageAndThreatContext context, Card target) =>
-        context.World.Cards.FirstOrDefault(card => DeckTypes.IsInPlay(card.Area.Type) && card.FaceUp
+        context.World.Cards.FirstOrDefault(card => card.FaceUp
             && context.Program.On(card.FaceId).Any(ability => AnswersAttackOn(ability.Trigger, card, target)));
 
     // Temporal Shield's "When Kang is attacked" is the only such trigger the
