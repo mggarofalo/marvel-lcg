@@ -21,34 +21,34 @@ namespace Marvel.Rules.Play;
 /// </remarks>
 public static class PlayerAttackPrevention
 {
-    /// <summary>Whether the occurrence names the attacked enemy of the active player attack.</summary>
+    /// <summary>Whether <paramref name="occurrence"/> initiates a player attack and <paramref name="enemy"/> is in play.</summary>
     /// <remarks>
-    /// Temporal Shield's trigger already matches only an occurrence whose target is
-    /// its attached Kang, and an attack-initiated occurrence targets the attack's
-    /// enemy, so the equality restates that contract rather than filtering further.
+    /// rr:attack-player-ability-type.5: an attack against several enemies "is
+    /// considered to have attacked each of those enemies", so the prevented enemy
+    /// is the attacked enemy the triggering ability names, not only the attack's
+    /// first target. The trigger's own match decides which recipient that is.
     /// </remarks>
-    public static bool CanInstall(World world, Occurrence occurrence)
+    public static bool CanInstall(World world, Occurrence occurrence, Card? enemy)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(occurrence);
-        return PlayerAttackReflection.Current(world) is { } operation
-            && occurrence.Target >= 0 && occurrence.Target == operation.Attack.Enemy;
+        return world.Agenda.PlayerAttackOperation(occurrence) is not null
+            && enemy is not null && DeckTypes.IsInPlay(enemy.Area.Type);
     }
 
-    /// <summary>Retains the prevention on the active player attack for this incarnation of its enemy.</summary>
-    public static void Install(World world, Occurrence occurrence)
+    /// <summary>Retains the prevention on that player attack for this incarnation of <paramref name="enemy"/>.</summary>
+    public static void Install(World world, Occurrence occurrence, Card? enemy)
     {
-        if (!CanInstall(world, occurrence))
-            throw new RulesNotImplementedException("attack damage prevention requires the attacked enemy of a begun player attack");
-        var enemy = world.Cards[occurrence.Target];
-        PlayerAttackReflection.Current(world)!.Prevented = (enemy.ObjectId, enemy.Incarnation);
+        if (!CanInstall(world, occurrence, enemy))
+            throw new RulesNotImplementedException("attack damage prevention requires an attacked enemy of a begun player attack");
+        world.Agenda.PlayerAttackOperation(occurrence)!.Prevented = (enemy!.ObjectId, enemy.Incarnation);
     }
 
     /// <summary>Whether this attack damage is prevented by the active player attack.</summary>
     /// <remarks>
-    /// The incarnation keeps the prevention to the Kang that was attacked. An attack
-    /// on an enemy that leaves play deals it nothing more, so no current card reaches
-    /// a re-entered incarnation within the same attack.
+    /// The incarnation keeps the prevention to the enemy that was attacked. An
+    /// attack on an enemy that leaves play deals it nothing more, so no current
+    /// card reaches a re-entered incarnation within the same attack.
     /// </remarks>
     internal static bool Prevents(World world, DamageRequest request) =>
         request.FromAttack && PlayerAttackReflection.Current(world)?.Prevented is { } prevented

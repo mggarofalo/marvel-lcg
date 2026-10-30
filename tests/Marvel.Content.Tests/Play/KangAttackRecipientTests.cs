@@ -1,0 +1,233 @@
+using Marvel.Rules.Play;
+using Marvel.Rules.Prompts;
+using Marvel.Rules.State;
+using Marvel.Tests;
+using Xunit;
+using static Marvel.Content.Tests.Play.KangObligationFixture;
+
+namespace Marvel.Content.Tests.Play;
+
+// Temporal Shield (11014) and Fear of Kang (11049) against attacks with several or
+// later recipients: Shield Toss (03006) declares its recipients, Giant Stomp (12003)
+// deals splash damage to each minion and then chooses an enemy. Ruling
+// 310af249be272877 treats each recipient as attacked, as
+// rr:attack-player-ability-type.5 does.
+public sealed class KangAttackRecipientTests : CoreCardTestBase
+{
+    private const string TemporalShield = "11014";
+    private const string FearOfKang = "11049";
+    private const string MasterOfTime = "11047";
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    [Rule("rr:attack-player-ability-type.5")]
+    [Rule("rr:triggering-condition.2")]
+    public void ShieldTossTriggersTheShieldWhereverTheShieldedVillainIsListed(bool villainFirst)
+    {
+        // Captain America discards two cards for two recipients, each dealt 4. Ruling
+        // 310af249be272877: the shield "only prevents the damage that would be dealt
+        // to Kang"; the Hydra Soldier (3 hit points) takes its 4 and is defeated. The
+        // attacker takes the shield's 1 damage either way.
+        Card? minion = null, villain = null, shield = null;
+        Card[] held = [];
+        var (game, world) = CaptainAmericaFixture.PlayingCaptain(board =>
+        {
+            var seat = board.Seats[0];
+            board.CreateCard("03006", seat.Hand);
+            board.CreateCard("03009", board.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), seat.IdentityCard.ObjectId, 0));
+            held = [.. Enumerable.Range(0, 2).Select(_ => board.CreateCard("03003", seat.Hand))];
+            minion = board.CreateCard("01102", board.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+            villain = board.TheCardIn(DeckType.VillainArea)!;
+            shield = board.CreateCard(TemporalShield, board.AreaOf(DeckType.UpgradesArea, PlayArea.Villains, villain.ObjectId));
+        }, twoPlayers: true);
+        var play = Assert.Single(game.Pending!.Affordances,
+            offer => offer.PlaysCard && world.Cards[offer.AnchorId].FaceId == "03006");
+        game.Resolve(new Decision(play.Id, [.. held.Select(card => card.ObjectId)]));
+        var attack = Assert.Single(game.Pending!.Affordances);
+        int[] targets = villainFirst ? [villain!.ObjectId, minion!.ObjectId] : [minion!.ObjectId, villain!.ObjectId];
+
+        game.Resolve(new Decision(attack.Id, targets));
+
+        Assert.Equal(0, villain!.Damage);
+        Assert.Equal(DeckType.EncounterDiscardPile, minion!.Area.Type);
+        Assert.Equal(DeckType.EncounterDiscardPile, shield!.Area.Type);
+        Assert.Equal(1, world.Seats[0].IdentityCard.Damage);
+        Assert.Equal(Question.TurnOption, game.Pending!.Asking);
+    }
+
+    [Fact]
+    [Rule("rr:attack-player-ability-type.5")]
+    public void GiantStompChoosingAShieldedVillainRaisesRatherThanSkippingTheShield()
+    {
+        // The 8 damage is chosen after the attack's initiation window, so the engine
+        // has no window in which the shield could answer "When Kang is attacked".
+        var (world, f, stomp, pay) = AntMan();
+        var shield = f.Reveal(TemporalShield, 0);
+        f.Finish();
+        Assert.Equal(f.Villain.ObjectId, shield.Area.Host);
+        Execute(f, stomp, pay);
+
+        Assert.Throws<RulesNotImplementedException>(() => f.Finish(prompt => Decision.Take(f.Villain.ObjectId)));
+        Assert.Equal(0, f.Villain.Damage);
+        Assert.Equal(f.Villain.ObjectId, shield.Area.Host);
+    }
+
+    [Fact]
+    [Rule("rr:attack-player-ability-type.5")]
+    public void GiantStompChoosingAnUnshieldedVillainDealsItsEight()
+    {
+        var (world, f, stomp, pay) = AntMan();
+        Execute(f, stomp, pay);
+
+        f.Finish(prompt => Decision.Take(f.Villain.ObjectId));
+
+        Assert.Equal(8, f.Villain.Damage);
+        Assert.Equal(0, world.Seats[0].IdentityCard.Damage);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    [Rule("rr:cannot")]
+    [Rule("rr:attack-player-ability-type.5")]
+    public void GiantStompsSplashSkipsAKangItsHolderCannotAttack(bool fear)
+    {
+        // "Deal 1 damage to each minion": every minion is attacked (ruling
+        // 310af249be272877), and the holder of Fear of Kang cannot attack the Master
+        // of Time. The Hydra Soldier is damaged either way; the 8 goes to Rhino.
+        var (world, f, stomp, pay) = AntMan();
+        var kang = KangTemporalFixture.Engaged(world, MasterOfTime, 0);
+        var soldier = KangTemporalFixture.Engaged(world, "01102", 0);
+        if (fear) Obligation(world, FearOfKang, 0);
+        Execute(f, stomp, pay);
+        var offered = new List<int>();
+
+        f.Finish(prompt =>
+        {
+            offered.AddRange(prompt.Affordances.Select(option => option.AnchorId));
+            return Decision.Take(f.Villain.ObjectId);
+        });
+
+        Assert.Equal(fear ? 0 : 1, kang.Damage);
+        Assert.Equal(1, soldier.Damage);
+        Assert.Equal(8, f.Villain.Damage);
+        Assert.Equal(!fear, offered.Contains(kang.ObjectId));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    [Rule("rr:cannot")]
+    public void AnEnergyChannelReleaseCannotChooseKangForTheHolder(bool fear)
+    {
+        var (world, f) = KangTemporalFixture.Board(players: 1);
+        var kang = KangTemporalFixture.Engaged(world, MasterOfTime, 0);
+        if (fear) Obligation(world, FearOfKang, 0);
+        var channel = world.CreateCard("01018", world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), cardOwner: 0));
+        channel.PlaceTokens("c_energy", 2);
+        var release = f.Runner.Actions(world, 0).Last(action => action.Card == channel.ObjectId);
+        f.Runner.ExecuteAction(world, new PlayerAction(release, [], []));
+        var offered = new List<int>();
+
+        f.Finish(prompt =>
+        {
+            offered.AddRange(prompt.Affordances.Select(option => option.AnchorId));
+            return Decision.Take(f.Villain.ObjectId);
+        });
+
+        Assert.Equal(!fear, offered.Contains(kang.ObjectId));
+        Assert.Contains(f.Villain.ObjectId, offered);
+        Assert.Equal(4, f.Villain.Damage);
+    }
+
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    [Rule("rr:guard.1")]
+    [Rule("rr:cannot")]
+    public void AnAttackAfterTheGuardLeavesOffersKangOnlyWithoutFear(bool repeated, bool fear)
+    {
+        // A synthetic upgrade action defeats the guarding Hydra Mercenary, then attacks
+        // an attackable enemy. Its admission projects the board the defeat leaves, and
+        // the attack's offer follows it: Rhino always, the Master of Time only without
+        // Fear of Kang. `eachPlayer` admits the same body through the repeated trace.
+        string body = """
+            { "seq": [
+              { "dealDamage": { "cards": { "titled": "Hydra Mercenary" }, "amount": 5 } },
+              { "chooseCard": { "from": { "query": "attackableEnemies" }, "effect": { "attack": {
+                "target": "chosen", "effect": { "dealAttackDamage": { "cards": "chosen", "amount": 1 } } } } } }
+            ] }
+            """;
+        var runner = ActionAbilitySupportFixtures.Runner("01016", "Action",
+            repeated ? "{ \"eachPlayer\": { \"effect\": " + body + " } }" : body,
+            cost: "{ \"exhaust\": \"this\" }", includeAuthored: true);
+        var (world, _) = KangTemporalFixture.Board(players: 1);
+        world.Abilities = runner;
+        var f = new RedSkullFixture(world, runner);
+        var hero = world.Seats[0].IdentityCard;
+        var source = world.CreateCard("01016", world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), hero.ObjectId, 0));
+        var mercenary = KangTemporalFixture.Engaged(world, "01101", 0);
+        var kang = KangTemporalFixture.Engaged(world, MasterOfTime, 0);
+        if (fear) Obligation(world, FearOfKang, 0);
+        var action = Assert.Single(runner.Actions(world, 0), offer => offer.Card == source.ObjectId);
+        runner.ExecuteAction(world, new PlayerAction(action, [], []));
+        var offered = new List<int>();
+
+        f.Finish(prompt =>
+        {
+            offered.AddRange(prompt.Affordances.Select(option => option.AnchorId));
+            return Decision.Take(f.Villain.ObjectId);
+        });
+
+        Assert.Equal(DeckType.EncounterDiscardPile, mercenary.Area.Type);
+        Assert.Equal(fear ? [f.Villain.ObjectId] : new[] { f.Villain.ObjectId, kang.ObjectId }.Order().ToArray(),
+            offered.Order().ToArray());
+        Assert.Equal(1, f.Villain.Damage);
+    }
+
+    [Fact]
+    [Rule("rr:stun-stunned.5.1")]
+    [Rule("rr:cannot")]
+    public void AStunnedHolderMayNotNameKangWhileAnotherTargetExists()
+    {
+        // The turn offers the stunned holder Rhino alone; the attempt itself agrees.
+        // Naming Rhino clears the stun without damage (rr:stun-stunned.7).
+        var (world, f) = KangTemporalFixture.Board(players: 1);
+        var kang = KangTemporalFixture.Engaged(world, MasterOfTime, 0);
+        Obligation(world, FearOfKang, 0);
+        var hero = world.Seats[0].IdentityCard;
+        Statuses.Give(world, hero, Statuses.Stunned);
+
+        Assert.Throws<RulesNotImplementedException>(() =>
+            BasicPowerInitiation.BasicAttack(world, world.Facts, 0, kang, []));
+        Assert.True(hero.Ready);
+        BasicPowerInitiation.BasicAttack(world, world.Facts, 0, f.Villain, []);
+        f.Finish();
+
+        Assert.False(Statuses.Has(world, hero, Statuses.Stunned));
+        Assert.Equal(0, f.Villain.Damage);
+        Assert.Equal(0, kang.Damage);
+    }
+
+    private static (World World, RedSkullFixture Fixture, Card Stomp, int[] Payment) AntMan()
+    {
+        // Giant Ant-Man (12001c) with Giant Stomp and three Energy to pay for it.
+        var (world, f) = KangTemporalFixture.Board(players: 1);
+        var seat = world.Seats[0];
+        World.MoveToTop(seat.IdentityCard, world.AreaOf(DeckType.RemovedArea));
+        seat.IdentityCard = world.CreateCard("12001a,12001b,12001c", seat.Hero);
+        seat.IdentityCard.TurnTo("12001c");
+        var stomp = world.CreateCard("12003", seat.Hand);
+        int[] payment = [.. Enumerable.Range(0, 3).Select(_ => world.CreateCard("01087", seat.Hand).ObjectId)];
+        return (world, f, stomp, payment);
+    }
+
+    private static void Execute(RedSkullFixture f, Card stomp, int[] payment)
+    {
+        var action = Assert.Single(f.Runner.Actions(f.World, 0), item => item.Card == stomp.ObjectId);
+        f.Runner.ExecuteAction(f.World, new PlayerAction(action, payment, []));
+    }
+}

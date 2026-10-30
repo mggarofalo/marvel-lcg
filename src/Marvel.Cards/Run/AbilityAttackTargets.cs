@@ -7,13 +7,19 @@ namespace Marvel.Cards.Run;
 internal static class AbilityAttackTargets
 {
     /// <summary>
-    /// <see cref="BasicPowers.Attackable(World, ICardFacts, int, Card)"/> for the
-    /// character that performs <paramref name="source"/>'s attack.
+    /// <see cref="BasicPowers.Attackable(World, ICardFacts, int)"/> narrowed by
+    /// <see cref="Permits"/> for the character that performs <paramref name="source"/>'s attack.
     /// </summary>
     internal static IReadOnlyList<Card> For(World world, int player, Card source) =>
-        Attacker(world, player, source) is { } attacker
-            ? BasicPowers.Attackable(world, world.Facts, player, attacker)
-            : BasicPowers.Attackable(world, world.Facts, player);
+        [.. BasicPowers.Attackable(world, world.Facts, player).Where(card => Permits(world, player, source, card))];
+
+    /// <summary>
+    /// Whether the character performing <paramref name="source"/>'s attack may attack
+    /// <paramref name="enemy"/>. Live, projected and traced attack-target reads all
+    /// ask this one question.
+    /// </summary>
+    internal static bool Permits(World world, int player, Card source, Card enemy) =>
+        Attacker(world, player, source) is not { } attacker || AttackPermissions.CanAttack(world, attacker, enemy);
 
     /// <summary>The character that would perform <paramref name="source"/>'s attack.</summary>
     /// <remarks>

@@ -41,7 +41,8 @@ internal static class AbilityAttackDamageExecution
         AbilityDamageAndThreatContext context, AbilityDamageAndThreatState state, Card attacker, long amount)
     {
         bool suspended = false;
-        foreach (var target in AbilityDamageAndThreatExecution.DamageTargets(damage.Cards, context))
+        foreach (var target in AbilityAttackRecipients.Admit(context, attacker,
+            AbilityDamageAndThreatExecution.DamageTargets(damage.Cards, context)))
         {
             // A resumed power can run on its ability-origin frame after an enemy
             // activation. The retained attack owns its damage procedure, defeat

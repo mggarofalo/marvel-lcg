@@ -7,6 +7,12 @@ namespace Marvel.Cards.Run;
 internal static class AbilityTriggerInstances
 {
     internal static IEnumerable<AbilityWindowAdmission.Candidate> For(
+        Marvel.Rules.State.World world, AbilityWindowAdmission.Candidate candidate, Occurrence occurrence) =>
+        AttackedRecipients(world, candidate, occurrence) is { IsDefault: false } recipients
+            ? recipients.Select(recipient => candidate with { TriggeringAttack = recipient })
+            : Instances(candidate, occurrence);
+
+    private static IEnumerable<AbilityWindowAdmission.Candidate> Instances(
         AbilityWindowAdmission.Candidate candidate, Occurrence occurrence)
     {
         var trigger = candidate.Ability.Trigger;
@@ -31,6 +37,22 @@ internal static class AbilityTriggerInstances
             foreach (var attack in occurrence.Attacks)
                 if (Matches(instance, attack)) yield return instance with { TriggeringAttack = attack };
         }
+    }
+
+    // rr:attack-player-ability-type.5: an attack against several enemies "is
+    // considered to have attacked each of those enemies". When a player attack
+    // declares its recipients before it is initiated, an ability keyed to the
+    // attacked enemy answers each recipient as its own instance of the one
+    // initiation occurrence (rr:triggering-condition.2).
+    private static System.Collections.Immutable.ImmutableArray<Marvel.Rules.State.Attacked> AttackedRecipients(
+        Marvel.Rules.State.World world, AbilityWindowAdmission.Candidate candidate, Occurrence occurrence)
+    {
+        var trigger = candidate.Ability.Trigger;
+        return trigger.Target is not null
+            && (trigger.Event == Steps.AttackInitiated || trigger.Also == Steps.AttackInitiated)
+            && world.Agenda.PlayerAttackOf(occurrence) is
+                { Continuation: AbilityPowerContinuation { DeclaredRecipients: { IsDefault: false } declared } }
+            ? declared : default;
     }
 
     private static bool HasReceivedDamageTargets(AbilityWindowAdmission.Candidate candidate, Occurrence occurrence)

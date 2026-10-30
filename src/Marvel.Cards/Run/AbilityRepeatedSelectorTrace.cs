@@ -184,8 +184,7 @@ internal static class AbilityRepeatedSelectorTrace
             ? VillainIsAttackableInTrace(trace, candidate)
             : kind == CardKind.Minion && AbilityDamageProtectionTrace.CanTakeDamageInTrace(
                 trace.Cast, candidate, trace.Discarded))
-        && (AbilityAttackTargets.Attacker(trace.Cast.World, trace.Cast.Player, trace.Cast.Source) is not { } attacker
-            || AttackPermissions.CanAttack(trace.Cast.World, attacker, candidate));
+        && AbilityAttackTargets.Permits(trace.Cast.World, Resolver(trace.Cast), trace.Cast.Source, candidate);
 
     private static bool IsEngagedMinion(
         CardKind kind, Card candidate, int player, Dictionary<int, int> engagement) =>

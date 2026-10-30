@@ -130,7 +130,8 @@ internal static class AbilityResolutionAdmission
             "preventThreat" => cast.Occurrence.Threat is { Remaining: > 0 }
                 && Amount(EffectOf<AbilityEffect.PreventThreat>(node, cast).Amount, cast) > 0,
             "reflectAttackDamage" => PlayerAttackReflection.CanInstall(cast.World, cast.Source),
-            "preventPlayerAttackDamage" => PlayerAttackPrevention.CanInstall(cast.World, cast.Occurrence),
+            "preventPlayerAttackDamage" => PlayerAttackPrevention.CanInstall(cast.World, cast.Occurrence,
+                AbilityCardQueries.Named(AbilityCardBinding.TriggerTarget, cast.Context.Query)),
             "useAttackForThwart" => ThwartStatSubstitution.CanUseAttack(cast.World, cast.Occurrence),
             "preventAttackDamage" => cast.World.Attack is { PreventAllDamage: false },
             "requireAttackedPlayerAllyDefender" => cast.World.Attack is not null

@@ -30,7 +30,8 @@ internal static class AbilityCombatImmediateExecution
                 Attack.MakeIndirect(world);
                 return new(true, false);
             case AbilityFixedInstruction.PreventPlayerAttackDamage:
-                PlayerAttackPrevention.Install(world, context.Admission.Query.Occurrence);
+                PlayerAttackPrevention.Install(world, context.Admission.Query.Occurrence,
+                    AbilityCardQueries.Named(AbilityCardBinding.TriggerTarget, context.Admission.Query));
                 return new(true, true);
             case AbilityFixedInstruction.PreventAttackDamage:
                 Attack.PreventDamage(world);
