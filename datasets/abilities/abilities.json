@@ -24158,6 +24158,22 @@
           } }
         }
       ]
+    },
+    {
+      "card": "11016",
+      "name": "Frozen in Time",
+      "note": "Attach to the revealing player's identity in either form (rr:attach-to). Forced Interrupt: When attached character would ready, discard this card instead. rr:interrupt.3.1 resolves a \"would\" interrupt before the ready initiates; rr:replacement-effect.1 replaces only that identity's ready, so other cards in the same ready instruction still ready. A host that cannot ready never would ready (rr:cannot.1). The would marker ranks it ahead of forced interrupts to the same condition without \"would\" (rr:would); the book has none. The boost attaches it to the identity of the player the activation is against (rr:attach-to.3.1).",
+      "attachTo": "you",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardWouldReady", "timing": "ForcedInterrupt", "would": true, "subject": "attachedTo" },
+          "effect": { "seq": [ { "replaceReady": "attachedTo" }, { "discard": "this" } ] }
+        },
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "Boost", "subject": "this" },
+          "effect": { "attachCards": { "cards": "this", "host": "you" } }
+        }
+      ]
     }
   ]
 }

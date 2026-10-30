@@ -121,7 +121,7 @@ internal static class AbilityResolutionAdmission
         {
             "playSharedHeroTraitCard" => AbilitySharedTraitPlay.CanInitiate(cast.Context),
             "inspectDiscardOrderEncounterTop" => EncounterRouting.Deck(cast.World).Cards.Count > 0,
-            "cancelOccurrence" => AbilityOccurrenceCancellation.CanResolve(cast.World, cast.Occurrence),
+            "cancelOccurrence" or "replaceReady" => TriggerChangeResolves(node, cast),
             "cancelBoostAbility" => cast.Occurrence.BoostAbility is { } boost && boost.CanCancel(cast.World),
             "cancelBoostIcons" => cast.Occurrence.BoostIcons is { Remaining: > 0 } icons && icons.IsCurrent(cast.World),
             "inspectEncounterTop" => AbilityEncounterInspection.Cards(cast.World,
@@ -206,10 +206,17 @@ internal static class AbilityResolutionAdmission
             _ => null,
         };
 
+    // Both instructions change the triggering occurrence: one cancels it, the
+    // other replaces one card's imminent ready in it.
+    private static bool TriggerChangeResolves(AbilityEffect node, AbilityAdmissionScope cast) =>
+        node.OperationName() == "replaceReady"
+            ? AbilityReadyReplacement.CanReplace(cast.World, cast.Occurrence, cast.Source)
+            : AbilityOccurrenceCancellation.CanResolve(cast.World, cast.Occurrence);
+
     private static AdmissionResolution LeafResolutionOf(
         AbilityEffect node, AbilityAdmissionScope cast) => node.OperationName() switch
         {
-            "cancelOccurrence" => AbilityOccurrenceCancellation.CanResolve(cast.World, cast.Occurrence)
+            "cancelOccurrence" or "replaceReady" => TriggerChangeResolves(node, cast)
                 ? AdmissionResolution.Full : AdmissionResolution.None,
             "cancelBoostAbility" => cast.Occurrence.BoostAbility is { } boost && boost.CanCancel(cast.World)
                 ? AdmissionResolution.Full : AdmissionResolution.None,

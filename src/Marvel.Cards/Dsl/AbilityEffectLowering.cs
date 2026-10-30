@@ -104,6 +104,7 @@ internal static class AbilityEffectLowering
             "cancelBoostAbility" => FixedEffect(argument, child, "trigger", AbilityFixedInstruction.CancelBoostAbility),
             "cancelBoostIcons" => FixedEffect(argument, child, "trigger", AbilityFixedInstruction.CancelBoostIcons),
             "cancelOccurrence" => FixedEffect(argument, child, "trigger", AbilityFixedInstruction.CancelOccurrence),
+            "replaceReady" => FixedEffect(argument, child, "attachedTo", AbilityFixedInstruction.ReplaceReady),
             "cancelWhenRevealed" => FixedEffect(argument, child, "trigger.subject", AbilityFixedInstruction.CancelWhenRevealed),
             "alsoAttackEachOtherHero" => FixedEffect(argument, child, "this", AbilityFixedInstruction.AlsoAttackEachOtherHero),
             "makeAttackIndirect" => FixedEffect(argument, child, 1, AbilityFixedInstruction.MakeAttackIndirect),

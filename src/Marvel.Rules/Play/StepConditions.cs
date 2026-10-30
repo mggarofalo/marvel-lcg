@@ -71,6 +71,7 @@ public static class StepConditions
         // response window between them.
         [EndVillainPhase] = [PhaseEnd.VillainPhaseEnds, PhaseEnd.RoundEnds],
         [EndPlayerPhase] = [PhaseEnd.PlayerPhaseEnds],
+        [CardReadying.WouldReady] = [CardReadying.WouldReady],
     });
 
     /// <summary>The triggering conditions a step creates.</summary>
