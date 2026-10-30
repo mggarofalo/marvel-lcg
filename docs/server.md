@@ -111,7 +111,7 @@ replay verification and bounded error code.
 Every retained record also carries the compiled product, commit and runtime
 identity. Mutation records distinguish expected and resulting revisions;
 persistence and restore records name the selected opaque save generation and
-the restore or quarantine stage. A diagnostics permission, disk-full
+the `restore`, `refused` or `quarantine` stage. A diagnostics permission, disk-full
 or write failure cannot fail or delay gameplay: the asynchronous dispatcher
 continues writing standard error and may drop unavailable file observations.
 Monitor both volume capacity and the `diagnostics.sink.unavailable` startup

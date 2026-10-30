@@ -1,28 +1,8 @@
 # Independent fixture review
 
-Accept the narrow fixture changes from `7ab1475d4420103a61605a3a6debd3a346579fb1`
+Accept the narrow socket-initialization fixture changes from `7ab1475d4420103a61605a3a6debd3a346579fb1`
 and `bdcd5491`, reviewed on `ed03a479` in a separate worktree with both changes
 applied. No runtime change or additional test control is needed for this scope.
-
-## Historical response comparison
-
-The adapter adds empty Invocation meaning only to its parsed protocol-35
-comparison copy. It rejects every preexisting `invocation_decks` member,
-including null and an empty array, and requires version 35. The strict production
-decoder remains the final reader. Current-protocol omission and unknown-member
-controls remain effective; the transport and area-contract selections retain
-null, reference, ownership, aliasing and snapshot-isolation checks.
-
-The actual predecessor-process restoration test still compares complete
-authorized responses before and after continuation against the independently
-recorded old-runtime control. Its implementation and archived bytes are
-unchanged. The archive hash is still
-`63BD6E38C7668F6789BB48300165026D34CA55432B59ADF08FF2B19793E87ABC`.
-The new tests verify that hash and preserve caller input bytes.
-
-The implementation packet's compiled omission and overwrite mutant logs were
-reviewed: each fails its four distinguishing controls. This review independently
-ran the restored final sources, not those temporary mutations.
 
 ## Socket initialization
 
@@ -49,10 +29,6 @@ ordering independently establishes the fixture defect and the narrow correction.
 
 Windows Release, with ordinary builds and no skipped selected tests:
 
-- Server filter: complete `HistoricalProtocol35ResponseTests`,
-  `PredecessorProcessContentUpgradeTests`, `InvocationDeckTransportTests` and
-  `InvocationAreaContractReviewTests`: **38 passed**, 4 seconds reported test
-  duration. Log: `C:/Users/mggar/Source/evidence/strange-fixture-independent-protocol.log`.
 - Godot managed filter: complete `ClientCompositionTests`: **17 passed**,
   12 seconds reported test duration. Log:
   `C:/Users/mggar/Source/evidence/strange-fixture-independent-socket.log`.

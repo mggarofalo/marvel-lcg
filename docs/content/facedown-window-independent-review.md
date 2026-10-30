@@ -42,9 +42,8 @@ Independent evidence is stored outside the repository under
 The preserved diagnostic archive itself declares `engine-replay-v28`; it is not
 a released v27 save. Its SHA-256 remains
 `D49FB0C457A2DA66DB4C3E91E26E7D5387BDC3874D8D7288545EAC51133AB7F1`.
-The repair belongs to this unpublished aggregate v28 candidate. Released-v27
-metadata rejection and frozen v19/v20/v21 route verification are separate
-compatibility checks; changing this unmerged candidate does not itself require
+The repair belongs to this unpublished aggregate v28 candidate. Refusal of released-v27
+saves is a separate compatibility check; changing this unmerged candidate does not itself require
 a v29 identity. Exact replay must still reject stale v28 candidate traces whose
 recorded events differ, as the preserved archive demonstrates.
 

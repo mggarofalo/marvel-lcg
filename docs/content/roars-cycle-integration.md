@@ -105,15 +105,9 @@ managed/platform checks remain open. Native Hank overpayment reaches its entry
 interrupt, but inspection found an internal card ID and missing counter/health
 explanation. That repair and complete payment journeys remain outstanding.
 
-Replay boundary source `9994b4f6` and independent review `a10e3469` establish
-v29. The review passes 105 focused Server cases, including genuine predecessor
-process continuation and authenticated v28 rejection with original bytes
-preserved, plus eight release-policy cases. Published v28 has no production
-migration route; specifically frozen v19/v20/v21 routes remain subject to exact
-replay and fingerprints. See [replay evidence](ant-man-replay-v29.md) and
-[independent review](ant-man-replay-v29-independent-review.md). Final combined
-verification and publication remain open; this is not a compatible v28 migration
-claim.
+Replay boundary source `9994b4f6` establishes v29. Saves under every earlier
+replay identity, including published v28, are refused with `save_incompatible`;
+there is no upgrade route (MARVEL-896). See [replay evidence](ant-man-replay-v29.md).
 
 The generic payment warning now describes excess resources as not applied to
 the cost rather than lost. This preserves the displayed quantity without

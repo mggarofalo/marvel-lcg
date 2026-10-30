@@ -102,7 +102,8 @@ explicit player deck recipes, or null to select each hero's authored starter,
 and a required nullable `campaign` member containing exact carry-over setup.
 Unknown members, missing members and other schemas fail loading. Unsupported
 save generations are refused and left untouched; no compatibility adapter
-supplies missing gameplay meaning.
+supplies missing gameplay meaning. When a save under another schema still has a
+readable authority file and label, its holders receive `save_incompatible`.
 
 `session` contains a server-generated storage id and the bounded display label
 used to open the table. The storage id uses operating-system entropy outside
@@ -678,9 +679,11 @@ the archive format does not promise power-loss immunity on arbitrary storage.
 The previous generation is retained for diagnosis, never silently substituted.
 Bad checksums, malformed authorities or receipts, and replay disagreement
 withhold that campaign without deleting the original files or blocking
-independent campaigns. A campaign under another replay or dataset identity is
-refused the same way; its owner, its attempts and an imported copy of it receive
-`save_incompatible`. SHA-256 detects corruption; it is not an
+independent campaigns. A campaign under another replay or dataset identity, or
+last written by a newer product, is refused the same way: its owner, the holders
+of its attempts' authority and an imported copy of it receive
+`save_incompatible`, and the owner may still delete it permanently. Every
+campaign commit stamps the current application version on the aggregate. SHA-256 detects corruption; it is not an
 attestation that a local file was never intentionally edited.
 
 The desktop persists the exact pending request and entry claim in a separate

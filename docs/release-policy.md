@@ -179,6 +179,13 @@ range negotiation and no best-effort parsing:
    uncertain, the client follows the existing synchronization rule rather than
    guessing from a version error.
 
+Adding a new error code under an existing failure disposition, such as
+`save_incompatible` under session-unavailable, does not change the protocol
+integer. A peer that does not recognize the code still acts on the disposition
+it already understands and shows the server's bounded message. This is the
+engine's choice, not a rulebook requirement; a new disposition or field is a
+wire change and bumps the protocol.
+
 Consequently, mixed product versions are allowed only when both artifacts
 declare the same protocol integer. Patch or minor releases may retain that
 integer when the wire is unchanged. A new optional-looking union variant still
@@ -221,10 +228,17 @@ does not publish it, and records the bounded mismatch category in the operator
 log. A request presenting that save's own capability, invitation or entry claim
 receives the typed error `save_incompatible` with session-unavailable
 disposition; the client shows "Saved game cannot be loaded." The same code
-answers an imported campaign file written under another identity. Any other
-request learns nothing more than `session_not_found`. An unreadable schema or a
-replay divergence under the current identity is not an incompatibility: it is
-logged as a restore failure and is not served. A storage failure leaves the
+answers an imported campaign file written under another identity. A session
+saved under another schema is refused the same way when its authority file still
+reads: a lower schema is `save_schema_mismatch`, a higher one is treated as a
+newer writer. Any other request learns nothing more than `session_not_found`. A
+corrupt save, or a replay divergence under the current identity, is not an
+incompatibility: it is logged as a restore failure and is not served. Every
+campaign commit stamps the current application version on the campaign record
+itself, so the newer-writer refusal applies to the aggregate as well as its
+attempts. The owner may still permanently delete a refused campaign; no other
+command reaches it. The desktop marks a refused campaign "delete only" and never
+reopens it automatically. A storage failure leaves the
 last committed generation authoritative.
 
 Before upgrading a server, the operator stops new work and makes a backup of
@@ -389,7 +403,7 @@ concealed card data.
 | Condition | Required outcome |
 |---|---|
 | Client/server protocol mismatch | Reject as `unsupported_version`; display both product versions and protocol integers from non-secret metadata, then require matching artifacts. |
-| Unknown or newer save schema | Refuse the session as unreadable; preserve its files and direct the operator to a compatible/newer server or backup restore. |
+| Unknown or newer save schema | Refuse the session with `save_incompatible` when its authority still reads, otherwise withhold it as unreadable; preserve its files and direct the operator to a compatible/newer server or backup restore. |
 | Replay/RNG/digest identity mismatch | Refuse before replay with `save_incompatible`; log the identity category, not hidden state. |
 | Runtime dataset mismatch | Refuse before dealing with `save_incompatible`; log which dataset category differs. |
 | Replay divergence | Refuse without mutation; report the bounded divergence stage and record position. |

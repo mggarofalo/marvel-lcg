@@ -60,9 +60,8 @@ review found no transfer into the separate attack-end occurrence. Correcting
 response timing must retain those causal facts through the attack-end window
 and preserve same-character villain succession. This review does not establish
 queued-activation isolation, fresh-host restart, archive-byte compatibility or
-public Black Widow admission. Replay v27 and its named v19/v20/v21 routes were
-inspected only; those routes verify retained history rather than promising every
-predecessor trace can migrate, and replay v26 has no admitted upgrade route.
+public Black Widow admission. Earlier replay identities are refused; there is
+no upgrade route (MARVEL-896).
 
 The implementation packet must additionally prove: original attacker/recipient
 and incarnation through suspension; full prevention/zero damage, boost ability

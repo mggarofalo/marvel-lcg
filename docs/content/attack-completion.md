@@ -98,11 +98,11 @@ defended enemy attack dealt zero damage. The board digest consequently changes.
 The predecessor journal's SHA-256 is
 `f9107037687344f2cfde00005e3acc2a5494894b1f905c0ef8e94aae1b0e7be1`.
 
-The integration candidate is based on PR-434 candidate `9097da07`. Replay v21
-admits explicit frozen-content v19 and v20 histories only after complete original
-verification, and retains the same-contract additive-content policy. Genuine v20
-host artifacts distinguish the unchanged played campaign from the affected Black
-Panther session; see [replay evidence](../../tests/Marvel.Server.Tests/Fixtures/replay-v21-evidence.md).
+Saves written under an earlier replay identity are refused; there is no upgrade
+route (MARVEL-896). The frozen Black Panther journal in
+`tests/Marvel.Acceptance.Tests/Fixtures/retaliate-predecessor-91098022.md`
+remains regression evidence that strict replay rejects the changed retaliation
+outcome.
 Final combined regression and independent review remain acceptance requirements.
 Default serialization omission does not establish replay compatibility.
 

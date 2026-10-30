@@ -63,12 +63,6 @@ as replay v26. No historical fixtures or archives are rewritten by this review.
 publication; a same-version review fixture is not evidence of predecessor
 admission or integrated replay v27 behavior.
 
-Read-only inspection of integrated predecessor `c1decfff` confirms the lead's
-replay v27 boundary has explicit v19/v20/v21 routes and no v26-to-v27 route.
-`SessionContentUpgrade.Verify` verifies the original complete trace before
-changing compatibility metadata. This is code review of those admission routes,
-not a claim that this older worktree ran the integrated historical Server suite.
-
 Separate follow-up: optional prevention during damage costs
 --------------------------------------------------------
 

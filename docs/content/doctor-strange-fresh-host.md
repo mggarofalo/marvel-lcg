@@ -68,13 +68,6 @@ and Game for reconstruction. The Natural Talent test fails specifically at
 Sources are restored in a finally block, followed by a nonincremental rebuild
 and the relevant replay/compatibility class run.
 
-The restored broader run passed 58 of 59 tests across the complete selected
-restart/replay/compatibility classes. The unchanged
-`ExpertCampaignReplayUpgradeTests.DirectDamageWindowDivergenceQuarantinesTheExpertCampaignWithoutChangingSourceFiles`
-expects `unit 28 decision 1 events diverged: expected 4, got 1`; current replay
-instead first reports unit 25 decision 0 (expected three events). The earlier
-rejection needs an authority-reviewed cause analysis before updating that
-diagnostic. This packet edits neither that test nor its historical fixture.
 Temporary diagnostic instrumentation failed compilation and was restored; it
 does not establish the earlier cause. The final source build is checked again.
 
