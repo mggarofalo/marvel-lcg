@@ -29,7 +29,6 @@ internal static class AbilityGameAreaQuery
     {
         var anchor = Anchor(cast);
         var found = cast.World.Cards.Where(card => card.Area.Type == DeckType.VillainArea
-            && CardKinds.IsVillain(EffectiveCards.Kind(card, cast.World.Facts))
             && Places.CanAffect(cast.World, anchor, card)).ToArray();
         return found.Length <= 1 ? found : throw new RulesNotImplementedException(
             $"'{cast.Source.FaceId}' names the villain in its game area, and {found.Length} villains are there");

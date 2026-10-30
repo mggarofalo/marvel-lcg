@@ -22,6 +22,11 @@ namespace Marvel.Rules.Play;
 public static class PlayerAttackPrevention
 {
     /// <summary>Whether the occurrence names the attacked enemy of the active player attack.</summary>
+    /// <remarks>
+    /// Temporal Shield's trigger already matches only an occurrence whose target is
+    /// its attached Kang, and an attack-initiated occurrence targets the attack's
+    /// enemy, so the equality restates that contract rather than filtering further.
+    /// </remarks>
     public static bool CanInstall(World world, Occurrence occurrence)
     {
         ArgumentNullException.ThrowIfNull(world);
@@ -40,6 +45,11 @@ public static class PlayerAttackPrevention
     }
 
     /// <summary>Whether this attack damage is prevented by the active player attack.</summary>
+    /// <remarks>
+    /// The incarnation keeps the prevention to the Kang that was attacked. An attack
+    /// on an enemy that leaves play deals it nothing more, so no current card reaches
+    /// a re-entered incarnation within the same attack.
+    /// </remarks>
     internal static bool Prevents(World world, DamageRequest request) =>
         request.FromAttack && PlayerAttackReflection.Current(world)?.Prevented is { } prevented
         && prevented.Card == request.Target.ObjectId && prevented.Incarnation == request.Target.Incarnation;

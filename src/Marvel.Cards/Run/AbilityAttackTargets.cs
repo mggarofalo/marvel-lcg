@@ -24,6 +24,6 @@ internal static class AbilityAttackTargets
     /// ally's attack untouched. A source no player resolves has no performer.
     /// </remarks>
     internal static Card? Attacker(World world, int player, Card source) =>
-        player < 0 || player >= world.Players
+        player < 0
             ? null : LabeledAbilities.Performer(world, world.Facts, player, source);
 }

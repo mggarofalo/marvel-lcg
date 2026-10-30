@@ -14,6 +14,8 @@ public sealed class KangFearOfKangTests : CoreCardTestBase
     private const string FearOfKang = "11049";
     private const string MasterOfTime = "11047";
 
+    private sealed record Continuation : CardPowerContinuation;
+
     [Theory]
     [InlineData(MasterOfTime)]
     [InlineData("11001")]
@@ -37,7 +39,38 @@ public sealed class KangFearOfKangTests : CoreCardTestBase
         Assert.Contains(enemy, BasicPowers.Attackable(world, world.Facts, 0, other));
         Assert.Throws<RulesNotImplementedException>(() =>
             BasicPowerInitiation.BasicAttack(world, world.Facts, 1, enemy, []));
+        Assert.Throws<RulesNotImplementedException>(() =>
+            BasicPowerInitiation.BasicAttackWithoutExhausting(world, world.Facts, holder, enemy, []));
         Assert.True(holder.Ready);
+        Assert.Equal(0, enemy.Damage);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    [Rule("rr:cannot")]
+    [Rule("rr:choose-game-element.3.1")]
+    public void ACardAttackNamingKangForTheHoldersHeroIsRejected(bool aggregate)
+    {
+        // A card-labelled attack whose target was chosen elsewhere is checked again
+        // against the attacking character: the holder's hero cannot attack the Master of
+        // Time alone, nor as a second recipient beside Rhino. Nothing is scheduled.
+        var (world, f) = KangTemporalFixture.Board(players: 1);
+        var kang = KangTemporalFixture.Engaged(world, MasterOfTime, 0);
+        Obligation(world, FearOfKang, 0);
+        var hero = world.Seats[0].IdentityCard;
+        string before = world.Digest().Canonical();
+
+        Assert.Throws<RulesNotImplementedException>(() => BasicPowerInitiation.CardAttack(world, world.Facts,
+            new CardPowerInvocation(0, hero, aggregate ? f.Villain : kang, 1, "synthetic attack")
+            {
+                Performer = hero,
+                Targets = aggregate ? [f.Villain, kang] : default,
+                Continuation = aggregate ? new Continuation() : null,
+            }, []));
+
+        Assert.Equal(before, world.Digest().Canonical());
+        Assert.Null(world.CharacterAttack);
     }
 
     [Fact]
