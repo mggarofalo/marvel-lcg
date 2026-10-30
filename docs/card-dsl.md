@@ -1172,12 +1172,15 @@ the attack. The spelling is an engine choice.
 Every `dealAttackDamage` recipient is an attacked enemy (ruling 310af249be272877).
 A recipient the attacking character cannot attack, such as a Kang for the holder
 of Fear of Kang, is not dealt the damage (`rr:cannot`). A recipient the attack
-reaches only after its initiation window -- a splash recipient or a later-chosen
-enemy -- raises when a card in play answers that card being attacked
-(`target: "attachedTo"` on an attack-initiated trigger), because the
-engine opens no initiation window for it.
+reaches only after its initiation window -- a later-chosen enemy such as
+`attackAnyEnemy`'s -- is announced by its own attack-initiated occurrence
+(`LateAttackRecipient`) before its damage, so "when [enemy] is attacked"
+interrupts answer it (`rr:interrupt.3`) and share the attack's per-attack
+maximums. Simultaneous placement has no such announcement; a splash recipient
+whose attachment answers its host being attacked raises, and no authored card
+reaches that shape.
 
-`reflectAttackDamage: "attack"` installs a replacement on the active player attack for this attachment's host. Every damage instance against that target during the attack is prevented and dealt to the attacking player's identity instead. The replacement survives the attachment leaving play and ends with the owning attack.
+`reflectAttackDamage: "attack"` installs a replacement on the player attack whose initiation (or later-recipient announcement) triggered it, for this attachment's host, whichever recipient that host is. Every damage instance against that target during the attack is prevented and dealt to the attacking player's identity instead. The replacement survives the attachment leaving play and ends with the owning attack.
 The card interpreter supplies `UsesThwartStat` on each scheduled power from its
 compiled numeric dependencies and resolved actor bindings. Stat substitution
 is offered only when that exact power reads its acting character's THW; a

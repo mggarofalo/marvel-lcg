@@ -40,7 +40,18 @@ public static class BasicPowerInitiation
         var character = seat.IdentityCard;
         Require(world, facts, seat, Forms.Hero, AttackVerb, "ATK");
 
-        if (!ValidTarget(world, facts, character, enemy, player))
+        // `rr:attack-player-ability-type.1.1`: "a character can only initiate a
+        // basic attack if there is an enemy that can be attacked by that
+        // character **or if that character is stunned**." A stunned character
+        // attacks nothing, on purpose -- it is how the stun comes off.
+        // rr:stun-stunned.5.1: "A stunned character can attempt to attack or use
+        // an attack ability even if it has no valid target for an attack", and
+        // .7: "that character is not considered to have attacked". The enemy a
+        // stunned attempt names is therefore never attacked, so a prohibition on
+        // attacking it (Fear of Kang) has nothing to forbid. The turn's offer
+        // still lists only legal targets when there are any.
+        if (!Statuses.Afflicted(world, facts, character, Statuses.Stunned)
+            && !Attackable(world, facts, player, character).Any(t => t.ObjectId == enemy.ObjectId))
         {
             // `rr:guard.1` is the case this catches in an ordinary game: a
             // minion with guard engaged with this player makes every villain an
@@ -118,20 +129,10 @@ public static class BasicPowerInitiation
     private static bool IsAlly(Card card, CardKind kind, int player) =>
         kind == CardKind.Ally && card.Area.Type == DeckType.AlliesArea && player >= 0;
 
-    // `rr:attack-player-ability-type.1.1`: "a character can only initiate a
-    // basic attack if there is an enemy that can be attacked by that character
-    // **or if that character is stunned**", and rr:stun-stunned.5.1: "A stunned
-    // character can attempt to attack ... even if it has no valid target". Only
-    // that targetless attempt names an enemy the character cannot attack; while a
-    // valid target exists, the attempt names one, as the turn's offer does. A
-    // stunned character attacks nothing either way -- the stun comes off.
     private static bool ValidTarget(
-        World world, ICardFacts facts, Card character, Card enemy, int player)
-    {
-        var attackable = Attackable(world, facts, player, character);
-        return attackable.Any(card => card.ObjectId == enemy.ObjectId)
-            || attackable.Count == 0 && Statuses.Afflicted(world, facts, character, Statuses.Stunned);
-    }
+        World world, ICardFacts facts, Card character, Card enemy, int player) =>
+        Statuses.Afflicted(world, facts, character, Statuses.Stunned)
+        || Attackable(world, facts, player, character).Any(card => card.ObjectId == enemy.ObjectId);
 
     private static void ScheduleConsequentialDamage(
         World world, Card character, Card enemy, int player) =>

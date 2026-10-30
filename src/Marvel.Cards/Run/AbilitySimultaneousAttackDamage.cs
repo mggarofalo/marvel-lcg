@@ -18,6 +18,7 @@ internal static class AbilitySimultaneousAttackDamage
         if (occurrence.Attacks.Count != 0)
             throw new RulesNotImplementedException("multiple simultaneous damage nodes in one labelled attack");
         var targets = AbilityAttackRecipients.Admit(context, attacker, AbilityDamageAndThreatQueries.Every(damage.Cards, context));
+        AbilityAttackRecipients.RequireNoSimultaneousLateAnswer(context, targets);
         foreach (var target in targets)
             if (occurrence.Retaliation is { } retaliation)
                 occurrence.Retaliation = retaliation.Include(target, context.World.Facts);

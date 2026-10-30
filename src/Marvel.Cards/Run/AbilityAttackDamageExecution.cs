@@ -55,7 +55,8 @@ internal static class AbilityAttackDamageExecution
                 context.PowerOccurrence.Retaliation = retaliation.Include(target, context.World.Facts);
             var damaged = DamageAttacks.Resolve(context.World, context.World.Facts,
                 new AttackDamageRequest(attacker, context.Source, target, amount, context.Trigger, "Attack", Retaliate: false)
-                { Origin = retained ? context.PowerOccurrence : null }, context.Events);
+                { Origin = retained ? context.PowerOccurrence : null, LateRecipient = AbilityAttackRecipients.IsLate(context, target) },
+                context.Events);
             state.Attacked.Add(target);
             (state.Damage ??= new(context.Occurrence)).Add(damaged, amount, recipient, context.PowerOccurrence);
             suspended |= !damaged.IsComplete;

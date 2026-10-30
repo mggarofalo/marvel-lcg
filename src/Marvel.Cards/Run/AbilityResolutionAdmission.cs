@@ -129,7 +129,7 @@ internal static class AbilityResolutionAdmission
             "peekTop" => AbilityDeckPeek.Decks(cast.World).Count > 0,
             "preventThreat" => cast.Occurrence.Threat is { Remaining: > 0 }
                 && Amount(EffectOf<AbilityEffect.PreventThreat>(node, cast).Amount, cast) > 0,
-            "reflectAttackDamage" => PlayerAttackReflection.CanInstall(cast.World, cast.Source),
+            "reflectAttackDamage" => PlayerAttackReflection.CanInstall(cast.World, cast.Occurrence, cast.Source),
             "preventPlayerAttackDamage" => PlayerAttackPrevention.CanInstall(cast.World, cast.Occurrence,
                 AbilityCardQueries.Named(AbilityCardBinding.TriggerTarget, cast.Context.Query)),
             "useAttackForThwart" => ThwartStatSubstitution.CanUseAttack(cast.World, cast.Occurrence),

@@ -26,13 +26,15 @@ public static class PlayerAttackPrevention
     /// rr:attack-player-ability-type.5: an attack against several enemies "is
     /// considered to have attacked each of those enemies", so the prevented enemy
     /// is the attacked enemy the triggering ability names, not only the attack's
-    /// first target. The trigger's own match decides which recipient that is.
+    /// first target, and an enemy the attack reaches later is announced by its
+    /// own attack-initiated occurrence (<see cref="LateAttackRecipientOperation"/>).
+    /// The trigger's own match decides which recipient that is.
     /// </remarks>
     public static bool CanInstall(World world, Occurrence occurrence, Card? enemy)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(occurrence);
-        return world.Agenda.PlayerAttackOperation(occurrence) is not null
+        return world.Agenda.InitiatingPlayerAttack(occurrence) is not null
             && enemy is not null;
     }
 
@@ -41,7 +43,7 @@ public static class PlayerAttackPrevention
     {
         if (!CanInstall(world, occurrence, enemy))
             throw new RulesNotImplementedException("attack damage prevention requires an attacked enemy of a begun player attack");
-        world.Agenda.PlayerAttackOperation(occurrence)!.Prevented = (enemy!.ObjectId, enemy.Incarnation);
+        world.Agenda.InitiatingPlayerAttack(occurrence)!.Prevented = (enemy!.ObjectId, enemy.Incarnation);
     }
 
     /// <summary>Whether this attack damage is prevented by the active player attack.</summary>

@@ -36,40 +36,18 @@ public sealed class StatusAStunnedHeroExhaustsAttacksNothingTests : StatusTestBa
         // "A character can only initiate a basic attack if there is an enemy
         // that can be attacked **or if that character is stunned**", and
         // `.5.1` says the same from the other side. Attacking nothing is how
-        // the stun comes off. The villain leaves play, so no enemy remains.
-        var printed = Cards();
-        var world = Board(printed);
-        var hero = world.Seats[0].IdentityCard;
-        var villain = world.TheCardIn(DeckType.VillainArea)!;
-        World.MoveToTop(villain, world.AreaOf(DeckType.RemovedArea));
-        Assert.Empty(BasicPowers.Attackable(world, printed, 0));
-        Statuses.Give(world, hero, Statuses.Stunned);
-        BasicPowerInitiation.BasicAttack(world, printed, 0, villain, []);
-        Agendas.Finish(world, printed);
-        Assert.Equal(0, villain.Damage);
-        Assert.Equal(0, Statuses.Count(world, hero, Statuses.Stunned));
-    }
-
-    [Rule("rr:stun-stunned.5.1")]
-    [Rule("rr:guard.1")]
-    [Fact]
-    public void AStunnedCharacterNamesALegalTargetWhileOneExists()
-    {
-        // `.5.1` lets the attempt go without a valid target only when there is
-        // none. Here the guarding minion is one, so the guarded villain is not
-        // a target even for a stunned hero -- as the turn's offer shows.
+        // the stun comes off.
         var printed = Cards().With("minion", ("HP", "3"), ("Guard", "1"));
         var world = Board(printed);
         var hero = world.Seats[0].IdentityCard;
         var villain = world.TheCardIn(DeckType.VillainArea)!;
-        var minion = world.CreateCard("minion", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+        // A guarding minion makes the villain an illegal target.
+        world.CreateCard("minion", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+        Assert.DoesNotContain(BasicPowers.Attackable(world, printed, 0), card => card.ObjectId == villain.ObjectId);
         Statuses.Give(world, hero, Statuses.Stunned);
-        Assert.Throws<RulesNotImplementedException>(() =>
-            BasicPowerInitiation.BasicAttack(world, printed, 0, villain, []));
-        Assert.True(hero.Ready);
-        BasicPowerInitiation.BasicAttack(world, printed, 0, minion, []);
+        BasicPowerInitiation.BasicAttack(world, printed, 0, villain, []);
         Agendas.Finish(world, printed);
-        Assert.Equal(0, minion.Damage);
+        Assert.Equal(0, villain.Damage);
         Assert.Equal(0, Statuses.Count(world, hero, Statuses.Stunned));
     }
 

@@ -29,7 +29,7 @@ public sealed class KangAttackRecipientTests : CoreCardTestBase
         // 310af249be272877: the shield "only prevents the damage that would be dealt
         // to Kang"; the Hydra Soldier (3 hit points) takes its 4 and is defeated. The
         // attacker takes the shield's 1 damage either way.
-        var (game, world, villain, minion, shields) = ShieldToss(shields: 1);
+        var (game, world, villain, minion, shields) = AttackRecipientFixture.ShieldToss(TemporalShield, 1);
         var shield = shields[0];
         var attack = Assert.Single(game.Pending!.Affordances);
         int[] targets = villainFirst ? [villain.ObjectId, minion.ObjectId] : [minion.ObjectId, villain.ObjectId];
@@ -43,29 +43,39 @@ public sealed class KangAttackRecipientTests : CoreCardTestBase
         Assert.Equal(Question.TurnOption, game.Pending!.Asking);
     }
 
-    [Fact]
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
     [Rule("rr:attack-player-ability-type.5")]
-    public void GiantStompChoosingAShieldedVillainRaisesRatherThanSkippingTheShield()
+    [Rule("rr:interrupt.3")]
+    [Rule("rr:max-maximum")]
+    public void GiantStompChoosingAShieldedVillainTriggersTheShield(int shields)
     {
-        // The 8 damage is chosen after the attack's initiation window, so the engine
-        // has no window in which the shield could answer "When Kang is attacked".
-        var (world, f, stomp, pay) = AntMan();
-        var shield = f.Reveal(TemporalShield, 0);
+        // The 8 is chosen after the attack begins. Ruling 310af249be272877: the enemy
+        // the second sentence hits is attacked then, so the shield answers before the
+        // damage: Rhino takes none and Giant Ant-Man takes 1. "(Max 1 per attack.)"
+        // A second shield stays attached.
+        var (world, f, stomp, pay) = AttackRecipientFixture.AntMan();
+        var attached = Enumerable.Range(0, shields).Select(_ => f.Reveal(TemporalShield, 0)).ToArray();
         f.Finish();
-        Assert.Equal(f.Villain.ObjectId, shield.Area.Host);
-        Execute(f, stomp, pay);
+        AttackRecipientFixture.Execute(f, stomp, pay);
 
-        Assert.Throws<RulesNotImplementedException>(() => f.Finish(prompt => Decision.Take(f.Villain.ObjectId)));
+        f.Finish(prompt => Decision.Take(prompt.Affordances.Any(option => option.AnchorId == f.Villain.ObjectId)
+            ? f.Villain.ObjectId : prompt.Affordances[0].Id));
+
         Assert.Equal(0, f.Villain.Damage);
-        Assert.Equal(f.Villain.ObjectId, shield.Area.Host);
+        Assert.Equal(1, world.Seats[0].IdentityCard.Damage);
+        Assert.Single(attached, shield => shield.Area.Type == DeckType.EncounterDiscardPile);
+        Assert.Equal(shields - 1, attached.Count(shield => shield.Area.Host == f.Villain.ObjectId));
+        Assert.False(world.Agenda.IsBusy);
     }
 
     [Fact]
     [Rule("rr:attack-player-ability-type.5")]
     public void GiantStompChoosingAnUnshieldedVillainDealsItsEight()
     {
-        var (world, f, stomp, pay) = AntMan();
-        Execute(f, stomp, pay);
+        var (world, f, stomp, pay) = AttackRecipientFixture.AntMan();
+        AttackRecipientFixture.Execute(f, stomp, pay);
 
         f.Finish(prompt => Decision.Take(f.Villain.ObjectId));
 
@@ -83,11 +93,11 @@ public sealed class KangAttackRecipientTests : CoreCardTestBase
         // "Deal 1 damage to each minion": every minion is attacked (ruling
         // 310af249be272877), and the holder of Fear of Kang cannot attack the Master
         // of Time. The Hydra Soldier is damaged either way; the 8 goes to Rhino.
-        var (world, f, stomp, pay) = AntMan();
+        var (world, f, stomp, pay) = AttackRecipientFixture.AntMan();
         var kang = KangTemporalFixture.Engaged(world, MasterOfTime, 0);
         var soldier = KangTemporalFixture.Engaged(world, "01102", 0);
         if (fear) Obligation(world, FearOfKang, 0);
-        Execute(f, stomp, pay);
+        AttackRecipientFixture.Execute(f, stomp, pay);
         var offered = new List<int>();
 
         f.Finish(prompt =>
@@ -177,26 +187,25 @@ public sealed class KangAttackRecipientTests : CoreCardTestBase
 
     [Fact]
     [Rule("rr:stun-stunned.5.1")]
-    [Rule("rr:cannot")]
-    public void AStunnedHolderMayNotNameKangWhileAnotherTargetExists()
+    [Rule("rr:stun-stunned.7")]
+    public void AStunnedHoldersAttemptNamingKangOnlyRemovesTheStun()
     {
-        // The turn offers the stunned holder Rhino alone; the attempt itself agrees.
-        // Naming Rhino clears the stun without damage (rr:stun-stunned.7).
+        // The stunned attempt is "not considered to have attacked" (rr:stun-stunned.7),
+        // so naming the Master of Time attacks nobody: the stun comes off, nothing is
+        // damaged, and the hero exhausts as the attempt's cost.
         var (world, f) = KangTemporalFixture.Board(players: 1);
         var kang = KangTemporalFixture.Engaged(world, MasterOfTime, 0);
         Obligation(world, FearOfKang, 0);
         var hero = world.Seats[0].IdentityCard;
         Statuses.Give(world, hero, Statuses.Stunned);
 
-        Assert.Throws<RulesNotImplementedException>(() =>
-            BasicPowerInitiation.BasicAttack(world, world.Facts, 0, kang, []));
-        Assert.True(hero.Ready);
-        BasicPowerInitiation.BasicAttack(world, world.Facts, 0, f.Villain, []);
+        BasicPowerInitiation.BasicAttack(world, world.Facts, 0, kang, []);
         f.Finish();
 
         Assert.False(Statuses.Has(world, hero, Statuses.Stunned));
-        Assert.Equal(0, f.Villain.Damage);
+        Assert.False(hero.Ready);
         Assert.Equal(0, kang.Damage);
+        Assert.Equal(0, f.Villain.Damage);
     }
 
     [Theory]
@@ -208,7 +217,7 @@ public sealed class KangAttackRecipientTests : CoreCardTestBase
     {
         // "(Max 1 per attack.)" The second shield stays attached, and the villain is a
         // recipient the attack declared, so its damage resolves without raising.
-        var (game, world, villain, minion, shields) = ShieldToss(shields: 2);
+        var (game, world, villain, minion, shields) = AttackRecipientFixture.ShieldToss(TemporalShield, 2);
         var attack = Assert.Single(game.Pending!.Affordances);
 
         game.Resolve(new Decision(attack.Id,
@@ -252,11 +261,11 @@ public sealed class KangAttackRecipientTests : CoreCardTestBase
     {
         // The splash and the 8 both go to the Hydra Soldier; the shielded villain is
         // never attacked, so nothing raises and the shield stays.
-        var (world, f, stomp, pay) = AntMan();
+        var (world, f, stomp, pay) = AttackRecipientFixture.AntMan();
         var shield = f.Reveal(TemporalShield, 0);
         f.Finish();
         var soldier = KangTemporalFixture.Engaged(world, "01102", 0);
-        Execute(f, stomp, pay);
+        AttackRecipientFixture.Execute(f, stomp, pay);
 
         f.Finish(prompt => Decision.Take(soldier.ObjectId));
 
@@ -271,9 +280,9 @@ public sealed class KangAttackRecipientTests : CoreCardTestBase
     {
         // Vibranium Armor answers damage to its host, not the host being attacked, so
         // Giant Stomp's later 8 reaches the armoured villain.
-        var (world, f, stomp, pay) = AntMan();
+        var (world, f, stomp, pay) = AttackRecipientFixture.AntMan();
         world.CreateCard("01152", world.AreaOf(DeckType.UpgradesArea, PlayArea.Villains, f.Villain.ObjectId));
-        Execute(f, stomp, pay);
+        AttackRecipientFixture.Execute(f, stomp, pay);
 
         f.Finish(prompt => Decision.Take(prompt.Affordances.Any(option => option.AnchorId == f.Villain.ObjectId)
             ? f.Villain.ObjectId : prompt.Affordances[0].Id));
@@ -321,46 +330,5 @@ public sealed class KangAttackRecipientTests : CoreCardTestBase
 
         Assert.False(PlayerAttackPrevention.CanInstall(world, occurrence, f.Villain));
         Assert.Throws<RulesNotImplementedException>(() => PlayerAttackPrevention.Install(world, occurrence, f.Villain));
-    }
-
-    private static (Game Game, World World, Card Villain, Card Minion, Card[] Shields) ShieldToss(int shields)
-    {
-        // Captain America plays Shield Toss discarding two cards: two recipients, 4 each.
-        Card? minion = null, villain = null;
-        Card[] held = [], attached = [];
-        var (game, world) = CaptainAmericaFixture.PlayingCaptain(board =>
-        {
-            var seat = board.Seats[0];
-            board.CreateCard("03006", seat.Hand);
-            board.CreateCard("03009", board.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), seat.IdentityCard.ObjectId, 0));
-            held = [.. Enumerable.Range(0, 2).Select(_ => board.CreateCard("03003", seat.Hand))];
-            minion = board.CreateCard("01102", board.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
-            villain = board.TheCardIn(DeckType.VillainArea)!;
-            attached = [.. Enumerable.Range(0, shields).Select(_ => board.CreateCard(TemporalShield,
-                board.AreaOf(DeckType.UpgradesArea, PlayArea.Villains, villain.ObjectId)))];
-        }, twoPlayers: true);
-        var play = Assert.Single(game.Pending!.Affordances,
-            offer => offer.PlaysCard && world.Cards[offer.AnchorId].FaceId == "03006");
-        game.Resolve(new Decision(play.Id, [.. held.Select(card => card.ObjectId)]));
-        return (game, world, villain!, minion!, attached);
-    }
-
-    private static (World World, RedSkullFixture Fixture, Card Stomp, int[] Payment) AntMan()
-    {
-        // Giant Ant-Man (12001c) with Giant Stomp and three Energy to pay for it.
-        var (world, f) = KangTemporalFixture.Board(players: 1);
-        var seat = world.Seats[0];
-        World.MoveToTop(seat.IdentityCard, world.AreaOf(DeckType.RemovedArea));
-        seat.IdentityCard = world.CreateCard("12001a,12001b,12001c", seat.Hero);
-        seat.IdentityCard.TurnTo("12001c");
-        var stomp = world.CreateCard("12003", seat.Hand);
-        int[] payment = [.. Enumerable.Range(0, 3).Select(_ => world.CreateCard("01087", seat.Hand).ObjectId)];
-        return (world, f, stomp, payment);
-    }
-
-    private static void Execute(RedSkullFixture f, Card stomp, int[] payment)
-    {
-        var action = Assert.Single(f.Runner.Actions(f.World, 0), item => item.Card == stomp.ObjectId);
-        f.Runner.ExecuteAction(f.World, new PlayerAction(action, payment, []));
     }
 }

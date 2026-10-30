@@ -18,45 +18,51 @@ namespace Marvel.Cards.Run;
 /// rr:cannot: "The word cannot is absolute". A recipient the attacking character
 /// cannot attack is not dealt the attack's damage.
 /// </para>
-/// <para>
-/// An enemy the attack reaches only after its initiation window has passed was
-/// never offered to an ability that answers "when this card is attacked". The
-/// engine opens no window for it, so such a recipient raises rather than
-/// letting that ability silently miss its trigger.
-/// </para>
 /// </remarks>
 internal static class AbilityAttackRecipients
 {
     internal static IReadOnlyList<Card> Admit(
-        AbilityDamageAndThreatContext context, Card attacker, IReadOnlyList<Card> targets)
+        AbilityDamageAndThreatContext context, Card attacker, IReadOnlyList<Card> targets) =>
+        [.. targets.Where(target => AttackPermissions.CanAttack(context.World, attacker, target))];
+
+    /// <summary>Whether the attack reaches <paramref name="target"/> after its initiation window.</summary>
+    /// <remarks>
+    /// Such a recipient is announced by its own attack-initiated occurrence
+    /// before its damage (<see cref="LateAttackRecipientOperation"/>). The
+    /// recipients the initiation window offered are the attack's enemy and any it
+    /// declared alongside it.
+    /// </remarks>
+    internal static bool IsLate(AbilityDamageAndThreatContext context, Card target)
     {
-        var permitted = targets.Where(target => AttackPermissions.CanAttack(context.World, attacker, target)).ToArray();
-        var initiated = Initiated(context);
-        foreach (var target in permitted)
-            if (!initiated.Contains(target.ObjectId) && AnswersItsAttack(context, target) is { } source)
-                throw new RulesNotImplementedException(
-                    $"'{source.FaceId}' answers its card being attacked, and this attack reaches '{target.FaceId}' after its initiation window");
-        return permitted;
+        if (context.World.Agenda.PlayerAttackOf(context.PowerOccurrence) is not { } attack) return false;
+        return attack.Enemy != target.ObjectId
+            && !(attack.Continuation is AbilityPowerContinuation { DeclaredRecipients: { IsDefault: false } declared }
+                && declared.Any(recipient => recipient.Card == target.ObjectId));
     }
 
-    // The recipients the initiation window offered: the attack's enemy and any
-    // recipients it declared alongside it.
-    private static HashSet<int> Initiated(AbilityDamageAndThreatContext context)
+    /// <summary>
+    /// Raises for a simultaneous late recipient that a card answers being attacked.
+    /// </summary>
+    /// <remarks>
+    /// Simultaneous placement has no per-recipient announcement. Its only late
+    /// recipients are splash minions (<c>attackAnyEnemy</c>'s splash body), and
+    /// every admitted "when attacked" attachment attaches to a villain, so no
+    /// admitted card reaches this raise.
+    /// </remarks>
+    internal static void RequireNoSimultaneousLateAnswer(
+        AbilityDamageAndThreatContext context, IReadOnlyList<Card> targets)
     {
-        if (context.World.Agenda.PlayerAttackOf(context.PowerOccurrence) is not { } attack) return [];
-        HashSet<int> initiated = [attack.Enemy];
-        if (attack.Continuation is AbilityPowerContinuation { DeclaredRecipients: { IsDefault: false } declared })
-            initiated.UnionWith(declared.Select(recipient => recipient.Card));
-        return initiated;
+        foreach (var target in targets)
+            if (IsLate(context, target) && AnswersItsAttack(context, target) is { } source)
+                throw new RulesNotImplementedException(
+                    $"'{source.FaceId}' answers its host being attacked, and simultaneous attack damage reaches '{target.FaceId}' after the attack's initiation");
     }
 
     private static Card? AnswersItsAttack(AbilityDamageAndThreatContext context, Card target) =>
-        context.World.Cards.FirstOrDefault(card => card.FaceUp
-            && context.Program.On(card.FaceId).Any(ability => AnswersAttackOn(ability.Trigger, card, target)));
+        context.World.Cards.FirstOrDefault(card => card.FaceUp && card.Area.Host == target.ObjectId
+            && context.Program.On(card.FaceId).Any(ability => AnswersHostAttack(ability.Trigger)));
 
-    // Temporal Shield's "When Kang is attacked" is the only such trigger the
-    // book holds: an attachment keyed to its host.
-    private static bool AnswersAttackOn(AbilityTrigger trigger, Card card, Card target) =>
+    internal static bool AnswersHostAttack(AbilityTrigger trigger) =>
         (trigger.Event == Steps.AttackInitiated || trigger.Also == Steps.AttackInitiated)
-        && trigger.Target == AbilityRoles.AttachedTo && card.Area.Host == target.ObjectId;
+        && trigger.Target == AbilityRoles.AttachedTo;
 }

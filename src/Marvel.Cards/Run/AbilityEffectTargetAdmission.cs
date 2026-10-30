@@ -199,7 +199,7 @@ internal static class AbilityEffectTargetAdmission
     private static TargetLegality? CombatTimingLegality(AbilityEffect node, AbilityAdmissionScope cast) =>
         node.OperationName() switch
         {
-            "reflectAttackDamage" => PlayerAttackReflection.CanInstall(cast.World, cast.Source)
+            "reflectAttackDamage" => PlayerAttackReflection.CanInstall(cast.World, cast.Occurrence, cast.Source)
                 ? TargetLegality.Valid : TargetLegality.Invalid,
             "preventPlayerAttackDamage" => PlayerAttackPrevention.CanInstall(cast.World, cast.Occurrence,
                 AbilityCardQueries.Named(AbilityCardBinding.TriggerTarget, cast.Context.Query))
