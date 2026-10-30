@@ -177,10 +177,11 @@ form, prefers attacks or urgent thwarting, selects legal targets and pays only
 with offered resource generators. Random choices use the answering seat's
 policy stream.
 
-A policy version is immutable after records use it. A change that can choose a
-different answer from the same prompt and stream creates a new version. A
-refactor that preserves every answer may keep the version, with a test that
-pins the claim.
+A policy version is immutable after records use it. A change that can alter an
+answer the engine accepts, or the policy stream draws taken before it, from the
+same prompt and stream creates a new version. A change that only replaces
+answers the engine rejects may keep the version, since no resolved step of an
+earlier record used them; a test pins the claim.
 
 ## Setup and execution
 
@@ -312,10 +313,11 @@ computed aliases is an engine format choice.
 The acting policy is version 3. It selects the earliest smallest generator set
 accepted by the engine for all offered resource components, including typed
 variable quantities. For a target request that allows repeated entries, such as
-an indirect damage assignment, it keeps the earliest distinct targets when the
+an indirect damage assignment, it keeps the earliest targets when the
 request admits them. Otherwise it draws each entry from the seat's policy stream
 among the targets that the request's `AllowsPartial` still admits, so a target
-may receive several points up to its offered occurrence limit. That draw only
+may receive several points up to its offered occurrence limit. A distinct request
+whose earliest targets break an exclusive set is redrawn the same way. That draw only
 replaces selections the engine rejects, so every accepted version 3 answer is
 unchanged. Prior policy versions are not replayed as version 3.
 

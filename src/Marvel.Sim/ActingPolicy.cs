@@ -6,11 +6,15 @@ using Marvel.Rules.State;
 namespace Marvel.Sim;
 
 /// <summary>A deterministic research policy that plays cards and attacks.</summary>
-internal sealed class ActingPolicy(ICardFacts facts, IReadOnlyList<uint> seatSeeds)
+internal sealed class ActingPolicy(ICardFacts facts, IReadOnlyList<uint> seatSeeds) : ISimulationPolicy
 {
     public const string Name = "acting";
     public const int Version = 3;
     public const string Visibility = "full_state";
+
+    /// <summary>The harness's policy for every recorded game.</summary>
+    public static readonly SimulationPolicyFactory Create =
+        (facts, seatSeeds) => new ActingPolicy(facts, seatSeeds);
 
     private readonly IReadOnlyList<EngineRandom> random =
         [.. seatSeeds.Select(seed => new EngineRandom(seed))];

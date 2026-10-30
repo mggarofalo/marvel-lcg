@@ -33,8 +33,8 @@ public sealed class PolicyAnswerAssessmentTests
     {
         var repeated = Decision.Take(7, [10, 20, 10], []);
 
-        PolicyAnswerAssessment.Require(Assign, repeated);
+        var error = Record.Exception(() => PolicyAnswerAssessment.Require(Assign, repeated));
 
-        Assert.True(DecisionAssessment.Assess(Assign, repeated).IsAccepted);
+        Assert.Null(error);
     }
 }

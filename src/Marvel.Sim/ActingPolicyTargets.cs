@@ -8,15 +8,16 @@ internal static class ActingPolicyTargets
 {
     /// <summary>Selects targets for one offer, preferring the villain for a single target.</summary>
     /// <remarks>
-    /// An allocation request names one target per point, so it may repeat a
-    /// target up to its offered occurrence limit. rr:indirect-damage.1: "Indirect
+    /// The earliest legal targets are kept whenever the request admits them,
+    /// which leaves every answer of policy version 3 that the engine accepts
+    /// unchanged and draws nothing from the stream. Otherwise each entry is drawn
+    /// from the seat's policy stream among the targets the request's own
+    /// <see cref="TargetRequest.AllowsPartial"/> still admits. That covers an
+    /// allocation request, which names one target per point and may repeat a
+    /// target up to its offered occurrence limit (rr:indirect-damage.1: "Indirect
     /// damage dealt to a player can be divided as that player chooses among
-    /// characters under their control." The earliest distinct targets are kept
-    /// whenever the request admits them, which leaves every answer of policy
-    /// version 3 that the engine accepts unchanged and draws nothing from the
-    /// stream. Otherwise each point goes to a target drawn from the seat's policy
-    /// stream among those the request's own
-    /// <see cref="TargetRequest.AllowsPartial"/> still admits.
+    /// characters under their control."), and a distinct request whose earliest
+    /// targets break one of its exclusive sets.
     /// </remarks>
     internal static IReadOnlyList<int> Select(TargetRequest? wanted, int villain, EngineRandom random)
     {
@@ -37,9 +38,7 @@ internal static class ActingPolicyTargets
             selected[0] = villain;
         }
 
-        return wanted.AllowRepeated && !wanted.Allows(selected)
-            ? Allocate(wanted, random)
-            : selected;
+        return wanted.Allows(selected) ? selected : Allocate(wanted, random);
     }
 
     private static List<int> Allocate(TargetRequest wanted, EngineRandom random)

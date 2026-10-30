@@ -71,6 +71,21 @@ public sealed class ActingPolicyTargetsTests
     }
 
     [Fact]
+    public void ADistinctRequestWhoseEarliestTargetsBreakAnExclusiveSetIsRedrawn()
+    {
+        // The first two candidates share an exclusive set, so taking them is rejected.
+        var wanted = new TargetRequest([10, 11, 20], 2, 2) { ExclusiveSets = [[10, 11]] };
+
+        for (uint seed = 0; seed < 32; seed++)
+        {
+            IReadOnlyList<int> chosen = ActingPolicyTargets.Select(wanted, -1, new EngineRandom(seed));
+
+            Assert.True(wanted.Allows(chosen));
+            Assert.Contains(20, chosen);
+        }
+    }
+
+    [Fact]
     public void ResearchPolicyStillPrefersTheVillainForASingleDistinctTarget()
     {
         var wanted = new TargetRequest([10, 20, 30], 1, 1);
