@@ -23921,11 +23921,11 @@
     {
       "card": "11040",
       "name": "Apocryphus",
-      "note": "When Revealed: Discard an ally or support you control. star Boost: Exhaust a character you control. Give this enemy another boost card. rr:ability.3 initiates the discard only with a valid target, so a player controlling neither resolves nothing. A boost card's \"this enemy\" is the activating enemy.",
+      "note": "When Revealed: Discard an ally or support you control. star Boost: Exhaust a character you control. Give this enemy another boost card. rr:ability.3 initiates the discard only with a valid target, so a player controlling neither resolves nothing. The chosen card must be one the discard can remove, which leaves out a permanent card from another set (rr:permanent.4). A boost card's \"this enemy\" is the activating enemy.",
       "abilities": [
         {
           "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
-          "effect": { "chooseCard": { "from": { "discardable": { "query": "alliesAndSupportsYouControl" } }, "effect": { "discard": "chosen" } } }
+          "effect": { "chooseCard": { "from": { "query": "alliesAndSupportsYouControl" }, "effect": { "discard": "chosen" } } }
         },
         {
           "trigger": { "event": "WhenCardRevealed", "timing": "Boost", "subject": "this" },

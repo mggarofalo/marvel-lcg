@@ -61,29 +61,66 @@ public sealed class KangAnachronautsMinionTests : CoreCardTestBase
     }
 
     [Theory]
-    [InlineData("11041", 3, 1)]
-    [InlineData("01101", 1, 3)]
+    [InlineData("11040", 2, 1)]
+    [InlineData("11041", 2, 1)]
+    [InlineData("11042", 3, 1)]
+    [InlineData("11043", 3, 2)]
+    [InlineData("11044", 2, 1)]
     [Rule("rr:villainous")]
     [Rule("rr:villainous.1")]
-    public void DeathuntIsBoostedAndABoostsThisEnemyIsTheActivatingMinion(
-        string enemy, int damage, int deck)
+    [Rule("rr:boost-boost-icon.4")]
+    public void AVillainousMinionsBoostCardTreatsTheMinionAsThisEnemy(string boost, int damage, int extra)
     {
         // rr:villainous.1: "Forced Interrupt: When this character uses a basic
-        // power, give it a boost card." Sir Raston's boost deals 1 damage and gives
-        // "this enemy another boost card", which is the activating minion, not the
-        // villain. Hydra Mercenary has no villainous keyword and draws no boost card.
+        // power, give it a boost card." The mc11 insert (pack:mc11:new-keywords):
+        // "When a minion with the villainous keyword activates, give it a facedown
+        // boost card from the top of the encounter deck." Each Anachronaut boost
+        // gives "this enemy" more boost cards, and Deathunt's gives it a tough card:
+        // all land on Deathunt 9000, the activating minion, never on Rhino. Each
+        // Hydra Mercenary beneath prints one boost icon; Deathunt prints ATK 1.
         var (world, f) = KangTemporalFixture.Board(players: 2, encounter: 0);
         world.CreateCard("01104", world.AreaOf(DeckType.EncounterDeck));
+        for (int i = 0; i < 2; i++) world.CreateCard("01101", world.AreaOf(DeckType.EncounterDeck));
+        world.CreateCard(boost, world.AreaOf(DeckType.EncounterDeck));
+        for (int i = 0; i < 2; i++) world.CreateCard("01088", world.Seats[1].Hand);
+        var identity = world.Seats[1].IdentityCard;
+        var deathunt = KangTemporalFixture.Engaged(world, "11041", 1);
+        KangTemporalFixture.Attack(world, deathunt, 1);
+
+        // Apocryphus asks player 1 to exhaust a character they control.
+        var events = f.Finish(prompt =>
+            Decision.Take(prompt.Affordances.Single(option => option.AnchorId == identity.ObjectId).Id));
+
+        Assert.Equal(damage, identity.Damage);
+        Assert.Equal(0, world.Seats[0].IdentityCard.Damage);
+        Assert.Equal(3 - extra, world.AreaOf(DeckType.EncounterDeck).Cards.Count);
+        Assert.Equal(boost == "11041", Statuses.Has(world, deathunt, Statuses.Tough));
+        Assert.False(Statuses.Has(world, f.Villain, Statuses.Tough));
+        Assert.Equal(boost != "11040", identity.Ready);
+        Assert.Equal(boost == "11044" ? 1 : 2, world.Seats[1].Hand.Cards.Count);
+        Assert.Single(events.OfType<AttackCompleted>(), e => e.Enemy == deathunt.ObjectId);
+        Assert.False(world.Agenda.IsBusy);
+    }
+
+    [Fact]
+    [Rule("rr:villainous")]
+    public void AMinionWithoutVillainousDrawsNoBoostCard()
+    {
+        // rr:villainous: "When a character with the villainous keyword uses a basic
+        // power, give it a facedown boost card". Hydra Mercenary lacks the keyword,
+        // so Sir Raston stays on top of the encounter deck.
+        var (world, f) = KangTemporalFixture.Board(players: 2, encounter: 0);
         world.CreateCard("01101", world.AreaOf(DeckType.EncounterDeck));
-        world.CreateCard("11042", world.AreaOf(DeckType.EncounterDeck));
-        var attacker = KangTemporalFixture.Engaged(world, enemy, 1);
-        KangTemporalFixture.Attack(world, attacker, 1);
+        var raston = world.CreateCard("11042", world.AreaOf(DeckType.EncounterDeck));
+        var mercenary = KangTemporalFixture.Engaged(world, "01101", 1);
+        KangTemporalFixture.Attack(world, mercenary, 1);
 
         var events = f.Finish();
 
-        Assert.Equal(damage, world.Seats[1].IdentityCard.Damage);
-        Assert.Equal(deck, world.AreaOf(DeckType.EncounterDeck).Cards.Count);
-        Assert.Single(events.OfType<AttackCompleted>(), e => e.Enemy == attacker.ObjectId);
+        Assert.Equal(1, world.Seats[1].IdentityCard.Damage);
+        Assert.Same(raston, world.AreaOf(DeckType.EncounterDeck).Cards[^1]);
+        Assert.Equal(2, world.AreaOf(DeckType.EncounterDeck).Cards.Count);
+        Assert.Single(events.OfType<AttackCompleted>(), e => e.Enemy == mercenary.ObjectId);
         Assert.False(world.Agenda.IsBusy);
     }
 

@@ -14,18 +14,22 @@ public sealed class KangApocryphusTests : CoreCardTestBase
     [InlineData(true)]
     [InlineData(false)]
     [Rule("rr:you-your.10")]
+    [Rule("rr:permanent.4")]
     public void ApocryphusOffersTheRevealingPlayerEachAllyAndSupportTheyControl(bool discardSupport)
     {
         // 11040: "When Revealed: Discard an ally or support you control."
         // rr:you-your.10: "the player resolving that game step or card ability
         // performs that game function against the card in their play area."
         // Player 1 is not the first player; player 0's ally and player 1's upgrade
-        // are not offered.
+        // are not offered. rr:permanent.4: "Permanent cards are not valid targets for
+        // card effects that would cause the permanent card to leave play", so Clear
+        // Skies, a permanent support from another set, is not offered either.
         var (world, f) = KangTemporalFixture.Board(players: 2);
         var ally = world.CreateCard("01059", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(1), cardOwner: 1));
         var support = world.CreateCard("01092", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(1), cardOwner: 1));
         var upgrade = world.CreateCard("01008", world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(1), cardOwner: 1));
         var other = world.CreateCard("01067", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+        var permanent = world.CreateCard("36002", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(1), cardOwner: 1));
         var apocryphus = f.Reveal("11040", player: 1);
         var discarded = discardSupport ? support : ally;
         var kept = discardSupport ? ally : support;
@@ -45,6 +49,26 @@ public sealed class KangApocryphusTests : CoreCardTestBase
         Assert.True(DeckTypes.IsInPlay(kept.Area.Type));
         Assert.Equal(DeckType.UpgradesArea, upgrade.Area.Type);
         Assert.Equal(DeckType.AlliesArea, other.Area.Type);
+        Assert.Equal(world.AreaOf(DeckType.SupportsArea, PlayArea.Of(1)), permanent.Area);
+        Assert.Equal(world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(1)), apocryphus.Area);
+        Assert.False(world.Agenda.IsBusy);
+    }
+
+    [Fact]
+    [Rule("rr:permanent.4")]
+    [Rule("rr:ability.3")]
+    public void ApocryphusFindsNoTargetWhenTheOnlySupportIsPermanent()
+    {
+        // rr:permanent.4 removes Clear Skies from the valid targets, and
+        // rr:ability.3: "that ability can only be initiated if it has at least one
+        // valid target." Nothing is asked and nothing leaves play.
+        var (world, f) = KangTemporalFixture.Board(players: 2);
+        var permanent = world.CreateCard("36002", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(1), cardOwner: 1));
+        var apocryphus = f.Reveal("11040", player: 1);
+
+        f.Finish(prompt => throw new InvalidOperationException($"unexpected prompt: {prompt.Label}"));
+
+        Assert.Equal(world.AreaOf(DeckType.SupportsArea, PlayArea.Of(1)), permanent.Area);
         Assert.Equal(world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(1)), apocryphus.Area);
         Assert.False(world.Agenda.IsBusy);
     }
