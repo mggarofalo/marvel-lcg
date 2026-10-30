@@ -213,18 +213,23 @@ internal static class AbilityResolutionEffectChoices
             execution.Capture(cast, abilityOrdinal));
         var continuation = AbilityContinuations.Step(
             capture, AbilityContinuationStage.Resume, cast.World.Agenda.Current?.Round ?? 0, plan: true);
-        if (agendaOwner is null)
+        if (agendaOwner is not { } owner)
         {
             cast.World.Agenda.Then(continuation);
         }
         else
         {
-            cast.World.Agenda.ContinueBeforeOwner(
-                agendaOccurrence
-                    ?? throw new InvalidOperationException(
-                        "a suspended rules procedure has no containing occurrence"),
-                agendaOwner.Value,
-                continuation);
+            var occurrence = agendaOccurrence
+                ?? throw new InvalidOperationException(
+                    "a suspended rules procedure has no containing occurrence");
+            // rr:player-elimination.5: "If a player is eliminated partway through the
+            // resolution of an ability, resolve the entire ability." Eliminating the
+            // attacked player ends the attack (rr:player-elimination.5.1) and removes its
+            // frames, so the ability resumes after its own effect windows instead.
+            if (cast.World.Agenda.IsOutstanding(owner, occurrence))
+                cast.World.Agenda.ContinueBeforeOwner(occurrence, owner, continuation);
+            else
+                cast.World.Agenda.Then(continuation);
         }
         cast.Suspend();
     }

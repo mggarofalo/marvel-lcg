@@ -42,18 +42,53 @@ public sealed class CrossbonesMachineGunAttackTests : CoreCardTestBase
         Assert.Equal(0, control.Seats[other].IdentityCard.Damage);
     }
 
+    [Fact]
+    [Rule("rr:player-elimination.4")]
+    public void LethalGunDamageToTheLastPlayerEndsTheGame()
+    {
+        // rr:player-elimination.4: "If all players are eliminated, the game ends and the
+        // players lose." Power Drain's three icons exceed Captain Marvel's last hit point.
+        var (world, gun) = Board(ammo: 2, attacked: 0, players: 1, remainingHealth: 1);
+
+        Assert.True(world.Seats[0].Eliminated);
+        Assert.True(world.IsOver);
+        Assert.Equal(Outcome.PlayersLose, world.Result);
+        Assert.Equal(1, gun.Tokens["c_ammo"]);
+        Assert.Equal(["02041"], Faces(world));
+    }
+
+    [Fact]
+    [Rule("rr:player-elimination.5")]
+    [Rule("rr:player-elimination.5.1")]
+    public void LethalGunDamageToOnePlayerEndsTheAttackAndTheGameContinues()
+    {
+        // rr:player-elimination.5: "If a player is eliminated partway through the resolution
+        // of an ability, resolve the entire ability." rr:player-elimination.5.1: "If a player
+        // is eliminated in the middle of an attack, that attack ends." No boost card is dealt.
+        var (world, gun) = Board(ammo: 2, attacked: 0, players: 2, remainingHealth: 1);
+
+        Assert.True(world.Seats[0].Eliminated);
+        Assert.False(world.IsOver);
+        Assert.Equal(1, gun.Tokens["c_ammo"]);
+        Assert.Equal(["02041"], Faces(world));
+        Assert.Equal(0, world.Seats[1].IdentityCard.Damage);
+        Assert.Null(world.Attack);
+    }
+
     private static string[] Faces(World world) =>
         [.. world.AreaOf(DeckType.EncounterDiscardPile).Cards.Select(card => card.FaceId)];
 
-    private static (World World, Card Gun) Board(int ammo, int attacked)
+    private static (World World, Card Gun) Board(int ammo, int attacked, int players = 2, int remainingHealth = 0)
     {
-        var world = new World(Cards, players: 2);
-        for (int player = 0; player < 2; player++)
+        var world = new World(Cards, players);
+        for (int player = 0; player < players; player++)
         {
             var seat = world.CreateSeat($"p{player}");
             seat.IdentityCard = world.CreateCard(player == 0 ? "01010a,01010b" : "01001a,01001b", seat.Hero);
             for (int i = 0; i < 12; i++) world.CreateCard("01088", seat.Deck);
         }
+        // Captain Marvel's printed 12 hit points.
+        if (remainingHealth > 0) world.Seats[attacked].IdentityCard.TakeDamage(12 - remainingHealth);
         var crossbones = world.CreateCard("04058", world.AreaOf(DeckType.VillainArea));
         world.CreateCard("01097a", world.AreaOf(DeckType.MainSchemesArea));
         for (int i = 0; i < 6; i++) world.CreateCard("01104", world.AreaOf(DeckType.EncounterDeck));
