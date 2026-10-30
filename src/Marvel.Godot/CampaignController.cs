@@ -56,8 +56,9 @@ internal sealed class CampaignController
             ui.Window.PopupCentered();
             if (connection is null)
             {
+                int resumable = CampaignConnection.FirstResumable(saved);
                 if (saved.Count == 0) New();
-                else { ui.Selected = 0; ResumeSaved(); }
+                else if (resumable >= 0) { ui.Selected = resumable; ResumeSaved(); }
             }
             else Choose(new("sync"));
         }
@@ -172,7 +173,7 @@ internal sealed class CampaignController
 
     private void Reject(ClientCampaignResult result)
     {
-        connection = connection! with { Pending = result.Pending };
+        connection = connection!.Rejected(result);
         if (connection.CampaignId is null && result.Pending is null)
         {
             store!.Delete(connection.LocalId);
@@ -184,6 +185,8 @@ internal sealed class CampaignController
         store!.Save(connection);
         if (result.Response?.Campaign is { } latest) campaign = latest;
         Render();
+        // A refused save offers only permanent deletion through the existing management row.
+        if (connection.Refused) { saved = store.Load(); ReloadSaved(); ui.Management.Visible = true; RefreshRecovery(); }
         ui.Status.Text = result.Error!.Message;
     }
 
@@ -262,8 +265,9 @@ internal sealed class CampaignController
         ui.Retry.Visible = connection?.Pending is not null;
         ui.Retry.Disabled = busy;
         ui.New.Disabled = ui.Refresh.Disabled = busy || connection?.Pending is not null;
-        ui.Import.Disabled = ui.Rename.Disabled = ui.Archive.Disabled = ui.Export.Disabled = ui.Delete.Disabled
-            = busy || connection?.Pending is not null;
+        ui.Import.Disabled = ui.Delete.Disabled = busy || connection?.Pending is not null;
+        ui.Rename.Disabled = ui.Archive.Disabled = ui.Export.Disabled
+            = busy || connection?.Pending is not null || connection?.Refused == true;
     }
 
     private void ReloadSaved()

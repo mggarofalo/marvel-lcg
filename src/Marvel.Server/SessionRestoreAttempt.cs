@@ -40,7 +40,8 @@ internal sealed class SessionRestoreAttempt(
             elapsed.ElapsedMilliseconds, gameId: stored.Save.Session.Label,
             revision: stored.Save.Revision, saveCommitted: false,
             replayDiverged: failure is ReplayDivergenceException,
-            saveGeneration: generation, stage: "quarantine",
+            saveGeneration: generation,
+            stage: failure is SessionCompatibilityException ? "refused" : "quarantine",
             errorCode: ErrorCode(failure));
     }
 

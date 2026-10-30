@@ -131,11 +131,7 @@ public sealed class FileSessionStore : ISessionStore
                 or JsonException
                 or SessionSaveException)
             {
-                results.Add(new SessionLoadResult(
-                    null,
-                    storageId,
-                    "restore_failed",
-                    ValidGeneration(generation ?? string.Empty) ? generation : null));
+                results.Add(Unreadable(directory, storageId, generation));
             }
         }
 
@@ -149,6 +145,13 @@ public sealed class FileSessionStore : ISessionStore
         string directory = PrepareDirectory(session.Save.Session.StorageId);
         using var lease = DurableFiles.AcquireWriterLease(directory);
         return CommitGeneration(session);
+    }
+
+    private static SessionLoadResult Unreadable(string directory, string storageId, string? generation)
+    {
+        string? valid = ValidGeneration(generation ?? string.Empty) ? generation : null;
+        RefusedSchema? refused = valid is null ? null : SessionSchemaProbe.Read(directory, valid);
+        return new SessionLoadResult(null, storageId, refused?.Category ?? "restore_failed", valid) { Refused = refused };
     }
 
     private string PrepareDirectory(string storageId)

@@ -81,10 +81,15 @@ internal static class EngineHostLifecycle
         }
     }
 
-    private static void LogUnreadable(EngineHost host, SessionLoadResult candidate) =>
+    private static void LogUnreadable(EngineHost host, SessionLoadResult candidate)
+    {
+        if (candidate.Refused is { } refused)
+            host.refused.Refuse(refused.GameId, refused.Authorities, refused.Category);
         host.log.Write(OperationalEventIds.SessionRestoreFailed, "rejected",
             gameId: candidate.StorageId, saveGeneration: candidate.Generation,
-            stage: "quarantine", errorCode: candidate.ErrorCode ?? "restore_failed");
+            stage: candidate.Refused is null ? "quarantine" : "refused",
+            errorCode: candidate.ErrorCode ?? "restore_failed");
+    }
 
     private static void RestoreCandidate(
         EngineHost host, SessionLoadResult candidate, StoredSession stored)

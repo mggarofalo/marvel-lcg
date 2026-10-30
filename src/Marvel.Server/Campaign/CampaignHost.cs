@@ -12,6 +12,7 @@ public sealed class CampaignHost : IEngineEndpoint
     internal readonly Dictionary<string, StoredCampaign> Campaigns = new(StringComparer.Ordinal);
     internal readonly Dictionary<string, CampaignDeletion> Deleted = new(StringComparer.Ordinal);
     internal readonly Dictionary<string, RefusedCampaign> Refused = new(StringComparer.Ordinal);
+    private readonly RefusedSaves refusedGames = new();
     internal readonly EngineHost Games;
     internal StoredCampaign? Starting { get; private set; }
     internal EngineRequest? StartingRequest { get; private set; }
@@ -41,7 +42,11 @@ public sealed class CampaignHost : IEngineEndpoint
                 Campaigns.Add(candidate.StorageId, campaign);
             }
             catch (SessionCompatibilityException error)
-            { Refused.Add(candidate.StorageId, RefusedCampaign.Of(campaign, error)); }
+            {
+                var refused = new RefusedCampaign(campaign, error.Category);
+                refused.RefuseAttempts(refusedGames);
+                Refused.Add(candidate.StorageId, refused);
+            }
             catch (Exception error) when (error is SessionSaveException or ReplayDivergenceException or InvalidOperationException or ArgumentException or IOException or UnauthorizedAccessException)
             { /* A rejected archive remains intact and is never replaced with an older generation. */ }
         }
@@ -75,8 +80,7 @@ public sealed class CampaignHost : IEngineEndpoint
     {
         if (DeletedGame(request))
             return Failure(request, "campaign_deleted", "This campaign and its saved games have been permanently deleted.");
-        if (Refused.Values.FirstOrDefault(item => item.Holds(request)) is { } refused)
-            return Failure(request, RefusedSaves.Code, RefusedSaves.Message(refused.Category));
+        if (refusedGames.Answer(request) is { } refused) return refused;
         if (request.Operation == EngineProtocol.Decks && request.Deck?.Campaign is not null)
             return CampaignDeckRequests.Handle(this, request);
         if (request.Campaign is not null || request.Game?.Campaign is not null)
@@ -118,6 +122,8 @@ public sealed class CampaignHost : IEngineEndpoint
 
     internal string Publish(StoredCampaign campaign)
     {
+        // Every campaign commit stamps the current runtime, so its application is a downgrade floor.
+        campaign = campaign with { Save = campaign.Save with { Compatibility = Factory.Compatibility } };
         try
         {
             string generation = store.Commit(campaign);
@@ -131,6 +137,12 @@ public sealed class CampaignHost : IEngineEndpoint
     {
         uncertain = true;
         throw new CampaignCommitUncertainException(failure);
+    }
+
+    internal void DeleteRefused(string storageId, EngineRequest request)
+    {
+        Delete(Refused[storageId].Campaign, request);
+        Refused.Remove(storageId);
     }
 
     internal void Delete(StoredCampaign campaign, EngineRequest request)

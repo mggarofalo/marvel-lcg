@@ -16,10 +16,13 @@ internal sealed class RefusedSaves
     private readonly ConcurrentDictionary<string, Refusal> capabilities = new(StringComparer.Ordinal);
     private readonly ConcurrentDictionary<string, Refusal> entries = new(StringComparer.Ordinal);
 
-    internal void Refuse(StoredSession stored, SessionCompatibilityException failure)
+    internal void Refuse(StoredSession stored, SessionCompatibilityException failure) =>
+        Refuse(stored.Save.Session.Label, stored.Authorities, failure.Category);
+
+    internal void Refuse(string gameId, IEnumerable<StoredAuthority> authorities, string category)
     {
-        var refusal = new Refusal(stored.Save.Session.Label, failure.Category);
-        foreach (StoredAuthority authority in stored.Authorities.Where(item => !item.Revoked))
+        var refusal = new Refusal(gameId, category);
+        foreach (StoredAuthority authority in authorities.Where(item => !item.Revoked))
         {
             capabilities.TryAdd(authority.Verifier, refusal);
             if (authority.Entry is { } entry) entries.TryAdd(entry.Verifier, refusal);

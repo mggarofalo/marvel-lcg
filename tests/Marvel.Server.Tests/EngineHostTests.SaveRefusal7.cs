@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using Marvel.Protocol;
 using Marvel.Session;
 using Marvel.Tests;
@@ -65,5 +66,47 @@ public sealed class EngineHostSaveRefusalTests : EngineHostTestBase
 
         Assert.Equal("session_not_found",
             restarted.Exchange(EngineRequest.SyncGame("sync", "revoked-table", "revoked-owner")).Error?.Code);
+    }
+
+    [Theory]
+    [InlineData(6, "Start a new game")]
+    [InlineData(8, "newer version")]
+    public void ASaveUnderAnotherSchemaIsRefusedToItsHolderAndLeftUntouched(int schema, string advice)
+    {
+        string root = Path.Combine(Path.GetTempPath(), "marvel-schema-refusal-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            IDurableGameFactory factory = DatasetGameFactory.Load(RepositoryPaths.Root);
+            var first = new EngineHost(factory, new SequenceCapabilities("schema-owner"), store: new FileSessionStore(root));
+            Assert.Null(first.Exchange(EngineRequest.OpenGame("open", "schema-table",
+                new GameSpecification("rhino", ["spider_man"], [], Seed: 73))).Error);
+            string file = Assert.Single(Directory.GetFiles(root, "*.session.json", SearchOption.AllDirectories));
+            var document = JsonNode.Parse(File.ReadAllText(file))!;
+            document["schema"] = schema;
+            File.WriteAllText(file, document.ToJsonString());
+            string written = File.ReadAllText(file);
+
+            var restarted = new EngineHost(factory, store: new FileSessionStore(root));
+
+            EngineError refused = Assert.IsType<EngineError>(restarted.Exchange(
+                EngineRequest.SyncGame("sync", "schema-table", "schema-owner")).Error);
+            Assert.Equal("save_incompatible", refused.Code);
+            Assert.Contains(advice, refused.Message, StringComparison.Ordinal);
+            Assert.Equal("session_not_found", restarted.Exchange(
+                EngineRequest.SyncGame("stranger", "schema-table", "someone-else")).Error?.Code);
+            Assert.Equal(written, File.ReadAllText(file));
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, recursive: true); }
+    }
+
+    [Fact]
+    public void AnUnreadableSaveUnderTheCurrentSchemaIsNotCalledIncompatible()
+    {
+        Assert.Null(SessionSchemaProbe.Refusal("{\"schema\":7,\"session\":{\"label\":\"t\"}}", "[]"));
+        Assert.Null(SessionSchemaProbe.Refusal("{\"schema\":6}", "[]"));
+        Assert.Null(SessionSchemaProbe.Refusal("{\"schema\":6,\"session\":{\"label\":\"\"}}", "[]"));
+        Assert.Null(SessionSchemaProbe.Refusal("[]", "[]"));
+        Assert.Null(SessionSchemaProbe.Refusal("{\"schema\":\"6\",\"session\":{\"label\":\"t\"}}", "[]"));
+        Assert.Null(SessionSchemaProbe.Refusal("{\"schema\":6,\"session\":{\"label\":\"t\"}}", "not-json"));
     }
 }

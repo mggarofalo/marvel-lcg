@@ -31,11 +31,67 @@ public sealed class CampaignReplayCompatibilityTests
         AssertRefused(restored.Exchange(CampaignHostTests.Command(created, "sync", 0)).Error);
         AssertRefused(restored.Exchange(EngineRequest.SyncGame("attempt", opened.GameId,
             opened.Capability!)).Error);
-        AssertRefused(restored.Exchange(EngineRequest.AttachGame("recover", opened.GameId, "unknown")
+        AssertRefused(restored.Exchange(EngineRequest.AttachGame("recover", "another-game", "unknown")
             with { Entry = entry }).Error);
+        Assert.Equal("session_not_found", restored.Exchange(EngineRequest.SyncGame("stranger", opened.GameId,
+            "not-a-seat")).Error?.Code);
         Assert.Equal("campaign_not_found", restored.Exchange(CampaignHostTests.Command(created, "sync", 0)
             with { Capability = "not-the-owner" }).Error?.Code);
         Assert.Equal(before, CampaignSaveJson.Write(Assert.Single(store.Load()).Campaign!.Save));
+    }
+
+    [Fact]
+    public void OnlyTheOwnerCanPermanentlyDeleteARefusedCampaign()
+    {
+        string root = Path.Combine(Path.GetTempPath(), "marvel-refused-campaign-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            var factory = new SyntheticCampaignFactory();
+            EngineResponse created;
+            using (var store = new FileCampaignStore(root))
+            {
+                created = new CampaignHost(factory, store, new MemorySessionStore()).Exchange(CampaignHostTests.Create());
+                var stored = Assert.Single(store.Load()).Campaign!;
+                store.Commit(stored with { Save = stored.Save with
+                {
+                    Compatibility = stored.Save.Compatibility with { ReplayContract = "engine-replay-v18" },
+                } });
+            }
+            string directory = Path.Combine(root, created.Campaign!.Id);
+            using (var store = new FileCampaignStore(root))
+            {
+                var host = new CampaignHost(factory, store, new MemorySessionStore());
+                Assert.Equal("campaign_not_found", host.Exchange(CampaignHostTests.Command(created, "delete", 0)
+                    with { Capability = "not-the-owner" }).Error?.Code);
+                Assert.True(Directory.Exists(directory));
+                var deleted = host.Exchange(CampaignHostTests.Command(created, "delete", 0) with { ExpectedRevision = null });
+                Assert.Null(deleted.Error);
+                Assert.True(deleted.CampaignDeleted);
+                Assert.False(Directory.Exists(directory));
+                Assert.Equal("campaign_deleted", host.Exchange(CampaignHostTests.Command(created, "sync", 0)).Error?.Code);
+            }
+            using var reopened = new FileCampaignStore(root);
+            Assert.Empty(reopened.Load());
+        }
+        finally { Directory.Delete(root, recursive: true); }
+    }
+
+    [Fact]
+    public void EveryCampaignCommitStampsTheRuntimeAndAnOlderRuntimeRefusesIt()
+    {
+        var store = new MemoryCampaignStore();
+        var created = new CampaignHost(new SyntheticCampaignFactory { Application = "0.1.0" }, store,
+            new MemorySessionStore()).Exchange(CampaignHostTests.Create());
+        Assert.Equal("0.1.0", Assert.Single(store.Load()).Campaign!.Save.Compatibility.Application);
+        var upgraded = new CampaignHost(new SyntheticCampaignFactory { Application = "0.2.0" }, store, new MemorySessionStore());
+        Assert.Null(upgraded.Exchange(CampaignHostTests.Command(created, "mode", 0)).Error);
+        Assert.Equal("0.2.0", Assert.Single(store.Load()).Campaign!.Save.Compatibility.Application);
+
+        var older = new CampaignHost(new SyntheticCampaignFactory { Application = "0.1.5" }, store, new MemorySessionStore());
+
+        EngineError refused = Assert.IsType<EngineError>(older.Exchange(CampaignHostTests.Command(created, "sync", 1)).Error);
+        Assert.Equal(RefusedSaves.Code, refused.Code);
+        Assert.Contains("newer version", refused.Message, StringComparison.Ordinal);
     }
 
     [Fact]
