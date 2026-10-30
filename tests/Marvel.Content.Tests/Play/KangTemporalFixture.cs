@@ -6,15 +6,23 @@ using Marvel.Tests;
 
 namespace Marvel.Content.Tests.Play;
 
-/// <summary>A nonpublic Rhino board with the full authored book for the Temporal faces.</summary>
+/// <summary>
+/// A nonpublic Rhino board with the full authored book for the Kang modular
+/// encounter faces, whose public admission stays closed.
+/// </summary>
 internal static class KangTemporalFixture
 {
     private static readonly CardCatalog Cards = CardCatalog.Parse(
         File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")));
 
-    internal static (World World, RedSkullFixture Fixture) Board(int players, int encounter = 6)
+    /// <summary>
+    /// Seat 0 is Captain Marvel and every later seat Spider-Man, each with twelve
+    /// Energy in deck; the encounter deck holds <paramref name="encounter"/> copies
+    /// of Hard to Keep Down, which prints no boost field.
+    /// </summary>
+    internal static (World World, RedSkullFixture Fixture) Board(int players, int encounter = 6, uint seed = 0)
     {
-        var world = new World(Cards, players);
+        var world = new World(Cards, players, seed);
         for (int player = 0; player < players; player++)
         {
             var seat = world.CreateSeat($"p{player}");
@@ -32,7 +40,10 @@ internal static class KangTemporalFixture
     internal static Card Engaged(World world, string face, int player) =>
         world.CreateCard(face, world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(player)));
 
-    internal static void Attack(World world, Card enemy, int player) =>
-        world.Agenda.Add(new PhaseStep(new EnemyAttackOperation(), 1, 2,
-            Index: player, Subject: enemy.ObjectId, Seat: player));
+    internal static void Attack(World world, Card enemy, int player) => Activate(world, enemy, false, player);
+
+    /// <summary>Queues one enemy activation against <paramref name="player"/>.</summary>
+    internal static void Activate(World world, Card enemy, bool scheme, int player) =>
+        world.Agenda.Add(new PhaseStep(scheme ? new EnemySchemeOperation() : new EnemyAttackOperation(),
+            1, 2, Index: player, Subject: enemy.ObjectId, Seat: player));
 }

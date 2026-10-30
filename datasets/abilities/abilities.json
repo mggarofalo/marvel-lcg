@@ -23917,6 +23917,92 @@
           "effect": { "shuffleInto": { "cards": "this", "deck": "encounterDeck" } }
         }
       ]
+    },
+    {
+      "card": "11041",
+      "name": "Deathunt 9000",
+      "note": "Toughness and Villainous are engine-owned. star Boost: Give this enemy a tough status card and another boost card. A boost card's \"this enemy\" is the enemy it was given to, which is the activating enemy.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "Boost", "subject": "this" },
+          "effect": { "seq": [
+            { "giveStatus": { "card": "activatingEnemy", "status": "tough" } },
+            { "giveAdditionalBoost": { "enemy": "activatingEnemy" } }
+          ] }
+        }
+      ]
+    },
+    {
+      "card": "11042",
+      "name": "Sir Raston",
+      "note": "Guard and Retaliate are engine-owned. star Boost: Take 1 damage. Give this enemy another boost card. rr:you-your.2 puts the damage on the identity of the player the activation is against.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "Boost", "subject": "this" },
+          "effect": { "seq": [
+            { "dealDamage": { "cards": "you", "amount": 1 } },
+            { "giveAdditionalBoost": { "enemy": "activatingEnemy" } }
+          ] }
+        }
+      ]
+    },
+    {
+      "card": "11043",
+      "name": "Terminatrix",
+      "note": "Quickstrike is engine-owned. star Terminatrix's attacks gain piercing. star Boost: Give this enemy 2 more boost cards.",
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant", "subject": "this" },
+          "effect": { "grant": { "card": "this", "keyword": "piercing", "amount": 1 } }
+        },
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "Boost", "subject": "this" },
+          "effect": { "seq": [
+            { "giveAdditionalBoost": { "enemy": "activatingEnemy" } },
+            { "giveAdditionalBoost": { "enemy": "activatingEnemy" } }
+          ] }
+        }
+      ]
+    },
+    {
+      "card": "11044",
+      "name": "Wildrun",
+      "note": "When Revealed: Discard 1 random card from your hand. star Boost: Discard 1 random card from your hand. Give this enemy another boost card. rr:you-your.8 makes \"your hand\" the resolving player's hand; the random pick draws on the seeded stream.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "discardAtRandom": { "player": "you", "count": 1 } }
+        },
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "Boost", "subject": "this" },
+          "effect": { "seq": [
+            { "discardAtRandom": { "player": "you", "count": 1 } },
+            { "giveAdditionalBoost": { "enemy": "activatingEnemy" } }
+          ] }
+        }
+      ]
+    },
+    {
+      "card": "11045",
+      "name": "The Anachronauts",
+      "note": "Hazard and per-player starting threat are engine-owned. When Defeated: Shuffle each Temporal card in the encounter discard pile into the encounter deck. rr:when-defeated-abilities.2.1 resolves this before the scheme leaves play.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardDefeated", "timing": "WhenDefeated", "subject": "this" },
+          "effect": { "shuffleInto": { "cards": { "cardsIn": { "area": "encounterDiscardPile", "trait": "TEMPORAL" } }, "deck": "encounterDeck" } }
+        }
+      ]
+    },
+    {
+      "card": "11046",
+      "name": "Kang's Chosen",
+      "note": "Incite is engine-owned. When Revealed: Discard cards from the top of the encounter deck until a Temporal minion is discarded. Reveal that minion. rr:encounter-deck.2 ends the discard, fulfilled, when the encounter deck empties first; \"Reveal that minion\" names no player, so the player resolving Kang's Chosen reveals it; that reading is ours.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "discardUntil": { "from": "encounterDeck", "kind": "minion", "trait": "TEMPORAL", "then": "reveal" } }
+        }
+      ]
     }
   ]
 }
