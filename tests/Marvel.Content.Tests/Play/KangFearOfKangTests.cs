@@ -41,6 +41,45 @@ public sealed class KangFearOfKangTests : CoreCardTestBase
     }
 
     [Fact]
+    [Rule("rr:player-turn.5")]
+    public void TheGameOffersTheHoldersHeroOnlyItsOtherTargetsAndTheAllyEvery()
+    {
+        // The turn's basic-attack offers read the same prohibition: Captain Marvel holds
+        // Fear of Kang, so her attack offers Rhino alone; her ally's offers both.
+        var (world, f) = KangTemporalFixture.Board(players: 1);
+        var kang = KangTemporalFixture.Engaged(world, MasterOfTime, 0);
+        Obligation(world, FearOfKang, 0);
+        var hero = world.Seats[0].IdentityCard;
+        var ally = world.CreateCard("01059", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+        var game = Game.Begin(world, world.Facts, f.Runner);
+        game.Resolve(Decision.Take(Assert.Single(game.Pending!.Affordances,
+            a => a.Verb == Game.ResolveMulligans).Id));
+
+        var attacks = game.Pending!.Affordances.Where(a => a.Verb == BasicPowers.AttackVerb).ToArray();
+
+        Assert.Equal([f.Villain.ObjectId],
+            Assert.Single(attacks, a => a.AnchorId == hero.ObjectId).Targets!.Legal);
+        Assert.Equal(new[] { f.Villain.ObjectId, kang.ObjectId }.Order(),
+            Assert.Single(attacks, a => a.AnchorId == ally.ObjectId).Targets!.Legal.Order());
+    }
+
+    [Fact]
+    [Rule("rr:cannot")]
+    public void AFacedownCardWithAnotherProfileIsNotKang()
+    {
+        // A facedown Drone answers with its profile's characteristics, so a Kang card
+        // engaged facedown as a Drone is not "Kang" and the holder may attack it.
+        var (world, _) = KangTemporalFixture.Board(players: 1);
+        world.CreateCard(MasterOfTime, world.Seats[0].Deck);
+        var drone = FacedownMinions.EngageTop(world, 0, Marvel.Content.Tests.Cards.AuthoredCards.DroneProfile,
+            "test", "Create_Drone", [])!;
+        Obligation(world, FearOfKang, 0);
+
+        Assert.Equal(MasterOfTime, drone.FaceId);
+        Assert.Contains(drone, BasicPowers.Attackable(world, world.Facts, 0, world.Seats[0].IdentityCard));
+    }
+
+    [Fact]
     [Rule("rr:you-your.15")]
     public void TheHoldersAllyMayStillAttackKang()
     {

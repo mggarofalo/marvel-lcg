@@ -79,6 +79,32 @@ public sealed class KangTemporalShieldTests : CoreCardTestBase
     }
 
     [Fact]
+    [Rule("rr:damage.step.1")]
+    public void DamageThatIsNotTheAttacksStillLands()
+    {
+        // "Prevent all damage from this attack": Iron Fist's own interrupt deals 1
+        // damage that is not the attack's, so it lands; his attack's 2 does not.
+        var (world, f) = KangTemporalFixture.Board(players: 2);
+        var shield = Attach(f, player: 1);
+        var ally = world.CreateCard("09014", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(1), cardOwner: 1));
+        ally.PlaceTokens("c_mystic", 2);
+
+        AllyBasicPowers.AllyPower(world, world.Facts, ally, f.Villain, BasicPowers.AttackVerb, []);
+        KangTemporalFixture.Drive(world, f.Runner, prompt => prompt.Affordances switch
+        {
+            [{ Verb: "Order", Targets: { } order } only] => new Decision(only.Id, [.. order.Legal]),
+            [var only] => Decision.Take(only.Id),
+            _ => null,
+        });
+
+        Assert.Equal(1, ally.Tokens["c_mystic"]);
+        Assert.True(Statuses.Has(world, f.Villain, Statuses.Stunned));
+        Assert.Equal(1, f.Villain.Damage);
+        Assert.Equal(DeckType.EncounterDiscardPile, shield.Area.Type);
+        Assert.False(world.Agenda.IsBusy);
+    }
+
+    [Fact]
     [Rule("rr:attack-player-ability-type.1")]
     public void AnAttackEventIsPreventedAndItsHeroTakesTheDamage()
     {

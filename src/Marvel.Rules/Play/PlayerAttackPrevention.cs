@@ -26,9 +26,8 @@ public static class PlayerAttackPrevention
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(occurrence);
-        return PlayerAttackReflection.Current(world) is { Prevented: null } operation
-            && occurrence.Is(Steps.AttackInitiated) && occurrence.Target == operation.Attack.Enemy
-            && occurrence.Target >= 0 && DeckTypes.IsInPlay(world.Cards[occurrence.Target].Area.Type);
+        return PlayerAttackReflection.Current(world) is { } operation
+            && occurrence.Target >= 0 && occurrence.Target == operation.Attack.Enemy;
     }
 
     /// <summary>Retains the prevention on the active player attack for this incarnation of its enemy.</summary>

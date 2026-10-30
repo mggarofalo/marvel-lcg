@@ -1436,7 +1436,7 @@ registered card-state or digest fields.
 
 `grantEach` may give an identity the derived `kang_attack_prohibited` modifier.
 A positive value prevents that character, and only that character, from
-attacking an enemy titled Kang or "Kang (...)" (Fear of Kang; rulings
+attacking an enemy whose title is "Kang (...)" (Fear of Kang; rulings
 af0e9693cc645666 and 8da857fcc70a81a2). Basic attacks, card attacks and the
 attackable-enemy queries all read it for the performing character
 (`rr:you-your.12`, `.15`), so an ally's attack is unaffected. The name is an

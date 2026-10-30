@@ -87,6 +87,29 @@ public sealed class KangFutureWeaponTests : CoreCardTestBase
     }
 
     [Fact]
+    [Rule("rr:overkill.1")]
+    public void ADamagedDefendingAllyIsNotAHero()
+    {
+        // Hulk (HP 5) defends and survives the 4-ATK attack: he is damaged but is not a
+        // hero, so nobody is stunned and nothing carries over to Spider-Man.
+        var (world, f) = KangTemporalFixture.Board(players: 2);
+        Attach(f);
+        var hulk = world.CreateCard("01050", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(1), cardOwner: 1));
+        var hero = world.Seats[1].IdentityCard;
+        KangTemporalFixture.Attack(world, f.Villain, 1);
+
+        KangTemporalFixture.Drive(world, f.Runner, prompt =>
+            prompt.Affordances.SingleOrDefault(a => a.Verb == "Defense" && a.AnchorId == hulk.ObjectId) is { } defense
+                ? Decision.Take(defense.Id) : null);
+
+        Assert.Equal(4, hulk.Damage);
+        Assert.False(Statuses.Has(world, hulk, Statuses.Stunned));
+        Assert.Equal(0, hero.Damage);
+        Assert.False(Statuses.Has(world, hero, Statuses.Stunned));
+        Assert.False(world.Agenda.IsBusy);
+    }
+
+    [Fact]
     [Rule("rr:defend-defense.1")]
     public void ADefendingHeroOfAnotherPlayerIsTheStunnedHero()
     {

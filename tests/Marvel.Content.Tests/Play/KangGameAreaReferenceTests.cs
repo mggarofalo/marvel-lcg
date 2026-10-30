@@ -110,7 +110,54 @@ public sealed class KangGameAreaReferenceTests : CoreCardTestBase
         Assert.Equal(0, villains[0].Damage);
     }
 
-    private static (World World, RedSkullFixture Fixture, Card[] Villains) Split()
+    [Fact]
+    public void TwoVillainsInOneGameAreaAreNotOneKang()
+    {
+        // The reference names one villain; with Rhino and Kang I both in the only game
+        // area, Temporal Shield raises rather than choosing whom to attach to.
+        var (world, f) = KangTemporalFixture.Board(players: 1);
+        world.CreateCard("11001", world.AreaOf(DeckType.VillainArea));
+        var shield = f.Reveal("11014");
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => f.Finish());
+
+        Assert.Contains("11014", thrown.Message, StringComparison.Ordinal);
+        Assert.Equal(-1, shield.Area.Host);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    public void AnObligationCountFromAPlayersAreaReadsOnlyThatGameArea(int player)
+    {
+        // Synthetic: Shocker's printed reveal is replaced by "take 1 damage for each
+        // obligation in this game area" to observe the count from an engaged minion,
+        // which is in the revealer's game area. Player 0 holds one obligation, player 1 two.
+        var (world, f, _) = Split(Synthetic("""
+            {"card":"01103","abilities":[{"trigger":{"event":"WhenCardRevealed","timing":"WhenRevealed","subject":"this"},
+              "effect":{"dealDamage":{"cards":"you","amount":{"count":{"query":"obligationsInThisGameArea"}}}}}]}
+            """));
+        KangTemporalFixture.Obligations(world, 0, 1);
+        KangTemporalFixture.Obligations(world, 1, 2);
+        f.Reveal("01103", player);
+
+        f.Finish();
+
+        Assert.Equal(player + 1, world.Seats[player].IdentityCard.Damage);
+        Assert.Equal(0, world.Seats[1 - player].IdentityCard.Damage);
+        Assert.False(world.Agenda.IsBusy);
+    }
+
+    private static AbilityRunner Synthetic(string row)
+    {
+        using var book = System.Text.Json.JsonDocument.Parse(AuthoredCards.Text);
+        var rows = book.RootElement.GetProperty("cards").EnumerateArray()
+            .Where(card => card.GetProperty("card").GetString() != "01103")
+            .Select(card => card.GetRawText()).Append(row);
+        return new AbilityRunner(Marvel.Cards.Dsl.AbilityCatalog.Parse($$"""{"cards":[{{string.Join(",", rows)}}]}"""));
+    }
+
+    private static (World World, RedSkullFixture Fixture, Card[] Villains) Split(AbilityRunner? abilities = null)
     {
         var world = new World(Cards, 2, 42);
         for (int player = 0; player < 2; player++)
@@ -132,7 +179,7 @@ public sealed class KangGameAreaReferenceTests : CoreCardTestBase
             villains[player] = world.CreateCard(player == 0 ? "11002" : "11003", world.AreaOf(DeckType.VillainArea, local));
         }
         for (int i = 0; i < 4; i++) world.CreateCard("01104", world.AreaOf(DeckType.EncounterDeck));
-        var runner = AuthoredCards.Runner();
+        var runner = abilities ?? AuthoredCards.Runner();
         world.Abilities = runner;
         return (world, new RedSkullFixture(world, runner), villains);
     }

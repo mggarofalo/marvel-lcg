@@ -38,15 +38,11 @@ public static class AttackPermissions
     /// different title. Ruling 7b48d5829d4d0f62 confirms the minion is "a
     /// different character" from each Kang villain. MARVEL-894 (Q2) reads Fear
     /// of Kang's "Kang" as every enemy titled Kang, the minion included (ruling
-    /// 13454feafb65378b discusses him under Fear of Kang). The engine therefore
-    /// matches the bare title and every parenthesised Kang title; the spelling of
-    /// that match is ours.
+    /// 13454feafb65378b discusses him under Fear of Kang). Every printed Kang
+    /// title is "Kang (...)", so the engine matches that prefix; the spelling of
+    /// the match is ours. A facedown card answers with its profile, not its face.
     /// </remarks>
-    internal static bool IsKang(ICardFacts facts, Card enemy)
-    {
-        if (EffectiveCards.HasProfile(enemy)) return false;
-        string title = facts.Title(enemy.FaceId);
-        return string.Equals(title, "Kang", StringComparison.Ordinal)
-            || title.StartsWith("Kang (", StringComparison.Ordinal);
-    }
+    internal static bool IsKang(ICardFacts facts, Card enemy) =>
+        !EffectiveCards.HasProfile(enemy)
+        && facts.Title(enemy.FaceId).StartsWith("Kang (", StringComparison.Ordinal);
 }
