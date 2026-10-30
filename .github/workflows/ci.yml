@@ -394,7 +394,8 @@ jobs:
     if: ${{ needs.changes.outputs.run == 'true' }}
     name: Native journeys (${{ matrix.os }}, shard ${{ matrix.shard }})
     runs-on: ${{ matrix.os }}
-    timeout-minutes: ${{ inputs.exhaustive && 90 || 40 }}
+    # A Windows representative shard needs about 40 minutes of native cases.
+    timeout-minutes: ${{ inputs.exhaustive && 90 || 60 }}
     strategy:
       fail-fast: false
       matrix:
