@@ -49,6 +49,8 @@ internal static class AbilityCostDescription
     private static string Chosen(AbilityCost cost) => cost switch
     {
         AbilityCost.RandomDiscardFromHand discard => $"Discard {discard.Count} card(s) at random from your hand",
+        AbilityCost.DiscardFromHand { Resource: { } resource } =>
+            $"Discard a card with a printed {AbilityBasicUseDescription.Resource(resource)} resource from your hand",
         AbilityCost.DiscardFromHand discard => $"Discard {Range(discard.Range)} cards from your hand",
         AbilityCost.ChooseScheme => "Choose one scheme before paying for the thwart",
         AbilityCost.ChooseFromDiscard choice => $"Choose one {choice.Trait} card in your discard pile",

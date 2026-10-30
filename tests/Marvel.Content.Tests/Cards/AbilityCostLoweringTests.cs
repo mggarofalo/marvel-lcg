@@ -72,6 +72,15 @@ public sealed class AbilityCostLoweringTests
             Lower("""{"discardAnyFromHand":"yourHand"}"""));
     }
 
+    [Fact]
+    public void ATypedHandDiscardIsOneCardPrintingThatResource()
+    {
+        var discard = Assert.IsType<AbilityCost.DiscardFromHand>(Lower("""{"discardResourceFromHand":"R"}"""));
+        Assert.Equal(new AbilityCostRange.Exact(1), discard.Range);
+        Assert.Equal('R', discard.Resource);
+        Assert.Null(Assert.IsType<AbilityCost.DiscardFromHand>(Lower("""{"discardFromHand":1}""")).Resource);
+    }
+
     [Theory]
     [InlineData("{\"exhaustChosen\":{\"from\":{\"query\":\"heroesAndAllies\"},\"count\":1,\"upTo\":2}}", "several selection ranges")]
     [InlineData("{\"exhaustChosen\":{\"from\":{\"query\":\"villain\"}}}", "supported exhaust-cost relation")]
@@ -86,6 +95,7 @@ public sealed class AbilityCostLoweringTests
     [InlineData("{\"spendDistinct\":0}", "positive integer")]
     [InlineData("{\"spendDistinct\":5}", "exceeds the resource types")]
     [InlineData("{\"spend\":\"Q\"}", "supported resource symbols")]
+    [InlineData("{\"discardResourceFromHand\":\"Q\"}", "one supported resource symbol")]
     [InlineData("{\"spendEnergyX\":\"B\"}", "expected 'Y'")]
     [InlineData("{\"draw\":{\"player\":\"you\",\"count\":1}}", "not a cost operation")]
     public void InvalidCostsAreRejectedBeforePayment(string json, string expected)

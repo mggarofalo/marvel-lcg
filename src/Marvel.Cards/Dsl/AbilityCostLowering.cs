@@ -43,6 +43,8 @@ internal static class AbilityCostLowering
             "spendEnergyX" => EnergyCost(argument, child),
             "discardRandomFromHand" => new AbilityCost.RandomDiscardFromHand(PositiveCount(argument, child)),
             "discardFromHand" => new AbilityCost.DiscardFromHand(new AbilityCostRange.Exact(PositiveCount(argument, child))),
+            "discardResourceFromHand" => new AbilityCost.DiscardFromHand(new AbilityCostRange.Exact(1))
+                { Resource = Resource(argument, child) },
             "discardUpToFromHand" => new AbilityCost.DiscardFromHand(new AbilityCostRange.UpTo(PositiveCount(argument, child))),
             "discardAnyFromHand" => AnyDiscardCost(argument, child),
             "exhaustChosen" => ExhaustChosenCost(argument, child),

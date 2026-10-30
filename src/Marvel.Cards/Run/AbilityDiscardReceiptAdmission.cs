@@ -30,7 +30,7 @@ internal static class AbilityDiscardReceiptAdmission
             return Accepted(ability.Effect, context);
         if (discards.Length != 1)
             throw new Marvel.Rules.Play.RulesNotImplementedException("multiple hand-discard receipt commitments");
-        var hand = AbilityCostSelection.HandCandidates(context.World, context.Source, context.Query.Player);
+        var hand = AbilityCostSelection.HandCandidates(context.World, context.Source, context.Query.Player, discards[0]);
         var range = AbilityCostSelection.Range(discards[0].Range, hand.Count);
         if (selected is not null) return Selected(ability, context, hand, range, selected);
         if (discards[0].Range is AbilityCostRange.Exact { Count: 1 })

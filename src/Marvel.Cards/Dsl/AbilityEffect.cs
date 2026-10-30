@@ -263,6 +263,8 @@ public abstract record AbilityEffect
     public sealed record RemoveCounters(AbilityCardSelection Card, string Counter, long Count) : AbilityEffect;
     /// <summary>Discard hand cards that generate a specified resource.</summary>
     public sealed record DiscardHandWithResource(char Resource) : AbilityEffect;
+    /// <summary>Discard every hand card of a printed card kind.</summary>
+    public sealed record DiscardHandOfKind(CardKind Kind) : AbilityEffect;
     /// <summary>Recover cards discarded this way with a printed resource.</summary>
     public sealed record RecoverDiscardedByResource(char Resource) : AbilityEffect;
 
