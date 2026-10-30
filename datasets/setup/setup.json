@@ -3203,7 +3203,7 @@
   "contract": "docs/setup-dataset.md",
   "counts": {
     "campaigns": 39,
-    "encounter_sets": 15,
+    "encounter_sets": 18,
     "heroes": 14
   },
   "encounter_sets": {
@@ -3382,6 +3382,48 @@
         "90004",
         "90005",
         "90005"
+      ]
+    },
+    "temporal": {
+      "name": "Temporal",
+      "role": "modular",
+      "encounters": [
+        "11030",
+        "11030",
+        "11030",
+        "11031",
+        "11031",
+        "11032",
+        "11033"
+      ]
+    },
+    "anachronauts": {
+      "name": "Anachronauts",
+      "role": "modular",
+      "encounters": [
+        "11040",
+        "11041",
+        "11042",
+        "11043",
+        "11044",
+        "11045",
+        "11045",
+        "11046",
+        "11046"
+      ]
+    },
+    "mot": {
+      "name": "Master of Time",
+      "role": "modular",
+      "encounters": [
+        "11047",
+        "11048",
+        "11048",
+        "11049",
+        "11049",
+        "11050",
+        "11051",
+        "11051"
       ]
     }
   },

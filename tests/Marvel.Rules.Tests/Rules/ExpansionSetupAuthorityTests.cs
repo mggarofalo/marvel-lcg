@@ -37,10 +37,11 @@ public sealed class ExpansionSetupAuthorityTests
             "setup:campaign:wrecking_crew_standard",
             "setup:campaign:zola", "setup:campaign:zola_expert",
             "setup:encounter-set:a_mess_of_things",
+            "setup:encounter-set:anachronauts",
             "setup:encounter-set:goblin_gimmicks",
             "setup:encounter-set:hydra_assault", "setup:encounter-set:hydra_patrol",
-            "setup:encounter-set:kree_fanatic",
-            "setup:encounter-set:power_drain", "setup:encounter-set:running_interference", "setup:encounter-set:weapon_master", "setup:hero:ant_man", "setup:hero:black_widow", "setup:hero:captain_america",
+            "setup:encounter-set:kree_fanatic", "setup:encounter-set:mot",
+            "setup:encounter-set:power_drain", "setup:encounter-set:running_interference", "setup:encounter-set:temporal", "setup:encounter-set:weapon_master", "setup:hero:ant_man", "setup:hero:black_widow", "setup:hero:captain_america",
             "setup:hero:doctor_strange", "setup:hero:hawkeye", "setup:hero:hulk", "setup:hero:ms_marvel", "setup:hero:spider_woman", "setup:hero:thor",
         };
         var expansion = Catalog.Build().Sources.Where(source =>
@@ -66,6 +67,8 @@ public sealed class ExpansionSetupAuthorityTests
         "setup:hero:hulk" => "Hulk hero pack",
         "setup:hero:thor" => "Thor hero pack",
         "setup:encounter-set:kree_fanatic" => "Ronan Kree Fanatic modular set",
+        "setup:encounter-set:anachronauts" or "setup:encounter-set:mot" or "setup:encounter-set:temporal"
+            => "The Once and Future Kang scenario pack",
         "setup:encounter-set:a_mess_of_things" or "setup:encounter-set:goblin_gimmicks"
             or "setup:encounter-set:power_drain" or "setup:encounter-set:running_interference" or "setup:campaign:risky_business" or "setup:campaign:risky_business_expert"
             or "setup:campaign:mutagen_formula" or "setup:campaign:mutagen_formula_expert"
