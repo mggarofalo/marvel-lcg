@@ -38,8 +38,9 @@ internal static class MainSchemeCompletion
         Commit(world, facts, abilities, scheme, events);
     }
 
-    private static void Schedule(World world, Card scheme)
+    internal static void Schedule(World world, Card scheme)
     {
+        if (AlreadyCompleting(world, scheme)) return;
         var current = world.Agenda.Current;
         var completion = new PhaseStep(new MainSchemeCompletionOperation(scheme.Incarnation),
             current?.Round ?? 0, current?.Number ?? 0, Subject: scheme.ObjectId,
@@ -56,12 +57,18 @@ internal static class MainSchemeCompletion
     internal static void Commit(World world, ICardFacts facts,
         IThreatCardAbilities abilities, Card scheme, List<GameEvent> events)
     {
+        bool local = KangLocalCompletion.IsLocal(scheme);
+        if (local) KangLocalCompletion.Preflight(world, scheme);
+
         scheme.PlaceTokens("is_completed", 1);
         events.Add(new FieldSet(scheme.ObjectId, "is_completed", 0, 1)
         {
             Trigger = "main scheme completed",
             Verb = "Complete",
         });
+
+        // Printed 11009b-11012b continue in their Forced Response window.
+        if (local) return;
 
         if (world.AreaOf(DeckType.MainSchemesDeck).Cards.Count > 0)
         {

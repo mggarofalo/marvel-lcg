@@ -59,6 +59,7 @@ public sealed class PresentationAssemblyPolicyTests
             "Marvel.Rules.Play.PlayerLossReason",
             "Marvel.Rules.Prompts.Affordance",
             "Marvel.Rules.Prompts.AffordanceAnchorKind",
+            "Marvel.Rules.Prompts.ConditionalResourceBonus",
             "Marvel.Rules.Prompts.CostOption",
             "Marvel.Rules.Prompts.Prompt",
             // Passive public purpose without answer choices.
@@ -127,6 +128,7 @@ public sealed class PresentationAssemblyPolicyTests
             "Marvel.Rules.Prompts.DecisionAssessment",
             "Marvel.Rules.Prompts.DecisionAssessmentResult",
             "Marvel.Rules.Prompts.DecisionRejection",
+            "Marvel.Rules.Prompts.ConditionalResourceBonus",
             "Marvel.Rules.Prompts.CostOption",
             "Marvel.Rules.Prompts.Prompt",
             "Marvel.Rules.Prompts.Question",
@@ -217,6 +219,7 @@ public sealed class PresentationAssemblyPolicyTests
             "Marvel.Rules.Play.Outcome",
             "Marvel.Rules.Play.PlayerLossReason",
             "Marvel.Rules.Prompts.Affordance",
+            "Marvel.Rules.Prompts.ConditionalResourceBonus",
             "Marvel.Rules.Prompts.CostOption",
             "Marvel.Rules.Prompts.Prompt",
             // Passive public situation validation grants no decision authority.

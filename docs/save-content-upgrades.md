@@ -19,7 +19,13 @@ The baseline is embedded in the executable; a save cannot supply a new baseline
 or authorize its own migration.
 
 This is a conservative product policy, not a rule inferred from the tabletop.
-The current v28 delivery retains named routes from the exact frozen v19/v20/v21
+The current v29 delivery retains explicit frozen v19/v20/v21 routes to v29 and
+frozen-content v29 additive upgrades. Published v28 and other v22-v28 sources
+have no named v29 admission. Complete original facts must verify before any
+metadata changes; unsupported and divergent saves remain unchanged. See
+[the v29 evidence](content/ant-man-replay-v29.md).
+
+The historical v28 delivery retains named routes from the exact frozen v19/v20/v21
 content triple to `engine-replay-v28`, plus frozen-content v28 additive upgrades.
 Every original recorded fact must verify; none is regenerated. V22, v23, v24, v25,
 v26 and v27 have no named source admission to v28 and are quarantined unchanged.
@@ -28,7 +34,7 @@ a real Rapid Response trace can change prompt and event order with identical
 content. Historical v27 routes remain exact v27 destination routes. V27 evaluates
 dynamic lasting amounts against current state and preserves captured actor incarnation
 across suspended responses. These corrections can change accepted Core/RoRS outcomes.
-Protocol 42 and save schema 7 apply to the current delivery. Historical v26 routes remain exact v26
+Protocol 42 and save schema 7 applied to that delivery. Historical v26 routes remain exact v26
 destination routes. V26 completes
 minion Quickstrike before optional engagement and entry responses;
 real Core Hawkeye/Vulture traces can therefore change independently of content

@@ -201,13 +201,14 @@ public sealed class DiscardAndAllyLimitTests
 
         CardPlay.Play(world, facts, new NoCardAbilities(), seat, fourth, [], []);
 
-        Assert.Equal(
-            [Steps.ChooseAllyForLimit, Steps.FinalizeAllyEntry, Steps.CardPlayed],
-            world.Agenda.Outstanding.Select(step => step.What));
+        Assert.Equal(Steps.CardPlayed, Assert.Single(world.Agenda.Outstanding).What);
         Assert.Empty(Statuses.On(world, fourth, Statuses.Tough));
         var events = new List<GameEvent>();
         var asked = Sequence.Work(world, facts, new NoCardAbilities(), events);
         Assert.NotNull(asked);
+        Assert.Equal(
+            [Steps.ChooseAllyForLimit, Steps.FinalizeAllyEntry, Steps.CardPlayed],
+            world.Agenda.Outstanding.Select(step => step.What));
         Assert.Equal(Question.Element, asked.Asking);
         Assert.False(asked.Cancellable);
         Assert.Contains(asked.Affordances, option => option.Id == chosen.ObjectId);
@@ -257,6 +258,7 @@ public sealed class DiscardAndAllyLimitTests
 
         var played = Assert.Single(world.Agenda.Outstanding);
         Assert.Equal(Steps.CardPlayed, played.What);
+        Assert.Null(Sequence.Work(world, facts, new NoCardAbilities(), []));
         Assert.Equal(DeckType.AlliesArea, fourth.Area.Type);
         Assert.Equal(4, allies.Cards.Count);
     }
@@ -282,6 +284,9 @@ public sealed class DiscardAndAllyLimitTests
         CardPlay.PutAllyIntoPlay(
             world, facts, new NoCardAbilities(), fourth, 0, "test", []);
 
+        var asked = Sequence.Work(world, facts, new NoCardAbilities(), []);
+        Assert.NotNull(asked);
+        Assert.Equal(Steps.ChooseAllyForLimit, asked.Trigger);
         Assert.Equal(
             [Steps.ChooseAllyForLimit, Steps.FinalizeAllyEntry, Steps.CardEntersPlay],
             world.Agenda.Outstanding.Select(step => step.What));
@@ -354,7 +359,8 @@ public sealed class DiscardAndAllyLimitTests
 
         public long PrintedValue(
             string faceId, string attribute, int players, long fallback = 0) =>
-            faceId == "permanent" && attribute == "Permanent" ? 1
+            faceId is "ally" or "toughally" && attribute == "HP" ? 3
+                : faceId == "permanent" && attribute == "Permanent" ? 1
                 : faceId == "toughally" && attribute == "Toughness" ? 1
                 : attribute == "Cost" ? 0
                 : fallback;

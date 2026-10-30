@@ -19,14 +19,21 @@ public sealed class SchemeDefeatReplayBoundaryTests : SimulationHarnessTestBase
         for (int index = 0; index < 30; index++)
         {
             var step = ReadStep(lines, index);
-            JournalReplay.RequirePrompt(step.Prompt, game.Pending!, $"step {index}");
+            if (index == 21)
+            {
+                // The first recorded Power of Justice offer is the projected spelling.
+                var strict = Assert.Throws<ReplayDivergenceException>(() =>
+                    JournalReplay.RequirePrompt(step.Prompt, game.Pending!, "strict step 21"));
+                Assert.Contains("\"effect\":30,\"generates\":\"GG\"", strict.Message, StringComparison.Ordinal);
+            }
+            FrozenPromptCompatibility.Require(step.Prompt, game.Pending!, game.State, $"step {index}");
             var result = game.Resolve(DecisionFor(game, step).Resolve(game.Pending!));
             JournalReplay.RequireEvents(step.Events, result.Events, $"step {index}");
             JournalReplay.RequireFingerprint(step.Digest, game.State.Digest().Fingerprint(), $"step {index}");
         }
 
         var boundary = ReadStep(lines, 30);
-        JournalReplay.RequirePrompt(boundary.Prompt, game.Pending!, "step 30");
+        FrozenPromptCompatibility.Require(boundary.Prompt, game.Pending!, game.State, "step 30");
         var changed = game.Resolve(DecisionFor(game, boundary).Resolve(game.Pending!));
         // The recorded boost/defense prefix is intact. Zero damage completes
         // Crossbones' attack, then starts the engaged minion's distinct attack.

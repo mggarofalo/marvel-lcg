@@ -1,0 +1,9 @@
+# Independent review of scoped permanent play
+
+Source73363f7017914eb2ef33cbf8c98090301d0edfc2 was independently reviewed against the printed12024 instruction, current Rules Reference cost, modifiers and initiation clauses, and ruling8337b7a07cb58a64. The bounded synthetic Action-only permanent capability has no blocking finding in that review. It remains separate from action-event dispatch and the actual Team-Building Exercise row.
+
+The source restricts admission to its declared exhaust-this/first-effect shape, quotes a scoped reduction separately from generated resources, revalidates live choices before information clearing, and uses ordinary permanent payment and entry. The source continuation remains pending through interrupted payment and resolves after the child completes. The removed early ResolveEffect marker was not needed by the tested admitted path; a surviving mutation in one synchronous case is not evidence for arbitrary contexts. The compiled omission-of-suspension mutant does distinguish the interrupted-generator continuation test.
+
+Review commitbff0af9c9e630a91e3e17e5c4b5f4a0aec712f76 adds an ordinary subsequent play paying full cost and a one-use modifier consumption control. The reviewer ran the full Rules suite at the source revision (1,216 passed), focused Content checks (66 passed), and the final scoped Rules class including the new control (7 passed). Normal architecture66, complexity and file-length hooks passed. Evidence is external under C:/Users/mggar/Source/evidence/team-building-permanent-review-*.log. The architecture baseline adjustment only moves existing diagnostic line numbers.
+
+Nested ally-entry interruption with overpayment, event dispatch, the actual12024 row, public admission and a final full Content run remain outside this review. Integration verification is recorded in the cycle checkpoint. This review does not accept an incomplete pack.

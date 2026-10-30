@@ -21,13 +21,16 @@ public sealed class PublicBlackWidowQuantityIndependentTests
         Assert.Equal([0], quantities["08001a"]);
         Assert.Equal([0], quantities["08001b"]);
         Assert.Equal([0], quantities["01002"]);
-        Assert.False(quantities.ContainsKey("12024"));
+        // The invalid draft must remove forbidden cards before any additions.
+        Assert.Equal([0], quantities["12024"]);
+        Assert.False(quantities.ContainsKey("13001a"));
         Assert.All(hero.Signature, face => Assert.False(quantities.ContainsKey(face)));
 
         // Espionage is a Basic extra, outside the pinned printed starter.
         string[] repaired = [.. hero.Signature, "08033"];
         var editable = factory.DeckQuantities(hero.Key, repaired);
         Assert.Equal([0, 1, 2, 3], editable["08033"]);
+        Assert.Equal([0, 1, 2, 3], editable["12024"]);
         Assert.True(factory.AssessDeck(hero.Key, repaired).CanExtend);
         Assert.DoesNotContain("08033", hero.Starter);
         string[] legal = [.. hero.Starter.SkipLast(1), "08033"];

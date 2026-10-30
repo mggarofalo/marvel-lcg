@@ -12,6 +12,8 @@ internal static class PhaseTransitionProcedure
     internal static Prompt? Apply(
         World world, ICardFacts facts, PhaseStep step, List<GameEvent> events)
     {
+        world.Agenda.KangSplit.Preflight(world, step);
+        world.Agenda.KangTransitions.Preflight(world, step);
         int start = events.Count;
         switch (step.What)
         {
@@ -31,9 +33,11 @@ internal static class PhaseTransitionProcedure
                 PhaseEnd.ReadyCards(world, events);
                 break;
             case PlayerTurnTiming.Begins:
-                // The scheduled occurrence owns the beginning windows; no state changes at its body.
+                // rr:interrupt: interrupts resolve before the triggering condition resolves.
+                world.Effects.BeginNextTurn(step.Seat);
                 break;
             case PlayerTurnTiming.Ends:
+                world.Agenda.PlayerTurnOpen = false;
                 PhaseEnd.EndPlayerTurn(world, step.Seat, events);
                 break;
             case Steps.EndPlayerPhase:
@@ -45,6 +49,12 @@ internal static class PhaseTransitionProcedure
         }
         for (int index = start; index < events.Count; index++)
             events[index] = events[index] with { Round = step.Round };
+        // rr:delayed-effect.1: resolve delayed work "before responses to that
+        // point or condition may be used". PhaseEnd expires lasting effects and
+        // resolves synchronous delayed work; this typed child retains the phase
+        // frame while its required choices finish before the response window.
+        world.Agenda.KangTransitions.Begin(world, step, events);
+        world.Agenda.KangSplit.Begin(world, step, events);
         return null;
     }
 

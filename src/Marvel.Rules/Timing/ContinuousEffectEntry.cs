@@ -16,5 +16,7 @@ internal sealed class ContinuousEffectEntry(ContinuousEffect effect, CardSourceS
     // without becoming gameplay state or part of the state digest.
     public CardSourceSnapshot? Origin { get; } = origin;
 
+    public bool NextTurnStarted { get; set; }
+
     public int? Remaining { get; set; } = effect.Lasts?.Uses;
 }

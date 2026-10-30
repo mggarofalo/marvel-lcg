@@ -9,13 +9,18 @@ internal sealed class ResourceAllocationSearch
     private readonly List<Slot> slots;
     private readonly List<Icon> icons;
     private readonly bool[] used;
+    private readonly IReadOnlyList<ResourceSource> sources;
     private readonly Choice[] choices;
     private readonly bool[] assigned;
+    private readonly Func<IReadOnlyList<ResourceAllocation>, bool>? accepts;
 
-    internal ResourceAllocationSearch(List<Slot> slots, IReadOnlyList<ResourceSource> sources)
+    internal ResourceAllocationSearch(List<Slot> slots, IReadOnlyList<ResourceSource> sources,
+        Func<IReadOnlyList<ResourceAllocation>, bool>? accepts = null)
     {
         this.slots = slots;
-        icons = sources.SelectMany(source => source.Generates.Select(resource =>
+        this.sources = sources;
+        this.accepts = accepts;
+        icons = sources.SelectMany(source => source.PossibleResources.Select(resource =>
             new Icon(source.Effect, resource))).ToList();
         used = new bool[icons.Count];
         choices = new Choice[slots.Count];
@@ -29,10 +34,24 @@ internal sealed class ResourceAllocationSearch
 
     private bool Search(int slotIndex)
     {
-        if (slotIndex == slots.Count) return true;
+        if (slotIndex == slots.Count)
+        {
+            var allocation = Collapse();
+            return (accepts is null || accepts(allocation)) && sources.All(source =>
+            {
+                string generated = ResourcePayment.GeneratedBy(source, allocation);
+                return icons.Select((icon, index) => (icon, index))
+                    .Where(entry => used[entry.index] && entry.icon.Source == source.Effect)
+                    .GroupBy(entry => entry.icon.Printed)
+                    .All(group => group.Count() <= generated.Count(icon => icon == group.Key));
+            });
+        }
         Slot slot = slots[slotIndex];
+        var considered = new HashSet<Icon>();
         foreach (int index in Candidates(slot))
         {
+            // Identical physical icons from the same source have identical effects.
+            if (!considered.Add(icons[index])) continue;
             used[index] = true;
             foreach (char declared in Declarations(slot, icons[index]))
             {

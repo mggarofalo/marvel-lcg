@@ -102,6 +102,7 @@ internal static class AbilityEffectAdmissionConstraints
         string until, AbilityAdmissionScope cast) =>
         until switch
         {
+            TimingPoints.EndOfTurn => cast.World.Agenda.PlayerTurnOpen,
             TimingPoints.EndOfAttack => cast.World.Attack is not null
                 || cast.World.CharacterAttack is not null
                 || cast.Occurrence.Is(Steps.AttackInitiated),

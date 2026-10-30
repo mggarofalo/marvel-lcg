@@ -48,6 +48,8 @@ public sealed class AbilityRunner : ICardAbilities
     public bool ObservesVillainStepOneCompletion(World world) => AbilityVillainPhaseTiming.Observed(world, program);
     /// <inheritdoc/>
     public bool ObservesVillainPhaseBeginning(World world) => AbilityVillainPhaseTiming.Observed(world, program, VillainPhaseBeginning.Begins);
+    public string? DescribeCardPlay(World world, Card card) => AbilityEntryCounterDescription.PlaySummary(world, program, card);
+
     public bool RequiresAllyPlayHistory(World world) => AbilityAllyPlayHistory.Required(world, program);
     public long SelfPlayCostReduction(World world, Card card, int player) => AbilitySelfPlayCost.Reduction(world, program, card, player);
     public bool CanPlayFromStorage(World world, Card card, int player) => AbilityStoragePermission.CanPlay(world, program, card, player);
@@ -57,6 +59,8 @@ public sealed class AbilityRunner : ICardAbilities
     public bool CanUseHandResources(World world, Card source) =>
         AbilityProgramQueries.CanUseHandResources(world, program, source);
     public string ResourcesGeneratedBy(World world, Card source, Card? payingFor) => AbilityProgramQueries.ResourcesGeneratedBy(world, program, source, payingFor);
+    public ResourceSource QuoteHandResources(World world, Card source, Card? costOwner, ulong qualifyingComponents = 1) =>
+        AbilityProgramQueries.QuoteHandResources(world, program, source, costOwner, qualifyingComponents);
     public DefenderChoice Defenders(World world, EnemyAttack attack, IReadOnlyList<Card> candidates) => AbilityProgramQueries.Defenders(world, program, attack, candidates);
     public bool CanRemoveThreat(World world, Card scheme, int ignoredSource = -1) => AbilityProgramQueries.CanRemoveThreat(world, program, scheme, ignoredSource);
     /// <inheritdoc/>
@@ -130,6 +134,11 @@ public sealed class AbilityRunner : ICardAbilities
             : resolution.Choosing(world, continuation);
     public Prompt? PreviewChoice(World world, Card source, int player, int position, AbilityType? tier = null, bool finalStep = false) =>
         AbilityChoicePreview.Describe(resolution, world, source, player, position, tier, finalStep);
+    public void ValidateChoice(World world, PhaseStep continuation, Decision input)
+    {
+        if (continuation.Operation is not AbilityContinuationAgendaOperation { Continuation: DamageReplacementContinuation })
+            resolution.ValidateChoice(world, continuation, input);
+    }
     public AbilityExecutionResult Act(World world, AbilityExecution invocation, Decision answer) => resolution.Act(world, invocation, answer);
     public IReadOnlyList<GameEvent> Chose(World world, PhaseStep continuation, Decision input) =>
         continuation.Operation is AbilityContinuationAgendaOperation { Continuation: DamageReplacementContinuation }

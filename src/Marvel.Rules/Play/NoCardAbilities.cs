@@ -26,6 +26,9 @@ public class NoCardAbilities : ICardAbilities
 
     /// <inheritdoc/>
     public virtual bool RequiresAllyPlayHistory(World world) => false;
+
+    /// <inheritdoc/>
+    public virtual string? DescribeCardPlay(World world, Card card) => null;
     /// <inheritdoc/>
     public virtual long SelfPlayCostReduction(World world, Card card, int player) => 0;
 
@@ -60,7 +63,7 @@ public class NoCardAbilities : ICardAbilities
     /// <inheritdoc/>
     public virtual bool CanThwartScheme(World world, Card scheme, int ignoredSource = -1) => CanRemoveThreat(world, scheme, ignoredSource);
     /// <inheritdoc/>
-    public virtual Card? SchemeDestination(World world, Card enemy) => world.TheCardIn(DeckType.MainSchemesArea);
+    public virtual Card? SchemeDestination(World world, Card enemy) => EnemySchemeDestination.Resolve(world, enemy);
 
     /// <inheritdoc/>
     public virtual bool CanUseHandResources(World world, Card source) => true;
@@ -68,6 +71,10 @@ public class NoCardAbilities : ICardAbilities
     /// <inheritdoc/>
     public virtual string ResourcesGeneratedBy(World world, Card source, Card? payingFor) =>
         EffectiveCards.HasProfile(source) ? string.Empty : Resources.GeneratedBy(source.FaceId, world.Facts);
+
+    /// <inheritdoc/>
+    public virtual ResourceSource QuoteHandResources(World world, Card source, Card? costOwner, ulong qualifyingComponents = 1) =>
+        new(source.ObjectId, ResourcesGeneratedBy(world, source, costOwner));
 
     /// <inheritdoc/>
     public virtual DefenderChoice Defenders(
@@ -191,6 +198,9 @@ public class NoCardAbilities : ICardAbilities
 
     /// <inheritdoc/>
     public virtual Prompts.Prompt? Choosing(World world, PhaseStep continuation) => null;
+
+    /// <inheritdoc/>
+    public virtual void ValidateChoice(World world, PhaseStep continuation, Decision input) { }
 
     /// <inheritdoc/>
     public virtual IReadOnlyList<GameEvent> Chose(World world, PhaseStep continuation, Decision input) =>

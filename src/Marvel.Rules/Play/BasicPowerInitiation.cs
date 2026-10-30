@@ -134,7 +134,7 @@ public static class BasicPowerInitiation
             new ConsequentialDamageOperation(
                 ConsequentialDamageKind.AllyConsequentialDamage,
                 Character: enemy.ObjectId
-            ),
+            ) { PerformerIncarnation = character.Incarnation },
             world.Agenda.Current?.Round ?? 0,
             9,
             Index: player,

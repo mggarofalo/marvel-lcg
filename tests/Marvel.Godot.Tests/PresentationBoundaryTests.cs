@@ -90,6 +90,8 @@ public sealed class PresentationBoundaryTests
             "Marvel.Rules.Prompts.AffordanceAnchorKind",
             "Marvel.Rules.Prompts.Question",
             "Marvel.Rules.Timing.TimingPriority",
+            // Read-only engine-offered bonus on a payment source; Godot describes it, never applies it.
+            "Marvel.Rules.Prompts.ConditionalResourceBonus",
             "Marvel.Rules.Prompts.CostOption",
             "Marvel.Rules.Prompts.Prompt",
             // Public prompt purpose selects a presentation surface, not game legality.

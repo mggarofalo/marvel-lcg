@@ -151,6 +151,9 @@ internal static class AbilityCardStateExecution
         string key = "c_" + counters.Counter;
         long before = card.Tokens.GetValueOrDefault(key);
         card.PlaceTokens(key, count);
+        if (context.Expressions.Occurrence.Entry.PendingAllyEntry is { } entry
+            && ReferenceEquals(card, context.Source) && entry.MatchesPending(card))
+            entry.StageCounter(card, key, count);
         context.Events.Add(new FieldSet(card.ObjectId, key, before, before + count)
         { Trigger = context.Trigger, Verb = "Place_Counters" });
     }

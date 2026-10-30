@@ -16,7 +16,7 @@ public sealed class PublicThorSetupTests : EngineHostTestBase
         var factory = DatasetGameFactory.Load(RepositoryPaths.Root);
         var discovery = new EngineHost(factory).Exchange(EngineRequest.ReadSetup("setup"));
         Assert.Null(discovery.Error);
-        Assert.Equal(13, discovery.Setup!.Heroes.Count);
+        Assert.Equal(14, discovery.Setup!.Heroes.Count);
         Assert.Contains(discovery.Setup.Heroes, hero => hero.Key == "thor");
         var hero = factory.DiscoverDecks().Heroes.Single(hero => hero.Key == "thor");
         Assert.Equal(40, hero.Starter.Count);

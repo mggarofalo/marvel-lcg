@@ -58,7 +58,7 @@ internal sealed class AbilityOfferQueries
 
     internal AbilityAdmissionResult? ActionAdmission(
         World world, Card card, CompiledCardAbility ability, int player, Occurrence? occurrence,
-        IReadOnlyList<int>? costSelection = null)
+        IReadOnlyList<int>? costSelection = null, ScopedCardCostReduction? reduction = null)
     {
         int index = AbilityAvailability.IndexOf(program, card, ability);
         if (!MayInitiate(world, ability, card, player)
@@ -75,7 +75,7 @@ internal sealed class AbilityOfferQueries
             return new AbilityAdmissionResult(true, []);
         }
 
-        return AbilityPaymentReceiptAdmission.Admit(ability, context, costSelection);
+        return AbilityPaymentReceiptAdmission.Admit(ability, context, costSelection, reduction);
     }
 
     internal IReadOnlyList<ResourceSource> ResourceAbilities(World world, int player)
@@ -196,7 +196,8 @@ internal sealed class AbilityOfferQueries
     private bool MayInitiate(World world, CompiledCardAbility ability, Card card, int player)
     {
         if (EffectiveCards.Kind(card, world.Facts) == CardKind.Event
-            && !CardPlayOrigin.CanPlayEvent(world, card, player)) return false;
+            && (!CardPlayOrigin.CanPlayEvent(world, card, player)
+                || !CardPlayLegality.TeamedUp(world, world.Facts, card))) return false;
         bool cardPermits = AbilityCardQueries.ControllerOf(world, card) == player
             || card.Owner == World.Scenario || ability.AnyPlayer;
         return cardPermits && (RestrictedPlayer(world, ability, card) is not { } restricted

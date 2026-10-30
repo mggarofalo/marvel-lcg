@@ -1,5 +1,7 @@
 # Release identity, signing and compatibility
 
+Protocol 43 adds conditional resource bonus facts to cost offers. Protocol 42 peers are rejected before gameplay. Replay compatibility of the integrated candidate remains a separate MARVEL-870 decision; this protocol change alone does not bump the replay identity.
+
 Protocol 42 adds typed public Invocation deck/discard area relationships.
 Protocol 41 peers are rejected before interpreting these response fields. This
 metadata change retains replay v27, session schema 7, RNG and state digest.
@@ -74,28 +76,37 @@ independent identities do:
 
 | Identity | Current value | Changes when |
 |---|---:|---|
-| Engine protocol | `42` | A request, response, affordance, event or descriptor change is not understood by the prior endpoint. |
+| Engine protocol | `43` | A request, response, affordance, event or descriptor change is not understood by the prior endpoint. |
 | Session schema | `7` | The strict persisted JSON shape changes. |
-| Engine replay contract | `engine-replay-v28` | The same setup and decision trace may resolve differently. |
+| Engine replay contract | `engine-replay-v29` | The same setup and decision trace may resolve differently. |
 | RNG contract | `mt19937-iso-cxx` | The seeded random stream changes. |
 | State digest | `state-digest-v3` | The canonical hidden-state serialization changes. |
 | Runtime datasets | Three SHA-256 values | Any byte in `cards.json`, `setup.json` or `abilities.json` changes. |
 
-Replay v28 completes an ordinary enemy attack before offering its defeat
+Replay v29 covers the combined Ant-Man delivery's changes to persisted prompt
+facts and existing-card resolution order. Published v28 saves have no named
+v29 admission and remain quarantined without publication or replacement. The
+exact frozen Core/RoRS v19/v20/v21 triples retain named v29 routes, subject
+to unchanged admitted entries and complete original-history verification;
+frozen-content v29 additive upgrades use the unchanged replay route. Historical
+v22–v28 destinations retain their explicit routes. Protocol 43, schema 7, RNG
+and digest identities are unchanged. See [the comparison evidence](content/ant-man-replay-v29.md).
+
+Historically, replay v28 completes an ordinary enemy attack before offering its defeat
 responses. The same legal attack with Black Widow Rapid Response (08031) can
 therefore produce different prompt and event timing. V27 sources, including
 current-content saves, have no named admission and remain quarantined unchanged.
 Only the exact frozen Core/RoRS v19/v20/v21 content triple has explicit routes to
 `engine-replay-v28`, verifying every original recorded fact before provenance
 changes; frozen-content v28 additive upgrades use the unchanged replay route.
-Historical named destinations remain exact. Protocol 42, schema 7, RNG and state
-digest formats retain their identities.
+Historical named destinations remain exact. At replay v28 publication, protocol 42,
+schema 7, RNG and state digest formats retained their identities.
 
 Replay v27 evaluates dynamic lasting amounts against current state and preserves
 captured actor incarnation across suspended responses. These corrections can change
 accepted Core/RoRS outcomes. V26 saves have no named source admission; original
 saves remain unchanged. Explicit frozen v19/v20/v21 routes verify every historical
-fact before changing compatibility metadata. Protocol 42 and save schema 7 apply.
+fact before changing compatibility metadata. That release used protocol 42 and save schema 7.
 
 Replay v26 completes minion Quickstrike before optional engagement and entry
 responses. Real Core Hawkeye and Vulture can therefore reach the same optional

@@ -18,6 +18,15 @@ public sealed class CardPaymentDraftTests
         PublicDecisionKind kind, bool hasCause, bool expected) =>
         Assert.Equal(expected, CardPaymentWorkspaceHeader.ShowsResolution(kind, hasCause));
 
+    [Theory]
+    [InlineData("0")]
+    [InlineData("1")]
+    [InlineData("X")]
+    public void OfferedPriceIsIdentifiedAsPayment(string cost)
+    {
+        Assert.Equal($"Play a card · Pay {cost}", DecisionCostLabel.OfferCaption("Play a card", new ResourceCost(cost)));
+    }
+
     [Fact]
     public void VariableTypedCostRetainsItsResourceMeaningInAccessiblePresentation()
     {

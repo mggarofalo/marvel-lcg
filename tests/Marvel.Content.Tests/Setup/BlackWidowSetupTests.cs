@@ -43,6 +43,6 @@ public sealed class BlackWidowSetupTests
         Assert.Contains("black_widow", admitted.Setup.HeroNames);
         Assert.Equal(34, admitted.Playable.Count(face => cards.Pack(face) == "bkw"));
         Assert.Contains("thor", admitted.Setup.HeroNames);
-        Assert.Equal(13, admitted.Setup.HeroNames.Count);
+        Assert.Equal(14, admitted.Setup.HeroNames.Count);
     }
 }

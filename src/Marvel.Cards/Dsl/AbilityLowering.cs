@@ -75,7 +75,11 @@ public static class AbilityLowering
             "if" => ConditionalNumber(argument, child),
             "printedResourceCountDiscarded" => new AbilityNumber.PrintedResourcesDiscarded(Resource(argument, child)),
             "discardedWithResource" => new AbilityNumber.DiscardedWithResource(Resource(argument, child)),
+            // Engine choice: this expression reads the current source's entry receipt.
+            "entryResourceExcess" => FixedNumber(argument, child, "this", AbilityResolutionNumber.EntryResourceExcess),
             "receivedAttackDamage" => FixedNumber(argument, child, "game", AbilityResolutionNumber.ReceivedAttackDamage),
+            // Engine choice: this spelling names the bound attack-end recipient.
+            "attackExcessDamage" => FixedNumber(argument, child, "trigger.target", AbilityResolutionNumber.AttackExcessDamage),
             "completedAttackDamageDealt" => FixedNumber(argument, child, "game", AbilityResolutionNumber.CompletedAttackDamageDealt),
             "activationAttacksAgainstYou" => FixedNumber(argument, child, "game", AbilityResolutionNumber.ActivationAttacksAgainstYou),
             "printedCostDiscarded" => FixedNumber(argument, child, "game", AbilityResolutionNumber.PrintedCostDiscarded),

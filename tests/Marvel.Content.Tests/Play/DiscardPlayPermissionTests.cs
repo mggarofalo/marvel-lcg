@@ -49,11 +49,12 @@ public sealed class DiscardPlayPermissionTests
             .Take(discount ? 3 : 4).Select(card => card.ObjectId).ToArray();
         var events = new List<GameEvent>();
         CardPlay.Play(world, world.Facts, runner, world.Seats[1], ally, paying, events);
+        Assert.Contains(world.Agenda.Outstanding, step => step.What == Steps.CardPlayed);
+        Assert.Null(Sequence.Work(world, world.Facts, runner, events));
         Assert.Same(ally, Assert.Single(world.Cards, card => card.ObjectId == ally.ObjectId));
         Assert.Equal(DeckType.AlliesArea, ally.Area.Type);
         Assert.Equal(PlayArea.Of(1), ally.Area.PlayArea);
         Assert.All(paying, id => Assert.Equal(DeckType.DiscardPile, world.Cards[id].Area.Type));
-        Assert.Contains(world.Agenda.Outstanding, step => step.What == Steps.CardPlayed);
     }
 
     [Theory]
@@ -145,9 +146,10 @@ public sealed class DiscardPlayPermissionTests
         var runner = Permission();
         var (_, world) = Playing(_ => { }, abilities: runner);
         var area = world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0);
-        foreach (string face in new[] { "01067", "01068", "01070" }) world.CreateCard(face, area);
+        foreach (string face in new[] { "01067", "01068", "01041" }) world.CreateCard(face, area);
         var ally = world.CreateCard("05018", Pile(world, 0));
         Pay(world, runner, ally);
+        Assert.NotNull(Sequence.Work(world, world.Facts, runner, []));
         var pending = world.Agenda.Outstanding.ToArray();
         Assert.Equal(DeckType.AlliesArea, ally.Area.Type);
         int limit = Array.FindIndex(pending, step => step.What == Steps.ChooseAllyForLimit);

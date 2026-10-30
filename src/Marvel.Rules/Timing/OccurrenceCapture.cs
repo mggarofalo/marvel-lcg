@@ -1,7 +1,7 @@
 namespace Marvel.Rules.Timing;
 
 /// <summary>Freezes public participant facts when a combat or threat occurrence begins.</summary>
-internal static class OccurrenceCapture
+public static class OccurrenceCapture
 {
     internal static Occurrence Attack(
         int id,
@@ -49,7 +49,8 @@ internal static class OccurrenceCapture
             TargetFacts: scheme >= 0 ? OccurrenceCard.Capture(world.Cards[scheme], facts) : null);
     }
 
-    internal static Occurrence Threat(
+    /// <summary>Capture an imminent threat assignment and its participant facts.</summary>
+    public static Occurrence Threat(
         int id, IReadOnlyList<string> conditions, State.World world,
         State.ICardFacts facts, State.ThreatPlacement placement, int? subject = null)
     {

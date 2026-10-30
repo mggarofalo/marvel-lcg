@@ -34,7 +34,13 @@ internal sealed class AbilityChoiceAnswer(
             return ApplyPayment(choice);
         if (operation is "distributeThreat" or "thwartDifferentSchemes" or "legalPractice")
             return ApplyThwartChoice(choice);
+        return ApplyRemaining(choice, operation);
+    }
+
+    private List<Marvel.Rules.Events.GameEvent> ApplyRemaining(AbilityEffect choice, string operation)
+    {
         if (operation == "makeTheCall") return ApplyMakeTheCall(choice);
+        if (operation == "playSharedHeroTraitCard") return AbilitySharedTraitPlay.Commit(execution, cast, choice, input);
         if (operation == "indirectDamage") return ApplyIndirectDamage(choice);
         if (operation == "attack") return ApplyCountedAttack((AbilityEffect.Power)choice);
         return ApplyResumableEffectChoice(choice);
@@ -117,13 +123,13 @@ internal sealed class AbilityChoiceAnswer(
             var occurrence = cast.World.Agenda.Occurrence;
             var payment = AbilityResourcePayment.Spend(cast.World, execution.resourceAbilities,
                 new(cast.Source, player, input.Spent, requirement.Amount, requirement.Resources), cast.Events);
-            if (!payment.IsComplete)
+            var plan = new AbilityChoicePayment(payment);
+            if (!payment.IsComplete || !plan.Commit(execution, cast))
             {
-                cast.PendingPayment = new AbilityChoicePayment(payment);
+                cast.PendingPayment = plan;
                 execution.SuspendAfterProcedure(choice, cast, owner, occurrence);
                 return cast.Events;
             }
-            cast.ResolveEffect();
         }
         else if (input.Affordance == 1)
         {
@@ -230,24 +236,19 @@ internal sealed class AbilityChoiceAnswer(
             execution.StructuralContext(cast), input);
         ThrowIfUnsupported(answer);
         var ally = cast.World.Cards[((MakeTheCallCommand)answer).Ally];
-        long cost = Resources.Cost(ally.FaceId, cast.World.Facts, cast.World.Players) ?? 0;
+        int allyIncarnation = ally.Incarnation;
+        int allyArea = ally.Area.Id;
         var owner = cast.World.Agenda.Current;
         var occurrence = cast.World.Agenda.Occurrence;
-        var payment = CardPlay.Spend(
-            cast.World, cast.World.Facts, execution.resourceAbilities,
-            [cast.World.Seats[player].Hand], input.Spent, cost,
-            Resources.Required(cast.World, ally, cast.World.Facts), cast.Source.ObjectId,
-            player, cast.Events, payingFor: ally);
-        if (!payment.IsComplete)
+        var payment = MakeTheCallPayment.Spend(cast.World, execution.resourceAbilities,
+            input, cast.Source, ally, player, cast.Events);
+        var plan = new AbilityChoicePayment(payment, ally, allyIncarnation, allyArea);
+        if (!payment.IsComplete || !plan.Commit(execution, cast))
         {
-            cast.PendingPayment = new AbilityChoicePayment(payment, ally);
+            cast.PendingPayment = plan;
             execution.SuspendAfterProcedure(choice, cast, owner, occurrence);
             return cast.Events;
         }
-        CardPlay.PutAllyIntoPlay(
-            cast.World, cast.World.Facts, execution.cardPlayAbilities, ally, player,
-            cast.Trigger, cast.Events);
-        cast.ResolveEffect();
         return Continue();
     }
 

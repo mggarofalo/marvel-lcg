@@ -178,6 +178,7 @@ public sealed class CardPlayACostIsACountOfResourcesOfAnyTypeTests : CardPlayTes
         var ally = InHand(world, "ally");
         var events = new List<GameEvent>();
         CardPlay.Play(world, printed, new Silent(), seat, ally, [Pay(world, "res")], events);
+        Assert.Null(Sequence.Work(world, printed, new Silent(), events));
         Assert.Equal(DeckType.AlliesArea, ally.Area.Type);
         Assert.Equal(PlayArea.Of(0), ally.Area.PlayArea);
         var upgrade = InHand(world, "upgrade");
@@ -305,6 +306,7 @@ public sealed class CardPlayACostIsACountOfResourcesOfAnyTypeTests : CardPlayTes
         var first = world.Cards[Pay(world, "res")];
         var second = seat.Hand.Cards.First(card => card.FaceId == "res" && card != first);
         CardPlay.PlayWithPermission(world, printed, new Silent(), seat, ally, [first.ObjectId, second.ObjectId], []);
+        Assert.Null(Sequence.Work(world, printed, new Silent(), []));
         Assert.Equal(DeckType.AlliesArea, ally.Area.Type);
         Assert.Equal(DeckType.DiscardPile, first.Area.Type);
         Assert.Equal(DeckType.DiscardPile, second.Area.Type);

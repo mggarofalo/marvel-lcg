@@ -10,6 +10,26 @@ namespace Marvel.Rules.Tests.Play;
 public sealed class EncounterDeckTests
 {
     [Rule("rr:encounter-deck.2")]
+    [Fact]
+    public void PrintedSetRatherThanSharedTitleOrTraitSelectsTheCard()
+    {
+        // Discard until the specified criterion is met or the deck is empty.
+        var facts = new Printed();
+        var world = Board(facts);
+        var deck = world.AreaOf(DeckType.EncounterDeck);
+        var below = world.CreateCard("below", deck);
+        var match = world.CreateCard("set-match", deck);
+        var sameTitleAndTrait = world.CreateCard("set-other", deck);
+        Assert.Equal(facts.Title(match.FaceId), facts.Title(sameTitleAndTrait.FaceId));
+        Assert.Equal(facts.Traits(match.FaceId), facts.Traits(sameTitleAndTrait.FaceId));
+
+        var found = EncounterDeck.DiscardUntil(world, facts, "wanted", "test", []);
+
+        Assert.Same(match, found);
+        Assert.Equal([sameTitleAndTrait, match], world.AreaOf(DeckType.EncounterDiscardPile).Cards);
+        Assert.Equal([below], deck.Cards);
+    }
+    [Rule("rr:encounter-deck.2")]
     [Rule("rr:discard.4")]
     [Fact]
     public void DiscardUntilReturnsTheExactMatchAndLeavesTheCardBelowIt()
@@ -227,8 +247,15 @@ public sealed class EncounterDeckTests
             _ => CardKind.Treachery,
         };
 
-        public IReadOnlyList<string> Traits(string faceId) =>
-            faceId == "masters" ? ["MASTERS_OF_EVIL"] : [];
+        public IReadOnlyList<string> Traits(string faceId) => faceId switch
+        {
+            "masters" => ["MASTERS_OF_EVIL"],
+            "set-match" or "set-other" => ["CRIMINAL"],
+            _ => [],
+        };
+
+        public string Title(string faceId) => faceId is "set-match" or "set-other" ? "Shared title" : faceId;
+        public string EncounterSet(string faceId) => faceId == "set-match" ? "wanted" : "other";
 
         public IReadOnlyDictionary<string, string> Attributes(string faceId) =>
             new Dictionary<string, string>();

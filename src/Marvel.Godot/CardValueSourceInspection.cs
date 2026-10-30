@@ -55,6 +55,7 @@ internal static class CardValueSourceInspection
 
     internal static string Operation(CardValueCalculation row) => row.Operation switch
     {
+        "Maximum" => $"Maximum {row.Amount.ToString(CultureInfo.InvariantCulture)}",
         "DefineBase" => $"Base {row.Amount.ToString(CultureInfo.InvariantCulture)}",
         "Add" => row.Amount.ToString("+0;-0;0", CultureInfo.InvariantCulture),
         "Lost" => "Characteristic lost",

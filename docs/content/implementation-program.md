@@ -25,6 +25,72 @@ The existing Content Expansion module defines these **11 planning waves**. Range
 
 ## Current integration checkpoint
 
+The active Ant-Man/Kang candidate is recorded in
+[the cycle checkpoint](roars-cycle-integration.md). It has all 35 authored
+Ant-Man faces and 758 total rows, including Hank's reviewed entry
+cases, plus reviewed Kang foundations. The owner resolved MARVEL-885 in favor of
+zero-HP defeat before ally-limit enforcement. Source `338cf0fb` and independent
+review `9598e36d` implement and verify that ordering. Neither pack is publicly admitted. Giant Stomp's live-choice
+capability is independently accepted at `38ce4bca` and integrated at `78b62715`,
+including the shared simultaneous attack-defeat repair and corrected View wording.
+Swarm Tactics' form-change/ready prerequisite is independently accepted at
+`a7973b01`; the separate event Team-Up check is accepted at `1c21233a`.
+Actual Giant Stomp and Swarm Tactics rows are independently accepted at `62eac154`.
+MARVEL-878's Power resource generation source is independently reviewed at
+`cadf296e`, with the regression repair independently accepted at `8836ebba`.
+MARVEL-882's spent-card response mechanism is accepted at `1ba9161d`; its actual
+Pym row is independently accepted at `fee19693`. Nemesis rows are accepted at `6f508f74`. Hank
+entry/overpayment is independently reviewed, with the MARVEL-885 defeat-first
+adjudication implemented and independently verified. MARVEL-870 owns the
+final replay publication boundary, and final combined verification remains open.
+The earlier 29-face integration passes 96 affected Content/data, 1,202 full Rules
+and 129 full Architecture checks. Its full Content run passed 8,752 cases with
+one obsolete Captain America quote assertion; the corrected assertion passes in
+the focused run. Final complete-pack verification remains required. MARVEL-883 encounter-set
+discard is independently accepted at `14b2a06e`; actual Yellowjacket's Plan is
+accepted at `872b6d0a`. MARVEL-884's next-turn prohibition is accepted at
+`836db363`; actual Care for Cassie is accepted at `1910cf57`. Hank entry-payment
+provenance is accepted at `1b4eed16`; the separate entry interrupt/counter
+operation is independently accepted at `77f4559a`, and entry health at
+`5b7e2b48`. The excess-resource expression and its admission repair are independently
+accepted at `b86db252`; the combined Rules suite passes 1,210 checks and the
+selected Server replay suite passes 22. The earlier combined full Content run at `0d5703bc` with
+Hank passes all 8,871 tests after the counter-admission and fixture repairs. Hank's actual row is independently reviewed at `ca6693d2`; its source
+passes 70 focused checks and its review passes 45, with cap/health mutations
+distinguished. The newer defeat-first and Tech blanking integration passes 134 focused Content/data,
+1,210 Rules and 22 selected Server replay checks. The subsequent34-face full Content run passes8,898 and finds one stale face inventory list; adding12026 to that expected list is followed by103 passing affected checks. Final
+pack admission, full verification, native interaction and publication checks remain open.
+Team-Building Exercise source `92e708fb` is independently reviewed at `627cef15`, completing all 35 authored faces. The reviewed gameplay tree passes 127 affected checks, including below-cap Hank overpayment with a distinguishing extra-counter mutant. Printed starter and public admission source `c526e9d7` is independently reviewed at `08ff9b12` with 130 Content, 29 Server and 25 authority checks. The three-face setup prerequisite is independently reviewed at `39a0ae35` with 1,230 Rules tests. Public Tiny/Giant choices preserve one physical identity. Public journey source `767691e3` and review `a602f39a` verify the pending Giant response through restart, invalid/stale rejection and undo/redo; seven complete public games replay identically, all defeats. Native `add0dfdf` verifies public form/response play headless and rendered with the raw-ID copy defect fixed. Team-Building/Hank payment UI, replay870 and final integrated verification remain. Its permanent-play prerequisite source `73363f70` is independently reviewed at `bff0af9c` and combined with90 focused Content/data and1,217 Rules checks passing. Event dispatch source `8db24131` is independently reviewed at `5d19b7ee`; the combined candidate passes 144 affected Content and 1,217 Rules checks. Actual Team-Building Exercise and Hank Pym overpayment integration are verified in the card packet; complete starter and public admission are verified in the admission packet. Actual Tech Theft source `891a1be2` is independently reviewed at `d0e7234a`, including full Plan reveal and scheme-defeat restoration. MARVEL-888 owns live TECH-player-card blanking and
+MARVEL-889 owns trait-matching discounted nested play. Their researched
+implementation and evidence requirements are recorded under the canonical
+Ant-Man parent. The combined Cassie/payment revision passes 121 focused Content/data and all 1,210 Rules checks; final pack/native/replay gates remain open.
+
+The attack-excess prerequisite is independently accepted at `3b3f3558` and
+integrated by an identical-tree fast-forward. Conditional-resource contract
+repair `aaedbb07` is independently accepted at `01f9ebca`; its protocol 43
+boundary rejects protocol 42 peers before gameplay. The combined candidate
+passes 201 selected checks across Content, Rules, Server and Decisions. Actual
+Power-card generation is integrated with 866 affected Content and 69 Rules
+checks passing. The ally-limit prerequisite is
+independently accepted at `9e7290e2` and integrated with 211 selected Content
+and Rules checks passing. Stinger and Moment of Triumph's actual rows are
+independently accepted at `ef9ff6f8` and integrated by an identical-tree
+fast-forward, including the separately reviewed response explanation repair.
+
+Fear No Evil's printed catalog is published in PR #465, merged as `0dbd5824`
+after all eleven checks passed on `b3e457ff`; source and squash trees match.
+Acquisition MARVEL-697 is complete. The 171 added records bring that catalog to
+239 IDs; this is printed authority for implementation, not executable content or
+another accepted pack. All 64 canonical parents are present. Nine have accepted
+content/engine behavior; eight are marked Done because Wrecking Crew retains its
+separate UI review. No owner-content-acceptance gate is added.
+
+Main push run `40752980930` also passes all eleven jobs on its second attempt.
+The first attempt's Windows server-startup timeout did not recur on the single
+unchanged failed-jobs retry; its cause remains unproven and no timeout was changed.
+
+## Accepted baseline evidence
+
 [PR #451](https://github.com/mggarofalo/marvel-lcg/pull/451) is merged at
 `71ac4975a3d6899715c0b5e29cf29bb84231a9db`. All eleven CI jobs passed on exact
 candidate `d7993ebf` in run `40300681863`, including managed correctness,

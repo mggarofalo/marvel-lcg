@@ -1,0 +1,15 @@
+# Entry payment provenance foundation
+
+Tracker: MARVEL-886, child of MARVEL-569. Implementation base: `75314782dc4b30d9829f1ddef3645523decf109d`.
+
+## Authority and scope
+
+`rr:cost.4` permits generating beyond a cost; `rr:cost.4.1` says the excess was not paid for that cost. `rr:cost.4.2` says that excess is lost after payment. The entry snapshot records how much was overpaid for a card's cost; it does not add resources to a later payment. `rr:leaves-play.1` treats a returned card as a new copy. The printed Ant-Man / Hank Pym card 12011 refers to the resources overpaid for its own cost. The vendored official ruling `e8c109f4af3b7aac` applies that instruction to Make the Call's separately paid ally cost. It does not make the event's own payment the ally's price.
+
+The implementation binds a resource-payment origin to its physical target, payer, out-of-play area and incarnation before its generators run. Once complete it snapshots generated and paid icons for that entry, retains them across spent-card responses, and attaches the snapshot to the existing entry occurrence. An unpaid put and a free play do not acquire a receipt. The pre-existing `PlayedCardPayment` remains the paid-only card-play response contract, and a paid put does not create that card-play receipt. The snapshot is transient and reconstructed by accepted-command replay; it is not a state digest or wire field.
+
+## Evidence and limits
+
+`EntryPaymentProvenanceTests` exercises normal overpayment, wrong copy/player and reentry, nested response payment, and actual Make the Call's separate event/ally payments using a synthetic entry observer. `AllyEntryPaymentTests.SuspendedGeneratorAndAllyLimitChoiceRetainTheOriginalPrice` also inspects the retained snapshot after a generator and ally-limit suspension. On the candidate based on `75314782`, the focused Content selection passed 37 tests; the full Rules suite passed 1,205 and the Architecture suite passed 129. The two server replay cases reconstructed and compared the new receipt after JSON save and host restart, with the transient field absent from serialized state. Removing the accepted Make the Call allocation compiled and caused both conditional-allocation cases to fail; after restoring it, a non-incremental rebuild succeeded and the same 37 focused tests passed. Logs are retained under `C:/Users/mggar/Source/evidence/hank-receipt-*.log`. The first normal commit hook rejected the complexity of the two entry procedures; extracting their validation helpers preserved their checks, and the same 37 focused Content tests passed after that refactor. The 1,205 Rules, 129 Architecture and two replay results above precede the validation extraction. Independent review and integration on the final combined revision remain pending.
+
+This foundation does not implement an entry interrupt, a Pym counter expression or HP settlement, and does not admit 12011. The separate fourth-ally zero-remaining-HP ordering judgment remains pending in MARVEL-885. No entry or framework timing is settled by this receipt change.

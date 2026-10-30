@@ -11,6 +11,45 @@ namespace Marvel.Content.Tests.Play;
 public sealed class NestedRevealCompletionTests : CoreCardTestBase
 {
     [Rule("rr:reveal.step.4")]
+    [Fact]
+    public void SetDiscardCanRevealAnotherSearchAndWaitForItsChild()
+    {
+        // Card-text reveals use "this same resolution procedure".
+        // Synthetic programs exercise recursive copies, not authored pack content.
+        var world = Hero("01001a");
+        var source = world.CreateCard("12029", world.AreaOf(DeckType.RevealingArea));
+        var deck = world.AreaOf(DeckType.EncounterDeck);
+        var below = world.CreateCard("01121", deck);
+        var sideScheme = world.CreateCard("12026", deck);
+        var nested = world.CreateCard("12029", deck);
+        var skipped = world.CreateCard("01098", deck);
+        var runner = new AbilityRunner(AbilityCatalog.Parse("""
+        {"cards":[
+          {"card":"12029","abilities":[{
+            "trigger":{"event":"WhenCardRevealed","timing":"WhenRevealed","subject":"this"},
+            "effect":{"seq":[{"discardUntil":{"from":"encounterDeck","set":"ant_nemesis","then":"reveal"}},
+                              {"giveStatus":{"card":"you","status":"tough"}}]}
+          }]},
+          {"card":"12026","abilities":[{
+            "trigger":{"event":"WhenCardRevealed","timing":"WhenRevealed","subject":"this"},
+            "effect":{"dealDamage":{"cards":"you","amount":1}}
+          }]}
+        ]}
+        """));
+
+        runner.ExecuteReveal(world, source, 0);
+        Assert.Equal(DeckType.RevealingArea, nested.Area.Type);
+        Assert.False(Statuses.Has(world, world.Seats[0].IdentityCard, Statuses.Tough));
+        Sequence.Finish(world, world.Facts, runner, []);
+        Assert.Equal(1, world.Seats[0].IdentityCard.Damage);
+        Assert.True(Statuses.Has(world, world.Seats[0].IdentityCard, Statuses.Tough));
+        Assert.Equal(DeckType.SideSchemesArea, sideScheme.Area.Type);
+        Assert.Equal(DeckType.EncounterDiscardPile, nested.Area.Type);
+        Assert.Equal(DeckType.EncounterDiscardPile, skipped.Area.Type);
+        Assert.Equal([below], deck.Cards);
+        Assert.Empty(world.Agenda.Outstanding);
+    }
+    [Rule("rr:reveal.step.4")]
     [Theory]
     [InlineData(false)]
     [InlineData(true)]

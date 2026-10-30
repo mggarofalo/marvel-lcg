@@ -34,7 +34,9 @@ internal static class AbilityResolutionDamageAndThreat
             PowerOccurrence = cast.PowerExecution?.Occurrence,
             ActivationAttack = cast.PowerExecution is { } power
                 && AbilityPowerActivationSupport.SupportsBody(power.Decoded.Body),
-            StagedAttack = cast.PowerExecution is { ExcludedEnemyStages.IsEmpty: false },
+            StagedAttack = cast.PowerExecution is { } staged
+                && (staged.ExcludedEnemyStages.Length > 0
+                    || AbilityStagedAttackLowering.IsSplashBody(staged.Decoded.Body)),
             DamageActivationId = cast.DamageOrigin?.AccountingId(cast.World),
             DeclaredAttackRecipients = cast.PowerExecution?.Continuation.DeclaredRecipients ?? default,
         };

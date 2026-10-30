@@ -13,7 +13,7 @@ public sealed class HulkStarterCardTests
     {
         using var book = JsonDocument.Parse(AuthoredCards.Text);
         var rows = book.RootElement.GetProperty("cards").EnumerateArray().ToArray();
-        Assert.Equal(723, rows.Length);
+        Assert.Equal(AuthoredCards.ExpectedFaceCount, rows.Length);
         Assert.Equal(Enumerable.Range(10011, 9).Where(id => id != 10015).Select(id => id.ToString(System.Globalization.CultureInfo.InvariantCulture)),
             rows.Skip(700).Take(8).Select(row => row.GetProperty("card").GetString()));
         Assert.All(rows.Skip(700).Take(8), row => Assert.False(row.TryGetProperty("startingCounters", out _)));
@@ -62,7 +62,7 @@ public sealed class HulkStarterCardTests
         var runner = AuthoredCards.Runner();
         var power = world.CreateCard("10017", world.Seats[1].Hand);
         var source = world.CreateCard(face, world.Seats[1].Hand);
-        Assert.Equal(expected, runner.ResourcesGeneratedBy(world, power, source));
+        Assert.Equal(expected, runner.QuoteHandResources(world, power, source).PossibleResources);
         Assert.Equal("2", world.Facts.Attributes("10017")["MaxPerDeck"]);
     }
 }

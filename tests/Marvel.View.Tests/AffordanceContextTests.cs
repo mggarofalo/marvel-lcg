@@ -15,7 +15,8 @@ public sealed class AffordanceContextTests
         int secret = world.Seats[1].Hand.Cards[0].ObjectId;
         var ids = new[] { publicId, secret };
         var offer = new Affordance(7, "Interrupt", publicId, 0, "Observe")
-        { ContextCardIds = ids, DisplayLabel = "Observe secret", CommitLabel = "Commit secret" };
+        { ContextCardIds = ids, DisplayLabel = "Observe secret", CommitLabel = "Commit secret",
+            Description = "Heal up to 3 damage; the amount depends on damage present." };
         var prompt = new Prompt(0, Question.Opportunity, TimingPriority.Interrupt, "Synthetic", "Observe", true, [offer]);
         ViewScope own = new RestrictedVisibilityPolicy(0).Authorize(null, 2);
         var visible = WorldProjection.For(world, prompt, [], own);
@@ -23,6 +24,7 @@ public sealed class AffordanceContextTests
         Assert.Equal([publicId], copied.ContextCardIds);
         Assert.Null(copied.DisplayLabel);
         Assert.Null(copied.CommitLabel);
+        Assert.Equal(offer.Description, copied.Description);
         ids[0] = -999;
         Assert.Equal([publicId], copied.ContextCardIds);
         ((IList<int>)copied.ContextCardIds)[0] = -1;
@@ -30,6 +32,30 @@ public sealed class AffordanceContextTests
         Assert.Null(WorldProjection.For(world, prompt, [], ViewScope.None).Prompt);
         ViewScope other = new RestrictedVisibilityPolicy(1).Authorize(null, 2);
         Assert.Null(WorldProjection.For(world, prompt, [], other).Prompt);
+    }
+
+    [Fact]
+    public void HistoricalAttackLabelSurvivesWithoutAssociatingAHiddenCurrentCopy()
+    {
+        World world = VisibilityFixture.Board();
+        int source = world.TheCardIn(DeckType.VillainArea)!.ObjectId;
+        int hidden = world.Seats[1].Hand.Cards[0].ObjectId;
+        var offers = new[]
+        {
+            new Affordance(10, "Response", source, 0, "Respond")
+            { ContextCardIds = [hidden], DisplayLabel = "Respond after attacking a secret" },
+            new Affordance(11, "Response", source, 0, "Respond")
+            { DisplayLabel = "Respond after attacking the public original",
+                Description = "Heal up to 3 damage from your identity." },
+        };
+        var prompt = new Prompt(0, Question.Opportunity, TimingPriority.Response, "Synthetic", "Respond", true, offers);
+        var visible = WorldProjection.For(world, prompt, [], new RestrictedVisibilityPolicy(0).Authorize(null, 2));
+        var projected = visible.Prompt!.Affordances;
+        Assert.Empty(projected[0].ContextCardIds);
+        Assert.Null(projected[0].DisplayLabel);
+        Assert.Empty(projected[1].ContextCardIds);
+        Assert.Equal("Respond after attacking the public original", projected[1].DisplayLabel);
+        Assert.Equal(offers[1].Description, projected[1].Description);
     }
 
     [Fact]

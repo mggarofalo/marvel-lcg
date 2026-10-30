@@ -25,6 +25,8 @@ internal sealed class AbilityEventPayment
     private readonly long total;
     private readonly string required;
     private readonly string paid;
+    private readonly CostOption? price;
+    private readonly ImmutableArray<ResourceAllocation> allocations;
     private ResourcePaymentReceipt? payment;
     private bool completed;
     internal long? Energy { get; private init; }
@@ -44,11 +46,13 @@ internal sealed class AbilityEventPayment
         total = quote.Total;
         required = quote.Required;
         paid = quote.Paid;
+        price = quote.Price;
+        allocations = quote.Allocations;
     }
 
     internal static AbilityEventPayment? Prepare(
         World world, Card card, int player, CompiledCardAbility ability,
-        IResourceCardAbilities resourceAbilities, AbilityPaymentSelection selection)
+        IResourceCardAbilities resourceAbilities, AbilityPaymentSelection selection, ScopedCardCostReduction? reduction = null)
     {
         if (EffectiveCards.Kind(card, world.Facts) != CardKind.Event)
         {
@@ -63,34 +67,95 @@ internal sealed class AbilityEventPayment
 
         var paying = selection.Paying;
         var allocations = selection.Allocations;
+        long? energy = ValidateVariableEnergy(world, card, player, ability, resourceAbilities, selection, reduction);
+        var adjusted = CardPayment.CostOf(
+            world, world.Facts, world.Seats[player], card, attachmentHost: null, reduction: reduction);
+        var sources = EventPaymentSources.Find(world, card, player, resourceAbilities);
+        ValidateSelectedSources(card, paying, sources.Generators);
+
+        var requirements = EventPaymentRequirements.Create(
+            world, card, adjusted, AbilityInvocationPayment.Expand(world, player, ability.Cost), energy, ability);
+        var price = AbilityPaymentPricing.CombinedPrice(world, card, player, ability, resourceAbilities, reduction)!;
+        price = RestrictSingleComponent(price, requirements);
+        var resolved = ResolveAllocations(card, price, requirements, paying, allocations);
+        var generatedSources = ResolveSources(price.Generators, paying, resolved, requirements.Total);
+        string generated = GeneratedResources(generatedSources, paying);
+        ValidateGeneratedPayment(generated, requirements);
+        if (allocations.Length == 0 && HasAmbiguousPaidResourceAllocation(
+                ability.Effect, generated, requirements.Total, requirements.Required))
+            throw new RulesNotImplementedException("the paid resource declaration requires the player's allocation");
+
+        var assigned = resolved;
+        string paid = ResolvePaidResources(
+            card, ability.Effect, generatedSources, paying, assigned, generated, requirements);
+
+        return new AbilityEventPayment(world, card, player, resourceAbilities, paying, sources,
+            new EventPaymentQuote(adjusted, requirements.Total, requirements.Required, paid,
+                assigned.Count == 0 && !price.Generators.Any(source => paying.Contains(source.Effect)
+                    && source.ConditionalBonus is not null) ? null : new CostOption(card.ObjectId,
+                    requirements.Total.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                    Sources: [.. price.Generators], Components: [.. requirements.Components]),
+                [.. assigned])) { Energy = energy };
+    }
+
+    private static CostOption RestrictSingleComponent(CostOption price, EventPaymentRequirements requirements)
+    {
+        if (requirements.Components.Count == 1)
+            price = price with { Sources = [.. price.Generators.Select(source => source.ConditionalBonus is { } bonus
+                ? source with { ConditionalBonus = (bonus.ComponentMask & 1) == 0 ? null
+                    : bonus with { ComponentMask = 1 } }
+                : source)] };
+        return price;
+    }
+
+    private static IReadOnlyList<ResourceAllocation> ResolveAllocations(
+        Card card, CostOption price, EventPaymentRequirements requirements,
+        IReadOnlyList<int> paying, IReadOnlyList<ResourceAllocation> allocations)
+    {
+        IReadOnlyList<ResourceAllocation> resolved = allocations;
+        if (resolved.Count == 0 && price.Generators.Any(source => paying.Contains(source.Effect)
+                && source.ConditionalBonus is not null))
+        {
+            var fixedPrice = new CostOption(card.ObjectId,
+                requirements.Total.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                Sources: price.Generators, Components: requirements.Components);
+            resolved = ResourcePayment.AllocateUnambiguousGeneration(fixedPrice, paying)
+                ?? throw new RulesNotImplementedException("conditional resource generation requires the player's allocation");
+        }
+        return resolved;
+    }
+
+    private static long? ValidateVariableEnergy(
+        World world, Card card, int player, CompiledCardAbility ability,
+        IResourceCardAbilities resourceAbilities, AbilityPaymentSelection selection, ScopedCardCostReduction? reduction)
+    {
         long? energy = null;
         if (ability.Cost is AbilityCost.SpendEnergy)
         {
             energy = AbilityPaymentValidation.DefinedVariable(selection.Values, "X", card);
-            var price = AbilityPaymentPricing.CombinedPrice(world, card, player, ability, resourceAbilities)!;
-            if (!price.VariableRequests.Single().Allows(energy.Value)
-                || !ResourcePayment.Allows(price, paying, selection.Values, allocations))
+            var variablePrice = AbilityPaymentPricing.CombinedPrice(world, card, player, ability, resourceAbilities, reduction)!;
+            if (!variablePrice.VariableRequests.Single().Allows(energy.Value)
+                || !ResourcePayment.Allows(variablePrice, selection.Paying, selection.Values, selection.Allocations))
                 throw new RulesNotImplementedException("the allocation does not pay the printed and variable energy costs");
         }
-        var adjusted = CardPayment.CostOf(
-            world, world.Facts, world.Seats[player], card);
-        var sources = EventPaymentSources.Find(world, card, player, resourceAbilities);
-        ValidateSelectedSources(card, paying, sources.Generators);
-
-        string generated = GeneratedResources(sources.Generators, paying);
-        var requirements = EventPaymentRequirements.Create(
-            world, card, adjusted, AbilityInvocationPayment.Expand(world, player, ability.Cost), energy, ability);
-        ValidateGeneratedPayment(generated, requirements);
-
-        var assigned = allocations;
-        string paid = ResolvePaidResources(
-            card, ability.Effect, sources.Generators, paying, assigned, generated, requirements);
-
-        return new AbilityEventPayment(world, card, player, resourceAbilities, paying, sources,
-            new EventPaymentQuote(adjusted, requirements.Total, requirements.Required, paid)) { Energy = energy };
+        return energy;
     }
 
-    private sealed record EventPaymentQuote(AdjustedCardCost Adjusted, long Total, string Required, string Paid);
+    private sealed record EventPaymentQuote(AdjustedCardCost Adjusted, long Total, string Required, string Paid,
+        CostOption? Price, ImmutableArray<ResourceAllocation> Allocations);
+
+    private static ResourceSource[] ResolveSources(
+        IReadOnlyList<ResourceSource> sources, IReadOnlyList<int> paying,
+        IReadOnlyList<ResourceAllocation> allocations, long amount)
+    {
+        if (allocations.Count == 0 && amount > 0
+            && sources.Any(source => paying.Contains(source.Effect) && source.ConditionalBonus is not null))
+            throw new RulesNotImplementedException("conditional resource generation requires the player's allocation");
+        return [.. sources.Select(source => source with
+        {
+            Generates = ResourcePayment.GeneratedBy(source, allocations), ConditionalBonus = null,
+        })];
+    }
 
     private static string GeneratedResources(
         IReadOnlyList<ResourceSource> generators, IReadOnlyList<int> paying)
@@ -164,34 +229,6 @@ internal sealed class AbilityEventPayment
         }
     }
 
-    private sealed record EventPaymentRequirements(
-        long Total, string Required, List<ResourceCost> Components)
-    {
-        internal static EventPaymentRequirements Create(
-            World world, Card card, AdjustedCardCost adjusted, AbilityCost? additionalCost, long? energy, CompiledCardAbility ability)
-        {
-            string printed = AbilityPaymentPricing.PrintedRequirement(world, card, ability, adjusted.Amount);
-            string additional = energy is { } x
-                ? new string(Resources.Energy, checked((int)x)) : ResourceRequirement(additionalCost, card);
-            int additionalAmount = checked(additional.Length + GenericResourceAmount(additionalCost));
-            var components = new List<ResourceCost>
-            {
-                new(adjusted.Amount.ToString(
-                    System.Globalization.CultureInfo.InvariantCulture),
-                    printed.Length > 0 ? [printed] : null),
-            };
-            if (additionalAmount > 0)
-                components.Add(new ResourceCost(
-                    additionalAmount.ToString(
-                        System.Globalization.CultureInfo.InvariantCulture), [additional]));
-            // Total is an early affordability check. Component allocation independently
-            // enforces the full amount, so omitting this addition is an equivalent
-            // mutant when every component is checked by ResourceAllocationLedger.
-            return new EventPaymentRequirements(
-                checked(adjusted.Amount + additionalAmount), printed + additional, components);
-        }
-    }
-
     /// <summary>Commit the validated payment at the initiating boundary.</summary>
     internal bool Commit(Occurrence occurrence, List<GameEvent> events)
     {
@@ -210,6 +247,8 @@ internal sealed class AbilityEventPayment
         completed = true;
         return true;
     }
+
+    internal ResourcePaymentReceipt? ResourceReceipt => payment;
 
     internal string PreviewPaid => paid;
 
@@ -235,12 +274,12 @@ internal sealed class AbilityEventPayment
             Verb = CardPlay.Verb,
         });
 
-        payment = CardPlay.Spend(
-            world, world.Facts, resourceAbilities, hands, paying,
-            total,
-            required, card.ObjectId,
-            player, events, payingFor: card,
-            resourcePayers: resourcePayers);
+        payment = CardResourcePayments.Spend(world, resourceAbilities, new CardResourcePaymentRequest
+        {
+            Hands = hands, Paying = paying, Cost = total, Required = required, Itself = card.ObjectId,
+            Payer = player, PayingFor = card, ResourcePayers = resourcePayers,
+            Price = price, Allocations = allocations,
+        }, events);
     }
 
     private static string AllocatedResources(

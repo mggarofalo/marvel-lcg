@@ -14,7 +14,7 @@ internal static class MinionActivationChoice
                 && incarnation != minion.Incarnation)
         .OrderBy(minion => minion.ObjectId).ToList();
 
-    internal static Prompt Describe(World world, Card villain, int seat, IReadOnlyList<Card> remaining) =>
+    internal static Prompt Describe(World world, Card? villain, int seat, IReadOnlyList<Card> remaining) =>
         new(seat, Question.Order, TimingPriority.Untimed, Steps.EnemiesActivate,
             $"{world.Seats[seat].Name} chooses the next engaged minion", false,
             remaining.Select(card => new Affordance(card.ObjectId, "Activate_Next",
@@ -30,8 +30,9 @@ internal static class MinionActivationChoice
             ContextCardIds = [.. remaining.Select(card => card.ObjectId)],
             // rr:minion.3: "one minion at a time and in an order of the engaged
             // player's choosing"; rr:activation.1 reads form at each activation.
-            Description = $"{EffectiveCards.Title(villain, world.Facts)} has finished activating against "
-                + $"{world.Seats[seat].Name}. Choose one engaged minion to activate next. "
+            Description = (villain is null ? "There is no villain in this game area. "
+                : $"{EffectiveCards.Title(villain, world.Facts)} has finished activating against {world.Seats[seat].Name}. ")
+                + "Choose one engaged minion to activate next. "
                 + "Each attacks in hero form or schemes in alter-ego form. "
                 + "Finish that activation and its triggered abilities before choosing again.",
         };

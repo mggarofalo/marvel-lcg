@@ -1,4 +1,6 @@
 using Marvel.Cards.Dsl;
+using Marvel.Rules.Play;
+using Marvel.Rules.State;
 using Marvel.Rules.Timing;
 
 namespace Marvel.Cards.Run;
@@ -13,8 +15,19 @@ internal static class AbilitySourceActionDescription
         AbilityEffect.GrantTrait { Cards: AbilityCardSelection.Bound
             { Binding: AbilityCardBinding.You }, Until: { } until } grant =>
             Duration(until) is { } duration ? $"Gain {grant.Trait} until {duration}" : null,
+        _ when PlaysMatchingCard(effect) => MatchingCardPlay,
         _ => null,
     });
+
+    // The commitment names the source so the receipt cannot read as playing
+    // the matching card itself; the offered caption stays short.
+    internal static string? CommitCaption(AbilityEffect effect, string? caption, World world, Card source) =>
+        PlaysMatchingCard(effect) ? $"{MatchingCardPlay} with {EffectiveCards.Title(source, world.Facts)}" : caption;
+
+    private const string MatchingCardPlay = "Play a matching card";
+
+    private static bool PlaysMatchingCard(AbilityEffect effect) =>
+        effect is AbilityEffect.Fixed { Instruction: AbilityFixedInstruction.PlaySharedHeroTraitCard };
 
     private static string? Attack(AbilityNumber amount) => amount switch
     {

@@ -1,4 +1,5 @@
 using Marvel.Behavior.Run;
+using Marvel.Rules.Events;
 using Marvel.Tests;
 using Xunit;
 
@@ -6,6 +7,8 @@ namespace Marvel.Content.Tests.Behavior;
 public sealed class CoreRuleTranscriptDefeatBranchesHavePinnedOutcomesTests
 {
     [Fact]
+    [Rule("rr:winning-the-game")]
+    [Rule("rr:event")]
     public void DefeatBranchesHavePinnedOutcomes()
     {
         var results = CoreTranscriptCorpus.All.Where(result => result.Scenario.StartsWith("specs/behavior/core/defeat.feature::", StringComparison.Ordinal)).ToDictionary(result => result.Obligation, StringComparer.Ordinal);
@@ -13,7 +16,16 @@ public sealed class CoreRuleTranscriptDefeatBranchesHavePinnedOutcomesTests
         Assert.Equal("714ab9a88f3aed2bba1f189c4a1547ea6304421714fe210aee8d7f09afc9bea3", results["behavior:rr:minion.2:published-result"].Digest);
         Assert.Equal("a8622c2b607e932edc2b9c2cf0da619c26a2bd8cdf552cef095116112a81a7e2", results["behavior:rr:side-scheme.2:published-result"].Digest);
         Assert.Equal("17b6d1ed7963473a22f4dff2e1cf0883fa5e6e340e060868cde6efa38a461175", results["behavior:rr:villain-defeat:published-result"].Digest);
-        Assert.Equal("9abcbfbb07699ca2eb3b58207acbc69f9291f7462e63feb74d14237a40d02bbf", results["behavior:rr:winning-the-game:published-result"].Digest);
+        // rr:winning-the-game: "If the final villain stage is defeated, the players win the game."
+        // rr:event: the card goes to its owner's discard pile "after those effects resolve".
+        // The final Uppercut (object 30 in this seeded scene) remains resolving at victory.
+        var victory = results["behavior:rr:winning-the-game:published-result"];
+        Assert.Equal("bb97bb09f4cd482d0154bb7ee2db3cfce490bbcf4e8a944b91b866173669d648", victory.Digest);
+        Assert.Equal(8, victory.Events.Count);
+        var uppercutMove = Assert.Single(victory.Events.OfType<CardsMoved>(), move => move.Cards.Any(card => card.Card == 30));
+        Assert.Equal("HandsArea", uppercutMove.From.Zone);
+        Assert.Equal("RevealingArea", uppercutMove.To.Zone);
+        Assert.False(Assert.IsType<AttackBoundary>(victory.Events[^1]).Started);
     }
 
     [Fact]

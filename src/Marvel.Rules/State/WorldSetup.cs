@@ -164,6 +164,8 @@ public static class WorldSetup
             var destination = SetupDestination(
                 world, blueprint, insert, encounterDeck, villainDeck, mainSchemeDeck);
             var card = world.CreateCard(blueprint.Spec, destination);
+            if (blueprint.Slot == SetupSlot.Nemesis)
+                world.Seats[blueprint.Seat].RegisterNemesis(card);
             if (blueprint.Slot == SetupSlot.Obligation)
             {
                 obligations.Add(card);

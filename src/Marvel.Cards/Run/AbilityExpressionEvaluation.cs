@@ -53,12 +53,15 @@ internal sealed class AbilityExpressionEvaluation(
     private long ResolutionAmount(AbilityResolutionNumber kind) => kind switch
     {
         AbilityResolutionNumber.PowerAmount => context.PowerAmount,
+        AbilityResolutionNumber.EntryResourceExcess => AbilityEntryResourceQuery.Excess(context),
         AbilityResolutionNumber.ReceivedAttackDamage => ReceivedAttackDamageQuery.Amount(context),
         AbilityResolutionNumber.CardsDiscarded => context.Discarded.Length,
         AbilityResolutionNumber.PrintedCostDiscarded => context.Discarded.Sum(card =>
             context.World.Facts.PrintedValue(card.FaceId, "Cost", context.World.Players)),
         AbilityResolutionNumber.DistinctCardTypesDiscarded => context.Discarded.Select(card =>
             context.World.Facts.Kind(card.FaceId)).Distinct().LongCount(),
+        // rr:overkill.3: excess uses the same value as overkill, captured at defeat.
+        AbilityResolutionNumber.AttackExcessDamage => context.Bindings.TriggeringAttack?.ExcessDamage ?? 0,
         AbilityResolutionNumber.CompletedAttackDamageDealt =>
             context.Occurrence.CompletedEnemyAttack?.DamageDealt ?? 0,
         AbilityResolutionNumber.CardsExhaustedForCost => context.Bindings.ExhaustedForCost.Count,
@@ -118,8 +121,7 @@ internal sealed class AbilityExpressionEvaluation(
             && DeckTypes.IsInPlay(source.Area.Type)
             && context.World.Attack is { } attack && attack.Enemy == source.ObjectId,
         AbilityCondition.WasDefeatedByDamage defeated => WasDefeatedByDamage(defeated.Card),
-        AbilityCondition.WasDefeated defeated => selectors.Find(defeated.Card) is { } card
-            && context.Occurrence.Defeats.Any(defeat => defeat.Card == card.ObjectId),
+        AbilityCondition.WasDefeated defeated => WasDefeated(defeated.Card),
         AbilityCondition.IsYourIdentity identity => selectors.Find(identity.Card)?.ObjectId == context.World.Seats[AbilityCardQueries.Resolver(context.Bindings)].IdentityCard.ObjectId,
         _ => throw new InvalidOperationException("Unknown compiled condition"),
     };
@@ -128,6 +130,18 @@ internal sealed class AbilityExpressionEvaluation(
     // Find preserves the selected incarnation; retained out-of-play facts alone do not qualify.
     private bool IsInPlay(AbilityCardSelection selection) =>
         selectors.Find(selection) is { } current && DeckTypes.IsInPlay(current.Area.Type);
+
+    private bool WasDefeated(AbilityCardSelection selection)
+    {
+        // A triggering attack binds the original incarnation even if the physical
+        // card has since reentered play as a new copy (rr:leaves-play.1).
+        if (selection is AbilityCardSelection.Bound { Binding: AbilityCardBinding.TriggerTarget }
+            && context.Bindings.TriggeringAttack is { } attack)
+            return context.Occurrence.Defeats.Any(defeat => defeat.Card == attack.Card
+                && defeat.Incarnation == attack.Incarnation);
+        return selectors.Find(selection) is { } card
+            && context.Occurrence.Defeats.Any(defeat => defeat.Card == card.ObjectId);
+    }
 
     private bool WasDefeatedByDamage(AbilityCardSelection selection)
     {
@@ -247,14 +261,21 @@ internal sealed class AbilityExpressionEvaluation(
         var resources = resourceAbilities
             ?? throw new InvalidOperationException(
                 "canMakeTheCall requires the initiating resource capability");
-        return AlliesInPlayerDiscards(context.World).Any(ally => Resources.Pays(
-            string.Concat(MakeTheCallSources(
-                    context.World, context.Player, context.Source, ally,
-                    resources)
-                .Select(source => source.Generates)),
-            Resources.Cost(ally.FaceId, context.World.Facts, context.World.Players) ?? 0,
-            Resources.Required(context.World, ally, context.World.Facts)));
+        return AlliesInPlayerDiscards(context.World).Any(ally =>
+            MakeTheCallAffordable(context.World, ally, MakeTheCallSources(
+                context.World, context.Player, context.Source, ally, resources)));
     }
+
+    internal static CostOption MakeTheCallPrice(World world, Card ally, IReadOnlyList<ResourceSource> sources) =>
+        new(ally.ObjectId,
+            (Resources.Cost(ally.FaceId, world.Facts, world.Players) ?? 0)
+                .ToString(System.Globalization.CultureInfo.InvariantCulture),
+            Resources.Required(world, ally, world.Facts) is { Length: > 0 } rule ? [rule] : null,
+            Sources: sources);
+
+    internal static bool MakeTheCallAffordable(World world, Card ally, IReadOnlyList<ResourceSource> sources) =>
+        ResourcePayment.Allocate(MakeTheCallPrice(world, ally, sources),
+            sources.Select(source => source.Effect).ToArray()) is not null;
 
     internal static IReadOnlyList<ResourceSource> MakeTheCallSources(
         World world, int player, Card source, Card ally,

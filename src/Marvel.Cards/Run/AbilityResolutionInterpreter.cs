@@ -113,10 +113,11 @@ internal static class AbilityResolutionInterpreter
 
     internal static void Run(this AbilityResolutionExecution execution, CompiledCardAbility ability, AbilityResolutionState cast)
     {
+        AbilityFormDestinationResolver.RequireStandalone(ability.Effect);
         var labels = ability.Labels;
         if (labels.Length > 0)
         {
-            if (!cast.LabelsPreflighted)
+            if (!cast.InitiationEvidence.LabelsPreflighted)
             {
                 if (!AbilityInitiation.LabelsCanInitiate(ability, execution.AdmissionContext(cast)))
                 {
@@ -124,7 +125,7 @@ internal static class AbilityResolutionInterpreter
                         $"'{cast.Source.FaceId}' cannot initiate its labeled ability "
                         + "in the current state");
                 }
-                cast.LabelsPreflighted = true;
+                cast.InitiationEvidence.LabelsPreflighted = true;
             }
 
             var performer = LabeledAbilities.Begin(
@@ -149,20 +150,18 @@ internal static class AbilityResolutionInterpreter
 
     internal static void Run(this AbilityResolutionExecution execution, AbilityEffect node, AbilityResolutionState cast)
     {
+        // rr:winning-the-game.1: "If these conditions are met, the players
+        // win or lose accordingly."
+        // Nested text can return here before the agenda observes that result.
+        if (cast.World.IsOver) return;
         int eventsBefore = cast.Events.Count;
         long requested = AbilityCompletion.Requested(execution, node, cast);
         cast.CompletedOutcome = null;
         var agendaOwner = cast.World.Agenda.Current;
         var agendaOccurrence = cast.World.Agenda.Occurrence;
         var healthBefore = cast.World.Effects.CaptureCharacterHealth();
-        var instruction = node;
-        if (!execution.TryRunCardState(instruction, cast)
-            && !execution.TryRunImmediateEffect(instruction, cast)
-            && !execution.TryRunDamageAndThreat(instruction, node, cast)
-            && !execution.TryRunCardMovement(instruction, cast))
-        {
-            execution.RunRemainingEffect(node, cast);
-        }
+        execution.RunEffect(node, cast);
+        if (cast.World.IsOver) return;
         if (cast.Events.Count > eventsBefore
             && AbilityStructuralExecution.EventMeansEffectApplied(node))
         {
@@ -191,6 +190,18 @@ internal static class AbilityResolutionInterpreter
         // next boost ability, reads the new attack roles rather than a stale
         // defender that has already moved.
         Attack.RefreshDefender(cast.World, cast.World.Facts);
+    }
+
+    private static void RunEffect(this AbilityResolutionExecution execution,
+        AbilityEffect node, AbilityResolutionState cast)
+    {
+        if (!execution.TryRunCardState(node, cast)
+            && !execution.TryRunImmediateEffect(node, cast)
+            && !execution.TryRunDamageAndThreat(node, node, cast)
+            && !execution.TryRunCardMovement(node, cast))
+        {
+            execution.RunRemainingEffect(node, cast);
+        }
     }
 
     internal static void RunRemainingEffect(this AbilityResolutionExecution execution, AbilityEffect node, AbilityResolutionState cast)

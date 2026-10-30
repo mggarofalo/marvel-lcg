@@ -119,7 +119,7 @@ public sealed class ContextualDraftMeaningTests
         composer.ToggleResource(20);
         string paid = Assert.IsType<string>(TableDraftSummary.From(composer, prompt, compact: true));
         Assert.Contains("2 resources selected", paid);
-        Assert.Contains("1 excess resource will be lost", paid);
+        Assert.Contains("1 excess resource not applied to the cost", paid);
         Assert.True(composer.TryBuild(out _, out _));
     }
 }

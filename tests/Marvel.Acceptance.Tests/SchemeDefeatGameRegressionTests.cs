@@ -22,7 +22,7 @@ public sealed class SchemeDefeatGameRegressionTests : SimulationHarnessTestBase
         var (lines, game) = OpenRecordedGame();
         ReplayPrefix(lines, game, 16);
         var step = ReadStep(lines, 16);
-        JournalReplay.RequirePrompt(step.Prompt, game.Pending!, "step 16");
+        FrozenPromptCompatibility.Require(step.Prompt, game.Pending!, game.State, "step 16");
         Assert.Equal("Haymaker", step.Decision.Label);
         Assert.Equal(41, step.Decision.AnchorId);
         Assert.Equal(43, Assert.Single(step.Resources));
@@ -67,7 +67,7 @@ public sealed class SchemeDefeatGameRegressionTests : SimulationHarnessTestBase
         World.MoveToTop(control.State.Cards[96], control.State.AreaOf(DeckType.RemovedArea));
         var continued = control.Resolve(DecisionFor(control, step).Resolve(control.Pending!));
         JournalReplay.RequireEvents(step.Events, continued.Events, "unstunned payment");
-        JournalReplay.RequirePrompt(ReadStep(lines, 17).Prompt, control.Pending!, "unstunned target");
+        FrozenPromptCompatibility.Require(ReadStep(lines, 17).Prompt, control.Pending!, control.State, "unstunned target");
     }
 
     [Fact]
@@ -81,7 +81,7 @@ public sealed class SchemeDefeatGameRegressionTests : SimulationHarnessTestBase
         {
             var source = ReadStep(lines, index);
             var prompt = game.Pending!;
-            JournalReplay.RequirePrompt(source.Prompt, prompt, $"current source {index}");
+            FrozenPromptCompatibility.Require(source.Prompt, prompt, game.State, $"current source {index}");
             var durable = DecisionFor(game, source);
             var result = game.Resolve(durable.Resolve(prompt));
             var expectedEvents = index == 16
@@ -154,7 +154,7 @@ public sealed class SchemeDefeatGameRegressionTests : SimulationHarnessTestBase
         {
             var step = ReadStep(lines, index);
             Assert.Equal(index, step.Step);
-            JournalReplay.RequirePrompt(step.Prompt, game.Pending!, $"step {index}");
+            FrozenPromptCompatibility.Require(step.Prompt, game.Pending!, game.State, $"step {index}");
             var result = game.Resolve(DecisionFor(game, step).Resolve(game.Pending!));
             JournalReplay.RequireEvents(step.Events, result.Events, $"step {index}");
             JournalReplay.RequireFingerprint(step.Digest, game.State.Digest().Fingerprint(), $"step {index}");

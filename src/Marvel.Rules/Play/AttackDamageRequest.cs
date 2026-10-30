@@ -16,6 +16,8 @@ public sealed record AttackDamageRequest(
 
     /// <summary>The exact attack occurrence retained across suspended ability execution; null uses the current occurrence.</summary>
     public Occurrence? Origin { get; init; }
+    // The basic attack owns this frozen recipient until its damage settles.
+    internal Attacked? BasicRecipient { get; init; }
     internal EnemyAttack? EnemyAttack { get; init; }
     internal DamageReplacement? Replacement { get; init; }
     internal PreparedAttackDamage? Prepared { get; init; }

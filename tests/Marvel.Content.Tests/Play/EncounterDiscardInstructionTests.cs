@@ -16,6 +16,95 @@ public sealed class EncounterDiscardInstructionTests
     private static readonly CardCatalog Cards = CardCatalog.Parse(
         File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")));
 
+    [Rule("rr:encounter-deck.2")]
+    [Theory]
+    [InlineData("12026")]
+    [InlineData("12027")]
+    [InlineData("12028")]
+    [InlineData("12029")]
+    public void SetMatchRevealsTheExactPhysicalCardRegardlessOfType(string face)
+    {
+        // Discard until the criterion is met or the encounter deck is empty.
+        var world = new World(Cards, players: 1);
+        world.CreateSeat("player");
+        var source = world.CreateCard("12029", world.AreaOf(DeckType.RevealingArea));
+        var deck = world.AreaOf(DeckType.EncounterDeck);
+        var below = world.CreateCard("01104", deck);
+        var match = world.CreateCard(face, deck);
+        // Shocker is also a CRIMINAL minion, but is from Rhino's set.
+        var skipped = world.CreateCard("01103", deck);
+        var duplicate = world.CreateCard(face, world.AreaOf(DeckType.EncounterDiscardPile));
+        var result = AbilityDiscardUntilExecution.Run(LowerSet(), Context(world, source));
+        Assert.Equal(match.ObjectId, result.Reveal!.Card);
+        Assert.Equal(DeckType.RevealingArea, match.Area.Type);
+        Assert.Equal(DeckType.EncounterDiscardPile, skipped.Area.Type);
+        Assert.Equal(DeckType.EncounterDiscardPile, duplicate.Area.Type);
+        Assert.Equal([below], deck.Cards);
+    }
+
+    [Rule("rr:encounter-deck.1")]
+    [Rule("rr:encounter-deck.2")]
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void SetMatchAtDeckBoundaryResetsOnceAndRevealsOnlyIfFound(bool matchLast)
+    {
+        // The discard stops at empty; the discard pile is immediately shuffled.
+        var world = new World(Cards, players: 1);
+        world.CreateSeat("player");
+        world.CreateCard("01117a", world.AreaOf(DeckType.MainSchemesArea));
+        var source = world.CreateCard("12029", world.AreaOf(DeckType.RevealingArea));
+        var deck = world.AreaOf(DeckType.EncounterDeck);
+        var last = world.CreateCard(matchLast ? "12027" : "01104", deck);
+        var first = world.CreateCard("01098", deck);
+        var context = Context(world, source);
+        var result = AbilityDiscardUntilExecution.Run(LowerSet(), context);
+        Assert.Equal(matchLast ? last.ObjectId : (int?)null, result.Reveal?.Card);
+        Assert.Equal(matchLast ? DeckType.RevealingArea : DeckType.EncounterDeck, last.Area.Type);
+        Assert.Equal(DeckType.EncounterDeck, first.Area.Type);
+        Assert.Single(context.Events, item => item.Verb == "Reset");
+        Assert.Equal(1, world.TheCardIn(DeckType.MainSchemesArea)!.Tokens[EncounterDeck.AccelerationToken]);
+    }
+
+    [Rule("rr:encounter-deck.1")]
+    [Fact]
+    public void EmptyDeckResetsBeforeSearchingForSet()
+    {
+        // If the deck is empty, its discard pile is immediately shuffled to make a new deck.
+        var world = new World(Cards, players: 1);
+        world.CreateSeat("player");
+        world.CreateCard("01117a", world.AreaOf(DeckType.MainSchemesArea));
+        var source = world.CreateCard("12029", world.AreaOf(DeckType.RevealingArea));
+        var match = world.CreateCard("12027", world.AreaOf(DeckType.EncounterDiscardPile));
+        var context = Context(world, source);
+        var result = AbilityDiscardUntilExecution.Run(LowerSet(), context);
+        Assert.Equal(match.ObjectId, result.Reveal!.Card);
+        Assert.Equal(DeckType.RevealingArea, match.Area.Type);
+        Assert.Equal(2, context.Events.Count(item => item.Verb == "Reset"));
+        Assert.Equal(2, world.TheCardIn(DeckType.MainSchemesArea)!.Tokens[EncounterDeck.AccelerationToken]);
+    }
+
+    [Theory]
+    [InlineData("\"set\":\"ant_nemesis\",\"kind\":\"minion\",\"then\":\"reveal\"")]
+    [InlineData("\"set\":\"ant_nemesis\",\"trait\":\"CRIMINAL\",\"then\":\"reveal\"")]
+    [InlineData("\"set\":\"ant_nemesis\",\"then\":\"putIntoPlay\"")]
+    [InlineData("\"set\":\"\",\"then\":\"reveal\"")]
+    [InlineData("\"trait\":\"CRIMINAL\",\"then\":\"reveal\"")]
+    public void RejectsUnsupportedMatchShapes(string fields)
+    {
+        Assert.Throws<AbilityException>(() => LowerFields(fields));
+    }
+
+    private static AbilityEffect.DiscardUntil LowerSet() => LowerFields("\"set\":\"ant_nemesis\",\"then\":\"reveal\"");
+
+    private static AbilityEffect.DiscardUntil LowerFields(string fields)
+    {
+        var effect = AbilityCatalog.Parse("{\"cards\":[{\"card\":\"12029\",\"abilities\":[{\"trigger\":{\"event\":\"WhenCardRevealed\",\"timing\":\"WhenRevealed\",\"subject\":\"this\"},\"effect\":{\"discardUntil\":{\"from\":\"encounterDeck\"," + fields + "}}}]}]}").Abilities[0].Effect;
+        return Assert.IsType<AbilityEffect.DiscardUntil>(AbilityLowering.Effect(
+            new AbilityValue.Map(new Dictionary<string, AbilityValue>(StringComparer.Ordinal)
+            { [effect.Kind] = effect.Argument }), new AbilityLocation("12029", 0, "effect")));
+    }
+
     [Rule("rr:attach-to.3.1")]
     [Fact]
     public void TechSearchAttachesToSourceInsteadOfPrintedHighestHealthHost()

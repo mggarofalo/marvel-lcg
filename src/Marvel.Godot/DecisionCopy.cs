@@ -82,10 +82,10 @@ internal static class DecisionCopy
     public static string WithPaymentConsequence(string action, PaymentProgress payment) =>
         payment.ExcessIcons == 0
             ? action
-            : $"{action}  ·  Lose {ResourceCount(payment.ExcessIcons)}";
+            : $"{action}  ·  {ResourceCount(payment.ExcessIcons)} beyond the cost";
 
     public static string OverpaymentWarning(PaymentProgress payment) =>
-        $"Overpayment: {ResourceCount(payment.ExcessIcons)} will be lost.";
+        $"Overpayment: {ResourceCount(payment.ExcessIcons)} not applied to the cost.";
 
     public static string ResourceCount(int count) =>
         $"{count} excess resource{(count == 1 ? string.Empty : "s")}";

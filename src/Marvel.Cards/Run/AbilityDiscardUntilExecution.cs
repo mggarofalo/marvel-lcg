@@ -10,12 +10,11 @@ internal static class AbilityDiscardUntilExecution
         AbilityEffect.DiscardUntil effect, AbilityDeckAndRevealContext context)
     {
         var found = effect.From == AbilitySearchArea.YourDeck
-            ? PlayerDeck.DiscardUntil(context.World,
-                new AbilityExpressionEvaluation(context.Expressions,
-                    new AbilitySelectorEvaluation(context.Expressions.Bindings)).Seat(effect.Player),
-                effect.Set!, context.Trigger, context.Events)
-            : EncounterDeck.DiscardUntil(context.World, context.World.Facts,
-                effect.Kind!.Value, context.Trigger, context.Events, effect.Trait);
+            ? DiscardPlayerDeck(effect, context)
+            : effect.Set is { } set
+                ? EncounterDeck.DiscardUntil(context.World, context.World.Facts, set, context.Trigger, context.Events)
+                : EncounterDeck.DiscardUntil(context.World, context.World.Facts,
+                    effect.Kind!.Value, context.Trigger, context.Events, effect.Trait);
         if (found is null) return AbilityDeckAndRevealResult.Handled;
         switch (effect.Result)
         {
@@ -54,5 +53,15 @@ internal static class AbilityDiscardUntilExecution
                 throw new InvalidOperationException("Unknown compiled discard-until result");
         }
         return AbilityDeckAndRevealResult.Handled;
+    }
+
+    private static Marvel.Rules.State.Card? DiscardPlayerDeck(
+        AbilityEffect.DiscardUntil effect, AbilityDeckAndRevealContext context)
+    {
+        int player = new AbilityExpressionEvaluation(context.Expressions,
+            new AbilitySelectorEvaluation(context.Expressions.Bindings)).Seat(effect.Player);
+        return effect.Set is { } set
+            ? PlayerDeck.DiscardUntil(context.World, player, set, context.Trigger, context.Events)
+            : PlayerDeck.DiscardUntil(context.World, player, effect.Kind!.Value, context.Trigger, context.Events, effect.Trait);
     }
 }

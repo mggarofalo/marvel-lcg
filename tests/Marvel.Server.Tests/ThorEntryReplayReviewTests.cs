@@ -111,6 +111,8 @@ public sealed class ThorEntryReplayReviewTests
         {
             composer.AssignResource(factory.Payment[0], 0, 0, declaration);
             composer.AssignResource(factory.Payment[0], 1, 0, declaration);
+            // A conditional source is never allocated for the player, so every icon is assigned.
+            composer.AssignResource(factory.Payment[1], 0, 0, 'R');
         }
         Assert.True(composer.TryBuild(out var answer, out var error), error);
         return answer!;

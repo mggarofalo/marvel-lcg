@@ -177,13 +177,13 @@ internal static class AbilityInitiationPrimitives
 
     internal static bool AlreadyInForm(
         AbilityEffect.ChangeForm change, AbilityAdmissionScope scope) =>
-        AbilityAdmissionFacts.AlreadyInForm(
-            scope.World, Seat(change.Player, scope), change.Form);
+        AbilityAdmissionFacts.FormDestination(
+            scope.World, Seat(change.Player, scope), change.Destination) is null;
 
     internal static bool CanChangeForm(
         AbilityEffect.ChangeForm change, AbilityAdmissionScope scope) =>
         AbilityAdmissionFacts.CanChangeForm(
-            scope.World, Seat(change.Player, scope), change.Form);
+            scope.World, Seat(change.Player, scope), change.Destination);
 
     internal static bool CanAdvanceMainScheme(AbilityAdmissionScope scope) =>
         AbilityAdmissionFacts.CanAdvanceMainScheme(scope.World);

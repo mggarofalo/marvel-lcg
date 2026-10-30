@@ -84,7 +84,8 @@ public static class Places
     public static GameArea? GameAreaOf(World world, Card card)
     {
         ArgumentNullException.ThrowIfNull(world);
-        return world.GameAreaOf(PlayAreaOf(card));
+        return world.Agenda.KangTransitions.Elimination.GameAreaOf(card)
+            ?? world.GameAreaOf(PlayAreaOf(card));
     }
 
     /// <summary>Whether one card may affect another at all.</summary>

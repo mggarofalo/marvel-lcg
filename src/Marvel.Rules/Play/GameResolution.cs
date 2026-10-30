@@ -39,7 +39,10 @@ public static class GameResolution
         var assessment = DecisionAssessment.Assess(game.Pending, input);
         if (!assessment.IsAccepted)
             throw new ArgumentException(assessment.Reason ?? assessment.Rejection.ToString(), nameof(input));
+        ValidateLiveTeamUp(game, input);
         ValidateLiveCardPlay(game, input);
+        GameFormChanges.Validate(game, input);
+        ValidateContinuation(game, input);
         game.world.ClearInformationSignals();
 
         // Rules questions and windows retain their sequence owner across phases.
@@ -54,6 +57,28 @@ public static class GameResolution
         }
 
         return ResolveDeclineOrVillain(game, input);
+    }
+
+    private static void ValidateContinuation(Game game, Decision input)
+    {
+        if (game.asking == Asker.Sequence && game.Pending!.ExecutionBinding is { Window: null }
+            && game.world.Agenda.Current is { What: Steps.ChooseOption } continuation)
+        {
+            PromptExecutionBinding.RequireCurrent(game.world, game.Pending);
+            game.world.ContinuationAbilities.ValidateChoice(game.world, continuation, input);
+        }
+    }
+
+    private static void ValidateLiveTeamUp(Game game, Decision input)
+    {
+        if (input.IsDecline) return;
+        var offer = game.Pending!.Affordances.First(option => option.Id == input.Affordance);
+        // rr:team-up: a card cannot be played unless both named friendly characters are in play.
+        // An offer describes an earlier board, so check again before committing an answer.
+        if (offer.PlaysCard && !DeckTypes.IsInPlay(game.world.Cards[offer.AnchorId].Area.Type)
+            && !CardPlayLegality.TeamedUp(
+                game.world, game.facts, game.world.Cards[offer.AnchorId]))
+            throw new ArgumentException("the offered card no longer satisfies team-up", nameof(input));
     }
 
     private static void ValidateLiveCardPlay(Game game, Decision input)
@@ -81,7 +106,8 @@ public static class GameResolution
             // ahead of information clearing as well as exposure and cost commitment.
             _ = CardPlayPayment.Prepare(game.world, new CardPlayInitiation(
                 game.facts, game.world.CardPlayAbilities, seat, card,
-                CardPayment.CostOf(game.world, game.facts, seat, card, input.Targets.SingleOrDefault()), input.Targets, input.Spent));
+                CardPayment.CostOf(game.world, game.facts, seat, card, input.Targets.SingleOrDefault()), input.Targets, input.Spent)
+                { Allocations = input.Allocated });
         }
         catch (RulesNotImplementedException rejected)
         {
@@ -138,7 +164,7 @@ public static class GameResolution
         string verb = game.Pending!.Affordances
             .FirstOrDefault(affordance => affordance.Id == input.Affordance)?.Verb
             ?? $"affordance {input.Affordance}";
-        if (verb == ChangeForm) return game.ChangeFormNow();
+        if (verb == ChangeForm) return game.ChangeFormNow(input);
         if (game.Phase == GamePhase.Mulligan && verb == ResolveMulligans)
             return game.Mulligan(input);
         if (game.Phase == GamePhase.PlayerTurn) return ResolveTurnAffordance(game, input, verb);

@@ -21,6 +21,11 @@ public static class CardEntry
     {
         var targets = choices.Targets;
         var kind = EffectiveCards.Kind(card, facts);
+        if (kind == CardKind.Ally && !choices.ApplyingAlly)
+        {
+            PlayerAllyEntry.SchedulePlay(world, seat, card, choices);
+            return;
+        }
         if (kind is CardKind.Event or CardKind.Resource)
         {
             // `rr:play-put-into-play.2`: "when an event card is played, place
@@ -32,50 +37,12 @@ public static class CardEntry
             return;
         }
 
-        int upgradeHost = seat.IdentityCard.ObjectId;
-        var eligibleHosts = kind == CardKind.Upgrade
-            ? abilities.AttachmentTargets(world, card)
-            : null;
-        if (eligibleHosts is not null)
-        {
-            if (targets.Count != 1 || !eligibleHosts.Contains(targets[0]))
-            {
-                throw new RulesNotImplementedException(
-                    $"card {card.ObjectId} must attach to exactly one eligible target");
-            }
-            upgradeHost = targets[0];
-        }
+        var (into, upgradeHost) = PlayedCardDestination.Resolve(world, abilities, seat, card, kind, targets);
 
-        // An encounter card's play area is the villain's, but attaching a
-        // player upgrade to it does not give control to the scenario. The
-        // exception in `rr:ownership-and-control.2.1` applies only when the
-        // attached card is controlled by another *player*.
-        var hostArea = world.Cards[upgradeHost].Area.PlayArea;
-        int controller = kind == CardKind.Upgrade && hostArea.IsPlayers
-            ? hostArea.Player
-            : seat.Index;
-
-        var into = kind switch
-        {
-            CardKind.Ally => world.AreaOf(
-                DeckType.AlliesArea, PlayArea.Of(seat.Index), cardOwner: seat.Index),
-            CardKind.Support => world.AreaOf(
-                DeckType.SupportsArea, PlayArea.Of(seat.Index), cardOwner: seat.Index),
-
-            // `rr:upgrade`: an upgrade attaches to a card, and with no ability
-            // saying otherwise that card is the identity playing it.
-            // `rr:ownership-and-control.2.1`: when it attaches to another
-            // player's card, that player controls the upgrade, so it enters
-            // that player's play area while retaining its original owner.
-            CardKind.Upgrade => world.AreaOf(
-                DeckType.UpgradesArea, PlayArea.Of(controller),
-                host: upgradeHost, cardOwner: seat.Index),
-            _ => throw new RulesNotImplementedException(
-                $"a {kind} played from hand has nowhere to enter play"),
-        };
-
+        var (blankTransition, blankDeparture) = ContinuousBlankingEntry.Preflight(world.Effects, card, into);
         var from = card.Area;
         World.MoveToTop(card, into);
+        using var blanking = ContinuousBlankingEntry.Begin(blankDeparture);
         events.Add(new CardsMoved(
             Places.Reference(from), Places.Reference(into),
             [new Landing(card.ObjectId, into.Cards.Count - 1)])
@@ -83,6 +50,8 @@ public static class CardEntry
             Trigger = Verb,
             Verb = Verb,
         });
+
+        choices.AfterMove?.Invoke();
 
         if (kind == CardKind.Upgrade)
         {
@@ -97,7 +66,11 @@ public static class CardEntry
         // not care how it got there. Eighteen allies in the pool print
         // `rr:toughness`, and before this a played one got no tough status card
         // -- only a *revealed* card ran them.
-        if (AllyLimit(world, facts, seat, card))
+        if (kind == CardKind.Ally && AllyEntryHealth.Settle(world, facts, card, events))
+        {
+            FinalizeAllyEntry(world, card, seat.Index);
+        }
+        else if (AllyLimit(world, facts, seat, card))
         {
             FinalizeAllyEntry(world, card, seat.Index);
         }
@@ -105,7 +78,9 @@ public static class CardEntry
         {
             Reveal.EnterPlay(world, facts, card, events, abilities: abilities);
         }
-        Played(world, seat, card, new PlayedCardPayment(card.ObjectId, card.Incarnation, seat.Index, choices.Paid));
+        ContinuousBlankingEntry.Complete(blankTransition, blankDeparture, Verb, events);
+        if (!choices.ApplyingAlly)
+            Played(world, seat, card, new PlayedCardPayment(card.ObjectId, card.Incarnation, seat.Index, choices.Paid), choices.EntryPayment);
         Restricted(world, facts, seat, card, events);
     }
 
@@ -135,10 +110,7 @@ public static class CardEntry
             return false;
         }
 
-        int controlled = world.Areas
-            .Where(area => area.Type == DeckType.AlliesArea
-                && area.PlayArea == PlayArea.Of(player))
-            .Sum(area => area.Cards.Count);
+        int controlled = PlayerLimitProcedure.CountedAllies(world, player).Count;
         long limit = StateFields.Modified(
             world, seat.IdentityCard, "ally_limit", facts, world.Players);
         if (controlled <= limit)
@@ -168,7 +140,7 @@ public static class CardEntry
 
     internal static void FinalizeAllyEntry(World world, Card ally, int player) =>
         world.Agenda.Then(new PhaseStep(
-            new RevealStageOperation(RevealStageKind.FinalizeAllyEntry),
+            new RevealStageOperation(RevealStageKind.FinalizeAllyEntry) { AllyIncarnation = ally.Incarnation },
             world.Agenda.Current?.Round ?? 0,
             0,
             Subject: ally.ObjectId,
@@ -177,14 +149,14 @@ public static class CardEntry
         ));
 
     /// <summary>Schedules the response window for an ally put into play.</summary>
-    internal static void Entered(World world, Card ally, int player)
+    internal static void Entered(World world, Card ally, int player, EntryPayment? entryPayment = null)
     {
         // `rr:enters-play`: putting a card into play by a card ability is one
         // way it enters play. The transition therefore creates the same
         // after-entry response window as a card played from hand, but not the
         // `WhenCardPlayed` condition that rr:play-put-into-play.3 excludes.
         world.Agenda.Then(new PhaseStep(
-            new LifecycleOperation(LifecycleKind.CardEntersPlay),
+            new LifecycleOperation(LifecycleKind.CardEntersPlay) { EntryPayment = entryPayment },
             world.Agenda.Current?.Round ?? 0,
             0,
             Subject: ally.ObjectId,
@@ -192,14 +164,15 @@ public static class CardEntry
         ));
     }
 
-    internal static void Played(World world, Seat seat, Card card, PlayedCardPayment? payment = null)
+    internal static void Played(World world, Seat seat, Card card, PlayedCardPayment? payment = null,
+        EntryPayment? entryPayment = null)
     {
         // The card has moved and all state it enters with has been applied.
         // The agenda supplies the ordinary response window, including the
         // optional responses `rr:ability.11` says must be chosen rather than
         // silently resolved or refused.
         world.Agenda.Then(new PhaseStep(
-            new LifecycleOperation(LifecycleKind.CardPlayed) { Payment = payment },
+            new LifecycleOperation(LifecycleKind.CardPlayed) { Payment = payment, EntryPayment = entryPayment },
             world.Agenda.Current?.Round ?? 0,
             0,
             Index: seat.Index,

@@ -25,10 +25,11 @@ internal static class AbilityEffectLowering
         var argument = node.Argument;
         return node.Kind switch
         {
-            "discardInvocation" => InvocationDiscard(argument, child),
-            "resolveInvocation" => InvocationEffect(argument, child),
-            "returnInvocation" => InvocationReturn(argument, child),
+            "discardInvocation" => AbilityInvocationLowering.Discard(argument, child),
+            "resolveInvocation" => AbilityInvocationLowering.Resolve(argument, child),
+            "returnInvocation" => AbilityInvocationLowering.Return(argument, child),
             "attackAnotherEnemy" => AbilityStagedAttackLowering.Lower(argument, child),
+            "attackAnyEnemy" => AbilityStagedAttackLowering.Lower(argument, child, anyEnemy: true),
             "boostBasicUse" => argument is AbilityValue.Word { Value: "overkill" }
                 ? new AbilityEffect.BoostBasicUse(0, Overkill: true)
                 : argument is AbilityValue.Word { Value: "exhaustedAllyPower" }
@@ -77,7 +78,7 @@ internal static class AbilityEffectLowering
             "chooseStatusRecipients" => AbilityStatusLowering.Recipients(argument, child),
             "giveStatus" => AbilityStatusLowering.Given(argument, child),
             "removeStatuses" => AbilityStatusRemovalLowering.Lower(argument, child),
-            "changeForm" => FormEffect(argument, child),
+            "changeForm" => AbilityFormChangeLowering.Lower(argument, child),
             "draw" => DrawEffect(argument, child),
             "allowPlayBeneath" => AbilityStoragePermissionLowering.Lower(argument, child),
             "allowPlayFromDiscard" => AbilityStoragePermissionLowering.LowerDiscard(argument, child),
@@ -91,6 +92,14 @@ internal static class AbilityEffectLowering
             "gainSurge" => new AbilityEffect.GainSurge(Integer(argument, child)),
             "useAttackForThwart" => FixedEffect(argument, child, "trigger", AbilityFixedInstruction.UseAttackForThwart),
             "readyUndamagedDefender" => FixedEffect(argument, child, "you", AbilityFixedInstruction.ReadyUndamagedDefender),
+            "playersWin" => FixedEffect(argument, child, "game", AbilityFixedInstruction.PlayersWin),
+            "captureKangStageTwoDefeat" => FixedEffect(argument, child, "this", AbilityFixedInstruction.CaptureKangStageTwoDefeat),
+            "captureKangLocalCompletion" => FixedEffect(argument, child, "this", AbilityFixedInstruction.CaptureKangLocalCompletion),
+            "captureKangStageOneDefeat" => FixedEffect(argument, child, "this", AbilityFixedInstruction.CaptureKangStageOneDefeat),
+            "splitKangStageTwo" => FixedEffect(argument, child, "this", AbilityFixedInstruction.SplitKangStageTwo),
+            "createKangGameArea" => FixedEffect(argument, child, "this", AbilityFixedInstruction.CreateKangGameArea),
+            "revealKangStageThree" => FixedEffect(argument, child, "this", AbilityFixedInstruction.RevealKangStageThree),
+            "putKangNemesesIntoPlay" => FixedEffect(argument, child, "this", AbilityFixedInstruction.PutKangNemesesIntoPlay),
             "advanceMainScheme" => FixedEffect(argument, child, "next", AbilityFixedInstruction.AdvanceMainScheme),
             "cancelBoostAbility" => FixedEffect(argument, child, "trigger", AbilityFixedInstruction.CancelBoostAbility),
             "cancelBoostIcons" => FixedEffect(argument, child, "trigger", AbilityFixedInstruction.CancelBoostIcons),
@@ -107,7 +116,9 @@ internal static class AbilityEffectLowering
             "placeAccelerationToken" => FixedEffect(argument, child, 1, AbilityFixedInstruction.PlaceAccelerationToken),
             "generateTopDiscard" => FixedEffect(argument, child, "printed", AbilityFixedInstruction.GenerateTopDiscard),
             "makeTheCall" => FixedEffect(argument, child, "game", AbilityFixedInstruction.MakeTheCall),
+            "playSharedHeroTraitCard" => FixedEffect(argument, child, "game", AbilityFixedInstruction.PlaySharedHeroTraitCard),
             "discardOtherEnvironments" => FixedEffect(argument, child, "game", AbilityFixedInstruction.DiscardOtherEnvironments),
+            "blankTechPlayerCards" => FixedEffect(argument, child, "game", AbilityFixedInstruction.BlankTechPlayerCards),
             "gainEnvironmentTraits" => FixedEffect(argument, child, "this", AbilityFixedInstruction.GainEnvironmentTraits),
             "preventSideSchemeDeparture" => FixedEffect(argument, child, "this", AbilityFixedInstruction.PreventSideSchemeDeparture),
             "requireAllyDefender" => FixedEffect(argument, child, "engagedPlayer", AbilityFixedInstruction.RequireAllyDefender),
@@ -206,17 +217,6 @@ internal static class AbilityEffectLowering
     internal static AbilityEffect.IndirectDamage IndirectEffect(AbilityValue value, AbilityLocation location) =>
         AbilityDamageLowering.IndirectEffect(value, location);
 
-    internal static AbilityEffect.ChangeForm FormEffect(AbilityValue value, AbilityLocation location)
-    {
-        var fields = Fields(value, location, "player", "to");
-        string form = Text(Required(fields, "to", location), location.Child("to"));
-        if (form is not ("hero" or "alter-ego"))
-        {
-            throw location.Child("to").Error($"'{form}' is not a supported form");
-        }
-        return new(LowerPlayer(Required(fields, "player", location), location.Child("player")), form);
-    }
-
     internal static AbilityEffect.Draw DrawEffect(AbilityValue value, AbilityLocation location)
     {
         var fields = Fields(value, location, "player", "count");
@@ -291,20 +291,4 @@ internal static class AbilityEffectLowering
         return new(instruction);
     }
 
-    private static AbilityEffect.ResolveInvocation InvocationEffect(AbilityValue value, AbilityLocation location)
-    {
-        FixedWord(value, location, "you");
-        return new();
-    }
-    private static AbilityEffect.DiscardInvocation InvocationDiscard(AbilityValue value, AbilityLocation location)
-    {
-        FixedWord(value, location, "this");
-        return new();
-    }
-    private static AbilityEffect.ReturnInvocation InvocationReturn(AbilityValue value, AbilityLocation location)
-    {
-        FixedWord(value, location, "you");
-        return new();
-    }
 }
-

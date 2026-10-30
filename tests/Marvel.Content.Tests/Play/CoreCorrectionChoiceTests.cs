@@ -221,17 +221,19 @@ public sealed class CoreCorrectionChoiceTests : ChoosingCardsTestBase
         Card source = world.CreateCard("01155", world.AreaOf(DeckType.ObligationsArea, PlayArea.Of(0)));
         var runner = AuthoredCards.Runner();
         runner.ExecuteReveal(world, source, 0);
-        Prompt prompt = runner.Choosing(world, AbilityContinuationFixtures.Pending(world, source))!;
+        var events = new List<Marvel.Rules.Events.GameEvent>();
+        Prompt prompt = Assert.IsType<Prompt>(Sequence.Work(world, Cards, runner, events));
         Assert.Equal(2, prompt.Affordances.Count);
         // "If a card ability causes a player to change forms, it does not count
         // against the one voluntary form change"; the choice precedes its cost.
         // An option cannot be chosen "if there are no valid targets for that option."
-        runner.Chose(world, AbilityContinuationFixtures.Pending(world, source), Decision.Take(flip ? 0 : 1));
+        Sequence.Answer(world, Cards, runner, prompt, Decision.Take(flip ? 0 : 1), events);
         if (flip)
         {
-            Prompt removal = runner.Choosing(world, AbilityContinuationFixtures.Pending(world, source))!;
+            Prompt removal = Assert.IsType<Prompt>(Sequence.Work(world, Cards, runner, events));
             Assert.Equal(0, Assert.Single(removal.Affordances).Id);
-            runner.Chose(world, AbilityContinuationFixtures.Pending(world, source), Decision.Take(0));
+            Sequence.Answer(world, Cards, runner, removal, Decision.Take(0), events);
+            Sequence.Finish(world, Cards, runner, events);
             Assert.Equal(DeckType.RemovedArea, source.Area.Type);
         }
         else

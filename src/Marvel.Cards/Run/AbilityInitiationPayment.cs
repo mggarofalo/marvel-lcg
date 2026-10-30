@@ -5,6 +5,7 @@ internal sealed class AbilityInitiationPayment(
     AbilityEventPayment? eventPayment, AbilityCostPayment arrowPayment) : AbilityPaymentPlan
 {
     private bool initiationOpened;
+    private bool spendWindowOpened;
     private bool effectPrevented;
     private Marvel.Rules.Play.EventPlayInitiation? initiation;
     internal override bool StopsEffect => arrowPayment.Unpaid || effectPrevented;
@@ -25,12 +26,25 @@ internal sealed class AbilityInitiationPayment(
             arrowPayment.Commit(cast.Execution!, execution.cardPlayAbilities, cast.Trigger, cast.Events), cast);
         if (cast.Suspended) return false;
         if (StopsEffect) return true;
+        if (OpenSpendWindow(cast)) return false;
         if (arrowPayment.HasMinionEntryCost)
         {
             effectPrevented = !EffectCanInitiate(execution, cast);
             if (effectPrevented) return true;
         }
         return OpenEventInitiation(execution, cast);
+    }
+
+    private bool OpenSpendWindow(AbilityResolutionState cast)
+    {
+        if (spendWindowOpened) return false;
+        spendWindowOpened = true;
+        var receipts = arrowPayment.ResourceReceipts.ToList();
+        if (eventPayment?.ResourceReceipt is { } receipt) receipts.Add(receipt);
+        var cards = receipts.SelectMany(item => item.SpentCards).ToArray();
+        if (!Marvel.Rules.Play.ResourceSpentWindow.Open(cast.World, cards, cast.Player)) return false;
+        cast.Suspend();
+        return true;
     }
 
     private bool OpenEventInitiation(AbilityResolutionExecution execution, AbilityResolutionState cast)

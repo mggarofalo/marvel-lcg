@@ -29,4 +29,8 @@ public enum AbilityResolutionNumber
     CardsExhaustedForCost,
     /// <summary>Actual damage taken by the resolving identity from this occurrence's enemy attack.</summary>
     ReceivedAttackDamage,
+    /// <summary>Settled excess for the bound attack-end recipient.</summary>
+    AttackExcessDamage,
+    /// <summary>Resources generated beyond the exact source card's entry cost.</summary>
+    EntryResourceExcess,
 }

@@ -89,3 +89,5 @@ engine execution, while migration comparisons preserve the entire original
 aggregate, proofs, authority and backup bytes. Import creates new authority and
 preserves all played records. Harness sources, the independent trace, and logs
 are included; capabilities belong only to this generated test campaign.
+
+`published-v28-rejection-870.zip` (SHA-256 `1a27eb1c902eacc982f8e6da5cae4602061269d7143b6712271b7efcbd64003d`) contains the unchanged durable files, excluding empty writer locks, from the genuine published `0dbd58241a2ae538b13ebb93f0968d9796b6b881` seed 73 Rhino/Spider-Man and seed 0 She-Hulk/Taskmaster captures. Both include retained prior generations. Synthetic local authority bytes are preserved verbatim. Their full comparison archive is externally retained with SHA-256 `945e23150acbbef5583c0e03855555e4730fe8139209962e384b32dba7169be8`; see `docs/content/ant-man-replay-v29.md` for scope and diagnostic limitations. This archive is not a migration or a relabelled save.

@@ -10,6 +10,9 @@ public sealed record ConsequentialDamageOperation(ConsequentialDamageKind Kind,
     /// <summary>The stat substituted for this exact ally thwart.</summary>
     public bool UsesAttack { get; init; }
 
+    /// <summary>The exact performer copy when captured by the initiating power.</summary>
+    public int? PerformerIncarnation { get; init; }
+
     /// <inheritdoc/>
     public override string What => Kind switch
     {

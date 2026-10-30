@@ -60,13 +60,22 @@ public static class AgendaProcedures
             AgendaProcedureKind.AbilityContinuation =>
                 AbilityContinuationProcedure.Apply(world, step, events),
             AgendaProcedureKind.Activation => ActivationProcedure.Apply(world, facts, step),
-            AgendaProcedureKind.PhaseTransition =>
-                PhaseTransitionProcedure.Apply(world, facts, step, events),
+            AgendaProcedureKind.PhaseTransition when step.Operation is KangCentralOperation or KangCentralStageOperation =>
+                KangCentral.Apply(world, step, events),
+            AgendaProcedureKind.PhaseTransition when step.Operation is KangSplitOperation =>
+                KangSplitProcedure.Apply(world, step, events),
+            AgendaProcedureKind.PhaseTransition when step.Operation is KangDepartureOrderOperation =>
+                KangDepartureOrderProcedure.Apply(world, step, events),
+            AgendaProcedureKind.PhaseTransition => step.Operation is KangJoinOperation
+                ? KangJoinProcedure.Apply(world, step, events)
+                : PhaseTransitionProcedure.Apply(world, facts, step, events),
             AgendaProcedureKind.CardEntry => EventCardEntry.Apply(world, step, events),
             AgendaProcedureKind.ResourcePayment => ResourcePaymentProcedure.Apply(world, step, events),
             AgendaProcedureKind.Campaign => CampaignRecoveryProcedure.Apply(world, step, events),
             AgendaProcedureKind.EncounterEntry => EncounterEntry.Apply(world, step, events),
-            AgendaProcedureKind.Lifecycle => null,
+            AgendaProcedureKind.Lifecycle when step.Operation is PlayerAllyEntryOperation => PlayerAllyEntry.Apply(world, step, events),
+            AgendaProcedureKind.Lifecycle => step.Operation is IdentityFormChangeOperation form
+                ? form.Apply(world, step, events) : null,
             _ => throw new RulesNotImplementedException(
                 $"the agenda has no procedure for '{step.What}'"),
         };
@@ -106,6 +115,12 @@ public static class AgendaProcedures
 
         switch (step.Operation.Procedure)
         {
+            case AgendaProcedureKind.PhaseTransition when step.Operation is KangDepartureOrderOperation:
+                KangDepartureOrderProcedure.Answer(world, step, input, events);
+                break;
+            case AgendaProcedureKind.PhaseTransition when step.Operation is KangJoinOperation:
+                KangJoinProcedure.Answer(world, step, input, events);
+                break;
             case AgendaProcedureKind.Attack:
                 AttackProcedure.Answer(world, facts, step, input, events);
                 break;

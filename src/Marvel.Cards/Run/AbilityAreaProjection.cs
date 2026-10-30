@@ -215,7 +215,8 @@ internal sealed class AbilityAreaProjection
     private List<AreaProjectionState>? TraceModifiers(
         AbilityEffect effect, List<AreaProjectionState> states,
         long repetitions, long baseMultiplier) =>
-        this.TryTraceGiveStatus(effect, states, repetitions, baseMultiplier)
+        this.TryTraceChangeForm(effect, states, repetitions, baseMultiplier)
+        ?? this.TryTraceGiveStatus(effect, states, repetitions, baseMultiplier)
         ?? this.TryTraceGrantTrait(effect, states, repetitions, baseMultiplier)
         ?? this.TryTraceGrantField(effect, states, repetitions, baseMultiplier)
         ?? this.TryTraceEachPlayer(effect, states, repetitions, baseMultiplier);

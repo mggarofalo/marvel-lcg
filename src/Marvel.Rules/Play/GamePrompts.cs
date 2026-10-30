@@ -85,11 +85,7 @@ internal static class GamePrompts
 
         // `rr:form-change-form.1` permits one voluntary change each round, so a
         // player who has used theirs is not offered it again.
-        if (seat.FormChangedInRound != game.Round
-            && FormChangePermissions.CanChange(game.world, seat.IdentityCard))
-        {
-            options.Add(game.Anchored(ChangeForm, seat));
-        }
+        GameFormChanges.AddOffers(game, seat, options);
 
         // `rr:player-turn.2`: "play an ally, upgrade, support, or player side
         // scheme card from hand". Priced per card, and a card that cannot be
@@ -244,7 +240,7 @@ internal static class GamePrompts
             Targets: attachmentTargets is not null
                 ? new TargetRequest(attachmentTargets, Min: 1, Max: 1)
                 : new TargetRequest([seat.IdentityCard.ObjectId], Min: 1, Max: 1),
-            Costs: [price]);
+            Costs: [price], Description: game.world.CardPlayAbilities.DescribeCardPlay(game.world, card));
     }
 
     internal static Affordance Anchored(this Game game, string verb, Seat seat) =>

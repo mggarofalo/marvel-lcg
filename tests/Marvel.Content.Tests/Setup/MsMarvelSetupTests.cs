@@ -71,7 +71,7 @@ public sealed class MsMarvelSetupTests
         Assert.Contains("ms_marvel", setup.HeroNames);
         Assert.Contains("ms_marvel", admitted.Setup.HeroNames);
         Assert.Equal(34, admitted.Playable.Count(face => cards.Pack(face) == "msm"));
-        Assert.Equal(13, admitted.Setup.HeroNames.Count);
+        Assert.Equal(14, admitted.Setup.HeroNames.Count);
         Assert.Contains("spider_man", admitted.Setup.HeroNames);
     }
 

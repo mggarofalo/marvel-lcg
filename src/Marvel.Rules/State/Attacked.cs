@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Marvel.Rules.Timing;
 
 namespace Marvel.Rules.State;
@@ -9,6 +10,10 @@ namespace Marvel.Rules.State;
 /// </remarks>
 public sealed record Attacked(int Card, int Incarnation, OccurrenceCard Facts, long DamageTaken)
 {
+    /// <summary>Excess from settled damage placements that defeated this incarnation.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public long ExcessDamage { get; init; }
+
     /// <summary>The original public play area, retained across stage departure.</summary>
     public int Area { get; init; } = -1;
 

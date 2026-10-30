@@ -336,10 +336,12 @@ visibility configuration, durable sessions and shutdown behavior.
 
 ## Wire protocol
 
+Protocol 43 adds a conditional resource bonus with its generated types and qualifying cost-component mask. Protocol 42 peers are rejected before gameplay because their strict decoder does not recognize this field. Unconditional sources retain their prior JSON shape. Replay compatibility for the integrated rules/content revision is separately assessed under MARVEL-870.
+
 The socket protocol uses source-generated JSON inside a 4-byte big-endian length
 frame. Frames are bounded. Unknown operations, unsupported protocol versions and
 unknown JSON members fail before they reach the engine. Both endpoints must use
-protocol 42. Setup and decisions replay under engine-replay-v27, with session
+protocol 43. Setup and decisions replay under engine-replay-v28, with session
 schema 7 retaining the exact ordered decks. Requests carry engine-authored
 commitments and explicit payment allocations; authorized responses include
 readable choices, active attack participants, attack completion events and

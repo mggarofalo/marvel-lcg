@@ -43,7 +43,7 @@ internal static class AbilityWindowAdmission
         AbilityProgram program, World world, Card card, Occurrence occurrence,
         WindowKind window, IResourceCardAbilities resourceAbilities, AbilityQueryProjection? projection)
     {
-        if (!CanHostWindowAbility(world, card)) yield break;
+        if (!CanHostWindowAbility(world, card, occurrence)) yield break;
         var written = program.On(card.FaceId);
         for (int index = 0; index < written.Length; index++)
         {
@@ -60,15 +60,22 @@ internal static class AbilityWindowAdmission
         }
     }
 
-    private static bool CanHostWindowAbility(World world, Card card)
+    private static bool CanHostWindowAbility(World world, Card card, Occurrence occurrence)
     {
         if (EffectiveCards.HasProfile(card) || PrintedText.IsBlanked(world, card)) return false;
         bool playableEvent = CardPlayOrigin.CanPlayEvent(world, card, card.Owner);
         // rr:in-play-and-out-of-play.10: "Facedown cards attached to in-play
         // cards are out of play." Explicit event-play origins remain separate:
         // hand cards need not be faceup to be played.
-        return DeckTypes.IsInPlay(card.Area.Type) && card.FaceUp || playableEvent;
+        return DeckTypes.IsInPlay(card.Area.Type) && card.FaceUp || playableEvent
+            || AbilityPendingEntryAdmission.OwnEntry(card, occurrence)
+            || IsSpentResource(card, occurrence);
     }
+
+    private static bool IsSpentResource(Card card, Occurrence occurrence) =>
+        card.Area.Type == DeckType.DiscardPile && occurrence.Is(ResourceSpentWindow.Condition)
+        && occurrence.SpentResourceCards.Any(spent => spent.Card == card.ObjectId
+            && spent.Incarnation == card.Incarnation);
 
     private static bool IsWaitingCandidate(
         AbilityProgram program, World world, Candidate candidate,
@@ -76,8 +83,7 @@ internal static class AbilityWindowAdmission
         AbilityQueryProjection? projection)
     {
         var (card, ability, controller, _) = candidate;
-        // rr:when-completed-abilities.1: "When this scheme is completed..."
-        if (!TriggerIsLive(world, ability, card, occurrence)) return false;
+        if (!TriggerEligible(world, card, ability, occurrence)) return false;
         occurrence = candidate.TriggeringThreat ?? occurrence;
         if (!Answers(program, world, candidate, occurrence, window,
                 ability.AnyPlayer ? controller : null)
@@ -91,6 +97,17 @@ internal static class AbilityWindowAdmission
                 AbilityAvailability.IndexOf(program, card, ability), occurrence);
     }
 
+    private static bool TriggerEligible(World world, Card card, CompiledCardAbility ability, Occurrence occurrence) =>
+        AbilityPendingEntryAdmission.Allows(card, ability, occurrence)
+        && EventTeamUpPermitted(world, card)
+        // rr:when-completed-abilities.1: "When this scheme is completed..."
+        && TriggerIsLive(world, ability, card, occurrence);
+
+    private static bool EventTeamUpPermitted(World world, Card card) =>
+        EffectiveCards.Kind(card, world.Facts) != CardKind.Event
+        || DeckTypes.IsInPlay(card.Area.Type)
+        || CardPlayLegality.TeamedUp(world, world.Facts, card);
+
     private static bool CostsPayable(AbilityProgram program, World world, Candidate candidate,
         IResourceCardAbilities resources, AbilityQueryProjection? projection)
     {
@@ -101,7 +118,11 @@ internal static class AbilityWindowAdmission
     }
 
     private static bool ControllerCanInitiate(int controller, CompiledCardAbility ability,
-        AbilityAdmissionContext context) => controller < 0 || CanInitiate(ability, context);
+        AbilityAdmissionContext context)
+    {
+        AbilityFormDestinationResolver.RequireStandalone(ability.Effect);
+        return controller < 0 || CanInitiate(ability, context);
+    }
 
     private static bool TriggerMatchesCandidate(CompiledCardAbility ability, Card card, Occurrence occurrence) =>
         TriggerMatches(ability, occurrence) && (ability.Trigger.Timing != AbilityType.WhenCompleted
@@ -178,6 +199,10 @@ internal static class AbilityWindowAdmission
         Card card, Occurrence occurrence) =>
         RestrictedPlayer(program, world, ability, card) is { } restricted
             ? restricted
+            : AbilityPendingEntryAdmission.OwnEntry(card, occurrence) ? occurrence.Player
+            : occurrence.Is(ResourceSpentWindow.Condition)
+                && occurrence.SpentResourceCards.FirstOrDefault(spent => spent.Card == card.ObjectId) is { } spent
+                ? spent.Player
             : ability.Trigger.Player is not null
                 ? occurrence.Player
                 : ability.Trigger.Actor == AbilityRoles.You
@@ -199,22 +224,11 @@ internal static class AbilityWindowAdmission
         };
         int? restricted = initiatingPlayer
             ?? RestrictedPlayer(program, world, ability, card);
-        return belongs && RolesMatch(world, candidate, occurrence, restricted);
+        return belongs && AbilityTriggerRoleMatching.Matches(world, candidate, occurrence, restricted);
     }
 
     private static bool TriggerMatches(CompiledCardAbility ability, Occurrence occurrence) =>
         PreparationAbilityTriggerMatching.Matches(ability.Trigger, occurrence);
-
-    private static bool RolesMatch(
-        World world, Candidate candidate, Occurrence occurrence, int? restricted)
-    {
-        var (card, ability, _, _) = candidate;
-        return Subject(world, ability.Trigger.Subject, card, occurrence, restricted, candidate.TriggeringDefeat)
-            && (ability.Trigger.Actor != AbilityRoles.You || occurrence.ActorFacts?.Kind is CardKind.Hero or CardKind.AlterEgo)
-            && Role(world, ability.Trigger.Actor, card, occurrence.ActorFacts, restricted)
-            && Role(world, ability.Trigger.Target, card, candidate.TriggeringAttack?.Facts ?? occurrence.TargetFacts, restricted)
-            && Player(world, ability.Trigger.Player, card, occurrence, restricted);
-    }
 
     private static int? RestrictedPlayer(
         AbilityProgram program, World world, CompiledCardAbility ability, Card card)
@@ -239,58 +253,6 @@ internal static class AbilityWindowAdmission
         }
         return null;
     }
-
-    private static bool Subject(
-        World world, string? subject, Card card, Occurrence occurrence,
-        int? restricted, Defeated? defeat) => subject switch
-        {
-            null => true,
-            AbilitySubjects.This => (defeat?.Card ?? occurrence.Subject) == card.ObjectId,
-            AbilitySubjects.AttachedTo =>
-                card.Area.Host >= 0 && (defeat?.Card ?? occurrence.Subject) == card.Area.Host,
-            AbilitySubjects.You => occurrence.Player >= 0
-                && occurrence.Player
-                    == (restricted ?? AbilityCardQueries.ControllerOf(world, card)),
-            AbilitySubjects.Game => true,
-            _ => throw new AbilityException(
-                $"'{subject}' is not a subject anything matches"),
-        };
-
-    private static bool Role(
-        World world, string? match, Card card, OccurrenceCard? role,
-        int? restricted) => match switch
-        {
-            null => true,
-            _ when role is null => false,
-            AbilityRoles.This => role.Card == card.ObjectId,
-            AbilityRoles.AttachedTo =>
-                card.Area.Host >= 0 && role.Card == card.Area.Host,
-            AbilityRoles.You => role.Controller >= 0
-                && (restricted is { } player
-                    ? role.Controller == player
-                    : card.Owner == World.Scenario
-                        || role.Controller == AbilityCardQueries.ControllerOf(world, card)),
-            AbilityRoles.Villain => role.IsVillain,
-            AbilityRoles.Minion => role.IsMinion,
-            AbilityRoles.Hero => role.IsHero,
-            AbilityRoles.Ally => role.IsAlly,
-            AbilityRoles.Friendly => role.IsFriendly,
-            AbilityRoles.Enemy => role.IsEnemy,
-            _ => throw new AbilityException(
-                $"'{match}' is not an occurrence role matcher"),
-        };
-
-    private static bool Player(
-        World world, string? match, Card card, Occurrence occurrence,
-        int? restricted) => match switch
-        {
-            null or AbilityPlayers.TriggerPlayer => true,
-            AbilityPlayers.You => occurrence.Player >= 0
-                && occurrence.Player
-                    == (restricted ?? AbilityCardQueries.ControllerOf(world, card)),
-            _ => throw new AbilityException(
-                $"'{match}' is not an occurrence player matcher"),
-        };
 
     private static bool InForm(
         World world, int player, string? form, Card card)

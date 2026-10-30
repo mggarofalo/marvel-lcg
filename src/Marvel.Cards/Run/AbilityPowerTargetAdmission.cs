@@ -33,18 +33,34 @@ internal static class AbilityPowerTargetAdmission
         var power = EffectOf<AbilityEffect.Power>(node, cast);
         if (AbilityIndependentAttack.CanAffectBoost(power, cast.Context)) return true;
         if (power.TargetCount is not null) return AbilityCountedAttackSelection.CanInitiate(power, cast);
-        var target = power.Target!;
+        if (power.Target is null && AbilityStagedAttackLowering.IsSplashBody(power.Effect))
+            return CanInitiateSplash(power, cast);
+        return CanTargetDeclaredAttack(node, power.Target!, cast);
+    }
+
+    private static bool CanTargetDeclaredAttack(
+        AbilityEffect node, AbilityCardSelection target, AbilityAdmissionScope cast)
+    {
         if (cast.Chosen is null && BindingCanChange(target)
             && cast.Reachability.PriorBindingCandidates.Count > 0)
-        {
             return EveryCandidateCan(cast, () => CanTargetAttack(node, cast));
-        }
         return Find(target, cast) is { } enemy
             && BasicPowers.Attackable(cast.World, cast.World.Facts, Resolver(cast))
                 .Any(candidate => candidate.ObjectId == enemy.ObjectId)
             && AbilityProgramQueries.CanTakeDamage(
                 cast.World, cast.Context.Program, enemy, cast.Source)
             && AttackEffectHasValidTargets(node, cast, enemy);
+    }
+
+    private static bool CanInitiateSplash(AbilityEffect.Power power, AbilityAdmissionScope cast)
+    {
+        if (LabeledAbilities.WouldBeCancelled(cast.World, cast.World.Facts,
+            Resolver(cast), cast.Source, [BasicPowers.AttackVerb])) return true;
+        var splash = ((AbilityEffect.Sequence)power.Effect).Effects[0];
+        return TargetLegalityOf(splash, cast) == TargetLegality.Valid
+            || BasicPowers.Attackable(cast.World, cast.World.Facts, Resolver(cast))
+                .Any(enemy => AbilityProgramQueries.CanTakeDamage(
+                    cast.World, cast.Context.Program, enemy, cast.Source));
     }
 
     private static bool AttackEffectHasValidTargets(

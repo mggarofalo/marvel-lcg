@@ -42,6 +42,8 @@ internal static class GeneratedPartialTypePolicy
             "src/Marvel.Godot/smoke/ScenarioSetupControlsProbe.cs" => (Namespace: "Marvel.Godot", Type: "ScenarioSetupControlsProbe"),
             "src/Marvel.Godot/smoke/DecisionDialogNativeProbe.cs" => (Namespace: "Marvel.Godot", Type: "DecisionDialogNativeProbe"),
             "src/Marvel.Godot/smoke/NativeGameWitness.cs" => (Namespace: "Marvel.Godot", Type: "NativeGameWitness"),
+            // This read-only RefCounted witness requires generated GDScript bindings.
+            "src/Marvel.Godot/smoke/NativePaymentWitness.cs" => (Namespace: "Marvel.Godot", Type: "NativePaymentWitness"),
             "src/Marvel.Godot/smoke/TooltipPolicyProbe.cs" => (Namespace: "Marvel.Godot", Type: "TooltipPolicyProbe"),
             "src/Marvel.Protocol/EngineJsonContext.cs" => (Namespace: "Marvel.Protocol", Type: "EngineJsonContext"),
             "tools/Marvel.Cards.Extract/Keywords.cs" => (Namespace: "Marvel.Cards.Extract", Type: "Keywords"),

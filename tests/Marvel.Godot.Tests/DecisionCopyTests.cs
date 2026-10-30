@@ -160,9 +160,9 @@ public sealed class DecisionCopyTests
     }
 
     [Theory]
-    [InlineData(1, "Play Web-Shooter  ·  Lose 1 excess resource")]
-    [InlineData(2, "Play Web-Shooter  ·  Lose 2 excess resources")]
-    public void CommitButtonNamesTheResourcesThatWillBeLost(int excess, string expected)
+    [InlineData(1, "Play Web-Shooter  ·  1 excess resource beyond the cost")]
+    [InlineData(2, "Play Web-Shooter  ·  2 excess resources beyond the cost")]
+    public void CommitButtonNamesTheResourcesBeyondTheCost(int excess, string expected)
     {
         var payment = new PaymentProgress(
             CostSelectionState.Selected,
@@ -177,6 +177,6 @@ public sealed class DecisionCopyTests
 
         Assert.Equal(expected, DecisionCopy.WithPaymentConsequence(
             "Play Web-Shooter", payment));
-        Assert.Contains("will be lost", DecisionCopy.OverpaymentWarning(payment));
+        Assert.Contains("not applied to the cost", DecisionCopy.OverpaymentWarning(payment));
     }
 }

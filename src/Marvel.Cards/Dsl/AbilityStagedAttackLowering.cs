@@ -8,11 +8,11 @@ namespace Marvel.Cards.Dsl;
 /// <summary>Bounds the engine-chosen staged attack spelling to two constant damage sentences.</summary>
 internal static class AbilityStagedAttackLowering
 {
-    internal static AbilityEffect Lower(AbilityValue value, AbilityLocation location)
+    internal static AbilityEffect Lower(AbilityValue value, AbilityLocation location, bool anyEnemy = false)
     {
         var fields = Fields(value, location, "amount");
         return new AbilityEffect.AttackAnotherEnemy(
-            PositiveInteger(Required(fields, "amount", location), location.Child("amount")));
+            PositiveInteger(Required(fields, "amount", location), location.Child("amount")), anyEnemy);
     }
 
     internal static bool IsBody(AbilityEffect effect) => effect is AbilityEffect.Sequence
@@ -21,21 +21,31 @@ internal static class AbilityStagedAttackLowering
         {
             Cards: AbilityCardSelection.Bound { Binding: AbilityCardBinding.Chosen },
             Amount: AbilityNumber.Constant, SimultaneousPlacement: false, Overkill: false,
-        }, AbilityEffect.AttackAnotherEnemy],
+        }, AbilityEffect.AttackAnotherEnemy { AnyEnemy: false }],
+    };
+
+    internal static bool IsSplashBody(AbilityEffect effect) => effect is AbilityEffect.Sequence
+    {
+        Effects: [AbilityEffect.AttackDamage
+        {
+            Cards: AbilityCardSelection.Query { Kind: AbilityCardQuery.Minions },
+            Amount: AbilityNumber.Constant { Value: > 0 }, SimultaneousPlacement: true, Overkill: false,
+        }, AbilityEffect.AttackAnotherEnemy { AnyEnemy: true }],
     };
 
     internal static void Validate(AbilityEffect body, AbilityPowerKind kind, AbilityCardSelection? target,
         AbilityNumber? count, AbilityLocation location)
     {
         bool contains = Walk(body).Any(node => node is AbilityEffect.AttackAnotherEnemy);
-        if (contains && (kind != AbilityPowerKind.Attack || count is not null || !IsBody(body)
-            || target is not AbilityCardSelection.Bound { Binding: AbilityCardBinding.Chosen }))
+        if (contains && (kind != AbilityPowerKind.Attack || count is not null
+            || !(IsBody(body) && target is AbilityCardSelection.Bound { Binding: AbilityCardBinding.Chosen }
+                || IsSplashBody(body) && target is null)))
             throw location.Error("attackAnotherEnemy requires one two-sentence constant-damage attack body");
     }
 
     internal static void ValidatePlacement(AbilityEffect effect, AbilityLocation location)
     {
-        if (effect is AbilityEffect.Power power && IsBody(power.Effect)) return;
+        if (effect is AbilityEffect.Power power && (IsBody(power.Effect) || IsSplashBody(power.Effect))) return;
         if (effect is AbilityEffect.AttackAnotherEnemy)
             throw location.Error("attackAnotherEnemy requires one two-sentence constant-damage attack body");
         foreach (var child in AbilityEffectStructure.AllEffectChildren(effect))

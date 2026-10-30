@@ -135,7 +135,7 @@ public sealed class CoreThreatAbilityTests
         var villain = world.TheCardIn(DeckType.VillainArea)!;
         var scheme = world.TheCardIn(DeckType.MainSchemesArea)!;
         int source = cause == ThreatCause.VillainPhase ? scheme.ObjectId : villain.ObjectId;
-        return Occurrence.ForThreat(
+        return OccurrenceCapture.Threat(
             1, [Steps.ThreatWouldBePlaced], world, Cards,
             new ThreatPlacement(scheme.ObjectId, source, amount, cause, "test", player: 0));
     }

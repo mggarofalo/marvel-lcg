@@ -40,18 +40,21 @@ public sealed class AllyPaymentReplayReviewTests
         Assert.Equal("open", save.Units[^1].Status);
         string serialized = SessionSaveJson.Write(save);
         Assert.DoesNotContain("CardPlayPayment", serialized);
+        Assert.DoesNotContain("EntryPayment", serialized);
         var replayed = SessionReplay.Verify(SessionSaveJson.Read(serialized), factory.Compatibility, _ =>
         {
             var fresh = factory.Create(specification);
             return new ReplayOpenedGame(fresh.Game, fresh.SetupEvents);
         });
         Equivalent(uninterrupted, replayed);
+        EntryPaymentEqual(uninterrupted, replayed, factory.Ally);
         var restarted = new EngineHost(factory, store: store);
         var restored = restarted.Exchange(EngineRequest.SyncGame("restart", "ally-price-review", opened.Capability!));
         Assert.Null(restored.Error);
         var restartedGame = factory.Game;
         Assert.NotSame(uninterrupted.State, restartedGame.State);
         Equivalent(uninterrupted, restartedGame);
+        EntryPaymentEqual(uninterrupted, restartedGame, factory.Ally);
         Assert.Equal(serialized, SessionSaveJson.Write(Assert.Single(store.Load()).Save));
         var draft = new DecisionComposer(pending.Prompt);
         draft.SelectAffordance(response.Id);
@@ -78,6 +81,18 @@ public sealed class AllyPaymentReplayReviewTests
         });
         Equivalent(uninterrupted, finalReplay);
         Assert.Equal(expectedCounters, finalReplay.State.Cards[factory.Ally].Tokens["c_test"]);
+    }
+
+    private static void EntryPaymentEqual(Game expected, Game actual, int ally)
+    {
+        var original = Assert.IsType<EntryPayment>(expected.State.Agenda.Occurrence!.Entry.EntryPayment);
+        var restored = Assert.IsType<EntryPayment>(actual.State.Agenda.Occurrence!.Entry.EntryPayment);
+        Assert.Equal(original.Generated, restored.Generated);
+        Assert.Equal(original.Paid, restored.Paid);
+        Assert.Equal(original.Excess, restored.Excess);
+        Assert.True(original.MatchesEntered(expected.State.Cards[ally], 0));
+        Assert.True(restored.MatchesEntered(actual.State.Cards[ally], 0));
+        Assert.False(restored.MatchesEntered(expected.State.Cards[ally], 0));
     }
 
     private static void Equivalent(Game expected, Game actual)

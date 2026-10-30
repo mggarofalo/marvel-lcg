@@ -72,7 +72,8 @@ internal static class AbilityPowerSuspension
     }
 
     private static bool HasRetainedBody(AbilityEffect node) =>
-        AbilityStagedAttackLowering.IsBody(node) || node is AbilityEffect.AttackAnotherEnemy
+        AbilityStagedAttackLowering.IsBody(node) || AbilityStagedAttackLowering.IsSplashBody(node)
+            || node is AbilityEffect.AttackAnotherEnemy
             || AbilityPowerActivationSupport.SupportsBody(node);
 
     private static bool HasIntrinsicSuspension(AbilityEffect node) =>

@@ -119,7 +119,7 @@ public sealed class CoreInterruptContextTests
         scheme.PlaceTokens("k_threat", 3);
         var placement = new ThreatPlacement(scheme.ObjectId, scheme.ObjectId, 4, cause, "test", 0);
         placement.Prevent(2);
-        var occurrence = Occurrence.ForThreat(1, [Steps.ThreatWouldBePlaced], world, Cards, placement);
+        var occurrence = OccurrenceCapture.Threat(1, [Steps.ThreatWouldBePlaced], world, Cards, placement);
 
         var prompt = Offering.Work(world, runner, occurrence, WindowKind.Interrupt, [])!;
 

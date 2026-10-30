@@ -24,6 +24,8 @@ internal sealed class AbilityCostPayment
     private readonly CommitOutcome outcome = new();
     private int nextStep;
     private ResourcePaymentReceipt? resourcePayment;
+    private readonly List<ResourcePaymentReceipt> resourceReceipts = [];
+    internal IReadOnlyList<ResourcePaymentReceipt> ResourceReceipts => resourceReceipts;
     private DamageCostReceipt? damagePayment;
     private readonly List<DamageCostReceipt> damageCosts = [];
     private bool settled;
@@ -112,6 +114,7 @@ internal sealed class AbilityCostPayment
                 resourcePayment = AbilityResourcePayment.Spend(world, resourceAbilities,
                     new(source, player, paying, spend.Required.Length + spend.Generic, spend.Required)
                     { Price = spend.Price, Allocations = spend.Allocations }, events);
+                resourceReceipts.Add(resourcePayment);
                 outcome.Suspended = !resourcePayment.IsComplete;
                 if (spend.Energy is { } x) outcome.Energy = x;
                 return true;

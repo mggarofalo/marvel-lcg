@@ -156,12 +156,14 @@ public static class EventPresenter
     private static (string Summary, IReadOnlyList<int> Anchors, EventMotionKind Motion) DescribeAttack(
         AttackBoundary boundary, WorldDescriptor world)
     {
+        string status = boundary.Started
+            ? boundary.Resumed ? " · Attack resumes." : " · Attack begins."
+            : " · Attack resolved.";
         if (boundary.Target < 0)
-            return ($"{Card(boundary.Source, world, boundary)}"
-                + (boundary.Started ? " · Attack begins without an attacked enemy." : " · Attack resolved without an attacked enemy."),
+            return ($"{Card(boundary.Source, world, boundary)}" + status,
                 [boundary.Source], EventMotionKind.Attack);
         return ($"{Card(boundary.Source, world, boundary)} → {Card(boundary.Target, world, boundary)}"
-            + (boundary.Started ? boundary.Resumed ? " · Attack resumes." : " · Attack begins." : " · Attack resolved."),
+            + status,
             [boundary.Source, boundary.Target], EventMotionKind.Attack);
     }
 

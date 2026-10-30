@@ -9,7 +9,7 @@ internal static class AbilitySchemeDestinations
     internal static Card? Resolve(World world, AbilityProgram program, Card enemy)
     {
         if (!program.SchemeDestinations.TryGetValue(enemy.FaceId, out var destination))
-            return world.TheCardIn(DeckType.MainSchemesArea);
+            return EnemySchemeDestination.Resolve(world, enemy);
         if (destination != AbilitySchemeDestination.CorrespondingSideScheme)
             throw new RulesNotImplementedException($"'{enemy.FaceId}' has an unsupported scheme destination");
 

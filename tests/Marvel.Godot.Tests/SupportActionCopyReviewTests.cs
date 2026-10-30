@@ -21,6 +21,19 @@ public sealed class SupportActionCopyReviewTests
         Assert.Equal(expected, DecisionCopy.Choice(offer));
     }
 
+    // Synthetic contract: the copy keeps an engine-supplied cost and effect
+    // together; the engine wording itself is proven by content tests.
+    [Fact]
+    public void MatchingPlayExplainsBothExhaustionAndEffectBeforeCommitment()
+    {
+        var offer = new AffordancePresentation(1, "12024", "Play a card from your hand that shares a trait with your hero, reducing its cost by 1",
+            "Action", "Team-Building Exercise", 8, 0, null, "", [])
+        { SourceName = "Team-Building Exercise", DisplayLabel = "Play a matching card", CostDescription = "Exhaust Team-Building Exercise" };
+        Assert.Equal("Play a matching card  ·  Team-Building Exercise", DecisionCopy.Choice(offer));
+        Assert.Contains(offer.CostDescription!, DecisionCopy.ActionSummary(offer));
+        Assert.Contains(offer.Description!, DecisionCopy.ActionSummary(offer));
+    }
+
     [Fact]
     public void CostDoesNotReplacePlayIntentOrExplicitActionMeaning()
     {

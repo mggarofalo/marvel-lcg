@@ -54,8 +54,18 @@ public static class Sequence
 
         while (world.Agenda.Current is { } step)
         {
+            if (world.IsOver)
+            {
+                world.Agenda.Abandon();
+                return null;
+            }
             var stage = world.Agenda.Stage;
             var question = WorkIteration(world, facts, abilities, events, scope, step);
+            if (world.IsOver)
+            {
+                world.Agenda.Abandon();
+                return null;
+            }
             if (question is not null) return question;
             if (world.Agenda.Current?.SameFrameAs(step) == true && world.Agenda.Stage == stage)
                 throw new InvalidOperationException(
@@ -136,7 +146,9 @@ public static class Sequence
             ?? throw new InvalidOperationException(
                 $"an applying '{step.What}' agenda step has no occurrence");
         var healthBefore = world.Effects.CaptureCharacterHealth();
+        var blanksBefore = world.Effects.CapturePrintedBlanks();
         Prompt? question = AgendaProcedures.ApplyWithWorldAbilities(world, facts, step, events);
+        world.Effects.RecheckAllyLimitsAfterBlanking(blanksBefore);
         if (question is not null) return AttackPromptContext.WithAttackContext(world, facts, step, question);
         Statuses.RemoveAfflictionsIfStalwart(world, facts, "stalwart", events);
         world.Effects.SettleLostHealth(healthBefore, step.What, events);
@@ -224,7 +236,7 @@ public static class Sequence
     }
 
     private static bool QuestionAdvancesByIdentity(PhaseStep step) =>
-        step.What is Steps.ChooseOption
+        step.Operation is KangJoinOperation or KangDepartureOrderOperation || step.What is Steps.ChooseOption
             or Steps.ChooseAttachmentTarget
             or Steps.ChooseWouldBeDefeated
             or Steps.ChooseCardDefeatedAbility

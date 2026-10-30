@@ -32,6 +32,8 @@ public sealed class LabelledPowerDefeatContinuationTests : CoreCardTestBase
         world.CreateCard("01187", world.AreaOf(DeckType.EncounterDeck));
         var card = world.CreateCard("04043", world.Seats[0].Hand);
         var payment = world.CreateCard("01088", world.Seats[0].Hand);
+        // Keep payment from exhausting the player deck and dealing an extra encounter card.
+        world.CreateCard("01089", world.Seats[0].Deck);
         var modifier = new ContinuousEffect(EffectSource.LastingEffect, Kind: "attackDamage", Amount: 1,
             Affects: card.ObjectId, Lasts: new Duration(Uses: 1));
         world.Effects.Register(modifier);
@@ -42,6 +44,7 @@ public sealed class LabelledPowerDefeatContinuationTests : CoreCardTestBase
         var choice = Sequence.Work(world, Cards, runner, events)!;
         Sequence.Answer(world, Cards, runner, choice, Decision.Take(world.Seats[1].IdentityCard.ObjectId), events);
         Sequence.Finish(world, Cards, runner, events);
+        Assert.Equal(Outcome.Unfinished, world.Result);
         Assert.Equal(DeckType.EncounterDiscardPile, soldier.Area.Type);
         Assert.Single(world.AreaOf(DeckType.DealtEncounterCardsDeck, PlayArea.Of(1)).Cards);
         Assert.Equal(2, villain.Damage);

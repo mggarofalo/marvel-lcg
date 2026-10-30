@@ -29,6 +29,7 @@ internal sealed record AbilityResolutionState(
     internal AbilityExecution? Execution { get; set; }
     internal AbilityPowerExecutionState? PowerExecution { get; set; }
     internal AbilityPaymentPlan? PendingPayment { get; set; }
+    internal AllyEntryBinding? PendingAllyEntryBinding { get; set; }
     private bool executionEntered;
 
     private PendingAbility? resolutionAbility;
@@ -264,37 +265,7 @@ internal sealed record AbilityResolutionState(
     /// <summary>The performer attributed by an ability-envelope label.</summary>
     public Card? AbilityActor { get; set; }
 
-    private AbilityInitiationEvidence InitiationEvidence { get; } = new();
-
-    /// <summary>Whether this fresh cast passed envelope legality before resolution.</summary>
-    public bool LabelsPreflighted
-    {
-        get => InitiationEvidence.LabelsPreflighted;
-        set => InitiationEvidence.LabelsPreflighted = value;
-    }
-
-    private HashSet<AbilityEffect> CrisisIgnoringThwarts => InitiationEvidence.CrisisIgnoringThwarts;
-
-    private HashSet<int> PersistedCrisisIgnoringThwarts => InitiationEvidence.PersistedCrisisIgnoringThwarts;
-
-    public ImmutableHashSet<AbilityEffect> ValidatedCrisisIgnoringThwarts =>
-        ImmutableHashSet.CreateRange<AbilityEffect>(
-            ReferenceEqualityComparer.Instance, CrisisIgnoringThwarts);
-
-    public ImmutableHashSet<int> RestoredCrisisIgnoringThwarts =>
-        PersistedCrisisIgnoringThwarts.ToImmutableHashSet();
-
-    /// <summary>Persists a pre-payment exception to this power's target limit.</summary>
-    public void ValidateCrisisIgnoringThwart(AbilityEffect node) =>
-        CrisisIgnoringThwarts.Add(node);
-
-    /// <summary>Whether initiation established this scoped target exception.</summary>
-    public bool CrisisIgnoringThwartWasValidated(AbilityEffect node, int ordinal) =>
-        CrisisIgnoringThwarts.Contains(node)
-        || PersistedCrisisIgnoringThwarts.Contains(ordinal);
-
-    public void RestoreCrisisIgnoringThwarts(IEnumerable<int> ordinals) =>
-        PersistedCrisisIgnoringThwarts.UnionWith(ordinals);
+    internal AbilityInitiationEvidence InitiationEvidence { get; } = new();
 
     /// <summary>A numeric result carried into this labelled power.</summary>
     public long PowerAmount { get; set; } = -1;

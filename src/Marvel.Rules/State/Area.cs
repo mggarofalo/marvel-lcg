@@ -92,7 +92,7 @@ public sealed class Area
 
     internal void Append(Card card)
     {
-        ValidateCanAcceptCards();
+        ValidateCanAcceptCards(card);
         cards.Add(card);
         card.MovedTo(this);
     }
@@ -119,7 +119,7 @@ public sealed class Area
     }
 
     /// <summary>Refuses to populate an area whose host can no longer carry cards.</summary>
-    internal void ValidateCanAcceptCards()
+    internal void ValidateCanAcceptCards(Card? card = null)
     {
         if (hostCard is null)
         {
@@ -130,10 +130,23 @@ public sealed class Area
         // only with cards in play. A hosted area can remain after its host
         // leaves, but putting a card back into it would attach that card to an
         // out-of-play copy which no longer exists under `rr:leaves-play.1`.
-        if (!DeckTypes.IsInPlay(hostCard.Area.Type))
+        bool dominion = IsDominionStorageFor(hostCard, card);
+        if (!DeckTypes.IsInPlay(hostCard.Area.Type) && !dominion)
         {
             throw new InvalidOperationException(
                 $"area {Id} cannot receive cards because host card {Host} is not in play");
         }
     }
+
+    // Printed 11009b-11012b explicitly store a set-aside Dominion facedown
+    // under set-aside 4A. This exception authorizes only that physical pair.
+    private bool IsDominionStorageFor(Card host, Card? card) =>
+        Type == DeckType.BeneathCardsPile && CardOwner == -1
+        && PlayArea == PlayArea.Villains && IsUnenteredDominionHost(host)
+        && card is { FaceId: "11023", Owner: -1 }
+        && card.Area.Type == DeckType.AsideDeck;
+
+    private static bool IsUnenteredDominionHost(Card host) =>
+        host.FaceId == "11013a" && host.Area.Type == DeckType.AsideDeck && host.Owner == -1
+        && host.Incarnation == 0 && host.Area.PlayArea == PlayArea.Villains;
 }

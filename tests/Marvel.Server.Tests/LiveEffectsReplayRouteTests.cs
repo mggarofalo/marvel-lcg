@@ -69,7 +69,7 @@ public sealed class LiveEffectsReplayRouteTests
             // Synthetic identity probes exercise admission, not historical gameplay evidence.
             var frozenSource = previous.Save.Compatibility with { ReplayContract = sourceReplay };
             var currentContentSource = factory.Compatibility with { ReplayContract = sourceReplay };
-            Assert.Equal("engine-replay-v28", factory.Compatibility.ReplayContract);
+            Assert.Equal("engine-replay-v29", factory.Compatibility.ReplayContract);
             var admission = ReplayContractUpgradeTests.Admission(root, factory.Compatibility with
                 { ReplayContract = "engine-replay-v27" });
             Assert.Null(admission.For(frozenSource));

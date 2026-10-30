@@ -57,6 +57,14 @@ public sealed class Seat
     /// <summary>This player's nemesis pile. Theirs, and the scenario's property.</summary>
     public Area Nemesis { get; }
 
+    /// <summary>Physical cards dealt as this identity's nemesis set, regardless of their current location.</summary>
+    /// <remarks>Setup fixes this association; moving a scenario-owned card does not transfer it.</remarks>
+    public IReadOnlyList<Card> NemesisSet => nemesisSet.ToArray();
+
+    private readonly List<Card> nemesisSet = [];
+
+    internal void RegisterNemesis(Card card) => nemesisSet.Add(card);
+
     /// <summary>This player's deck. The <b>last</b> element is the top.</summary>
     public Area Deck { get; }
 

@@ -66,7 +66,7 @@ public readonly record struct PhaseStep(
             Steps.PlaceThreat => VillainPhaseThreat(id, world, facts),
             Steps.SchemeThreat => SchemeThreat(id, world, facts),
             Steps.PlaceThreatEffect when Operation is ThreatPlacementOperation { Placement: { } placement } =>
-                Occurrence.ForThreat(id, Conditions, world, facts, placement),
+                OccurrenceCapture.Threat(id, Conditions, world, facts, placement),
             Steps.PlaceThreatEffect => throw new RulesNotImplementedException(
                 "a scheduled threat placement has no placement payload"),
             Steps.Attack => Occurrence.ForAttack(
@@ -142,7 +142,7 @@ public readonly record struct PhaseStep(
             return new Occurrence(id, Conditions, Subject: scheme.ObjectId);
         }
 
-        return Occurrence.ForThreat(
+        return OccurrenceCapture.Threat(
             id,
             Conditions,
             world,
@@ -161,12 +161,15 @@ public readonly record struct PhaseStep(
 
         var enemy = world.Cards[Subject];
         if (world.ThreatAbilities.SchemeDestination(world, enemy) is not { } scheme)
-            return new Occurrence(id, []);
+            // The enemy still schemes when its area has no threat destination.
+            // Keep its causal roles for scheme-end responses without a placement.
+            return new Occurrence(id, [], Subject: enemy.ObjectId, Player: Seat,
+                Actor: enemy.ObjectId, ActorFacts: OccurrenceCard.Capture(enemy, facts));
         long amount = StateFields.Modified(
             world, enemy, "scheme", facts, world.Players);
         if (amount <= 0)
         {
-            return Occurrence.ForThreat(
+            return OccurrenceCapture.Threat(
                 id,
                 [Steps.SchemeEnds],
                 world,
@@ -177,7 +180,7 @@ public readonly record struct PhaseStep(
                 subject: enemy.ObjectId);
         }
 
-        return Occurrence.ForThreat(
+        return OccurrenceCapture.Threat(
             id,
             Conditions,
             world,
@@ -201,6 +204,9 @@ public readonly record struct PhaseStep(
                 OccurrenceId ?? Moment.Id(Round, Number, Index), Conditions, Subject, Seat)
             {
                 EventRemovesThreat = (Operation as LifecycleOperation)?.EventRemovesThreat,
-                CardPlayPayment = (Operation as LifecycleOperation)?.Payment,
+                Entry = new OccurrenceEntry(
+                    (Operation as LifecycleOperation)?.Payment ?? (Operation as PlayerAllyEntryOperation)?.PlayedPayment,
+                    (Operation as LifecycleOperation)?.EntryPayment ?? (Operation as PlayerAllyEntryOperation)?.Payment,
+                    Operation as PlayerAllyEntryOperation),
             };
 }

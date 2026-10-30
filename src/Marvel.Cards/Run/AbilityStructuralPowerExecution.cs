@@ -33,7 +33,7 @@ internal static class AbilityStructuralPowerExecution
         bool departed = AbilitySchemeCostBinding.HasDeparted(context.Program, context.AbilityFace,
             power, context.Expressions.Bindings);
         target = ResolveTarget(context, power, target, departed);
-        if (!departed && target is null && (power.Kind != AbilityPowerKind.Thwart || power.Target is not null))
+        if (!departed && target is null && RequiresTarget(power))
             return new Unsupported($"'{context.SourceFace}' cannot find the target of its {verb}");
 
         var selected = PowerAdmission(context, power, target, targets);
@@ -49,6 +49,14 @@ internal static class AbilityStructuralPowerExecution
                 context.Player, context.Expressions.Source, target)) target = null;
         return SchedulePower(context, power, target, targets, amount, verb);
     }
+
+    private static bool RequiresTarget(AbilityEffect.Power power) =>
+        power.Target is not null || power.Kind switch
+        {
+            AbilityPowerKind.Thwart => false,
+            AbilityPowerKind.Attack => !AbilityStagedAttackLowering.IsSplashBody(power.Effect),
+            _ => true,
+        };
 
     private static Card? ResolveTarget(AbilityStructuralContext context, AbilityEffect.Power power,
         Card? target, bool departed) => departed ? null

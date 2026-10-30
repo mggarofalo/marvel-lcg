@@ -29,7 +29,7 @@ public abstract record AbilityEffect
     public sealed record ChooseStatusRecipients(AbilityCardSelection From, string Status, int Maximum) : AbilityEffect;
 
     /// <summary>Select a distinct second enemy within the current attack, then deal constant damage.</summary>
-    public sealed record AttackAnotherEnemy(long Amount) : AbilityEffect;
+    public sealed record AttackAnotherEnemy(long Amount, bool AnyEnemy = false) : AbilityEffect;
 
     /// <summary>Return this host's stored cards to their owners, optionally removing the host.</summary>
     public sealed record ReleaseBeneath(bool RemoveHost, bool Rescue = false) : AbilityEffect
@@ -117,7 +117,7 @@ public abstract record AbilityEffect
     /// <summary>Remove every selected status kind from selected in-play characters.</summary>
     public sealed record RemoveStatuses(AbilityCardSelection Cards, ImmutableArray<string> Statuses) : AbilityEffect;
     /// <summary>Change the selected player's form.</summary>
-    public sealed record ChangeForm(AbilityPlayer Player, string Form) : AbilityEffect;
+    public sealed record ChangeForm(AbilityPlayer Player, AbilityFormDestination Destination) : AbilityEffect;
     /// <summary>Permit matching cards beneath the source to be played as if in hand.</summary>
     public sealed record AllowPlayBeneath(CardKind Kind, string Trait) : AbilityEffect;
     /// <summary>Permit this ally to be played from its owner's discard during their turn.</summary>
@@ -214,7 +214,7 @@ public abstract record AbilityEffect
         public AbilityPlayer Player { get; init; } = AbilityPlayer.You;
         /// <summary>The deck whose current contents bound the discard.</summary>
         public AbilitySearchArea From { get; init; } = AbilitySearchArea.EncounterDeck;
-        /// <summary>The printed identity set required for a player-deck match.</summary>
+        /// <summary>The printed set required for a deck match.</summary>
         public string? Set { get; init; }
     }
     /// <summary>Move selected cards into a deck and shuffle it.</summary>

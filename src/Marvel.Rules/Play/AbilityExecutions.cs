@@ -213,7 +213,11 @@ public sealed class AbilityExecutions
     {
         if (invocation.DeferredActivation) return;
         var owned = AbilityOwnedWork.Segment(invocation);
-        if (invocation.ResponseBoundary is { } boundary) owned.Remove(boundary.Continuation);
+        if (invocation.ResponseBoundary is { } boundary)
+        {
+            owned.Remove(boundary.Continuation);
+            if (boundary.Prerequisite is { } prerequisite) owned.Remove(prerequisite);
+        }
         var children = agenda.items.Where(item => owned.Contains(item.Step.FrameId)).ToList();
         if (children.Count == 0) return;
         int first = agenda.items.FindIndex(item => owned.Contains(item.Step.FrameId));

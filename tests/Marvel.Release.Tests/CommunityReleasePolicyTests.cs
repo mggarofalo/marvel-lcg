@@ -79,14 +79,14 @@ public sealed class CommunityReleasePolicyTests
             workflow, StringComparison.Ordinal);
         Assert.Contains("needs: [identity, acceptance-record, server-sign]",
             workflow, StringComparison.Ordinal);
-        Assert.Contains("engine-replay-v28 · protocol 42 · save 7",
+        Assert.Contains("engine-replay-v29 · protocol 43 · save 7",
             File.ReadAllText(Path.Combine(RepositoryPaths.Root, ".github", "workflows", "ci.yml")),
             StringComparison.Ordinal);
-        Assert.Contains("engine-replay-v28 · protocol 42 · save 7", workflow,
+        Assert.Contains("engine-replay-v29 · protocol 43 · save 7", workflow,
             StringComparison.Ordinal);
-        Assert.Contains("engine-replay-v28 · protocol 42 · save 7", serverUpgrade,
+        Assert.Contains("engine-replay-v29 · protocol 43 · save 7", serverUpgrade,
             StringComparison.Ordinal);
-        Assert.Contains("protocol:42,save_schema:7", workflow, StringComparison.Ordinal);
+        Assert.Contains("protocol:43,save_schema:7", workflow, StringComparison.Ordinal);
         Assert.DoesNotContain("protocol:14", workflow, StringComparison.Ordinal);
         Assert.Contains("tar -C /source -czf - . > \"$backup\"", serverUpgrade,
             StringComparison.Ordinal);
@@ -170,8 +170,8 @@ public sealed class CommunityReleasePolicyTests
             "Linux server interrupted candidate",
             "Linux server downgrade",
             "unsupported_downgrade",
-            "engine-replay-v28",
-            "protocol `42`",
+            "engine-replay-v29",
+            "protocol `43`",
             "TrustedPeople",
         })
         {

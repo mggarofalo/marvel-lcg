@@ -11,8 +11,10 @@ public static class IdentityFaces
         ArgumentNullException.ThrowIfNull(spec);
         ArgumentNullException.ThrowIfNull(facts);
         string[] faces = spec.Split(',');
-        if (faces.Length != 2 || faces.Count(face => facts.Kind(face) == CardKind.Hero) != 1)
-            throw new ArgumentException($"identity '{spec}' requires one hero and one alter-ego face", nameof(spec));
+        if (faces.Distinct(StringComparer.Ordinal).Count() != faces.Length ||
+            !faces.Any(face => facts.Kind(face) == CardKind.Hero) ||
+            faces.Any(face => facts.Kind(face) is not (CardKind.Hero or CardKind.AlterEgo)))
+            throw new ArgumentException($"identity '{spec}' requires distinct identity faces including a hero", nameof(spec));
         string[] alterEgos = faces.Where(face => facts.Kind(face) == CardKind.AlterEgo).ToArray();
         if (alterEgos.Length != 1)
             throw new ArgumentException($"identity '{spec}' requires exactly one alter-ego face", nameof(spec));

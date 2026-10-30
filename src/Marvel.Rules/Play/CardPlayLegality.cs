@@ -46,7 +46,7 @@ public static class CardPlayLegality
     /// what may go in one has nothing to check at play time.
     /// </para>
     /// </remarks>
-    internal static bool TeamedUp(World world, ICardFacts facts, Card card)
+    public static bool TeamedUp(World world, ICardFacts facts, Card card)
     {
         if (Characteristics.IsLost(world, card, "team-up")
             || !facts.Attributes(card.FaceId).TryGetValue("TeamUp", out string? named))

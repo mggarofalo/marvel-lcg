@@ -21,7 +21,24 @@ internal static class ContinuousEffectRegistry
         ArgumentNullException.ThrowIfNull(effect);
         effect = DelayedEffects.CaptureTarget(effects.world, effects.BindCurrentActivation(effect));
         var entry = new ContinuousEffectEntry(effect, CardEffectSources.Capture(effects.world, effect));
+        bool changesTraits = effect.Kind.StartsWith(Traits.Granted, StringComparison.Ordinal)
+            || effect.Kind.StartsWith(Characteristics.Lost + Traits.Granted, StringComparison.Ordinal);
+        var transition = changesTraits ? new ContinuousBlankingTransition(effects) : null;
         effects.entries.Add(entry);
+        ContinuousEffectDeparture? departure;
+        try
+        {
+            departure = transition?.Preflight();
+        }
+        catch
+        {
+            effects.entries.Remove(entry);
+            throw;
+        }
+        using (departure?.Begin()) departure?.Complete("trait changed", []);
+        transition?.RecheckLimits();
+        if (effect.Kind is "ally_limit" or PrintedText.Blanked)
+            RecheckAllyLimits(effects);
         return new ContinuousEffects.Registration(effects, entry);
     }
 
@@ -110,7 +127,7 @@ internal static class ContinuousEffectRegistry
         return [.. registered, .. constants];
     }
 
-    private static IReadOnlyList<ContinuousEffect> ExcludingSuppressedConstants(
+    internal static IReadOnlyList<ContinuousEffect> ExcludingSuppressedConstants(
         this ContinuousEffects effects,
         IReadOnlyList<ContinuousEffect> constants)
     {
@@ -210,15 +227,21 @@ internal static class ContinuousEffectRegistry
             return;
         }
 
+        var blanksBefore = effects.CapturePrintedBlanks();
         Card[] candidates = effects.LostUsesCandidates();
+        var healthBefore = effects.CaptureCharacterHealthCore();
         ContinuousEffectDeparture constantsEnding;
         effects.suppressed.UnionWith(ending);
         try
         {
             var restoredUses = effects.RestoredUsesAfter(candidates);
-            constantsEnding = effects.PreflightDepartures(
-                [.. restoredUses, .. effects.LethalAfterHealthEnds(
-                    ending.Select(entry => entry.Effect))],
+            var lethal = effects.LethalAfterDerivedChange(healthBefore);
+            if (lethal.Length > 0 && effects.world.Agenda.Occurrence is null
+                && !blanksBefore.SequenceEqual(effects.CapturePrintedBlanks()))
+                throw new RulesNotImplementedException(
+                    "printed blanking health defeat requires an enclosing occurrence");
+            constantsEnding = new ContinuousEffectCascadePreflight(effects).PreflightDepartures(
+                [.. restoredUses, .. lethal],
                 includeHostedCards: true, moveRoots: true);
         }
         finally
@@ -234,68 +257,15 @@ internal static class ContinuousEffectRegistry
         var sink = events ?? [];
         using var departure = constantsEnding.Begin();
         constantsEnding.Complete(trigger, sink);
+        effects.RecheckAllyLimitsAfterBlanking(blanksBefore);
+        if (ending.Any(entry => entry.Effect.Kind is "ally_limit" or PrintedText.Blanked))
+            RecheckAllyLimits(effects);
     }
 
-    internal static Card[] LostUsesCandidates(this ContinuousEffects effects) => effects.world.Cards.Where(card =>
-            DeckTypes.IsInPlay(card.Area.Type)
-            && !EffectiveCards.HasProfile(card)
-            && Characteristics.IsLost(effects.world, card, "uses")
-            && effects.world.CounterPools.CounterPool(effects.world, card)?.Uses == true
-            && card.Tokens
-                .Where(pair => pair.Key.StartsWith("c_", StringComparison.Ordinal))
-                .Sum(pair => pair.Value) == 0).ToArray();
-
-    internal static Card[] RestoredUsesAfter(this ContinuousEffects effects, Card[] candidates)
+    private static void RecheckAllyLimits(ContinuousEffects effects)
     {
-        var restored = candidates
-            .Where(card => !Characteristics.IsLost(effects.world, card, "uses"))
-            .ToArray();
-        var restoredIds = restored.Select(card => card.ObjectId).ToHashSet();
-        return restored.Where(card => !effects.HasHostedAncestor(card, restoredIds)).ToArray();
+        foreach (int player in effects.world.PlayerOrder)
+            CardEntry.CheckAllyLimit(effects.world, effects.world.Facts, player);
     }
 
-    internal static Card[] LethalAfterHealthEnds(this ContinuousEffects effects, IEnumerable<ContinuousEffect> ending)
-    {
-        var health = ending.Where(effect =>
-                string.Equals(effect.Kind, "health", StringComparison.Ordinal)
-                && effect.Amount > 0)
-            .ToArray();
-        if (health.Length == 0)
-        {
-            return [];
-        }
-
-        return effects.world.Cards.Where(card =>
-                DeckTypes.IsInPlay(card.Area.Type)
-                && CardKinds.IsCharacter(EffectiveCards.Kind(card, effects.world.Facts))
-                && StateFields.Modified(
-                    effects.world, card, "is_infinite_health", effects.world.Facts, effects.world.Players) <= 0
-                && health.Where(effect => effect.AppliesTo(effects.world, card))
-                    .Sum(effect => effect.Amount) is long lost and > 0
-                && card.Damage < Play.DamagePlacement.Health(effects.world, effects.world.Facts, card) + lost
-                && card.Damage >= Play.DamagePlacement.Health(effects.world, effects.world.Facts, card))
-            .ToArray();
-    }
-
-
-    internal static bool HasHostedAncestor(this ContinuousEffects effects, Card card, HashSet<int> candidates)
-    {
-        int host = card.Area.Host;
-        var seen = new HashSet<int> { card.ObjectId };
-        bool candidateAncestor = false;
-        while (host >= 0)
-        {
-            if (!seen.Add(host))
-            {
-                throw new RulesNotImplementedException(
-                    $"attachment {host} forms a hosting cycle");
-            }
-            if (candidates.Contains(host))
-            {
-                candidateAncestor = true;
-            }
-            host = host < effects.world.Cards.Count ? effects.world.Cards[host].Area.Host : -1;
-        }
-        return candidateAncestor;
-    }
 }

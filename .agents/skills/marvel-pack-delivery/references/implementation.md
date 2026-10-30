@@ -18,6 +18,9 @@ answers must not be used to restore the superseded behavior. An assertion based
 on the older rule is a test finding, not evidence of an engine defect.
 
 Map each new mechanic to its engine prerequisite and test a characteristic card.
+Rejection of one candidate encoding does not establish a missing capability.
+Check existing compositions before extending the DSL: a finite capped value may
+be expressible with conditional branches and existing fixed bounds.
 Keep card DSL changes separate from engine mechanisms where practical. Confirm
 cost assessment, choices and mutations happen in the correct order: a rejected
 answer must preserve the prompt, state, RNG and pending effects, including on retry.
@@ -54,7 +57,9 @@ playerless scenario setup. Evaluate resolving-player context only on paths whose
 printed instruction requires it.
 
 After authoring rows, run the ability-data tests as well as characteristic card
-tests. Reconcile explicit authored-face and starting-counter inventories with the
+tests. Use `FullyQualifiedName~AbilityData` to include the split test classes;
+`~AbilityDataTests` misses the separately named authored-face inventory class.
+Reconcile explicit authored-face and starting-counter inventories with the
 printed facts, and keep unknown-card negative controls genuinely unauthored.
 Do not permit an entire incomplete pack merely to satisfy a face-inventory gate.
 

@@ -102,6 +102,23 @@ public sealed class FormsTests
         Assert.Equal(["energy", Forms.Hero], Forms.Of(world, seat, printed));
     }
 
+    [Rule("rr:form-change-form.6.1")]
+    [Fact]
+    public void SpeculativeIdentityFaceRetainsOtherFaceupKeywordForms()
+    {
+        // rr:form-change-form.6.1: a keyword form is in addition to the identity form.
+        var printed = new Printed();
+        printed.Forms["gamma"] = "energy";
+        var world = Board(printed);
+        var seat = world.Seats[0];
+        InPlay(world, seat, "gamma");
+
+        Assert.Equal(["energy", Forms.Hero], Forms.OfIdentityFace(world, seat, printed, "hero"));
+        Assert.Equal([Forms.AlterEgo, "energy"], Forms.Of(world, seat, printed));
+        Assert.Equal("alterego", seat.IdentityCard.FaceId);
+        Assert.Throws<ArgumentException>(() => Forms.OfIdentityFace(world, seat, printed, "villain"));
+    }
+
     [Rule("rr:identity.4")]
     [Fact]
     public void AFacedownFormCardGrantsNothing()

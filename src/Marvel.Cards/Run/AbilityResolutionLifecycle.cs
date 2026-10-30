@@ -150,7 +150,9 @@ internal static class AbilityResolutionLifecycle
     private static List<GameEvent> ResumeSegment(this AbilityResolutionExecution execution,
         AbilityResolutionState cast, Card source, AbilityContinuationTransition transition)
     {
-        while (true)
+        // A resumed node can end the game before its structural frames unwind.
+        // Leave their remaining text and completion cleanup to agenda abandonment.
+        while (!cast.World.IsOver)
         {
             switch (transition)
             {
@@ -187,6 +189,7 @@ internal static class AbilityResolutionLifecycle
                         $"Unknown continuation transition {transition.GetType().Name}");
             }
         }
+        return cast.Events;
     }
 
     private static AbilityContinuationTransition ContinueAfterResumedNode(

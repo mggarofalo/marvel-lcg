@@ -19,6 +19,7 @@ public sealed class CoreLastingEffectCardsTests
     public void LeadFromTheFrontAffectsTheChosenPlayersCurrentAndLaterCharacters()
     {
         var world = Board();
+        world.CreateCard("01088", world.Seats[0].Deck);
         var eventCard = world.CreateCard("01070", world.Seats[0].Hand);
         var payment = world.CreateCard("01088", world.Seats[0].Hand);
         var existing = world.CreateCard(
@@ -26,7 +27,9 @@ public sealed class CoreLastingEffectCardsTests
         var runner = AuthoredCards.Runner();
 
         runner.ExecuteAction(world, new PlayerAction(new PendingAbility(eventCard.ObjectId, AbilityType.Action, 0), [payment.ObjectId], []));
+        Assert.Equal(Outcome.Unfinished, world.Result);
         AnswerCardChoice(world, runner, eventCard, world.Seats[1].IdentityCard);
+        Assert.Equal(Outcome.Unfinished, world.Result);
 
         var later = world.CreateCard(
             "01083", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(1), cardOwner: 1));
@@ -174,17 +177,17 @@ public sealed class CoreLastingEffectCardsTests
         world.Abilities = new UnrelatedWorldAbilities();
 
         runner.ExecuteAction(world, new PlayerAction(new PendingAbility(source.ObjectId, AbilityType.Action, 0), [], []));
-        var step = Assert.Single(world.Agenda.Outstanding);
-        var prompt = runner.Choosing(world, step)!;
+        var prompt = Assert.IsType<Prompt>(Sequence.Work(world, Cards, runner, []));
         var offer = Assert.Single(prompt.Affordances);
         Assert.Equal(chosen.ObjectId, offer.AnchorId);
         Assert.Equal("3", Assert.Single(offer.CostOptions).Cost);
 
-        runner.Chose(world, step, Decision.Take(
+        Sequence.Answer(world, Cards, runner, prompt, Decision.Take(
                 chosen.ObjectId, [], [doubleResource.ObjectId, singleResource.ObjectId], new Dictionary<string, long>(),
                 Assert.IsAssignableFrom<IReadOnlyList<ResourceAllocation>>(ResourcePayment.Allocate(
-                    Assert.Single(offer.CostOptions), [doubleResource.ObjectId, singleResource.ObjectId]))));
+                    Assert.Single(offer.CostOptions), [doubleResource.ObjectId, singleResource.ObjectId]))), []);
 
+        Assert.Null(Sequence.Work(world, Cards, runner, []));
         Assert.Equal(1, chosen.Owner);
         Assert.Equal(PlayArea.Of(0), chosen.Area.PlayArea);
         Assert.Equal(DeckType.AlliesArea, chosen.Area.Type);
@@ -193,6 +196,8 @@ public sealed class CoreLastingEffectCardsTests
         Assert.Equal(DeckType.DiscardPile, singleResource.Area.Type);
     }
 
+    [Rule("rr:cost.3")]
+    [Rule("rr:cost.4.1")]
     [Theory]
     [InlineData("01071", "01072")]
     [InlineData("03016", "03018")]
@@ -201,6 +206,8 @@ public sealed class CoreLastingEffectCardsTests
         // The official FAQ for 01071 says Make the Call pays the ally's own
         // cost. A matching Power of Aspect card therefore generates two
         // resources even though Make the Call, rather than the ally, is played.
+        // rr:cost.3 pays costs with generated resources; rr:cost.4.1 says
+        // resources beyond the cost "were not paid for that cost."
         var world = Board();
         var source = world.CreateCard(callFace, world.Seats[0].Hand);
         var power = world.CreateCard(powerFace, world.Seats[0].Hand);
@@ -208,23 +215,34 @@ public sealed class CoreLastingEffectCardsTests
         var theirDiscard = world.AreaOf(
             DeckType.DiscardPile, PlayArea.Of(1), cardOwner: 1);
         var maria = world.CreateCard("01067", theirDiscard);
+        var hulk = world.CreateCard("01050", theirDiscard);
         var runner = AuthoredCards.Runner();
         world.Abilities = runner;
 
         runner.ExecuteAction(world, new PlayerAction(new PendingAbility(source.ObjectId, AbilityType.Action, 0), [], []));
-        var step = Assert.Single(world.Agenda.Outstanding);
-        var prompt = runner.Choosing(world, step)!;
+        var prompt = Assert.IsType<Prompt>(Sequence.Work(world, Cards, runner, []));
         var offer = Assert.Single(prompt.Affordances);
         var price = Assert.Single(offer.CostOptions);
 
         Assert.Equal(maria.ObjectId, offer.AnchorId);
         Assert.Equal("2", price.Cost);
-        Assert.Equal("GG", Assert.Single(price.Generators).Generates);
+        var quote = Assert.Single(price.Generators);
+        Assert.Equal("G", quote.Generates);
+        Assert.Equal(new ConditionalResourceBonus("G", 1), quote.ConditionalBonus);
 
-        runner.Chose(world, step, Decision.Take(maria.ObjectId, [], [power.ObjectId], new Dictionary<string, long>(),
-            Assert.IsAssignableFrom<IReadOnlyList<ResourceAllocation>>(
-                ResourcePayment.Allocate(price, [power.ObjectId]))));
+        var allocation = Assert.IsAssignableFrom<IReadOnlyList<ResourceAllocation>>(
+            ResourcePayment.Allocate(price, [power.ObjectId]));
+        Assert.Equal(new ResourceAllocation(power.ObjectId, 0, "GG"), Assert.Single(allocation));
+        Assert.Equal("GG", ResourcePayment.GeneratedBy(quote, allocation));
+        Sequence.Answer(world, Cards, runner, prompt, Decision.Take(maria.ObjectId, [], [power.ObjectId],
+            new Dictionary<string, long>(), allocation), []);
 
+        var entryResponse = Assert.IsType<Prompt>(Sequence.Work(world, Cards, runner, []));
+        Assert.Contains(entryResponse.Affordances, offer => offer.AnchorId == maria.ObjectId);
+        Sequence.Answer(world, Cards, runner, entryResponse, Decision.Decline, []);
+        Assert.Null(Sequence.Work(world, Cards, runner, []));
+        Assert.Equal(1, maria.Owner);
+        Assert.Equal(DeckType.DiscardPile, hulk.Area.Type);
         Assert.Equal(DeckType.AlliesArea, maria.Area.Type);
         Assert.Equal(PlayArea.Of(0), maria.Area.PlayArea);
         Assert.Equal(DeckType.DiscardPile, power.Area.Type);

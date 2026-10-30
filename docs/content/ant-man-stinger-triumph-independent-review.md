@@ -1,0 +1,19 @@
+# Independent content review: Stinger and Moment of Triumph
+
+Candidate: `c868fa51e272268dc68ed4e626abdebc39fba212`; comparison base: `b0d5c9ca307e1bd78fc50eff2a3bb58b129fc83e`. This review concerns the actual 12014 and 12030 rows on prepared, nonpublic boards. It does not admit the incomplete Ant-Man pack or claim whole-pack acceptance.
+
+## Authority and interpretation
+
+The generated card dataset says Stinger may be played only if the current identity has the Avenger trait and does not count against her controller's ally limit. The printed restriction is enforced through the existing card-play restriction, not authored as a second ability. The row grants its source the exclusion constant. RR 1.8 `rr:ability.8.2` starts constants on entry, and `rr:ally-limit` requires the controller to choose and discard allies until the count is legal. Existing actual-row entry and current-face restriction tests use a same-cost Blade control. The new independent actual-row test chooses Stinger after a later ordinary ally creates an excess, and requires another choice: treating Stinger as an increase to the limit, or considering the first discard sufficient, cannot satisfy that behavior.
+
+Moment of Triumph is a zero-cost Hero Response after that player's hero attacks and defeats an enemy; it heals that hero once per point of that attack's excess against that enemy. The row binds the hero actor, defeated triggering recipient, and recipient-specific excess. RR 1.8 `rr:you-your.6` and `.15` distinguish the identity from an ally, `rr:overkill.1` and `.3` govern defeat and excess, and `rr:heal.1` limits healing to damage present. The historical `ruling:a9f3fec80b8e2872` (pre-1.5) confirms Moment and overkill combine; current RR 1.8 governs the calculation. The vendored MarvelCDB FAQ has no entries for either card.
+
+Actual-row tests cover both seats, an ally and another player's attack with an eligible synthetic response control; positive and zero excess, nonlethal and tough, prevention, a healing cap, overkill, reentry, a nonattack defeat of a new incarnation, and separate simultaneous recipient amounts including identical names. The labelled and simultaneous attacks use synthetic attack sources; they establish response behavior, not a publicly playable Ant-Man scenario. The separate engine reviews document their limits, including same-incarnation unrelated defeat and genuine predecessor replay, which this content review does not resolve.
+
+Compared with the base, all 748 original ability objects and their raw byte prefix through the prior final object are unchanged. The candidate has 750 entries and 27 authored Ant-Man faces. The existing server catalog transport and runtime admission controls keep incomplete Ant-Man excluded. Prior compiled behavioral row mutants removed Stinger's constant and changed Moment's amount to one; the respective actual-row controls failed as documented in [the source checkpoint](ant-man-stinger-triumph-cards.md). The independent engine review additionally killed a compiled same-title recipient-association mutant. These are distinct from the new exclusion-choice control.
+
+## Verification and verdict
+
+On Windows Release with `MSBUILDDISABLENODEREUSE=1` and `-m:1`, the focused actual-card and `AbilityData` selection passed 58/58, including the new Stinger control. The server catalog and runtime-admission selection passed 20/20, including Ant-Man exclusion. Logs: `C:/Users/mggar/evidence/stinger-triumph-independent-content.log` and `stinger-triumph-independent-catalog.log`. Normal commit hooks are recorded in `stinger-triumph-independent-final-hooks.log`.
+
+Verdict: accept the two actual rows for the exercised nonpublic content scope. No content defect was found. This does not settle the separate engine and replay limitations above or replace broader integration gates.

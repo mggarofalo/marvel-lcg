@@ -409,7 +409,7 @@ public sealed class World
     {
         ArgumentNullException.ThrowIfNull(card);
         ArgumentNullException.ThrowIfNull(destination);
-        destination.ValidateCanAcceptCards();
+        destination.ValidateCanAcceptCards(card);
 
         // `rr:removed-from-the-game.2`: this is a terminal game state, not a
         // set-aside pile. Effects that may later retrieve a card use

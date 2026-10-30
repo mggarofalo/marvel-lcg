@@ -207,10 +207,10 @@ public sealed class InvocationTopDiscardTests
         Sequence.Answer(world, InvocationTopDiscardFixture.Cards, call, callPrompt, Decision.Take(wong.ObjectId, [], [doubleResource.ObjectId, singleResource.ObjectId],
             new Dictionary<string, long>(), ResourcePayment.Allocate(Assert.Single(offered.CostOptions),
                 [doubleResource.ObjectId, singleResource.ObjectId])!), []);
+        Assert.Null(Sequence.Work(world, InvocationTopDiscardFixture.Cards, call, []));
         Assert.Equal(PlayArea.Of(0), wong.Area.PlayArea);
         Assert.Equal(1, wong.Owner);
         Assert.True(wong.Ready);
-        Assert.Null(Sequence.Work(world, InvocationTopDiscardFixture.Cards, call, []));
         world.Abilities = runner;
         var top = deck.PublicTop!;
         runner.ExecuteAction(world, new PlayerAction(Assert.Single(runner.Actions(world, 0), item => item.Card == wong.ObjectId), [], []));

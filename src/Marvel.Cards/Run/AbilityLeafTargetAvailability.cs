@@ -46,6 +46,13 @@ internal static class AbilityLeafTargetAvailability
 
         // The delayed effect's game element comes from its future occurrence;
         // rr:target.5 requires no target at initiation.
+        "playersWin" => !cast.World.IsOver,
+        "captureKangStageOneDefeat" => true,
+        "captureKangStageTwoDefeat" => true,
+        "captureKangLocalCompletion" => true,
+        "splitKangStageTwo" => true,
+        "createKangGameArea" => true,
+        "revealKangStageThree" or "putKangNemesesIntoPlay" => true,
         "delayUntil" => true,
         "generate" or "preventDamage" or "cancelWhenRevealed" or "cancelOccurrence"
             or "dealEncounterCards" or "revealTop"

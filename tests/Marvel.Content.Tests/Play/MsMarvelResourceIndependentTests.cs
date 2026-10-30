@@ -68,17 +68,17 @@ public sealed class MsMarvelResourceIndependentTests
     }
 
     [Fact]
-    public void ProtectionResourceDoesNotDoubleForAbilityCostOnProtectionCard()
+    public void ProtectionResourceQualifiesAbilityCostOnProtectionCard()
     {
         var (_, world) = Playing(_ => { });
         var runner = AuthoredCards.Runner();
         var power = world.CreateCard("05016", world.Seats[0].Hand);
         var protection = world.CreateCard("01080", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
-        Assert.Equal("G", Assert.Single(CardPayment.Generators(world, world.Facts, world.Seats[0], runner,
-            abilitySource: protection), item => item.Effect == power.ObjectId).Generates);
+        Assert.Equal("GG", Assert.Single(CardPayment.Generators(world, world.Facts, world.Seats[0], runner,
+            abilitySource: protection), item => item.Effect == power.ObjectId).PossibleResources);
         var card = world.CreateCard("01080", world.Seats[0].Hand);
         Assert.Equal("GG", Assert.Single(CardPayment.Generators(world, world.Facts, world.Seats[0], runner, card),
-            item => item.Effect == power.ObjectId).Generates);
+            item => item.Effect == power.ObjectId).PossibleResources);
         Assert.Equal("G", Assert.Single(CardPayment.Generators(world, world.Facts, world.Seats[0], runner),
             item => item.Effect == power.ObjectId).Generates);
     }

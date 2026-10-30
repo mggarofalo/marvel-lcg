@@ -2154,7 +2154,10 @@
       "abilities": [
         {
           "trigger": { "timing": "Constant", "subject": "this" },
-          "effect": { "grant": { "card": "you", "keyword": "hand_size", "amount": { "min": [ 6, { "count": { "withTrait": { "cards": { "query": "upgradesYouControl" }, "trait": "TECH" } } } ] } } }
+          "effect": { "seq": [
+            { "grant": { "card": "you", "keyword": "hand_size", "amount": { "count": { "withTrait": { "cards": { "query": "upgradesYouControl" }, "trait": "TECH" } } } } },
+            { "grant": { "card": "you", "keyword": "hand_size_maximum", "amount": 7 } }
+          ] }
         }
       ]
     },
@@ -22819,6 +22822,1054 @@
               }
             }
           }
+        }
+      ]
+    },
+    {
+      "card": "12019",
+      "name": "First Aid",
+      "note": "The action chooses any character and heals 2 damage from it.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "characters"
+              },
+              "effect": {
+                "heal": {
+                  "card": "chosen",
+                  "amount": 2
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "12021",
+      "name": "Energy",
+      "note": "This resource card has no ability. Its two printed energy resources are read from datasets/cards by the resource rules.",
+      "abilities": []
+    },
+    {
+      "card": "12022",
+      "name": "Genius",
+      "note": "This resource card has no ability. Its two printed mental resources are read from datasets/cards by the resource rules.",
+      "abilities": []
+    },
+    {
+      "card": "12023",
+      "name": "Strength",
+      "note": "This resource card has no ability. Its two printed physical resources are read from datasets/cards by the resource rules.",
+      "abilities": []
+    },
+    {
+      "card": "12012",
+      "name": "Giant-Man",
+      "note": "Giant-Man gets +2 ATK while his current remaining hit points are at least 3. The conditional grant spelling is an engine choice.",
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant", "subject": "this" },
+          "effect": { "if": {
+            "test": { "atLeast": { "value": { "remainingHealth": "this" }, "count": 3 } },
+            "then": { "grant": { "card": "this", "keyword": "attack", "amount": 2 } }
+          } }
+        }
+      ]
+    },
+    {
+      "card": "12018",
+      "name": "Reinforced Suit",
+      "note": "Attach to an ally, maximum one per ally. The attached ally gets +2 hit points.",
+      "attachTo": { "withoutAnotherCopyAttached": { "query": "allies" } },
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant", "subject": "this" },
+          "effect": { "grant": { "card": "attachedTo", "keyword": "health", "amount": 2 } }
+        }
+      ]
+    },
+    {
+      "card": "12013",
+      "name": "Ronin",
+      "note": "Ronin gets +1 THW and +1 ATK while at least one upgrade is attached to them. upgradesOnThis and conditional grants are engine spellings; multiple upgrades do not multiply this bonus.",
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant", "subject": "this" },
+          "effect": { "if": {
+            "test": { "exists": { "query": "upgradesOnThis" } },
+            "then": { "seq": [
+              { "grant": { "card": "this", "keyword": "thwart", "amount": 1 } },
+              { "grant": { "card": "this", "keyword": "attack", "amount": 1 } }
+            ] }
+          } }
+        }
+      ]
+    },
+    {
+      "card": "12033",
+      "name": "Assess the Situation",
+      "note": "The Action grants its player +1 hand size until phase end, including the end-player draw before phase expiration. grantUntil and EndOfPhase are engine spellings.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this" },
+          "effect": { "grantUntil": { "card": "you", "keyword": "hand_size", "amount": 1, "until": "EndOfPhase" } }
+        }
+      ]
+    },
+    {
+      "card": "12015",
+      "name": "Call for Aid",
+      "note": "Hero Action discards from your deck until an Avenger ally, then adds that exact physical ally to your hand. The bounded discard operation retains the normal immediate empty-deck reset and does not continue through the replacement deck. DSL spellings are engine choices.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" },
+          "effect": { "discardUntil": { "from": "yourDeck", "kind": "ally", "trait": "AVENGER", "then": "addToHand" } }
+        }
+      ]
+    },
+    {
+      "card": "12017",
+      "name": "Power Gloves",
+      "note": "Attach to an Avenger ally, maximum one per ally. After that exact ally attacks or thwarts, its controller may deal 1 damage to an enemy. Trigger and selector spellings are engine choices.",
+      "attachTo": { "withoutAnotherCopyAttached": { "withTrait": { "cards": { "query": "allies" }, "trait": "AVENGER" } } },
+      "abilities": [
+        {
+          "trigger": { "event": "WhenAttackEnds", "timing": "Response", "actor": "attachedTo" },
+          "effect": { "chooseCard": { "from": { "query": "enemies" }, "effect": { "dealDamage": { "cards": "chosen", "amount": 1 } } } }
+        },
+        {
+          "trigger": { "event": "WhenThwartEnds", "timing": "Response", "actor": "attachedTo" },
+          "effect": { "chooseCard": { "from": { "query": "enemies" }, "effect": { "dealDamage": { "cards": "chosen", "amount": 1 } } } }
+        }
+      ]
+    },
+    {
+      "card": "12001a",
+      "name": "Ant-Man (Tiny)",
+      "note": "After changing to this face, the optional response removes 1 threat from a scheme. Trigger and selector spellings are engine choices.",
+      "abilities": [
+        { "trigger": { "event": "WhenFormChanged", "timing": "Response", "subject": "this" },
+          "effect": { "chooseCard": { "from": { "query": "schemes" }, "effect": { "removeThreat": { "scheme": "chosen", "amount": 1 } } } } }
+      ]
+    },
+    {
+      "card": "12001b",
+      "name": "Scott Lang",
+      "note": "After changing to this face, the optional response heals Scott Lang 1 damage. Trigger and selector spellings are engine choices.",
+      "abilities": [
+        { "trigger": { "event": "WhenFormChanged", "timing": "Response", "subject": "this" },
+          "effect": { "heal": { "card": "you", "amount": 1 } } }
+      ]
+    },
+    {
+      "card": "12001c",
+      "name": "Ant-Man (Giant)",
+      "note": "After changing to this face, the optional response deals 1 damage to an enemy. Trigger and selector spellings are engine choices.",
+      "abilities": [
+        { "trigger": { "event": "WhenFormChanged", "timing": "Response", "subject": "this" },
+          "effect": { "chooseCard": { "from": { "query": "enemies" }, "effect": { "dealDamage": { "cards": "chosen", "amount": 1 } } } } }
+      ]
+    },
+    {
+      "card": "12005",
+      "name": "Resize",
+      "note": "Hero Action changes to the other hero form and independently draws a card. Destination and sequence spellings are engine choices.",
+      "abilities": [
+        { "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" },
+          "effect": { "seq": [ { "changeForm": { "player": "you", "to": "other-hero" } }, { "draw": { "player": "you", "count": 1 } } ] } }
+      ]
+    },
+    {
+      "card": "12008",
+      "name": "Ant-Man's Helmet",
+      "note": "After changing to Giant, heal 2 damage; after changing to Tiny, draw 1 card. Both are optional Hero Responses; trigger and trait spellings are engine choices.",
+      "abilities": [
+        { "trigger": { "event": "WhenFormChanged", "timing": "Response", "subject": "you", "form": "hero" },
+          "when": { "hasTrait": { "card": "you", "trait": "GIANT" } }, "effect": { "heal": { "card": "you", "amount": 2 } } },
+        { "trigger": { "event": "WhenFormChanged", "timing": "Response", "subject": "you", "form": "hero" },
+          "when": { "hasTrait": { "card": "you", "trait": "TINY" } }, "effect": { "draw": { "player": "you", "count": 1 } } }
+      ]
+    },
+    {
+      "card": "12002",
+      "name": "Wasp",
+      "note": "Printed 12002 Hero Response uses the current controller identity form. Damage is not an attack and threat removal is not a thwart. DSL spellings are engine choices.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardEntersPlay",
+            "timing": "Response",
+            "subject": "this",
+            "form": "hero"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "hasTrait": {
+                  "card": "you",
+                  "trait": "GIANT"
+                }
+              },
+              "then": {
+                "chooseCard": {
+                  "from": {
+                    "query": "enemies"
+                  },
+                  "effect": {
+                    "dealDamage": {
+                      "cards": "chosen",
+                      "amount": 2
+                    }
+                  }
+                }
+              },
+              "else": {
+                "if": {
+                  "test": {
+                    "hasTrait": {
+                      "card": "you",
+                      "trait": "TINY"
+                    }
+                  },
+                  "then": {
+                    "chooseCard": {
+                      "from": {
+                        "query": "schemes"
+                      },
+                      "effect": {
+                        "removeThreat": {
+                          "scheme": "chosen",
+                          "amount": 2
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "12004",
+      "name": "Hive Mind",
+      "note": "Printed Tiny-only thwart removes 2 plus one additional threat per controlled Army of Ants support. The additional amount belongs to the same thwart. DSL spellings are engine choices.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "when": {
+            "hasTrait": {
+              "card": "you",
+              "trait": "TINY"
+            }
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "thwartableSchemes"
+              },
+              "effect": {
+                "thwart": {
+                  "target": "chosen",
+                  "effect": {
+                    "removeThreat": {
+                      "scheme": "chosen",
+                      "amount": {
+                        "add": [
+                          2,
+                          {
+                            "count": {
+                              "cardsIn": {
+                                "area": "yourPlayArea",
+                                "kind": "Support",
+                                "title": "Army of Ants"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "12007",
+      "name": "Army of Ants",
+      "note": "Printed Tiny-only Hero Action exhausts this support to deal nonattack damage to an enemy. DSL spellings are engine choices.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "when": {
+            "hasTrait": {
+              "card": "you",
+              "trait": "TINY"
+            }
+          },
+          "cost": {
+            "exhaust": "this"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "enemies"
+              },
+              "effect": {
+                "dealDamage": {
+                  "cards": "chosen",
+                  "amount": 1
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "12010",
+      "name": "Wrist Gauntlets",
+      "note": "Printed Hero Actions require Giant and two physical resources to stun, or Tiny and two energy resources to confuse; both exhaust this upgrade. Resource encodings and DSL spellings are engine choices.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "when": {
+            "hasTrait": {
+              "card": "you",
+              "trait": "GIANT"
+            }
+          },
+          "cost": {
+            "seq": [
+              {
+                "exhaust": "this"
+              },
+              {
+                "spend": "RR"
+              }
+            ]
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "enemies"
+              },
+              "effect": {
+                "giveStatus": {
+                  "card": "chosen",
+                  "status": "stunned"
+                }
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "when": {
+            "hasTrait": {
+              "card": "you",
+              "trait": "TINY"
+            }
+          },
+          "cost": {
+            "seq": [
+              {
+                "exhaust": "this"
+              },
+              {
+                "spend": "YY"
+              }
+            ]
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "enemies"
+              },
+              "effect": {
+                "giveStatus": {
+                  "card": "chosen",
+                  "status": "confused"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+{
+  "card": "12009",
+  "name": "Giant Strength",
+  "note": "Hero Response: after changing to Giant hero form, gain +1 ATK until this turn ends. Current RR 1.8 lasting-effects.6 restricts initiation to a player turn; no turn is taken during the villain phase.",
+  "abilities": [
+    {
+      "trigger": {
+        "event": "WhenFormChanged",
+        "timing": "Response",
+        "subject": "you",
+        "form": "hero"
+      },
+      "when": {
+        "hasTrait": {
+          "card": "you",
+          "trait": "GIANT"
+        }
+      },
+      "effect": {
+        "grantUntil": {
+          "card": "you",
+          "keyword": "attack",
+          "amount": 1,
+          "until": "EndOfTurn"
+        }
+      }
+    }
+  ]
+},
+{
+  "card": "12016",
+  "name": "Moxie",
+  "note": "Hero Response after the controller changes form: the controller's hero gains +1 THW, ATK and DEF until round end. The lasting bonuses persist after the event is discarded; they do not create a recurring form-change trigger.",
+  "abilities": [
+    {
+      "trigger": {
+        "event": "WhenFormChanged",
+        "timing": "Response",
+        "subject": "you",
+        "form": "hero"
+      },
+      "effect": {
+        "seq": [
+          {
+            "grantUntil": {
+              "card": "yourHero",
+              "keyword": "thwart",
+              "amount": 1,
+              "until": "EndOfRound"
+            }
+          },
+          {
+            "grantUntil": {
+              "card": "yourHero",
+              "keyword": "attack",
+              "amount": 1,
+              "until": "EndOfRound"
+            }
+          },
+          {
+            "grantUntil": {
+              "card": "yourHero",
+              "keyword": "defense",
+              "amount": 1,
+              "until": "EndOfRound"
+            }
+          }
+        ]
+      }
+    }
+  ]
+},
+{
+  "card": "12031",
+  "name": "Lay Down the Law",
+  "note": "Hero Response (thwart) after the controller changes form: remove 3 threat from one chosen scheme, or 4 when the committed payment contains mental. Generated but unallocated excess does not qualify.",
+  "abilities": [
+    {
+      "trigger": {
+        "event": "WhenFormChanged",
+        "timing": "Response",
+        "subject": "you",
+        "form": "hero"
+      },
+      "labels": [
+        "thwart"
+      ],
+      "effect": {
+        "chooseCard": {
+          "from": {
+            "query": "schemes"
+          },
+          "effect": {
+            "thwart": {
+              "target": "chosen",
+              "effect": {
+                "if": {
+                  "test": {
+                    "paidWithResource": "B"
+                  },
+                  "then": {
+                    "removeThreat": {
+                      "scheme": "chosen",
+                      "amount": 4
+                    }
+                  },
+                  "else": {
+                    "removeThreat": {
+                      "scheme": "chosen",
+                      "amount": 3
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+},
+{
+  "card": "12032",
+  "name": "Muster Courage",
+  "note": "Printed Hero Action requires an Avenger identity and gives tough to up to the current villain stage number of friendly characters, maximum three. Fixed recipient bounds selected by stage conditions are engine-chosen composition.",
+  "abilities": [
+    {
+      "trigger": {
+        "event": "WhenActionTriggered",
+        "timing": "Action",
+        "subject": "this",
+        "form": "hero"
+      },
+      "when": {
+        "and": [
+          {
+            "hasTrait": {
+              "card": "you",
+              "trait": "AVENGER"
+            }
+          },
+          {
+            "atLeast": {
+              "value": {
+                "modified": {
+                  "card": {
+                    "query": "villain"
+                  },
+                  "field": "printed_stage"
+                }
+              },
+              "count": 1
+            }
+          }
+        ]
+      },
+      "effect": {
+        "if": {
+          "test": {
+            "atLeast": {
+              "value": {
+                "modified": {
+                  "card": {
+                    "query": "villain"
+                  },
+                  "field": "printed_stage"
+                }
+              },
+              "count": 3
+            }
+          },
+          "then": {
+            "chooseStatusRecipients": {
+              "from": {
+                "query": "heroesAndAllies"
+              },
+              "status": "tough",
+              "maximum": 3
+            }
+          },
+          "else": {
+            "if": {
+              "test": {
+                "atLeast": {
+                  "value": {
+                    "modified": {
+                      "card": {
+                        "query": "villain"
+                      },
+                      "field": "printed_stage"
+                    }
+                  },
+                  "count": 2
+                }
+              },
+              "then": {
+                "chooseStatusRecipients": {
+                  "from": {
+                    "query": "heroesAndAllies"
+                  },
+                  "status": "tough",
+                  "maximum": 2
+                }
+              },
+              "else": {
+                "chooseStatusRecipients": {
+                  "from": {
+                    "query": "heroesAndAllies"
+                  },
+                  "status": "tough",
+                  "maximum": 1
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+},
+    {
+      "card": "12003",
+      "note": "Giant hero action: one attack deals simultaneous damage to each minion, then selects a live enemy for eight damage.",
+      "abilities": [{
+        "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" },
+        "when": { "hasTrait": { "card": "you", "trait": "GIANT" } },
+        "effect": { "attack": { "effect": { "seq": [
+          { "dealAttackDamage": { "cards": { "query": "minions" }, "amount": 1, "simultaneous": 1 } },
+          { "attackAnyEnemy": { "amount": 8 } }
+        ] } } }
+      }]
+    },
+    {
+      "card": "12020",
+      "note": "Hero action: change to the other hero form, then ready your hero; printed Team-Up governs play.",
+      "abilities": [{
+        "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" },
+        "effect": { "seq": [
+          { "changeForm": { "player": "you", "to": "other-hero" } },
+          { "ready": "yourHero" }
+        ] }
+      }]
+    }
+,
+    {
+      "card": "12014",
+      "note": "Stinger does not count against her controller's ally limit; the printed identity-trait restriction governs play.",
+      "abilities": [{
+        "trigger": { "timing": "Constant" },
+        "effect": { "grant": { "card": "this", "keyword": "ally_limit_excluded" } }
+      }]
+    },
+    {
+      "card": "12030",
+      "note": "Hero response: heal your hero by the attack's excess damage to the defeated enemy.",
+      "abilities": [{
+        "trigger": { "event": "WhenAttackEnds", "timing": "Response", "actor": "you", "target": "enemy", "form": "hero" },
+        "when": { "wasDefeated": "trigger.target" },
+        "effect": { "heal": { "card": "you", "amount": { "attackExcessDamage": "trigger.target" } } }
+      }]
+    },
+    {
+      "card": "12027",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "and": [
+                  {
+                    "inForm": {
+                      "player": "engagedPlayer",
+                      "form": "hero"
+                    }
+                  },
+                  {
+                    "exists": {
+                      "withTrait": {
+                        "cards": {
+                          "inPlayerArea": {
+                            "area": "identity",
+                            "player": "engagedPlayer"
+                          }
+                        },
+                        "trait": "GIANT"
+                      }
+                    }
+                  }
+                ]
+              },
+              "then": {
+                "grant": {
+                  "card": "this",
+                  "trait": "GIANT"
+                }
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "timing": "Constant"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "and": [
+                  {
+                    "inForm": {
+                      "player": "engagedPlayer",
+                      "form": "hero"
+                    }
+                  },
+                  {
+                    "exists": {
+                      "withTrait": {
+                        "cards": {
+                          "inPlayerArea": {
+                            "area": "identity",
+                            "player": "engagedPlayer"
+                          }
+                        },
+                        "trait": "GIANT"
+                      }
+                    }
+                  }
+                ]
+              },
+              "then": {
+                "grant": {
+                  "card": "this",
+                  "keyword": "retaliate",
+                  "amount": 1
+                }
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "timing": "Constant"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "and": [
+                  {
+                    "inForm": {
+                      "player": "engagedPlayer",
+                      "form": "hero"
+                    }
+                  },
+                  {
+                    "exists": {
+                      "withTrait": {
+                        "cards": {
+                          "inPlayerArea": {
+                            "area": "identity",
+                            "player": "engagedPlayer"
+                          }
+                        },
+                        "trait": "TINY"
+                      }
+                    }
+                  }
+                ]
+              },
+              "then": {
+                "grant": {
+                  "card": "this",
+                  "trait": "TINY"
+                }
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "timing": "Constant"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "and": [
+                  {
+                    "inForm": {
+                      "player": "engagedPlayer",
+                      "form": "hero"
+                    }
+                  },
+                  {
+                    "exists": {
+                      "withTrait": {
+                        "cards": {
+                          "inPlayerArea": {
+                            "area": "identity",
+                            "player": "engagedPlayer"
+                          }
+                        },
+                        "trait": "TINY"
+                      }
+                    }
+                  }
+                ]
+              },
+              "then": {
+                "grant": {
+                  "card": "this",
+                  "keyword": "attack",
+                  "amount": 1
+                }
+              }
+            }
+          }
+        }
+      ],
+      "note": "Live engaged-player hero form controls Yellowjacket's Giant/retaliate or Tiny/ATK constants."
+    },
+    {
+      "card": "12028",
+      "attachTo": {
+        "firstAvailable": [
+          {
+            "titled": "Yellowjacket"
+          },
+          {
+            "query": "villain"
+          }
+        ]
+      },
+      "startingCounters": {
+        "type": "size",
+        "count": 3,
+        "uses": true
+      },
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenAttackEnds",
+            "timing": "ForcedResponse",
+            "actor": "attachedTo"
+          },
+          "effect": {
+            "removeCounters": {
+              "card": "this",
+              "counter": "size",
+              "count": 1
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenSchemeEnds",
+            "timing": "ForcedResponse",
+            "subject": "attachedTo"
+          },
+          "effect": {
+            "removeCounters": {
+              "card": "this",
+              "counter": "size",
+              "count": 1
+            }
+          }
+        }
+      ],
+      "note": "Prefer Yellowjacket, otherwise the villain; printed attachment stats apply once. Each completed attack or scheme removes one use."
+    },
+    {
+      "card": "12006",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenResourceCardSpent",
+            "timing": "Response",
+            "subject": "this",
+            "player": "you",
+            "form": "hero"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "hasTrait": {
+                  "card": "you",
+                  "trait": "GIANT"
+                }
+              },
+              "then": {
+                "heal": {
+                  "card": "yourHero",
+                  "amount": 2
+                }
+              },
+              "else": {
+                "if": {
+                  "test": {
+                    "hasTrait": {
+                      "card": "you",
+                      "trait": "TINY"
+                    }
+                  },
+                  "then": {
+                    "draw": {
+                      "player": "you",
+                      "count": 1
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "note": "The spent physical card responds after the completed cost and before the paid effect or entry; wholly excess generation is still a spend."
+    },
+    {
+      "card": "12029",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "discardUntil": {
+              "from": "encounterDeck",
+              "set": "ant_nemesis",
+              "then": "reveal"
+            }
+          }
+        }
+      ],
+      "note": "Discard only through the current encounter-deck boundary, then reveal the exact physical Ant-Man nemesis-set card found."
+    },
+    {
+      "card": "12025",
+      "name": "Care for Cassie",
+      "note": "Give to Scott Lang through the printed obligation routing. The discard is not an arrow cost; resolve the lasting prohibition and cleanup even with an empty hand.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "choose": {
+                  "descriptions": [
+                    "Change to alter-ego form",
+                    "Remain in your current form"
+                  ],
+                  "options": [
+                    {
+                      "changeForm": {
+                        "player": "you",
+                        "to": "alter-ego"
+                      }
+                    },
+                    {
+                      "seq": []
+                    }
+                  ]
+                }
+              },
+              {
+                "choose": {
+                  "descriptions": [
+                    "Exhaust Scott Lang and remove Care for Cassie from the game",
+                    "Choose and discard 1 card from your hand; you cannot change form until your next turn ends; discard Care for Cassie"
+                  ],
+                  "options": [
+                    {
+                      "then": {
+                        "effect": {
+                          "exhaust": "yourAlterEgo"
+                        },
+                        "then": {
+                          "removeFromGame": "this"
+                        }
+                      }
+                    },
+                    {
+                      "seq": [
+                        {
+                          "discardHandCards": 1
+                        },
+                        {
+                          "grantUntil": {
+                            "card": "you",
+                            "keyword": "form_change_prohibited",
+                            "amount": 1,
+                            "until": "EndOfNextPlayerTurn"
+                          }
+                        },
+                        {
+                          "discard": "this"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "12011",
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant", "subject": "this" },
+          "effect": { "grant": { "card": "this", "keyword": "health", "amount": { "countersOn": { "card": "this", "counter": "pym" } } } }
+        },
+        {
+          "trigger": { "event": "WhenCardEntersPlay", "timing": "Interrupt", "subject": "this" },
+          "effect": { "placeCounters": { "card": "this", "counter": "pym", "count": { "min": [ 4, { "entryResourceExcess": "this" } ] } } }
+        }
+      ]
+    },
+    {
+      "card": "12026",
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant", "subject": "this" },
+          "effect": { "blankTechPlayerCards": "game" }
+        }
+      ]
+    },
+    {
+      "card": "12024",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "game", "form": "hero" },
+          "cost": { "exhaust": "this" },
+          "effect": { "playSharedHeroTraitCard": "game" }
         }
       ]
     }

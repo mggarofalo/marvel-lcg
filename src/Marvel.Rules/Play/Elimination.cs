@@ -34,7 +34,10 @@ public static class Elimination
             return;
         }
 
+        KangElimination.Preflight(world, player);
         Preflight(world, facts, player);
+
+        var kangArea = world.Agenda.KangTransitions.Elimination.Capture(world, player);
 
         seat.Eliminated = true;
 
@@ -121,7 +124,8 @@ public static class Elimination
         // themselves an encounter card for it.
         foreach (var area in Mine(world, player))
         {
-            foreach (var card in area.Cards.ToList())
+            foreach (var card in area.Cards.Where(card =>
+                !world.Agenda.KangTransitions.Elimination.Retains(card)).ToList())
             {
                 Remove(world, card, trigger, events);
             }
@@ -139,6 +143,7 @@ public static class Elimination
         {
             world.Finish(Outcome.PlayersLose, PlayerLossReason.AllPlayersEliminated);
         }
+        else if (kangArea is not null) world.Agenda.KangTransitions.PlayerDeparted(world, kangArea, player);
     }
 
     /// <summary>

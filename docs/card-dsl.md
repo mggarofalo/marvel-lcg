@@ -5,6 +5,51 @@ forced and optional attack-end responses and is zero without a completed attack.
 
 # The card DSL
 
+`playSharedHeroTraitCard: "game"` offers the resolving player a card in their hand
+that shares a live trait with their hero, played at a cost reduced by one. The
+spelling is an engine choice. It is admitted once in an Action whose sole cost
+is exhausting its source, either as the entire effect or as the first instruction
+of a sequence. The normal play and payment procedures apply. An eligible event must
+have exactly one ordinary Action, with no arrow cost or paid-resource-dependent
+effect; unsupported matching Action shapes raise rather than guessing. Event
+conditions, form and targets remain subject to ordinary Action admission.
+
+
+`blankTechPlayerCards: "game"` is an engine-chosen spelling for a standalone, unconditional constant. It targets the live in-play TECH player-card set. Permanent targets from another known set are protected; missing set facts and same-set Permanent targets refuse. A target with an admitted `playersWin` instruction also refuses. This is not a general implementation of protected alternate victory or loss text: unsupported printed outcomes and protected partial text require separate admission and protection. The canonical card inventory has no printed TECH player card containing an alternate win or loss instruction; SP//dr Suit (31001b) is Permanent in another set. This vocabulary does not admit Tech Theft into the canonical ability book.
+
+
+`grant` with `card: "this"` and `keyword: "ally_limit_excluded"` expresses
+an unconditional standalone constant excluding that ally from its controller's
+ally-limit count. The mandatory choice still includes every controlled ally. This spelling is an engine choice;
+it does not increase the player's limit. It is admitted only as a standalone
+constant on the source, with the default amount of one. The live source and
+controller are read at each check. This prerequisite does not author Stinger or
+admit the Ant-Man product.
+
+
+`playersWin: "game"` ends the game with a player victory. The spelling is an engine choice; Kang III uses it in its When Defeated ability. The terminal result abandons remaining ability text and agenda work, including suspended continuations. A direct `playersWin` option in `choose` remains unsupported: partial-resolution admission raises before offering the prompt.
+
+Player-deck `discardUntil` uses either `set` for an identity-set match or `kind`
+with an optional `trait`; when both kind and trait are supplied, both must match.
+`from: "yourDeck"` and `then: "addToHand"` retrieve the exact discarded physical
+card for the resolving player (or explicitly named `player`), including when the
+match was shuffled by the immediate empty-deck reset. The instruction stops at
+the original deck boundary. These vocabulary spellings are engine choices.
+Mixing an identity set with kind or trait, or supplying trait without kind, is
+rejected. This mechanism does not admit additional production cards.
+
+Encounter-deck `discardUntil` can instead specify `set` and `then: "reveal"`.
+It matches the printed encounter set across card types and reveals the exact
+discarded card, including after an immediate reset. Set cannot be combined with
+kind or trait. This vocabulary is an engine choice; it admits no production card.
+
+`grant` with `keyword: "hand_size_maximum"`, a positive constant amount and
+`card: "you"` expresses a total hand-size maximum from the current face's
+constant ability. This engine-chosen spelling applies after all additive
+modifiers; multiple maxima use the smallest. It is distinct from a limit on
+one ability's bonus. The maximum ends when its source's text is inactive.
+
+
 `handResourceForm: "hero"` is card-level metadata restricting the printed hand
 resource source to its owner's current hero form. The engine chooses this spelling;
 only `hero` is admitted, and the face must have a complete authored `abilities`
@@ -88,6 +133,14 @@ enemy. The first physical enemy remains excluded across villain stage changes;
 a departed and reentered minion is a new copy. Both sentences retain one attack
 context and consume a whole-attack modifier once. Arbitrary choice-inside-power
 shapes remain unsupported. This spelling is an engine choice for Melee.
+
+`attackAnyEnemy: { "amount": <positive constant> }` is the second sentence
+of a targetless attack whose first sentence deals simultaneous constant attack
+damage to every minion. The second selection is made against the settled live
+board and may name a surviving first-sentence recipient. Both sentences share
+one attack and its response and retaliation facts. This engine-chosen spelling
+is restricted to that exact two-sentence shape; other targetless attack bodies
+and arbitrary suspended choices remain unsupported.
 
 `forEachDiscarded` uses the `eachTime` fields (`effect`, `when`, `then`) for an
 encounter-deck `discardTop`, but finishes that discard before traversing its own
@@ -535,6 +588,20 @@ undefendedAttack until upgradesAndSupportsYouControl
 upgradesYouControl wasDefeated withStatus withTrait within withoutAnotherCopyAttached
 yourAsideMinion yourAsidePile yourAsideSideScheme
 ```
+
+### Identity form destinations
+
+The engine chooses `changeForm.to` spellings. `hero` and `alter-ego` name a
+form; `other-hero` names the other hero face when a hero face is active; and
+`{"face":"12001c"}` names an exact face of the changing physical identity.
+A current destination has no effect. A foreign face or a generic form with
+multiple possible destinations is unsupported and raises rather than choosing.
+Form-change effects do not consume the voluntary form-change receipt.
+
+Exact and other-hero destinations are currently admitted only as standalone
+instructions. A composed ability containing either raises during preflight:
+the existing dependent and repeated traces do not yet project an exact face or
+its traits. This boundary does not admit Ant-Man content.
 
 ## Generic selection and temporary identities
 
@@ -1229,6 +1296,13 @@ interpretation of "this attack". Combine it with the player's form condition and
 `afterActivation`; it neither moves the active counter nor schedules an attack.
 Activations remain sequential under rr:activation.8.
 
+`grantUntil` accepts `EndOfNextPlayerTurn` only for a unit
+`form_change_prohibited` grant to `you`. It applies immediately and expires
+at the end of that player's next turn, including when it starts during another
+player's turn or the villain phase. It remains after the source leaves play.
+The current turn is not the next turn. Other targets, amounts and fields are not
+admitted for this duration.
+
 `grantCharactersWithTrait` registers a live lasting combat bonus:
 `{"trait":"AVENGER","fields":["attack","thwart"],"amount":1,"until":"EndOfPhase"}`.
 The affected set includes all in-play characters with the current effective
@@ -1528,6 +1602,21 @@ Both branches retain the same outer thwart label and its whole-ability cancellat
 Other power suspension and conditional admission shapes retain their existing gates.
 
 
+### Entry resource excess
+
+`{"entryResourceExcess":"this"}` reads resources generated beyond those paid
+for the bound source card's completed entry cost (`rr:cost.4.1`). Its spelling
+is an engine choice. The payer and physical card incarnation must match the
+entry receipt; an unpaid entry, unrelated source or reentered copy reads zero.
+The expression composes with numeric operators such as `min` for a printed cap.
+### Player attack excess damage
+
+`{"attackExcessDamage":"trigger.target"}` reads the settled excess on the
+bound attack-end recipient. The spelling is an engine choice. The value uses
+the same calculation as overkill (`rr:overkill.3`) and is zero without a
+matching recipient or an actual defeat. It survives the recipient leaving play
+and is independent of overkill damage subsequently prevented on its spill target.
+
 ### Received enemy-attack damage
 
 `{"receivedAttackDamage":"game"}` reads the positive damage actually taken by
@@ -1784,3 +1873,51 @@ callers for this causal ownership; a null value uses the current occurrence.
 Its accessibility is an engine API choice and adds no persisted or wire field.
 Actual authored Chase Them Down (`01052`) observes the lethal followup and removes
 two threat, while the enemy activation's ally defeat does not satisfy it.
+
+
+`captureKangStageOneDefeat: "this"`, `splitKangStageTwo: "this"` and
+`createKangGameArea: "this"` are engine-chosen scenario instructions for Kang's
+nonpublic 1–4-player split. They capture the actual own When Defeated event,
+resolve central 2A, and create a selected 3A's local scheme/villain/deal through
+the retained phase-owned controller. Calling a reveal instruction without that
+controller raises. No production card rows or product admission are added by
+these spellings. See `content/kang-first-split-evidence.md` for exact scope,
+seeded assignment policy and remaining scenario boundaries.
+
+`captureKangStageTwoDefeat: "this"` connects the matching physical Kang II's
+own When Defeated resolution to removal of its local 3B and a pending whole-group
+join at the next actual phase-ending operation. This scenario instruction's name
+and binding are engine choices. It is available for test overlays only; no
+production card row or scenario admission is added. See
+`content/kang-first-split-evidence.md` for evidence and boundaries.
+
+
+`revealKangStageThree: "this"` and `putKangNemesesIntoPlay: "this"` are
+engine-chosen scenario instructions for the nonpublic 1–4-player central reunion.
+The phase-owned 4A reveal waits for the final villain's entry and reveal before
+4B flips. The 4B instruction searches each associated physical nemesis in player
+order, schedules non-reveal encounter entry, then shuffles the encounter deck.
+Both suspend their enclosing ability until their child work finishes. Stored
+Dominions under 4A use ordinary encounter reveal windows after III's complete
+reveal and before 4B; unknown hosted cards and unsupported composition fail closed. These instructions do
+not admit Kang's production rows or complete the scenario.
+
+`captureKangLocalCompletion: "this"` is an engine-chosen bounded instruction
+for an actual 11009b–11012b completion Forced Response. The completion occurrence
+retains the exact local stage; the instruction stores one scenario-owned physical
+11023 facedown beneath set-aside 11013a, then retains both local stage and matching
+II until their next actual phase ending. The existing whole-group join owns the
+continuation. Storage permits only that out-of-play physical pair and refuses a
+4A host that has already entered play. Ordered 4A reveals retain stored physical
+incarnations across suspension. No production rows or public admission are added.
+See `content/kang-dominion-storage-evidence.md` for evidence and remaining limits.
+
+`upgradesOnThis` selects in-play cards of effective Upgrade kind attached to the
+source’s current incarnation. It excludes encounter Attachment cards and cards
+stored beneath the source. Its name is an engine choice; `rr:upgrade.3` and
+`rr:attach-to.1` distinguish attached upgrades from the Attachment card type.
+Projected selection follows projected host, entry and departure changes. The engine
+chooses ascending physical object-id order for this new selector in both live and
+projected evaluation. The printed condition requires existence, not attachment
+chronology; `last` therefore selects the greatest matching object id. Other
+queries retain their existing order.

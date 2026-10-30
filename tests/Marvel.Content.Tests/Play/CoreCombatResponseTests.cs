@@ -69,6 +69,7 @@ public sealed class CoreCombatResponseTests
     public void SuperhumanStrengthUsesTheCompletedAttacksTarget()
     {
         var world = Board("01019a");
+        world.CreateCard("01087", world.Seats[0].Deck);
         var hero = world.Seats[0].IdentityCard;
         var strength = world.CreateCard(
             "01028", world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), cardOwner: 0));
@@ -82,6 +83,7 @@ public sealed class CoreCombatResponseTests
             ability => ability.Card == strength.ObjectId);
         runner.ResolveWindow(world, occurrence, pending, new Decision(pending.Card, [], []));
 
+        Assert.Equal(Outcome.Unfinished, world.Result);
         Assert.False(DeckTypes.IsInPlay(strength.Area.Type));
         Assert.True(Statuses.Has(world, minion, Statuses.Stunned));
     }
@@ -205,6 +207,7 @@ public sealed class CoreCombatResponseTests
     public void IndomitableRequiresTheHeroToHaveDefended()
     {
         var world = Board("01001a");
+        world.CreateCard("01087", world.Seats[0].Deck);
         var hero = world.Seats[0].IdentityCard;
         hero.Exhaust();
         var indomitable = world.CreateCard(
@@ -219,6 +222,7 @@ public sealed class CoreCombatResponseTests
         var pending = Assert.Single(runner.Waiting(world, occurrence, WindowKind.Response));
         runner.ResolveWindow(world, occurrence, pending, new Decision(pending.Card, [], []));
 
+        Assert.Equal(Outcome.Unfinished, world.Result);
         Assert.True(hero.Ready);
         Assert.False(DeckTypes.IsInPlay(indomitable.Area.Type));
     }

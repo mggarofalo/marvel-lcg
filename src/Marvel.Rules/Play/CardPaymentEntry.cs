@@ -7,6 +7,8 @@ namespace Marvel.Rules.Play;
 internal sealed class CardPaymentEntry
 {
     private bool consumed;
+    private bool spendWindowOpened;
+    private EntryPayment? entryPayment;
     internal required AbilityExecution Execution { get; init; }
     internal required World World { get; init; }
     internal required ICardFacts Facts { get; init; }
@@ -14,21 +16,41 @@ internal sealed class CardPaymentEntry
     internal required Seat Seat { get; init; }
     internal required Card Card { get; init; }
     internal required int Incarnation { get; init; }
+    internal required int OriginArea { get; init; }
     internal required AdjustedCardCost Cost { get; init; }
     internal required IReadOnlyList<int> Targets { get; init; }
     internal required ResourcePaymentReceipt Payment { get; init; }
 
     internal AbilityExecutionResult Apply(World world, List<GameEvent> events)
     {
-        if (!ReferenceEquals(World, world) || consumed)
-            throw new InvalidOperationException("card entry requires its unused owning game");
-        if (!Payment.IsComplete) throw new InvalidOperationException("card entry preceded its payment");
-        if (Card.Incarnation != Incarnation)
-            throw new InvalidOperationException("the paid card changed incarnation before entry");
+        ValidateAndCapture(world);
+        if (!spendWindowOpened)
+        {
+            spendWindowOpened = true;
+            if (ResourceSpentWindow.Open(world, Payment.SpentCards, Seat.Index))
+            {
+                world.Agenda.ThenContinuation(
+                    new PhaseStep(new CardPaymentEntryOperation(this), world.Agenda.Current?.Round ?? 0, 0),
+                    Execution.Occurrence);
+                return Execution.Yield(events);
+            }
+        }
         consumed = true;
         AllyPlayHistory.Record(world, Abilities, Card);
-        CardEntry.Enter(world, Facts, Abilities, Seat, Card, events, new CardEntryChoices(Targets, Payment.Paid));
+        CardEntry.Enter(world, Facts, Abilities, Seat, Card, events, new CardEntryChoices(Targets, Payment.Paid, entryPayment));
         CardPayment.UseCostModifiers(world, Cost);
         return Execution.Finish(events);
     }
+    private void ValidateAndCapture(World world)
+    {
+        if (!ReferenceEquals(World, world) || consumed)
+            throw new InvalidOperationException("card entry requires its unused owning game");
+        if (!Payment.IsComplete) throw new InvalidOperationException("card entry preceded its payment");
+        if (Card.Incarnation != Incarnation || Card.Area.Id != OriginArea)
+            throw new InvalidOperationException("the paid card changed incarnation before entry");
+        entryPayment ??= EntryPayment.Capture(Card, Seat.Index, Payment);
+        if (!entryPayment.MatchesPending(Card, Seat.Index))
+            throw new RulesNotImplementedException("the paid card moved before entry completed");
+    }
+
 }

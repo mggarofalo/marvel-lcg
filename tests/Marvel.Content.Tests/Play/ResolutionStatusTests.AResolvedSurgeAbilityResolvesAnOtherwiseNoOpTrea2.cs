@@ -72,7 +72,7 @@ public sealed class ResolutionStatusAResolvedSurgeAbilityResolvesAnOtherwiseNoOp
         hero.TurnTo(AuthoredCards.SpiderMan);
         var scheme = world.TheCardIn(DeckType.MainSchemesArea)!;
         var villain = world.TheCardIn(DeckType.VillainArea)!;
-        var occurrence = Occurrence.ForThreat(9, [Steps.ThreatWouldBePlaced], world, Cards, new ThreatPlacement(scheme.ObjectId, villain.ObjectId, 4, ThreatCause.CardAbility, "test", 0));
+        var occurrence = OccurrenceCapture.Threat(9, [Steps.ThreatWouldBePlaced], world, Cards, new ThreatPlacement(scheme.ObjectId, villain.ObjectId, 4, ThreatCause.CardAbility, "test", 0));
         var ability = Assert.Single(runner.Waiting(world, occurrence, WindowKind.Interrupt), pending => pending.Card == card.ObjectId);
         world.Effects.Register(new ContinuousEffect(EffectSource.LastingEffect, Kind: "preventDamage", Amount: long.MaxValue, Affects: hero.ObjectId, Lasts: new Duration(Uses: 1)));
         var resolution = runner.ResolveWindow(world, occurrence, ability, new Decision(ability.Card, [], []));

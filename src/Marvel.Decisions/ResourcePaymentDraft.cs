@@ -11,6 +11,7 @@ internal static class ResourcePaymentDraft
         IReadOnlyList<int> paying) =>
         option is { DeclarationSensitive: true }
         && option.ResourceCosts.Count == 1
+        && option.Generators.All(source => source.ConditionalBonus is null)
         && option.PreferredResourceTypes.Distinct().Take(2).Count() == 1
         && paying.Count > 0
         && paying.All(effect => option.Generators.Count(source =>

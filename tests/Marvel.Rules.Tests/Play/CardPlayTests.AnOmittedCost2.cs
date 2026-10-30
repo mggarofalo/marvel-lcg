@@ -41,6 +41,7 @@ public sealed class CardPlayAnOmittedCostTests : CardPlayTestBase
         Assert.Equal("0", CardPayment.Price(world, printed, seat, ally)!.Cost);
         Assert.Single(world.Effects.Active());
         CardPlay.Play(world, printed, new Silent(), seat, ally, [], []);
+        Assert.Null(Sequence.Work(world, printed, new Silent(), []));
         Assert.Equal(DeckType.AlliesArea, ally.Area.Type);
         Assert.Empty(world.Effects.Active());
     }
@@ -148,6 +149,7 @@ public sealed class CardPlayAnOmittedCostTests : CardPlayTestBase
         var ally = world.CreateCard("bruiser", discard);
         var events = new List<GameEvent>();
         CardPlay.PutAllyIntoPlay(world, printed, new Silent(), ally, controller: 0, trigger: "Make_The_Call", events);
+        Assert.Null(Sequence.Work(world, printed, new Silent(), events));
         Assert.Equal(1, ally.Owner);
         Assert.Equal(DeckType.AlliesArea, ally.Area.Type);
         Assert.Equal(PlayArea.Of(0), ally.Area.PlayArea);

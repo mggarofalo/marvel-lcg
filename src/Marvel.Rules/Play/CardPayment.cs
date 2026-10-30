@@ -58,7 +58,13 @@ public static class CardPayment
     /// because pricing a card is not playing it.
     /// </remarks>
     public static AdjustedCardCost CostOf(
-        World world, ICardFacts facts, Seat seat, Card card, int? attachmentHost = null)
+        World world, ICardFacts facts, Seat seat, Card card, int? attachmentHost = null) =>
+        CostOf(world, facts, seat, card, attachmentHost, null);
+
+    /// <summary>Prices one play with an explicitly scoped resource-cost reduction.</summary>
+    public static AdjustedCardCost CostOf(
+        World world, ICardFacts facts, Seat seat, Card card, int? attachmentHost,
+        ScopedCardCostReduction? reduction)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
@@ -83,6 +89,11 @@ public static class CardPayment
         amount = Math.Max(0, amount - world.CardPlayAbilities.SelfPlayCostReduction(world, card, seat.Index));
         amount = AllyPlayHistory.AdjustCost(world, card, amount);
         amount = UpgradeHostCost.Adjust(world, card, attachmentHost, amount);
+        if (reduction is not null)
+        {
+            reduction.Validate(world, seat, card);
+            amount = Math.Max(0, amount - reduction.Amount);
+        }
         return new AdjustedCardCost(amount, [.. modifiers, .. increases]);
     }
 
@@ -143,10 +154,10 @@ public static class CardPayment
         foreach (var card in seat.Hand.Cards)
         {
             if (!resourceAbilities.CanUseHandResources(world, card)) continue;
-            string generates = resourceAbilities.ResourcesGeneratedBy(world, card, payingFor);
-            if (generates.Length > 0)
+            var quote = resourceAbilities.QuoteHandResources(world, card, payingFor ?? abilitySource);
+            if (quote.Generates.Length > 0)
             {
-                sources.Add(new ResourceSource(card.ObjectId, generates));
+                sources.Add(quote);
             }
         }
 
@@ -208,7 +219,12 @@ public static class CardPayment
     /// <param name="seat">Whose card.</param>
     /// <param name="card">The card in hand.</param>
     /// <param name="attachmentHost">The selected physical attachment host, when pricing one destination.</param>
-    public static CostOption? Price(World world, ICardFacts facts, Seat seat, Card card, int? attachmentHost = null)
+    public static CostOption? Price(World world, ICardFacts facts, Seat seat, Card card, int? attachmentHost = null) =>
+        Price(world, facts, seat, card, attachmentHost, null);
+
+    /// <summary>Prices a permanent play using a reduction scoped to that card.</summary>
+    public static CostOption? Price(World world, ICardFacts facts, Seat seat, Card card,
+        int? attachmentHost, ScopedCardCostReduction? reduction)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
@@ -241,7 +257,7 @@ public static class CardPayment
             if (targets is null || !targets.Contains(target)) return null;
         }
 
-        long cost = CostOf(world, facts, seat, card, attachmentHost).Amount;
+        long cost = CostOf(world, facts, seat, card, attachmentHost, reduction).Amount;
 
         // The card being played cannot also pay for itself: `rr:cost.3` spends
         // resources "by discarding cards from their hand", and this one is
@@ -257,12 +273,12 @@ public static class CardPayment
         // spending all of them is a payment. The types matter as well as the
         // count -- `rr:requirement-resources` makes a card with a requirement
         // unplayable without those resources, however many cards are in hand.
-        string pool = string.Concat(sources.SelectMany(source => source.Generates));
-        return !Resources.Pays(pool, cost, Resources.Required(world, card, facts))
-            ? null
-            : new CostOption(
-                Target: attachmentHost ?? card.ObjectId,
-                Cost: cost.ToString(System.Globalization.CultureInfo.InvariantCulture),
-                Sources: sources);
+        var price = new CostOption(
+            Target: attachmentHost ?? card.ObjectId,
+            Cost: cost.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            Sources: sources);
+        var requiredPrice = price with { Rule = [Resources.Required(world, card, facts)] };
+        return ResourcePayment.Allocate(requiredPrice, sources.Select(source => source.Effect).ToArray()) is null
+            ? null : price;
     }
 }

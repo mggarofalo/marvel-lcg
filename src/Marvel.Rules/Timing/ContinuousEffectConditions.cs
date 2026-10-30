@@ -35,16 +35,29 @@ public static class ContinuousEffectConditions
     }
 
     internal static int ExpireCore(this ContinuousEffects effects,
-        string timingPoint, List<GameEvent>? events = null)
+        string timingPoint, List<GameEvent>? events = null, int? turnPlayer = null)
     {
         ArgumentNullException.ThrowIfNull(timingPoint);
         int? activation = effects.world.Activation?.Id;
         var expired = effects.entries.Where(entry =>
-            entry.Effect.Lasts?.Until == timingPoint
+            (entry.Effect.Lasts?.Until == timingPoint
+                || (turnPlayer is not null && entry.NextTurnStarted
+                    && entry.Effect.Lasts?.NextTurnSeat == turnPlayer))
             && Matches(entry.Effect, activation)).ToList();
         effects.End(expired, timingPoint, events);
         return expired.Count;
     }
+
+    /// <summary>Record the beginning of the specified player's next turn.</summary>
+    public static void BeginNextTurn(this ContinuousEffects effects, int player)
+    {
+        foreach (var entry in effects.entries.Where(entry => entry.Effect.Lasts?.NextTurnSeat == player))
+            entry.NextTurnStarted = true;
+    }
+
+    /// <summary>Expire all effects ending at this player's turn boundary together.</summary>
+    public static int ExpirePlayerTurn(this ContinuousEffects effects, int player, List<GameEvent> events) =>
+        effects.ExpireCore(TimingPoints.EndOfTurn, events, player);
 
     /// <summary>Retire an activation's effects even when its occurrence was replaced.</summary>
     public static void CompleteActivation(this ContinuousEffects effects,
@@ -71,6 +84,11 @@ public static class ContinuousEffectConditions
             entry.Remaining -= 1;
         return [.. due.Select(entry => entry.Effect)];
     }
+
+    internal static bool HasDue(this ContinuousEffects effects, IReadOnlyList<string> conditions,
+        int? activationId = null) => effects.entries.Any(entry =>
+            entry.Effect.Lasts?.OnCondition is { } condition && conditions.Contains(condition)
+            && Matches(entry.Effect, activationId));
 
     private static bool Matches(ContinuousEffect effect, int? activation) =>
         effect.AwaitingActivation is null
