@@ -178,6 +178,8 @@ internal static class AbilityRepeatedSelectorTrace
     private static bool IsCharacter(bool villain, CardKind kind) =>
         villain || kind is CardKind.Minion or CardKind.Hero or CardKind.AlterEgo or CardKind.Ally;
 
+    // The trace keeps the live attack-target filter; no admitted action is
+    // offered or withheld on that difference alone.
     private static bool IsAttackableEnemy(
         bool villain, CardKind kind, Card candidate, AbilitySelectorTraceContext trace) =>
         (villain

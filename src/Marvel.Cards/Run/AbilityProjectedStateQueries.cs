@@ -147,6 +147,8 @@ internal static class AbilityProjectedStateQueries
             .ToList();
         found.RemoveAll(card => CardKinds.IsVillain(EffectiveCards.Kind(card, context.World.Facts))
             && !VillainAttackRestrictions.Allows(card, restricting));
+        // The projection keeps the live attack-target filter; no admitted action
+        // is offered or withheld on this difference alone.
         found.RemoveAll(card => !AbilityAttackTargets.Permits(context.World, Resolver(context), context.Source, card));
         return found;
     }

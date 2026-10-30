@@ -43,7 +43,9 @@ internal static class AbilityTriggerInstances
     // considered to have attacked each of those enemies". When a player attack
     // declares its recipients before it is initiated, an ability keyed to the
     // attacked enemy answers each recipient as its own instance of the one
-    // initiation occurrence (rr:triggering-condition.2).
+    // initiation occurrence (rr:triggering-condition.2). An ability not keyed to
+    // the attacked enemy still answers the occurrence once (rr:triggering-condition.1);
+    // no such attack-initiated ability in the book answers a player attack today.
     private static System.Collections.Immutable.ImmutableArray<Marvel.Rules.State.Attacked> AttackedRecipients(
         Marvel.Rules.State.World world, AbilityWindowAdmission.Candidate candidate, Occurrence occurrence)
     {
