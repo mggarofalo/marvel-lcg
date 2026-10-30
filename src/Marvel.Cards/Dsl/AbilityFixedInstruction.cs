@@ -30,6 +30,8 @@ public enum AbilityFixedInstruction
     ReadyUndamagedDefender,
     /// <summary>Cancel the current occurrence.</summary>
     CancelOccurrence,
+    /// <summary>Replace the imminent ready of this attachment's host.</summary>
+    ReplaceReady,
     /// <summary>Cancel numeric icons on the exact faceup boost card.</summary>
     CancelBoostIcons,
     /// <summary>Cancel the ability on the exact faceup boost card.</summary>

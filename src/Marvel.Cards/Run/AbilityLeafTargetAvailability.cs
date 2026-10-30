@@ -54,7 +54,7 @@ internal static class AbilityLeafTargetAvailability
         "createKangGameArea" => true,
         "revealKangStageThree" or "putKangNemesesIntoPlay" => true,
         "delayUntil" => true,
-        "generate" or "preventDamage" or "cancelWhenRevealed" or "cancelOccurrence"
+        "generate" or "preventDamage" or "cancelWhenRevealed" or "cancelOccurrence" or "replaceReady"
             or "dealEncounterCards" or "revealTop"
             or "recoverDiscardedByResource" or "shuffleInto" or "recruitDiscarded" or "shuffle" => true,
         _ => throw new RulesNotImplementedException(

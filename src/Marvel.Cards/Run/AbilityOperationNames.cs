@@ -185,6 +185,7 @@ internal static class AbilityOperationNames
             AbilityFixedInstruction.CancelBoostAbility => "cancelBoostAbility",
             AbilityFixedInstruction.CancelBoostIcons => "cancelBoostIcons",
             AbilityFixedInstruction.CancelOccurrence => "cancelOccurrence",
+            AbilityFixedInstruction.ReplaceReady => "replaceReady",
             AbilityFixedInstruction.CancelWhenRevealed => "cancelWhenRevealed",
             AbilityFixedInstruction.AlsoAttackEachOtherHero => "alsoAttackEachOtherHero",
             AbilityFixedInstruction.MakeAttackIndirect => "makeAttackIndirect",

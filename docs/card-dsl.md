@@ -580,7 +580,7 @@ placeAtRandom placeCounters placeThreat power powerAmount powerTargets cardsDisc
 preventDamage preventDamageFrom preventDamageWhile preventThreat
 preventThreatRemoval printedResourceCountDiscarded putIntoPlay
 recoverDiscardedByResource reduceNextCardCost remainingHealth removeCounters
-removeFromGame removeThreat replaceStatus replaceThreatWithDamage requireAllyDefender
+removeFromGame removeThreat replaceReady replaceStatus replaceThreatWithDamage requireAllyDefender
 resolveSpecials returnOwnedToHand returnToHand revealTop scheme schemes search
 shuffle shuffleInto sideSchemes soakDamage sourceKind sourceTrait spend
 spendEnergyX startingCounters statusCards takeDamage then threatCause thwartDifferentSchemes thwartSchemes
@@ -947,6 +947,17 @@ attack replacement; status-card priority remains higher. The parser rejects
 this marker on other ability timings. Optional “would” subwindows with distinct
 pass lifecycles are not represented by this marker. The supported Core optional
 damage-prevention and imminent-threat windows already isolate those conditions.
+
+`WhenCardWouldReady` is the condition of every ready instruction: the end of
+the player phase, a card effect's `ready`, and a delayed ready. One instruction
+readies its cards together, so `subject: "attachedTo"` or `"this"` matches each
+card the instruction still would ready. `replaceReady: "attachedTo"` replaces
+the imminent ready of this attachment's host (`rr:replacement-effect.1`): that
+card stays exhausted while the instruction's other cards ready. It resolves only
+while the host's ready is imminent. Cancelling a whole would-ready occurrence with
+`cancelOccurrence` raises. A replaced card-effect ready counts as not resolved,
+so `then` text after it does not resolve (`rr:then.2`). The window and its
+ordering are described in [timing.md](timing.md#would-ready-replacement).
 
 ### Campaign rewards and physical storage
 

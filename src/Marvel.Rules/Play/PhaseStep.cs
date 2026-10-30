@@ -49,6 +49,7 @@ public readonly record struct PhaseStep(
         int id = OccurrenceId ?? Moment.Id(Round, Number, Index);
         if (Operation is BoostFaceupOperation boost) return boost.Occurrence(id, world, Subject, Seat);
         if (Operation is HeroDefenseOperation defense) return defense.Occurrence(id, world);
+        if (Operation is CardReadyOperation ready) return ready.Occurrence(id);
 
         if (Operation is EncounterEntryOperation entry)
             return new Occurrence(id, EncounterEntry.IsCurrent(world, entry.Entry)
@@ -194,7 +195,7 @@ public readonly record struct PhaseStep(
     /// <summary>An occurrence that needs no live attack roles, or null.</summary>
     public Occurrence? ScheduledOccurrence => Operation is DirectDamagePreventionOperation prevention
         ? prevention.Prevention.Occurrence : Operation is CompletedCardEffectOperation { Occurrence: { } response }
-        ? response : Operation is EncounterEntryOperation or HeroDefenseOperation or BoostFaceupOperation ? null : What is
+        ? response : Operation is EncounterEntryOperation or HeroDefenseOperation or BoostFaceupOperation or CardReadyOperation ? null : What is
         Steps.Attack or Steps.CharacterAttacks or Steps.CharacterThwarts or Steps.EndAttack
             or Steps.PlaceThreat or Steps.SchemeThreat or Steps.PlaceThreatEffect
             or Steps.PrepareIndirectAttackDamage
