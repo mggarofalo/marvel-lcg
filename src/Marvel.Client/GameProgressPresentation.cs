@@ -244,6 +244,12 @@ public sealed record GameProgressPresentation(
                 error.Message,
                 "VERSION MISMATCH  ·  UPDATE THE CLIENT OR SERVER",
                 LocksDecisions: true),
+            "save_incompatible" => new(
+                GameProgressKind.SessionUnavailable,
+                "Saved game cannot be loaded.",
+                error.Message,
+                "SAVE INCOMPATIBLE  ·  START A NEW GAME",
+                LocksDecisions: true),
             "session_unavailable" or "session_not_found" or "invitation_unavailable" => new(
                 GameProgressKind.SessionUnavailable,
                 "Session or invitation unavailable.",
@@ -267,8 +273,7 @@ public sealed record GameProgressPresentation(
     }
 
     private static bool IsStorageFailure(string code) => code is
-        "save_failed" or "persistence_failed" or "restore_failed"
-        or "unsupported_downgrade";
+        "save_failed" or "persistence_failed" or "restore_failed";
 
     internal static string Humanize(string value)
     {

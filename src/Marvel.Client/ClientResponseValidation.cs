@@ -14,22 +14,26 @@ internal static class ClientResponseValidation
         || requestId.StartsWith(prefix + "-", StringComparison.Ordinal);
 
     internal static ClientResolutionResult UnavailableResolution(
-        ClientMutationDisposition mutation) =>
+        ClientMutationDisposition mutation, EngineError? cause = null) =>
         new(
             Response: null,
-            Error(
-                "session_unavailable",
-                "This game session is unavailable. Return to the connection screen."),
+            SessionLoss(cause),
             mutation,
             ClientSessionDisposition.Unavailable);
 
-    internal static ClientSynchronizationResult UnavailableSynchronization() =>
+    internal static ClientSynchronizationResult UnavailableSynchronization(EngineError? cause = null) =>
         new(
             Response: null,
-            Error(
-                "session_unavailable",
-                "This game session is unavailable. Return to the connection screen."),
+            SessionLoss(cause),
             ClientSessionDisposition.Unavailable);
+
+    // A refused save keeps the server's typed reason; every other loss reads the same.
+    private static ClientStartupError SessionLoss(EngineError? cause) =>
+        cause is { Code: "save_incompatible" }
+            ? Error(cause.Code, cause.Message)
+            : Error(
+                "session_unavailable",
+                "This game session is unavailable. Return to the connection screen.");
 
     internal static ClientSynchronizationResult SynchronizationFailed(
         string code,

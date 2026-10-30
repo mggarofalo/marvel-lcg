@@ -57,7 +57,8 @@ public sealed class EngineHostRestartQuarantinesTheFirstDivergentAuthorityRecoTe
             },
             _ => throw new InvalidOperationException(field),
         };
-        AssertQuarantined(factory, stored with { Save = changed }, "divergence-table", "divergence-owner");
+        AssertQuarantined(factory, stored with { Save = changed }, "divergence-table", "divergence-owner",
+            field is "compatibility" or "previous-replay" ? "save_incompatible" : "session_not_found");
     }
 
     [Theory]

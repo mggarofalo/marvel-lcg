@@ -100,7 +100,7 @@ public sealed class NextSpecialTransportTests : TransportTestBase
         store.Commit(saved with { Save = oldSave });
         host = new EngineHost(factory, visibility: new RestrictedVisibilityPolicy(0), store: store);
         EngineResponse incompatible = await Exchange(EngineRequest.SyncGame("old-replay", game, owner));
-        Assert.Equal("session_not_found", incompatible.Error?.Code);
+        Assert.Equal("save_incompatible", incompatible.Error?.Code);
     }
 
     [Theory]

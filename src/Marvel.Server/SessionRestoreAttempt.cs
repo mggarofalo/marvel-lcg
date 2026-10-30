@@ -5,7 +5,7 @@ using Marvel.Session;
 
 namespace Marvel.Server;
 
-/// <summary>Restores and publishes one independently quarantinable stored session.</summary>
+/// <summary>Restores and publishes one stored session, or refuses it without touching its files.</summary>
 internal sealed class SessionRestoreAttempt(
     EngineHost host, string? generation, StoredSession stored)
 {
@@ -20,34 +20,21 @@ internal sealed class SessionRestoreAttempt(
 
     private void RestoreVerified()
     {
-        StoredSession current = stored;
-        bool migrated = false;
-        string? restoredGeneration = generation;
-        if (host.factory is IContentUpgradeFactory factory
-            && factory.ContentUpgrade(current.Save.Compatibility) is { } upgrade)
-        {
-            if (host.store is not IContentUpgradeStore upgrades)
-                throw new SessionSaveException("this store cannot preserve a content upgrade predecessor");
-            current = current with { Save = upgrade.Verify(current.Save, host.ReplayOpen) };
-            Game verified = SessionReplay.Verify(current.Save, host.compatibility, host.ReplayOpen);
-            host.authority.ValidateForRestore(current, verified);
-            restoredGeneration = upgrades.CommitContentUpgrade(stored, current, generation);
-            migrated = true;
-        }
-        Game game = SessionReplay.Verify(current.Save, host.compatibility, host.ReplayOpen);
-        host.authority.ValidateForRestore(current, game);
-        restoring = host.authority.PublishRestored(current, game);
+        Game game = SessionReplay.Verify(stored.Save, host.compatibility, host.ReplayOpen);
+        host.authority.ValidateForRestore(stored, game);
+        restoring = host.authority.PublishRestored(stored, game);
         elapsed.Stop();
         host.log.Write(OperationalEventIds.SessionRestored, "accepted",
-            elapsed.ElapsedMilliseconds, gameId: current.Save.Session.Label,
-            revision: current.Save.Revision, saveCommitted: migrated,
-            replayVerified: true, saveGeneration: restoredGeneration,
+            elapsed.ElapsedMilliseconds, gameId: stored.Save.Session.Label,
+            revision: stored.Save.Revision, saveCommitted: false,
+            replayVerified: true, saveGeneration: generation,
             stage: "restore");
     }
 
     private void Reject(Exception failure)
     {
         if (restoring is not null) host.authority.Remove(restoring);
+        if (failure is SessionCompatibilityException incompatible) host.refused.Refuse(stored, incompatible);
         elapsed.Stop();
         host.log.Write(OperationalEventIds.SessionRestoreFailed, "rejected",
             elapsed.ElapsedMilliseconds, gameId: stored.Save.Session.Label,

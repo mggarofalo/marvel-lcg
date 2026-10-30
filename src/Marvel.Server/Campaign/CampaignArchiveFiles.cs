@@ -57,16 +57,8 @@ internal sealed class CampaignArchiveFiles : IDisposable
     internal string CommitCampaign(StoredCampaign candidate)
     {
         lock (publication)
-        {
-            string id = candidate.Save.Identity.StorageId;
-            RequireId(id);
-            if (File.Exists(Path.Combine(root, id, "current")))
-            {
-                var previous = CampaignSaveJson.ReadDocument<StoredCampaign>(Read(id));
-                SessionPublication.RequireCompatible(previous.Save.Compatibility, candidate.Save.Compatibility);
-            }
-            return CommitGeneration(id, System.Text.Encoding.UTF8.GetBytes(CampaignSaveJson.Canonical(candidate)));
-        }
+            return CommitGeneration(candidate.Save.Identity.StorageId,
+                System.Text.Encoding.UTF8.GetBytes(CampaignSaveJson.Canonical(candidate)));
     }
 
     private string CommitGeneration(string id, ReadOnlySpan<byte> bytes)
@@ -90,22 +82,6 @@ internal sealed class CampaignArchiveFiles : IDisposable
         { throw new CampaignCommitUncertainException(failure); }
         Cleanup(directory, manifest);
         return generation;
-    }
-
-    internal string CommitContentUpgrade(string id, StoredCampaign previous, StoredCampaign candidate)
-    {
-        lock (publication)
-        {
-            byte[] original = Read(id);
-            if (CampaignSaveJson.Canonical(CampaignSaveJson.ReadDocument<StoredCampaign>(original))
-                != CampaignSaveJson.Canonical(previous) || candidate.Save.Identity != previous.Save.Identity)
-                throw new SessionSaveException("campaign content upgrade predecessor changed");
-            string directory = Path.Combine(root, id);
-            var manifest = ReadManifest(directory);
-            ContentUpgradeBackup.Preserve(directory, manifest.Generation + ".archive");
-            ContentUpgradeBackup.Preserve(directory, "current", manifest.Generation + ".manifest");
-            return CommitGeneration(id, System.Text.Encoding.UTF8.GetBytes(CampaignSaveJson.Canonical(candidate)));
-        }
     }
 
     private static CampaignGeneration ReadManifest(string directory)

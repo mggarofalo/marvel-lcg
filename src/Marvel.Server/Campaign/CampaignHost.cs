@@ -11,6 +11,7 @@ public sealed class CampaignHost : IEngineEndpoint
     internal readonly ICampaignGameFactory Factory;
     internal readonly Dictionary<string, StoredCampaign> Campaigns = new(StringComparer.Ordinal);
     internal readonly Dictionary<string, CampaignDeletion> Deleted = new(StringComparer.Ordinal);
+    internal readonly Dictionary<string, RefusedCampaign> Refused = new(StringComparer.Ordinal);
     internal readonly EngineHost Games;
     internal StoredCampaign? Starting { get; private set; }
     internal EngineRequest? StartingRequest { get; private set; }
@@ -35,12 +36,13 @@ public sealed class CampaignHost : IEngineEndpoint
             if (candidate.Campaign is not { } campaign) continue;
             try
             {
-                campaign = CampaignContentUpgrade.Restore(Factory, store, campaign);
                 _ = CampaignReplay.Verify(campaign.Save, definition, Factory.Compatibility,
                     setup => CampaignTransactions.Open(Factory, setup), Factory.InspectCampaign);
                 Campaigns.Add(candidate.StorageId, campaign);
             }
-            catch (Exception error) when (error is SessionSaveException or ReplayDivergenceException or SessionCompatibilityException or InvalidOperationException or ArgumentException or IOException or UnauthorizedAccessException)
+            catch (SessionCompatibilityException error)
+            { Refused.Add(candidate.StorageId, RefusedCampaign.Of(campaign, error)); }
+            catch (Exception error) when (error is SessionSaveException or ReplayDivergenceException or InvalidOperationException or ArgumentException or IOException or UnauthorizedAccessException)
             { /* A rejected archive remains intact and is never replaced with an older generation. */ }
         }
     }
@@ -62,7 +64,9 @@ public sealed class CampaignHost : IEngineEndpoint
             { return Failure(request, "campaign_recovery_required", "Restart to verify the campaign save before continuing."); }
             catch (IOException)
             { return Failure(request, "save_failed", "The campaign change was not committed."); }
-            catch (Exception error) when (error is SessionSaveException or ReplayDivergenceException or SessionCompatibilityException or InvalidOperationException or ArgumentException or FormatException)
+            catch (SessionCompatibilityException error)
+            { return Failure(request, RefusedSaves.Code, RefusedSaves.Message(error.Category)); }
+            catch (Exception error) when (error is SessionSaveException or ReplayDivergenceException or InvalidOperationException or ArgumentException or FormatException)
             { return Failure(request, "campaign_rejected", "The requested campaign transition is not available."); }
         }
     }
@@ -71,6 +75,8 @@ public sealed class CampaignHost : IEngineEndpoint
     {
         if (DeletedGame(request))
             return Failure(request, "campaign_deleted", "This campaign and its saved games have been permanently deleted.");
+        if (Refused.Values.FirstOrDefault(item => item.Holds(request)) is { } refused)
+            return Failure(request, RefusedSaves.Code, RefusedSaves.Message(refused.Category));
         if (request.Operation == EngineProtocol.Decks && request.Deck?.Campaign is not null)
             return CampaignDeckRequests.Handle(this, request);
         if (request.Campaign is not null || request.Game?.Campaign is not null)
@@ -183,8 +189,12 @@ public sealed class CampaignHost : IEngineEndpoint
     }
 
     internal static EngineResponse Failure(EngineRequest request, string code, string message) =>
-        new(EngineProtocol.Version, request.RequestId, request.GameId, null, null, [], Error: new(code, message, code == "campaign_recovery_required"
-            ? EngineFailureDisposition.CommitUncertain : EngineFailureDisposition.Rejected));
+        new(EngineProtocol.Version, request.RequestId, request.GameId, null, null, [], Error: new(code, message, code switch
+        {
+            "campaign_recovery_required" => EngineFailureDisposition.CommitUncertain,
+            RefusedSaves.Code => EngineFailureDisposition.SessionUnavailable,
+            _ => EngineFailureDisposition.Rejected,
+        }));
     internal static EngineResponse Success(EngineRequest request) =>
         new(EngineProtocol.Version, request.RequestId, request.GameId, null, null, []);
 }

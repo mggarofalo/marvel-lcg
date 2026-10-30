@@ -83,105 +83,14 @@ independent identities do:
 | State digest | `state-digest-v3` | The canonical hidden-state serialization changes. |
 | Runtime datasets | Three SHA-256 values | Any byte in `cards.json`, `setup.json` or `abilities.json` changes. |
 
-Replay v29 covers the combined Ant-Man delivery's changes to persisted prompt
-facts and existing-card resolution order. Published v28 saves have no named
-v29 admission and remain quarantined without publication or replacement. The
-exact frozen Core/RoRS v19/v20/v21 triples retain named v29 routes, subject
-to unchanged admitted entries and complete original-history verification;
-frozen-content v29 additive upgrades use the unchanged replay route. Historical
-v22–v28 destinations retain their explicit routes. Protocol 43, schema 7, RNG
-and digest identities are unchanged. See [the comparison evidence](content/ant-man-replay-v29.md).
-
-Historically, replay v28 completes an ordinary enemy attack before offering its defeat
-responses. The same legal attack with Black Widow Rapid Response (08031) can
-therefore produce different prompt and event timing. V27 sources, including
-current-content saves, have no named admission and remain quarantined unchanged.
-Only the exact frozen Core/RoRS v19/v20/v21 content triple has explicit routes to
-`engine-replay-v28`, verifying every original recorded fact before provenance
-changes; frozen-content v28 additive upgrades use the unchanged replay route.
-Historical named destinations remain exact. At replay v28 publication, protocol 42,
-schema 7, RNG and state digest formats retained their identities.
-
-Replay v27 evaluates dynamic lasting amounts against current state and preserves
-captured actor incarnation across suspended responses. These corrections can change
-accepted Core/RoRS outcomes. V26 saves have no named source admission; original
-saves remain unchanged. Explicit frozen v19/v20/v21 routes verify every historical
-fact before changing compatibility metadata. That release used protocol 42 and save schema 7.
-
-Replay v26 completes minion Quickstrike before optional engagement and entry
-responses. Real Core Hawkeye and Vulture can therefore reach the same optional
-response with different damage and event order from v25. V25 sources have no
-named admission and remain quarantined unchanged. Frozen v19/v20/v21 sources
-retain explicit v26 routes that verify every original recorded fact; divergent
-histories are rejected. Protocol 39, session schema 7, RNG, state digest and
-runtime datasets retain their identities for this replay boundary. Historical
-v22/v23/v24/v25 destination routes remain destination-bound.
-See [the minion-entry boundary evidence](content/minion-entry-replay-boundary.md).
-
-Replay v25 emits one ally-entry response occurrence after the mandatory ally-limit
-choice, for ordinary play and put-into-play. This changes existing Core outcomes
-including Nick Fury, Maria Hill and Mockingbird. V24 sources have no named
-admission and remain quarantined unchanged; frozen v19/v20/v21 sources retain
-explicit v25 routes that verify every original recorded fact. The session schema,
-RNG and digest formats retain their identities.
-
-Replay v24 discards revealed attachments when they cannot attach to an eligible
-host, after their reveal and surge work completes. Core 01163/01185 and RoRS
-04117–04119/04135 can therefore change the same recorded trace, including its
-state digest and later encounter shuffles. V23 and v22 sources have no named
-admission and remain quarantined unchanged. Frozen v19/v20/v21 sources retain
-named v24 routes only after every original gameplay fact verifies. Protocol 37,
-schema 7, RNG and digest formats retain their identities.
-
-Replay v23 consumes every prevention committed to one damage instance, including
-stacked Cosmic Flights, and preserves separate resolutions when a recovered event
-is replayed in the same window, including suspended payment. It also assigns
-ordinary simultaneous activations to the attacked player and nested activations
-to the first player, deferring attack-end response activations until the enclosing
-attack finishes. These corrections change existing Core traces, including
-Gang-Up, independently of expansion content. There is no named
-v22 source admission: v22 saves are quarantined unchanged before replay. Frozen
-v19/v20/v21 sources retain explicitly named v24 routes that verify every original
-gameplay fact and reject divergent histories. Protocol 37, schema 7, RNG and digest
-identities are unchanged; internal continuations are rebuilt from decisions.
-
-The frozen Expert campaign also contains a divergent Backflip history: at
-Crossbones attempt 4, unit 31 decision 3, the corrected prevention consumption
-allows Hydra Mercenary's two damage instead of carrying prevention from the
-preceding attack. Its complete aggregate remains quarantined unchanged on
-restore and import; the unaffected initial Absorbing Man attempt can still
-upgrade independently. See [save-content-upgrades.md](save-content-upgrades.md).
-
-Replay v22 completes nested reveals, including minion Quickstrike, before the
-parent reveal continues. This changes recorded event and decision boundaries;
-v21 saves require named source admission and full exact replay verification.
-The frozen v19/v20 played campaigns contain an affected Shadows of the Past
-history and are rejected without changing their files. Protocol 37, save schema 7,
-RNG and state-digest identities remain unchanged.
-
-Replay v21 orders native retaliation with printed forced after-attack responses
-and applies retaliation even when attack damage is zero. The strict named v19/v20
-upgrade paths verify original histories and reject changed outcomes before
-publication; see [save-content-upgrades.md](save-content-upgrades.md).
-
-Replay v20 preserves the responsible player through scheme defeat and follows
-same-title villain stages through card continuations. Corrected outcomes can
-differ from v19, including Press the Advantage drawing after a stunned villain
-advances. It retains encounter-entry timing, activation-local effects and receipts,
-attack damage reflection, actor-specific thwart-stat substitution, and campaign
-setup and recovery. The same Core setup and decisions can resolve differently
-under these mechanics, independently of expansion dataset admission. Internal
-agenda operations are reconstructed by full replay; they are not serialized as
-save authority. Schema 7 records ordered explicit decks and the exact campaign
-setup, including stable campaign seats and overlays. Protocol 37 carries campaign
-commands, engine-owned decision contracts and visibility-filtered independent
-villain/deck relationships. Older protocol and save
-identities remain rejected. Older replay identities are rejected except for the
-named predecessor upgrade described in
-[save-content-upgrades.md](save-content-upgrades.md). That adapter
-accepts an unchanged history only after every recorded result matches; it never
-rewrites a history containing a corrected outcome. The RNG and
-state-digest formats retain their existing identities.
+A save loads only when its replay contract, RNG contract, state digest and
+three runtime dataset hashes equal the running server's. There is no upgrade,
+adapter or migration route from any earlier identity: a release that changes
+any of them makes every earlier save unloadable. This is a product choice, not
+a rule of the game; the owner decided that legacy saves need no handling
+(MARVEL-896). Replay v29 covers the Ant-Man delivery's changes to persisted
+prompt facts and existing-card resolution order; see
+[the comparison evidence](content/ant-man-replay-v29.md).
 
 The product version belongs in desktop and server metadata. The protocol
 version belongs on every request and response. Save schema and replay identities
@@ -227,14 +136,13 @@ version; its numeric identity exists only for Windows update ordering.
 
 Saves record the complete SemVer product version of the runtime that last
 committed them in `compatibility.application`. Every successful gameplay,
-history, lifecycle or migration commit stamps the current version in the same
+history or lifecycle commit stamps the current version in the same
 atomic generation. Loading without a commit does not rewrite it. This makes the
 field a durable downgrade floor instead of the version that first created the
 table. SemVer comparison ignores build metadata.
 
 Saves from the earlier developer-only runtime contain a four-part assembly
-version instead. They are not supported release inputs and remain quarantined
-unless a later issue adds and verifies an explicit migration.
+version instead. They are not supported release inputs and are refused.
 
 ## Release channels
 
@@ -290,40 +198,41 @@ game.
 
 The application version in a save is a last-writer provenance and downgrade
 gate, not an equality gate. A newer product version may read an older save when
-every compatibility identity still matches. A runtime may restore a save only
+every other compatibility identity still matches. A runtime restores a save only
 when all of the following hold:
 
 - its product version is not lower than the saved application version;
 - the save schema is the current schema;
-- the engine replay, RNG and state-digest identities are supported;
-- the card, setup and ability dataset SHA-256 values match exactly, or a
-  [named additive content migration](save-content-upgrades.md) verifies the
-  unchanged predecessor content before replay; and
+- the engine replay, RNG and state-digest identities equal the runtime's;
+- the card, setup and ability dataset SHA-256 values equal the runtime's; and
 - complete deterministic replay verifies every recorded prompt, event, RNG
   count and state fingerprint.
 
-Schema 7 is the only readable and writable session schema. It records ordered
-explicit player deck recipes and campaign setup. Other schemas are quarantined without alteration;
-no migration or inferred default reconstructs omitted gameplay meaning.
+There is no upgrade path. No adapter, migration or content admission makes a
+save written under another identity loadable, and none may be added without an
+owner decision reversing MARVEL-896.
 
-An unknown schema, replay identity, RNG identity, digest identity or dataset
-hash is unsupported. The server quarantines that session and reports a bounded
-compatibility failure; it does not skip records, substitute current data or
-offer a partially restored table. A storage or migration failure leaves the
+Schema 7 is the only readable and writable session schema. It records ordered
+explicit player deck recipes and campaign setup.
+
+A session or campaign whose replay, RNG, digest or dataset identity differs, or
+whose last writer was newer, is refused. The server leaves its files unchanged,
+does not publish it, and records the bounded mismatch category in the operator
+log. A request presenting that save's own capability, invitation or entry claim
+receives the typed error `save_incompatible` with session-unavailable
+disposition; the client shows "Saved game cannot be loaded." The same code
+answers an imported campaign file written under another identity. Any other
+request learns nothing more than `session_not_found`. An unreadable schema or a
+replay divergence under the current identity is not an incompatibility: it is
+logged as a restore failure and is not served. A storage failure leaves the
 last committed generation authoritative.
 
-A newer runtime may deliberately support another predecessor by shipping an
-explicit parser, migration and replay tests. A release note must name the exact
-source identity and destination identity. Merely retaining a decoder is not an
-upgrade promise.
-
 Before upgrading a server, the operator stops new work and makes a backup of
-the complete save and protected-authentication volume. A successful upgrade
-verifies and, when required, atomically migrates every active session before it
-is published. If any session is unsupported or divergent, that session remains
-quarantined and the operator restores the prior artifact together with its
-matching pre-upgrade backup. New-format saves are never handed to an older
-runtime as a downgrade strategy.
+the complete save and protected-authentication volume. A release that keeps
+every identity restores each saved session after complete replay. A release
+that changes any identity refuses every earlier save; the only way back to them
+is the prior artifact together with its matching pre-upgrade backup. New-format
+saves are never handed to an older runtime as a downgrade strategy.
 
 ## Dataset identity
 
@@ -340,8 +249,8 @@ vendored research corpora are not runtime identity merely because they are in
 the repository.
 
 Changing a runtime dataset requires a new product version. Existing saves do
-not become compatible because the new dataset looks equivalent; an explicit
-replay-contract migration must prove that claim.
+not become compatible because the new dataset looks equivalent; they are
+refused.
 
 ## Community desktop artifacts
 
@@ -480,11 +389,11 @@ concealed card data.
 | Condition | Required outcome |
 |---|---|
 | Client/server protocol mismatch | Reject as `unsupported_version`; display both product versions and protocol integers from non-secret metadata, then require matching artifacts. |
-| Unknown or newer save schema | Quarantine the session as unsupported; preserve its files and direct the operator to a compatible/newer server or backup restore. |
-| Replay/RNG/digest identity mismatch | Quarantine before replay; name the identity category, not hidden state. |
-| Runtime dataset mismatch | Quarantine before dealing; report which dataset category differs and the expected/actual hashes in operator-only diagnostics. |
-| Replay divergence | Quarantine without mutation; report the bounded divergence stage and record position. |
-| Unsupported downgrade | Quarantine sessions written by the newer product; direct the operator to reinstall it or restore the matching pre-upgrade backup. |
+| Unknown or newer save schema | Refuse the session as unreadable; preserve its files and direct the operator to a compatible/newer server or backup restore. |
+| Replay/RNG/digest identity mismatch | Refuse before replay with `save_incompatible`; log the identity category, not hidden state. |
+| Runtime dataset mismatch | Refuse before dealing with `save_incompatible`; log which dataset category differs. |
+| Replay divergence | Refuse without mutation; report the bounded divergence stage and record position. |
+| Unsupported downgrade | Refuse sessions written by the newer product with `save_incompatible`, asking for that version; the operator reinstalls it or restores the matching pre-upgrade backup. |
 | Signature or trust failure | Do not install or publish; identify the artifact and failed trust stage without exposing local certificate-store details. |
 
 No compatibility failure offers “continue anyway.” A recovery action changes

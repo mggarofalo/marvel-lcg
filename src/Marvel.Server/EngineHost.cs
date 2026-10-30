@@ -27,6 +27,7 @@ public sealed class EngineHost : IEngineEndpoint
     internal readonly OperationalLog log;
     internal readonly SessionAuthorityRegistry authority;
     internal readonly AuthorizedSessionProjector projector;
+    internal readonly RefusedSaves refused = new();
 
     /// <summary>Creates an engine host with cryptographically random session capabilities.</summary>
     public EngineHost(
@@ -177,6 +178,7 @@ public sealed class EngineHost : IEngineEndpoint
 
     private EngineResponse? RecoverOrRejectEntry(EngineRequest request)
     {
+        if (refused.Answer(request) is { } refusal) return refusal;
         if (request.Operation is EngineProtocol.Open or EngineProtocol.Attach)
         {
             if (!EntryReceipts.Valid(request.Entry)) return Failed(request, "invalid_request", "entry requires a valid recovery claim");

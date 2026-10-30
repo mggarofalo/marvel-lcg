@@ -196,7 +196,7 @@ internal static class EngineHostLifecycle
             Error: new EngineError(
                 Bounded(code, EngineProtocol.MaximumIdentifierLength),
                 Bounded(message, EngineProtocol.MaximumErrorLength),
-                code == "session_not_found" ? EngineFailureDisposition.SessionUnavailable
+                code is "session_not_found" or RefusedSaves.Code ? EngineFailureDisposition.SessionUnavailable
                     : EngineFailureDisposition.Rejected));
 
     internal static string Bounded(string? value, int maximum) => value switch

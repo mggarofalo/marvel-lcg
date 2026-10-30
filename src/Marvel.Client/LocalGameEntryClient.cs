@@ -146,6 +146,7 @@ internal sealed class LocalGameEntryClient(LocalGameClient client)
             return EntryFailed(Error(error.Code, error.Message));
         return EntryFailed(error.Code switch
         {
+            "save_incompatible" => Error(error.Code, error.Message),
             "session_not_found" => Error("invitation_unavailable",
                 "That seat invitation is unavailable. Ask the host for a new invitation."),
             "save_failed" => Error("save_failed",

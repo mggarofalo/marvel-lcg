@@ -111,7 +111,7 @@ replay verification and bounded error code.
 Every retained record also carries the compiled product, commit and runtime
 identity. Mutation records distinguish expected and resulting revisions;
 persistence and restore records name the selected opaque save generation and
-the restore, migration or quarantine stage. A diagnostics permission, disk-full
+the restore or quarantine stage. A diagnostics permission, disk-full
 or write failure cannot fail or delay gameplay: the asynchronous dispatcher
 continues writing standard error and may drop unavailable file observations.
 Monitor both volume capacity and the `diagnostics.sink.unavailable` startup
@@ -270,14 +270,17 @@ restored server is healthy and its expected tables have synchronized.
 
 Before an upgrade, stop the server and preserve both the current image digest
 and a complete volume backup. The selected runtime replay-verifies each session against save schema 7 and its
-exact replay contract. Older save schemas are not migrated. A corrupt, divergent,
-dataset-incompatible, or newer-last-writer session is quarantined and reported
-with a bounded `session.restore.failed` error code; it does not prevent other
-sessions or the listener from becoming ready. Recover that table from a known
-good backup or with a future runtime that explicitly supports its identity.
+exact replay contract. No save is migrated or upgraded. A session whose replay,
+RNG, digest or dataset identity differs from the runtime's, or whose last writer
+was newer, is refused: its files stay unchanged, `session.restore.failed` records
+the bounded mismatch category, and the holder of its capability receives
+`save_incompatible`. A corrupt or divergent session is withheld the same way
+with its own error code. Neither prevents other sessions or the listener from
+becoming ready. A refused table is recoverable only with the runtime that wrote
+it and its matching volume backup.
 
 Do not point an older runtime at a volume written by a newer product version.
-The last writer's SemVer is stamped on every gameplay, history, lifecycle commit, and the older runtime quarantines that session as
+The last writer's SemVer is stamped on every gameplay, history, lifecycle commit, and the older runtime refuses that session, logging
 `unsupported_downgrade`. Rolling back requires restoring the matching
 pre-upgrade backup into a fresh volume as well as restoring the prior image.
 
@@ -317,7 +320,8 @@ supported recovery paths:
 | `SESSION UNAVAILABLE` or `session_not_found` | The server established only that the held capability or invitation is not usable; it does not disclose whether it expired, was already used, or was never valid. | Check the game label. For an invitation, ask the host for a new one. For a previously working session, inspect restore records and recover a known-good volume backup if the table should exist. |
 | `STORAGE FAILURE`, `save_failed`, or `session.persistence.completed` with `rejected` | The requested state was not durably committed. | Stop new play, verify volume space, ownership and read/write status, and preserve logs. Synchronize the last authoritative revision; do not repair save files by hand. |
 | `session.restore.completed` | A saved session replay-verified and was published after startup. | Reconnect with the existing capability and Synchronize. |
-| `session.restore.failed` | One saved table was quarantined; other tables may still be healthy. | Match its pseudonymous game correlation and bounded error code, preserve the volume, then restore a known-good backup or use a runtime that supports the recorded identity. |
+| `SAVE INCOMPATIBLE` or `save_incompatible` | The saved table was written by another engine, card data or newer product version. This runtime never loads it. | Start a new game, or return to the runtime that wrote it together with its matching volume backup. |
+| `session.restore.failed` | One saved table was refused or withheld; other tables may still be healthy. | Match its pseudonymous game correlation and bounded error code, preserve the volume, then restore a known-good backup or use a runtime that supports the recorded identity. |
 | `server.listener.stopped` | The listener completed an intentional graceful shutdown and flushed its bounded log queue. | Archive the stopped save volume only after also confirming exit code zero. Absence of this record means shutdown was not confirmed graceful. |
 
 Useful collection commands are read-only:

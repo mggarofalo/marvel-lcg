@@ -16,7 +16,7 @@ namespace Marvel.Server.Tests;
 public sealed class EngineHostOneIncompatibleSessionTests : EngineHostTestBase
 {
     [Fact]
-    public void OneIncompatibleSessionIsQuarantinedWithoutHidingAHealthySession()
+    public void OneIncompatibleSessionIsRefusedWithoutHidingAHealthySession()
     {
         var store = new MemorySessionStore();
         IDurableGameFactory factory = DatasetGameFactory.Load(RepositoryPaths.Root);
@@ -37,7 +37,7 @@ public sealed class EngineHostOneIncompatibleSessionTests : EngineHostTestBase
             },
         };
         var restarted = new EngineHost(factory, store: new FixedSessionStore(bad, healthy));
-        Assert.Equal("session_not_found", restarted.Exchange(EngineRequest.SyncGame("bad", "bad-table", "bad-owner")).Error?.Code);
+        Assert.Equal("save_incompatible", restarted.Exchange(EngineRequest.SyncGame("bad", "bad-table", "bad-owner")).Error?.Code);
         Assert.Null(restarted.Exchange(EngineRequest.SyncGame("healthy", "healthy-table", "healthy-owner")).Error);
     }
 
@@ -70,7 +70,9 @@ public sealed class EngineHostOneIncompatibleSessionTests : EngineHostTestBase
         Assert.Null(resolved.Error);
         Assert.Equal("0.1.1-preview.2", Assert.Single(store.Load()).Save.Compatibility.Application);
         var downgraded = new EngineHost(new VersionedFactory(inner, "0.1.1-preview.1"), store: store);
-        Assert.Equal("session_not_found", downgraded.Exchange(EngineRequest.SyncGame("downgrade", "version-table", "version-owner")).Error?.Code);
+        EngineError refused = Assert.IsType<EngineError>(downgraded.Exchange(EngineRequest.SyncGame("downgrade", "version-table", "version-owner")).Error);
+        Assert.Equal("save_incompatible", refused.Code);
+        Assert.Contains("newer version", refused.Message, StringComparison.Ordinal);
     }
 
     [Fact]

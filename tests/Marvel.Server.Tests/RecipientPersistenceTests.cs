@@ -61,7 +61,7 @@ public sealed class RecipientPersistenceTests : EngineHostTestBase
             Compatibility = stored.Save.Compatibility with { ReplayContract = previousContract },
         } });
         var restarted = new EngineHost(factory, store: store);
-        Assert.Equal("session_not_found", restarted.Exchange(EngineRequest.SyncGame(
+        Assert.Equal("save_incompatible", restarted.Exchange(EngineRequest.SyncGame(
             "sync", "previous-recipient", RequiredCapability(opened))).Error?.Code);
         Assert.Equal(previousContract, Assert.Single(store.Load()).Save.Compatibility.ReplayContract);
     }

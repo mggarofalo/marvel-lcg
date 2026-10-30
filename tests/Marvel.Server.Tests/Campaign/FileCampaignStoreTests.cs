@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using Marvel.Session;
 using Xunit;
 namespace Marvel.Server.Tests;
 
@@ -94,4 +95,20 @@ public sealed class FileCampaignStoreTests
         finally { Directory.Delete(root, recursive: true); }
     }
 
+    [Fact]
+    public void RepeatedDeletionPublishesATombstoneWithoutReadingItAsACampaign()
+    {
+        string root = Path.Combine(Path.GetTempPath(), "marvel-campaign-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            using var store = new FileCampaignStore(root);
+            var deletion = new CampaignDeletion(new string('a', 32), new string('b', 64), "delete",
+                new string('c', 64), new string('d', 64), [], []);
+            store.Delete(deletion);
+            store.Delete(deletion);
+            Assert.Equal(CampaignSaveJson.Canonical(deletion), CampaignSaveJson.Canonical(Assert.Single(store.Deletions())));
+            Assert.Empty(store.Load());
+        }
+        finally { Directory.Delete(root, recursive: true); }
+    }
 }

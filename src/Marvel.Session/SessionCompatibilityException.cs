@@ -7,10 +7,10 @@ using Marvel.Rules.State;
 
 namespace Marvel.Session;
 
-/// <summary>A bounded compatibility category for operator quarantine diagnostics.</summary>
+/// <summary>A save written under another engine or dataset identity, named by a bounded category.</summary>
 public sealed class SessionCompatibilityException(string category, string message)
     : SessionSaveException(message)
 {
-    /// <summary>The stable non-secret mismatch category.</summary>
+    /// <summary>The stable non-secret mismatch category recorded for the operator.</summary>
     public string Category { get; } = category;
 }
