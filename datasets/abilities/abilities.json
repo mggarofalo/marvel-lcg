@@ -24266,6 +24266,111 @@
           ] }
         }
       ]
+    },
+    {
+      "card": "11014",
+      "name": "Temporal Shield",
+      "note": "Attach to Kang. Forced Interrupt: When Kang is attacked, discard Temporal Shield -> prevent all damage from this attack and deal 1 damage to the attacker. (Max 1 per attack.) MARVEL-894 (Q2) reads Kang as the villain in this card's game area (villainInThisGameArea). The discard is the arrow cost. Ruling 310af249be272877: it \"only prevents the damage that would be dealt to Kang during an attack\". Ruling a806907d1743e0d1: it \"resolves entirely before the tough status card, meaning the tough status card will have no damage to prevent and will not be discarded\", so the prevention fixes the damage dealt at rr:damage.step.1. The attacker is the attacking character, an ally included.",
+      "attachTo": { "query": "villainInThisGameArea" },
+      "abilities": [
+        {
+          "trigger": { "event": "WhenAttackInitiated", "timing": "ForcedInterrupt", "target": "attachedTo", "player": "trigger.player" },
+          "maxPerAttack": 1,
+          "cost": { "discard": "this" },
+          "effect": { "seq": [
+            { "preventPlayerAttackDamage": "trigger.target" },
+            { "dealDamage": { "cards": "trigger.actor", "amount": 1 } }
+          ] }
+        }
+      ]
+    },
+    {
+      "card": "11015",
+      "name": "Future Weapon",
+      "note": "Attach to Kang. star Forced Interrupt: When Kang attacks, the attack gains overkill. If this attack damages a hero, that hero is stunned. After this attack, discard Future Weapon. MARVEL-894 (Q2) reads Kang as the villain in this card's game area (villainInThisGameArea). The printed ATK+ 2 is declarative (rr:attachment.1) and read from the printed facts. The star in that field is the reminder to check this text whenever Kang attacks (rr:star-icon.2). The stun is a delayed effect within this attack (rr:delayed-effect.1); a Tough status that takes the damage means the hero was not damaged (rr:tough.3), and a damaged ally is not a hero.",
+      "attachTo": { "query": "villainInThisGameArea" },
+      "abilities": [
+        {
+          "trigger": { "event": "WhenAttackInitiated", "timing": "ForcedInterrupt", "actor": "attachedTo" },
+          "effect": { "seq": [
+            { "grantUntil": { "keyword": "overkill", "card": "trigger.actor", "until": "EndOfAttack" } },
+            { "delayUntil": { "condition": "WhenDamageDealt", "within": "EndOfAttack", "effect": { "giveStatus": { "card": "damagedHero", "status": "stunned" } } } },
+            { "delayUntil": { "condition": "WhenAttackEnds", "effect": { "discard": "this" } } }
+          ] }
+        }
+      ]
+    },
+    {
+      "card": "11017",
+      "name": "Macrobots",
+      "note": "Guard and Retaliate are engine-owned. star Boost: Give Kang a tough status card. MARVEL-894 (Q2) and ruling 5ecfc71ddff64d39 keep a Kang boost local, so Kang is the villain in the activation's game area (villainInThisGameArea), not necessarily the activating enemy.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "Boost", "subject": "this" },
+          "effect": { "giveStatus": { "card": { "query": "villainInThisGameArea" }, "status": "tough" } }
+        }
+      ]
+    },
+    {
+      "card": "11023",
+      "name": "Kang's Dominion",
+      "note": "Per-player starting threat is engine-owned. Kang cannot take damage. When Defeated: Deal the player who defeated this scheme an encounter card. MARVEL-894 (Q2) reads Kang as the villain in this card's game area (villainInThisGameArea). Ruling 76a9465df95e739c: \"if 'Kang's Dominion' is in play, and Kang has Tough, he will keep Tough even if card effects would otherwise try to deal damage to him\"; damage he cannot take is replaced by none at rr:damage.step.1. rr:when-defeated-abilities.2.1 resolves the deal before the scheme leaves play; defeater is the credited player.",
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant", "subject": "this" },
+          "effect": { "preventDamageWhile": { "card": { "query": "villainInThisGameArea" }, "condition": { "exists": "this" } } }
+        },
+        {
+          "trigger": { "event": "WhenCardDefeated", "timing": "WhenDefeated", "subject": "this" },
+          "effect": { "dealEncounterCards": { "player": "defeater", "count": 1 } }
+        }
+      ]
+    },
+    {
+      "card": "11024",
+      "name": "Pinned Down",
+      "note": "Starting threat and the crisis icon are engine-owned. When Revealed: Place 2 threat here for each obligation in play. MARVEL-894 (Q4) counts the obligations in this card's game area (obligationsInThisGameArea). rr:obligation.5 puts a revealed obligation in its player's play area, so every player's obligations count, not only the revealing player's.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "placeThreat": { "scheme": "this", "amount": { "mul": [2, { "count": { "query": "obligationsInThisGameArea" } }] } } }
+        }
+      ]
+    },
+    {
+      "card": "11026",
+      "name": "Energy Blast",
+      "note": "When Revealed (Alter-Ego): Discard an ally or support you control. If you cannot, this card gains surge. When Revealed (Hero): Kang attacks you. rr:you-your.10 discards from the revealing player's play area. rr:permanent.4 leaves out a permanent card, so a player whose only cards are permanent cannot discard and the card gains surge. MARVEL-894 (Q2) reads Kang as the villain in this card's game area (villainInThisGameArea).",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this", "form": "alter-ego" },
+          "effect": { "if": {
+            "test": { "exists": { "discardable": { "query": "alliesAndSupportsYouControl" } } },
+            "then": { "chooseCard": { "from": { "discardable": { "query": "alliesAndSupportsYouControl" } }, "effect": { "discard": "chosen" } } },
+            "else": { "gainSurge": 1 }
+          } }
+        },
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this", "form": "hero" },
+          "effect": { "enemyAttacks": { "enemies": { "query": "villainInThisGameArea" }, "against": "you" } }
+        }
+      ]
+    },
+    {
+      "card": "11049",
+      "name": "Fear of Kang",
+      "note": "You cannot attack Kang. Alter-Ego Action: Discard a random card from your hand -> discard this obligation. rr:obligation.1 scopes \"you\" to the player whose play area holds it. Ruling af0e9693cc645666 and ruling 13454feafb65378b: \"you\" is that player's identity, so their allies may attack Kang. MARVEL-894 (Q2) reads Kang as every enemy titled Kang, Kang (Master of Time) included (rulings 8da857fcc70a81a2 and 7b48d5829d4d0f62 make them distinct titles). The prohibition is the derived kang_attack_prohibited modifier on that identity. The random discard is the arrow cost and draws on the seeded stream.",
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant" },
+          "effect": { "grantEach": { "cards": { "inPlayerArea": { "area": "identity", "player": "engagedPlayer" } }, "keyword": "kang_attack_prohibited", "amount": 1 } }
+        },
+        {
+          "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "alter-ego" },
+          "cost": { "discardRandomFromHand": 1 },
+          "effect": { "discard": "this" }
+        }
+      ]
     }
   ]
 }
