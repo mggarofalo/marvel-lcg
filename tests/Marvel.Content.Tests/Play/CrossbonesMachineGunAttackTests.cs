@@ -102,6 +102,29 @@ public sealed class CrossbonesMachineGunAttackTests : CoreCardTestBase
         AssertResolvedAndDrained(world, gun, events);
     }
 
+    [Theory]
+    [InlineData(1)]
+    [InlineData(0)]
+    [Rule("rr:player-elimination.5")]
+    [Rule("rr:response.1")]
+    public void AReactionToTheGunDamageResolvesBeforeItsFollowOnEffect(int remainingHealth)
+    {
+        // A synthetic forced response on Crossbones places 2 threat after damage is dealt.
+        // It reacts in the window of the gun's damage, which closes before the gun's
+        // synthetic follow-on places its 1 threat, whether the damage eliminates the
+        // attacked player (1) or the attack continues normally (0).
+        var (world, _, events) = Board(ammo: 2, attacked: 0, players: 2, remainingHealth,
+            ThreatAfterDamage(reactToDamage: true));
+        var threat = events.OfType<FieldSet>().Where(set => set.Field == "k_threat").ToList();
+        int reaction = threat.FindIndex(set => set.Trigger == "WhenDamageDealt");
+        int followOn = threat.FindIndex(set => set.Trigger == "WhenEnemyActivates");
+
+        Assert.Equal(remainingHealth > 0, world.Seats[0].Eliminated);
+        Assert.InRange(reaction, 0, followOn - 1);
+        Assert.Equal((0, 2), (threat[reaction].From, threat[reaction].To));
+        Assert.Equal((2, 3), (threat[followOn].From, threat[followOn].To));
+    }
+
     private static void AssertResolvedAndDrained(World world, Card gun, List<GameEvent> events)
     {
         // The ability's window result is recorded once, after its last instruction, and
@@ -112,9 +135,15 @@ public sealed class CrossbonesMachineGunAttackTests : CoreCardTestBase
         Assert.Equal(0, world.Agenda.Count);
     }
 
-    private static AbilityRunner ThreatAfterDamage()
+    private static AbilityRunner ThreatAfterDamage(bool reactToDamage = false)
     {
         var book = JsonNode.Parse(AuthoredCards.Text)!;
+        if (reactToDamage)
+            book["cards"]!.AsArray().Single(row => row!["card"]!.GetValue<string>() == "04058")!
+                ["abilities"]!.AsArray().Add(JsonNode.Parse("""
+                    { "trigger": { "event": "WhenDamageDealt", "timing": "ForcedResponse", "subject": "game" },
+                      "effect": { "placeThreat": { "scheme": { "query": "mainScheme" }, "amount": 2 } } }
+                    """));
         var ability = book["cards"]!.AsArray().Single(row => row!["card"]!.GetValue<string>() == "04064")!
             ["abilities"]![0]!;
         var damage = ability["effect"]!.DeepClone();
