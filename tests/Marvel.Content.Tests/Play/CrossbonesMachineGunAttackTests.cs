@@ -1,4 +1,8 @@
+using System.Text.Json.Nodes;
+using Marvel.Cards.Dsl;
+using Marvel.Cards.Run;
 using Marvel.Content.Tests.Cards;
+using Marvel.Rules.Events;
 using Marvel.Rules.Play;
 using Marvel.Rules.State;
 using Marvel.Tests;
@@ -19,7 +23,9 @@ public sealed class CrossbonesMachineGunAttackTests : CoreCardTestBase
         // 04064: "When Crossbones attacks you, remove 1 ammo counter from this card and
         // discard the top card of the encounter deck → take indirect damage equal to the
         // number of boost icons on the discarded card." rr:you-your.7: "For abilities that
-        // trigger “after [enemy] attacks you,” “you” refers to the attacked player."
+        // trigger “after [enemy] attacks you,” “you” refers to the attacked player." The
+        // clause is worded for "after"; this "when" interrupt applies it by analogy, since
+        // "you" in the same attack can only be the attacked player.
         // rr:interrupt.3: an interrupt "is resolved when its triggering condition initiates,
         // but before that triggering condition resolves", and the attack resolves from
         // rr:attack-enemy-activation step 1, "Give boost card". So the gun discards the top
@@ -27,8 +33,8 @@ public sealed class CrossbonesMachineGunAttackTests : CoreCardTestBase
         // Hard to Keep Down (01104, no boost icons).
         // A gun without ammo cannot pay its cost, so it is the control attack, whose boost
         // card is Power Drain.
-        var (world, gun) = Board(ammo: 2, attacked);
-        var (control, _) = Board(ammo: 0, attacked);
+        var (world, gun, _) = Board(ammo: 2, attacked);
+        var (control, _, _) = Board(ammo: 0, attacked);
         int other = 1 - attacked;
 
         Assert.Equal(1, gun.Tokens["c_ammo"]);
@@ -48,7 +54,7 @@ public sealed class CrossbonesMachineGunAttackTests : CoreCardTestBase
     {
         // rr:player-elimination.4: "If all players are eliminated, the game ends and the
         // players lose." Power Drain's three icons exceed Captain Marvel's last hit point.
-        var (world, gun) = Board(ammo: 2, attacked: 0, players: 1, remainingHealth: 1);
+        var (world, gun, events) = Board(ammo: 2, attacked: 0, players: 1, remainingHealth: 1);
 
         Assert.True(world.Seats[0].Eliminated);
         Assert.True(world.IsOver);
@@ -65,7 +71,7 @@ public sealed class CrossbonesMachineGunAttackTests : CoreCardTestBase
         // rr:player-elimination.5: "If a player is eliminated partway through the resolution
         // of an ability, resolve the entire ability." rr:player-elimination.5.1: "If a player
         // is eliminated in the middle of an attack, that attack ends." No boost card is dealt.
-        var (world, gun) = Board(ammo: 2, attacked: 0, players: 2, remainingHealth: 1);
+        var (world, gun, events) = Board(ammo: 2, attacked: 0, players: 2, remainingHealth: 1);
 
         Assert.True(world.Seats[0].Eliminated);
         Assert.False(world.IsOver);
@@ -73,12 +79,58 @@ public sealed class CrossbonesMachineGunAttackTests : CoreCardTestBase
         Assert.Equal(["02041"], Faces(world));
         Assert.Equal(0, world.Seats[1].IdentityCard.Damage);
         Assert.Null(world.Attack);
+        AssertResolvedAndDrained(world, gun, events);
+    }
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(0)]
+    [Rule("rr:player-elimination.5")]
+    [Rule("rr:player-elimination.5.1")]
+    public void AnEffectAfterLethalDamageStillResolves(int remainingHealth)
+    {
+        // rr:player-elimination.5: "resolve the entire ability." A synthetic gun row
+        // places 1 threat on the main scheme after its indirect damage; with one hit
+        // point left that damage eliminates the attacked player and ends the attack.
+        // The 0 case is the unharmed control: the threat is placed after a normal attack.
+        var (world, gun, events) = Board(ammo: 2, attacked: 0, players: 2, remainingHealth,
+            ThreatAfterDamage());
+
+        Assert.Equal(remainingHealth > 0, world.Seats[0].Eliminated);
+        Assert.Equal(1, world.TheCardIn(DeckType.MainSchemesArea)!.Tokens["k_threat"]);
+        Assert.False(world.IsOver);
+        AssertResolvedAndDrained(world, gun, events);
+    }
+
+    private static void AssertResolvedAndDrained(World world, Card gun, List<GameEvent> events)
+    {
+        // The ability's window result is recorded once, after its last instruction, and
+        // no agenda work (including a suspended continuation) is left behind.
+        var result = Assert.Single(events.OfType<AbilityWindowResult>(), happened => happened.Source == gun.ObjectId);
+        Assert.Equal(events.FindLastIndex(happened => happened.AbilitySource == gun.ObjectId) + 1,
+            events.IndexOf(result));
+        Assert.Equal(0, world.Agenda.Count);
+    }
+
+    private static AbilityRunner ThreatAfterDamage()
+    {
+        var book = JsonNode.Parse(AuthoredCards.Text)!;
+        var ability = book["cards"]!.AsArray().Single(row => row!["card"]!.GetValue<string>() == "04064")!
+            ["abilities"]![0]!;
+        var damage = ability["effect"]!.DeepClone();
+        ability["effect"] = new JsonObject
+        {
+            ["seq"] = new JsonArray(damage, JsonNode.Parse(
+                """{ "placeThreat": { "scheme": { "query": "mainScheme" }, "amount": 1 } }""")),
+        };
+        return new AbilityRunner(AbilityCatalog.Parse(book.ToJsonString()));
     }
 
     private static string[] Faces(World world) =>
         [.. world.AreaOf(DeckType.EncounterDiscardPile).Cards.Select(card => card.FaceId)];
 
-    private static (World World, Card Gun) Board(int ammo, int attacked, int players = 2, int remainingHealth = 0)
+    private static (World World, Card Gun, List<GameEvent> Events) Board(
+        int ammo, int attacked, int players = 2, int remainingHealth = 0, AbilityRunner? abilities = null)
     {
         var world = new World(Cards, players);
         for (int player = 0; player < players; player++)
@@ -95,11 +147,11 @@ public sealed class CrossbonesMachineGunAttackTests : CoreCardTestBase
         world.CreateCard("02041", world.AreaOf(DeckType.EncounterDeck));
         var gun = world.CreateCard("04064", world.AreaOf(DeckType.UpgradesArea, PlayArea.Villains, crossbones.ObjectId));
         if (ammo > 0) gun.PlaceTokens("c_ammo", ammo);
-        var runner = AuthoredCards.Runner();
+        var runner = abilities ?? AuthoredCards.Runner();
         world.Abilities = runner;
         world.Agenda.Add(new PhaseStep(new EnemyAttackOperation(), 1, 2,
             Index: attacked, Subject: crossbones.ObjectId, Seat: attacked));
-        new RedSkullFixture(world, runner).Finish();
-        return (world, gun);
+        var events = new RedSkullFixture(world, runner).Finish();
+        return (world, gun, events);
     }
 }

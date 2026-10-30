@@ -31,15 +31,16 @@ fully verified prefix with only stun removed produces exactly the historical
 three events and target prompt. This control is explicitly synthetic and does
 not establish a played game or acceptance of the historical replay.
 
-`CurrentLegalSupportAndAllyThwartsCompleteWithExactResultsAndReplay` opens a fresh
-seed-13 game and submits the original intentions except obsolete answer 17.
-Every submitted answer first matches its full current prompt. Current decision
-16 produces exactly the combined historical 16/17 events and decision-17 state
-fingerprint. Every subsequent event list and fingerprint matches the archive
-exactly. The resulting 88-decision played game reaches the original VillainWins
-outcome and complete canonical terminal digest. Its in-memory current journal is
-then independently replayed, comparing every prompt, event, RNG count and
-fingerprint and the terminal result and digest. Neither archive is rewritten.
+On that candidate, a fresh seed-13 game submitted the original intentions except
+obsolete answer 17. Every submitted answer first matched its full current prompt.
+Decision 16 produced exactly the combined historical 16/17 events and decision-17
+state fingerprint, and every later event list and fingerprint matched the archive.
+That 88-decision game reached the original VillainWins outcome and canonical
+terminal digest, and its in-memory journal replayed independently. With the
+corrected Machine Gun, a current game diverges at decision 45. The exact 88-decision
+route now runs only as the causal control
+`PreCorrectionMachineGunRowReproducesTheFrozenAllyThwartGame`, which reverts the
+gun's trigger binding. Neither archive is rewritten.
 
 The coverage retains the original scope: Surveillance Team removes threat from
 Crossbones' Assault from 2 to 1 at historical decision 87; Black Cat's basic
@@ -74,8 +75,8 @@ dotnet test tests/Marvel.Acceptance.Tests/Marvel.Acceptance.Tests.csproj -c Rele
 ```
 
 The distinguishing evidence includes the exact historical prefix and first
-divergence, the synthetic unstunned control, the prompt-checked current legal
-88-decision game, explicit Black Cat thwart/forced-scheme consequences, its full
+divergence, the synthetic unstunned control, the prompt-checked 88-decision game
+of that candidate, explicit Black Cat thwart/forced-scheme consequences, its full
 terminal digest and independent journal replay, and the separate positive
 Surveillance Team defeat game. No historical target answer is submitted to a
 different current prompt, and no positive defeat obligation is replaced by a

@@ -222,17 +222,35 @@ internal static class AbilityResolutionEffectChoices
             var occurrence = agendaOccurrence
                 ?? throw new InvalidOperationException(
                     "a suspended rules procedure has no containing occurrence");
-            // rr:player-elimination.5: "If a player is eliminated partway through the
-            // resolution of an ability, resolve the entire ability." Eliminating the
-            // attacked player ends the attack (rr:player-elimination.5.1) and removes its
-            // frames, so the ability resumes after its own effect windows instead.
             if (cast.World.Agenda.IsOutstanding(owner, occurrence))
                 cast.World.Agenda.ContinueBeforeOwner(occurrence, owner, continuation);
             else
-                cast.World.Agenda.Then(continuation);
+                ContinueAfterEliminationEndedOwner(cast.World, owner, cast.Source.ObjectId, continuation);
         }
         cast.Suspend();
     }
+
+    /// <summary>Resume after the ability's own effect windows when elimination ended its owner.</summary>
+    /// <remarks>
+    /// rr:player-elimination.5: "If a player is eliminated partway through the resolution
+    /// of an ability, resolve the entire ability." rr:player-elimination.5.1: "If a player
+    /// is eliminated in the middle of an attack, that attack ends", which removes the
+    /// owner's frames. The ability then resumes directly after its own effect windows,
+    /// which must be the current frame. Any other missing owner is an engine fault.
+    /// </remarks>
+    internal static void ContinueAfterEliminationEndedOwner(
+        World world, PhaseStep owner, int source, PhaseStep continuation)
+    {
+        if (!OwnerEndedByElimination(world, owner, source))
+            throw new InvalidOperationException("the continuation owner is not on the agenda");
+        world.Agenda.Then(continuation);
+    }
+
+    private static bool OwnerEndedByElimination(World world, PhaseStep owner, int source) =>
+        owner.Seat >= 0 && owner.ActivationId >= 0
+        && world.Seats[owner.Seat].Eliminated && world.Activation?.Id != owner.ActivationId
+        && world.Agenda.Current is { What: Steps.CardEffectResolved } current
+        && current.Subject == source;
 
     /// <summary>Resume an initiated ability after its cost procedure settles.</summary>
     internal static void SuspendAfterCost(this AbilityResolutionExecution execution,

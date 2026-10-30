@@ -63,9 +63,17 @@ transition, and the gun fires later in the same replayed game. The minion case
 This correction does not change `engine-replay-v29`. Under
 [the release policy](../release-policy.md), the replay contract changes when "the
 same setup and decision trace may resolve differently". The runtime dataset identity
-changes separately when any byte of `abilities.json` changes. The engine is
-unchanged, so a given dataset triple and trace still resolves identically. Only the
-ability dataset hash changes, and that already decides save admission:
+changes separately when any byte of `abilities.json` changes.
+
+The packet has one engine change. A nested ability whose damage eliminated the
+attacked player threw `InvalidOperationException` ("the continuation owner is not
+on the agenda") when it tried to resume. It now resumes after its own effect
+windows (`rr:player-elimination.5`). The fallback applies only when the owner's seat
+is eliminated and its activation has ended; any other missing owner still throws.
+Before this change, every trace that reached this point failed, so no accepted v29
+trace contained it. Every accepted v29 trace therefore resolves exactly as before.
+That is why v29 is kept. The ability dataset hash changes, and that already decides
+save admission:
 
 - A v29 save made with the `1d78bc2d` datasets records the old ability hash. A
   restore needs matching dataset hashes or a named additive content migration.
