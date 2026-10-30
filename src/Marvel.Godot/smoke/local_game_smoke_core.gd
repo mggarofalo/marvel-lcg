@@ -55,9 +55,9 @@ func _visible_text(node: Node) -> String:
 	return text
 
 
-func _wait_for(condition: Callable) -> bool:
+func _wait_for(condition: Callable, timeout_milliseconds := TIMEOUT_MILLISECONDS) -> bool:
 	var started := Time.get_ticks_msec()
-	while Time.get_ticks_msec() - started < TIMEOUT_MILLISECONDS:
+	while Time.get_ticks_msec() - started < timeout_milliseconds:
 		if condition.call():
 			return true
 		await process_frame
