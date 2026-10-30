@@ -40,6 +40,7 @@ public static class GameResolution
         if (!assessment.IsAccepted)
             throw new ArgumentException(assessment.Reason ?? assessment.Rejection.ToString(), nameof(input));
         ValidateLiveTeamUp(game, input);
+        ValidateLiveHeroSpecificPlay(game, input);
         ValidateLiveCardPlay(game, input);
         GameFormChanges.Validate(game, input);
         ValidateContinuation(game, input);
@@ -79,6 +80,18 @@ public static class GameResolution
             && !CardPlayLegality.TeamedUp(
                 game.world, game.facts, game.world.Cards[offer.AnchorId]))
             throw new ArgumentException("the offered card no longer satisfies team-up", nameof(input));
+    }
+
+    private static void ValidateLiveHeroSpecificPlay(Game game, Decision input)
+    {
+        if (input.IsDecline) return;
+        var offer = game.Pending!.Affordances.First(option => option.Id == input.Affordance);
+        // rr:cannot: a hero-specific play prohibition is absolute. An offer
+        // describes an earlier board, so check again before committing an answer.
+        if (offer.PlaysCard && !DeckTypes.IsInPlay(game.world.Cards[offer.AnchorId].Area.Type)
+            && !HeroSpecificPlayPermissions.CanPlay(
+                game.world, game.world.Cards[offer.AnchorId], game.Pending.Player))
+            throw new ArgumentException("the offered card is a prohibited hero-specific play", nameof(input));
     }
 
     private static void ValidateLiveCardPlay(Game game, Decision input)

@@ -120,6 +120,12 @@ is meant to be cheap and called often rather than cached onto the board.
 Where the three kinds differ is only in **how an entry leaves**, and that is
 stated by the effect itself.
 
+A constant prohibition is read live from that list at the moment it matters,
+never copied into an offer. Depowered's `hero_specific_play_prohibited` and
+Corrupted Timestream's `obligation_alter_ego_action_prohibited` are checked when
+a play or action is offered and again when it is answered or executed, so a
+prohibition that arrives or leaves between the two is honoured (`rr:cannot`).
+
 ## A duration is a condition, not a timing point
 
 `rr:lasting-effects` describes a duration as what the card says — *"for a

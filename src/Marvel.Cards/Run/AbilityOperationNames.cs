@@ -28,7 +28,9 @@ internal static class AbilityOperationNames
         AbilityCost.RandomDiscardFromHand => "discardRandomFromHand",
         AbilityCost.DiscardFromHand discard => discard.Range switch
         {
-            AbilityCostRange.Exact => discard.Resource is null ? "discardFromHand" : "discardResourceFromHand",
+            AbilityCostRange.Exact when discard.Resource is not null => "discardResourceFromHand",
+            AbilityCostRange.Exact when discard.CardClass is not null => "discardClassFromHand",
+            AbilityCostRange.Exact => "discardFromHand",
             AbilityCostRange.UpTo => "discardUpToFromHand",
             AbilityCostRange.Any => "discardAnyFromHand",
             _ => throw new InvalidOperationException("Unknown discard cost range"),
@@ -77,6 +79,7 @@ internal static class AbilityOperationNames
         AbilityEffect.ChooseStatusRecipients => "chooseStatusRecipients",
         AbilityEffect.ChooseCardsToHand => "chooseCardsToHand",
         AbilityEffect.StoreBeneath => "storeBeneath",
+        AbilityEffect.StoreDeckTopBeneath => "storeDeckTopBeneath",
         AbilityEffect.InitializeAuxiliaryDeck => "initializeAuxiliaryDeck",
         AbilityEffect.RevealAuxiliaryTop => "revealAuxiliaryTop",
         AbilityEffect.Shuffle => "shuffle",

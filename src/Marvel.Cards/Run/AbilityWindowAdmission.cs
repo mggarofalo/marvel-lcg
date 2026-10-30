@@ -83,7 +83,7 @@ internal static class AbilityWindowAdmission
         AbilityQueryProjection? projection)
     {
         var (card, ability, controller, _) = candidate;
-        if (!TriggerEligible(world, card, ability, occurrence)) return false;
+        if (!TriggerEligible(world, card, ability, controller, occurrence)) return false;
         occurrence = candidate.TriggeringThreat ?? occurrence;
         if (!Answers(program, world, candidate, occurrence, window,
                 ability.AnyPlayer ? controller : null)
@@ -97,16 +97,20 @@ internal static class AbilityWindowAdmission
                 AbilityAvailability.IndexOf(program, card, ability), occurrence);
     }
 
-    private static bool TriggerEligible(World world, Card card, CompiledCardAbility ability, Occurrence occurrence) =>
+    private static bool TriggerEligible(
+        World world, Card card, CompiledCardAbility ability, int controller, Occurrence occurrence) =>
         AbilityPendingEntryAdmission.Allows(card, ability, occurrence)
-        && EventTeamUpPermitted(world, card)
+        && EventPlayPermitted(world, card, controller)
         // rr:when-completed-abilities.1: "When this scheme is completed..."
         && TriggerIsLive(world, ability, card, occurrence);
 
-    private static bool EventTeamUpPermitted(World world, Card card) =>
+    // The prohibition is read for the player offered this window ability,
+    // the one who would play the event.
+    private static bool EventPlayPermitted(World world, Card card, int controller) =>
         EffectiveCards.Kind(card, world.Facts) != CardKind.Event
         || DeckTypes.IsInPlay(card.Area.Type)
-        || CardPlayLegality.TeamedUp(world, world.Facts, card);
+        || (CardPlayLegality.TeamedUp(world, world.Facts, card)
+            && HeroSpecificPlayPermissions.CanPlay(world, card, controller));
 
     private static bool CostsPayable(AbilityProgram program, World world, Candidate candidate,
         IResourceCardAbilities resources, AbilityQueryProjection? projection)

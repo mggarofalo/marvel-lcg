@@ -174,11 +174,16 @@ internal static class AbilityEffectTargetAdmission
             "chooseCardsToHand" => AbilityGroupRetrieval.Target((AbilityEffect.ChooseCardsToHand)node, cast.Context),
             "releaseBeneath" => AbilityBeneathAdmission.Target((AbilityEffect.ReleaseBeneath)node, cast),
             "storeBeneath" => AbilityBeneathAdmission.Target((AbilityEffect.StoreBeneath)node, cast),
+            "storeDeckTopBeneath" => AbilityBeneathAdmission.Target((AbilityEffect.StoreDeckTopBeneath)node, cast),
             "putIntoPlay" => AbilityAllyEntry.HasTarget(EffectOf<AbilityEffect.PutIntoPlay>(node, cast), cast)
                 ? TargetLegality.Valid : TargetLegality.Invalid,
             "placeAtRandom" => Find(EffectOf<AbilityEffect.PlaceAtRandom>(node, cast).Host, cast) is null
                 ? TargetLegality.Invalid : TargetLegality.Valid,
             "draw" => DrawTargetLegality((AbilityEffect.Draw)node, cast, bindingMayChange),
+            // rr:target.1 lists "a card" among targets, as rr:target.2.3 does for
+            // drawing: a random hand discard affects a card only while one is in hand.
+            "discardAtRandom" => AbilityCardStateAdmission.CardStatePartialResolution(node, cast) == true
+                ? TargetLegality.Valid : TargetLegality.Invalid,
             "discardUntil" => DiscardUntilTargetLegality(node, cast),
             "search" => HasSearchableArea(node, cast)
                 ? TargetLegality.Valid : TargetLegality.Invalid,

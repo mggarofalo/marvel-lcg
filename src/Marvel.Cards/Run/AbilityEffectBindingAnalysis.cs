@@ -208,6 +208,7 @@ internal static class AbilityEffectBindingAnalysis
         AbilityEffect.AttackAnotherEnemy => false,
         AbilityEffect.ReleaseBeneath => false,
         AbilityEffect.StoreBeneath store => BindingCanChange(store.Cards) || BindingCanChange(store.Host),
+        AbilityEffect.StoreDeckTopBeneath store => BindingCanChange(store.Host),
         AbilityEffect.InitializeAuxiliaryDeck initialize => BindingCanChange(initialize.Cards),
         AbilityEffect.RevealAuxiliaryTop => false,
         // This instruction always addresses its physical source, regardless of a prior choice.

@@ -49,6 +49,8 @@ public abstract record AbilityCost
     {
         /// <summary>A printed resource type every discarded card must show, or any card.</summary>
         public char? Resource { get; init; }
+        /// <summary>A printed classification every discarded card must show, or any card.</summary>
+        public string? CardClass { get; init; }
     }
 
     /// <summary>Discard a fixed number of random hand cards as an arrow cost.</summary>
