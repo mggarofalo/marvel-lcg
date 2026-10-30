@@ -64,6 +64,7 @@ internal sealed class SimulationGameRun(
         }
         var asked = game!.Pending!;
         input = policy!.Answer(game);
+        PolicyAnswerAssessment.Require(asked, input);
         var durable = DurableDecision.From(
             DurableDecision.SimulationActor(asked, input), asked, input);
         prompt = PromptRecord.From(asked);

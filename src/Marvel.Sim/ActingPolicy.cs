@@ -201,7 +201,7 @@ internal sealed class ActingPolicy(ICardFacts facts, IReadOnlyList<uint> seatSee
         var values = Values(option);
         return Decision.Take(
             option.Id,
-            targets ?? Targets(world, option),
+            targets ?? Targets(game, option),
             payment,
             values,
             Allocations(option, payment, values));
@@ -251,26 +251,12 @@ internal sealed class ActingPolicy(ICardFacts facts, IReadOnlyList<uint> seatSee
         return null;
     }
 
-    private static IReadOnlyList<int> Targets(World world, Affordance option)
+    private IReadOnlyList<int> Targets(Game game, Affordance option)
     {
-        if (option.Targets is not { } wanted)
-        {
-            return [];
-        }
-
-        if (wanted.IsGrouped && wanted.Groups is { Count: > 0 } groups)
-        {
-            return groups[0];
-        }
-
-        var selected = wanted.Legal.Take(wanted.Min).ToList();
+        var world = game.State;
+        int seat = DecisionAssessment.ActingSeat(game.Pending!, option);
         int villain = world.TheCardIn(DeckType.VillainArea)?.ObjectId ?? -1;
-        if (wanted.Min == 1 && wanted.Legal.Contains(villain))
-        {
-            selected[0] = villain;
-        }
-
-        return selected;
+        return ActingPolicyTargets.Select(option.Targets, villain, random[seat]);
     }
 
     private static IReadOnlyList<int> Excess(World world, int player)

@@ -311,7 +311,13 @@ computed aliases is an engine format choice.
 
 The acting policy is version 3. It selects the earliest smallest generator set
 accepted by the engine for all offered resource components, including typed
-variable quantities. Prior policy versions are not replayed as version 3.
+variable quantities. For a target request that allows repeated entries, such as
+an indirect damage assignment, it keeps the earliest distinct targets when the
+request admits them. Otherwise it draws each entry from the seat's policy stream
+among the targets that the request's `AllowsPartial` still admits, so a target
+may receive several points up to its offered occurrence limit. That draw only
+replaces selections the engine rejects, so every accepted version 3 answer is
+unchanged. Prior policy versions are not replayed as version 3.
 
 ## Game record stream
 
@@ -471,7 +477,7 @@ failed. Its last record has `type: "failure"` and one of these categories:
 | Category | Meaning |
 |---|---|
 | `decision_limit` | The game still had a prompt at the configured limit |
-| `policy_error` | The policy returned an illegal or ambiguous decision |
+| `policy_error` | The policy returned an illegal or ambiguous decision, including one `DecisionAssessment` rejects before resolve |
 | `rules_not_implemented` | The engine reached a named unimplemented rule |
 | `engine_exception` | Another exception escaped setup or resolve |
 | `record_error` | A record could not be serialized or committed |
