@@ -178,6 +178,11 @@ public static class AbilityLowering
             ? text[0] : throw location.Error("expected one supported resource symbol");
     }
 
+    // Engine choice: a whole-hand discard by kind admits only the kind a card needs.
+    internal static CardKind HandCardKind(AbilityValue value, AbilityLocation location) =>
+        string.Equals(Text(value, location), "event", StringComparison.Ordinal)
+            ? CardKind.Event : throw location.Error("expected the hand card kind 'event'");
+
     internal static string ResultName(AbilityValue value, AbilityLocation location)
     {
         string name = Text(value, location);

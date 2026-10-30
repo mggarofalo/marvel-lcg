@@ -263,7 +263,7 @@ internal static class AbilityImmediateExecution
             return;
         }
         var liveAmount = AbilityLastingAmount.Capture(amount, context.Admission);
-        if (liveAmount is not null && kind is not ("attack" or "scheme"))
+        if (liveAmount is not null && kind is not ("attack" or "scheme" or "boost_const"))
             throw new RulesNotImplementedException($"live lasting field '{kind}' is not implemented");
         world.Effects.Register(new ContinuousEffect(EffectSource.LastingEffect, Kind: kind,
             Amount: liveAmount is null ? resolveAmount(amount) : 0, Card: context.Admission.Source.ObjectId,

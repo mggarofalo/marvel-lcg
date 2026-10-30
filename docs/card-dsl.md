@@ -565,12 +565,12 @@ canMakeTheCall cancelOccurrence cancelWhenRevealed cardsIn changeForm characters
 charactersYouControl choose chooseCard chooseDiscardToShuffle chooseTopForHand
 countersOn damageOn dealAttackDamage dealDamage dealEncounterCards
 deck defeatedByYou delayUntil discardAtRandom discardAnyFromHand discardFromHand
-discardHandWithResource discardTop discardUntil discardable discardedWithResource
+discardHandOfKind discardHandWithResource discardResourceFromHand discardTop discardUntil discardable discardedWithResource
 doubleResourceFor drawToPrintedHandSize dynamic
 eachPlayer else encounterDeck encounterDiscardPile enemies
 enemiesEngagedWithChosenPlayer enemiesWithTrait enemyAttacks enemySchemes exists
 finalStep generate generateTopDiscard giveAdditionalBoost
-grantCharactersControlledBy grantEach grantUntil hasStatus hasTrait heroDefended
+grantCharactersControlledBy grantEach grantUntil hasStatus hasTrait heroBasicDefended heroDefended
 heroes heroesAndAllies heroAndAllyTargets identities
 identitiesWithinPerPlayerLimit inForm indirectDamage isEnemyAttacker isKind isTitle
 isYourIdentity keyword kind legalPractice mainScheme makeTheCall maxBy minions
@@ -1315,6 +1315,12 @@ player's turn or the villain phase. It remains after the source leaves play.
 The current turn is not the next turn. Other targets, amounts and fields are not
 admitted for this duration.
 
+A `grantUntil` amount of `{"count":{"inPlayerArea":{"area":...,"player":"you"}}}`
+captures the resolving player's seat and counts that player's zone live, as
+rr:lasting-effects.3 requires; other player relations raise. Live amounts are
+admitted for `attack`, `scheme` and `boost_const`. A lasting `boost_const` grant
+on a boost card adds icons counted at rr:attack-enemy-activation.step.3.c.
+
 `grantCharactersWithTrait` registers a live lasting combat bonus:
 `{"trait":"AVENGER","fields":["attack","thwart"],"amount":1,"until":"EndOfPhase"}`.
 The affected set includes all in-play characters with the current effective
@@ -1332,6 +1338,18 @@ printed ability declarations; an unobserved empty occurrence is omitted.
 completion through ally-limit and entry-response windows for dependent `then`
 text. Unavailable entry has no completion. A `chooseCard` conditional with no
 reachable branch does not offer an unaffected candidate.
+
+`discardHandOfKind: "event"` discards every event in the resolving player's hand
+(rr:you-your.8) without a choice and records them in `result: "discarded"`, so
+"if no events are discarded this way" reads that result. Only `event` is admitted.
+
+The arrow cost `discardResourceFromHand: "R"` asks for exactly one hand card
+printing that resource. A wild icon does not qualify (rr:wild-resource.3;
+ruling:437680ffd6d92fb8). The condition `heroBasicDefended: "you"` is true when
+the resolver's identity made a basic defense against the completed attack. It
+is false for a defense-labeled ability (rr:defend-defense.4.3), unlike
+`heroDefended`. rr:defend-defense.7.2 times "after you use a basic power" for a
+defense after the attack.
 
 `discardHandCards: <number>` asks the resolving player to choose exactly the
 computed number of distinct cards from their own hand, capped by available

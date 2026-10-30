@@ -24,6 +24,9 @@ internal static class AbilityLastingAmount
                     Exclude: false } trait } =>
                 new ContinuousAmount.EngagedMinionsWithTrait(
                     AbilityCardQueries.Resolver(context.Query), trait.Trait),
+            AbilityNumber.Count { Cards: AbilityCardSelection.InPlayerArea
+                { Player: AbilityPlayer.You } area } =>
+                new ContinuousAmount.PlayerAreaCards(AbilityCardQueries.Resolver(context.Query), area.Area),
             AbilityNumber.Counters { Card: AbilityCardSelection.Query
                 { Kind: AbilityCardQuery.MainScheme } } count =>
                 new ContinuousAmount.MainSchemeCounters(count.Counter),

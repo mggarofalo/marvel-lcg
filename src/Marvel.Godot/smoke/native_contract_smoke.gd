@@ -1,5 +1,7 @@
 extends "res://smoke/search_choice_smoke.gd"
 
+const PREPARED_OPEN_MILLISECONDS := 60000
+
 var contract := OS.get_environment("MARVEL_NATIVE_CONTRACT")
 var witness = preload("res://smoke/NativeGameWitness.cs").new()
 var stale_commit: Callable
@@ -28,7 +30,9 @@ func _run() -> void:
     if not await _pointer_activate(_button_named("Start game")): return
     witness.Bind(main)
     ui = preload("res://smoke/automation/ui_driver.gd").new(main, render_viewport, _fail)
-    if not await _wait_for(_scene_ready):
+    # Opening a prepared scene is host work; a cold Windows runner can take longer
+    # than the interaction deadline to answer it.
+    if not await _wait_for(_scene_ready, PREPARED_OPEN_MILLISECONDS):
         _fail("prepared scene did not become actionable: " + _visible_text(main))
         return
     print("NATIVE_CONTRACT_STAGE ready " + contract)
