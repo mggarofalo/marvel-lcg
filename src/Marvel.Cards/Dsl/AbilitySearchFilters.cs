@@ -20,6 +20,7 @@ internal static class AbilitySearchFilters
             Top = top, AspectOnly = Boolean(fields, "aspectOnly", location),
             CardClass = AbilitySelectorLowering.OptionalText(fields, "cardClass", location),
             Set = set,
+            DifferentTitleFromRevealed = Boolean(fields, "differentTitleFromRevealed", location),
         };
     }
 }

@@ -16,6 +16,8 @@ internal sealed record AbilityQueryContext(
 {
     internal System.Collections.Immutable.ImmutableArray<(int Card, int Incarnation)> DamageDefeats { get; init; } = [];
     internal ImmutableHashSet<int> ExhaustedForCost { get; init; } = [];
+    // Cards revealed earlier in this invocation, including earlier each-player frames.
+    internal IReadOnlyList<int> RevealedThisResolution { get; init; } = [];
 
     internal Defeated? TriggeringDefeat { get; init; }
     internal Attacked? TriggeringAttack { get; init; }

@@ -44,6 +44,7 @@ internal static class AbilityResolutionCardMovement
         // The child resolves completely before the containing ability advances.
         // The receipt concerns revealing the card, even if its own effects are canceled.
         cast.CompletedOutcome = AbilityStructuralOutcome.Full;
+        cast.Execution?.RecordReveal(reveal.Card);
         var capture = AbilityContinuationScheduling.ForEffectProcedure(
             execution.Capture(cast, execution.AbilityOrdinal(instruction, cast)));
         int round = cast.World.Agenda.Current?.Round ?? 0;

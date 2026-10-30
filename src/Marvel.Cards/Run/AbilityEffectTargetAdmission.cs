@@ -180,8 +180,9 @@ internal static class AbilityEffectTargetAdmission
             "placeAtRandom" => Find(EffectOf<AbilityEffect.PlaceAtRandom>(node, cast).Host, cast) is null
                 ? TargetLegality.Invalid : TargetLegality.Valid,
             "draw" => DrawTargetLegality((AbilityEffect.Draw)node, cast, bindingMayChange),
-            // rr:target.1 lists "a card" among targets, as rr:target.2.3 does for
-            // drawing: a random hand discard affects a card only while one is in hand.
+            // A random hand discard affects a card only while one is in hand. Ruling
+            // 304a4798e0b453b4: an encounter choice must be an option the player can
+            // fully resolve (rr:choose-option.1).
             "discardAtRandom" => AbilityCardStateAdmission.CardStatePartialResolution(node, cast) == true
                 ? TargetLegality.Valid : TargetLegality.Invalid,
             "discardUntil" => DiscardUntilTargetLegality(node, cast),

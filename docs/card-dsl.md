@@ -1252,10 +1252,15 @@ hero-specific class (rr:identity-specific-card). Offers, selection requests,
 validation and event availability all use the filtered hand. Its spelling is an
 engine choice.
 
-`discardAtRandom` has a valid target only while a selected player holds a card
-(`rr:target.1` lists "a card"). An encounter option whose only effect is that
-discard is therefore not offered to a player with an empty hand
-(`rr:choose-option.1`).
+`discardAtRandom` has a valid target only while a selected player holds a card.
+An encounter option whose only effect is that discard is therefore not offered to
+a player with an empty hand: the player must choose an option they can fully
+resolve (ruling 304a4798e0b453b4, `rr:choose-option.1`).
+
+`cardsIn` accepts `differentTitleFromRevealed: "true"`, which leaves out cards
+titled as any card the resolving invocation has already revealed, across all its
+`eachPlayer` frames. The invocation records each card its `reveal` instruction
+schedules. The field's spelling is an engine choice.
 
 `discardRandomFromHand: N` is a positive fixed-count arrow cost. Offer and
 admission queries inspect only affordability; commitment samples physical cards
