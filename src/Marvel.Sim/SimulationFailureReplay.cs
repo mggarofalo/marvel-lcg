@@ -106,6 +106,7 @@ internal sealed class SimulationFailureReplay(
         try
         {
             var generated = session.Policy!.Answer(session.Game!);
+            PolicyAnswerAssessment.Require(session.Game!.Pending!, generated);
             _ = DecisionSelector.From(session.Game!.Pending!, generated);
         }
         catch (Exception error)

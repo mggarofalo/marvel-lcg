@@ -22,6 +22,8 @@ internal sealed class SimulationRunSession(
     private readonly SimulationData data = SimulationData.Load(config.RepoRoot);
     private readonly SimulationRunTotals totals = new();
 
+    internal SimulationPolicyFactory Policies { get; init; } = ActingPolicy.Create;
+
     internal SimulationSummary Run()
     {
         Validate(data.Setup, config);
@@ -30,7 +32,7 @@ internal sealed class SimulationRunSession(
         for (int index = 0; index < seeds.Count; index++)
         {
             new SimulationGameRun(config, data, records, diagnostics, totals,
-                index, seeds[index]).Run();
+                index, seeds[index]) { Policies = Policies }.Run();
         }
         return WriteSummary(seeds.Count);
     }

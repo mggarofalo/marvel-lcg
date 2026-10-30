@@ -21,7 +21,7 @@ internal sealed class SimulationGameRun(
 {
     private readonly uint policySeed = unchecked(config.PolicySeed + (uint)gameIndex);
     private Game? game;
-    private ActingPolicy? policy;
+    private ISimulationPolicy? policy;
     private DecisionSelector? attempted;
     private Decision? input;
     private PromptRecord? prompt;
@@ -29,6 +29,8 @@ internal sealed class SimulationGameRun(
     private readonly Queue<StepRecord> recent = new();
     private int step;
     private string stage = "setup";
+
+    internal SimulationPolicyFactory Policies { get; init; } = ActingPolicy.Create;
 
     internal void Run()
     {
@@ -49,7 +51,7 @@ internal sealed class SimulationGameRun(
         RecordJson.Write(records, new StartRecord(
             "start", gameIndex, seed, policySeed, policySeeds, lastGood,
             [.. opened.SetupEvents.Select(JournalJson.Event)]));
-        policy = new ActingPolicy(data.Cards, policySeeds);
+        policy = Policies(data.Cards, policySeeds);
         while (game.Pending is not null) ResolveStep();
         RecordResult();
     }
@@ -64,6 +66,7 @@ internal sealed class SimulationGameRun(
         }
         var asked = game!.Pending!;
         input = policy!.Answer(game);
+        PolicyAnswerAssessment.Require(asked, input);
         var durable = DurableDecision.From(
             DurableDecision.SimulationActor(asked, input), asked, input);
         prompt = PromptRecord.From(asked);
