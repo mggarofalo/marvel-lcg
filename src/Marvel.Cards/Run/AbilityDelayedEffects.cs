@@ -13,7 +13,8 @@ internal static class AbilityDelayedEffects
         if (delayed.Within == TimingPoints.EndOfActivation && context.Admission.World.Activation is null)
             throw new RulesNotImplementedException("an activation-bound delayed effect has no activation");
         context.Admission.World.Effects.Register(new ContinuousEffect(
-            EffectSource.DelayedEffect, Kind: DelayedEffects.StunTheSubject,
+            EffectSource.DelayedEffect,
+            Kind: delayed.HeroOnly ? DelayedEffects.StunTheDamagedHero : DelayedEffects.StunTheSubject,
             Card: context.Admission.Source.ObjectId, Affects: null,
             Lasts: new Duration(Until: delayed.Within, OnCondition: Steps.DamageDealt,
                 Uses: delayed.Within is null ? 1 : null))

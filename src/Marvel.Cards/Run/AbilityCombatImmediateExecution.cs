@@ -29,6 +29,9 @@ internal static class AbilityCombatImmediateExecution
             case AbilityFixedInstruction.MakeAttackIndirect:
                 Attack.MakeIndirect(world);
                 return new(true, false);
+            case AbilityFixedInstruction.PreventPlayerAttackDamage:
+                PlayerAttackPrevention.Install(world, context.Admission.Query.Occurrence);
+                return new(true, true);
             case AbilityFixedInstruction.PreventAttackDamage:
                 Attack.PreventDamage(world);
                 return new(true, true);

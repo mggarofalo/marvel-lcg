@@ -33,7 +33,7 @@ internal static class AbilitySingularTraceSelection
         AbilityCardSelection.Bound or AbilityCardSelection.Titled or AbilityCardSelection.Last
         or AbilityCardSelection.InAreas or AbilityCardSelection.Query
         {
-            Kind: AbilityCardQuery.Villain or AbilityCardQuery.MainScheme or AbilityCardQuery.ActiveVillainSideScheme or AbilityCardQuery.VillainOfAttachedScheme
+            Kind: AbilityCardQuery.Villain or AbilityCardQuery.VillainInThisGameArea or AbilityCardQuery.MainScheme or AbilityCardQuery.ActiveVillainSideScheme or AbilityCardQuery.VillainOfAttachedScheme
                 or AbilityCardQuery.YourAsideMinion or AbilityCardQuery.YourAsideSideScheme,
         };
 }

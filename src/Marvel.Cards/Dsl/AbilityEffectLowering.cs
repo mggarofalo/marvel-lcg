@@ -109,6 +109,7 @@ internal static class AbilityEffectLowering
             "alsoAttackEachOtherHero" => FixedEffect(argument, child, "this", AbilityFixedInstruction.AlsoAttackEachOtherHero),
             "makeAttackIndirect" => FixedEffect(argument, child, 1, AbilityFixedInstruction.MakeAttackIndirect),
             "reflectAttackDamage" => FixedEffect(argument, child, "attack", AbilityFixedInstruction.ReflectAttackDamage),
+            "preventPlayerAttackDamage" => FixedEffect(argument, child, "trigger.target", AbilityFixedInstruction.PreventPlayerAttackDamage),
             "preventAttackDamage" => FixedEffect(argument, child, "attack", AbilityFixedInstruction.PreventAttackDamage),
             "revealTop" => FixedEffect(argument, child, 1, AbilityFixedInstruction.RevealTop),
             "inspectEncounterTop" => AbilityInspectionLowering.Lower(argument, child),

@@ -195,7 +195,7 @@ public abstract record AbilityEffect
     /// <summary>Discard the selected card when the named occurrence happens.</summary>
     public sealed record DelayedDiscard(AbilityCardSelection Card, string Condition) : AbilityEffect;
     /// <summary>Stun the character damaged by the bounded attack or activation.</summary>
-    public sealed record DelayedStun(string? Within) : AbilityEffect;
+    public sealed record DelayedStun(string? Within, bool HeroOnly = false) : AbilityEffect;
     /// <summary>Deal facedown encounter cards to selected players.</summary>
     public sealed record DealEncounterCards(AbilityPlayerSelection Players, int Count) : AbilityEffect;
     /// <summary>Assign top physical player-deck cards the declared minion identity.</summary>

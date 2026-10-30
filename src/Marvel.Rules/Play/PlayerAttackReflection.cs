@@ -5,7 +5,7 @@ namespace Marvel.Rules.Play;
 /// <summary>Installs and queries damage reflection within one begun player attack.</summary>
 public static class PlayerAttackReflection
 {
-    private static CharacterAttackOperation? Current(World world) => world.Agenda.items
+    internal static CharacterAttackOperation? Current(World world) => world.Agenda.items
         .Where(item => item.Occurrence is not null)
         .Select(item => item.Step.Operation).OfType<CharacterAttackOperation>().FirstOrDefault();
 

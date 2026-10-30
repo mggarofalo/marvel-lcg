@@ -24,8 +24,8 @@ internal static class AbilityCountedAttackSelection
     private static IReadOnlyList<Card> Candidates(AbilityEffect.Power power, AbilityAdmissionContext context)
     {
         var permitted = context.Selectors().Every(power.Target!).Select(card => card.ObjectId).ToHashSet();
-        return [.. BasicPowers.Attackable(context.World, context.World.Facts,
-                AbilityCardQueries.Resolver(context.Query))
+        return [.. AbilityAttackTargets.For(context.World,
+                AbilityCardQueries.Resolver(context.Query), context.Source)
             .Where(card => permitted.Contains(card.ObjectId)
                 && AbilityProgramQueries.CanTakeDamage(context.World, context.Program, card, context.Source))];
     }

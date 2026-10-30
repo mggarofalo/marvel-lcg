@@ -178,5 +178,5 @@ public static class AllyBasicPowers
 
     private static IReadOnlyList<Card> LegalTargets(
         World world, ICardFacts facts, Card ally, bool attacking) => attacking
-            ? Attackable(world, facts, CardControl.ControllerOf(world, ally)) : Thwartable(world, facts, CardControl.ControllerOf(world, ally));
+            ? Attackable(world, facts, CardControl.ControllerOf(world, ally), ally) : Thwartable(world, facts, CardControl.ControllerOf(world, ally));
 }

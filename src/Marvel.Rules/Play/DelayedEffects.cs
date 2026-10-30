@@ -59,6 +59,12 @@ public static class DelayedEffects
     /// </remarks>
     public const string StunTheSubject = "StunTheSubject";
 
+    /// <summary>
+    /// <see cref="StunTheSubject"/> limited to a hero — the shape "if this attack
+    /// damages a hero, that hero is stunned" (Future Weapon, 11015).
+    /// </summary>
+    public const string StunTheDamagedHero = "StunTheDamagedHero";
+
     /// <summary>Resolve every delayed effect waiting on a condition that has occurred.</summary>
     /// <param name="world">The board.</param>
     /// <param name="condition">What has just happened.</param>
@@ -112,6 +118,15 @@ public static class DelayedEffects
 
             case StunTheSubject:
                 Stun(world, effect, condition, subject, events);
+                break;
+
+            case StunTheDamagedHero:
+                // rr:form-change-form: "A player can be in either hero or alter-ego
+                // form", shown by the identity card. Only that card on its hero
+                // side is "a hero"; a damaged ally is not.
+                if (subject >= 0 && subject < world.Cards.Count
+                    && EffectiveCards.Kind(world.Cards[subject], world.Facts) == CardKind.Hero)
+                    Stun(world, effect, condition, subject, events);
                 break;
 
             default:

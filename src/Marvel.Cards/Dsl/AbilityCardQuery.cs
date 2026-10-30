@@ -12,6 +12,10 @@ public enum AbilityCardQuery
     StatusCards,
     /// <summary>The authored villain relation.</summary>
     Villain,
+    /// <summary>The villain in the source's game area.</summary>
+    VillainInThisGameArea,
+    /// <summary>Every obligation in play in the source's game area.</summary>
+    ObligationsInThisGameArea,
     /// <summary>Controlled upgrades physically attached to the resolving hero.</summary>
     UpgradesOnYourHero,
     /// <summary>The side scheme paired with the current active villain.</summary>

@@ -32,7 +32,7 @@ public static class BasicAttackCosts
             throw new RulesNotImplementedException("the character cannot pay its additional attack discard cost");
         int player = CardControl.ControllerOf(world, character);
         if (!Statuses.Afflicted(world, world.Facts, character, Statuses.Stunned)
-            && (enemy is null || !BasicPowers.Attackable(world, world.Facts, player).Contains(enemy)))
+            && (enemy is null || !BasicPowers.Attackable(world, world.Facts, player, character).Contains(enemy)))
             throw new RulesNotImplementedException("the additional-cost attack has no legal target");
         world.Agenda.Then(new PhaseStep(
             new BasicAttackCostOperation(enemy?.ObjectId ?? -1, character.Incarnation, count, exhaust),

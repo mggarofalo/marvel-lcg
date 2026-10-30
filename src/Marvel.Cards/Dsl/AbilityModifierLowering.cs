@@ -143,10 +143,11 @@ internal static class AbilityModifierLowering
     {
         var fields = Fields(value, location, "card", "condition");
         var target = Selected(fields, "card", location);
-        if (target is not AbilityCardSelection.Titled and not AbilityCardSelection.Bound { Binding: AbilityCardBinding.This })
-            throw location.Child("card").Error("expected 'this' or a printed-title target");
+        if (target is not AbilityCardSelection.Titled and not AbilityCardSelection.Bound { Binding: AbilityCardBinding.This }
+            and not AbilityCardSelection.Query { Kind: AbilityCardQuery.VillainInThisGameArea })
+            throw location.Child("card").Error("expected 'this', a printed-title target or the villain in this game area");
         return new(LowerCondition(Required(fields, "condition", location), location.Child("condition")))
-        { Target = target is AbilityCardSelection.Titled ? target : null };
+        { Target = target is AbilityCardSelection.Bound ? null : target };
     }
 
     internal static AbilityEffect DelayedEffect(AbilityValue value, AbilityLocation location)
@@ -162,14 +163,16 @@ internal static class AbilityModifierLowering
         {
             var nested = location.Child("effect/giveStatus");
             var status = Fields(effect.Argument, nested, "card", "status");
-            FixedWord(Required(status, "card", nested), nested.Child("card"), "damaged");
+            string damaged = Text(Required(status, "card", nested), nested.Child("card"));
+            if (damaged is not ("damaged" or "damagedHero"))
+                throw nested.Child("card").Error("expected 'damaged' or 'damagedHero'");
             FixedWord(Required(status, "status", nested), nested.Child("status"), "stunned");
             if (condition != Steps.DamageDealt)
             {
                 throw location.Child("condition").Error("a delayed stun requires WhenDamageDealt");
             }
             return new AbilityEffect.DelayedStun(fields.TryGetValue("within", out var within)
-                ? TimingPoint(within, location.Child("within")) : null);
+                ? TimingPoint(within, location.Child("within")) : null, damaged == "damagedHero");
         }
         if (effect.Kind != "discard")
         {

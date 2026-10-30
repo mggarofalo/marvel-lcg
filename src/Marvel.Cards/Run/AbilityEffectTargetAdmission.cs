@@ -201,6 +201,8 @@ internal static class AbilityEffectTargetAdmission
         {
             "reflectAttackDamage" => PlayerAttackReflection.CanInstall(cast.World, cast.Source)
                 ? TargetLegality.Valid : TargetLegality.Invalid,
+            "preventPlayerAttackDamage" => PlayerAttackPrevention.CanInstall(cast.World, cast.Occurrence)
+                ? TargetLegality.Valid : TargetLegality.Invalid,
             "readyUndamagedDefender" => UndamagedDefenseReady.CanInstall(cast.World, cast.Occurrence, cast.Player)
                 ? TargetLegality.Valid : TargetLegality.Invalid,
             "useAttackForThwart" => ThwartStatSubstitution.CanUseAttack(cast.World, cast.Occurrence)
