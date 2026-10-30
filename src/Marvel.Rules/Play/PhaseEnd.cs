@@ -229,6 +229,8 @@ public static class PhaseEnd
     /// readies all of their cards. <b>Ready each exhausted encounter card.</b>"
     /// The second sentence is why this walks every place in play rather than
     /// each player's: an exhausted minion is nobody's card and readies anyway.
+    /// "Simultaneously" makes the cards one instruction with one would-ready
+    /// interrupt window (<see cref="CardReadying"/>).
     /// </remarks>
     /// <param name="world">The board.</param>
     /// <param name="events">Where to record what changed.</param>
@@ -236,34 +238,15 @@ public static class PhaseEnd
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(events);
-        int start = events.Count;
 
-        foreach (var area in world.Areas)
-        {
-            if (!DeckTypes.IsInPlay(area.Type))
-            {
-                // `rr:exhausted` is about cards in play. A card in a deck or a
-                // hand has no ready state to return to.
-                continue;
-            }
-
-            foreach (var card in area.Cards)
-            {
-                if (card.Ready || !ReadinessPermissions.CanReady(world, card)
-                    || !world.ReadinessAbilities.CanReady(world, card, card))
-                {
-                    continue;
-                }
-
-                card.Refresh();
-                events.Add(new FieldSet(card.ObjectId, "is_exhaust", 1, 0)
-                {
-                    Trigger = "end of player phase",
-                    Verb = "Ready",
-                });
-            }
-        }
-        ActivityBatches.Complete(events, start, "Ready", -1, ActivityPhaseStep.ReadyCards);
+        // `rr:exhausted` is about cards in play. A card in a deck or a hand has
+        // no ready state to return to.
+        var cards = world.Areas.Where(area => DeckTypes.IsInPlay(area.Type))
+            .SelectMany(area => area.Cards)
+            .Where(card => CardReadying.CanReady(world, card, card))
+            .ToList();
+        CardReadying.Ready(world,
+            new CardReadyBatch(cards, source: null, "end of player phase", ActivityPhaseStep.ReadyCards), events);
     }
 
     /// <summary>

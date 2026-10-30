@@ -34,4 +34,6 @@ public enum AgendaProcedureKind
     Campaign,
     /// <summary>Encounter placement with entry windows and no reveal text.</summary>
     EncounterEntry,
+    /// <summary>A ready instruction after its would-ready interrupt window.</summary>
+    Readying,
 }

@@ -123,6 +123,10 @@ public sealed record Occurrence
     public Play.DefeatWindow? SharedDefeatWindow { get; internal set; }
 
 
+    /// <summary>The ready instruction this would-ready occurrence precedes, reconstructed by replay.</summary>
+    [JsonIgnore]
+    public Play.CardReadyBatch? Readying { get; init; }
+
     /// <summary>The exact numeric boost contribution at its faceup interrupt.</summary>
     [JsonIgnore]
     public Play.BoostIconCancellation? BoostIcons { get; internal set; }
