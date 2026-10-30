@@ -24174,6 +24174,82 @@
           "effect": { "attachCards": { "cards": "this", "host": "you" } }
         }
       ]
+    },
+    {
+      "card": "11019",
+      "name": "Stolen Memories",
+      "note": "When Revealed: Place the top 8 cards of your deck facedown under this card. Alter-Ego Action: Discard a mental resource from your hand -> discard this obligation. (Discard each facedown card under this obligation.) Ruling a31d988626f0879e: a short deck reshuffles, deals its encounter card, and placement continues from the new deck. Ruling 437680ffd6d92fb8: the discarded resource is not spent, so only a printed mental resource pays, not a wild one. Host departure discards the stored cards to their owners' discard piles, which is the reminder text.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "storeDeckTopBeneath": { "count": 8, "host": "this" } }
+        },
+        {
+          "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "alter-ego" },
+          "cost": { "discardResourceFromHand": "B" },
+          "effect": { "discard": "this" }
+        }
+      ]
+    },
+    {
+      "card": "11020",
+      "name": "Depowered",
+      "note": "You cannot play hero-specific cards. Alter-Ego Action: Discard a hero-specific card from your hand -> discard this obligation. rr:obligation.1 scopes \"you\" to the player whose play area holds it. Hero-specific is the printed Hero class (rr:identity-specific-card). Rulings 277ab401b1269ec7 and 2ace2379284bf746: resolving an Invocation is not playing it, so the prohibition leaves it alone.",
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant" },
+          "effect": { "grantEach": { "cards": { "inPlayerArea": { "area": "identity", "player": "engagedPlayer" } }, "keyword": "hero_specific_play_prohibited", "amount": 1 } }
+        },
+        {
+          "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "alter-ego" },
+          "cost": { "discardClassFromHand": "Hero" },
+          "effect": { "discard": "this" }
+        }
+      ]
+    },
+    {
+      "card": "11021",
+      "name": "Time-Travel Hijinks",
+      "note": "When Revealed: Discard the highest-cost card you control, then place it facedown under this card. Alter-Ego Action: Discard a energy resource from your hand -> discard this obligation. (Discard each facedown card under this obligation.) rr:ownership-and-control.8 limits \"you control\" to cards in play. rr:target.3 leaves out a card the discard cannot affect before ranking by cost, and rr:first-player.1 gives tied highest choices to the first player. The placement depends on the discard. Ruling 437680ffd6d92fb8: only a printed energy resource pays.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "if": {
+            "test": { "exists": { "discardable": { "query": "cardsYouControl" } } },
+            "then": { "chooseCard": {
+              "chooser": "firstPlayer",
+              "from": { "maxBy": { "of": { "discardable": { "query": "cardsYouControl" } }, "by": "cost" } },
+              "effect": { "then": { "effect": { "discard": "chosen" }, "then": { "storeBeneath": { "cards": "chosen", "host": "this" } } } }
+            } }
+          } }
+        },
+        {
+          "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "alter-ego" },
+          "cost": { "discardResourceFromHand": "Y" },
+          "effect": { "discard": "this" }
+        }
+      ]
+    },
+    {
+      "card": "11022",
+      "name": "Corrupted Timestream",
+      "note": "Starting threat is engine-owned. Players cannot trigger \"Alter-Ego Action\" abilities on obligations. When Revealed: Each player must either discard 1 random card from hand, or place 2 threat here. rr:each-player.1 lets the first player order the players. rr:choose-option.1 bars the discard for a player with no card in hand.",
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant" },
+          "effect": { "grantEach": { "cards": { "query": "identities" }, "keyword": "obligation_alter_ego_action_prohibited", "amount": 1 } }
+        },
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "eachPlayer": { "effect": { "choose": {
+            "descriptions": ["Discard 1 random card from your hand", "Place 2 threat on Corrupted Timestream"],
+            "options": [
+              { "discardAtRandom": { "player": "you", "count": 1 } },
+              { "placeThreat": { "scheme": "this", "amount": 2 } }
+            ]
+          } } } }
+        }
+      ]
     }
   ]
 }
