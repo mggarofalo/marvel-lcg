@@ -1315,6 +1315,12 @@ player's turn or the villain phase. It remains after the source leaves play.
 The current turn is not the next turn. Other targets, amounts and fields are not
 admitted for this duration.
 
+A `grantUntil` amount of `{"count":{"inPlayerArea":{"area":...,"player":"you"}}}`
+captures the resolving player's seat and counts that player's zone live, as
+rr:lasting-effects.3 requires; other player relations raise. Live amounts are
+admitted for `attack`, `scheme` and `boost_const`. A lasting `boost_const` grant
+on a boost card adds icons counted at rr:attack-enemy-activation.step.3.c.
+
 `grantCharactersWithTrait` registers a live lasting combat bonus:
 `{"trait":"AVENGER","fields":["attack","thwart"],"amount":1,"until":"EndOfPhase"}`.
 The affected set includes all in-play characters with the current effective
