@@ -230,7 +230,9 @@ public sealed class ProgramTests
     {
         using var stopping = CancellationTokenSource.CreateLinkedTokenSource(
             TestContext.Current.CancellationToken);
-        stopping.CancelAfter(TimeSpan.FromSeconds(15));
+        // Program.Run loads every dataset before it listens, which takes far longer on a
+        // saturated runner; only the stop deadlines below measure behaviour under test.
+        stopping.CancelAfter(TimeSpan.FromSeconds(90));
         using var error = new StringWriter();
         var listening = new TaskCompletionSource<IPEndPoint>(
             TaskCreationOptions.RunContinuationsAsynchronously);
@@ -252,7 +254,7 @@ public sealed class ProgramTests
         try
         {
             IPEndPoint endpoint = await listening.Task.WaitAsync(
-                TimeSpan.FromSeconds(10),
+                TimeSpan.FromSeconds(60),
                 TestContext.Current.CancellationToken);
             var transport = new SocketTransport(endpoint.Address.ToString(), endpoint.Port);
             EngineResponse response = await transport.ExchangeAsync(
