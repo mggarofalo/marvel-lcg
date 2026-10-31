@@ -80,7 +80,7 @@ public sealed class KangStageTwoVillainTests : CoreCardTestBase
         // 11002/11035: "This villain cannot take damage while a minion is in
         // play." pack:mc11:game-areas: "Cards and components in one game area
         // cannot affect another game area", so a minion engaged with player 1, in
-        // the other area, leaves him exposed (our reading). Ruling
+        // the other area, leaves him exposed (MARVEL-894 Q17). Ruling
         // 76a9465df95e739c (MARVEL-894 Q9): he keeps Tough while he cannot take
         // damage. Captain Marvel's basic attack deals 2; Shocker has no guard.
         var (world, kang, _, _) = Board(face, "11009b");

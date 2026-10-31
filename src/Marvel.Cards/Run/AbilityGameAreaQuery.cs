@@ -11,8 +11,7 @@ namespace Marvel.Cards.Run;
 /// encounter cards as the Kang villain in that card's game area (ruling
 /// 5ecfc71ddff64d39 keeps a Kang boost local), and (Q4) "each obligation in
 /// play" as the obligations in that game area. Immortus's "while a minion is in
-/// play" is read the same way, as a minion in his game area; that reading is
-/// ours, by the same partition.
+/// play" is read the same way (Q17), as a minion in his game area.
 /// </para>
 /// <para>
 /// Every answer comes from <see cref="Places.CanAffect"/> and nowhere else, so an

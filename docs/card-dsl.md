@@ -179,7 +179,7 @@ play. More than one candidate raises rather than choosing.
 affect, in object-id order. `minionsInThisGameArea` selects every minion in
 play that the source can affect, in object-id order. These are engine spellings
 for the Kang scenario's "Kang", "each obligation in play" (MARVEL-894 Q2 and Q4)
-and Immortus's "a minion is in play" (our reading, by the same partition); they
+and Immortus's "a minion is in play" (Q17); they
 are the one place a game-area split changes those cards.
 
 `delayUntil` with `giveStatus: {"card": "damagedHero", "status": "stunned"}`
