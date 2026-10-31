@@ -51,14 +51,14 @@ func _play_exercise(source: int, helmet: int, army: int) -> bool:
         witness.CanResolve() and not bool(main.get_meta("response_staged", false)) and \
         payment_witness.InArea(source, "SupportsArea", 0) and payment_witness.Ready(source) and \
         payment_witness.InArea(helmet, "DiscardPile", 0) and payment_witness.InArea(army, "DiscardPile", 0), \
-        "one commitment plays the ready Exercise and discards both selected resources")
+        "one commitment plays the ready Exercise and discards both selected resources", Driver.COMMIT_DEADLINE_MS)
 
 func _become_tiny() -> bool:
     if not await _open_form_menu(): return false
     if not await ui.click(_menu_choice("Change to Ant-Man (AVENGER, TINY)")): return false
     if not await ui.expect(func(): return witness.Revision() == 3 and witness.Face(identity) == "12001a" and \
         witness.DecisionKind() == "PlayerAction" and witness.CanResolve() and not bool(main.get_meta("response_staged", false)), \
-        "one form commitment changes the same identity to Tiny and returns to player action"): return false
+        "one form commitment changes the same identity to Tiny and returns to player action", Driver.COMMIT_DEADLINE_MS): return false
     return await _capture_checkpoint("exercise-tiny")
 
 func _exercise_child(source: int, child: int, helmet: int, spent_army: int) -> bool:
@@ -81,7 +81,7 @@ func _offer_child(source: int, child: int) -> bool:
     if not await ui.expect(func(): return witness.Revision() == 4 and witness.CanResolve() and \
         not bool(main.get_meta("response_staged", false)) and not payment_witness.Ready(source) and \
         Array(witness.OfferedAnchors()).has(child) and payment_witness.OfferedPrice(child) == "0", \
-        "Exercise exhausts once and offers the exact Army for zero after its scoped reduction"): return false
+        "Exercise exhausts once and offers the exact Army for zero after its scoped reduction", Driver.COMMIT_DEADLINE_MS): return false
     return true
 
 func _select_child(source: int, child: int, helmet: int, spent_army: int) -> bool:
@@ -98,7 +98,7 @@ func _select_child(source: int, child: int, helmet: int, spent_army: int) -> boo
         payment_witness.InArea(child, "SupportsArea", 0) and payment_witness.InArea(source, "SupportsArea", 0) and \
         not payment_witness.Ready(source) and payment_witness.InArea(helmet, "DiscardPile", 0) and \
         payment_witness.InArea(spent_army, "DiscardPile", 0) and witness.HandCount() == 2, \
-        "zero-cost child enters once, Exercise remains exhausted, and no other hand card is spent"): return false
+        "zero-cost child enters once, Exercise remains exhausted, and no other hand card is spent", Driver.COMMIT_DEADLINE_MS): return false
     return await _capture_checkpoint("exercise-child-result")
 
 func _expect_child_offer(offer: Control) -> bool:

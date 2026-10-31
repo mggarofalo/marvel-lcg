@@ -72,7 +72,7 @@ func _opening_hand() -> bool:
     if not await ui.click(ui.button("Keep hand")): return false
     return await ui.expect(func(): return witness.Revision() == 1 and witness.DecisionKind() == "PlayerAction" and \
         witness.CanResolve() and not bool(main.get_meta("response_staged", false)),
-        "keeping the hand commits once and the player-action table settles")
+        "keeping the hand commits once and the player-action table settles", Driver.COMMIT_DEADLINE_MS)
 
 func _open_form_menu() -> bool:
     if not await ui.expect(func(): return _table_card(identity) != null, "Scott Lang card body is visible"): return false
@@ -103,7 +103,7 @@ func _choose_giant() -> bool:
     if not await ui.click(_menu_choice("Change to Ant-Man (AVENGER, GIANT)")): return false
     return await ui.expect(func(): return witness.Revision() == 2 and witness.Face(identity) == "12001c" and \
         witness.Anchor("Ant-Man") == identity and witness.DecisionKind() == "Response",
-        "one form commitment changes the same identity to Giant and opens its response")
+        "one form commitment changes the same identity to Giant and opens its response", Driver.COMMIT_DEADLINE_MS)
 
 func _giant_response() -> bool:
     if not await ui.expect(func(): return main.find_child("LocalDecisionWorkspace", true, false) != null and \
@@ -118,7 +118,7 @@ func _giant_response() -> bool:
     if not await ui.expect(func(): return responses.size() == 1, "one offered Giant response"): return false
     if not await ui.click(Locator.control(responses[0])): return false
     if not await ui.expect(func(): return witness.Revision() == 3 and witness.CanResolve() and \
-        not bool(main.get_meta("response_staged", false)), "one response commitment opens the target decision"): return false
+        not bool(main.get_meta("response_staged", false)), "one response commitment opens the target decision", Driver.COMMIT_DEADLINE_MS): return false
     return await _choose_response_target()
 
 func _choose_response_target() -> bool:
@@ -128,7 +128,7 @@ func _choose_response_target() -> bool:
     if not await ui.click(target): return false
     if not await ui.expect(func(): return witness.Revision() == 4 and witness.DecisionKind() == "PlayerAction" and \
         witness.Face(identity) == "12001c" and _rhino_health() == rhino_health - 1,
-        "one target commitment deals exactly one damage and returns to play"): return false
+        "one target commitment deals exactly one damage and returns to play", Driver.COMMIT_DEADLINE_MS): return false
     return await _capture_checkpoint("ant-man-giant-result")
 
 func _table_card(anchor: int) -> Control:
