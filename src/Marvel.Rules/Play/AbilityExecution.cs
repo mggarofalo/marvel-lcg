@@ -63,6 +63,13 @@ public sealed class AbilityExecution
     public AbilityExecutionResult Report(IReadOnlyList<GameEvent> events) =>
         Agenda.Executions.Report(this, events);
 
+    /// <summary>The physical cards this invocation revealed, in reveal order, across all its each-player frames.</summary>
+    public IReadOnlyList<int> Revealed => revealed;
+    private readonly List<int> revealed = [];
+
+    /// <summary>Records a card this invocation revealed.</summary>
+    public void RecordReveal(int card) => revealed.Add(card);
+
     /// <summary>Completion includes all owned procedures and continuations, including deferred activations.</summary>
     public bool IsComplete => State == AbilityExecutionState.Complete;
 }

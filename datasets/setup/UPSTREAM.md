@@ -9,9 +9,9 @@ admits a product without its complete face and recipe gates.
 | | |
 |---|---|
 | Kind | authored |
-| Declared products | Marvel Champions Core Set; Rise of Red Skull; The Wrecking Crew; Captain America; Ms. Marvel; Thor; Black Widow; Doctor Strange; Hulk; Ant-Man; Green Goblin (both scenarios and four modular sets); Ronan Kree Fanatic modular set |
-| Records | 39 scenario modes, 14 heroes, 15 encounter sets; candidate runtime admission exposes 39 modes, 14 heroes and 15 sets |
-| Gated by | `SetupDatasetTests`, `RiseOfRedSkullSetupDataTests`, `CaptainAmericaSetupTests`, `MsMarvelSetupTests`, `ThorSetupTests`, `BlackWidowSetupTests`, `MessOfThingsSetupTests`, `RiskyBusinessSetupTests`, `KreeFanaticAdmissionTests`, complete-product admission |
+| Declared products | Marvel Champions Core Set; Rise of Red Skull; The Wrecking Crew; Captain America; Ms. Marvel; Thor; Black Widow; Doctor Strange; Hulk; Ant-Man; Green Goblin (both scenarios and four modular sets); Ronan Kree Fanatic modular set; The Once and Future Kang modular sets (declared, not admitted) |
+| Records | 39 scenario modes, 14 heroes, 18 encounter sets; candidate runtime admission exposes 39 modes, 14 heroes and 15 sets |
+| Gated by | `SetupDatasetTests`, `RiseOfRedSkullSetupDataTests`, `CaptainAmericaSetupTests`, `MsMarvelSetupTests`, `ThorSetupTests`, `BlackWidowSetupTests`, `MessOfThingsSetupTests`, `RiskyBusinessSetupTests`, `KreeFanaticAdmissionTests`, `KangModularSetupTests`, complete-product admission |
 
 ## Why it is authored
 
@@ -32,7 +32,7 @@ Rise of Red Skull printed faces before exposing its runtime recipes.
 - every named encounter or modular set is defined;
 - every scenario has valid main schemes and villain stages;
 - every hero has one physical identity with hero and alter-ego faces, an obligation, and a nemesis set;
-- the declared products contain 39 authored modes, 14 heroes, and 15 sets;
+- the declared products contain 39 authored modes, 14 heroes, and 18 sets;
 - required encounter sets remain fixed when optional modular sets change;
 - the header counts match the file.
 
@@ -171,3 +171,14 @@ physical card. Obligation 12025 and nemesis 12026, 12027, two 12028 and 12029
 are separate. Extras 12030–12033 belong to the pack, not its starter. All 35
 faces and the exact recipe are required for candidate admission. This does not
 establish complete-game, replay, native or final combined acceptance.
+
+## The Once and Future Kang modular sets
+
+Temporal, Anachronauts and Master of Time (key `mot`) are declared from the
+generated printed set facts and the pinned MarvelSDB
+`datasets/marvelsdb/pack/toafk_encounter.json` quantities: seven, nine and
+eight physical cards. `pack:mc11:adjustable-difficulty` names the three sets
+and lets each be used in other scenarios. The Kang scenario itself has no
+recipe; `docs/setup-dataset.md` records what its recipe needs.
+`KangModularSetupTests` checks exact composition and that complete-product
+admission excludes the sets even when every face is authored.

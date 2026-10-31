@@ -17,7 +17,7 @@ internal sealed class SimulationReplaySession
     private SimulationData data = null!;
     private SimulationConfig simulation = null!;
     private Game? game;
-    private ActingPolicy? policy;
+    private ISimulationPolicy? policy;
     private int currentGame = -1, currentSteps, games, steps;
     private int playerWins, villainWins, playerLosses, failures, rounds;
     private int cardsPlayed, playerAttacks, payments, resourceAbilities;
@@ -93,7 +93,7 @@ internal sealed class SimulationReplaySession
         ValidateStartSeed(start);
         var opened = Open(data, simulation, start.Seed);
         game = opened.Game;
-        policy = new ActingPolicy(data.Cards, start.SeatPolicySeeds);
+        policy = Policies(data.Cards, start.SeatPolicySeeds);
         currentGame = start.Game;
         currentSteps = 0;
         recent.Clear();
@@ -219,7 +219,9 @@ internal sealed class SimulationReplaySession
     internal SimulationConfig Simulation => simulation;
     internal TextWriter Diagnostics => diagnostics;
     internal Game? Game => game;
-    internal ActingPolicy? Policy => policy;
+    internal ISimulationPolicy? Policy => policy;
+
+    internal SimulationPolicyFactory Policies { get; init; } = ActingPolicy.Create;
     internal int CurrentGame => currentGame;
     internal int CurrentSteps => currentSteps;
     internal Queue<StepRecord> Recent => recent;

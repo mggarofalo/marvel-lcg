@@ -158,7 +158,7 @@ public sealed class BlackWidowPreparationCardTests
         Assert.Equal(AuthoredCards.ExpectedFaceCount, rows.Length);
         Assert.Equal(added, rows.Skip(623).Take(5).Select(row => row.GetProperty("card").GetString()));
         Assert.All(rows.Skip(623).Take(5), row => Assert.False(row.TryGetProperty("startingCounters", out _)));
-        Assert.DoesNotContain("11029", AuthoredCards.Book.Authored);
+        Assert.DoesNotContain("11017", AuthoredCards.Book.Authored);
     }
 
     private static Prompt Work(PreparationPrintedFixture f) =>

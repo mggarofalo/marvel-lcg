@@ -37,14 +37,15 @@ internal sealed class SimulationRunTotals
         signatures[signature] = signatures.GetValueOrDefault(signature) + 1;
     }
 
-    internal void Add(Game? game, ActingPolicy? policy)
+    internal void Add(Game? game, ISimulationPolicy? policy)
     {
         if (game is not null) rounds += game.Round;
         if (policy is null) return;
-        cardsPlayed += policy.CardsPlayed;
-        playerAttacks += policy.PlayerAttacks;
-        payments += policy.Payments;
-        resourceAbilities += policy.ResourceAbilitiesUsed;
+        var metrics = policy.Metrics;
+        cardsPlayed += metrics.CardsPlayed;
+        playerAttacks += metrics.PlayerAttacks;
+        payments += metrics.Payments;
+        resourceAbilities += metrics.ResourceAbilitiesUsed;
     }
 
     internal SimulationSummary Summary(int games) => new(

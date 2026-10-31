@@ -13,6 +13,10 @@ internal static class AbilityBeneathAdmission
         release.RemoveHost || BeneathCards.Of(context.World, context.Source).Count > 0
             ? TargetLegality.Valid : TargetLegality.None;
 
+    internal static TargetLegality Target(AbilityEffect.StoreDeckTopBeneath store, AbilityAdmissionScope context) =>
+        Find(store.Host, context) is { } host && DeckTypes.IsInPlay(host.Area.Type)
+            ? TargetLegality.Valid : TargetLegality.Invalid;
+
     internal static TargetLegality Target(AbilityEffect.StoreBeneath store, AbilityAdmissionScope context)
     {
         var host = Find(store.Host, context);

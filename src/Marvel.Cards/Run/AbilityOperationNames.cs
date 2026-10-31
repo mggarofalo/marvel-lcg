@@ -28,7 +28,9 @@ internal static class AbilityOperationNames
         AbilityCost.RandomDiscardFromHand => "discardRandomFromHand",
         AbilityCost.DiscardFromHand discard => discard.Range switch
         {
-            AbilityCostRange.Exact => discard.Resource is null ? "discardFromHand" : "discardResourceFromHand",
+            AbilityCostRange.Exact when discard.Filter is AbilityHandFilter.PrintedResource => "discardResourceFromHand",
+            AbilityCostRange.Exact when discard.Filter is AbilityHandFilter.PrintedClass => "discardClassFromHand",
+            AbilityCostRange.Exact => "discardFromHand",
             AbilityCostRange.UpTo => "discardUpToFromHand",
             AbilityCostRange.Any => "discardAnyFromHand",
             _ => throw new InvalidOperationException("Unknown discard cost range"),
@@ -77,6 +79,7 @@ internal static class AbilityOperationNames
         AbilityEffect.ChooseStatusRecipients => "chooseStatusRecipients",
         AbilityEffect.ChooseCardsToHand => "chooseCardsToHand",
         AbilityEffect.StoreBeneath => "storeBeneath",
+        AbilityEffect.StoreDeckTopBeneath => "storeDeckTopBeneath",
         AbilityEffect.InitializeAuxiliaryDeck => "initializeAuxiliaryDeck",
         AbilityEffect.RevealAuxiliaryTop => "revealAuxiliaryTop",
         AbilityEffect.Shuffle => "shuffle",
@@ -185,6 +188,7 @@ internal static class AbilityOperationNames
             AbilityFixedInstruction.CancelBoostAbility => "cancelBoostAbility",
             AbilityFixedInstruction.CancelBoostIcons => "cancelBoostIcons",
             AbilityFixedInstruction.CancelOccurrence => "cancelOccurrence",
+            AbilityFixedInstruction.ReplaceReady => "replaceReady",
             AbilityFixedInstruction.CancelWhenRevealed => "cancelWhenRevealed",
             AbilityFixedInstruction.AlsoAttackEachOtherHero => "alsoAttackEachOtherHero",
             AbilityFixedInstruction.MakeAttackIndirect => "makeAttackIndirect",

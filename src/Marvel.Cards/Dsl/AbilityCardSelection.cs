@@ -61,5 +61,7 @@ public abstract record AbilityCardSelection
         public string? CardClass { get; init; }
         /// <summary>Match one exact printed catalog set.</summary>
         public string? Set { get; init; }
+        /// <summary>Leave out cards titled as a card this resolution already revealed.</summary>
+        public bool DifferentTitleFromRevealed { get; init; }
     }
 }

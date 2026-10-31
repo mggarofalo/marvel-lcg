@@ -564,7 +564,7 @@ automaticTarget canAutomaticThwart canLegalPractice
 canMakeTheCall cancelOccurrence cancelWhenRevealed cardsIn changeForm characters
 charactersYouControl choose chooseCard chooseDiscardToShuffle chooseTopForHand
 countersOn damageOn dealAttackDamage dealDamage dealEncounterCards
-deck defeatedByYou delayUntil discardAtRandom discardAnyFromHand discardFromHand
+deck defeatedByYou delayUntil discardAtRandom discardAnyFromHand discardClassFromHand discardFromHand
 discardHandOfKind discardHandWithResource discardResourceFromHand discardTop discardUntil discardable discardedWithResource
 doubleResourceFor drawToPrintedHandSize dynamic
 eachPlayer else encounterDeck encounterDiscardPile enemies
@@ -580,10 +580,10 @@ placeAtRandom placeCounters placeThreat power powerAmount powerTargets cardsDisc
 preventDamage preventDamageFrom preventDamageWhile preventThreat
 preventThreatRemoval printedResourceCountDiscarded putIntoPlay
 recoverDiscardedByResource reduceNextCardCost remainingHealth removeCounters
-removeFromGame removeThreat replaceStatus replaceThreatWithDamage requireAllyDefender
+removeFromGame removeThreat replaceReady replaceStatus replaceThreatWithDamage requireAllyDefender
 resolveSpecials returnOwnedToHand returnToHand revealTop scheme schemes search
 shuffle shuffleInto sideSchemes soakDamage sourceKind sourceTrait spend
-spendEnergyX startingCounters statusCards takeDamage then threatCause thwartDifferentSchemes thwartSchemes
+spendEnergyX startingCounters statusCards storeDeckTopBeneath takeDamage then threatCause thwartDifferentSchemes thwartSchemes
 thwartableSchemes titleInPlay titled tokensOn topEncounterDiscardBoostPlusOne
 undefendedAttack until upgradesAndSupportsYouControl
 upgradesYouControl wasDefeated withStatus withTrait within withoutAnotherCopyAttached
@@ -948,6 +948,17 @@ this marker on other ability timings. Optional “would” subwindows with disti
 pass lifecycles are not represented by this marker. The supported Core optional
 damage-prevention and imminent-threat windows already isolate those conditions.
 
+`WhenCardWouldReady` is the condition of every ready instruction: the end of
+the player phase, a card effect's `ready`, and a delayed ready. One instruction
+readies its cards together, so `subject: "attachedTo"` or `"this"` matches each
+card the instruction still would ready. `replaceReady: "attachedTo"` replaces
+the imminent ready of this attachment's host (`rr:replacement-effect.1`): that
+card stays exhausted while the instruction's other cards ready. It resolves only
+while the host's ready is imminent. Cancelling a whole would-ready occurrence with
+`cancelOccurrence` raises. A replaced card-effect ready counts as not resolved,
+so `then` text after it does not resolve (`rr:then.2`). The window and its
+ordering are described in [timing.md](timing.md#would-ready-replacement).
+
 ### Campaign rewards and physical storage
 
 `reduceFirstAllyCost` takes a positive integer in a direct, unconditional Constant
@@ -977,6 +988,14 @@ already removed, or non-TECH instances cannot pay this cost.
 replacement using the seeded game stream. `beneathThis` selects those stored cards,
 separately from in-play attachments. Host departure discards stored cards to their
 owners' discard piles.
+
+`storeDeckTopBeneath: { count, host }` stores up to a positive `count` of cards
+from the top of the resolving player's deck facedown underneath an in-play
+`host`, one card at a time. A deck that empties part-way resets under
+`rr:player-deck.1`, dealing its encounter card, and placement continues from the
+new deck (ruling a31d988626f0879e on Stolen Memories). With an empty deck and
+discard pile placement stops (`rr:player-deck.4`). Its admission requires only
+the in-play host. Host departure discards the stored cards as for `storeBeneath`.
 
 `initializeAuxiliaryDeck` initializes a named `experimentalWeapons` or `sideSchemes`
 deck from its selected cards. `revealAuxiliaryTop` resolves its top card through the
@@ -1227,6 +1246,25 @@ and unrelated status kinds remain. Unsupported projected compositions raise befo
 execution rather than infer future status membership.
 
 
+`discardClassFromHand: "Hero"` asks for exactly one hand card printing that
+classification, as `discardResourceFromHand` does for a resource; `Hero` is the
+hero-specific class (rr:identity-specific-card). Offers, selection requests,
+validation and event availability all use the filtered hand. Its spelling is an
+engine choice.
+
+`discardAtRandom` has a valid target only while a selected player holds a card.
+An encounter option whose only effect is that discard is therefore not offered to
+a player with an empty hand: the player must choose an option they can fully
+resolve (ruling 304a4798e0b453b4, `rr:choose-option.1`).
+
+`cardsIn` accepts `differentTitleFromRevealed: "true"`, which leaves out cards
+titled as any card the resolving invocation has already revealed, across all its
+`eachPlayer` frames. The invocation records each card its `reveal` instruction
+schedules. The field's spelling is an engine choice. Lowering admits it only in
+the effect of an ability that also reveals a card, never in its `when` or cost.
+Initiation checks see an empty record; an evaluation that belongs to no ability
+resolution raises `RulesNotImplementedException`.
+
 `discardRandomFromHand: N` is a positive fixed-count arrow cost. Offer and
 admission queries inspect only affordability; commitment samples physical cards
 from the seeded game RNG without replacement. The resulting discard receipt can
@@ -1364,6 +1402,15 @@ value prevents the selected character from performing basic or labeled thwarts,
 including an attempt canceled by Confused. It does not prevent nonthwart threat
 removal or another character's thwart. The field is an engine-selected constant
 modifier name, not a registered card-state or digest field.
+
+`grantEach` may give an identity the derived `hero_specific_play_prohibited`
+modifier. A positive value prevents that identity's player from playing cards
+with the printed `Hero` class: ordinary plays, action events and timing-window
+events, rechecked when an offered play is answered (`rr:cannot`). Discarding such
+a card is not playing it. `obligation_alter_ego_action_prohibited` granted to an
+identity withholds every Alter-Ego Action on an obligation from that player, at
+offer and at execution. Both are engine-selected constant modifier names, not
+registered card-state or digest fields.
 
 `trigger.discardedEvent` binds the exact physical event named by a card-play
 occurrence only while it remains in the playing owner's discard pile and that

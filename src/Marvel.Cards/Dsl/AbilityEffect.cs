@@ -44,6 +44,9 @@ public abstract record AbilityEffect
     /// <summary>Store selected cards out of play beneath a host, optionally choosing a random subset.</summary>
     public sealed record StoreBeneath(AbilityCardSelection Cards, AbilityCardSelection Host, bool FaceUp, int? RandomCount) : AbilityEffect;
 
+    /// <summary>Store cards from the top of the resolving player's deck facedown beneath a host, one at a time.</summary>
+    public sealed record StoreDeckTopBeneath(int Count, AbilityCardSelection Host) : AbilityEffect;
+
     /// <summary>Move and shuffle the printed setup selection into a scenario auxiliary deck.</summary>
     public sealed record InitializeAuxiliaryDeck(AuxiliaryDeckKind Deck, AbilityCardSelection Cards) : AbilityEffect;
     /// <summary>Reveal the top card of the named scenario auxiliary deck.</summary>

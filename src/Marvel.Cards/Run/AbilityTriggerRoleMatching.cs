@@ -25,9 +25,9 @@ internal static class AbilityTriggerRoleMatching
             AbilitySubjects.This => occurrence.Is(ResourceSpentWindow.Condition)
                 ? occurrence.SpentResourceCards.Any(spent => spent.Card == card.ObjectId
                     && spent.Incarnation == card.Incarnation)
-                : (defeat?.Card ?? occurrence.Subject) == card.ObjectId,
+                : IsSubject(world, card, occurrence, defeat),
             AbilitySubjects.AttachedTo =>
-                card.Area.Host >= 0 && (defeat?.Card ?? occurrence.Subject) == card.Area.Host,
+                card.Area.Host >= 0 && IsSubject(world, world.Cards[card.Area.Host], occurrence, defeat),
             AbilitySubjects.You => occurrence.Player >= 0
                 && occurrence.Player
                     == (restricted ?? AbilityCardQueries.ControllerOf(world, card)),
@@ -35,6 +35,12 @@ internal static class AbilityTriggerRoleMatching
             _ => throw new AbilityException(
                 $"'{subject}' is not a subject anything matches"),
         };
+
+    // One ready instruction can ready several cards at once; each card is a
+    // subject of its would-ready occurrence until it readies or is replaced.
+    private static bool IsSubject(World world, Card card, Occurrence occurrence, Defeated? defeat) =>
+        occurrence.Readying is { } readying ? readying.WouldReady(world, card)
+            : (defeat?.Card ?? occurrence.Subject) == card.ObjectId;
 
     private static bool Role(
         World world, string? match, Card card, OccurrenceCard? role,

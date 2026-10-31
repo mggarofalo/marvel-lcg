@@ -126,6 +126,7 @@ public static class CardPlayLegality
         }
 
         if (!PrintedCardPlayPrerequisites.Permits(world, facts, seat, card)) return false;
+        if (!HeroSpecificPlayPermissions.CanPlay(world, card, seat.Index)) return false;
 
         // `rr:team-up` -- "a card with the team-up keyword cannot be played
         // unless both of the named friendly characters (identity or ally) are

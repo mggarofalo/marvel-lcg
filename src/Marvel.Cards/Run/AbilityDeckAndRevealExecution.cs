@@ -30,6 +30,7 @@ internal static class AbilityDeckAndRevealExecution
             AbilityEffect.AttachCards attach => AbilityAttachmentExecution.Run(attach, context),
             AbilityEffect.ReleaseBeneath release => AbilityBeneathReleaseExecution.Run(release, context),
             AbilityEffect.StoreBeneath store => AbilityBeneathExecution.Run(store, context),
+            AbilityEffect.StoreDeckTopBeneath store => AbilityBeneathExecution.Run(store, context),
             AbilityEffect.InitializeAuxiliaryDeck or AbilityEffect.RevealAuxiliaryTop =>
                 AbilityAuxiliaryDeckExecution.Run(effect, context),
             AbilityEffect.CardAction { Instruction: AbilityCardInstruction.PlaceOnBottomOfDeck } bottom =>

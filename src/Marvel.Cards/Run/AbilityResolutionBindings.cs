@@ -87,5 +87,7 @@ internal sealed class AbilityResolutionBindings(World world, Card source)
         chosenBinding, playerSelectionBinding, resolution.Altered, [.. resolution.PowerTargets])
         { DamageDefeats = resolution.DamageDefeats, SourceState = sourceState, SourceWasPublicInPlay = SourceWasPublicInPlay,
             TriggeringAttack = resolution.TriggeringAttack, TriggeringDefeat = resolution.TriggeringDefeat,
-            ExhaustedForCost = System.Collections.Immutable.ImmutableHashSet.CreateRange(resolution.ExhaustedForCost) };
+            ExhaustedForCost = System.Collections.Immutable.ImmutableHashSet.CreateRange(resolution.ExhaustedForCost),
+            // An invocation not yet begun is checked for initiation and has revealed nothing.
+            RevealedThisResolution = resolution.Execution?.Revealed ?? [] };
 }

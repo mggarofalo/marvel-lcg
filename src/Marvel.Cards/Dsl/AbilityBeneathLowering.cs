@@ -24,6 +24,13 @@ internal static class AbilityBeneathLowering
         return new(remove, rescue) { InvocationDeck = invocation };
     }
 
+    internal static AbilityEffect.StoreDeckTopBeneath StoreDeckTop(AbilityValue value, AbilityLocation location)
+    {
+        var fields = Fields(value, location, "count", "host");
+        return new(PositiveCount(Required(fields, "count", location), location.Child("count")),
+            Selected(fields, "host", location));
+    }
+
     internal static AbilityEffect.StoreBeneath Store(AbilityValue value, AbilityLocation location)
     {
         var fields = Fields(value, location, "cards", "host", "faceUp", "randomCount");

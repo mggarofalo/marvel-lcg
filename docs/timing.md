@@ -120,6 +120,12 @@ is meant to be cheap and called often rather than cached onto the board.
 Where the three kinds differ is only in **how an entry leaves**, and that is
 stated by the effect itself.
 
+A constant prohibition is read live from that list at the moment it matters,
+never copied into an offer. Depowered's `hero_specific_play_prohibited` and
+Corrupted Timestream's `obligation_alter_ego_action_prohibited` are checked when
+a play or action is offered and again when it is answered or executed, so a
+prohibition that arrives or leaves between the two is honoured (`rr:cannot`).
+
 ## A duration is a condition, not a timing point
 
 `rr:lasting-effects` describes a duration as what the card says — *"for a
@@ -659,3 +665,31 @@ When zero-health defeat and an excess ally limit apply simultaneously, the
 owner adjudicated defeat first (MARVEL-885); this is a project choice, not an
 official ruling. If the entering ally survives the defeat lifecycle, the engine
 then enforces the ally limit before entry responses.
+
+## Would-ready replacement
+
+Every ready is one engine operation, `CardReadying`. The end of the player phase
+(`rr:end-of-player-phase.step.3`), a card effect's `ready` and a delayed ready
+each build a `CardReadyBatch`: the cards eligible to ready when the instruction
+begins, in resolution order. "Each player simultaneously readies all of their
+cards", so a batch is one instruction with one `WhenCardWouldReady` interrupt
+window (`rr:triggering-condition.2`). A card is a subject of that window while it
+is instructed, still exhausted, permitted to ready, and not replaced.
+
+The window is scheduled only when an interrupt is waiting for it. Engine choice:
+an unobserved batch readies inline, so content without a would-ready ability
+keeps its events, agenda and decisions. An observed batch schedules a
+`CardReadyOperation` step ahead of the instructing step's response window, then
+readies the cards it still would ready. A card ability suspends behind that step
+and resumes with a receipt counting the cards that actually readied. A "would"
+interrupt resolves "before its triggering condition initiates" (`rr:interrupt.3.1`).
+
+Replacement is per card. `rr:replacement-effect.1` says a replaced effect "is no
+longer considered imminent and no further interrupts or responses to that effect
+can be triggered". Replacing one card's ready removes only that card from the
+window's subjects; the batch's other cards still ready. Several forced
+would-ready interrupts in one window are ordered by the first player
+(`rr:forced.5`), and the board is re-read between them (`rr:forced.6`). An
+attachment that leaves play before its turn no longer offers its interrupt.
+Status cards have no ready-replacement ability, so `rr:status-cards.2` priority
+does not arise in this window.

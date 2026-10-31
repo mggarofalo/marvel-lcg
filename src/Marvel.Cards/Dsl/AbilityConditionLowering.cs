@@ -135,16 +135,21 @@ internal static class AbilityConditionLowering
         return new(LowerPlayer(Required(fields, "player", location), location.Child("player")), form);
     }
 
+    /// <summary>A printed classification, as the card dataset spells it.</summary>
+    internal static string CardClassName(AbilityValue value, AbilityLocation location)
+    {
+        string text = Text(value, location);
+        return text is "Aggression" or "Justice" or "Leadership" or "Protection" or "Basic" or "Hero" or "'Pool"
+            ? text : throw location.Error($"'{text}' is not a card class");
+    }
+
     internal static AbilityCondition.CardText CardText(
         AbilityValue value, AbilityLocation location, string name, AbilityCardTextProperty property)
     {
         var fields = Fields(value, location, "card", name);
-        string text = Text(Required(fields, name, location), location.Child(name));
-        if (property == AbilityCardTextProperty.Class
-            && text is not ("Aggression" or "Justice" or "Leadership" or "Protection" or "Basic" or "Hero" or "'Pool"))
-        {
-            throw location.Child(name).Error($"'{text}' is not a card class");
-        }
+        string text = property == AbilityCardTextProperty.Class
+            ? CardClassName(Required(fields, name, location), location.Child(name))
+            : Text(Required(fields, name, location), location.Child(name));
         if (property == AbilityCardTextProperty.Status
             && text is not (Statuses.Tough or Statuses.Stunned or Statuses.Confused))
         {

@@ -179,13 +179,13 @@ internal static class AbilityCardStateExecution
 
     private static void Ready(AbilityCardSelection selection, AbilityCardStateContext context)
     {
-        foreach (var card in Every(selection, context).Where(card => card.Ready == false
-                     && context.Readiness.CanReady(context.World, card, context.Source)))
-        {
-            card.Refresh();
-            context.Events.Add(new FieldSet(card.ObjectId, "is_exhaust", 1, 0)
-            { Trigger = context.Trigger, Verb = "Ready" });
-        }
+        var batch = new CardReadyBatch(
+            Every(selection, context).Where(card => CardReadying.CanReady(context.World, card, context.Source)),
+            context.Source, context.Trigger);
+        // rr:interrupt.3.1: an observed "would" interrupt resolves before the ready
+        // initiates, so the resolver suspends this ability behind that window.
+        if (CardReadying.Interrupted(context.World, batch)) context.Result.InterruptedReady = batch;
+        else CardReadying.Commit(context.World, batch, context.Events, completion: null);
     }
 
     private static void GiveStatus(AbilityEffect.GiveStatus status, AbilityCardStateContext context)
