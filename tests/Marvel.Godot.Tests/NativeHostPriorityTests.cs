@@ -21,6 +21,19 @@ public sealed class NativeHostPriorityTests
     }
 
     [Fact]
+    public void OverlappingRenderedJourneysKeepTheClassUntilTheLastEnds()
+    {
+        ProcessPriorityClass before = Current();
+        var first = new NativeHostPriority(renderedClient: true);
+        ProcessPriorityClass held = Current();
+        using (new NativeHostPriority(renderedClient: true)) Assert.Equal(held, Current());
+        Assert.Equal(held, Current());
+        first.Dispose();
+        first.Dispose();
+        Assert.Equal(before, Current());
+    }
+
+    [Fact]
     public void HeadlessJourneyLeavesTheHostPriorityAlone()
     {
         ProcessPriorityClass before = Current();
