@@ -318,6 +318,9 @@ public sealed class QuicksilverSignatureTests : CoreCardTestBase
         var price = AbilityPaymentPricing.CombinedPrice(world, cyclone, 0,
             Assert.Single(AuthoredCards.Program.On("14006")), runner)!;
         Assert.Equal("X-1", price.ResourceCosts[^1].Cost);
+        // The reduction lets X exceed the payable resources by 1.
+        Assert.Equal(price.Generators.Sum(source => (long)source.PossibleResources.Length) + 1,
+            Assert.Single(price.VariableRequests).Max);
         var values = new Dictionary<string, long>(StringComparer.Ordinal) { ["X"] = x };
         int[] spent = [.. paying.Select(card => card.ObjectId)];
 
