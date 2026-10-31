@@ -145,30 +145,6 @@ public sealed class KangConquerorTests : CoreCardTestBase
         Assert.Equal(Outcome.Unfinished, world.Result);
     }
 
-    [Fact]
-    public void ThePhaseEndAdvanceRefusesAtTheUnauthoredStageTwoScheme()
-    {
-        // Stage 2A's own text belongs to the later stage packet. Reaching it with
-        // the authored book raises instead of splitting the table silently.
-        var (world, _, kang, _) = Board("11001");
-        var aside = world.AreaOf(DeckType.AsideDeck);
-        world.CreateCard("11008a,11008b", aside);
-        for (int index = 0; index < 4; index++)
-        {
-            world.CreateCard($"{11009 + index}a,{11009 + index}b", aside);
-            world.CreateCard((11002 + index).ToString(System.Globalization.CultureInfo.InvariantCulture), aside);
-        }
-        Agendas.Happening(world);
-        Defeat.Character(world, Cards, kang, "prepared defeat", []);
-        Sequence.Finish(world, Cards, world.Abilities, []);
-        world.Agenda.Add(new PhaseStep(new PhaseTransitionOperation(PhaseTransitionKind.EndPlayerPhase), 1, 4));
-
-        var thrown = Assert.Throws<RulesNotImplementedException>(
-            () => Sequence.Finish(world, Cards, world.Abilities, []));
-        Assert.Contains("11008a", thrown.Message, StringComparison.Ordinal);
-        Assert.Contains("no ability data", thrown.Message, StringComparison.Ordinal);
-    }
-
     private static (World World, RedSkullFixture Fixture, Card Kang, Card Main) Board(string face)
     {
         var world = new World(Cards, 2, 0);

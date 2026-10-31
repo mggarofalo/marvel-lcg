@@ -20,6 +20,16 @@ public sealed class KangFirstSplit
     /// <summary>Whether this physical face uses the scenario's stage-I departure policy.</summary>
     public static bool IsFirstStage(Card card) => card.FaceId is "11001" or "11034";
 
+    /// <summary>Whether completing this stage loses the game although later stages remain.</summary>
+    /// <remarks>
+    /// Printed 11007b: "If this stage is completed, the players lose the game."
+    /// Stages 2 and 4 wait beneath it in the main scheme deck (MARVEL-894 Q13), so
+    /// the generic advance of rr:main-scheme-main-scheme-deck.2 would otherwise
+    /// reveal 2A. rr:winning-the-game.1 makes this an alternate loss condition that
+    /// "cannot be blanked or canceled", so it is engine-owned rather than ability text.
+    /// </remarks>
+    public static bool LosesWhenCompleted(Card scheme) => scheme.FaceId == "11007b";
+
     /// <summary>Called by the authored When Defeated ability in its normal interrupt tier.</summary>
     public void Capture(World world, Card card)
     {
@@ -52,7 +62,7 @@ public sealed class KangFirstSplit
             ? [PhaseEnd.PlayerPhaseEnds] : [PhaseEnd.VillainPhaseEnds, PhaseEnd.RoundEnds];
         if (world.Effects.HasDue(conditions))
             throw new RulesNotImplementedException("Kang split ordering with other delayed effects is not implemented");
-        Require(world, "11008a");
+        RequireStageTwo(world);
         for (int index = 0; index < 4; index++)
         {
             Require(world, $"{11009 + index}a");
@@ -69,7 +79,7 @@ public sealed class KangFirstSplit
             ?? throw new RulesNotImplementedException("Kang split has no stage 1 scheme");
         long acceleration = prior.Tokens.GetValueOrDefault(EncounterDeck.AccelerationToken);
         Remove(world, prior, "Kang split", events);
-        var central = Require(world, "11008a");
+        var central = RequireStageTwo(world);
         Move(world, central, world.AreaOf(DeckType.MainSchemesArea), events);
         central.PlaceTokens(EncounterDeck.AccelerationToken, acceleration);
         Schedule(world, central, world.FirstPlayer, false);
@@ -131,6 +141,14 @@ public sealed class KangFirstSplit
     {
         if (owner is null || origin is null || !world.Agenda.IsOutstanding(owner.Value, origin))
             throw new RulesNotImplementedException("Kang split instruction requires its retained phase owner");
+    }
+
+    private static Card RequireStageTwo(World world)
+    {
+        // MARVEL-894 Q13: stage 2 waits on top of the main scheme deck, above stage 4.
+        var deck = world.AreaOf(DeckType.MainSchemesDeck);
+        return deck.Cards.Count > 0 && deck.Cards[^1].FaceId == "11008a" ? deck.Cards[^1]
+            : throw new RulesNotImplementedException("Kang split requires stage 2A on top of the main scheme deck");
     }
 
     private static Card Require(World world, string face) => world.Cards.SingleOrDefault(card => card.Faces.Contains(face)

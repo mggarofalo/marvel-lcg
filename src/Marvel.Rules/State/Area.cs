@@ -139,7 +139,8 @@ public sealed class Area
     }
 
     // Printed 11009b-11012b explicitly store a set-aside Dominion facedown
-    // under set-aside 4A. This exception authorizes only that physical pair.
+    // under stage 4A, which waits in the main scheme deck (MARVEL-894 Q13).
+    // This exception authorizes only that physical pair.
     private bool IsDominionStorageFor(Card host, Card? card) =>
         Type == DeckType.BeneathCardsPile && CardOwner == -1
         && PlayArea == PlayArea.Villains && IsUnenteredDominionHost(host)
@@ -147,6 +148,6 @@ public sealed class Area
         && card.Area.Type == DeckType.AsideDeck;
 
     private static bool IsUnenteredDominionHost(Card host) =>
-        host.FaceId == "11013a" && host.Area.Type == DeckType.AsideDeck && host.Owner == -1
+        host.FaceId == "11013a" && host.Area.Type == DeckType.MainSchemesDeck && host.Owner == -1
         && host.Incarnation == 0 && host.Area.PlayArea == PlayArea.Villains;
 }

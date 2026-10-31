@@ -22,8 +22,8 @@ public sealed class KangPlayerCountFixture : CoreCardTestBase
         {
             new("11007a,11007b", SetupSlot.MainScheme, -1),
             new(expert ? "11034" : "11001", SetupSlot.Villain, -1),
-            new("11008a,11008b", SetupSlot.SetAside, -1),
-            new("11013a,11013b", SetupSlot.SetAside, -1),
+            new("11008a,11008b", SetupSlot.MainScheme, -1),
+            new("11013a,11013b", SetupSlot.MainScheme, -1),
             new(expert ? "11039" : "11006", SetupSlot.SetAside, -1),
         };
         for (int player = 0; player < players; player++)

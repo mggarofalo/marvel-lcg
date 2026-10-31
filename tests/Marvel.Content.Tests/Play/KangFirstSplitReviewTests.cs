@@ -101,7 +101,7 @@ public sealed class KangFirstSplitReviewTests : CoreCardTestBase
         scheme.TurnTo("11007b");
         var kang = world.CreateCard(expert ? "11034" : "11001", world.AreaOf(DeckType.VillainArea));
         var aside = world.AreaOf(DeckType.AsideDeck);
-        world.CreateCard("11008a,11008b", aside);
+        world.CreateCard("11008a,11008b", world.AreaOf(DeckType.MainSchemesDeck));
         for (int index = 0; index < 4; index++)
         {
             world.CreateCard($"{11009 + index}a,{11009 + index}b", aside);

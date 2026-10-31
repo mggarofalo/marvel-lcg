@@ -76,6 +76,27 @@ public static class MainScheme
     public static bool Crisis(World world, ICardFacts facts) =>
         IconsInPlay(world, facts, "crisis") > 0;
 
+    /// <summary>Whether a crisis icon that can affect this main scheme is in play.</summary>
+    /// <remarks>
+    /// <c>pack:mc11:game-areas</c>: "Cards and components in one game area cannot
+    /// affect another game area", so a crisis icon in one game area leaves the
+    /// main scheme of another free. In an ordinary game this is
+    /// <see cref="Crisis(World, ICardFacts)"/>.
+    /// </remarks>
+    /// <param name="world">The board.</param>
+    /// <param name="facts">The printed card data.</param>
+    /// <param name="scheme">The main scheme threat would be removed from.</param>
+    public static bool Crisis(World world, ICardFacts facts, Card scheme)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(scheme);
+        return world.Areas.Where(area => DeckTypes.IsInPlay(area.Type))
+            .SelectMany(area => area.Cards)
+            .Any(card => Places.CanAffect(world, card, scheme)
+                && StateFields.Modified(world, card, "crisis", facts, world.Players) > 0);
+    }
+
     /// <summary>
     /// How many boost icons every boost card gains — <c>rr:amplify-icon</c>.
     /// </summary>

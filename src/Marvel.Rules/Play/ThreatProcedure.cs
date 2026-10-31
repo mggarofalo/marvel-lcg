@@ -72,6 +72,7 @@ internal static class ThreatProcedure
                 occurrence.Also(VillainStepOneTiming.ThreatPlaced);
             }
         }
+        if (SeparateGameAreas.Active(world)) SeparateGameAreas.ScheduleStepOne(world, facts);
     }
 
     internal static void ApplyThreat(

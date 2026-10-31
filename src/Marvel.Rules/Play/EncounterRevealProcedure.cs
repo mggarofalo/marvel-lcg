@@ -36,6 +36,11 @@ internal static class EncounterRevealProcedure
         // player one additional card *(not one card per player)*. Additional
         // cards are dealt in player order" -- so these go round the table one
         // at a time, wrapping, rather than one round per icon.
+        if (SeparateGameAreas.Active(world))
+        {
+            SeparateGameAreas.DealHazards(world, facts, events);
+            return;
+        }
         long icons = Deal.HazardIcons(world, facts);
         for (long dealt = 0; dealt < icons; dealt++)
         {

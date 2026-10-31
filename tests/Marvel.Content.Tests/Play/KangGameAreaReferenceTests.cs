@@ -18,22 +18,51 @@ public sealed class KangGameAreaReferenceTests : CoreCardTestBase
     [InlineData(0)]
     [InlineData(1)]
     [Rule("rr:reveal.5")]
-    public void PinnedDownInTheSplitRaisesRatherThanCountingEveryArea(int player)
+    public void PinnedDownInTheSplitCountsOnlyItsRevealersGameArea(int player)
     {
-        // MARVEL-894 (Q4): "each obligation in play" counts the card's own game area.
-        // rr:reveal.5 puts a revealed side scheme in the villain's play area, which
-        // the split leaves in no game area, so the count has no area to read and
-        // raises; counting every player's obligations (2 + 2 x 3) would be wrong.
+        // 11024: "When Revealed: Place 2 threat here for each obligation in play."
+        // MARVEL-894 (Q15): a side scheme revealed during the split enters the
+        // revealing player's game area, and (Q4) the count reads only that area.
+        // Player 0 holds one obligation and player 1 two; counting both areas would
+        // give 2 + 2 x 3.
         var (world, f, _) = Split();
         KangTemporalFixture.Obligations(world, 0, 1);
         KangTemporalFixture.Obligations(world, 1, 2);
         var pinned = f.Reveal("11024", player);
 
-        var thrown = Assert.Throws<RulesNotImplementedException>(() => f.Finish());
+        f.Finish();
 
-        Assert.Contains("11024", thrown.Message, StringComparison.Ordinal);
-        Assert.Null(Places.GameAreaOf(world, pinned));
-        Assert.NotEqual(8, pinned.Tokens.GetValueOrDefault("k_threat"));
+        Assert.Equal(DeckType.SideSchemesArea, pinned.Area.Type);
+        Assert.Equal(PlayArea.Of(player), pinned.Area.PlayArea);
+        Assert.Same(world.GameAreaOf(PlayArea.Of(player)), Places.GameAreaOf(world, pinned));
+        Assert.Equal(2 + 2 * (player + 1), pinned.Tokens.GetValueOrDefault("k_threat"));
+        Assert.False(world.Agenda.IsBusy);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    [Rule("rr:reveal.5")]
+    [Rule("rr:cannot")]
+    public void ARevealedDominionProtectsOnlyItsRevealersKang(int player)
+    {
+        // 11023: "Kang cannot take damage." Revealed during the split it enters the
+        // revealer's game area (MARVEL-894 Q15), where "Kang" is that area's Kang
+        // (Q2); the other Kang II still takes damage.
+        var (world, f, villains) = Split();
+        var dominion = f.Reveal("11023", player);
+        f.Finish();
+        Assert.Same(world.GameAreaOf(PlayArea.Of(player)), Places.GameAreaOf(world, dominion));
+        foreach (int seat in new[] { 0, 1 })
+        {
+            world.Seats[seat].IdentityCard.TurnTo("01001a");
+            BasicPowerInitiation.BasicAttack(world, world.Facts, seat, villains[seat], []);
+            f.Finish();
+        }
+
+        Assert.Equal(0, villains[player].Damage);
+        Assert.Equal(2, villains[1 - player].Damage);
+        Assert.False(world.Agenda.IsBusy);
     }
 
     [Theory]

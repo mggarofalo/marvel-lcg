@@ -36,7 +36,7 @@ public static class KangCentral
         var central = Require(world, "11008b", DeckType.MainSchemesArea);
         if (central.Area.PlayArea != PlayArea.Villains)
             throw new RulesNotImplementedException("Kang central reunion requires central 2B");
-        var next = Require(world, "11013a", DeckType.AsideDeck);
+        var next = Require(world, "11013a", DeckType.MainSchemesDeck);
         if (next.Faces.Count != 2 || next.Faces[1] != "11013b"
             || world.Areas.Where(area => area.Host == next.ObjectId).SelectMany(area => area.Cards)
                 .Any(card => card.FaceId != "11023" || card.Owner != -1 || card.FaceUp
@@ -76,7 +76,7 @@ public static class KangCentral
     {
         Preflight(world, operation.Departure);
         var old = Require(world, "11008b", DeckType.MainSchemesArea);
-        var next = Require(world, "11013a", DeckType.AsideDeck);
+        var next = Require(world, "11013a", DeckType.MainSchemesDeck);
         long acceleration = old.Tokens.GetValueOrDefault(EncounterDeck.AccelerationToken);
         world.Agenda.KangTransitions.Elimination.Join(world, operation.Departure.Source,
             operation.Departure.Source, "11008b", events);

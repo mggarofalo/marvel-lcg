@@ -56,6 +56,16 @@ public static class Threat
         return receipt;
     }
 
+    /// <summary>Schedule independent placements in order, each with its own windows.</summary>
+    internal static void ScheduleEach(World world, IReadOnlyList<ThreatBatch> batches)
+    {
+        var current = world.Agenda.Current;
+        var scheduled = batches.Select(batch => Placement(batch, batch.Schemes.Single(),
+            new EffectCompletion(batch.Amount, 1), 0, current)).ToList();
+        if (current is not null) world.Agenda.Now(scheduled);
+        else foreach (var operation in scheduled) world.Agenda.Add(operation);
+    }
+
     private static PhaseStep Placement(ThreatBatch batch, Card scheme,
         EffectCompletion completion, int part, PhaseStep? current) =>
         new(new ThreatPlacementOperation(new ThreatPlacement(
