@@ -78,7 +78,7 @@ independent identities do:
 |---|---:|---|
 | Engine protocol | `43` | A request, response, affordance, event or descriptor change is not understood by the prior endpoint. |
 | Session schema | `7` | The strict persisted JSON shape changes. |
-| Engine replay contract | `engine-replay-v29` | The same setup and decision trace may resolve differently. |
+| Engine replay contract | `engine-replay-v30` | The same setup and decision trace may resolve differently. |
 | RNG contract | `mt19937-iso-cxx` | The seeded random stream changes. |
 | State digest | `state-digest-v3` | The canonical hidden-state serialization changes. |
 | Runtime datasets | Three SHA-256 values | Any byte in `cards.json`, `setup.json` or `abilities.json` changes. |
@@ -88,9 +88,12 @@ three runtime dataset hashes equal the running server's. There is no upgrade,
 adapter or migration route from any earlier identity: a release that changes
 any of them makes every earlier save unloadable. This is a product choice, not
 a rule of the game; the owner decided that legacy saves need no handling
-(MARVEL-896). Replay v29 covers the Ant-Man delivery's changes to persisted
-prompt facts and existing-card resolution order; see
-[the comparison evidence](content/ant-man-replay-v29.md).
+(MARVEL-896). Replay v30 announces an enemy a player attack reaches after its
+initiation with its own attack-initiated occurrence (`LateAttackRecipient`), so
+"when attacked" interrupts answer later and declared recipients; see
+[session-ledger.md](session-ledger.md#replay-identity). Replay v29 covered the
+Ant-Man delivery's changes to persisted prompt facts and existing-card
+resolution order; see [the comparison evidence](content/ant-man-replay-v29.md).
 
 The product version belongs in desktop and server metadata. The protocol
 version belongs on every request and response. Save schema and replay identities

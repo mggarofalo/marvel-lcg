@@ -4,7 +4,8 @@ namespace Marvel.Rules.Play;
 /// <remarks>
 /// rr:attack-player-ability-type.5: the attacker "is considered to have attacked
 /// each of those enemies". Ruling 310af249be272877: an enemy hit by a later
-/// sentence of the attack is attacked then. The step's occurrence is the same
+/// sentence of the attack is attacked then, as the enemy Giant Stomp (12003)
+/// chooses for its 8 or Melee (05030) chooses as "another enemy". The step's occurrence is the same
 /// attack-initiated condition <see cref="Steps.CharacterAttacks"/> creates, with
 /// that enemy as its target, so its interrupts resolve before the damage
 /// (rr:interrupt.3). The step name is an engine choice.

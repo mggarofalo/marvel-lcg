@@ -28,7 +28,7 @@ public sealed record ActiveAttack(int Source, int Target)
 
     private static IEnumerable<ActiveAttack> StepOwners(World world, PhaseStep step, Occurrence? occurrence)
     {
-        if (CharacterOwner(step, occurrence) is { } character) yield return character;
+        if (CharacterOwner(world, step, occurrence) is { } character) yield return character;
         if (step.What == Steps.EndAttack && world.Attack is { } pending)
             yield return new ActiveAttack(pending.Enemy, pending.Target) { Identity = new(step.ActivationId, true) };
         if (FinishedOwner(world, occurrence) is { } finished) yield return finished;
@@ -36,12 +36,26 @@ public sealed record ActiveAttack(int Source, int Target)
             yield return enclosing;
     }
 
-    private static ActiveAttack? CharacterOwner(PhaseStep step, Occurrence? occurrence)
+    private static ActiveAttack? CharacterOwner(World world, PhaseStep step, Occurrence? occurrence)
     {
+        if (step.Operation is LateAttackRecipientOperation late) return LateRecipientOwner(world, late, occurrence);
         if (step.Operation is not CharacterAttackOperation { Attack: { } attack }) return null;
         return occurrence is not null
             ? new ActiveAttack(attack.Attacker, attack.Enemy)
                 { Identity = new(occurrence?.Id ?? step.OccurrenceId ?? Moment.Id(step.Round, step.Number, step.Index), false) } : null;
+    }
+
+    // While a late recipient's attack-initiated window is open, the begun player
+    // attack is attacking that enemy (rr:attack-player-ability-type.5), so it is
+    // the attack's target for the length of the window. The identity stays the
+    // owning character attack's.
+    private static ActiveAttack? LateRecipientOwner(World world, LateAttackRecipientOperation late, Occurrence? occurrence)
+    {
+        if (occurrence is null) return null;
+        var owner = world.Agenda.items.FirstOrDefault(item => item.Occurrence is not null
+            && item.Step.Operation is CharacterAttackOperation);
+        return owner.Occurrence is { } initiation
+            ? new ActiveAttack(late.Attacker, late.Recipient) { Identity = new(initiation.Id, false) } : null;
     }
 
     private static ActiveAttack? FinishedOwner(World world, Occurrence? occurrence)

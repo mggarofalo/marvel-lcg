@@ -9,7 +9,8 @@ namespace Marvel.Cards.Run;
 /// <para>
 /// Every authored attack-damage recipient passes through here, whether the
 /// attack named it at initiation, declared it with several others, or reaches it
-/// afterwards ("deal 1 damage to each minion", a later-chosen enemy). Ruling
+/// afterwards ("deal 1 damage to each minion", or the later-chosen enemy of
+/// Giant Stomp's "an enemy" and Melee's "another enemy"). Ruling
 /// 310af249be272877 treats each such recipient as attacked, as
 /// rr:attack-player-ability-type.5 does: the attacker "is considered to have
 /// attacked each of those enemies".

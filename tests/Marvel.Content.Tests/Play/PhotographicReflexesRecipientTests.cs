@@ -15,6 +15,7 @@ public sealed class PhotographicReflexesRecipientTests : CoreCardTestBase
 {
     private const string Reflexes = "04104";
     private const string Taskmaster = "04093";
+    private static readonly string[] Resources = ["01087", "01088", "01089"];
 
     [Theory]
     [InlineData(true)]
@@ -51,12 +52,49 @@ public sealed class PhotographicReflexesRecipientTests : CoreCardTestBase
         var reflexes = world.CreateCard(Reflexes, world.AreaOf(DeckType.UpgradesArea, PlayArea.Villains, taskmaster.ObjectId));
         AttackRecipientFixture.Execute(f, stomp, pay);
 
-        f.Finish(prompt => Decision.Take(prompt.Affordances.Any(option => option.AnchorId == taskmaster.ObjectId)
+        var events = f.Finish(prompt => Decision.Take(prompt.Affordances.Any(option => option.AnchorId == taskmaster.ObjectId)
             ? taskmaster.ObjectId : prompt.Affordances[0].Id));
 
+        Assert.Contains(events.OfType<Marvel.Rules.Events.AttackBoundary>(),
+            boundary => boundary.Started && boundary.Target == taskmaster.ObjectId);
         Assert.Equal(0, taskmaster.Damage);
         Assert.Equal(8, world.Seats[0].IdentityCard.Damage);
         Assert.Equal(DeckType.EncounterDiscardPile, reflexes.Area.Type);
+        Assert.False(world.Agenda.IsBusy);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    [Rule("rr:attack-player-ability-type.5")]
+    [Rule("rr:interrupt.3")]
+    public void MeleesAnotherEnemyMayBeTaskmaster(bool reflexes)
+    {
+        // Melee (05030): "Deal 3 damage to an enemy. Deal 3 damage to another enemy."
+        // Shocker (3 hit points) is the attack's enemy and is defeated; Taskmaster,
+        // chosen as "another enemy", goes through the same later-recipient path
+        // as Giant Stomp's choice and is attacked when
+        // chosen, so the reflexes send his 3 to Captain Marvel.
+        var (world, f) = KangTemporalFixture.Board(players: 1);
+        World.MoveToTop(f.Villain, world.AreaOf(DeckType.RemovedArea));
+        var taskmaster = world.CreateCard(Taskmaster, world.AreaOf(DeckType.VillainArea));
+        var attached = reflexes
+            ? world.CreateCard(Reflexes, world.AreaOf(DeckType.UpgradesArea, PlayArea.Villains, taskmaster.ObjectId)) : null;
+        var shocker = KangTemporalFixture.Engaged(world, "01103", 0);
+        var hand = world.Seats[0].Hand;
+        var melee = world.CreateCard("05030", hand);
+        int[] pay = [.. Resources.Select(face => world.CreateCard(face, hand).ObjectId)];
+        var action = Assert.Single(f.Runner.Actions(world, 0), ability => ability.Card == melee.ObjectId);
+        f.Runner.ExecuteAction(world, new PlayerAction(action, pay, []));
+        var choices = new Queue<int>([shocker.ObjectId, taskmaster.ObjectId]);
+
+        f.Finish(prompt => prompt.Affordances.Any(option => choices.Count > 0 && option.AnchorId == choices.Peek())
+            ? Decision.Take(choices.Dequeue()) : Decision.Take(prompt.Affordances[0].Id));
+
+        Assert.Equal(DeckType.EncounterDiscardPile, shocker.Area.Type);
+        Assert.Equal(reflexes ? 0 : 3, taskmaster.Damage);
+        Assert.Equal(reflexes ? 3 : 0, world.Seats[0].IdentityCard.Damage);
+        if (attached is not null) Assert.Equal(DeckType.EncounterDiscardPile, attached.Area.Type);
         Assert.False(world.Agenda.IsBusy);
     }
 }
