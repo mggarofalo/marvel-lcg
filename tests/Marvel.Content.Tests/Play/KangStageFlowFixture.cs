@@ -102,6 +102,29 @@ internal static class KangStageFlowFixture
         return world;
     }
 
+    /// <summary>
+    /// Reveals <paramref name="face"/> for <paramref name="player"/> as live play
+    /// does, into that player's own revealing area, and resolves it with
+    /// <paramref name="answer"/> (the seeded acting policy when omitted).
+    /// </summary>
+    public static void Reveal(World world, string face, int player, List<GameEvent> events,
+        Func<Prompt, Decision>? answer = null)
+    {
+        var card = world.CreateCard(face, world.AreaOf(DeckType.EncounterDeck));
+        var origin = new EncounterRevealOrigin(card.ObjectId, Places.Reference(card.Area));
+        World.MoveToTop(card, world.AreaOf(DeckType.RevealingArea, PlayArea.Of(player)));
+        world.Agenda.Add(new PhaseStep(new RevealStageOperation(RevealStageKind.RevealEncounterCard, origin),
+            1, 2, Subject: card.ObjectId, Seat: player));
+        answer ??= new ActingPolicy(7, declineOneIn: 1).Answer;
+        var prompt = Sequence.Work(world, Cards, world.Abilities, events);
+        for (int step = 0; prompt is not null; step++)
+        {
+            Assert.True(step < 80, prompt.Description);
+            Sequence.Answer(world, Cards, world.Abilities, prompt, answer(prompt), events);
+            prompt = Sequence.Work(world, Cards, world.Abilities, events);
+        }
+    }
+
     /// <summary>Runs one villain phase, declining every optional decision.</summary>
     public static void VillainPhase(World world, int round, List<GameEvent> events)
     {

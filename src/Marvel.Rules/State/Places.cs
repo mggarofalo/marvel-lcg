@@ -88,6 +88,20 @@ public static class Places
             ?? world.GameAreaOf(PlayAreaOf(card));
     }
 
+    /// <summary>Whether the players are in separate game areas.</summary>
+    /// <remarks>
+    /// The table is separated exactly when the villain's play area belongs to no
+    /// game area: Kang's stage 2A detaches it and leaves 2B there, central
+    /// (<c>pack:mc11:areas</c>). In an ordinary game the villain's play area
+    /// shares the one game area with every player's.
+    /// </remarks>
+    /// <param name="world">The world.</param>
+    public static bool Separated(World world)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        return world.GameAreaOf(PlayArea.Villains) is null;
+    }
+
     /// <summary>Whether one card may affect another at all.</summary>
     /// <remarks>
     /// <para>
@@ -224,7 +238,9 @@ public static class Places
     /// <para>
     /// The game-area partition is applied on top. Both rules say what a card
     /// cannot reach, so the answer is the intersection; in an ordinary game
-    /// neither narrows anything.
+    /// neither narrows anything. Of what remains, the main schemes in the
+    /// source's own game area are preferred over a central one such as Kang's
+    /// 2B (<see cref="CardReferences.InHomeGameArea"/>).
     /// </para>
     /// </remarks>
     /// <param name="world">The world.</param>
@@ -264,6 +280,6 @@ public static class Places
             }
         }
 
-        return found;
+        return CardReferences.InHomeGameArea(world, source, found);
     }
 }

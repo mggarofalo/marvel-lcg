@@ -101,18 +101,27 @@ public static class MainScheme
     /// How many boost icons every boost card gains — <c>rr:amplify-icon</c>.
     /// </summary>
     /// <remarks>
+    /// <para>
     /// "When a boost card is turned faceup <b>during an enemy activation</b>,
     /// add one additional boost icon to that card for each amplify icon in
     /// play", written in <c>.1</c> as the constant ability "each boost card
     /// gains [boost]".
+    /// </para>
+    /// <para>
+    /// While the table is split, "in play" stops at the activating enemy's game
+    /// area: <c>pack:mc11:game-areas</c>, "Cards and components in one game area
+    /// cannot affect another game area", and ruling 5ecfc71ddff64d39 keeps boosts
+    /// local to that area. In an ordinary game every icon reaches the enemy.
+    /// </para>
     /// </remarks>
     /// <param name="world">The board.</param>
     /// <param name="facts">The printed card data.</param>
-    public static long Amplify(World world, ICardFacts facts) =>
-        IconsInPlay(world, facts, "amplify");
+    /// <param name="enemy">The activating enemy, or <c>null</c> outside an activation.</param>
+    public static long Amplify(World world, ICardFacts facts, Card? enemy) =>
+        IconsInPlay(world, facts, "amplify", enemy);
 
-    /// <summary>One printed icon, totalled over everything in play.</summary>
-    private static long IconsInPlay(World world, ICardFacts facts, string field)
+    /// <summary>One printed icon, totalled over everything in play that reaches a card.</summary>
+    private static long IconsInPlay(World world, ICardFacts facts, string field, Card? reaching = null)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
@@ -127,7 +136,8 @@ public static class MainScheme
 
             foreach (var card in area.Cards)
             {
-                total += StateFields.Modified(world, card, field, facts, world.Players);
+                if (reaching is null || Places.CanAffect(world, card, reaching))
+                    total += StateFields.Modified(world, card, field, facts, world.Players);
             }
         }
 

@@ -92,4 +92,16 @@ public static class AgendaContinuationScheduling
             }, Stage.Apply, continuationOccurrence ?? occurrence));
         agenda.scheduled = 0;
     }
+
+    /// <summary>Whether any frame waits between this frame and its exact owner.</summary>
+    internal static bool HasWorkBeforeOwner(
+        this Agenda agenda, PhaseStep frame, PhaseStep owner, Occurrence occurrence)
+    {
+        int at = agenda.items.FindIndex(item => item.Step.SameFrameAs(frame));
+        int ownerAt = agenda.items.FindIndex(item => item.Step.SameFrameAs(owner)
+            && ReferenceEquals(item.Occurrence, occurrence));
+        if (at < 0 || ownerAt < 0)
+            throw new InvalidOperationException("the frame and its owner must both be on the agenda");
+        return ownerAt - at > 1;
+    }
 }

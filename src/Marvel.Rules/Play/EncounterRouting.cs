@@ -13,9 +13,43 @@ public static class EncounterRouting
             $"'{villain.FaceId}' requires its living corresponding encounter deck");
 
     /// <summary>pack:mc03:new-rules: “the villain” refers to the active villain.</summary>
-    public static Card? Villain(World world) =>
-        world.EncounterTopology is { } topology
-            ? topology.Active.CurrentVillain : world.TheCardIn(DeckType.VillainArea);
+    /// <remarks>
+    /// Without a referring card this cannot choose between the villains of
+    /// separate game areas, so it raises there rather than naming whichever
+    /// game area was created first; <see cref="Villain(World, Card)"/> answers it.
+    /// </remarks>
+    public static Card? Villain(World world)
+    {
+        if (world.EncounterTopology is { } topology) return topology.Active.CurrentVillain;
+        if (SeparateGameAreas.Active(world))
+            throw new RulesNotImplementedException(
+                "\"the villain\" needs a referring card while game areas are separate");
+        return world.TheCardIn(DeckType.VillainArea);
+    }
+
+    /// <summary>The villain this card's text means by “the villain”.</summary>
+    /// <remarks>
+    /// pack:mc11:game-areas: "Cards and components in one game area cannot affect
+    /// another game area". While the table is split each game area has its own
+    /// Kang, so the villain is the one in the referring card's game area. A card
+    /// in no game area (Kang's central 2B) reaches every Kang, and which one it
+    /// means is not settled by any rule, so that raises.
+    /// </remarks>
+    public static Card? Villain(World world, Card source)
+    {
+        if (world.EncounterTopology is { } topology) return topology.Active.CurrentVillain;
+        if (!SeparateGameAreas.Active(world)) return world.TheCardIn(DeckType.VillainArea);
+        var reachable = world.Areas.Where(area => area.Type == DeckType.VillainArea)
+            .SelectMany(area => area.Cards).Where(card => Places.CanAffect(world, source, card)).ToList();
+        var candidates = CardReferences.InHomeGameArea(world, source, reachable);
+        return candidates.Count switch
+        {
+            0 => null,
+            1 => candidates[0],
+            _ => throw new RulesNotImplementedException(
+                $"'{source.FaceId}' refers to the villain from outside every Kang's game area"),
+        };
+    }
 
     /// <summary>The villain that can activate against this player in their game area.</summary>
     public static Card? VillainForPlayer(World world, int player)

@@ -48,20 +48,18 @@ public sealed class KangFirstSplit
         Remove(world, card, trigger, events);
     }
 
-    private bool IsBoundary(PhaseStep step) => defeated is not null && step.Operation is
+    internal bool IsBoundary(PhaseStep step) => defeated is not null && step.Operation is
         PhaseTransitionOperation { Kind: PhaseTransitionKind.EndPlayerPhase or PhaseTransitionKind.EndVillainPhase };
 
     internal void Preflight(World world, PhaseStep step)
     {
         if (!IsBoundary(step)) return;
+        // An eliminated player is out of the game (rr:player-elimination.6) and
+        // reveals no stage 3A: SelectStages deals only to world.PlayerOrder.
         if (world.Players is < 1 or > 4 || world.Seats.Count != world.Players
-            || world.Seats.Any(seat => seat.Eliminated)
+            || !world.PlayerOrder.Any()
             || world.Agenda.KangTransitions.Pending.Count != 0)
-            throw new RulesNotImplementedException("the first Kang split requires one to four participating seats without elimination");
-        string[] conditions = step.Require<PhaseTransitionOperation>().Kind == PhaseTransitionKind.EndPlayerPhase
-            ? [PhaseEnd.PlayerPhaseEnds] : [PhaseEnd.VillainPhaseEnds, PhaseEnd.RoundEnds];
-        if (world.Effects.HasDue(conditions))
-            throw new RulesNotImplementedException("Kang split ordering with other delayed effects is not implemented");
+            throw new RulesNotImplementedException("the first Kang split requires one to four seats with a participating player");
         RequireStageTwo(world);
         for (int index = 0; index < 4; index++)
         {

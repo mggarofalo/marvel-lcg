@@ -23,7 +23,9 @@ public sealed class BoostIconCancellation
     internal long Contribution(World world, ICardFacts facts) => Math.Max(0,
         (Characteristics.IsLost(world, Card, "boost_const") ? 0
             : StateFields.Modified(world, Card, "boost_const", facts, world.Players)
-                + MainScheme.Amplify(world, facts)) - Cancelled);
+                + MainScheme.Amplify(world, facts, ActivatingEnemy(world))) - Cancelled);
+    private static Card? ActivatingEnemy(World world) =>
+        world.Activation is { Enemy: >= 0 } activation ? world.Cards[activation.Enemy] : null;
     /// <summary>Whether this exact boost window remains live.</summary>
     public bool IsCurrent(World world) => ReferenceEquals(Game, world)
         && world.Activation?.Id == Activation && Card.Incarnation == Incarnation

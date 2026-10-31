@@ -12,7 +12,8 @@ public static class EachPlayerEffects
     public static void Schedule(World world, PhaseStep template, int? onlyPlayer = null, bool inPlayerOrder = false)
     {
         ArgumentNullException.ThrowIfNull(world);
-        var players = world.PlayerOrder.Where(player => onlyPlayer is null || player == onlyPlayer).ToList();
+        var players = Players(world, Source(world, template))
+            .Where(player => onlyPlayer is null || player == onlyPlayer).ToList();
         if (players.Count == 0) return;
         // rr:each-player.1 permits the first player to choose only when card
         // text does not specify an order; rr:in-player-order starts at first player.
@@ -31,10 +32,25 @@ public static class EachPlayerEffects
         });
     }
 
+    /// <summary>The players in the game this card's "each player" means, in player order.</summary>
+    /// <remarks>
+    /// Ruling 4799b99ecc0e5dea (<c>pack:mc11:rules-clarifications</c>): "'Each
+    /// player' refers to each player in the same game area." <see cref="Places.EachPlayer"/>
+    /// owns that partition; <see cref="World.PlayerOrder"/> supplies the order and
+    /// leaves out eliminated players (<c>rr:player-elimination.6</c>). In an
+    /// ordinary game every player shares the source's game area.
+    /// </remarks>
+    public static IReadOnlyList<int> Players(World world, Card source)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        var reached = Places.EachPlayer(world, source);
+        return [.. world.PlayerOrder.Where(reached.Contains)];
+    }
+
     internal static Prompt Ordering(World world, PhaseStep step)
     {
         var source = Source(world, step);
-        var identities = world.PlayerOrder
+        var identities = Players(world, source)
             .Select(seat => world.Seats[seat].IdentityCard.ObjectId)
             .ToList();
 
@@ -64,7 +80,7 @@ public static class EachPlayerEffects
     internal static void Ordered(World world, PhaseStep step, Decision input)
     {
         var source = Source(world, step);
-        var candidates = world.PlayerOrder
+        var candidates = Players(world, source)
             .ToDictionary(
                 seat => world.Seats[seat].IdentityCard.ObjectId,
                 seat => seat);

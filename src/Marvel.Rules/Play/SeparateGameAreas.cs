@@ -22,7 +22,7 @@ namespace Marvel.Rules.Play;
 /// </remarks>
 internal static class SeparateGameAreas
 {
-    internal static bool Active(World world) => world.GameAreaOf(PlayArea.Villains) is null;
+    internal static bool Active(World world) => Places.Separated(world);
 
     /// <summary>The game areas holding players, in turn order of their earliest player.</summary>
     /// <remarks>

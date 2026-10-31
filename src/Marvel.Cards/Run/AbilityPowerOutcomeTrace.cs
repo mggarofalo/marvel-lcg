@@ -202,7 +202,7 @@ internal static class AbilityPowerOutcomeTrace
         var player = change.Player;
         if (bindingMayChange && player == AbilityPlayer.ChosenPlayer)
         {
-            var seats = cast.World.PlayerOrder.Where(seat =>
+            var seats = EachPlayerEffects.Players(cast.World, cast.Source).Where(seat =>
                 AbilityProjectedCharacterPermissions.CanChangeForm(seat, cast, reachability)).ToArray();
             return reachability with
             {

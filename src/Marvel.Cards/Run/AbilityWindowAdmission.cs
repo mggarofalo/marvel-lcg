@@ -195,7 +195,8 @@ internal static class AbilityWindowAdmission
         {
             return [occurrence.Player];
         }
-        return world.PlayerOrder;
+        // pack:mc11:game-areas: players cannot affect a card in another game area.
+        return EachPlayerEffects.Players(world, card);
     }
 
     private static int Controller(

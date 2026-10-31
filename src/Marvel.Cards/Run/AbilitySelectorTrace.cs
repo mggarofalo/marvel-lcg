@@ -197,7 +197,7 @@ internal static class AbilitySelectorTrace
         if (trace.Engagement.Count > 0 && !UsesObjectIdOrder(selector) && UsesEngagedAreaOrder(selector))
             throw new Rules.Play.RulesNotImplementedException(
                 "Last-card area order after projected engagement changes is not implemented");
-        int boardVillain = Rules.Play.EncounterRouting.Villain(trace.Cast.World)?.ObjectId ?? -1;
+        int boardVillain = Rules.Play.EncounterRouting.Villain(trace.Cast.World, trace.Cast.Source)?.ObjectId ?? -1;
         IEnumerable<Card> source = TraceCandidateCards(selector, trace.Cast);
         if (trace.EncounterStages is not null)
             source = source.Concat(trace.Cast.World.EncounterTopology!.Groups.SelectMany(group => group.Stages));

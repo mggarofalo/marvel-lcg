@@ -40,29 +40,29 @@ public sealed class KangFirstSplitReviewTests : CoreCardTestBase
     }
 
     [Theory]
-    [InlineData(1)]
+    [Rule("rr:player-elimination.6")]
     [InlineData(2)]
     [InlineData(3)]
     [InlineData(4)]
-    public void EliminatedSeatsRaiseBeforeThePhaseBoundaryMutates(int players)
+    public void AnEliminatedPlayerRevealsNoStageThreeAtTheSplit(int players)
     {
+        // "Effects that refer to the players in the game ignore eliminated
+        // players." 11008a: "Each player reveals a random stage 3A in turn order."
         var (world, kang, _, _) = Board(0, false, players: players);
         var events = new List<GameEvent>();
-        Agendas.Happening(world);
-        Defeat.Character(world, Cards, kang, "prepared defeat", events);
-        Sequence.Finish(world, Cards, world.Abilities, events);
-        world.Seats[players - 1].Eliminated = true;
-        var pending = world.Agenda.KangSplit.Pending;
-        var before = world.Digest().Canonical();
-        int eventCount = events.Count;
-        world.Agenda.Add(new PhaseStep(new PhaseTransitionOperation(PhaseTransitionKind.EndPlayerPhase), 1, 4));
-        var error = Assert.Throws<RulesNotImplementedException>(() => Sequence.Finish(world, Cards, world.Abilities, events));
-        Assert.Contains("without elimination", error.Message, StringComparison.Ordinal);
-        Assert.Equal(before, world.Digest().Canonical());
-        Assert.Same(pending, world.Agenda.KangSplit.Pending);
-        Assert.Equal(eventCount, events.Count);
-        Assert.Equal(0, world.Random.Generator.WordsConsumed);
-        Assert.Single(world.GameAreas);
+        int eliminated = players - 1;
+        Elimination.Eliminate(world, Cards, eliminated, "prepared elimination", events);
+        Split(world, kang, events);
+
+        Assert.Null(world.GameAreaOf(PlayArea.Of(eliminated)));
+        Assert.Empty(world.AreaOf(DeckType.MainSchemesArea, PlayArea.Of(eliminated)).Cards);
+        Assert.All(world.PlayerOrder, player =>
+        {
+            Assert.Single(world.AreaOf(DeckType.MainSchemesArea, PlayArea.Of(player)).Cards);
+            Assert.Single(world.AreaOf(DeckType.VillainArea, PlayArea.Of(player)).Cards);
+        });
+        Assert.Equal(players - 1, world.Cards.Count(card => card.FaceId is "11009b" or "11010b" or "11011b" or "11012b"));
+        Assert.Equal(Outcome.Unfinished, world.Result);
     }
 
     [Fact]

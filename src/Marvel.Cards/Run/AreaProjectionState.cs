@@ -22,7 +22,7 @@ internal sealed class AreaProjectionState(AbilityAdmissionContext context)
     public Dictionary<(int Card, string Field), long> Modifiers { get; } = [];
     public bool SourceReferenceCurrent { get; set; } = true;
     public int ActiveVillain { get; set; } =
-        EncounterRouting.Villain(context.World)?.ObjectId ?? -1;
+        EncounterRouting.Villain(context.World, context.Source)?.ObjectId ?? -1;
     public int VillainAttachmentHost { get; set; } = -1;
 
     public long DamageOf(Card card) =>

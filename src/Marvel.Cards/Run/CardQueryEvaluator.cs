@@ -43,7 +43,19 @@ internal sealed class CardQueryEvaluator(
         AbilityCardQuery.Characters, AbilityCardQuery.Supports,
     ];
 
+    // pack:mc11:game-areas: "Cards and components in one game area cannot affect
+    // another game area". Every card a query names is one the source might act
+    // on, so a card the source cannot reach is never named. In an ordinary game
+    // every card can reach every other, and this keeps them all.
     internal IReadOnlyList<Card> Evaluate(AbilityCardQuery query)
+    {
+        var found = EvaluateAnywhere(query);
+        return Places.Separated(cast.World)
+            ? [.. found.Where(card => Places.CanAffect(cast.World, cast.Source, card))]
+            : found;
+    }
+
+    private IReadOnlyList<Card> EvaluateAnywhere(AbilityCardQuery query)
     {
         if (query == AbilityCardQuery.StatusCards)
             return StatusReplacement.Candidates(cast.World);
@@ -100,25 +112,32 @@ internal sealed class CardQueryEvaluator(
         AbilityCardQuery.BeneathThis => cast.SourceReference is { } host
             ? BeneathCards.Of(cast.World, host) : [],
         // rr:player-side-scheme.1 puts both kinds of side scheme together.
-        AbilityCardQuery.SideSchemes =>
-            [.. InArea(cast.World, DeckType.SideSchemesArea, PlayArea.Villains)],
+        AbilityCardQuery.SideSchemes => EncounterCards(DeckType.SideSchemesArea),
         AbilityCardQuery.Schemes =>
-            [.. InArea(cast.World, DeckType.MainSchemesArea, PlayArea.Villains),
-             .. InArea(cast.World, DeckType.SideSchemesArea, PlayArea.Villains)],
+            [.. EncounterCards(DeckType.MainSchemesArea), .. EncounterCards(DeckType.SideSchemesArea)],
         AbilityCardQuery.PowerTargets => cast.PowerTargets,
         AbilityCardQuery.YourAsidePile => [.. cast.World.Seats[cast.Player].Nemesis.Cards],
         // pack:mc03:new-rules.the-active-villain: a card reference to "the
         // villain" names the active villain; selecting an enemy remains plural.
-        AbilityCardQuery.Villain => EncounterRouting.Villain(cast.World) is { } villain ? [villain] : [],
-        AbilityCardQuery.MainScheme => SingleIn(DeckType.MainSchemesArea),
+        AbilityCardQuery.Villain => EncounterRouting.Villain(cast.World, cast.Source) is { } villain ? [villain] : [],
+        AbilityCardQuery.MainScheme => CardReferences.TheCardIn(cast.World, DeckType.MainSchemesArea, cast.Source) is { } scheme ? [scheme] : [],
         AbilityCardQuery.YourAsideMinion => AsideOfKind(CardKind.Minion),
         AbilityCardQuery.YourAsideSideScheme => AsideOfKind(CardKind.EncounterSideScheme),
         _ => throw new InvalidOperationException("Unknown scenario card query"),
     };
 
+    // rr:play-area.2: the villain's play area holds encounter cards in play that
+    // have not entered a player's. pack:mc11:game-areas puts each split game
+    // area's own Kang and schemes in front of its players, so while the table
+    // is separated every play area is searched; Evaluate keeps what the source
+    // can affect.
+    private Card[] EncounterCards(DeckType type) => Places.Separated(cast.World)
+        ? [.. cast.World.Areas.Where(area => area.Type == type).SelectMany(area => area.Cards)]
+        : [.. InArea(cast.World, type, PlayArea.Villains)];
+
     private Card[] VillainAttachments()
     {
-        var villain = EncounterRouting.Villain(cast.World);
+        var villain = EncounterRouting.Villain(cast.World, cast.Source);
         if (villain is null) return [];
         return [.. cast.World.Areas.Where(area => area.Host == villain.ObjectId && DeckTypes.IsInPlay(area.Type))
             .SelectMany(area => area.Cards)
@@ -141,7 +160,7 @@ internal sealed class CardQueryEvaluator(
                 .SelectMany(area => area.Cards)
                 .Where(card => EffectiveCards.Kind(card, cast.World.Facts)
                     == CardKind.Minion)],
-        AbilityCardQuery.Villains => [.. InArea(cast.World, DeckType.VillainArea, PlayArea.Villains)],
+        AbilityCardQuery.Villains => EncounterCards(DeckType.VillainArea),
         AbilityCardQuery.Enemies =>
             [.. cast.World.Areas.Where(area => area.Type is DeckType.VillainArea
                     or DeckType.EngagedEnemiesArea)
@@ -262,9 +281,6 @@ internal sealed class CardQueryEvaluator(
         .Count(card => DeckTypes.IsInPlay(card.Area.Type)
             && string.Equals(
                 EffectiveCards.Title(card, cast.World.Facts), title, StringComparison.Ordinal));
-
-    private IReadOnlyList<Card> SingleIn(DeckType area) =>
-        cast.World.TheCardIn(area) is { } card ? [card] : [];
 
     private IReadOnlyList<Card> AsideOfKind(CardKind kind) =>
         Aside(cast, kind) is { } card ? [card] : [];

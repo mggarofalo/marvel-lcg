@@ -1,5 +1,6 @@
 using Marvel.Cards.Dsl;
 using Marvel.Rules.Events;
+using Marvel.Rules.Play;
 
 namespace Marvel.Cards.Run;
 
@@ -56,7 +57,7 @@ internal static class AbilityCompletion
     {
         AbilityEffect.CardAction { Instruction: AbilityCardInstruction.MoveActiveCounter } => 1,
         AbilityEffect.CardAction { Instruction: AbilityCardInstruction.PlaceOnBottomOfDeck } => 1,
-        AbilityEffect.Draw draw => draw.Count * (long)(draw.Players is AbilityPlayerSelection.AllPlayers ? cast.World.PlayerOrder.Count() : 1),
+        AbilityEffect.Draw draw => draw.Count * (long)(draw.Players is AbilityPlayerSelection.AllPlayers ? EachPlayerEffects.Players(cast.World, cast.Source).Count : 1),
         AbilityEffect.GiveStatus status => execution.Every(status.Cards, cast).Count,
         AbilityEffect.CardAction { Instruction: AbilityCardInstruction.Exhaust } action =>
             execution.Every(action.Selection, cast).Count(card => card.Ready),

@@ -39,7 +39,7 @@ internal static class RepeatedDamageFrames
                 var next = new List<DamageTraceState>();
                 foreach (var state in states)
                 {
-                    foreach (int player in cast.World.PlayerOrder.Where(player =>
+                    foreach (int player in EachPlayerEffects.Players(cast.World, cast.Source).Where(player =>
                         !state.Players.Contains(player)))
                     {
                         cast.RestorePlayer(player);

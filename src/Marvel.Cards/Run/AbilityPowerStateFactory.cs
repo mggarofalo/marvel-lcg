@@ -11,7 +11,7 @@ internal static class AbilityPowerStateFactory
     internal static AbilityPowerState Initial(AbilityAdmissionScope cast)
     {
         var identity = cast.World.Seats[cast.World.FirstPlayer].IdentityCard;
-        int villain = EncounterRouting.Villain(cast.World)?.ObjectId ?? -1;
+        int villain = EncounterRouting.Villain(cast.World, cast.Source)?.ObjectId ?? -1;
         return new AbilityPowerState(
             0, cast.World.FirstPlayer, identity.Damage,
             Statuses.Has(cast.World, identity, Statuses.Tough),

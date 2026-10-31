@@ -233,7 +233,7 @@ internal static class AbilityResolutionInterpreter
         && AbilityAdmissionFacts.CanEngageTopAsMinion(
             cast.World, drones.Players switch
             {
-                AbilityPlayerSelection.AllPlayers => cast.World.PlayerOrder,
+                AbilityPlayerSelection.AllPlayers => EachPlayerEffects.Players(cast.World, cast.Source),
                 AbilityPlayerSelection.OnePlayer one => [execution.Seat(one.Player, cast)],
                 _ => throw new InvalidOperationException("Unknown compiled player selection"),
             }, drones.Count);

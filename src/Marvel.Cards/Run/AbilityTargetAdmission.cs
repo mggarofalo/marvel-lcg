@@ -112,7 +112,7 @@ internal static class AbilityTargetAdmission
         var scope = cast.Reachability.PriorBindingCandidates.Count == 0
             ? cast.ForReachability(cast.Reachability with
             {
-                PriorBindingCandidates = cast.World.PlayerOrder.Select(player =>
+                PriorBindingCandidates = EachPlayerEffects.Players(cast.World, cast.Source).Select(player =>
                     cast.World.Seats[player].IdentityCard).ToImmutableList(),
             })
             : cast;
