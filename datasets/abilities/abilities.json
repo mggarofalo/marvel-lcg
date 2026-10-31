@@ -24639,6 +24639,14 @@
       "abilities": [
         {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero"}, "effect": {"chooseCard": {"from": {"statusCardsOn": {"card": "yourHero", "statuses": ["stunned", "confused"]}}, "effect": {"discard": "chosen"}}}}
       ]
+    },
+    {
+      "card": "13013",
+      "name": "Into the Fray",
+      "note": "Hero Action (attack): deal 6 damage to a minion, then remove 1 threat from the main scheme per point of excess damage dealt by this attack. Ruling dd353e3498f6b923: excess damage is damage dealt beyond remaining hit points, independent of damage taken or defeat.",
+      "abilities": [
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero"}, "labels": ["attack"], "effect": {"chooseCard": {"from": {"query": "attackableMinions"}, "effect": {"attack": {"target": "chosen", "effect": {"seq": [{"dealAttackDamage": {"cards": "chosen", "amount": 6}}, {"removeThreat": {"scheme": {"query": "mainScheme"}, "amount": {"result": "excessDamageDealt"}}}]}}}}}}
+      ]
     }
   ]
 }
