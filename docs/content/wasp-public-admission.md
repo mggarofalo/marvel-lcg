@@ -139,10 +139,15 @@ main scheme equal to the excess damage. When that minion has its own defeat
 ability, that ability resolves at the moment of defeat (rr:interrupt,
 rr:when-defeated-abilities). The removal then resolves on the board as it
 stands (rr:ability.4), using the excess recorded when the damage was dealt
-(ruling dd353e34). Nothing about the defeat window is predicted. The engine
-leaves any fixed-amount or recorded-amount threat removal after an opaque
-defeat window to the live board. A removal whose amount is counted from the
-board still raises before anything changes. Beetle's (13028) "Forced
+(ruling dd353e34). Nothing about the defeat window is predicted. After an
+opaque defeat window, the engine leaves a threat removal to the live board
+only when it chooses nothing: its scheme is the retained chosen card, the
+power's targets or the main scheme, and its amount is fixed or the excess
+damage recorded by attack damage. Any other selection or amount, and any
+later step that would read the board after that removal, raises before
+anything changes. A thwart still cannot target the main scheme while a crisis
+scheme is in play (rr:crisis-icon.1, rr:target.3), even if an earlier removal
+in the same thwart would defeat that scheme. Beetle's (13028) "Forced
 Interrupt: When Beetle is defeated" joins the window the engine runs for When
 Defeated, because rr:when-defeated-abilities.1 treats the two triggers as
 equivalent. `IntoTheFrayRemovesExcessThreatAfterTheMinionsDefeatAbilityResolves`

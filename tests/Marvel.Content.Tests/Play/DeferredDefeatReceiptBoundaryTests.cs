@@ -15,6 +15,7 @@ public sealed class DeferredDefeatReceiptBoundaryTests
     [InlineData("{\"query\":\"mainScheme\"}", "{\"result\":\"boostIconsLookedAt\"}", false)]
     [InlineData("\"chosen\"", "{\"count\":{\"query\":\"minions\"}}", false)]
     [InlineData("\"that\"", "{\"result\":\"boostIconsLookedAt\"}", false)]
+    [InlineData("\"that\"", "2", false)]
     [InlineData("\"chosen\"", "{\"result\":\"boostIconsLookedAt\"}", true)]
     public void BoardReadingTailsStillRaiseWithoutChangingCardsAgendaOrRandom(string target, string amount, bool live)
     {
