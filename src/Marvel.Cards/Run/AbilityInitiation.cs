@@ -93,6 +93,10 @@ internal static class AbilityInitiation
     {
         if (string.Equals(node.OperationName(), power.ToLowerInvariant(), StringComparison.Ordinal))
             return PowerNodes(node, power).Count() == 1;
+        // A thwart group is itself the labelled thwart: it chooses its schemes and
+        // schedules the one thwart power it contains.
+        if (node is AbilityEffect.ThwartGroup)
+            return PowerNodes(node, power).Count() == 1;
         if (node.OperationName() == "chooseCard")
             return GuaranteesOneLabeledPower(EffectBody(node), power);
         if (node.OperationName() == "choose")
@@ -100,7 +104,9 @@ internal static class AbilityInitiation
         if (node.OperationName() == "if")
             return ConditionalGuaranteesOnePower(node, power);
         if (node.OperationName() != "seq") return false;
-        var steps = OrderedEffects(node).ToList();
+        // Engine choice: an any-number exhaustion whose count feeds the attack may
+        // resolve immediately before the labelled power it modifies.
+        var steps = OrderedEffects(node).SkipWhile(step => step is AbilityEffect.ExhaustAnyNumber).ToList();
         return steps.Count > 0 && GuaranteesOneLabeledPower(steps[0], power)
             && steps.Skip(1).All(step => !PowerNodes(step, power).Any());
     }

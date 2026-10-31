@@ -106,8 +106,10 @@ func _open_campaign_tracker() -> bool:
     if not await _wait_for_setup():
         _fail("setup discovery did not complete")
         return false
-    if not await _wait_for(func(): return _button_named("Campaigns") != null):
-        _fail("complete campaign was not admitted")
+    # The entry sits above the tabletop. It must be laid out with the setup
+    # choices that admit it; appearing afterwards shifts the table under the pointer.
+    if _button_named("Campaigns") == null:
+        _fail("complete campaign entry was not laid out with its setup choices")
         return false
     if not await _pointer_activate(_button_named("Campaigns")): return false
     return true

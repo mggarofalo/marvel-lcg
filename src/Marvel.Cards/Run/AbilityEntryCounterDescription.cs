@@ -19,11 +19,13 @@ internal static class AbilityEntryCounterDescription
             || EntryOccurrence(world, source, player) is not { } occurrence) return null;
         long cap = Cap(placement);
         var cast = new AbilityResolutionState(world, source, occurrence, player, []);
-        long amount = Math.Min(cap, AbilityEntryResourceQuery.Excess(cast.ExpressionContext()));
+        long amount = Math.Min(cap, Energy(placement)
+            ? AbilityEntryResourceQuery.EnergyExcess(cast.ExpressionContext())
+            : AbilityEntryResourceQuery.Excess(cast.ExpressionContext()));
         string title = EffectiveCards.Title(source, world.Facts);
         string suffix = amount == 1 ? "counter" : "counters";
         return $"Place {amount} {placement.Counter} {suffix} on {title} "
-            + $"for overpaid resources (maximum {cap}). Declining this interrupt places no counters."
+            + $"for overpaid {Kind(placement)}resources (maximum {cap}). Declining this interrupt places no counters."
             + HealthText(world, execution.program, source, placement.Counter, title);
     }
 
@@ -33,7 +35,7 @@ internal static class AbilityEntryCounterDescription
         if (ability is null || Match(ability.Effect) is not { } placement) return null;
         string title = EffectiveCards.Title(source, world.Facts);
         return $"Optional entry interrupt: place 1 {placement.Counter} counter on {title} "
-            + $"per resource overpaid (maximum {Cap(placement)})."
+            + $"per {Kind(placement)}resource overpaid (maximum {Cap(placement)})."
             + HealthText(world, program, source, placement.Counter, title);
     }
 
@@ -70,6 +72,12 @@ internal static class AbilityEntryCounterDescription
         return counters.Counter == counter;
     }
 
+    private static bool Energy(AbilityEffect.PlaceCounters placement) =>
+        ((AbilityNumber.Minimum)placement.Count).Operands[1] is AbilityNumber.ResolutionValue
+            { Kind: AbilityResolutionNumber.EntryEnergyExcess };
+
+    private static string Kind(AbilityEffect.PlaceCounters placement) => Energy(placement) ? "energy " : string.Empty;
+
     private static long Cap(AbilityEffect.PlaceCounters placement) =>
         ((AbilityNumber.Constant)((AbilityNumber.Minimum)placement.Count).Operands[0]).Value;
 
@@ -82,7 +90,8 @@ internal static class AbilityEntryCounterDescription
             Count: AbilityNumber.Minimum { Operands.Length: 2 } minimum,
         } placement) return null;
         if (minimum.Operands[0] is not AbilityNumber.Constant { Value: > 0 }) return null;
-        return minimum.Operands[1] is AbilityNumber.ResolutionValue { Kind: AbilityResolutionNumber.EntryResourceExcess }
+        return minimum.Operands[1] is AbilityNumber.ResolutionValue
+            { Kind: AbilityResolutionNumber.EntryResourceExcess or AbilityResolutionNumber.EntryEnergyExcess }
             ? placement : null;
     }
 }

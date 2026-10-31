@@ -153,10 +153,10 @@ public sealed class SetupDatasetTests
         {
             Assert.Single(hero.Hero);
             var faces = hero.Hero.SelectMany(Faces).ToList();
-            Assert.Equal(name == "ant_man" ? 3 : 2, faces.Count);
+            Assert.Equal(name is "ant_man" or "wasp" ? 3 : 2, faces.Count);
             Assert.Equal(CardKind.Hero, Cards.Kind(faces[0]));
             Assert.Equal(CardKind.AlterEgo, Cards.Kind(faces[1]));
-            if (name == "ant_man") Assert.Equal(CardKind.Hero, Cards.Kind(faces[2]));
+            if (name is "ant_man" or "wasp") Assert.Equal(CardKind.Hero, Cards.Kind(faces[2]));
         }
     }
 

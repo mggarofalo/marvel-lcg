@@ -25,7 +25,7 @@ public sealed class DoctorStrangePublishedRecipeTests
         var cards = DoctorStrangeSetupFixture.PrintedCards;
         var admitted = RuntimeProductAdmission.Discover(setup, cards, AuthoredCards.Book.Authored);
         Assert.Equal(40, admitted.Playable.Count(face => cards.Pack(face) == "drs"));
-        Assert.Equal(14, admitted.Setup.HeroNames.Count);
+        Assert.Equal(15, admitted.Setup.HeroNames.Count);
         Assert.Equal(39, admitted.Setup.CampaignNames.Count);
         Assert.Equal(15, admitted.Setup.EncounterSetNames.Count);
         Assert.Equal(40, PlayerDeckAdmission.Admit(new([.. hero.HeroDeck, .. hero.PlayerDeck]),

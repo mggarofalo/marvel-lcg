@@ -11,7 +11,7 @@ namespace Marvel.Cards.Run;
 internal static class AbilityResolutionChoices
 {
     private static readonly System.Collections.Immutable.ImmutableArray<string> SpecialChoiceOperations =
-        ["chooseCardsToHand", "resolveSpecials", "chooseTopForHand", "chooseDiscardToShuffle", "discardHandCards", "discardResourceIcons"];
+        ["chooseCardsToHand", "resolveSpecials", "chooseTopForHand", "chooseDiscardToShuffle", "exhaustAnyNumber", "discardHandCards", "discardResourceIcons"];
 
     internal static void ValidateChoice(this AbilityResolutionExecution execution, World world, PhaseStep step, Decision input)
     {

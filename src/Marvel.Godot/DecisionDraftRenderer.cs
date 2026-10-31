@@ -207,7 +207,7 @@ internal sealed class DecisionDraftRenderer
         panel.BindAnchors(remove, target);
         row.AddChild(remove);
         var label = DecisionPanel.Text(
-            $"{count}  ·  {PromptPresentation.Describe(target, world!)}  ·  max {limit}",
+            $"{count}  ·  {TargetLabel(PromptPresentation.Describe(target, world!), request.Details?.GetValueOrDefault(target))}  ·  max {limit}",
             GodotThemeVariations.Body, wrap: true);
         label.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
         row.AddChild(label);

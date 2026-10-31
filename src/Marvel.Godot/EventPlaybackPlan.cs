@@ -27,14 +27,24 @@ internal static class EventPlaybackPlan
     private static EventPresentation[] WithAttackIntent(IReadOnlyList<EventPresentation> entries,
         ActiveAttackDescriptor? prior)
     {
-        var names = new Dictionary<Marvel.Rules.Events.AttackIdentity, string>();
-        if (prior?.Identity is { } identity) names[identity] = $"{prior.Source.Name} → {prior.Target.Name}";
+        // One attack can announce several recipients, as a divided attack does; its
+        // intention names the attacker once and every announced recipient in order.
+        var subjects = new Dictionary<Marvel.Rules.Events.AttackIdentity, List<string>>();
         foreach (EventPresentation entry in WithDetails(entries))
             if (entry.Activity is { AttackIdentity: { } id, AttackBoundary: not null } activity)
-                names[id] = string.Join(" → ", activity.Subjects.Select(subject => subject.Name));
-        return entries.Select(entry => entry.Activity?.AttackIdentity is { } id
-            ? entry with { Intention = names.GetValueOrDefault(id) } : entry).ToArray();
+            {
+                var names = subjects.TryGetValue(id, out var known) ? known : subjects[id] = [];
+                foreach (string name in activity.Subjects.Select(subject => subject.Name))
+                    if (!names.Contains(name)) names.Add(name);
+            }
+        if (prior?.Identity is { } identity && !subjects.ContainsKey(identity))
+            subjects[identity] = [prior.Source.Name, prior.Target.Name];
+        return entries.Select(entry => entry.Activity?.AttackIdentity is { } id && subjects.TryGetValue(id, out var names)
+            ? entry with { Intention = Intention(names) } : entry).ToArray();
     }
+
+    private static string Intention(List<string> names) =>
+        names.Count <= 2 ? string.Join(" → ", names) : $"{names[0]} → {string.Join(", ", names.Skip(1))}";
 
     private static EventPresentation? CompletedAttack(IReadOnlyList<EventPresentation> entries)
     {

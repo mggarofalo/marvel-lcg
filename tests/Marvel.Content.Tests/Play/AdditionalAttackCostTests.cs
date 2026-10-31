@@ -1,4 +1,5 @@
 using Marvel.Rules.Play;
+using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
 using Marvel.Tests;
 using Xunit;
@@ -38,6 +39,7 @@ public sealed class AdditionalAttackCostTests
         Assert.Same(world.Seats[0].Hand, payment!.Area);
         Assert.Equal(0, enemy.Damage);
         var cost = Assert.Single(game.Pending!.Affordances);
+        Assert.Equal(PublicDecisionKind.VisibleCardSelection, game.Pending.PublicKind);
         string digest = world.Digest().Canonical();
         Assert.Throws<ArgumentException>(() => game.Resolve(new Decision(cost.Id, [enemy.ObjectId])));
         Assert.Throws<ArgumentException>(() => game.Resolve(new Decision(cost.Id, [])));

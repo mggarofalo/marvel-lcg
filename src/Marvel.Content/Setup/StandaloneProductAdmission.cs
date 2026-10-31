@@ -66,6 +66,12 @@ public static class StandaloneProductAdmission
         && setup.HeroNames.Contains("ant_man")
         && AntManRecipe.Complete(setup.Hero("ant_man"));
 
+    /// <summary>Admits Wasp's complete face inventory and published starter.</summary>
+    public static bool Wasp(SetupCatalog setup, CardCatalog cards, IReadOnlySet<string> authored) =>
+        Complete("wsp", ["13001a", "13001b", "13001c", .. Enumerable.Range(2, 33).Select(number => $"13{number:000}")], cards, authored)
+        && setup.HeroNames.Contains("wasp")
+        && WaspRecipe.Complete(setup.Hero("wasp"));
+
     /// <summary>Admits the complete seven-card Kree Fanatic modular set.</summary>
     public static bool KreeFanatic(SetupCatalog setup, CardCatalog cards, IReadOnlySet<string> authored) =>
         Complete("ron", ["90001", "90002", "90003", "90004", "90005"], cards, authored)

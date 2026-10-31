@@ -243,7 +243,7 @@ internal static class AbilityAdmissionAreaDependencies
                 // neither binds a hidden top card nor predicts its numeric result.
                 or AbilityEffect.InspectEncounterTop
                 or AbilityEffect.ChooseTopForHand
-                or AbilityEffect.ChooseDiscardToShuffle
+                or AbilityEffect.ChooseDiscardToShuffle or AbilityEffect.ExhaustAnyNumber
                 or AbilityEffect.DiscardHandWithResource or AbilityEffect.DiscardHandOfKind
                 or AbilityEffect.RecoverDiscardedByResource or AbilityEffect.RecruitDiscarded
                 or AbilityEffect.ActivateEnemies or AbilityEffect.GrantTraitCharacters or AbilityEffect.ModifyPlayedEvent or AbilityEffect.BoostBasicUse or AbilityPricingEffect.IncreaseNextEventCost => true,

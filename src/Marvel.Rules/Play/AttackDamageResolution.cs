@@ -79,7 +79,7 @@ internal sealed class AttackDamageResolution
     {
         if (policy.Retaliate && request.Target.Incarnation == incarnation)
             DamageAttacks.Retaliate(world, facts, request.Target, request.Attacker, request.Trigger, events);
-        Result.Publish(placed!, spill?.Amount ?? 0, outcome == Damage.Outcome.Defeated ? Excess : 0);
+        Result.Publish(placed!, spill?.Amount ?? 0, outcome == Damage.Outcome.Defeated ? Excess : 0, remaining);
         if (!spillOnly && request.BasicRecipient is { } recipient)
             Execution.Occurrence.Also(recipient with
             { DamageTaken = placed!.Taken, ExcessDamage = outcome == Damage.Outcome.Defeated ? Excess : 0 }, accumulate: true);

@@ -51,6 +51,10 @@ internal static class AbilityPowerTrace
     {
         AbilityExhaustionResultProjection.Validate([node], cast.Reachability.PriorSteps);
         AbilityProjectedDefeatWindows.ValidateContinuation(node, reachability, cast);
+        // The removal resolves on the live board, so the board after it is not projected.
+        if (AbilityProjectedDefeatWindows.LeavesToLiveBoard(node, reachability, cast))
+            return new PowerReachability.Unsupported(
+                "A threat removal resolves on the live board after an unprojected defeat window.");
         if (AbilityPowerSimultaneousSupport.Mutation(node) is { } mutation)
             return PowerStateAfter(mutation, cast, stateMayChange,
                 bindingMayChange, reachability);

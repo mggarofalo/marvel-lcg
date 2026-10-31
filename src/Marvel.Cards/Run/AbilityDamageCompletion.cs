@@ -28,6 +28,19 @@ internal sealed class AbilityDamageCompletion(Occurrence occurrence)
             .Concat(attacks.SelectMany(item => item.Result.Execution.Occurrence.Defeats)
                 .Select(item => (item.Card, item.Incarnation))).Distinct()];
 
+    /// <summary>Records the attack damage dealt beyond each target's remaining hit points.</summary>
+    /// <remarks>
+    /// rr:excess-damage counts damage "dealt to a character beyond that character's
+    /// remaining hit points". Engine choice: the result reads this node's attack
+    /// damage, including simultaneous recipients; direct damage is not an attack.
+    /// </remarks>
+    internal void RecordExcessDealt(Dictionary<string, long> results) =>
+        results[ExcessDealtResult] = attacks.Sum(item => item.Result.ExcessDealt)
+            + batches.Sum(batch => batch.ExcessDealt);
+
+    /// <summary>Engine spelling of the authored excess-dealt result.</summary>
+    internal const string ExcessDealtResult = "excessDamageDealt";
+
     internal AbilityStructuralOutcome Complete()
     {
         if (!IsComplete) throw new InvalidOperationException("the damage node still owns unfinished recipients");

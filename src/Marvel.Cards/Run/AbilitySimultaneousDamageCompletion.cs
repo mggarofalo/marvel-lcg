@@ -11,6 +11,7 @@ internal sealed class AbilitySimultaneousDamageCompletion(
 {
     private bool published;
     internal bool IsComplete => result is null || result.IsComplete;
+    internal long ExcessDealt => result?.Recipients.Sum(item => item.ExcessDealt) ?? 0;
 
     internal AbilityStructuralOutcome Complete()
     {

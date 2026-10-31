@@ -205,6 +205,7 @@ internal static class AbilityEffectBindingAnalysis
         AbilityEffect.DiscardUntil discard => discard.Player == AbilityPlayer.ChosenPlayer,
         AbilityEffect.AttachCards attach => BindingCanChange(attach.Cards) || BindingCanChange(attach.Host),
         AbilityEffect.ChooseCardsToHand group => BindingCanChange(group.From),
+        AbilityEffect.ExhaustAnyNumber exhaust => BindingCanChange(exhaust.From),
         AbilityEffect.AttackAnotherEnemy => false,
         AbilityEffect.ReleaseBeneath => false,
         AbilityEffect.StoreBeneath store => BindingCanChange(store.Cards) || BindingCanChange(store.Host),

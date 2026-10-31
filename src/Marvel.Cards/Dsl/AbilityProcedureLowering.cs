@@ -178,7 +178,7 @@ internal static class AbilityProcedureLowering
     internal static AbilityEffect ChoiceFromPile(AbilityValue value, AbilityLocation location, bool top)
     {
         string count = top ? "count" : "max";
-        var fields = top ? Fields(value, location, count) : Fields(value, location, count, "min", "differentTitles");
+        var fields = top ? Fields(value, location, count) : Fields(value, location, count, "min", "differentTitles", "resource");
         int maximum = NonnegativeCount(Required(fields, count, location), location.Child(count));
         if (top) return new AbilityEffect.ChooseTopForHand(maximum);
         int minimum = fields.TryGetValue("min", out var min) ? NonnegativeCount(min, location.Child("min")) : 1;
@@ -187,6 +187,7 @@ internal static class AbilityProcedureLowering
         {
             Minimum = minimum,
             DifferentTitles = !fields.ContainsKey("differentTitles") || Boolean(fields, "differentTitles", location),
+            Resource = fields.TryGetValue("resource", out var resource) ? Resource(resource, location.Child("resource")) : null,
         };
     }
 

@@ -37,11 +37,12 @@ internal static class GamePowerOffers
                 : "thwart",
             game.facts, game.world.Players);
         bool ranged = AttackKeywords.Has(game.world, character, character, Keywords.Ranged, basic: true);
+        var (division, condition) = Division(game, character, verb, targets.Count, cancelledByStatus);
         options.Add(game.Anchored(verb, character, game.world.Seats[game.Active]) with
         {
             CostDescription = AdditionalAttackCost(game, character, verb),
             Description = PowerDescription(game, character, verb, power, ranged,
-                cancelledByStatus, cancellingStatus),
+                cancelledByStatus, cancellingStatus) + division,
             // Exactly one target: `rr:attack-player-ability-type.1` and
             // `rr:thwart.1` are each one enemy or one scheme. An ability that
             // hits several is a different thing (`.5`) and is not a basic power.
@@ -52,13 +53,28 @@ internal static class GamePowerOffers
             {
                 Details = targets.ToDictionary(target => target.ObjectId,
                     target => PowerTargetDetail(game, character, target, verb, power,
-                        cancelledByStatus, cancellingStatus)),
+                        cancelledByStatus, cancellingStatus) + condition),
             },
         });
     }
 
+    // Engine copy: the declared target is chosen first and the final amount is divided next,
+    // so a target's preview describes the case where every point is assigned to it.
+    private static (string Note, string Condition) Division(Game game, Card character, string verb,
+        int targets, bool cancelled)
+    {
+        if (cancelled || !BasicPowerDivision.FollowsDeclaration(game.world, game.facts, character, verb, targets))
+            return (string.Empty, string.Empty);
+        return (verb == BasicPowers.AttackVerb
+            ? " · Then divide the damage among enemies you can attack"
+            : " · Then divide the threat removal among schemes you can thwart", " if all of it is assigned here");
+    }
+
     private static string? AdditionalAttackCost(Game game, Card character, string verb) =>
-        verb == BasicPowers.AttackVerb && BasicAttackCosts.Count(game.world, character) is > 0 and var count
+        verb != BasicPowers.AttackVerb ? null
+        : BasicAttackCosts.Resources(game.world, character) is > 0 and var resources
+            ? $"Spend {resources} resource(s) of any type in addition to exhausting the attacker."
+        : BasicAttackCosts.Count(game.world, character) is > 0 and var count
             ? $"Discard {count} card(s) from your hand in addition to exhausting the attacker."
             : null;
 

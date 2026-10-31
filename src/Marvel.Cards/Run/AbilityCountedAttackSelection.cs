@@ -30,8 +30,12 @@ internal static class AbilityCountedAttackSelection
                 && AbilityProgramQueries.CanTakeDamage(context.World, context.Program, card, context.Source))];
     }
 
+    // A divided total is allocated in full whenever any enemy can receive it;
+    // a counted attack chooses at most as many enemies as are available.
     private static int Count(AbilityEffect.Power power, AbilityAdmissionContext context, int available) =>
-        checked((int)Math.Min(available, Math.Max(0, context.Evaluator().Amount(power.TargetCount!))));
+        power.Distributed && available == 0 ? 0
+        : checked((int)Math.Min(power.Distributed ? long.MaxValue : available,
+            Math.Max(0, context.Evaluator().Amount(power.TargetCount!))));
 
     internal static AbilityStructuralTransition Start(AbilityStructuralContext context, AbilityEffect.Power power)
     {
@@ -50,13 +54,15 @@ internal static class AbilityCountedAttackSelection
         var admission = context.Admission();
         var candidates = Candidates(power, admission);
         int count = Count(power, admission, candidates.Count);
-        string question = $"Choose {count} different enemies";
-        string explanation = "All chosen enemies are attacked together.";
+        string question = power.Distributed ? $"Divide {count} damage among enemies" : $"Choose {count} different enemies";
+        string explanation = power.Distributed
+            ? "Assign each point of damage to an enemy. Each enemy dealt damage is attacked; damage is dealt simultaneously."
+            : "All chosen enemies are attacked together.";
         return new Prompt(context.Player, Question.Element, TimingPriority.Untimed, Steps.TurnAction,
             $"{context.SourceFace}: choose attack targets", false,
             [new Affordance(context.Expressions.Source.ObjectId, AbilityStructuralExecution.ChooseVerb,
                 context.Expressions.Source.ObjectId, context.Player, "attack",
-                new TargetRequest([.. candidates.Select(card => card.ObjectId)], count, count),
+                new TargetRequest([.. candidates.Select(card => card.ObjectId)], count, count, AllowRepeated: power.Distributed),
                 Description: explanation) { DisplayLabel = question, CommitLabel = "Attack chosen enemies" }])
         {
             DisplayQuestion = question,
@@ -71,6 +77,7 @@ internal static class AbilityCountedAttackSelection
         var assessment = DecisionAssessment.Assess(Describe(context, power), answer);
         if (!assessment.IsAccepted) return new Rejected(assessment.Reason ?? "Invalid attack targets");
         if (answer.Targets.Count == 0) return new Complete(context.Frames);
+        // A divided attack retains each allocated point as a repeated power target.
         var selected = answer.Targets.Select(id => context.Expressions.World.Cards[id]).ToArray();
         return AbilityStructuralPowerExecution.Power(context, power, selected[0], selected);
     }

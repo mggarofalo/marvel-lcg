@@ -1,6 +1,7 @@
 using static Marvel.Cards.Dsl.AbilityLowering;
 using static Marvel.Cards.Dsl.AbilityEffectLowering;
 using static Marvel.Cards.Dsl.AbilitySelectorLowering;
+using static Marvel.Cards.Dsl.AbilityCostLowering;
 
 namespace Marvel.Cards.Dsl;
 
@@ -12,13 +13,31 @@ internal static class AbilityPowerLowering
     {
         var fields = kind == AbilityPowerKind.Defense ? Fields(value, location, "effect")
             : kind == AbilityPowerKind.Thwart ? Fields(value, location, "target", "effect", "automaticTarget")
-                : Fields(value, location, "target", "effect", "count");
+                : Fields(value, location, "target", "effect", "count", "total");
         bool automatic = Marker(fields, "automaticTarget", location);
         var body = LowerEffect(Required(fields, "effect", location), location.Child("effect"));
+        if (fields.ContainsKey("total")) return DistributedAttack(fields, body, location);
         var count = AttackCount(fields, body, location);
         var target = PowerTarget(fields, body, kind, automatic, location);
         AbilityStagedAttackLowering.Validate(body, kind, target, count, location);
         return new(kind, target, body, automatic) { TargetCount = count };
+    }
+
+    // An engine-chosen shape for "deal a total of N damage divided among enemies":
+    // a positive constant total allocated one point per entry among the target pool,
+    // with one simultaneous 1-damage body over the allocated power targets.
+    private static AbilityEffect.Power DistributedAttack(
+        IReadOnlyDictionary<string, AbilityValue> fields, AbilityEffect body, AbilityLocation location)
+    {
+        if (fields.ContainsKey("count"))
+            throw location.Child("total").Error("a divided attack cannot also declare a target count");
+        var total = new AbilityNumber.Constant(PositiveInteger(Required(fields, "total", location), location.Child("total")));
+        if (body is not AbilityEffect.AttackDamage
+            { SimultaneousPlacement: true, Overkill: false, Amount: AbilityNumber.Constant { Value: 1 },
+              Cards: AbilityCardSelection.Query { Kind: AbilityCardQuery.PowerTargets } } damage)
+            throw location.Child("effect").Error("a divided attack requires one simultaneous 1-damage effect over powerTargets");
+        return new(AbilityPowerKind.Attack, Selected(fields, "target", location), damage with { Distributed = true }, false)
+            { TargetCount = total, Distributed = true };
     }
 
     private static AbilityNumber? AttackCount(
