@@ -45,13 +45,21 @@ public sealed class BasicUse(int actor, int incarnation, string field = "attack"
 
     internal static IReadOnlyList<string> ThwartConditions(World world, ICardFacts facts,
         CharacterThwart thwart, IReadOnlyList<string> ordinary) =>
-        ForThwart(world, thwart) is not null
-            && EffectiveCards.Kind(world.Cards[thwart.Thwarter], facts) == CardKind.Hero
-            ? [.. ordinary, BasicPowerTiming.HeroUseInitiated] : ordinary;
+        ForThwart(world, thwart) is null ? ordinary
+            : EffectiveCards.Kind(world.Cards[thwart.Thwarter], facts) switch
+            {
+                CardKind.Hero => [.. ordinary, BasicPowerTiming.HeroUseInitiated],
+                CardKind.Ally => [.. ordinary, BasicPowerTiming.AllyUseInitiated],
+                _ => ordinary,
+            };
 
     internal static IReadOnlyList<string> AttackConditions(World world, ICardFacts facts,
         CharacterAttack attack, IReadOnlyList<string> ordinary) =>
-        ForAttack(world, facts, attack) is not null
-            && EffectiveCards.Kind(world.Cards[attack.Attacker], facts) == CardKind.Hero
-            ? [.. ordinary, BasicPowerTiming.HeroAttackInitiated, BasicPowerTiming.HeroUseInitiated] : ordinary;
+        ForAttack(world, facts, attack) is null ? ordinary
+            : EffectiveCards.Kind(world.Cards[attack.Attacker], facts) switch
+            {
+                CardKind.Hero => [.. ordinary, BasicPowerTiming.HeroAttackInitiated, BasicPowerTiming.HeroUseInitiated],
+                CardKind.Ally => [.. ordinary, BasicPowerTiming.AllyUseInitiated],
+                _ => ordinary,
+            };
 }

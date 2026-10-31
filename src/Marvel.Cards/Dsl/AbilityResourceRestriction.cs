@@ -18,6 +18,8 @@ internal static class AbilityResourceRestriction
             "aspectCard" => ResourceRestriction.AspectCard,
             "event" => ResourceRestriction.Event,
             "attackEvent" => ResourceRestriction.AttackEvent,
+            "defenseEvent" => ResourceRestriction.DefenseEvent,
+            "thwartEvent" => ResourceRestriction.ThwartEvent,
             "preparationCard" => ResourceRestriction.PreparationCard,
             _ => throw new AbilityException("unknown resourceRestriction"),
         };

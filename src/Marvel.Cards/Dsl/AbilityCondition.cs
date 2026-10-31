@@ -32,6 +32,8 @@ public abstract record AbilityCondition
     public sealed record AutomaticThwart(AbilityCardSelection Scheme) : AbilityCondition;
     /// <summary>A card with this printed title is in play.</summary>
     public sealed record TitleInPlay(string Title) : AbilityCondition;
+    /// <summary>A faceup card in play has this title or subtitle.</summary>
+    public sealed record NamedInPlay(string Name) : AbilityCondition;
     /// <summary>The left numeric expression is at least the right.</summary>
     public sealed record AtLeast(AbilityNumber Value, AbilityNumber Count) : AbilityCondition;
     /// <summary>The selected player is in this supported form.</summary>

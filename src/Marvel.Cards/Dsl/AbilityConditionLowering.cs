@@ -54,6 +54,7 @@ internal static class AbilityConditionLowering
             "canLegalPractice" => new AbilityCondition.LegalPractice(SelectCards(argument, child)),
             "canAutomaticThwart" => new AbilityCondition.AutomaticThwart(SelectCards(argument, child)),
             "titleInPlay" => new AbilityCondition.TitleInPlay(Text(argument, child)),
+            "namedInPlay" => new AbilityCondition.NamedInPlay(Text(argument, child)),
             "atLeast" => AtLeast(argument, child),
             "inForm" => InForm(argument, child),
             "activationIs" => new AbilityCondition.ActivationIs(Text(argument, child) switch
@@ -161,7 +162,11 @@ internal static class AbilityConditionLowering
     internal static AbilityCondition.IsKind IsKind(AbilityValue value, AbilityLocation location)
     {
         var fields = Fields(value, location, "card", "kind");
-        var kind = ConditionCardKind(Required(fields, "kind", location), location.Child("kind"));
+        var authored = Required(fields, "kind", location);
+        // Engine spelling: only this condition tests for the villain kind; other
+        // kind-filtered instructions keep their existing closed vocabulary.
+        var kind = authored is AbilityValue.Word { Value: "villain" } ? CardKind.EncounterVillain
+            : ConditionCardKind(authored, location.Child("kind"));
         return new(SelectCards(Required(fields, "card", location), location.Child("card")), kind);
     }
 

@@ -183,8 +183,9 @@ internal static class AbilityCardStateExecution
             Every(selection, context).Where(card => CardReadying.CanReady(context.World, card, context.Source)),
             context.Source, context.Trigger);
         // rr:interrupt.3.1: an observed "would" interrupt resolves before the ready
-        // initiates, so the resolver suspends this ability behind that window.
-        if (CardReadying.Interrupted(context.World, batch)) context.Result.InterruptedReady = batch;
+        // initiates, and an observed response follows the ready's own occurrence,
+        // so the resolver suspends this ability behind that scheduled ready.
+        if (CardReadying.Observed(context.World, batch)) context.Result.InterruptedReady = batch;
         else CardReadying.Commit(context.World, batch, context.Events, completion: null);
     }
 

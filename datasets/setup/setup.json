@@ -3204,7 +3204,7 @@
   "counts": {
     "campaigns": 39,
     "encounter_sets": 18,
-    "heroes": 15
+    "heroes": 16
   },
   "encounter_sets": {
     "running_interference": {
@@ -4263,6 +4263,67 @@
         "13030"
       ],
       "nemesis_set_icon": "wsp_nemesis"
+    },
+    "quicksilver": {
+      "name": "Quicksilver",
+      "hero": [
+        "14001a,14001b"
+      ],
+      "hero_deck": [
+        "14002",
+        "14003",
+        "14003",
+        "14003",
+        "14003",
+        "14004",
+        "14004",
+        "14005",
+        "14005",
+        "14006",
+        "14007",
+        "14008",
+        "14009",
+        "14010",
+        "14011"
+      ],
+      "player_deck": [
+        "14012",
+        "14012",
+        "14012",
+        "14013",
+        "14014",
+        "14014",
+        "14014",
+        "14015",
+        "14015",
+        "14015",
+        "14016",
+        "14016",
+        "14017",
+        "14017",
+        "14017",
+        "14018",
+        "14019",
+        "14020",
+        "14021",
+        "14022",
+        "14022",
+        "14022",
+        "14023",
+        "14023",
+        "14023"
+      ],
+      "obligations": [
+        "14024"
+      ],
+      "nemesis_set": [
+        "14025",
+        "14026",
+        "14027",
+        "14028",
+        "14028"
+      ],
+      "nemesis_set_icon": "qsv_nemesis"
     }
   },
   "note": "Authored scenario, hero, and encounter-set setup recipes, admitted by complete-product runtime gates: what a scenario is dealt from is printed in its rules insert rather than on any card, so there is nothing to derive it from and no upstream to copy it from. Gated by SetupDatasetTests -- see datasets/setup/UPSTREAM.md.",

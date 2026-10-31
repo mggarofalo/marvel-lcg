@@ -13,9 +13,12 @@ internal sealed record EventPaymentRequirements(
         World world, Card card, AdjustedCardCost adjusted, AbilityCost? additionalCost, long? energy, CompiledCardAbility ability)
     {
         string printed = AbilityPaymentPricing.PrintedRequirement(world, card, ability, adjusted.Amount);
-        string additional = energy is { } x
-            ? new string(Resources.Energy, checked((int)x)) : ResourceRequirement(additionalCost, card);
-        int additionalAmount = checked(additional.Length + GenericResourceAmount(additionalCost));
+        // rr:non-numerical-variable.1: a reduction lowers the amount paid for X, not X.
+        long? paidForX = energy is { } x ? Math.Max(0, x - adjusted.VariableReduction) : null;
+        string additional = paidForX is { } paying && additionalCost is AbilityCost.SpendX variable
+            ? variable.Required(paying) : ResourceRequirement(additionalCost, card);
+        int additionalAmount = paidForX is { } defined
+            ? checked((int)defined) : checked(additional.Length + GenericResourceAmount(additionalCost));
         var components = new List<ResourceCost>
         {
             new(adjusted.Amount.ToString(

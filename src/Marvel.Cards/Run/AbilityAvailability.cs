@@ -73,5 +73,5 @@ internal static class AbilityAvailability
         "spent:"
         + card.Incarnation.ToString(CultureInfo.InvariantCulture)
         + ":" + ability.Card + ":"
-        + abilityIndex.ToString(CultureInfo.InvariantCulture);
+        + (ability.LimitGroup is { } group ? "group:" + group : abilityIndex.ToString(CultureInfo.InvariantCulture));
 }

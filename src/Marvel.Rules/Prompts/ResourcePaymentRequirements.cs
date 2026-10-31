@@ -50,7 +50,25 @@ internal static class ResourcePaymentRequirements
             System.Globalization.NumberStyles.None,
             System.Globalization.CultureInfo.InvariantCulture,
             out amount)
-        || values is not null && values.TryGetValue(written, out amount);
+        || values is not null && values.TryGetValue(written, out amount)
+        || ReducedVariable(written, values, out amount);
+
+    // Engine spelling "X-2": the amount paid for a defined variable after a cost
+    // reduction. rr:non-numerical-variable.1: once X is defined, "the amount paid may
+    // be modified by effects without changing the value of X". rr:modifiers.4: "a
+    // card cannot have 'negative' ... cost".
+    private static bool ReducedVariable(
+        string written, IReadOnlyDictionary<string, long>? values, out long amount)
+    {
+        amount = 0;
+        int minus = written.IndexOf('-', StringComparison.Ordinal);
+        if (minus <= 0 || values is null
+            || !values.TryGetValue(written[..minus], out long defined)
+            || !long.TryParse(written[(minus + 1)..], System.Globalization.NumberStyles.None,
+                System.Globalization.CultureInfo.InvariantCulture, out long reduction)) return false;
+        amount = Math.Max(0, defined - reduction);
+        return true;
+    }
 
     internal static bool CanDeclare(char icon, char declared, bool printedCost) =>
         Resources.Types.Contains(declared)

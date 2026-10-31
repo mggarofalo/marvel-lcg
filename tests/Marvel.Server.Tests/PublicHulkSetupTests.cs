@@ -21,7 +21,7 @@ public sealed class PublicHulkSetupTests : TransportTestBase
             ? await ExchangeOverSocket(new SocketEngineServer(host, IPAddress.Loopback, 0), request)
             : await new InProcessTransport(host).ExchangeAsync(request, TestContext.Current.CancellationToken);
         Assert.Null(response.Error);
-        Assert.Equal(15, response.Setup!.Heroes.Count);
+        Assert.Equal(16, response.Setup!.Heroes.Count);
         Assert.Equal(39, response.Setup.Scenarios.Count);
         Assert.Equal("Hulk", response.Setup.Heroes.Single(hero => hero.Key == "hulk").Name);
         Assert.Contains(response.Setup.Heroes, hero => hero.Key == "ant_man");
@@ -39,7 +39,7 @@ public sealed class PublicHulkSetupTests : TransportTestBase
         var factory = DatasetGameFactory.Load(RepositoryPaths.Root);
         var catalog = factory.DiscoverDecks();
         var hero = catalog.Heroes.Single(item => item.Key == "hulk");
-        Assert.Equal(15, catalog.Heroes.Count);
+        Assert.Equal(16, catalog.Heroes.Count);
         Assert.Equal(40, hero.Starter.Count);
         Assert.Equal(15, hero.Signature.Count);
         Assert.True(factory.AssessDeck(hero.Key, hero.Starter).IsValid);

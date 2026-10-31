@@ -19,14 +19,14 @@ public abstract record AbilityEffect
     /// <summary>Return the captured physical Invocation after its Special completes.</summary>
     public sealed record ReturnInvocation : AbilityEffect;
 
-    /// <summary>Increase only the current basic use, optionally from its selected ally receipt.</summary>
-    public sealed record BoostBasicUse(int Amount, bool MatchingAlly = false, bool Overkill = false) : AbilityEffect;
+    /// <summary>Increase only the current basic use, optionally from its selected ally receipt or a resolution number (<paramref name="Variable"/>).</summary>
+    public sealed record BoostBasicUse(int Amount, bool MatchingAlly = false, bool Overkill = false, AbilityNumber? Variable = null) : AbilityEffect;
 
     /// <summary>Select up to a bounded number of physical out-of-play cards to add to your hand.</summary>
     public sealed record ChooseCardsToHand(AbilityCardSelection From, int Maximum) : AbilityEffect;
 
-    /// <summary>Select one bounded distinct group before giving each character a status.</summary>
-    public sealed record ChooseStatusRecipients(AbilityCardSelection From, string Status, int Maximum) : AbilityEffect;
+    /// <summary>Select one bounded distinct group before giving each character a status; a <paramref name="Count"/> chooses exactly that many as are available.</summary>
+    public sealed record ChooseStatusRecipients(AbilityCardSelection From, string Status, int Maximum, AbilityNumber? Count = null) : AbilityEffect;
 
     /// <summary>Select a distinct second enemy within the current attack, then deal constant damage.</summary>
     public sealed record AttackAnotherEnemy(long Amount, bool AnyEnemy = false) : AbilityEffect;
@@ -52,8 +52,8 @@ public abstract record AbilityEffect
     /// <summary>Reveal the top card of the named scenario auxiliary deck.</summary>
     public sealed record RevealAuxiliaryTop(AuxiliaryDeckKind Deck) : AbilityEffect;
 
-    /// <summary>Resolve child effects in authored order.</summary>
-    public sealed record Sequence(ImmutableArray<AbilityEffect> Effects) : AbilityEffect;
+    /// <summary>Resolve child effects in authored order; as one listed option, <paramref name="EverySentenceTargeted"/> requires each its own valid target.</summary>
+    public sealed record Sequence(ImmutableArray<AbilityEffect> Effects, bool EverySentenceTargeted = false) : AbilityEffect;
     /// <summary>Resolve independent simultaneous effects in the permitted player order.</summary>
     public sealed record Simultaneous(ImmutableArray<AbilityEffect> Effects) : AbilityEffect;
     /// <summary>Resolve the branch selected by a live condition.</summary>
@@ -257,6 +257,8 @@ public abstract record AbilityEffect
         public bool DifferentTitles { get; init; } = true;
         /// <summary>A printed resource every selected card must generate, or null for any card.</summary>
         public char? Resource { get; init; }
+        /// <summary>The printed card set every selected card belongs to, or null for any set.</summary>
+        public string? Set { get; init; }
     }
     /// <summary>Discard a minimal hand-card group providing the requested printed icons, as far as possible.</summary>
     public sealed record DiscardResourceIcons(AbilityNumber Count) : AbilityEffect

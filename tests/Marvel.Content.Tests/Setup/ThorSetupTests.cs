@@ -68,7 +68,7 @@ public sealed class ThorSetupTests
         Assert.Contains("thor", setup.HeroNames);
         Assert.Contains("thor", admitted.Setup.HeroNames);
         Assert.Equal(35, admitted.Playable.Count(face => cards.Pack(face) == "thor"));
-        Assert.Equal(15, admitted.Setup.HeroNames.Count);
+        Assert.Equal(16, admitted.Setup.HeroNames.Count);
         Assert.Contains("spider_man", admitted.Setup.HeroNames);
     }
 

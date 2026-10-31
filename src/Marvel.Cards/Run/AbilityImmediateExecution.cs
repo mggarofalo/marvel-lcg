@@ -13,7 +13,7 @@ internal static class AbilityImmediateExecution
         return effect switch
         {
             AbilityPricingEffect.IncreaseNextEventCost increase => IncreaseEventCost(increase, context),
-            AbilityEffect.BoostBasicUse bonus => BoostBasicUse(bonus, context),
+            AbilityEffect.BoostBasicUse bonus => AbilityBasicUseBoost.Run(bonus, context),
             AbilityEffect.ModifyPlayedEvent modifier => AbilityPlayedEventModifier.Run(modifier, context),
             AbilityEffect.Fixed fixedEffect => RunFixed(fixedEffect, context),
             AbilityEffect.CardAction action => RunCardAction(action, context),
@@ -35,24 +35,6 @@ internal static class AbilityImmediateExecution
     {
         NextEventCost.Register(context.Admission.World, context.Admission.Source,
             context.Admission.Query.Player, increase.Amount);
-        return new(true, true);
-    }
-
-    private static AbilityImmediateResult BoostBasicUse(AbilityEffect.BoostBasicUse bonus, AbilityImmediateContext context)
-    {
-        var use = context.Admission.Query.Occurrence.BasicUse
-            ?? throw new RulesNotImplementedException("basic-use bonus requires its exact occurrence");
-        if (!use.IsCurrent(context.Admission.World)) return new(true, false);
-        if (bonus.Overkill)
-        {
-            use.GrantOverkill();
-            return new(true, true);
-        }
-        long amount = bonus.MatchingAlly
-            ? BasicUseAllyReceipt.Read(context.Admission.Expressions.Results, context.Admission.World, use)
-            : bonus.Amount;
-        if (amount <= 0) return new(true, false);
-        use.Increase(amount);
         return new(true, true);
     }
 

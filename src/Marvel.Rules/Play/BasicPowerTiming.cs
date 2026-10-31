@@ -7,6 +7,8 @@ public static class BasicPowerTiming
     public const string HeroAttackInitiated = "WhenHeroBasicAttackInitiated";
     /// <summary>A hero is making one basic attack or thwart.</summary>
     public const string HeroUseInitiated = "WhenHeroBasicUseInitiated";
+    /// <summary>An ally is making one basic attack or thwart.</summary>
+    public const string AllyUseInitiated = "WhenAllyBasicUseInitiated";
     /// <summary>A successful basic thwart has resolved.</summary>
     public const string ThwartEnds = "WhenBasicThwartEnds";
     /// <summary>A character has used its basic recovery power.</summary>

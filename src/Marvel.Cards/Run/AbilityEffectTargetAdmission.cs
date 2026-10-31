@@ -171,6 +171,7 @@ internal static class AbilityEffectTargetAdmission
                 CardsLegality(Every(ActivationOf(node, cast).Enemies, cast)),
             "attachCards" => AbilityAttachmentExecution.Target((AbilityEffect.AttachCards)node, cast),
             "chooseStatusRecipients" => AbilityStatusRecipients.Target((AbilityEffect.ChooseStatusRecipients)node, cast.Context),
+            "chooseHealRecipients" => AbilityHealRecipients.Target((AbilityRecipientEffect.ChooseHealRecipients)node, cast.Context),
             "chooseCardsToHand" => AbilityGroupRetrieval.Target((AbilityEffect.ChooseCardsToHand)node, cast.Context),
             "releaseBeneath" => AbilityBeneathAdmission.Target((AbilityEffect.ReleaseBeneath)node, cast),
             "storeBeneath" => AbilityBeneathAdmission.Target((AbilityEffect.StoreBeneath)node, cast),
@@ -204,12 +205,18 @@ internal static class AbilityEffectTargetAdmission
             "preventPlayerAttackDamage" => PlayerAttackPrevention.CanInstall(cast.World, cast.Occurrence,
                 AbilityCardQueries.Named(AbilityCardBinding.TriggerTarget, cast.Context.Query))
                 ? TargetLegality.Valid : TargetLegality.Invalid,
-            "readyUndamagedDefender" => UndamagedDefenseReady.CanInstall(cast.World, cast.Occurrence, cast.Player)
+            "readyUndamagedDefender" or "stunUndamagedDefendersAttacker" => UndamagedDefenseReady.CanInstall(cast.World, cast.Occurrence, cast.Player)
                 ? TargetLegality.Valid : TargetLegality.Invalid,
             "useAttackForThwart" => ThwartStatSubstitution.CanUseAttack(cast.World, cast.Occurrence)
                 ? TargetLegality.Valid : TargetLegality.Invalid,
             "preventAttackDamage" => cast.World.Attack is { PreventAllDamage: false }
                 ? TargetLegality.Valid : TargetLegality.Invalid,
+            // rr:initiating-abilities.step.2: "If the card or ability does not have at least
+            // one valid target, it cannot be played or initiated." The discarded cards a
+            // required selection names are its targets; an optional one (min 0) has none.
+            "chooseDiscardToShuffle" when node is AbilityEffect.ChooseDiscardToShuffle { Minimum: > 0 } discard =>
+                AbilityDiscardShuffleDescription.Eligible(cast.World, cast.Player, discard).Count > 0
+                    ? TargetLegality.Valid : TargetLegality.Invalid,
             _ => null,
         };
 

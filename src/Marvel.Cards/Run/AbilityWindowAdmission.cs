@@ -173,7 +173,7 @@ internal static class AbilityWindowAdmission
         {
             return true;
         }
-        return ability.Cost is AbilityCost.SpendEnergy
+        return ability.Cost is AbilityCost.SpendX
             ? AbilityPaymentReceiptAdmission.Admit(ability, context, null) is not null
             : AbilityEntryAdmission.Admit(ability.Effect, context).IsAdmissible;
     }
@@ -207,9 +207,7 @@ internal static class AbilityWindowAdmission
         RestrictedPlayer(program, world, ability, card) is { } restricted
             ? restricted
             : AbilityPendingEntryAdmission.OwnEntry(card, occurrence) ? occurrence.Player
-            : occurrence.Is(ResourceSpentWindow.Condition)
-                && occurrence.SpentResourceCards.FirstOrDefault(spent => spent.Card == card.ObjectId) is { } spent
-                ? spent.Player
+            : AbilityOccurrenceControllers.Of(world, card, occurrence) is { } owner ? owner
             : ability.Trigger.Player is not null
                 ? occurrence.Player
                 : ability.Trigger.Actor == AbilityRoles.You

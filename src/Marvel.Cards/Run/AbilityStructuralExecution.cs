@@ -22,7 +22,7 @@ internal static class AbilityStructuralExecution
             "seq" or "and" or "then" or "otherwise" or "eachPlayer" or "if"
             or "forEach" or "eachTime" or "choose" or "chooseCard"
             or "resolveSpecials" or "payOrExhaust" or "payOrEffect"
-            or "chooseTopForHand" or "peekTop" or "inspectEncounterTop" or "inspectDiscardOrderEncounterTop" or "discardHandCards" or "discardResourceIcons" or "chooseStatusRecipients" or "chooseCardsToHand" or "chooseDiscardToShuffle" or "exhaustAnyNumber"
+            or "chooseTopForHand" or "peekTop" or "inspectEncounterTop" or "inspectDiscardOrderEncounterTop" or "discardHandCards" or "discardResourceIcons" or "chooseStatusRecipients" or "chooseHealRecipients" or "chooseCardsToHand" or "chooseDiscardToShuffle" or "exhaustAnyNumber"
             or "distributeThreat" or "thwartDifferentSchemes" or "makeTheCall" or "playSharedHeroTraitCard" or "legalPractice"
             or "attack" or "defense" or "thwart" or "thwartSchemes"
             or "placeThreat" or "enemyAttacks" or "enemySchemes");
@@ -54,6 +54,8 @@ internal static class AbilityStructuralExecution
             AbilityEffect.DiscardResourceIcons discard => AbilityResourceIconDiscard.Required(context, discard) > 0
                 ? AskFor(context, discard) : new Complete(context.Frames),
             AbilityEffect.ChooseStatusRecipients group => AbilityStatusRecipients.Candidates(group, context.Admission()).Count > 0
+                ? AskFor(context, group) : new Complete(context.Frames),
+            AbilityRecipientEffect.ChooseHealRecipients group => AbilityHealRecipients.Candidates(group, context.Admission()).Count > 0
                 ? AskFor(context, group) : new Complete(context.Frames),
             AbilityEffect.ChooseCardsToHand group => AskFor(context, group),
             AbilityEffect.ExhaustAnyNumber exhaust => AbilityAnyNumberExhaustion.Ask(context, exhaust),

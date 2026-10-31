@@ -5,19 +5,20 @@ using Marvel.Rules.Timing;
 
 namespace Marvel.Rules.Play;
 
-/// <summary>Readies cards, opening the would-ready interrupt window when an ability observes it.</summary>
+/// <summary>Readies cards, opening the would-ready and readied windows when an ability observes them.</summary>
 /// <remarks>
 /// <para>
 /// Every ready in the game goes through <see cref="Ready"/> or, for a suspendable
-/// card ability, through <see cref="Interrupted"/>, <see cref="Commit"/> and
+/// card ability, through <see cref="Observed"/>, <see cref="Commit"/> and
 /// <see cref="Schedule"/>. <c>rr:interrupt.3.1</c>: "Interrupts that use the word
 /// 'would' resolve before its triggering condition initiates, when that condition
 /// becomes imminent." <c>rr:replacement-effect</c>: "when [triggering condition]
 /// would happen, do [replacement effect] instead."
 /// </para>
 /// <para>
-/// The window is scheduled only when an interrupt is waiting for it. Engine
-/// choice: an unobserved ready commits inline, so content without a would-ready
+/// The ready is scheduled as its own step only when an interrupt waits for the
+/// would-ready window or a response waits for the readied window. Engine
+/// choice: an unobserved ready commits inline, so content without such an
 /// ability keeps its events, agenda and decisions.
 /// </para>
 /// </remarks>
@@ -25,6 +26,14 @@ public static class CardReadying
 {
     /// <summary>Engine spelling of the "when [a card] would ready" triggering condition.</summary>
     public const string WouldReady = "WhenCardWouldReady";
+
+    /// <summary>Engine spelling of the "after [a card] readies" triggering condition.</summary>
+    /// <remarks>
+    /// <c>rr:triggering-condition.2</c> gives one occurrence one pair of windows:
+    /// the scheduled ready's own occurrence carries this condition into its
+    /// response window once a card has readied.
+    /// </remarks>
+    public const string Readied = "WhenCardReadied";
 
     /// <summary>Whether this card can be readied by this source now.</summary>
     /// <remarks>
@@ -46,7 +55,7 @@ public static class CardReadying
     /// <returns>Whether the batch was scheduled rather than committed.</returns>
     public static bool Ready(World world, CardReadyBatch batch, List<GameEvent> events)
     {
-        if (!Interrupted(world, batch))
+        if (!Observed(world, batch))
         {
             Commit(world, batch, events, completion: null);
             return false;
@@ -55,13 +64,15 @@ public static class CardReadying
         return true;
     }
 
-    /// <summary>Whether an interrupt is waiting for this batch's would-ready window.</summary>
-    /// <remarks>A read-only query: the candidate occurrence is never put on the agenda.</remarks>
-    public static bool Interrupted(World world, CardReadyBatch batch)
+    /// <summary>Whether an interrupt waits for this batch's would-ready window or a response for its readied window.</summary>
+    /// <remarks>A read-only query: the candidate occurrences are never put on the agenda.</remarks>
+    public static bool Observed(World world, CardReadyBatch batch)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(batch);
-        return world.WindowAbilities.Waiting(world, Occurrence(0, batch), WindowKind.Interrupt).Count > 0;
+        return world.WindowAbilities.Waiting(world, Occurrence(0, batch), WindowKind.Interrupt).Count > 0
+            || world.WindowAbilities.Waiting(world, new(0, [Readied], Subject: Subject(batch)) { Readying = batch },
+                WindowKind.Response).Count > 0;
     }
 
     /// <summary>Ready every card the batch still would ready, in its resolution order.</summary>
@@ -81,6 +92,7 @@ public static class CardReadying
             bool ready = batch.WouldReady(world, card);
             if (ready)
             {
+                batch.RecordReady(card);
                 card.Refresh();
                 events.Add(new FieldSet(card.ObjectId, "is_exhaust", 1, 0) { Trigger = batch.Trigger, Verb = "Ready" });
             }
@@ -109,14 +121,16 @@ public static class CardReadying
 
     /// <summary>The would-ready occurrence of one batch.</summary>
     internal static Occurrence Occurrence(int id, CardReadyBatch batch) =>
-        new(id, [WouldReady], Subject: batch.Targets.Length == 1 ? batch.Targets[0] : -1)
-        { Readying = batch };
+        new(id, [WouldReady], Subject: Subject(batch)) { Readying = batch };
+
+    private static int Subject(CardReadyBatch batch) => batch.Targets.Length == 1 ? batch.Targets[0] : -1;
 
     internal static Prompt? Apply(World world, PhaseStep step, List<GameEvent> events)
     {
         var operation = step.Require<CardReadyOperation>();
         int start = events.Count;
         Commit(world, operation.Batch, events, operation.Completion);
+        if (operation.Batch.ReadiedFacts(world).Count > 0) world.Agenda.Occurrence?.Also(Readied);
         if (operation.Batch.Activity is not null)
         {
             // PhaseTransitionProcedure records a phase step's events in its round;

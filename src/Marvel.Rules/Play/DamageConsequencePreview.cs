@@ -165,9 +165,18 @@ internal sealed class DamageConsequencePreview(World world, ICardFacts facts, Ca
             {
                 notes.Add("Piercing discards Tough");
             }
+            if (isAttack) taken = ProjectAttackReduction(taken.Value, notes);
         }
 
         return ProjectActivePrevention(taken, notes);
+    }
+
+    private long ProjectAttackReduction(long taken, List<string> notes)
+    {
+        long reduction = AttackDamageReduction.Available(world, target);
+        if (reduction <= 0 || taken <= 0) return taken;
+        notes.Add($"Takes {reduction} less damage from this attack");
+        return Math.Max(0, taken - reduction);
     }
 
     private long? ProjectActivePrevention(long? taken, List<string> notes)

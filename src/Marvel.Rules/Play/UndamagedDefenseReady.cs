@@ -54,7 +54,8 @@ public static class UndamagedDefenseReady
         CardReadying.Ready(world, new CardReadyBatch([hero], source, condition), events);
     }
 
-    private static Card? UndamagedHero(World world, ContinuousEffect effect)
+    /// <summary>The captured hero, if it is still in play and its exact attack placed no damage on it.</summary>
+    internal static Card? UndamagedHero(World world, ContinuousEffect effect)
     {
         if (world.Activation?.Id != effect.ActivationId || world.Attack is not { } attack
             || effect.Affects is not { } id || id < 0 || id >= world.Cards.Count) return null;

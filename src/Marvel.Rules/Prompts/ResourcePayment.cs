@@ -17,6 +17,13 @@ public static class ResourcePayment
         ResourceCost cost, IReadOnlyDictionary<string, long>? values = null) =>
         Resolve(cost, values)?.Required;
 
+    /// <summary>The amount a written component cost asks for, or null until its variable is defined.</summary>
+    public static long? Amount(string written, IReadOnlyDictionary<string, long>? values = null)
+    {
+        ArgumentNullException.ThrowIfNull(written);
+        return ResourcePaymentRequirements.Amount(written, values, out long amount) ? amount : null;
+    }
+
     /// <summary>Whether a generator can supply any slot in an offered cost.</summary>
     /// <remarks>
     /// This is partial-payment guidance, not a restriction on legal overpayment.

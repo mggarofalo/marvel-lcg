@@ -65,10 +65,10 @@ internal static class AbilityModifierLowering
         AbilityNumber amount, bool each, AbilityLocation location)
     {
         if (until == TimingPoints.EndOfNextPlayerTurn
-            && (field != FormChangePermissions.ProhibitedField || each
+            && (field is not (FormChangePermissions.ProhibitedField or ReadinessPermissions.ProhibitedField) || each
                 || cards is not AbilityCardSelection.Bound { Binding: AbilityCardBinding.You }
                 || amount is not AbilityNumber.Constant { Value: 1 }))
-            throw location.Error("next-turn duration requires a form-change prohibition on you");
+            throw location.Error("next-turn duration requires a form-change or ready prohibition on you");
     }
 
     private static void ValidateAllyLimitExclusion(string field, AbilityCardSelection cards,

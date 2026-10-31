@@ -177,7 +177,7 @@ internal static class AbilityRepeatedEffectAnalysis
             AbilityCondition.InForm form => changes.HasFlag(RepeatedChange.Form)
                 || changes.HasFlag(RepeatedChange.PlayerOrder)
                     && form.Player != AbilityPlayer.You,
-            AbilityCondition.TitleInPlay => changes.HasFlag(RepeatedChange.CardsInPlay),
+            AbilityCondition.TitleInPlay or AbilityCondition.NamedInPlay => changes.HasFlag(RepeatedChange.CardsInPlay),
             AbilityCondition.Flag { Kind: AbilityConditionFact.FinalStep }
                 or AbilityCondition.PaidWithResource or AbilityCondition.CausedThreat => false,
             _ => true,

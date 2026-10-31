@@ -19,7 +19,7 @@ internal sealed class AbilityChoiceAnswer(
 
     internal List<Marvel.Rules.Events.GameEvent> Apply(AbilityEffect choice)
     {
-        if (choice is AbilityEffect.Damage { Maximum: not null } or AbilityEffect.ChooseStatusRecipients)
+        if (choice is AbilityEffect.Damage { Maximum: not null } or AbilityEffect.ChooseStatusRecipients or AbilityRecipientEffect.ChooseHealRecipients)
             return ApplyRecipientSelection(choice);
         string operation = choice.OperationName();
         if (choice is AbilityEffect.MoveThreat move)
@@ -50,6 +50,8 @@ internal sealed class AbilityChoiceAnswer(
     {
         if (choice is AbilityEffect.Damage damage)
             AbilityDamageRecipients.Commit(execution, cast, damage, input);
+        else if (choice is AbilityRecipientEffect.ChooseHealRecipients healed)
+            AbilityHealRecipients.Commit(execution.StructuralContext(cast), cast, healed, input);
         else
             AbilityStatusRecipients.Commit(execution.StructuralContext(cast), cast,
                 (AbilityEffect.ChooseStatusRecipients)choice, input);

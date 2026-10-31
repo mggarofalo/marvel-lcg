@@ -16,6 +16,9 @@ public sealed record CompiledCardAbility(
     /// <summary>The period of the per-instance use limit.</summary>
     public AbilityLimitPeriod LimitPeriod { get; init; }
 
+    /// <summary>The face-local group sharing this per-instance limit, or null for this ability alone.</summary>
+    public string? LimitGroup { get; init; }
+
     /// <summary>Printed limitation on the cost that consumes this ability's resources.</summary>
     public Marvel.Rules.Prompts.ResourceRestriction ResourceRestriction { get; init; }
 }

@@ -31,7 +31,7 @@ public sealed class ThorInventoryAdmissionTests
 
         Assert.DoesNotContain("thor", admitted.Setup.HeroNames);
         Assert.DoesNotContain(admitted.Playable, id => Cards.Pack(id) == "thor");
-        Assert.Equal(14, admitted.Setup.HeroNames.Count);
+        Assert.Equal(15, admitted.Setup.HeroNames.Count);
         Assert.Contains("spider_man", admitted.Setup.HeroNames);
         Assert.Contains("captain_america", admitted.Setup.HeroNames);
         Assert.Contains("hawkeye", admitted.Setup.HeroNames);

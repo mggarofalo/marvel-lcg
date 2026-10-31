@@ -15,4 +15,8 @@ public enum ResourceRestriction
     PreparationCard,
     /// <summary>An Attack event, as printed on Martial Prowess.</summary>
     AttackEvent,
+    /// <summary>A Defense event, as printed on Nerves of Steel.</summary>
+    DefenseEvent,
+    /// <summary>A Thwart event, as printed on Sense of Justice.</summary>
+    ThwartEvent,
 }

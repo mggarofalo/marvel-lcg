@@ -50,6 +50,10 @@ internal static class AbilityAdmission
     internal static bool OptionIsLegal(
         AbilityEffect option, AbilityAdmissionScope scope)
     {
+        // Ruling 5a46f4ebeb92ff9d: options chosen together are chosen before any
+        // resolves, and each needs a valid target of its own on the current board.
+        if (option is AbilityEffect.Sequence { EverySentenceTargeted: true } sentences)
+            return sentences.Effects.All(sentence => OptionIsLegal(sentence, scope));
         bool canInitiate = CanInitiate(option, scope);
         return canInitiate
             && TargetLegalityOf(option, scope) != TargetLegality.Invalid

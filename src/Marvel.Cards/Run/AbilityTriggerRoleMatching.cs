@@ -13,7 +13,9 @@ internal static class AbilityTriggerRoleMatching
         return Subject(world, ability.Trigger.Subject, card, occurrence, restricted, candidate.TriggeringDefeat)
             && (ability.Trigger.Actor != AbilityRoles.You || occurrence.ActorFacts?.Kind is CardKind.Hero or CardKind.AlterEgo)
             && Role(world, ability.Trigger.Actor, card, occurrence.ActorFacts, restricted)
-            && Role(world, ability.Trigger.Target, card, candidate.TriggeringAttack?.Facts ?? occurrence.TargetFacts, restricted)
+            && (ReadiedTriggerMatching.Applies(occurrence)
+                ? ReadiedTriggerMatching.Target(world, ability.Trigger, card, occurrence, restricted)
+                : Role(world, ability.Trigger.Target, card, candidate.TriggeringAttack?.Facts ?? occurrence.TargetFacts, restricted))
             && Player(world, ability.Trigger.Player, card, occurrence, restricted);
     }
 
@@ -39,10 +41,11 @@ internal static class AbilityTriggerRoleMatching
     // One ready instruction can ready several cards at once; each card is a
     // subject of its would-ready occurrence until it readies or is replaced.
     private static bool IsSubject(World world, Card card, Occurrence occurrence, Defeated? defeat) =>
-        occurrence.Readying is { } readying ? readying.WouldReady(world, card)
+        occurrence.Readying is { } readying
+            ? occurrence.Is(CardReadying.Readied) ? readying.Readies(world, card) : readying.WouldReady(world, card)
             : (defeat?.Card ?? occurrence.Subject) == card.ObjectId;
 
-    private static bool Role(
+    internal static bool Role(
         World world, string? match, Card card, OccurrenceCard? role,
         int? restricted) => match switch
         {
@@ -71,6 +74,8 @@ internal static class AbilityTriggerRoleMatching
         int? restricted) => match switch
         {
             null or AbilityPlayers.TriggerPlayer => true,
+            // ReadiedTriggerMatching holds "you" to the readied card's controller.
+            AbilityPlayers.You when occurrence.Is(CardReadying.Readied) => true,
             AbilityPlayers.You when occurrence.Is(ResourceSpentWindow.Condition) =>
                 occurrence.SpentResourceCards.Any(spent => spent.Card == card.ObjectId
                     && spent.Player == (restricted ?? AbilityCardQueries.ControllerOf(world, card))),

@@ -36,7 +36,7 @@ internal static class AbilityPlayerBindingAnalysis
         AbilityCost.ExhaustChosen chosen => chosen.From is
             AbilityCardQuery.CharactersYouControl or AbilityCardQuery.AlliesYouControl,
         AbilityCost.DiscardFromHand discard => discard.Range is AbilityCostRange.Any,
-        AbilityCost.Spend or AbilityCost.SpendEnergy => false,
+        AbilityCost.Spend or AbilityCost.SpendX => false,
         _ => throw new InvalidOperationException(
             "Unknown compiled cost in player-binding analysis"),
     };
@@ -274,7 +274,7 @@ internal static class AbilityPlayerBindingAnalysis
         AbilityCondition.WasDefeated defeated => Contains(defeated.Card),
         AbilityCondition.IsYourIdentity => true,
         AbilityCondition.PaidWithResource or AbilityCondition.DiscardedWithResource or AbilityCondition.DiscardedWithTrait
-            or AbilityCondition.CausedThreat or AbilityCondition.TitleInPlay
+            or AbilityCondition.CausedThreat or AbilityCondition.TitleInPlay or AbilityCondition.NamedInPlay
             or AbilityCondition.ActivationIs => false,
         _ => throw new InvalidOperationException(
             "Unknown compiled condition in player-binding analysis"),

@@ -112,16 +112,62 @@ public sealed class CardPlayACostIsACountOfResourcesOfAnyTypeTests : CardPlayTes
         Assert.Equal(0, Resources.PrintedCount([doubleWild], Resources.Mental, printed));
     }
 
-    [Rule("rr:non-numerical-variable.1")]
     [Fact]
     public void ACostThatIsNotANumberSaysSoRatherThanReadingAsZero()
     {
-        // For a cost of X the player chooses or card text defines X before
-        // modifiers apply. Reading an unsupported X as zero would silently
-        // make the card free.
-        var printed = new Printed().With("odd", ("Cost", "X"));
+        // A printed cost the engine cannot read would otherwise make the card free.
+        var printed = new Printed().With("odd", ("Cost", "Y"));
         var thrown = Assert.Throws<RulesNotImplementedException>(() => Resources.Cost("odd", printed));
         Assert.Contains("is not a number", thrown.Message, StringComparison.Ordinal);
+    }
+
+    [Rule("rr:non-numerical-variable")]
+    [Rule("rr:non-numerical-variable.1")]
+    [Fact]
+    public void APrintedXCostReadsAsZeroOutsideItsOwnPlay()
+    {
+        // rr:non-numerical-variable: an undefined variable is "equal to 0"; ruling
+        // 5636cf3904ac9370 reads an X cost in hand as 0 for other abilities. The
+        // playing player defines X only through the card's own variable cost.
+        var printed = new Printed().With("variable", ("Cost", "X"));
+        Assert.Equal(0, Resources.Cost("variable", printed));
+        Assert.True(VariableCardCost.Applies("variable", printed));
+    }
+
+    [Rule("rr:non-numerical-variable.1")]
+    [Fact]
+    public void AReductionOnAnEventCostingXIsLeftForTheAmountPaidForX()
+    {
+        // "The amount paid may be modified by effects without changing the value of
+        // X": the zero printed part absorbs nothing, so the whole reduction lowers
+        // what X pays, and never below zero (rr:modifiers.4).
+        var printed = Cards().With("event", ("Cost", "X"));
+        var world = Board(printed);
+        var card = InHand(world, "event");
+        var source = world.CreateCard("support", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
+        CardPayment.ReduceNextCardCost(world, source, player: 0, amount: 2);
+
+        var adjusted = CardPayment.CostOf(world, printed, world.Seats[0], card);
+        Assert.Equal(0, adjusted.Amount);
+        Assert.Equal(2, adjusted.VariableReduction);
+        Assert.Single(adjusted.Modifiers);
+        Assert.Equal(1, ResourcePayment.Amount("X-2", new Dictionary<string, long> { ["X"] = 3 }));
+        Assert.Equal(0, ResourcePayment.Amount("X-2", new Dictionary<string, long> { ["X"] = 1 }));
+        Assert.Null(ResourcePayment.Amount("X-2"));
+    }
+
+    [Rule("rr:non-numerical-variable.1")]
+    [Fact]
+    public void ANonEventCostingXRaisesRatherThanBeingPricedFree()
+    {
+        // Only an event's own variable cost defines X; reading an ally's X as 0 would
+        // make it free.
+        var printed = Cards().With("ally", ("Cost", "X"));
+        var world = Board(printed);
+        var card = InHand(world, "ally");
+        var thrown = Assert.Throws<RulesNotImplementedException>(
+            () => CardPayment.CostOf(world, printed, world.Seats[0], card));
+        Assert.Contains("costs X", thrown.Message, StringComparison.Ordinal);
     }
 
     [Rule("rr:cost.2")]

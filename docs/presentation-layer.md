@@ -343,7 +343,7 @@ Protocol 43 adds a conditional resource bonus with its generated types and quali
 The socket protocol uses source-generated JSON inside a 4-byte big-endian length
 frame. Frames are bounded. Unknown operations, unsupported protocol versions and
 unknown JSON members fail before they reach the engine. Both endpoints must use
-protocol 44. Setup and decisions replay under engine-replay-v31, with session
+protocol 44. Setup and decisions replay under engine-replay-v32, with session
 schema 7 retaining the exact ordered decks. Requests carry engine-authored
 commitments and explicit payment allocations; authorized responses include
 readable choices, active attack participants, attack completion events and

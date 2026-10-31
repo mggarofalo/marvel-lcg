@@ -75,6 +75,7 @@ internal static class AbilityJsonReader
             Maximum(element, card))
         {
             LimitPeriod = element.TryGetProperty("limitPerPhase", out _) ? AbilityLimitPeriod.Phase : AbilityLimitPeriod.Round,
+            LimitGroup = AbilityLimit.ReadGroup(element),
             ResourceRestriction = AbilityResourceRestriction.Read(element, trigger.Timing),
             PrintedCostResource = AbilityPrintedCostResource.Read(element),
         };

@@ -20,3 +20,6 @@ __pycache__/
 
 # Agent working state: scratch plans and per-agent worktrees. Not project data.
 /.claude/
+
+# dotnet test result and blame artifacts
+TestResults/
