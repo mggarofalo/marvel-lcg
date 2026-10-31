@@ -26,7 +26,7 @@ public sealed class BlackWidowRapidResponseCompositionTests
         // and responses to defeat occur after "Discarding of a defeated character."
         // 08031: "After an ally you control is defeated"; return "that ally"
         // "from your discard pile and deal 1 damage to it."
-        var runner = new AbilityRunner(AuthoredCards.Book);
+        var runner = AuthoredCards.Runner();
         var world = ThorActualFixture.Board("06001a", 2);
         var seat = world.Seats[1];
         World.MoveToTop(seat.IdentityCard, world.AreaOf(DeckType.RemovedArea));

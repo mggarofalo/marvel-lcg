@@ -21,7 +21,7 @@ internal sealed class HulkFinalCardsFixture
 
     internal HulkFinalCardsFixture()
     {
-        Runner = new(AuthoredCards.Book);
+        Runner = AuthoredCards.Runner();
         World.Abilities = Runner;
         World.MoveToTop(Hero, World.AreaOf(DeckType.RemovedArea));
         World.Seats[1].IdentityCard = World.CreateCard("10001a,10001b", World.Seats[1].Hero);

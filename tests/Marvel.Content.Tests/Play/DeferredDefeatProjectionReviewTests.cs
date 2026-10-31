@@ -33,7 +33,7 @@ public sealed class DeferredDefeatProjectionReviewTests
         var expressions = new AbilityExpressionContext(query,
             ImmutableDictionary<string, long>.Empty.Add("boostIconsLookedAt", 2), [], "", 0, false, null);
         var scope = new AbilityAdmission.AbilityAdmissionScope(new AbilityAdmissionContext(
-            AbilityLowering.Book(AuthoredCards.Book), world.ResourceAbilities, expressions, new(), "thwart"), []);
+            AuthoredCards.Program, world.ResourceAbilities, expressions, new(), "thwart"), []);
         string before = Observe(world);
         var prefix = new AbilityEffect.RemoveThreat(new AbilityCardSelection.Titled("Hydra Patrol"),
             new AbilityNumber.Constant(3), false, null);

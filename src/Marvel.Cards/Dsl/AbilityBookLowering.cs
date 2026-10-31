@@ -65,13 +65,17 @@ internal static class AbilityBookLowering
         var effect = LowerEffect(Syntax(ability.Effect), location);
         AbilityStagedAttackLowering.ValidatePlacement(effect, location);
         var address = new AbilityEffectAddress(ability.Card, ordinal, "effect");
-        Index(effect, address, effects);
-        var nodes = OwnNodes(effects, ability.Card, ordinal);
+        // This ability's nodes are indexed apart first, so its validators read
+        // them without scanning every earlier ability's nodes.
+        var own = ImmutableDictionary.CreateBuilder<AbilityEffectAddress, AbilityEffect>();
+        Index(effect, address, own);
+        effects.AddRange(own);
+        List<AbilityEffect> nodes = [.. own.Values];
         AbilityStoragePermissionLowering.Validate(ability, effect, location, nodes);
         AbilitySelfPlayCostLowering.Validate(ability, effect, location, nodes);
         AbilityAllyCostLowering.Validate(ability, effect, location, nodes);
         AbilityBasicUseLowering.Validate(ability, effect, location);
-        AbilityAttackKeywordLowering.Validate(ability, ordinal, effects, location);
+        AbilityAttackKeywordLowering.Validate(ability, ordinal, own, location);
         AbilityExcessDamageLowering.Validate(ability, effect, location, nodes);
         var compiledCost = ability.Cost is { } syntaxCost
             ? LowerCost(Syntax(syntaxCost), location with { Path = "cost" }) : null;
@@ -90,10 +94,6 @@ internal static class AbilityBookLowering
         PrintedCostResource = AbilityPrintedCostResource.Validate(ability),
     };
     }
-
-    private static List<AbilityEffect> OwnNodes(
-        ImmutableDictionary<AbilityEffectAddress, AbilityEffect>.Builder effects, string card, int ordinal) =>
-        [.. effects.Where(pair => pair.Key.Card == card && pair.Key.Ability == ordinal).Select(pair => pair.Value)];
 
     private static ImmutableDictionary<string, AbilityCardSelection> LowerAttachments(
         IReadOnlyDictionary<string, AbilityValue>? attachTo)

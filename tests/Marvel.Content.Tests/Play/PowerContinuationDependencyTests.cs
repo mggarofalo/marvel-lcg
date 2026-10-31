@@ -100,7 +100,7 @@ public sealed class PowerContinuationDependencyTests : CoreCardTestBase
         var expression = new AbilityExpressionContext(query, ImmutableDictionary<string, long>.Empty,
             [], "", 0, false, null);
         var scope = new AbilityAdmission.AbilityAdmissionScope(new AbilityAdmissionContext(
-            AbilityLowering.Book(AuthoredCards.Book), world.ResourceAbilities, expression, new(), null), []);
+            AuthoredCards.Program, world.ResourceAbilities, expression, new(), null), []);
         var draw = new AbilityEffect.Draw(new AbilityPlayerSelection.OnePlayer(AbilityPlayer.You), 1);
         var error = Assert.Throws<RulesNotImplementedException>(() =>
             AbilityPowerSuspension.SuspendsPowerEffect(draw, scope,
@@ -119,7 +119,7 @@ public sealed class PowerContinuationDependencyTests : CoreCardTestBase
             source.Incarnation, null, null, null, []);
         var expression = new AbilityExpressionContext(query, ImmutableDictionary<string, long>.Empty,
             [], "Y", 0, false, null);
-        var context = new AbilityAdmissionContext(AbilityLowering.Book(AuthoredCards.Book),
+        var context = new AbilityAdmissionContext(AuthoredCards.Program,
             world.ResourceAbilities, expression, new(), null);
         var draw = new AbilityEffect.Draw(new AbilityPlayerSelection.OnePlayer(AbilityPlayer.You), 1);
         var choice = new AbilityEffect.Choose([draw, draw], ["first", "second"]);
