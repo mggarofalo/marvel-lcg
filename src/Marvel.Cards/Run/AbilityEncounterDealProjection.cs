@@ -17,6 +17,9 @@ internal static class AbilityEncounterDealProjection
         AbilityEffect.AttackDamage damage => Stable(damage.Cards) && Stable(damage.Amount),
         AbilityEffect.GiveStatus status => Stable(status.Cards),
         AbilityEffect.Heal heal => Stable(heal.Card) && Stable(heal.Amount),
+        // A facedown dealt card changes no scheme's threat and no crisis icon in play.
+        AbilityEffect.RemoveThreat remove => Stable(remove.Schemes) && Stable(remove.Amount)
+            && (remove.OverridesCannotFrom is null || Stable(remove.OverridesCannotFrom)),
         _ => false,
     };
 

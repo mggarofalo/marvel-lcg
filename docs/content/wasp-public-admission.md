@@ -95,8 +95,18 @@ on both hosts.
 and policy matrix as Ant-Man, beside an exact same-seed replay of every
 decision's prompt, events, digest and RNG. All seven games reach a terminal
 policy loss; they establish complete games and replay, not victory. The policy
-never changes to Giant, so these games do not exercise the division; the
-restart and native journeys do.
+never changes to Giant, so these seven games do not exercise the division.
+
+`AGiantStarterDividesItsBasicPowersThroughACompleteReplayedGame` plays two more
+unarranged games with the same replay check. Before the policy answers, the
+test changes Wasp to Giant whenever the turn offers it, and spreads each
+division one point per recipient. Each game divides a basic power at least
+once and reaches a policy loss.
+
+| Scenario | Players | Seed | Outcome | Round | Decisions | Divisions |
+|---|---:|---:|---|---:|---:|---:|
+| Ultron | 1 | 3 | PlayersLose | 6 | 46 | 1 |
+| Wrecking Crew | 1 | 8 | PlayersLose | 2 | 14 | 1 |
 
 | Scenario | Players | Seed | Outcome | Round | Decisions |
 |---|---:|---:|---|---:|---:|

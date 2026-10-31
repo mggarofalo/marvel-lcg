@@ -69,6 +69,7 @@ public sealed class ThwartGroupProhibitionTests : CoreCardTestBase
             host: seat.IdentityCard.ObjectId, cardOwner: 0));
         world.Effects.Register(new ContinuousEffect(EffectSource.LastingEffect, Kind: Traits.Granted + "AERIAL",
             Amount: 1, Card: helmet.ObjectId, Affects: seat.IdentityCard.ObjectId));
+        Assert.True(Traits.Has(world, seat.IdentityCard, "AERIAL", world.Facts));
         return helmet;
     }
 

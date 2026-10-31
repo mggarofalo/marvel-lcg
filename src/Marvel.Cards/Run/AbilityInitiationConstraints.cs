@@ -134,8 +134,8 @@ internal static class AbilityInitiationConstraints
             throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' suspends inside a labelled power, "
                 + "which is not implemented"),
-        "thwartSchemes" => AbilityThwartGroupAdmission.PerformerCanThwart(cast)
-            && Every(EffectOf<AbilityEffect.ThwartGroup>(node, cast).Schemes, cast).Count > 0,
+        // Its thwart power is admitted as a "thwart" leaf, which checks the performer.
+        "thwartSchemes" => Every(EffectOf<AbilityEffect.ThwartGroup>(node, cast).Schemes, cast).Count > 0,
         "attack" or "thwart" when SuspendsPowerEffect(
             EffectBody(node), cast) =>
             throw new RulesNotImplementedException(

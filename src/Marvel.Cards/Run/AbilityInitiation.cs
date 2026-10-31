@@ -96,7 +96,7 @@ internal static class AbilityInitiation
         // A thwart group is itself the labelled thwart: it chooses its schemes and
         // schedules the one thwart power it contains.
         if (node is AbilityEffect.ThwartGroup)
-            return power == BasicPowers.ThwartVerb && PowerNodes(node, power).Count() == 1;
+            return PowerNodes(node, power).Count() == 1;
         if (node.OperationName() == "chooseCard")
             return GuaranteesOneLabeledPower(EffectBody(node), power);
         if (node.OperationName() == "choose")
