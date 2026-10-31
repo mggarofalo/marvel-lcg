@@ -66,7 +66,7 @@ internal static class PublicStarterGames
         return seats;
     }
 
-    private static string Observe(Game game, Resolution? result = null) => JsonSerializer.Serialize(new
+    internal static string Observe(Game game, Resolution? result = null) => JsonSerializer.Serialize(new
     {
         State = game.State.Digest().Canonical(),
         RngWords = game.State.Random.Generator.WordsConsumed,

@@ -23,7 +23,7 @@ even when the Rules Reference describes it. Runtime product admission is separat
 adding a complete expansion does not certify it through these Core transcripts.
 Every authored setup record is still enumerated and fingerprinted. The 15 Rise
 of Red Skull records, 19 Wrecking Crew variant records, Captain America and
-Ms. Marvel, Thor, Black Widow, Doctor Strange, Hulk and Ant-Man hero recipes, two Risky Business and two Mutagen Formula modes, and A Mess of Things,
+Ms. Marvel, Thor, Black Widow, Doctor Strange, Hulk and Ant-Man hero recipes, two Risky Business, two Mutagen Formula and two Kang modes, and A Mess of Things,
 Goblin Gimmicks, Kree Fanatic, Temporal, Anachronauts and Master of Time
 modular recipes are explicitly
 adjudicated `outside-core`; they are not
