@@ -24371,6 +24371,202 @@
           "effect": { "discard": "this" }
         }
       ]
+    },
+    {
+      "card": "11001",
+      "name": "Kang (The Conqueror)",
+      "note": "Kang I. Toughness is engine-owned. star Forced Interrupt: When Kang attacks you, either place 1 threat on the main scheme, or he gets +2 ATK for this attack. rr:attack-enemy-activation.1.4 resolves \"When [enemy] attacks you\" against the attacked player, who chooses (MARVEL-894 Q3), and rr:attack-enemy-activation.5 gives it the timing of an interrupt to the attack's initiation, before its boost card is dealt. The trigger's player binding names that player explicitly; the attack occurrence already resolves against them, so omitting it changes nothing observable. rr:choose-option.1 leaves both options open: neither needs a target beyond the main scheme. Kang I is in play only while one main scheme is, so \"the main scheme\" is that one. When Defeated: Advance the main scheme to stage 2 at the end of the phase. captureKangStageOneDefeat retains this exact defeat for the next phase ending, where the scenario-owned split advances to stage 2A (pack:mc11:setup, pack:mc11:areas); rr:when-defeated-abilities.2.1 resolves it before he leaves play, and pack:mc11:rules-clarifications keeps his attachments and statuses from passing to Kang II.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenAttackInitiated", "timing": "ForcedInterrupt", "actor": "this", "player": "trigger.player" },
+          "effect": { "choose": {
+            "descriptions": ["Place 1 threat on the main scheme", "Kang gets +2 ATK for this attack"],
+            "options": [
+              { "placeThreat": { "scheme": { "query": "mainScheme" }, "amount": 1 } },
+              { "grantUntil": { "card": "this", "keyword": "attack", "amount": 2, "until": "EndOfAttack" } }
+            ]
+          } }
+        },
+        {
+          "trigger": { "event": "WhenCardDefeated", "timing": "WhenDefeated", "subject": "this" },
+          "effect": { "captureKangStageOneDefeat": "this" }
+        }
+      ]
+    },
+    {
+      "card": "11003",
+      "name": "Kang (Iron Lad)",
+      "note": "Kang II. Retaliate and Toughness are engine-owned. When Defeated: Remove Inexorable Fate from the game. At the end of the phase, join another game area. captureKangStageTwoDefeat removes the matching stage 3B in this Kang's game area and retains the defeat for the next phase ending, where the scenario-owned departure joins the group to another game area (pack:mc11:game-areas). rr:when-defeated-abilities.2.1 resolves it before he leaves play; pack:mc11:rules-clarifications keeps his attachments and statuses from passing to Kang III. His flat hit points are printed without a per-player icon.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardDefeated", "timing": "WhenDefeated", "subject": "this" },
+          "effect": { "captureKangStageTwoDefeat": "this" }
+        }
+      ]
+    },
+    {
+      "card": "11005",
+      "name": "Kang (Scarlet Centurion)",
+      "note": "Kang II. Toughness is engine-owned. star This villain's attack gains piercing: a constant piercing grant, which rr:piercing.2 withholds from an attack that would deal no damage. Piercing is read by presence, so the grant amount is not otherwise observable. When Defeated: Remove The Present Future War from the game. At the end of the phase, join another game area. captureKangStageTwoDefeat removes the matching stage 3B in this Kang's game area and retains the defeat for the next phase ending, where the scenario-owned departure joins the group to another game area (pack:mc11:game-areas). rr:when-defeated-abilities.2.1 resolves it before he leaves play; pack:mc11:rules-clarifications keeps his attachments and statuses from passing to Kang III. His flat hit points are printed without a per-player icon.",
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant", "subject": "this" },
+          "effect": { "grant": { "card": "this", "keyword": "piercing", "amount": 1 } }
+        },
+        {
+          "trigger": { "event": "WhenCardDefeated", "timing": "WhenDefeated", "subject": "this" },
+          "effect": { "captureKangStageTwoDefeat": "this" }
+        }
+      ]
+    },
+    {
+      "card": "11006",
+      "name": "Kang (The Conqueror)",
+      "note": "Kang III. Toughness is engine-owned. star Forced Interrupt: When Kang attacks you, either place 1 threat on the main scheme, or he gets +2 ATK for this attack. rr:attack-enemy-activation.1.4 resolves \"When [enemy] attacks you\" against the attacked player, who chooses (MARVEL-894 Q3), and rr:attack-enemy-activation.5 gives it the timing of an interrupt to the attack's initiation, before its boost card is dealt. The trigger's player binding names that player explicitly; the attack occurrence already resolves against them, so omitting it changes nothing observable. rr:choose-option.1 leaves both options open: neither needs a target beyond the main scheme. Kang III is in play only while one main scheme is, so \"the main scheme\" is that one. When Defeated: The players win the game. playersWin ends the game with a player victory; rr:when-defeated-abilities.1 makes it a forced interrupt to his defeat.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenAttackInitiated", "timing": "ForcedInterrupt", "actor": "this", "player": "trigger.player" },
+          "effect": { "choose": {
+            "descriptions": ["Place 1 threat on the main scheme", "Kang gets +2 ATK for this attack"],
+            "options": [
+              { "placeThreat": { "scheme": { "query": "mainScheme" }, "amount": 1 } },
+              { "grantUntil": { "card": "this", "keyword": "attack", "amount": 2, "until": "EndOfAttack" } }
+            ]
+          } }
+        },
+        {
+          "trigger": { "event": "WhenCardDefeated", "timing": "WhenDefeated", "subject": "this" },
+          "effect": { "playersWin": "game" }
+        }
+      ]
+    },
+    {
+      "card": "11034",
+      "name": "Kang (The Conqueror)",
+      "note": "Kang I. Toughness is engine-owned. star Forced Interrupt: When Kang attacks you, either place 1 threat on the main scheme, or he gets +2 ATK for this attack. rr:attack-enemy-activation.1.4 resolves \"When [enemy] attacks you\" against the attacked player, who chooses (MARVEL-894 Q3), and rr:attack-enemy-activation.5 gives it the timing of an interrupt to the attack's initiation, before its boost card is dealt. The trigger's player binding names that player explicitly; the attack occurrence already resolves against them, so omitting it changes nothing observable. rr:choose-option.1 leaves both options open: neither needs a target beyond the main scheme. Kang I is in play only while one main scheme is, so \"the main scheme\" is that one. When Defeated: Advance the main scheme to stage 2 at the end of the phase. captureKangStageOneDefeat retains this exact defeat for the next phase ending, where the scenario-owned split advances to stage 2A (pack:mc11:setup, pack:mc11:areas); rr:when-defeated-abilities.2.1 resolves it before he leaves play, and pack:mc11:rules-clarifications keeps his attachments and statuses from passing to Kang II.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenAttackInitiated", "timing": "ForcedInterrupt", "actor": "this", "player": "trigger.player" },
+          "effect": { "choose": {
+            "descriptions": ["Place 1 threat on the main scheme", "Kang gets +2 ATK for this attack"],
+            "options": [
+              { "placeThreat": { "scheme": { "query": "mainScheme" }, "amount": 1 } },
+              { "grantUntil": { "card": "this", "keyword": "attack", "amount": 2, "until": "EndOfAttack" } }
+            ]
+          } }
+        },
+        {
+          "trigger": { "event": "WhenCardDefeated", "timing": "WhenDefeated", "subject": "this" },
+          "effect": { "captureKangStageOneDefeat": "this" }
+        }
+      ]
+    },
+    {
+      "card": "11036",
+      "name": "Kang (Iron Lad)",
+      "note": "Kang II. Retaliate and Toughness are engine-owned. When Defeated: Remove Inexorable Fate from the game. At the end of the phase, join another game area. captureKangStageTwoDefeat removes the matching stage 3B in this Kang's game area and retains the defeat for the next phase ending, where the scenario-owned departure joins the group to another game area (pack:mc11:game-areas). rr:when-defeated-abilities.2.1 resolves it before he leaves play; pack:mc11:rules-clarifications keeps his attachments and statuses from passing to Kang III. His flat hit points are printed without a per-player icon.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardDefeated", "timing": "WhenDefeated", "subject": "this" },
+          "effect": { "captureKangStageTwoDefeat": "this" }
+        }
+      ]
+    },
+    {
+      "card": "11038",
+      "name": "Kang (Scarlet Centurion)",
+      "note": "Kang II. Toughness is engine-owned. star This villain's attacks gain piercing: a constant piercing grant, which rr:piercing.2 withholds from an attack that would deal no damage. Piercing is read by presence, so the grant amount is not otherwise observable. When Defeated: Remove The Present Future War from the game. At the end of the phase, join another game area. captureKangStageTwoDefeat removes the matching stage 3B in this Kang's game area and retains the defeat for the next phase ending, where the scenario-owned departure joins the group to another game area (pack:mc11:game-areas). rr:when-defeated-abilities.2.1 resolves it before he leaves play; pack:mc11:rules-clarifications keeps his attachments and statuses from passing to Kang III. His flat hit points are printed without a per-player icon.",
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant", "subject": "this" },
+          "effect": { "grant": { "card": "this", "keyword": "piercing", "amount": 1 } }
+        },
+        {
+          "trigger": { "event": "WhenCardDefeated", "timing": "WhenDefeated", "subject": "this" },
+          "effect": { "captureKangStageTwoDefeat": "this" }
+        }
+      ]
+    },
+    {
+      "card": "11039",
+      "name": "Kang (The Conqueror)",
+      "note": "Kang III. Toughness is engine-owned. star Forced Interrupt: When Kang attacks you, either place 1 threat on the main scheme, or he gets +2 ATK for this attack. rr:attack-enemy-activation.1.4 resolves \"When [enemy] attacks you\" against the attacked player, who chooses (MARVEL-894 Q3), and rr:attack-enemy-activation.5 gives it the timing of an interrupt to the attack's initiation, before its boost card is dealt. The trigger's player binding names that player explicitly; the attack occurrence already resolves against them, so omitting it changes nothing observable. rr:choose-option.1 leaves both options open: neither needs a target beyond the main scheme. Kang III is in play only while one main scheme is, so \"the main scheme\" is that one. When Defeated: The players win the game. playersWin ends the game with a player victory; rr:when-defeated-abilities.1 makes it a forced interrupt to his defeat.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenAttackInitiated", "timing": "ForcedInterrupt", "actor": "this", "player": "trigger.player" },
+          "effect": { "choose": {
+            "descriptions": ["Place 1 threat on the main scheme", "Kang gets +2 ATK for this attack"],
+            "options": [
+              { "placeThreat": { "scheme": { "query": "mainScheme" }, "amount": 1 } },
+              { "grantUntil": { "card": "this", "keyword": "attack", "amount": 2, "until": "EndOfAttack" } }
+            ]
+          } }
+        },
+        {
+          "trigger": { "event": "WhenCardDefeated", "timing": "WhenDefeated", "subject": "this" },
+          "effect": { "playersWin": "game" }
+        }
+      ]
+    },
+    {
+      "card": "11002",
+      "name": "Kang (Immortus)",
+      "note": "Kang II. Toughness is engine-owned. This villain cannot take damage while a minion is in play. pack:mc11:game-areas: cards in one game area cannot affect another, so a minion counts only in his game area (minionsInThisGameArea; MARVEL-894 Q17), by the same partition as \"Kang\" (Q2) and \"each obligation in play\" (Q4). Ruling 76a9465df95e739c (MARVEL-894 Q9) decides that Kang keeps Tough while he cannot take damage, and rr:piercing.2 then leaves it against a piercing attack, which deals him no damage. When Defeated: Remove The Chronopolis from the game. At the end of the phase, join another game area. captureKangStageTwoDefeat removes the matching stage 3B in this Kang's game area and retains the defeat for the next phase ending, where the scenario-owned departure joins the group to another game area (pack:mc11:game-areas). rr:when-defeated-abilities.2.1 resolves it before he leaves play; pack:mc11:rules-clarifications keeps his attachments and statuses from passing to Kang III. His flat hit points are printed without a per-player icon.",
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant", "subject": "this" },
+          "effect": { "preventDamageWhile": { "card": "this", "condition": { "exists": { "query": "minionsInThisGameArea" } } } }
+        },
+        {
+          "trigger": { "event": "WhenCardDefeated", "timing": "WhenDefeated", "subject": "this" },
+          "effect": { "captureKangStageTwoDefeat": "this" }
+        }
+      ]
+    },
+    {
+      "card": "11004",
+      "name": "Kang (Rama-Tut)",
+      "note": "Kang II. Toughness is engine-owned. star This villain gets +1 ATK for each obligation in play. MARVEL-894 (Q4) counts the obligations in his game area (obligationsInThisGameArea). rr:obligation.5 puts a revealed obligation in its player's play area, so every player's obligations in that game area count. When Defeated: Remove The Realm of Rama-Tut from the game. At the end of the phase, join another game area. captureKangStageTwoDefeat removes the matching stage 3B in this Kang's game area and retains the defeat for the next phase ending, where the scenario-owned departure joins the group to another game area (pack:mc11:game-areas). rr:when-defeated-abilities.2.1 resolves it before he leaves play; pack:mc11:rules-clarifications keeps his attachments and statuses from passing to Kang III. His flat hit points are printed without a per-player icon.",
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant", "subject": "this" },
+          "effect": { "grant": { "card": "this", "keyword": "attack", "amount": { "count": { "query": "obligationsInThisGameArea" } } } }
+        },
+        {
+          "trigger": { "event": "WhenCardDefeated", "timing": "WhenDefeated", "subject": "this" },
+          "effect": { "captureKangStageTwoDefeat": "this" }
+        }
+      ]
+    },
+    {
+      "card": "11035",
+      "name": "Kang (Immortus)",
+      "note": "Kang II. Toughness is engine-owned. This villain cannot take damage while a minion is in play. pack:mc11:game-areas: cards in one game area cannot affect another, so a minion counts only in his game area (minionsInThisGameArea; MARVEL-894 Q17), by the same partition as \"Kang\" (Q2) and \"each obligation in play\" (Q4). Ruling 76a9465df95e739c (MARVEL-894 Q9) decides that Kang keeps Tough while he cannot take damage, and rr:piercing.2 then leaves it against a piercing attack, which deals him no damage. When Defeated: Remove The Chronopolis from the game. At the end of the phase, join another game area. captureKangStageTwoDefeat removes the matching stage 3B in this Kang's game area and retains the defeat for the next phase ending, where the scenario-owned departure joins the group to another game area (pack:mc11:game-areas). rr:when-defeated-abilities.2.1 resolves it before he leaves play; pack:mc11:rules-clarifications keeps his attachments and statuses from passing to Kang III. His flat hit points are printed without a per-player icon.",
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant", "subject": "this" },
+          "effect": { "preventDamageWhile": { "card": "this", "condition": { "exists": { "query": "minionsInThisGameArea" } } } }
+        },
+        {
+          "trigger": { "event": "WhenCardDefeated", "timing": "WhenDefeated", "subject": "this" },
+          "effect": { "captureKangStageTwoDefeat": "this" }
+        }
+      ]
+    },
+    {
+      "card": "11037",
+      "name": "Kang (Rama-Tut)",
+      "note": "Kang II. Toughness is engine-owned. star This villain gets +1 ATK for each obligation in play. MARVEL-894 (Q4) counts the obligations in his game area (obligationsInThisGameArea). rr:obligation.5 puts a revealed obligation in its player's play area, so every player's obligations in that game area count. When Defeated: Remove The Realm of Rama-Tut from the game. At the end of the phase, join another game area. captureKangStageTwoDefeat removes the matching stage 3B in this Kang's game area and retains the defeat for the next phase ending, where the scenario-owned departure joins the group to another game area (pack:mc11:game-areas). rr:when-defeated-abilities.2.1 resolves it before he leaves play; pack:mc11:rules-clarifications keeps his attachments and statuses from passing to Kang III. His flat hit points are printed without a per-player icon.",
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant", "subject": "this" },
+          "effect": { "grant": { "card": "this", "keyword": "attack", "amount": { "count": { "query": "obligationsInThisGameArea" } } } }
+        },
+        {
+          "trigger": { "event": "WhenCardDefeated", "timing": "WhenDefeated", "subject": "this" },
+          "effect": { "captureKangStageTwoDefeat": "this" }
+        }
+      ]
     }
   ]
 }

@@ -16,6 +16,6 @@ public sealed class BlackWidowPreventionInventoryTests
         Assert.Equal(added, rows.Skip(639).Take(4).Select(row => row.GetProperty("card").GetString()));
         Assert.All(rows.Skip(639).Take(4), row => Assert.False(row.TryGetProperty("startingCounters", out _)));
         Assert.All(added, face => Assert.Contains(face, AuthoredCards.Book.Authored));
-        Assert.DoesNotContain("11001", AuthoredCards.Book.Authored);
+        Assert.DoesNotContain("52031", AuthoredCards.Book.Authored);
     }
 }

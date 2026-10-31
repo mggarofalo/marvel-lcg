@@ -20,7 +20,7 @@ public sealed class BlackWidowFinalResponseCardTests
             rows.Skip(643).Take(2).Select(row => row.GetProperty("card").GetString()));
         Assert.Equal(34, AuthoredCards.Book.Authored.Count(face => face.StartsWith("08", StringComparison.Ordinal)));
         Assert.All(rows.Skip(643).Take(2), row => Assert.False(row.TryGetProperty("startingCounters", out _)));
-        Assert.DoesNotContain("11001", AuthoredCards.Book.Authored);
+        Assert.DoesNotContain("52031", AuthoredCards.Book.Authored);
     }
 
     [Theory]
