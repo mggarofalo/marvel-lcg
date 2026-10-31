@@ -43,7 +43,7 @@ public sealed class ConditionalResourceTransportTests : TransportTestBase
             ? await ExchangeOverSocket(new SocketEngineServer(host, IPAddress.Loopback, 0), request)
             : await new InProcessTransport(host).ExchangeAsync(request, TestContext.Current.CancellationToken);
         Assert.Equal("unsupported_version", response.Error?.Code);
-        Assert.Equal(43, response.Version);
+        Assert.Equal(44, response.Version);
         Assert.Null(response.World);
         Assert.Null(response.Prompt);
     }

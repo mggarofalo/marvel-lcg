@@ -1,5 +1,7 @@
 # Release identity, signing and compatibility
 
+Protocol 44 adds each seat's and addressable card's game area id. Protocol 43 peers are rejected before gameplay. It changes no replay identity, save schema, digest or RNG.
+
 Protocol 43 adds conditional resource bonus facts to cost offers. Protocol 42 peers are rejected before gameplay. Replay compatibility of the integrated candidate remains a separate MARVEL-870 decision; this protocol change alone does not bump the replay identity.
 
 Protocol 42 adds typed public Invocation deck/discard area relationships.

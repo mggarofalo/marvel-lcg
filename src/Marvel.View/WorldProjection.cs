@@ -85,7 +85,10 @@ public static class WorldProjection
             area.Removed.Where(card => cards.ContainsKey(card.ObjectId))
                 .Select(card => cards[card.ObjectId]).ToList())).ToList();
         var players = world.Seats.Select(seat =>
-            new PlayerDescriptor(seat.Index, seat.Name, seat.Eliminated)).ToList();
+            new PlayerDescriptor(seat.Index, seat.Name, seat.Eliminated)
+            {
+                GameArea = world.GameAreaOf(PlayArea.Of(seat.Index))?.Id,
+            }).ToList();
         var gameAreas = world.GameAreas.Select(area =>
             new GameAreaDescriptor(
                 area.Id,

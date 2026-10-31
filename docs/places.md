@@ -175,9 +175,22 @@ areas, they must discard copies of unique cards until only one of each remains i
 that game area. If the players cannot agree which one to discard, the first player
 decides."* Play, put-into-play, and reveal restrictions therefore consult
 `Places.CanAffect`: a matching unique card in another game area places no limit.
-The combine case remains outside the supported scenario surface because it needs
-a prompt to choose which copy is discarded; no scenario currently calls
-`World.Join` during play.
+Kang's phase-end join asks the first player to choose which matching copy is
+discarded before the group joins (`KangJoinProcedure`).
+
+**Defence, basic attacks, basic thwarts and crisis icons are scoped too.**
+`pack:mc11:game-areas`: players "cannot attack or defend enemies in other game
+areas, and they cannot target any game elements in the other game areas."
+Defender candidates, `BasicPowers.Attackable` and `BasicPowers.Thwartable` are
+narrowed by `Places.CanAffect`, and `MainScheme.Crisis(world, facts, scheme)`
+counts only crisis icons that can affect that scheme. The villain phase's
+separated steps are in [villain-phase.md](villain-phase.md).
+
+**A client is told each seat's and card's game area.** `PlayerDescriptor` and
+`CardLocationDescriptor` carry a `GameArea` id (protocol 44), null for a card in
+no game area such as central stage 2B. The card answer comes from
+`Places.GameAreaOf`, which also covers scenario cards whose association outlives
+an eliminated player's membership.
 
 **The engine tells a client each topology change once.** `World.Join` and
 `World.Detach` are operations on a play area and emit one `PlayAreaJoined` or
