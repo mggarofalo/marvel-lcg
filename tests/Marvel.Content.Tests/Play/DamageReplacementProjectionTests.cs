@@ -45,7 +45,7 @@ public sealed class DamageReplacementProjectionTests : CoreCardTestBase
         var expressions = new AbilityExpressionContext(query, ImmutableDictionary<string, long>.Empty,
             [], "", 0, false, null);
         var scope = new AbilityAdmission.AbilityAdmissionScope(new AbilityAdmissionContext(
-            AbilityLowering.Book(AuthoredCards.Book), world.ResourceAbilities, expressions, new(), null), []);
+            AuthoredCards.Program, world.ResourceAbilities, expressions, new(), null), []);
         var damage = new Dictionary<int, long>();
         var discarded = new HashSet<int>();
         // Printed01098 only replaces damage that would be dealt to Rhino.

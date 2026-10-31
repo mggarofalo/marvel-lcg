@@ -121,7 +121,7 @@ public sealed class ComposableCardSelectionTests
         var expression = new AbilityExpressionContext(binding,
             System.Collections.Immutable.ImmutableDictionary<string, long>.Empty, [], "", 0, false, null);
         var admission = new AbilityAdmission.AbilityAdmissionScope(new AbilityAdmissionContext(
-            AbilityLowering.Book(AuthoredCards.Book), world.ResourceAbilities, expression, new(), null), []);
+            AuthoredCards.Program, world.ResourceAbilities, expression, new(), null), []);
         var trace = new AbilitySelectorTraceContext(-1, admission, [], [], [], new() { [moved.ObjectId] = 1 });
         var unordered = new AbilityCardSelection.Last(area);
         Assert.Contains("area order", Assert.Throws<RulesNotImplementedException>(() =>
@@ -146,7 +146,7 @@ public sealed class ComposableCardSelectionTests
         var expression = new AbilityExpressionContext(Context(world, source),
             System.Collections.Immutable.ImmutableDictionary<string, long>.Empty, [], "", 0, false, null);
         var admission = new AbilityAdmission.AbilityAdmissionScope(new AbilityAdmissionContext(
-            AbilityLowering.Book(AuthoredCards.Book), world.ResourceAbilities, expression, new(), null), []);
+            AuthoredCards.Program, world.ResourceAbilities, expression, new(), null), []);
         var trace = new AbilitySelectorTraceContext(next.ObjectId, admission, [old.ObjectId], [], [], []);
 
         Assert.True(Traits.Has(world, minion, "BRUTE", Cards));

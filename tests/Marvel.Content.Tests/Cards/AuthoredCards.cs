@@ -185,8 +185,9 @@ internal static class AuthoredCards
     /// <summary>The dataset, parsed once.</summary>
     public static AbilityBook Book { get; } = AbilityCatalog.Parse(Text);
 
-    private static AbilityProgram Program { get; } = AbilityLowering.Book(Book);
+    /// <summary>The dataset, lowered once. The program is immutable, so runners share it.</summary>
+    public static AbilityProgram Program { get; } = AbilityLowering.Book(Book);
 
-    /// <summary>A runner over the authored cards.</summary>
-    public static AbilityRunner Runner() => new(Book);
+    /// <summary>A fresh runner over the authored cards.</summary>
+    public static AbilityRunner Runner() => new(Program);
 }
