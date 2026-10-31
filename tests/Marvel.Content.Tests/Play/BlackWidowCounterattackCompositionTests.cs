@@ -23,7 +23,7 @@ public sealed class BlackWidowCounterattackCompositionTests
         // Prevention modifies "the amount of damage a character takes", not damage dealt.
         // 08030: "After you take damage from an enemy attack, discard Counterattack"
         // and "deal an equal amount of damage to that enemy."
-        var runner = new AbilityRunner(AuthoredCards.Book);
+        var runner = AuthoredCards.Runner();
         var world = ThorActualFixture.Board("06001a", 2);
         var seat = world.Seats[1];
         World.MoveToTop(seat.IdentityCard, world.AreaOf(DeckType.RemovedArea));

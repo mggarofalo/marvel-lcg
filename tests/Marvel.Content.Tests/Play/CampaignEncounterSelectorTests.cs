@@ -42,7 +42,7 @@ public sealed class CampaignEncounterSelectorTests
         var second = world.CreateCard("04114", first.Area);
         var expression = new AbilityExpressionContext(Context(world, source), ImmutableDictionary<string, long>.Empty,
             [], "", 0, false, null);
-        var admission = new AbilityAdmissionContext(AbilityLowering.Book(AuthoredCards.Book),
+        var admission = new AbilityAdmissionContext(AuthoredCards.Program,
             world.ResourceAbilities, expression, new(), null);
         var state = new AreaProjectionState(admission);
         state.Damage[first.ObjectId] = 3;

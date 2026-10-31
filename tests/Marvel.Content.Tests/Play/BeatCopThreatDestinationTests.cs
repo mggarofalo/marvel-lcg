@@ -45,7 +45,7 @@ public sealed class BeatCopThreatDestinationTests
         Assert.DoesNotContain(events, e => e.Verb == "Thwart");
     }
 
-    private static AbilityRunner Runner() => new(AuthoredCards.Book);
+    private static AbilityRunner Runner() => AuthoredCards.Runner();
 
     private static void Answer(World world, Marvel.Cards.Run.AbilityRunner runner,
         List<GameEvent> events, int target)
