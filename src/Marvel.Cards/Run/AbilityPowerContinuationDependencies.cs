@@ -15,6 +15,10 @@ internal static class AbilityPowerContinuationDependencies
         {
             Cards: AbilityCardSelection.Bound { Binding: AbilityCardBinding.Chosen },
         } => true,
+        // rr:ability.4: "resolve the ability one sentence at a time." Removing threat
+        // chooses nothing, so it resolves on the settled live board after any defeat
+        // window; an excess-damage amount is the receipt recorded when the damage was dealt.
+        AbilityEffect.RemoveThreat => true,
         AbilityEffect.Sequence sequence => sequence.Effects.All(IsIndependent),
         AbilityEffect.Conditional conditional => SupportedCondition(conditional.Test)
             && IsIndependent(conditional.Then) && IsIndependent(conditional.Else),

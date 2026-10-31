@@ -46,10 +46,14 @@ internal static class AbilityProjectedDefeatWindows
         var candidates = DefeatCandidates(state, subject, cast);
         // The live defeat procedure owns both the dying card and its attached
         // forced interrupts. Their unknown board changes stay behind the same
-        // continuation and damage-batch read guards.
+        // continuation and damage-batch read guards. rr:when-defeated-abilities.1:
+        // "The 'When Defeated' timing trigger is equivalent to the following trigger:
+        // 'Forced Interrupt: When this card is defeated...'", so the dying card's own
+        // forced interrupt on its defeat joins the same window.
         return candidates.Length > 0 && candidates.All(candidate =>
             candidate.Ability.When is null && candidate.Ability.Cost is null
-            && (candidate.Card == subject && candidate.Ability.Trigger.Timing == AbilityType.WhenDefeated
+            && (candidate.Card == subject && candidate.Ability.Trigger.Timing
+                    is AbilityType.WhenDefeated or AbilityType.ForcedInterrupt
                 || candidate.Card.Area.Host == subject.ObjectId
                 && candidate.Ability.Trigger.Timing == AbilityType.ForcedInterrupt));
     }
