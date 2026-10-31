@@ -85,9 +85,6 @@ internal static class AbilitySelectorLowering
     internal static AbilityCardQuery Query(string name, AbilityLocation location) => name switch
     {
         "villain" => AbilityCardQuery.Villain,
-        "villainInThisGameArea" => AbilityCardQuery.VillainInThisGameArea,
-        "obligationsInThisGameArea" => AbilityCardQuery.ObligationsInThisGameArea,
-        "minionsInThisGameArea" => AbilityCardQuery.MinionsInThisGameArea,
         "otherVillainSideSchemes" => AbilityCardQuery.OtherVillainSideSchemes,
         "activeVillainSideScheme" => AbilityCardQuery.ActiveVillainSideScheme,
         "villainOfAttachedScheme" => AbilityCardQuery.VillainOfAttachedScheme,
@@ -136,7 +133,7 @@ internal static class AbilitySelectorLowering
         "characters" => AbilityCardQuery.Characters,
         "otherEnvironments" => AbilityCardQuery.OtherEnvironments,
         "cardsYouControl" => AbilityCardQuery.CardsYouControl,
-        _ => throw location.Error($"'{name}' is not a card query"),
+        _ => AbilityGameAreaQueryNames.Lower(name) ?? throw location.Error($"'{name}' is not a card query"),
     };
 
     private static AbilityCardSelection.DefeatedWithProfile DefeatedProfile(AbilityValue value, AbilityLocation location)

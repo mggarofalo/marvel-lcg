@@ -1,5 +1,6 @@
 using Marvel.Content.Tests.Cards;
 using Marvel.Rules.Play;
+using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
 using Marvel.Tests;
 using Xunit;
@@ -114,17 +115,72 @@ public sealed class KangStageTwoVillainTests : CoreCardTestBase
         Assert.Equal(damage, world.Seats[0].IdentityCard.Damage);
     }
 
+    [Theory]
+    [InlineData(true, 0, true)]
+    [InlineData(false, 2, false)]
+    [Rule("rr:piercing.2")]
+    public void ImmortusKeepsToughAgainstAPiercingAttackWhileProtected(bool minion, int damage, bool toughAfter)
+    {
+        // 04012: "Black Knight's basic attack gains piercing." rr:piercing.2: "If
+        // an attack with the piercing keyword would deal no damage to the
+        // attacked character, it does not discard tough status cards from that
+        // character." Immortus cannot take damage while Shocker is engaged in
+        // his game area, so the attack deals none and Tough stays (ruling
+        // 76a9465df95e739c). Without Shocker the piercing discards it first.
+        var (world, kang, _, _) = Board("11002", "11009b");
+        if (minion) KangTemporalFixture.Engaged(world, "01103", 0);
+        Statuses.Give(world, kang, Statuses.Tough);
+        var knight = world.CreateCard("04012", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+
+        BasicPowers.AllyPower(world, world.Facts, knight, kang, BasicPowers.AttackVerb, []);
+        Finish(world);
+
+        Assert.Equal(damage, kang.Damage);
+        Assert.Equal(toughAfter, Statuses.Has(world, kang, Statuses.Tough));
+    }
+
+    [Theory]
+    [InlineData("11005", 0, true)]
+    [InlineData("11038", 1, false)]
+    [Rule("rr:piercing.2")]
+    [Rule("rr:attack-enemy-activation.2.2")]
+    public void ScarletCenturionKeepsOffToughWhenADefenceLeavesNoDamage(string face, int damage, bool toughAfter)
+    {
+        // rr:attack-enemy-activation.2.2: a defending hero with Tough reduces the
+        // damage by DEF first; "If the damage is reduced to 0, the hero keeps
+        // their tough status." rr:piercing.2 withholds the discard then. Spider-
+        // Man's DEF 3 stops Scarlet Centurion's 3 but not the expert's 4.
+        var (world, kang, _, _) = Board(face, "11012b", identity: "01001a,01001b");
+        var spider = world.Seats[0].IdentityCard;
+        Statuses.Give(world, spider, Statuses.Tough);
+        KangTemporalFixture.Attack(world, kang, 0);
+        int defences = 0;
+
+        KangTemporalFixture.Drive(world, (Marvel.Cards.Run.AbilityRunner)world.Abilities, prompt =>
+        {
+            if (prompt.Asking != Question.Defender) return null;
+            var defence = prompt.Affordances.FirstOrDefault(option => option.Id == spider.ObjectId);
+            if (defence is null) return Decision.Decline;
+            defences++;
+            return Decision.Take(defence.Id);
+        });
+
+        Assert.Equal(1, defences);
+        Assert.Equal(damage, spider.Damage);
+        Assert.Equal(toughAfter, Statuses.Has(world, spider, Statuses.Tough));
+    }
+
     private static void Finish(World world) =>
         new RedSkullFixture(world, (Marvel.Cards.Run.AbilityRunner)world.Abilities).Finish();
 
     internal static (World World, Card Kang, Card Scheme, Card Other) Board(
-        string face, string schemeFace, bool otherVillain = true)
+        string face, string schemeFace, bool otherVillain = true, string identity = "01010a,01010b")
     {
         var world = new World(Cards, 2, 42);
         for (int player = 0; player < 2; player++)
         {
             var seat = world.CreateSeat($"p{player}");
-            seat.IdentityCard = world.CreateCard(player == 0 ? "01010a,01010b" : "01019a,01019b", seat.Hero);
+            seat.IdentityCard = world.CreateCard(player == 0 ? identity : "01019a,01019b", seat.Hero);
             for (int i = 0; i < 6; i++) world.CreateCard("01088", seat.Deck);
             world.Join(PlayArea.Of(player), world.CreateGameArea(), "prepared split", []);
         }

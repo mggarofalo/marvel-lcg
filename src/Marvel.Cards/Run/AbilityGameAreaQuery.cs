@@ -57,6 +57,9 @@ internal static class AbilityGameAreaQuery
     internal static IReadOnlyList<Card> Minions(AbilityQueryContext cast)
     {
         var anchor = Anchor(cast);
+        // rr:minion.3 activates the minions engaged with a player; nothing else is
+        // engaged in admitted content, so the kind test mirrors the ordinary
+        // minions query and is not otherwise observable today.
         return [.. cast.World.Cards.Where(card => card.Area.Type == DeckType.EngagedEnemiesArea
             && EffectiveCards.Kind(card, cast.World.Facts) == CardKind.Minion
             && Places.CanAffect(cast.World, anchor, card)).OrderBy(card => card.ObjectId)];

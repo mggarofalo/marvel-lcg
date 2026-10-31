@@ -17,8 +17,9 @@ public sealed class AbilityDataAnUnauthoredCardSaysSoRatherThanDoingNothingTests
         // card produces a board that is plausible and wrong.
         var world = new World(Printed, players: 1);
         world.CreateSeat("p0");
-        // Kang's Arrival (stage 1A) has printed setup text and remains unauthored.
-        var card = world.CreateCard("11007a", world.AreaOf(DeckType.RevealingArea));
+        // Hunting the Spider-Bride, from Silk's nemesis set, has printed surge and
+        // When Revealed text and remains unauthored.
+        var card = world.CreateCard("52031", world.AreaOf(DeckType.RevealingArea));
         var thrown = Assert.Throws<RulesNotImplementedException>(() => AuthoredCards.Runner().ExecuteReveal(world, card, 0));
         Assert.Contains("no ability data", thrown.Message, StringComparison.Ordinal);
     }

@@ -76,7 +76,7 @@ public sealed class BlackWidowBurnNoticeTests
         Assert.Equal(added,
             rows.Skip(628).Take(4).Select(row => row.GetProperty("card").GetString()));
         Assert.All(rows.Skip(628).Take(4), row => Assert.False(row.TryGetProperty("startingCounters", out _)));
-        Assert.DoesNotContain("11007a", AuthoredCards.Book.Authored);
+        Assert.DoesNotContain("52031", AuthoredCards.Book.Authored);
         string[] seven = ["08003", "08004", "08013", "08012", "08018", "08024", "08033"];
         Assert.Equal(seven,
             rows.Skip(632).Take(7).Select(row => row.GetProperty("card").GetString()));

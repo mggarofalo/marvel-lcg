@@ -50,7 +50,7 @@ public sealed class DoctorStrangeInvocationCardTests
         Assert.Equal(AuthoredCards.ExpectedFaceCount, rows.Length);
         Assert.Equal(InvocationFaces, rows.Skip(665).Take(2).Select(row => row.GetProperty("card").GetString()));
         Assert.All(rows.Skip(665).Take(2), row => Assert.False(row.TryGetProperty("startingCounters", out _)));
-        Assert.DoesNotContain("11007a", AuthoredCards.Book.Authored);
+        Assert.DoesNotContain("52031", AuthoredCards.Book.Authored);
     }
 
     private static void AssertLifecycle(Game game, InvocationDeck deck, Card original,

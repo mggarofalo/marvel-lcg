@@ -21,6 +21,6 @@ public sealed class HulkFinalCardInventoryTests
         Assert.Equal(expected.Order(), AuthoredCards.Book.Authored.Where(id => id.StartsWith("10", StringComparison.Ordinal)).Order());
         Assert.Single(AuthoredCards.Book.On("10015"));
         Assert.Equal(2, AuthoredCards.Book.On("10029").Count());
-        Assert.DoesNotContain("11007a", AuthoredCards.Book.Authored);
+        Assert.DoesNotContain("52031", AuthoredCards.Book.Authored);
     }
 }

@@ -18,14 +18,16 @@ public sealed class KangConquerorTests : CoreCardTestBase
     [InlineData("11034", 1, 3)]
     [InlineData("11006", 0, 2)]
     [InlineData("11039", 1, 3)]
-    [Rule("rr:you-your.7")]
+    [Rule("rr:attack-enemy-activation.1.4")]
     [Rule("rr:interrupt")]
     public void TheAttackedPlayerChoosesThreatOnTheMainSchemeOrTwoMoreAttack(string face, int option, int attack)
     {
         // 11001/11006/11034/11039: "Forced Interrupt: When Kang attacks you,
         // either place 1 threat on the main scheme, or he gets +2 ATK for this
-        // attack." rr:you-your.7: "you" is the attacked player, who chooses
-        // (MARVEL-894 Q3). Player 1 is attacked and is not the first player.
+        // attack." rr:attack-enemy-activation.1.4: "When/After [enemy] attacks
+        // you" abilities "are resolved when/after a player is attacked"; that
+        // player chooses (MARVEL-894 Q3). Player 1 is attacked and is not the
+        // first player.
         var (world, f, kang, main) = Board(face);
         long threat = main.Tokens.GetValueOrDefault("k_threat");
         var askers = new List<int>();
@@ -47,7 +49,34 @@ public sealed class KangConquerorTests : CoreCardTestBase
     }
 
     [Fact]
-    [Rule("rr:you-your.7")]
+    [Rule("rr:attack-enemy-activation.5")]
+    [Rule("rr:attack-enemy-activation.step.1")]
+    public void TheChoiceIsMadeBeforeTheBoostCardIsDealt()
+    {
+        // rr:attack-enemy-activation.5: "Interrupts that trigger 'when [enemy
+        // name] attacks' have the same timing as interrupts that trigger 'when
+        // [the villain/an enemy] initiates an attack.'" They precede step 1,
+        // "Give boost card", so the deck is untouched when the player chooses.
+        var (world, f, kang, _) = Board("11001");
+        var deck = world.AreaOf(DeckType.EncounterDeck);
+        int before = deck.Cards.Count;
+        int asked = 0;
+        KangTemporalFixture.Attack(world, kang, 0);
+
+        f.Finish(prompt =>
+        {
+            asked++;
+            Assert.Equal(before, deck.Cards.Count);
+            Assert.All(world.Areas.Where(area => area.Type == DeckType.BoostingArea), area => Assert.Empty(area.Cards));
+            return Decision.Take(prompt.Affordances[0].Id);
+        });
+
+        Assert.Equal(1, asked);
+        Assert.Equal(before - 1, deck.Cards.Count);
+    }
+
+    [Fact]
+    [Rule("rr:attack-enemy-activation.1.4")]
     public void TheExtraAttackLastsOnlyForTheAttackThatChoseIt()
     {
         // "he gets +2 ATK for this attack": the next attack starts from printed ATK.
