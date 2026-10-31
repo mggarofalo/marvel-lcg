@@ -737,9 +737,14 @@ packet. Public wire support is protocol 38 and rejects protocol 37 peers.
 
 ### Replay identity
 
-The current replay identity is `engine-replay-v30`. Every earlier replay
-identity is refused. Under v30 an enemy a begun player attack reaches after its
-initiation -- the enemy Giant Stomp (12003) or Melee (05030) chooses for its
+The current replay identity is `engine-replay-v31`. Every earlier replay
+identity is refused. Under v31 a piercing attack on a character that cannot
+take damage leaves its tough status card, because the attack deals it no
+damage (rr:piercing.2; ruling 76a9465df95e739c). A v30 trace in which Black
+Knight (04012) attacks a Tough Red Skull while The Red House (04139) is in play,
+or a piercing attack reaches Ultron III or Madame Hydra under their own
+prohibition, resolves differently. Under v30 an enemy a begun player attack
+reaches after its initiation -- the enemy Giant Stomp (12003) or Melee (05030) chooses for its
 later damage -- is announced by a `LateAttackRecipient` step before that damage,
 and an attack-initiated interrupt keyed to the attacked enemy answers each
 recipient an attack declares, as Shield Toss's (rr:attack-player-ability-type.5).
