@@ -135,9 +135,8 @@ public static class BasicPowers
 
         // pack:mc11:game-areas: "Players cannot attack or defend enemies in other
         // game areas." An ordinary game has one game area, so nothing is removed.
-        var identity = world.Seats[player].IdentityCard;
         var enemies = BasicPowerStatus.Enemies(world, facts)
-            .Where(enemy => Places.CanAffect(world, identity, enemy)).ToList();
+            .Where(enemy => Places.CanAffect(world, player, enemy)).ToList();
         bool guarded = enemies.Any(enemy =>
             EffectiveCards.Kind(enemy, facts) == CardKind.Minion
             && BasicPowerStatus.Engaged(world, enemy) == player
@@ -193,7 +192,6 @@ public static class BasicPowers
         // `.2` exempts encounter card abilities, which do not come through here.
         // pack:mc11:game-areas: a player "cannot target any game elements in the
         // other game areas", and an icon there cannot affect this player's scheme.
-        var identity = world.Seats[player].IdentityCard;
 
         var schemes = new List<Card>();
         foreach (var area in world.Areas)
@@ -209,7 +207,7 @@ public static class BasicPowers
             }
 
             schemes.AddRange(area.Cards.Where(scheme =>
-                Places.CanAffect(world, identity, scheme)
+                Places.CanAffect(world, player, scheme)
                 && !(area.Type == DeckType.MainSchemesArea && MainScheme.Crisis(world, facts, scheme))
                 && scheme.Tokens.GetValueOrDefault("k_threat") > 0
                 && world.ThreatAbilities.CanThwartScheme(world, scheme)));

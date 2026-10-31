@@ -364,6 +364,8 @@ public sealed class PresentationSourcePolicyTests
             "Marvel.Rules.State.PersistentTrigger.Subject",
             "Marvel.Rules.State.PersistentTrigger.Target",
             "Marvel.Rules.State.PersistentTrigger.Timing",
+            // The engine's game-area answer, including retained scenario cards.
+            "Marvel.Rules.State.Places.GameAreaOf(Marvel.Rules.State.World, Marvel.Rules.State.Card)",
             "Marvel.Rules.State.PlayArea.IsPlayers",
             "Marvel.Rules.State.PlayArea.Player",
             // Passive canonical facts; the renderer never parses their notation.

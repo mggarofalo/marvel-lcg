@@ -113,7 +113,7 @@ public sealed class KangStageFlowTests : CoreCardTestBase
     [Theory]
     [InlineData(0)]
     [InlineData(1)]
-    [Rule("rr:villain-phase.1")]
+    [Rule("rr:villain-phase.step.1")]
     public void EachLocalSchemeTakesItsOwnStepOneThreatInTurnOrder(int first)
     {
         // Ruling 97d62cdb9ce436a7: "each player should place threat on their main

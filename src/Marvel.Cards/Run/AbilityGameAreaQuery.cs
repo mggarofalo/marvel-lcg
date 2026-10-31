@@ -14,7 +14,7 @@ namespace Marvel.Cards.Run;
 /// play" is read the same way (Q17), as a minion in his game area.
 /// </para>
 /// <para>
-/// Every answer comes from <see cref="Places.CanAffect"/> and nowhere else, so an
+/// Every answer comes from <see cref="Places.CanAffect(World, Card, Card)"/> and nowhere else, so an
 /// ordinary game, which has one game area holding every play area, reads the
 /// whole table. While the table is split, a side scheme revealed by a player
 /// enters that player's game area (MARVEL-894 Q15), and a card in no game area

@@ -124,6 +124,22 @@ public static class Places
         return from is null || to is null || ReferenceEquals(from, to);
     }
 
+    /// <summary>Whether a player's play area may affect a card at all.</summary>
+    /// <remarks>
+    /// The same partition as <see cref="CanAffect(World, Card, Card)"/>, asked from
+    /// a player's play area rather than from one of their cards.
+    /// </remarks>
+    /// <param name="world">The world.</param>
+    /// <param name="player">The player doing the affecting.</param>
+    /// <param name="target">The card being affected.</param>
+    public static bool CanAffect(World world, int player, Card target)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        var from = world.GameAreaOf(PlayArea.Of(player));
+        var to = GameAreaOf(world, target);
+        return from is null || to is null || ReferenceEquals(from, to);
+    }
+
     /// <summary>Which seats "each player" means, said by this card.</summary>
     /// <remarks>
     /// <para>
@@ -144,7 +160,7 @@ public static class Places
     /// </para>
     /// <para>
     /// A card in no game area reaches everybody, for the same reason as
-    /// <see cref="CanAffect"/> — which is what makes Kang's 2B "active for all
+    /// <see cref="CanAffect(World, Card, Card)"/> — which is what makes Kang's 2B "active for all
     /// players".
     /// </para>
     /// </remarks>

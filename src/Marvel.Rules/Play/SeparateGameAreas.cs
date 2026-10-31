@@ -29,7 +29,7 @@ internal static class SeparateGameAreas
     /// The ruling speaks of one main scheme per player. After a join, two players
     /// share one scheme; the engine chooses to place that scheme's threat once, at
     /// the turn of the area's earliest player, as the scheme's acceleration field
-    /// is placed once per villain phase (<c>rr:villain-phase.1</c>).
+    /// is placed once per villain phase (<c>rr:villain-phase.step.1</c>).
     /// </remarks>
     internal static IReadOnlyList<(GameArea Area, int Player)> InTurnOrder(World world)
     {
