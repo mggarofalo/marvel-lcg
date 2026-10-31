@@ -109,7 +109,7 @@ internal sealed class AbilityCostPreparation
             PrepareSequence(sequence);
             return;
         }
-        if (component is AbilityCost.Spend or AbilityCost.SpendEnergy)
+        if (component is AbilityCost.Spend or AbilityCost.SpendX)
         {
             PrepareResource(component);
             return;
@@ -169,7 +169,7 @@ internal sealed class AbilityCostPreparation
                 { Price = resourcePrice, Allocations = effectiveAllocations.ToImmutableArray() });
             return;
         }
-        var variable = (AbilityCost.SpendEnergy)component;
+        var variable = (AbilityCost.SpendX)component;
         long x = AbilityPaymentValidation.DefinedVariable(variables, "X", source);
         var resolvedPrice = resourcePrice is null ? null : resourcePrice with
         {

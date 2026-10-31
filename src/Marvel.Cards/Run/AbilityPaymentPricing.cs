@@ -25,7 +25,7 @@ internal static class AbilityPaymentPricing
         if (cost is AbilityCost.Sequence sequence)
             return SequencePrice(world, card, player, sequence, resourceAbilities);
 
-        if (cost is AbilityCost.SpendEnergy variable)
+        if (cost is AbilityCost.SpendX variable)
         {
             long maximum = CardPayment.Generators(
                     world, world.Facts, world.Seats[player], resourceAbilities, abilitySource: card)
@@ -115,7 +115,7 @@ internal static class AbilityPaymentPricing
     {
         // rr:non-numerical-variable.1: a printed X is defined by the playing player, which
         // only the card's own spendX cost records.
-        if (VariableCardCost.Applies(card.FaceId, world.Facts) && ability.Cost is not AbilityCost.SpendEnergy { Resource: null })
+        if (VariableCardCost.Applies(card.FaceId, world.Facts) && ability.Cost is not AbilityCost.SpendX { Resource: null })
             throw new RulesNotImplementedException($"'{card.FaceId}' costs X but its ability does not define X");
         var printed = EventPrice(world, card, player, ability, resourceAbilities, reduction);
         var arrow = Price(world, card, player, ability.Cost, resourceAbilities);
@@ -124,8 +124,9 @@ internal static class AbilityPaymentPricing
             return printed ?? arrow;
         }
 
-        if (ability.Cost is AbilityCost.SpendEnergy variable)
-            return VariableEventPrice(world, card, resourceAbilities, printed, variable);
+        if (ability.Cost is AbilityCost.SpendX variable)
+            return VariableEventPrice(world, card, resourceAbilities, printed, variable,
+                CardPayment.CostOf(world, world.Facts, world.Seats[player], card, null, reduction).VariableReduction);
 
         if (!TryCombinedAmounts(printed, arrow, out long printedAmount, out long arrowAmount))
         {
@@ -158,19 +159,23 @@ internal static class AbilityPaymentPricing
     }
 
     private static CostOption VariableEventPrice(World world, Card card, IResourceCardAbilities resourceAbilities,
-        CostOption printed, AbilityCost.SpendEnergy variable)
+        CostOption printed, AbilityCost.SpendX variable, long reduction)
     {
         // Engine choice: display the sum; allocation evaluates its separate components.
+        // A reduction left over from the fixed part lowers what X pays, so X may
+        // exceed the payable resources by that much (rr:non-numerical-variable.1).
         long amount = long.Parse(printed.Cost, System.Globalization.CultureInfo.InvariantCulture);
         long energy = printed.Generators.Sum(source => source.PossibleResources.LongCount(variable.Counts));
         long total = printed.Generators.Sum(source => (long)source.PossibleResources.Length);
+        string paid = reduction > 0
+            ? "X-" + reduction.ToString(System.Globalization.CultureInfo.InvariantCulture) : "X";
         return printed with
         {
-            Cost = printed.Cost + "+X",
-            Variables = [new VariableRequest("X", 1, Math.Min(energy, Math.Max(0, total - amount)))],
+            Cost = printed.Cost + "+" + paid,
+            Variables = [new VariableRequest("X", 1, checked(Math.Min(energy, Math.Max(0, total - amount)) + reduction))],
             Sources = [.. printed.Generators.Select(source => ExpandMask(world, card, resourceAbilities, source, 2))],
             Components = [printed.ResourceCosts.Single(),
-                new ResourceCost("X") { RepeatedResource = variable.Resource }],
+                new ResourceCost(paid) { RepeatedResource = variable.Resource }],
         };
     }
 

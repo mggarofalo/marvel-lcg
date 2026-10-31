@@ -167,7 +167,7 @@ internal static class AbilityCostLowering
             PositiveInteger(Required(fields, "count", location), location.Child("count")));
     }
 
-    internal static AbilityCost.SpendEnergy EnergyCost(AbilityValue value, AbilityLocation location)
+    internal static AbilityCost.SpendX EnergyCost(AbilityValue value, AbilityLocation location)
     {
         FixedWord(value, location, "Y");
         return new();
@@ -175,7 +175,7 @@ internal static class AbilityCostLowering
 
     // A printed card cost of X: the player defines X and pays X resources of any type
     // (rr:non-numerical-variable.1).
-    internal static AbilityCost.SpendEnergy PrintedXCost(AbilityValue value, AbilityLocation location)
+    internal static AbilityCost.SpendX PrintedXCost(AbilityValue value, AbilityLocation location)
     {
         FixedWord(value, location, "printed");
         return new() { Resource = null };

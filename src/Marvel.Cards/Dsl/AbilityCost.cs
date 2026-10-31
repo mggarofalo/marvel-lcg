@@ -42,10 +42,10 @@ public abstract record AbilityCost
         /// <summary>Total icons required, including unrestricted resources.</summary>
         public int Amount => checked(Resources.Length + Generic);
     }
-    /// <summary>Define and pay a positive X in energy resources, or in resources of any type.</summary>
-    public sealed record SpendEnergy : AbilityCost
+    /// <summary>Define a positive X and pay X resources: energy (<c>spendEnergyX</c>) or any type (a printed card cost of X, <c>spendX</c>).</summary>
+    public sealed record SpendX : AbilityCost
     {
-        /// <summary>The resource each of the X icons pays, or null for any type (a printed card cost of X).</summary>
+        /// <summary>The type each of the X resources must be, or null when any type pays.</summary>
         public char? Resource { get; init; } = Rules.Play.Resources.Energy;
         /// <summary>Whether a generated icon can count toward X.</summary>
         public bool Counts(char icon) => Resource is not { } resource || icon == resource || icon == Rules.Play.Resources.Wild;

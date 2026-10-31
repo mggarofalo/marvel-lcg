@@ -71,7 +71,7 @@ internal static class AbilityPaymentRules
             // so if everything together cannot pay then no choice among them
             // can, and if it can then spending it all is a payment.
             AbilityCost.Spend spend => ResourcePayable(world, card, player, spend, resourceAbilities),
-            AbilityCost.SpendEnergy variable => Resources.Pays(
+            AbilityCost.SpendX variable => Resources.Pays(
                 string.Concat(CardPayment.Generators(
                         world, world.Facts, world.Seats[player], resourceAbilities, abilitySource: card)
                     .SelectMany(source => source.Generates)),
@@ -210,7 +210,7 @@ internal static class AbilityPaymentRules
             return false;
         }
 
-        if (ability.Cost is AbilityCost.SpendEnergy)
+        if (ability.Cost is AbilityCost.SpendX)
         {
             var price = AbilityPaymentPricing.CombinedPrice(world, card, player, ability, resourceAbilities)!;
             var sources = price.Generators.Where(source => discarded is null || !discarded.Contains(source.Effect))
@@ -237,7 +237,7 @@ internal static class AbilityPaymentRules
 
     internal static bool EventPaysResources(World world, Card card, AbilityCost? cost) =>
         EffectiveCards.Kind(card, world.Facts) == CardKind.Event
-        && (AbilityInvocationPayment.Contains(cost) || cost is AbilityCost.SpendEnergy
+        && (AbilityInvocationPayment.Contains(cost) || cost is AbilityCost.SpendX
             || ResourceRequirement(cost, card).Length + GenericResourceAmount(cost) > 0);
 
     internal static int GenericResourceAmount(AbilityCost? cost) => cost switch
@@ -267,7 +267,7 @@ internal static class AbilityPaymentRules
                     + "printed-resource arrow cost, whose allocation is not implemented"),
                 _ => string.Empty,
             })),
-        AbilityCost.SpendEnergy => throw new RulesNotImplementedException(
+        AbilityCost.SpendX => throw new RulesNotImplementedException(
             $"event '{card.FaceId}' combines a printed cost with a variable X cost"),
         _ => string.Empty,
     };

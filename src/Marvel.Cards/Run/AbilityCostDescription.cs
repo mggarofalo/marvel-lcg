@@ -22,7 +22,7 @@ internal static class AbilityCostDescription
         // CostOptions. This contract supplies the other mandatory commitments.
         if (cost is AbilityCost.Spend { DistinctTypes: true } spend)
             return $"Spend {Number(spend.Amount)} resources of different types";
-        if (cost is AbilityCost.Spend or AbilityCost.SpendEnergy) return null;
+        if (cost is AbilityCost.Spend or AbilityCost.SpendX) return null;
         return Bound(world, source, player, cost) ?? Chosen(cost);
     }
 

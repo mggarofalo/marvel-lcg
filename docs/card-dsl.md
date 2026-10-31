@@ -2156,5 +2156,7 @@ available (`rr:choose-game-element.3`). Speed Cyclone (14006) stuns X enemies.
 defines a positive X and pays X resources of any type
 (`rr:non-numerical-variable.1`), recorded as the `energy` result as for
 `spendEnergyX`. A printed X reads as 0 everywhere else (`rr:non-numerical-variable`,
-ruling `5636cf3904ac9370`). A card costing X whose ability lacks this cost, or a
-cost reduction applied to X, raises.
+ruling `5636cf3904ac9370`). A cost reduction lowers the amount paid for X,
+never below 0, and leaves X unchanged; the offered component reads `X-1` for a
+reduction of 1. An event costing X whose ability lacks this cost, and any other
+card kind costing X, raises.

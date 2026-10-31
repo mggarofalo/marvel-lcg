@@ -11,7 +11,7 @@ internal static class AbilityPaymentReceiptAdmission
     internal static AbilityAdmissionResult? Admit(CompiledCardAbility ability,
         AbilityAdmissionContext context, IReadOnlyList<int>? selected, ScopedCardCostReduction? reduction = null)
     {
-        if (ability.Cost is AbilityCost.SpendEnergy)
+        if (ability.Cost is AbilityCost.SpendX)
             return AdmitEnergy(ability, context, selected, reduction);
         if (!Applies(ability, context))
             return AbilityDiscardReceiptAdmission.Admit(ability, context, selected);
@@ -62,8 +62,8 @@ internal static class AbilityPaymentReceiptAdmission
                     return result;
                 continue;
             }
-            int amount = checked((int)price.ResourceCosts.Sum(component => component.Cost == "X"
-                ? x : long.Parse(component.Cost, System.Globalization.CultureInfo.InvariantCulture)));
+            int amount = checked((int)price.ResourceCosts.Sum(component =>
+                ResourcePayment.Amount(component.Cost, values)!.Value));
             string required = string.Concat(price.ResourceCosts.Select(component =>
                 ResourcePayment.RequiredResources(component, values)));
             string generated = string.Concat(price.Generators.Select(source => source.Generates));

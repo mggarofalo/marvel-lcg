@@ -101,7 +101,7 @@ internal sealed class AbilityPaymentValidation(
             ValidateHealing(heal, paying, completeCost);
             return;
         }
-        if (step is AbilityCost.SpendEnergy)
+        if (step is AbilityCost.SpendX)
             ValidateEnergySpend(step, paying, values, allocations);
         else if (step is AbilityCost.DiscardFromHand discard)
             ValidateHandDiscard(discard, chosen);
@@ -139,17 +139,20 @@ internal sealed class AbilityPaymentValidation(
         long x = DefinedVariable(values, "X", source);
         var request = Price(world, source, player, step, resourceAbilities)!
             .VariableRequests.Single(variable => variable.Name == "X");
-        if (!request.Allows(x))
+        // rr:non-numerical-variable.1: a reduction lowers the amount paid, not X.
+        long reduction = CardPayment.CostOf(world, world.Facts, world.Seats[player], source).VariableReduction;
+        long paid = Math.Max(0, x - reduction);
+        if (x < request.Min || x > request.Max + reduction)
             throw new RulesNotImplementedException(
-                $"'{source.FaceId}' defines X as {x}, outside the offered range {request.Min}..{request.Max}");
+                $"'{source.FaceId}' defines X as {x}, outside the offered range {request.Min}..{request.Max + reduction}");
         var generators = CardPayment.Generators(
             world, world.Facts, world.Seats[player], resourceAbilities, abilitySource: source).ToList();
-        if (paying.Count == 0 || paying.Distinct().Count() != paying.Count
+        if (paying.Count == 0 && paid > 0 || paying.Distinct().Count() != paying.Count
             || paying.Any(id => generators.All(candidate => candidate.Effect != id)))
             throw new RulesNotImplementedException($"'{source.FaceId}' names an invalid generator for X");
         string generated = string.Concat(generators.Where(generator => paying.Contains(generator.Effect))
             .Select(generator => ResourcePayment.GeneratedBy(generator, allocations)));
-        if (!Resources.Pays(generated, x, ((AbilityCost.SpendEnergy)step).Required(x)))
+        if (!Resources.Pays(generated, paid, ((AbilityCost.SpendX)step).Required(paid)))
             throw new RulesNotImplementedException(
                 $"'{source.FaceId}' defines X as {x}, but the payment generates '{generated}'");
     }

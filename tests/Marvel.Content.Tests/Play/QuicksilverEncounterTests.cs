@@ -210,6 +210,28 @@ public sealed class QuicksilverEncounterTests : CoreCardTestBase
         Assert.Equal(3, villain.Damage);
     }
 
+    [Fact]
+    [Rule("rr:attack-player-ability-type.1")]
+    public void AnAttackThatUsedTheReductionHasNoneLeftToPreview()
+    {
+        // "Reduce the damage attached enemy takes from each attack by 1." Within one
+        // attack the first damage uses the reduction, so the reduction the preview
+        // offers for the rest of that attack is 0. Rhino is the host; attack damage
+        // from his own activation stands in for any attack scope.
+        var world = QuicksilverBoards.Board();
+        var villain = QuicksilverBoards.Villain(world);
+        RevealDealt(world, "14027");
+        var quicksilver = world.Seats[0].IdentityCard;
+        world.Activation = new EnemyActivation(villain.ObjectId, 0, Attacking: true, Id: 17);
+        Assert.Equal(1, AttackDamageReduction.Available(world, villain));
+
+        DamagePlacement.Resolve(world, world.Facts,
+            new DamageRequest(quicksilver, villain, 2, "test", "Attack") { FromAttack = true }, []);
+        Assert.Equal(1, villain.Damage);
+        Assert.Equal(0, AttackDamageReduction.Available(world, villain));
+        Assert.Equal(1, AttackDamageReduction.Amount(world, villain));
+    }
+
     // The production Vibration Resistance row beside a synthetic two-hit attack on For Justice!.
     private static AbilityBook DoubleStrikeBook()
     {

@@ -22,4 +22,9 @@ namespace Marvel.Rules.Play;
 /// <param name="Amount">The cost after modifiers, never less than zero.</param>
 /// <param name="Modifiers">The effects applied while determining it.</param>
 public sealed record AdjustedCardCost(
-    long Amount, IReadOnlyList<ContinuousEffect> Modifiers);
+    long Amount, IReadOnlyList<ContinuousEffect> Modifiers)
+{
+    /// <summary>The reduction left for the amount paid for a printed X once the rest of the cost is zero.</summary>
+    /// <remarks><c>rr:non-numerical-variable.1</c>: it lowers what is paid, never X itself.</remarks>
+    public long VariableReduction { get; init; }
+}

@@ -37,19 +37,21 @@ Each choice below is recorded in the row note or the code comment that owns it.
 - **Speed Cyclone** costs X resources of any type, X chosen while paying
   (rr:initiating-abilities.step.3, rr:non-numerical-variable.1), and stuns X
   different enemies (`spendX: printed`). The engine offers X from 1, as for
-  every existing X cost; X = 0 would stun nothing. Ruling 5636cf3904ac9370
-  reads its cost in hand as 0 for other abilities. rr:non-numerical-variable.1
-  lets effects modify the amount paid without changing X; the engine does not
-  yet reduce the X component, so a cost reduction applied to Speed Cyclone
-  raises `RulesNotImplementedException` before anything is paid.
+  every X cost; X = 0 would stun nothing. Ruling 5636cf3904ac9370 reads its
+  cost in hand as 0 for other abilities. A cost reduction such as Helicarrier
+  (01092, 10024) lowers the amount paid for X, never below 0, and leaves X
+  unchanged (rr:non-numerical-variable.1: "the amount paid may be modified by
+  effects without changing the value of X"). The offered X component reads
+  `X-1`, X may exceed the payable resources by the reduction, and the
+  reduction is used by that play.
 - **Serval Industries** shuffles in only Quicksilver identity-specific cards
   and is not offered without one in the discard pile
   (rr:initiating-abilities.step.2). The same gate applies to every
   `chooseDiscardToShuffle` with a minimum, such as Ancestral Knowledge (01042).
 - **Friction Resistance** responds to a ready instruction that readied your
   hero. The readying occurrence opens a response window (`WhenCardReadied`).
-  Ruling 47cf0084407ee2a4: its
-  generated resource is a printed physical resource.
+  Ruling 47cf0084407ee2a4: its generated resource is a printed physical
+  resource.
 - **Never Back Down** gives +2 DEF for the attack and, if the defending hero
   took no damage from it, stuns the attacker when the attack ends. Ruling
   da8c5c381de666bb: it cannot be played before an ally becomes the defender.
@@ -78,25 +80,32 @@ Each choice below is recorded in the row note or the code comment that owns it.
 Every change is new vocabulary used only by Quicksilver rows, except the
 following:
 
-- The `chooseDiscardToShuffle` target gate described above withholds an
-  offer that could not be completed. Ancestral Knowledge was offered with an
-  empty discard pile, so a recorded prompt can differ, and the replay identity
-  moves to `engine-replay-v32`
+- **The discard-pile shuffle gate.** An ability that must shuffle at least
+  one card from its player's discard pile is offered only when an eligible
+  card is there (rr:initiating-abilities.step.2). Ancestral Knowledge (01042)
+  is not offered with an empty discard pile. A v31 trace can record a prompt
+  that v32 does not produce, so the replay identity is `engine-replay-v32`
   (`AncestralKnowledgeNeedsACardInTheDiscardPile`).
-- The ready instruction raises a `WhenCardReadied` response window, and an
-  ally's basic thwart or attack raises `WhenAllyBasicUseInitiated`. Before this
-  pack no ability listened to either, so an admitted game opens no new prompt.
-- A card whose printed cost is X refuses a cost reduction and refuses an
-  ability without `spendX`. Speed Cyclone is the first admitted player card
-  with a printed X cost.
-
-The last two change no admitted outcome.
+- **Readied and ally basic-use windows.** The ready instruction raises a
+  `WhenCardReadied` response window, and an ally's basic thwart or attack
+  raises `WhenAllyBasicUseInitiated`. Only Quicksilver rows listen to either,
+  so a game without them opens no new prompt.
+- **Printed X costs.** A printed X reads as 0 outside its card's own play. An
+  event costing X needs `spendX` in its ability. Any other card kind costing X
+  raises rather than being priced free. A cost reduction lowers the amount
+  paid for X. Admitted reductions reach Speed Cyclone: Helicarrier is in five
+  Core starters and Hulk's, so a partner can reduce Quicksilver's next card.
+  Speed Cyclone is the only admitted player card with a printed X cost, so
+  this changes no other card's price.
 
 ## Evidence
 
 The runtime tests use the production ability book on synthetic boards:
 `QuicksilverIdentityTests`, `QuicksilverSignatureTests`,
 `QuicksilverPlayerCardTests` and `QuicksilverEncounterTests`.
+`AHelicarrierReductionLowersWhatSpeedCyclonePaysButNotX` plays Speed Cyclone
+after Spider-Man's Helicarrier chooses Quicksilver: X = 2 stuns two enemies
+for one resource, and X = 1 stuns one for none.
 `QuicksilverAdmissionTests` closes the pack when a face is missing, a face
 changes pack, or any recipe component changes. `QuicksilverLoweringTests`
 refuses malformed shapes of the new vocabulary.

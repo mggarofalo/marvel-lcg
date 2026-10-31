@@ -292,17 +292,44 @@ public sealed class QuicksilverSignatureTests : CoreCardTestBase
         Assert.Equal(DeckType.DiscardPile, cyclone.Area.Type);
     }
 
-    [Fact]
+    [Theory]
+    [InlineData(2, 1)]
+    [InlineData(1, 0)]
     [Rule("rr:non-numerical-variable.1")]
-    public void ACostReductionOnSpeedCycloneRaisesUntilXReductionIsImplemented()
+    public void AHelicarrierReductionLowersWhatSpeedCyclonePaysButNotX(int x, int paid)
     {
-        // rr:non-numerical-variable.1: "the amount paid may be modified by effects
-        // without changing the value of X". Reducing the paid X is not implemented.
-        var world = QuicksilverBoards.Board();
-        QuicksilverBoards.Hand(world, "14006");
-        QuicksilverBoards.Hand(world, "14004");
-        CardPayment.ReduceNextCardCost(world, world.Seats[0].IdentityCard, 0, 1);
-        var raised = Assert.Throws<RulesNotImplementedException>(() => QuicksilverBoards.Runner(world).Actions(world, 0));
-        Assert.Contains("costs X", raised.Message, StringComparison.Ordinal);
+        // rr:non-numerical-variable.1: "the value of X is defined by card ability or
+        // player choice, after which the amount paid may be modified by effects without
+        // changing the value of X." 01092 Helicarrier: "choose a player. Reduce the
+        // resource cost of the next card that player plays this phase by 1." Spider-Man
+        // uses it on Quicksilver, who then stuns X enemies while paying X - 1.
+        var world = QuicksilverBoards.Board(players: 2);
+        var villain = QuicksilverBoards.Villain(world);
+        var minion = QuicksilverBoards.Engaged(world, "01101");
+        var helicarrier = QuicksilverBoards.InPlay(world, "01092", DeckType.SupportsArea, player: 1);
+        QuicksilverBoards.Play(world, helicarrier, []);
+        QuicksilverBoards.Drive(world, QuicksilverBoards.Take(world.Seats[0].IdentityCard));
+        var cyclone = QuicksilverBoards.Hand(world, "14006");
+        var later = QuicksilverBoards.Hand(world, "14003");
+        Card[] paying = [.. Enumerable.Range(0, paid).Select(_ => QuicksilverBoards.Hand(world, "14005"))];
+        var runner = QuicksilverBoards.Runner(world);
+        var action = Assert.Single(runner.Actions(world, 0), a => a.Card == cyclone.ObjectId);
+
+        var price = AbilityPaymentPricing.CombinedPrice(world, cyclone, 0,
+            Assert.Single(AuthoredCards.Program.On("14006")), runner)!;
+        Assert.Equal("X-1", price.ResourceCosts[^1].Cost);
+        var values = new Dictionary<string, long>(StringComparer.Ordinal) { ["X"] = x };
+        int[] spent = [.. paying.Select(card => card.ObjectId)];
+
+        runner.ExecuteAction(world, new PlayerAction(action, spent, [], values)
+            { Allocations = [.. ResourcePayment.Allocate(price, spent, values)!] });
+        QuicksilverBoards.Drive(world, prompt => prompt.Affordances.FirstOrDefault(a => a.Targets is { } request && request.Min > 0) is { } choose
+            ? Decision.Take(choose.Id) with { Targets = [.. choose.Targets!.Legal.Take(choose.Targets.Min)] } : null);
+
+        Assert.Equal(x, new[] { villain, minion }.Count(enemy => Statuses.Has(world, enemy, Statuses.Stunned)));
+        Assert.All(paying, card => Assert.Equal(DeckType.DiscardPile, card.Area.Type));
+        Assert.Equal(DeckType.DiscardPile, cyclone.Area.Type);
+        // The reduction applied to Speed Cyclone; the next card costs its printed 1.
+        Assert.Equal(1, CardPayment.CostOf(world, world.Facts, world.Seats[0], later).Amount);
     }
 }

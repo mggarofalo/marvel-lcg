@@ -173,7 +173,7 @@ internal sealed class DamageConsequencePreview(World world, ICardFacts facts, Ca
 
     private long ProjectAttackReduction(long taken, List<string> notes)
     {
-        long reduction = AttackDamageReduction.Amount(world, target);
+        long reduction = AttackDamageReduction.Available(world, target);
         if (reduction <= 0 || taken <= 0) return taken;
         notes.Add($"Takes {reduction} less damage from this attack");
         return Math.Max(0, taken - reduction);

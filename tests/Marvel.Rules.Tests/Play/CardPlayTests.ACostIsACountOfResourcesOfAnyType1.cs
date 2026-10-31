@@ -134,6 +134,42 @@ public sealed class CardPlayACostIsACountOfResourcesOfAnyTypeTests : CardPlayTes
         Assert.True(VariableCardCost.Applies("variable", printed));
     }
 
+    [Rule("rr:non-numerical-variable.1")]
+    [Fact]
+    public void AReductionOnAnEventCostingXIsLeftForTheAmountPaidForX()
+    {
+        // "The amount paid may be modified by effects without changing the value of
+        // X": the zero printed part absorbs nothing, so the whole reduction lowers
+        // what X pays, and never below zero (rr:modifiers.4).
+        var printed = Cards().With("event", ("Cost", "X"));
+        var world = Board(printed);
+        var card = InHand(world, "event");
+        var source = world.CreateCard("support", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
+        CardPayment.ReduceNextCardCost(world, source, player: 0, amount: 2);
+
+        var adjusted = CardPayment.CostOf(world, printed, world.Seats[0], card);
+        Assert.Equal(0, adjusted.Amount);
+        Assert.Equal(2, adjusted.VariableReduction);
+        Assert.Single(adjusted.Modifiers);
+        Assert.Equal(1, ResourcePayment.Amount("X-2", new Dictionary<string, long> { ["X"] = 3 }));
+        Assert.Equal(0, ResourcePayment.Amount("X-2", new Dictionary<string, long> { ["X"] = 1 }));
+        Assert.Null(ResourcePayment.Amount("X-2"));
+    }
+
+    [Rule("rr:non-numerical-variable.1")]
+    [Fact]
+    public void ANonEventCostingXRaisesRatherThanBeingPricedFree()
+    {
+        // Only an event's own variable cost defines X; reading an ally's X as 0 would
+        // make it free.
+        var printed = Cards().With("ally", ("Cost", "X"));
+        var world = Board(printed);
+        var card = InHand(world, "ally");
+        var thrown = Assert.Throws<RulesNotImplementedException>(
+            () => CardPayment.CostOf(world, printed, world.Seats[0], card));
+        Assert.Contains("costs X", thrown.Message, StringComparison.Ordinal);
+    }
+
     [Rule("rr:cost.2")]
     [Rule("rr:cost.2.1")]
     [Rule("rr:per-player-icon.1")]

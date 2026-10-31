@@ -25280,7 +25280,7 @@
     {
       "card": "14006",
       "name": "Speed Cyclone",
-      "note": "Printed cost X: the player defines a positive X and pays X resources of any type (rr:non-numerical-variable.1); X is recorded as the energy result. Hero Action: stun X different enemies, as many as can be stunned when fewer are available (rr:choose-game-element.3). A cost reduction applied to X raises until implemented; ruling 5636cf3904ac9370 reads its cost in hand as 0 for other abilities.",
+      "note": "Printed cost X: the player defines a positive X and pays X resources of any type (rr:non-numerical-variable.1); X is recorded in the energy result, the receipt every variable X cost writes. Hero Action: stun X different enemies, as many as can be stunned when fewer are available (rr:choose-game-element.3). A cost reduction lowers the amount paid for X without changing X; ruling 5636cf3904ac9370 reads its cost in hand as 0 for other abilities.",
       "abilities": [
         {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero"}, "cost": {"spendX": "printed"}, "effect": {"chooseStatusRecipients": {"from": {"query": "enemies"}, "status": "stunned", "count": {"result": "energy"}}}}
       ]

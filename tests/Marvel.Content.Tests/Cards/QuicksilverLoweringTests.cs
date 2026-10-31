@@ -30,7 +30,7 @@ public sealed class QuicksilverLoweringTests
 
         var program = AbilityLowering.Book(Book(
             Ability("""{"draw":{"player":"you","count":1}}""", """ "cost":{"spendX":"printed"}, """)));
-        var cost = Assert.IsType<AbilityCost.SpendEnergy>(Assert.Single(program.On("14006")).Cost);
+        var cost = Assert.IsType<AbilityCost.SpendX>(Assert.Single(program.On("14006")).Cost);
         Assert.Null(cost.Resource);
     }
 

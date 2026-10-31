@@ -81,13 +81,13 @@ public static class CardPayment
 
         var increases = NextEventCost.Applied(world, seat, card);
         amount = checked(amount + increases.Sum(effect => effect.Amount));
+        long reduced = amount;
         foreach (var modifier in modifiers)
         {
             amount = Math.Max(0, amount - modifier.Amount);
         }
 
         long self = world.CardPlayAbilities.SelfPlayCostReduction(world, card, seat.Index);
-        VariableCardCost.RefuseReduction(card.FaceId, facts, modifiers.Count, self, reduction);
         amount = Math.Max(0, amount - self);
         amount = AllyPlayHistory.AdjustCost(world, card, amount);
         amount = UpgradeHostCost.Adjust(world, card, attachmentHost, amount);
@@ -96,7 +96,11 @@ public static class CardPayment
             reduction.Validate(world, seat, card);
             amount = Math.Max(0, amount - reduction.Amount);
         }
-        return new AdjustedCardCost(amount, [.. modifiers, .. increases]);
+        long reductions = checked(modifiers.Sum(modifier => modifier.Amount) + self + (reduction?.Amount ?? 0));
+        return new AdjustedCardCost(amount, [.. modifiers, .. increases])
+        {
+            VariableReduction = VariableCardCost.Remaining(card, facts, reductions, reduced),
+        };
     }
 
     private static bool Matches(World world, Card card, CardCostFilter? filter) =>

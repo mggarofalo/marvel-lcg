@@ -21,16 +21,20 @@ public static class VariableCardCost
         return facts.Attributes(faceId).TryGetValue("Cost", out string? printed) && printed == Printed;
     }
 
-    /// <summary>Raises when a cost reduction applies to a card that costs X.</summary>
+    /// <summary>The part of a reduction left for the amount paid for X, after the rest of the cost reached zero.</summary>
     /// <remarks>
     /// <c>rr:non-numerical-variable.1</c>: X is defined first, "after which the amount
-    /// paid may be modified by effects without changing the value of X". X is priced
-    /// as its own variable component, so an increase adds to the zero printed part
-    /// correctly, while reducing the amount paid for X is not implemented.
+    /// paid may be modified by effects without changing the value of X". Only an event
+    /// defines X through its own variable cost; another card kind costing X raises
+    /// rather than being priced free.
     /// </remarks>
-    public static void RefuseReduction(string faceId, ICardFacts facts, int modifiers, long self, object? scoped)
+    public static long Remaining(Card card, ICardFacts facts, long reductions, long fixedCost)
     {
-        if (Applies(faceId, facts) && (modifiers > 0 || self > 0 || scoped is not null))
-            throw new RulesNotImplementedException($"card '{faceId}' costs X and a cost reduction applies to it");
+        ArgumentNullException.ThrowIfNull(card);
+        if (!Applies(card.FaceId, facts)) return 0;
+        if (EffectiveCards.Kind(card, facts) != CardKind.Event)
+            throw new RulesNotImplementedException(
+                $"card '{card.FaceId}' costs X, which only an event's own variable cost defines");
+        return Math.Max(0, reductions - fixedCost);
     }
 }

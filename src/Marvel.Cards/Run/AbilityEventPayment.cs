@@ -130,7 +130,7 @@ internal sealed class AbilityEventPayment
         IResourceCardAbilities resourceAbilities, AbilityPaymentSelection selection, ScopedCardCostReduction? reduction)
     {
         long? energy = null;
-        if (ability.Cost is AbilityCost.SpendEnergy)
+        if (ability.Cost is AbilityCost.SpendX)
         {
             energy = AbilityPaymentValidation.DefinedVariable(selection.Values, "X", card);
             var variablePrice = AbilityPaymentPricing.CombinedPrice(world, card, player, ability, resourceAbilities, reduction)!;

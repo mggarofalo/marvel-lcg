@@ -36,7 +36,7 @@ internal static class AbilityPlayerBindingAnalysis
         AbilityCost.ExhaustChosen chosen => chosen.From is
             AbilityCardQuery.CharactersYouControl or AbilityCardQuery.AlliesYouControl,
         AbilityCost.DiscardFromHand discard => discard.Range is AbilityCostRange.Any,
-        AbilityCost.Spend or AbilityCost.SpendEnergy => false,
+        AbilityCost.Spend or AbilityCost.SpendX => false,
         _ => throw new InvalidOperationException(
             "Unknown compiled cost in player-binding analysis"),
     };

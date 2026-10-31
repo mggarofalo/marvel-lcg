@@ -173,7 +173,7 @@ internal static class AbilityWindowAdmission
         {
             return true;
         }
-        return ability.Cost is AbilityCost.SpendEnergy
+        return ability.Cost is AbilityCost.SpendX
             ? AbilityPaymentReceiptAdmission.Admit(ability, context, null) is not null
             : AbilityEntryAdmission.Admit(ability.Effect, context).IsAdmissible;
     }

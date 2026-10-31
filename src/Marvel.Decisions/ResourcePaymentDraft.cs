@@ -52,7 +52,5 @@ internal static class ResourcePaymentDraft
 
     private static bool RequiredHasRoom(
         string cost, string required, IReadOnlyDictionary<string, long>? values) =>
-        (long.TryParse(cost, out long amount)
-            || values is not null && values.TryGetValue(cost, out amount))
-        && required.Length < amount;
+        ResourcePayment.Amount(cost, values) is { } amount && required.Length < amount;
 }
