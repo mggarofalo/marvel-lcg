@@ -2,6 +2,7 @@ using Marvel.Rules.Events;
 using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
+using Marvel.Rules.Timing;
 using Marvel.Tests;
 using Xunit;
 using static Marvel.Content.Tests.Play.KangStageFlowFixture;
@@ -152,7 +153,7 @@ public sealed class KangSplitAreaIsolationTests
         var mine = LocalKang(world, 1);
         var theirs = LocalKang(world, 0);
         var identity = world.Seats[1].IdentityCard;
-        if (!Forms.In(world, world.Seats[1], world.Facts, Forms.Hero)) identity.TurnTo(identity.FaceId.Replace('b', 'a'));
+        Hero(world, 1);
         int start = events.Count;
 
         Reveal(world, "01189", 1, events);
@@ -160,6 +161,74 @@ public sealed class KangSplitAreaIsolationTests
         var attacks = events.Skip(start).OfType<AttackBoundary>().Where(attack => attack.Started).ToList();
         Assert.DoesNotContain(attacks, attack => attack.Source == theirs.ObjectId);
         Assert.Contains(attacks, attack => attack.Source == mine.ObjectId && attack.Target == identity.ObjectId);
+    }
+
+    [Theory]
+    [Rule("rr:amplify-icon.1")]
+    [InlineData(0, 0)]
+    [InlineData(1, 2)]
+    public void AmplifyCountsOnlyIconsInTheActivatingEnemysGameArea(int holder, int added)
+    {
+        // "Add one additional boost icon to that card for each amplify icon in
+        // play"; MARVEL-894 Q14 puts the boost card in the activating enemy's
+        // area, and pack:mc11:game-areas keeps another area's icons out of reach.
+        Assert.Equal(AssaultDamage(null) + added, AssaultDamage(holder));
+    }
+
+    [Fact]
+    [Rule("rr:overkill.1")]
+    public void OverkillSpillsOntoTheAttackersOwnKang()
+    {
+        // "Deal the damage beyond its hit points to the villain": the Kang in the
+        // attacking character's game area.
+        var events = new List<GameEvent>();
+        var world = Split(2, false, events);
+        var minion = world.CreateCard("01101", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(1)));
+        string theirs = Snapshot(world, 0);
+        var mine = LocalKang(world, 1);
+        long health = Damage.Health(world, world.Facts, mine);
+        bool tough = Statuses.Has(world, mine, Statuses.Tough);
+        Agendas.Happening(world);
+        var identity = world.Seats[1].IdentityCard;
+
+        DamageAttacks.Resolve(world, world.Facts,
+            new AttackDamageRequest(identity, identity, minion, 9, "prepared overkill", "Attack") { GrantedOverkill = true },
+            events);
+        Sequence.Finish(world, world.Facts, world.Abilities, events);
+
+        Assert.Equal(theirs, Snapshot(world, 0));
+        Assert.True(Damage.Health(world, world.Facts, mine) < health || tough && !Statuses.Has(world, mine, Statuses.Tough));
+    }
+
+    [Fact]
+    public void MainSchemeCountersRefuseWhileTheTableIsSeparated()
+    {
+        // A captured live amount names no referring card, so it cannot choose
+        // between the separate game areas' main schemes.
+        var world = Split(2, false, []);
+
+        Assert.Throws<RulesNotImplementedException>(() =>
+            new ContinuousAmount.MainSchemeCounters("test").Evaluate(world));
+    }
+
+    // Player 1's own Kang attacks them through Assault (01187), boosted once.
+    private static long AssaultDamage(int? amplifyHolder)
+    {
+        var events = new List<GameEvent>();
+        var world = Split(2, false, events);
+        if (amplifyHolder is int seat)
+            world.Effects.Register(new(EffectSource.LastingEffect, "amplify", 2, Affects: LocalKang(world, seat).ObjectId));
+        Hero(world, 1);
+        long before = world.Seats[1].IdentityCard.Damage;
+        Reveal(world, "01187", 1, events);
+        return world.Seats[1].IdentityCard.Damage - before;
+    }
+
+    private static void Hero(World world, int seat)
+    {
+        var identity = world.Seats[seat].IdentityCard;
+        if (!Forms.In(world, world.Seats[seat], world.Facts, Forms.Hero))
+            identity.TurnTo(identity.FaceId.Replace('b', 'a'));
     }
 
     private static string Snapshot(World world, int seat)

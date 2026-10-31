@@ -238,9 +238,7 @@ public static class Places
     /// <para>
     /// The game-area partition is applied on top. Both rules say what a card
     /// cannot reach, so the answer is the intersection; in an ordinary game
-    /// neither narrows anything. Of what remains, the main schemes in the
-    /// source's own game area are preferred over a central one such as Kang's
-    /// 2B (<see cref="CardReferences.InHomeGameArea"/>).
+    /// neither narrows anything.
     /// </para>
     /// </remarks>
     /// <param name="world">The world.</param>
@@ -280,6 +278,6 @@ public static class Places
             }
         }
 
-        return CardReferences.InHomeGameArea(world, source, found);
+        return found;
     }
 }
