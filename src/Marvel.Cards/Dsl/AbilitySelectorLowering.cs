@@ -87,6 +87,7 @@ internal static class AbilitySelectorLowering
         "villain" => AbilityCardQuery.Villain,
         "villainInThisGameArea" => AbilityCardQuery.VillainInThisGameArea,
         "obligationsInThisGameArea" => AbilityCardQuery.ObligationsInThisGameArea,
+        "minionsInThisGameArea" => AbilityCardQuery.MinionsInThisGameArea,
         "otherVillainSideSchemes" => AbilityCardQuery.OtherVillainSideSchemes,
         "activeVillainSideScheme" => AbilityCardQuery.ActiveVillainSideScheme,
         "villainOfAttachedScheme" => AbilityCardQuery.VillainOfAttachedScheme,

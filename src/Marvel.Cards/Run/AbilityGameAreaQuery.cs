@@ -10,10 +10,12 @@ namespace Marvel.Cards.Run;
 /// another game area". MARVEL-894 (Q2) reads "Kang" on the Kang scenario's
 /// encounter cards as the Kang villain in that card's game area (ruling
 /// 5ecfc71ddff64d39 keeps a Kang boost local), and (Q4) "each obligation in
-/// play" as the obligations in that game area.
+/// play" as the obligations in that game area. Immortus's "while a minion is in
+/// play" is read the same way, as a minion in his game area; that reading is
+/// ours, by the same partition.
 /// </para>
 /// <para>
-/// Both answers come from <see cref="Places.CanAffect"/> and nowhere else, so an
+/// Every answer comes from <see cref="Places.CanAffect"/> and nowhere else, so an
 /// ordinary game, which has one game area holding every play area, reads the
 /// whole table. While the table is split, a source in no game area raises: the
 /// engine places a revealed side scheme in the villain's play area
@@ -44,6 +46,20 @@ internal static class AbilityGameAreaQuery
         var anchor = Anchor(cast);
         return [.. cast.World.Cards.Where(card => card.Area.Type == DeckType.ObligationsArea
             && Places.CanAffect(cast.World, anchor, card))];
+    }
+
+    /// <summary>Every minion in play in the source's game area, in object-id order.</summary>
+    /// <remarks>
+    /// rr:minion: "If a minion enters play, it engages the player who is
+    /// revealing the card [...]", so a minion is in play exactly while it is in
+    /// an engaged-enemies area.
+    /// </remarks>
+    internal static IReadOnlyList<Card> Minions(AbilityQueryContext cast)
+    {
+        var anchor = Anchor(cast);
+        return [.. cast.World.Cards.Where(card => card.Area.Type == DeckType.EngagedEnemiesArea
+            && EffectiveCards.Kind(card, cast.World.Facts) == CardKind.Minion
+            && Places.CanAffect(cast.World, anchor, card)).OrderBy(card => card.ObjectId)];
     }
 
     // A faceup boost card sits in the villain's play area, which a split table

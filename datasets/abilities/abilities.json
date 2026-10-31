@@ -24507,6 +24507,66 @@
           "effect": { "playersWin": "game" }
         }
       ]
+    },
+    {
+      "card": "11002",
+      "name": "Kang (Immortus)",
+      "note": "Kang II. Toughness is engine-owned. This villain cannot take damage while a minion is in play. pack:mc11:game-areas: cards in one game area cannot affect another, so a minion counts only in his game area (minionsInThisGameArea); that reading is ours, by the same partition MARVEL-894 applies to \"Kang\" (Q2) and \"each obligation in play\" (Q4). Ruling 76a9465df95e739c (MARVEL-894 Q9): Kang keeps Tough while he cannot take damage, since damage he cannot take is replaced by none at rr:damage.step.1. When Defeated: Remove The Chronopolis from the game. At the end of the phase, join another game area. captureKangStageTwoDefeat removes the matching stage 3B in this Kang's game area and retains the defeat for the next phase ending, where the scenario-owned departure joins the group to another game area (pack:mc11:game-areas). rr:when-defeated-abilities.2.1 resolves it before he leaves play; pack:mc11:rules-clarifications keeps his attachments and statuses from passing to Kang III. His flat hit points are printed without a per-player icon.",
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant", "subject": "this" },
+          "effect": { "preventDamageWhile": { "card": "this", "condition": { "exists": { "query": "minionsInThisGameArea" } } } }
+        },
+        {
+          "trigger": { "event": "WhenCardDefeated", "timing": "WhenDefeated", "subject": "this" },
+          "effect": { "captureKangStageTwoDefeat": "this" }
+        }
+      ]
+    },
+    {
+      "card": "11004",
+      "name": "Kang (Rama-Tut)",
+      "note": "Kang II. Toughness is engine-owned. star This villain gets +1 ATK for each obligation in play. MARVEL-894 (Q4) counts the obligations in his game area (obligationsInThisGameArea). rr:obligation.5 puts a revealed obligation in its player's play area, so every player's obligations in that game area count. When Defeated: Remove The Realm of Rama-Tut from the game. At the end of the phase, join another game area. captureKangStageTwoDefeat removes the matching stage 3B in this Kang's game area and retains the defeat for the next phase ending, where the scenario-owned departure joins the group to another game area (pack:mc11:game-areas). rr:when-defeated-abilities.2.1 resolves it before he leaves play; pack:mc11:rules-clarifications keeps his attachments and statuses from passing to Kang III. His flat hit points are printed without a per-player icon.",
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant", "subject": "this" },
+          "effect": { "grant": { "card": "this", "keyword": "attack", "amount": { "count": { "query": "obligationsInThisGameArea" } } } }
+        },
+        {
+          "trigger": { "event": "WhenCardDefeated", "timing": "WhenDefeated", "subject": "this" },
+          "effect": { "captureKangStageTwoDefeat": "this" }
+        }
+      ]
+    },
+    {
+      "card": "11035",
+      "name": "Kang (Immortus)",
+      "note": "Kang II. Toughness is engine-owned. This villain cannot take damage while a minion is in play. pack:mc11:game-areas: cards in one game area cannot affect another, so a minion counts only in his game area (minionsInThisGameArea); that reading is ours, by the same partition MARVEL-894 applies to \"Kang\" (Q2) and \"each obligation in play\" (Q4). Ruling 76a9465df95e739c (MARVEL-894 Q9): Kang keeps Tough while he cannot take damage, since damage he cannot take is replaced by none at rr:damage.step.1. When Defeated: Remove The Chronopolis from the game. At the end of the phase, join another game area. captureKangStageTwoDefeat removes the matching stage 3B in this Kang's game area and retains the defeat for the next phase ending, where the scenario-owned departure joins the group to another game area (pack:mc11:game-areas). rr:when-defeated-abilities.2.1 resolves it before he leaves play; pack:mc11:rules-clarifications keeps his attachments and statuses from passing to Kang III. His flat hit points are printed without a per-player icon.",
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant", "subject": "this" },
+          "effect": { "preventDamageWhile": { "card": "this", "condition": { "exists": { "query": "minionsInThisGameArea" } } } }
+        },
+        {
+          "trigger": { "event": "WhenCardDefeated", "timing": "WhenDefeated", "subject": "this" },
+          "effect": { "captureKangStageTwoDefeat": "this" }
+        }
+      ]
+    },
+    {
+      "card": "11037",
+      "name": "Kang (Rama-Tut)",
+      "note": "Kang II. Toughness is engine-owned. star This villain gets +1 ATK for each obligation in play. MARVEL-894 (Q4) counts the obligations in his game area (obligationsInThisGameArea). rr:obligation.5 puts a revealed obligation in its player's play area, so every player's obligations in that game area count. When Defeated: Remove The Realm of Rama-Tut from the game. At the end of the phase, join another game area. captureKangStageTwoDefeat removes the matching stage 3B in this Kang's game area and retains the defeat for the next phase ending, where the scenario-owned departure joins the group to another game area (pack:mc11:game-areas). rr:when-defeated-abilities.2.1 resolves it before he leaves play; pack:mc11:rules-clarifications keeps his attachments and statuses from passing to Kang III. His flat hit points are printed without a per-player icon.",
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant", "subject": "this" },
+          "effect": { "grant": { "card": "this", "keyword": "attack", "amount": { "count": { "query": "obligationsInThisGameArea" } } } }
+        },
+        {
+          "trigger": { "event": "WhenCardDefeated", "timing": "WhenDefeated", "subject": "this" },
+          "effect": { "captureKangStageTwoDefeat": "this" }
+        }
+      ]
     }
   ]
 }

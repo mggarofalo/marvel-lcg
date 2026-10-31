@@ -11,16 +11,21 @@ namespace Marvel.Content.Tests.Play;
 public sealed class KangStageTwoVillainTests : CoreCardTestBase
 {
     [Theory]
+    [InlineData("11002", "11009b")]
     [InlineData("11003", "11010b")]
+    [InlineData("11004", "11011b")]
     [InlineData("11005", "11012b")]
+    [InlineData("11035", "11009b")]
     [InlineData("11036", "11010b")]
+    [InlineData("11037", "11011b")]
     [InlineData("11038", "11012b")]
     [Rule("rr:when-defeated-abilities.2.1")]
     public void DefeatRemovesTheMatchingLocalSchemeAndWaitsToJoin(string face, string schemeFace)
     {
         // 11003/11036: "When Defeated: Remove Inexorable Fate from the game. At the
-        // end of the phase, join another game area." 11005/11038 name The Present
-        // Future War. "A defeated card leaves play after its When Defeated ability
+        // end of the phase, join another game area." Immortus names the
+        // Chronopolis, Rama-Tut the Realm of Rama-Tut and Scarlet Centurion The
+        // Present Future War. "A defeated card leaves play after its When Defeated ability
         // is resolved." The other area's scheme stays.
         var (world, kang, scheme, other) = Board(face, schemeFace);
         Agendas.Happening(world);
@@ -53,14 +58,67 @@ public sealed class KangStageTwoVillainTests : CoreCardTestBase
         Statuses.Give(world, identity, Statuses.Tough);
         KangTemporalFixture.Attack(world, kang, 0);
 
-        new RedSkullFixture(world, (Marvel.Cards.Run.AbilityRunner)world.Abilities).Finish();
+        Finish(world);
 
         Assert.False(Statuses.Has(world, identity, Statuses.Tough));
         Assert.Equal(damage, identity.Damage);
         Assert.Equal(0, world.Seats[1].IdentityCard.Damage);
     }
 
-    internal static (World World, Card Kang, Card Scheme, Card Other) Board(string face, string schemeFace)
+    [Theory]
+    [InlineData("11002", 0, false, 0, false)]
+    [InlineData("11035", 0, true, 0, true)]
+    [InlineData("11002", 1, false, 2, false)]
+    [InlineData("11035", -1, false, 2, false)]
+    [InlineData("11002", -1, true, 0, false)]
+    [Rule("rr:cannot")]
+    [Rule("rr:tough.2")]
+    public void ImmortusCannotTakeDamageWhileAMinionIsInHisGameArea(
+        string face, int minionSeat, bool tough, int damage, bool toughAfter)
+    {
+        // 11002/11035: "This villain cannot take damage while a minion is in
+        // play." pack:mc11:game-areas: "Cards and components in one game area
+        // cannot affect another game area", so a minion engaged with player 1, in
+        // the other area, leaves him exposed (our reading). Ruling
+        // 76a9465df95e739c (MARVEL-894 Q9): he keeps Tough while he cannot take
+        // damage. Captain Marvel's basic attack deals 2; Shocker has no guard.
+        var (world, kang, _, _) = Board(face, "11009b");
+        if (minionSeat >= 0) KangTemporalFixture.Engaged(world, "01103", minionSeat);
+        if (tough) Statuses.Give(world, kang, Statuses.Tough);
+
+        BasicPowerInitiation.BasicAttack(world, world.Facts, 0, kang, []);
+        Finish(world);
+
+        Assert.Equal(damage, kang.Damage);
+        Assert.Equal(toughAfter, Statuses.Has(world, kang, Statuses.Tough));
+    }
+
+    [Theory]
+    [InlineData("11004", false, 2 + 2)]
+    [InlineData("11037", false, 3 + 2)]
+    [InlineData("11004", true, 2 + 3)]
+    [Rule("rr:obligation.5")]
+    public void RamaTutGainsAttackForEachObligationInHisGameArea(string face, bool joined, int damage)
+    {
+        // 11004/11037: "This villain gets +1 ATK for each obligation in play."
+        // MARVEL-894 Q4 counts the obligations in his game area. Player 0 holds
+        // two and player 1 one; player 1's counts once both share the area.
+        var (world, kang, _, _) = Board(face, "11011b", otherVillain: !joined);
+        KangTemporalFixture.Obligations(world, 0, 2);
+        KangTemporalFixture.Obligations(world, 1, 1);
+        if (joined) world.Join(PlayArea.Of(1), world.GameAreaOf(PlayArea.Of(0))!, "prepared join", []);
+        KangTemporalFixture.Attack(world, kang, 0);
+
+        Finish(world);
+
+        Assert.Equal(damage, world.Seats[0].IdentityCard.Damage);
+    }
+
+    private static void Finish(World world) =>
+        new RedSkullFixture(world, (Marvel.Cards.Run.AbilityRunner)world.Abilities).Finish();
+
+    internal static (World World, Card Kang, Card Scheme, Card Other) Board(
+        string face, string schemeFace, bool otherVillain = true)
     {
         var world = new World(Cards, 2, 42);
         for (int player = 0; player < 2; player++)
@@ -73,7 +131,7 @@ public sealed class KangStageTwoVillainTests : CoreCardTestBase
         world.Detach(PlayArea.Villains, "prepared split", []);
         var kang = world.CreateCard(face, world.AreaOf(DeckType.VillainArea, PlayArea.Of(0)));
         var scheme = world.CreateCard(schemeFace, world.AreaOf(DeckType.MainSchemesArea, PlayArea.Of(0)));
-        world.CreateCard("11004", world.AreaOf(DeckType.VillainArea, PlayArea.Of(1)));
+        if (otherVillain) world.CreateCard("11004", world.AreaOf(DeckType.VillainArea, PlayArea.Of(1)));
         var other = world.CreateCard("11011b", world.AreaOf(DeckType.MainSchemesArea, PlayArea.Of(1)));
         // Hard to Keep Down prints no boost field, so every boost adds nothing.
         for (int i = 0; i < 6; i++) world.CreateCard("01104", world.AreaOf(DeckType.EncounterDeck));
