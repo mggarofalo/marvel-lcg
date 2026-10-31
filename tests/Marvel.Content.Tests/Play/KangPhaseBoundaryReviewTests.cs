@@ -10,6 +10,8 @@ namespace Marvel.Content.Tests.Play;
 // Prepared engine capability probes; these do not admit the Kang scenario.
 public sealed class KangPhaseBoundaryReviewTests : CoreCardTestBase
 {
+    private static readonly int[] OrderOffers = [0, 1];
+
     [Fact]
     public void AddedSourceMemberMustFailClosedRatherThanLeavePartOfTheGroupBehind()
     {
@@ -30,41 +32,59 @@ public sealed class KangPhaseBoundaryReviewTests : CoreCardTestBase
     }
 
     [Theory]
-    [Rule("rr:delayed-effect.1")]
-    [InlineData(PhaseTransitionKind.EndPlayerPhase, PhaseEnd.PlayerPhaseEnds)]
-    [InlineData(PhaseTransitionKind.EndVillainPhase, PhaseEnd.VillainPhaseEnds)]
-    [InlineData(PhaseTransitionKind.EndVillainPhase, PhaseEnd.RoundEnds)]
-    public void CompetingDelayedUniqueDiscardMustFailClosedWithoutAnAcceptedOrderingPolicy(
-        PhaseTransitionKind boundary, string condition)
+    [Rule("rr:first-player.3")]
+    [InlineData(PhaseTransitionKind.EndPlayerPhase, PhaseEnd.PlayerPhaseEnds, false)]
+    [InlineData(PhaseTransitionKind.EndVillainPhase, PhaseEnd.VillainPhaseEnds, false)]
+    [InlineData(PhaseTransitionKind.EndVillainPhase, PhaseEnd.RoundEnds, false)]
+    [InlineData(PhaseTransitionKind.EndPlayerPhase, PhaseEnd.PlayerPhaseEnds, true)]
+    [InlineData(PhaseTransitionKind.EndVillainPhase, PhaseEnd.RoundEnds, true)]
+    public void CompetingDelayedDiscardResolvesInTheFirstPlayersOrder(
+        PhaseTransitionKind boundary, string condition, bool kangFirst)
     {
-        // Delayed effects resolve "before responses to that point or condition
-        // may be used"; this does not decide their order relative to each other.
-        var (world, kang, _, _) = Split();
+        // "If two or more effects would resolve simultaneously, the first player
+        // decides the order in which to resolve them" (MARVEL-894 Q6). The order
+        // matters here: discarding the unique copy first avoids the join conflict.
+        var (world, kang, _, destination) = Split();
         var first = world.CreateCard("01011", world.Seats[0].Hero);
-        world.CreateCard("01011", world.Seats[1].Hero);
-        var departure = world.Agenda.KangTransitions.CaptureJoin(world, kang, 7, boundary);
-        world.Effects.Register(new ContinuousEffect(EffectSource.LastingEffect,
-            "attack", 2, first.ObjectId, first.ObjectId, Duration.UntilEndOf(TimingPoints.EndOfPhase)));
+        var other = world.CreateCard("01011", world.Seats[1].Hero);
+        world.Agenda.KangTransitions.CaptureJoin(world, kang, 7, boundary);
         world.Effects.Register(new ContinuousEffect(EffectSource.DelayedEffect,
             DelayedEffects.DiscardFromPlay, Card: first.ObjectId, Affects: first.ObjectId,
             Lasts: Duration.NextTime(condition)));
         world.Agenda.Add(new PhaseStep(new PhaseTransitionOperation(boundary), 7, 6));
-        var registered = world.Effects.Registered.ToArray();
-        var owner = world.Agenda.Current!.Value;
-        var origin = world.Agenda.Occurrence!;
+        var abilities = new NoCardAbilities();
         var events = new List<GameEvent>();
-        string digest = world.Digest().Canonical();
 
-        var error = Assert.Throws<RulesNotImplementedException>(() =>
-            Sequence.Work(world, Cards, new NoCardAbilities(), events));
+        var order = Sequence.Work(world, Cards, abilities, events)!;
 
-        Assert.Contains("ordering", error.Message);
-        Assert.Equal(digest, world.Digest().Canonical());
-        Assert.Equal(registered, world.Effects.Registered);
+        Assert.Equal(KangPhaseEndOrderOperation.Order, order.Trigger);
+        Assert.Equal(world.FirstPlayer, order.Player);
+        Assert.Equal(OrderOffers, order.Affordances.Select(offer => offer.Id));
         Assert.Same(world.Seats[0].Hero, first.Area);
-        Assert.Same(departure, Assert.Single(world.Agenda.KangTransitions.Pending));
-        Assert.True(world.Agenda.IsOutstanding(owner, origin));
-        Assert.Empty(events);
+        Sequence.Answer(world, Cards, abilities, order, Decision.Take(kangFirst ? 0 : 1), events);
+        Assert.Equal(kangFirst, ReferenceEquals(world.Seats[0].Hero, first.Area));
+
+        var join = Sequence.Work(world, Cards, abilities, events)!;
+        Assert.All(join.Affordances, offer => Assert.Equal("Join_Game_Area", offer.Verb));
+        Sequence.Answer(world, Cards, abilities, join, Decision.Take(destination.Id), events);
+        var conflict = Sequence.Work(world, Cards, abilities, events);
+        if (kangFirst)
+        {
+            Assert.NotNull(conflict);
+            Assert.All(conflict.Affordances, offer => Assert.Equal("Discard_Joined_Unique", offer.Verb));
+            Sequence.Answer(world, Cards, abilities, conflict, Decision.Take(other.ObjectId), events);
+            Assert.Same(world.Seats[0].Hero, first.Area);
+            Assert.Null(Sequence.Work(world, Cards, abilities, events));
+        }
+        else
+        {
+            Assert.Null(conflict);
+            Assert.Same(world.Seats[1].Hero, other.Area);
+        }
+
+        Assert.NotSame(world.Seats[0].Hero, first.Area);
+        Assert.Same(destination, world.GameAreaOf(PlayArea.Of(0)));
+        Assert.DoesNotContain(world.Effects.Registered, effect => effect.Source == EffectSource.DelayedEffect);
     }
 
     [Theory]
@@ -146,6 +166,48 @@ public sealed class KangPhaseBoundaryReviewTests : CoreCardTestBase
         Assert.Equal(world.FirstPlayer, prompt.Player);
         Assert.Equal(new[] { kang.ObjectId, other.ObjectId }, prompt.Affordances.Select(offer => offer.Id));
         Assert.Empty(world.Agenda.KangTransitions.Pending);
+    }
+
+    [Fact]
+    [Rule("rr:first-player.3")]
+    public void KangFirstResolvesEveryDepartureBeforeACompetingDelayedEffect()
+    {
+        // MARVEL-894 Q6: with Kang's effect chosen first, both departures and their
+        // joins resolve completely before the other delayed effect due now.
+        var (world, kang, _, _) = Split();
+        var other = world.CreateCard("11003", world.AreaOf(DeckType.VillainArea, PlayArea.Of(1)));
+        var target = world.CreateCard("01041", world.Seats[2].Hero);
+        world.Agenda.KangTransitions.CaptureJoin(world, kang, 7, PhaseTransitionKind.EndPlayerPhase);
+        world.Agenda.KangTransitions.CaptureJoin(world, other, 7, PhaseTransitionKind.EndPlayerPhase);
+        world.Effects.Register(new ContinuousEffect(EffectSource.DelayedEffect,
+            DelayedEffects.DiscardFromPlay, Card: target.ObjectId, Affects: target.ObjectId,
+            Lasts: Duration.NextTime(PhaseEnd.PlayerPhaseEnds)));
+        AddBoundary(world);
+        var abilities = new NoCardAbilities();
+        var events = new List<GameEvent>();
+
+        var order = Sequence.Work(world, Cards, abilities, events)!;
+        Assert.Equal(KangPhaseEndOrderOperation.Order, order.Trigger);
+        Sequence.Answer(world, Cards, abilities, order, Decision.Take(0), events);
+        var departure = Sequence.Work(world, Cards, abilities, events)!;
+        Assert.Equal(KangDepartureOrderOperation.Order, departure.Trigger);
+        Sequence.Answer(world, Cards, abilities, departure, Decision.Take(kang.ObjectId), events);
+
+        var prompt = Sequence.Work(world, Cards, abilities, events);
+        for (int step = 0; prompt is not null; step++)
+        {
+            Assert.True(step < 10, prompt.Description);
+            Assert.Equal(KangJoinOperation.Join, prompt.Trigger);
+            Assert.Equal(DeckType.HeroArea, target.Area.Type);
+            Sequence.Answer(world, Cards, abilities, prompt, Decision.Take(prompt.Affordances[0].Id), events);
+            prompt = Sequence.Work(world, Cards, abilities, events);
+        }
+
+        int discarded = events.FindIndex(happened => happened is CardsMoved moved
+            && moved.Cards.Any(landing => landing.Card == target.ObjectId));
+        Assert.Equal(2, events.Count(happened => happened is PlayAreaJoined));
+        Assert.True(discarded > events.FindLastIndex(happened => happened is PlayAreaJoined));
+        Assert.NotEqual(DeckType.HeroArea, target.Area.Type);
     }
 
     [Fact]

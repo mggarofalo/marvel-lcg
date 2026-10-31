@@ -55,7 +55,7 @@ public sealed class KangDominionStorageTests : CoreCardTestBase
         Assert.Equal(host.ObjectId, stored.Area.Host);
         Assert.Equal(-1, stored.Owner);
         Assert.Equal(0, stored.Incarnation);
-        Assert.Equal(DeckType.AsideDeck, host.Area.Type);
+        Assert.Equal(DeckType.MainSchemesDeck, host.Area.Type);
         Assert.Equal(DeckType.MainSchemesArea, scheme.Area.Type);
         Assert.Equal(DeckType.VillainArea, local.Area.Type);
         Assert.Equal(1, scheme.Tokens.GetValueOrDefault("is_completed"));
@@ -112,7 +112,7 @@ public sealed class KangDominionStorageTests : CoreCardTestBase
     public void HostExceptionRejectsOtherPhysicalPairsWithoutMovingCards(string hostFace, string face, DeckType type)
     {
         var world = Hero("01001a");
-        var host = world.CreateCard(hostFace, world.AreaOf(DeckType.AsideDeck));
+        var host = world.CreateCard(hostFace, world.AreaOf(DeckType.MainSchemesDeck));
         var card = world.CreateCard(face, world.AreaOf(DeckType.AsideDeck));
         var destination = world.AreaOf(type, PlayArea.Villains, host.ObjectId);
         string before = world.Digest().Canonical();
@@ -122,15 +122,16 @@ public sealed class KangDominionStorageTests : CoreCardTestBase
     }
 
     [Fact]
-    public void SetAsideHostThatAlreadyEnteredPlayCannotReviveItsOldStorage()
+    public void UnrevealedHostThatAlreadyEnteredPlayCannotReviveItsOldStorage()
     {
         var world = Hero("01001a");
         var aside = world.AreaOf(DeckType.AsideDeck);
-        var host = world.CreateCard("11013a,11013b", aside);
+        var deck = world.AreaOf(DeckType.MainSchemesDeck);
+        var host = world.CreateCard("11013a,11013b", deck);
         var card = world.CreateCard("11023", aside);
         var storage = world.AreaOf(DeckType.BeneathCardsPile, PlayArea.Villains, host.ObjectId);
         World.MoveToTop(host, world.AreaOf(DeckType.MainSchemesArea));
-        World.MoveToTop(host, aside);
+        World.MoveToTop(host, deck);
         string before = world.Digest().Canonical();
         Assert.Throws<InvalidOperationException>(() => World.MoveToTop(card, storage));
         Assert.Equal(before, world.Digest().Canonical());

@@ -132,7 +132,10 @@ public readonly record struct PhaseStep(
 
     private Occurrence VillainPhaseThreat(int id, World world, ICardFacts facts)
     {
-        if (world.TheCardIn(DeckType.MainSchemesArea) is not { } scheme)
+        // Separate game areas each place threat on their own main scheme; the
+        // heading itself places none (SeparateGameAreas.ScheduleStepOne).
+        if (SeparateGameAreas.Active(world)
+            || world.TheCardIn(DeckType.MainSchemesArea) is not { } scheme)
         {
             return new Occurrence(id, Conditions);
         }

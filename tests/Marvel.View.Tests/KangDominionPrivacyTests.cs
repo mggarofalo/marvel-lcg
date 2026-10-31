@@ -19,7 +19,7 @@ public sealed class KangDominionPrivacyTests
             var player = world.CreateSeat($"p{seat}");
             player.IdentityCard = world.CreateCard(seat == 0 ? "01001a" : "01019a", player.Hero);
         }
-        var host = world.CreateCard("11013a,11013b", world.AreaOf(DeckType.AsideDeck));
+        var host = world.CreateCard("11013a,11013b", world.AreaOf(DeckType.MainSchemesDeck));
         var card = world.CreateCard("11023", world.AreaOf(DeckType.AsideDeck));
         var from = card.Area;
         var storage = world.AreaOf(DeckType.BeneathCardsPile, PlayArea.Villains, host.ObjectId);

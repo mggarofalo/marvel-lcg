@@ -202,7 +202,7 @@ internal static class AbilityAdmissionMutation
         string form = AbilityFormDestinationResolver.LegacyForm(change.Destination);
         bool canChangePlayer = change.Player == AbilityPlayer.ChosenPlayer;
         var seats = bindingMayChange && canChangePlayer
-            ? cast.World.PlayerOrder.ToList()
+            ? EachPlayerEffects.Players(cast.World, cast.Source).ToList()
             : [Seat(change.Player, cast)];
         ulong ChangeOne(ulong state, int seat)
         {

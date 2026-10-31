@@ -66,6 +66,8 @@ public static class AgendaProcedures
                 KangSplitProcedure.Apply(world, step, events),
             AgendaProcedureKind.PhaseTransition when step.Operation is KangDepartureOrderOperation =>
                 KangDepartureOrderProcedure.Apply(world, step, events),
+            AgendaProcedureKind.PhaseTransition when step.Operation is KangPhaseEndOrderOperation =>
+                KangPhaseEndOrderProcedure.Apply(world, step, events),
             AgendaProcedureKind.PhaseTransition => step.Operation is KangJoinOperation
                 ? KangJoinProcedure.Apply(world, step, events)
                 : PhaseTransitionProcedure.Apply(world, facts, step, events),
@@ -116,11 +118,9 @@ public static class AgendaProcedures
 
         switch (step.Operation.Procedure)
         {
-            case AgendaProcedureKind.PhaseTransition when step.Operation is KangDepartureOrderOperation:
-                KangDepartureOrderProcedure.Answer(world, step, input, events);
-                break;
-            case AgendaProcedureKind.PhaseTransition when step.Operation is KangJoinOperation:
-                KangJoinProcedure.Answer(world, step, input, events);
+            case AgendaProcedureKind.PhaseTransition when step.Operation is KangDepartureOrderOperation
+                or KangPhaseEndOrderOperation or KangJoinOperation:
+                AnswerKangPhaseTransition(world, step, input, events);
                 break;
             case AgendaProcedureKind.Attack:
                 AttackProcedure.Answer(world, facts, step, input, events);
@@ -149,4 +149,20 @@ public static class AgendaProcedures
         }
     }
 
+    private static void AnswerKangPhaseTransition(
+        World world, PhaseStep step, Decision input, List<GameEvent> events)
+    {
+        switch (step.Operation)
+        {
+            case KangDepartureOrderOperation:
+                KangDepartureOrderProcedure.Answer(world, step, input, events);
+                break;
+            case KangPhaseEndOrderOperation:
+                KangPhaseEndOrderProcedure.Answer(world, step, input, events);
+                break;
+            default:
+                KangJoinProcedure.Answer(world, step, input, events);
+                break;
+        }
+    }
 }

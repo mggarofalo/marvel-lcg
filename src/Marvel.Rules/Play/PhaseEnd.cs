@@ -61,7 +61,11 @@ public static class PhaseEnd
     /// <param name="world">The board.</param>
     /// <param name="facts">The printed card data.</param>
     /// <param name="events">Where to record what happened.</param>
-    public static void EndVillainPhase(World world, ICardFacts facts, List<GameEvent> events)
+    public static void EndVillainPhase(World world, ICardFacts facts, List<GameEvent> events) =>
+        EndVillainPhase(world, facts, events, resolveDelayed: true);
+
+    /// <summary>Ends the villain phase, optionally leaving due delayed effects to an ordering frame.</summary>
+    internal static void EndVillainPhase(World world, ICardFacts facts, List<GameEvent> events, bool resolveDelayed)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
@@ -93,7 +97,7 @@ public static class PhaseEnd
             new Occurrence(0, [VillainPhaseEnds, RoundEnds]),
             [TimingPoints.EndOfVillainPhase, TimingPoints.EndOfPhase,
                 TimingPoints.EndOfRound, TimingPoints.EndOfTurn],
-            events);
+            events, resolveDelayed);
     }
 
     /// <summary>
@@ -109,10 +113,14 @@ public static class PhaseEnd
     /// <param name="world">The board.</param>
     /// <param name="events">Where to record what happened.</param>
     public static void EndPlayerPhase(World world, List<GameEvent> events) =>
+        EndPlayerPhase(world, events, resolveDelayed: true);
+
+    /// <summary>Ends the player phase, optionally leaving due delayed effects to an ordering frame.</summary>
+    internal static void EndPlayerPhase(World world, List<GameEvent> events, bool resolveDelayed) =>
         End(world,
             new Occurrence(0, [PlayerPhaseEnds]),
             [TimingPoints.EndOfPlayerPhase, TimingPoints.EndOfPhase],
-            events);
+            events, resolveDelayed);
 
     /// <summary>Expire effects whose stated duration is the active player's turn.</summary>
     public static void EndPlayerTurn(World world, int player, List<GameEvent> events) =>
@@ -271,7 +279,8 @@ public static class PhaseEnd
         World world,
         Occurrence occurrence,
         IReadOnlyList<string> expiring,
-        List<GameEvent> events)
+        List<GameEvent> events,
+        bool resolveDelayed = true)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(events);
@@ -289,7 +298,14 @@ public static class PhaseEnd
             // Delayed effects waiting on this moment resolve here, "before
             // responses to that point or condition may be used" --
             // rr:delayed-effect.1 -- which is what puts this between the two
-            // windows rather than in the response one.
+            // windows rather than in the response one. When Kang's delayed
+            // effect is due too, KangPhaseEndOrderProcedure resolves these in
+            // the order the first player chooses.
+            if (!resolveDelayed)
+            {
+                return;
+            }
+
             foreach (var condition in occurrence.Conditions)
             {
                 DelayedEffects.Occur(world, condition, events);

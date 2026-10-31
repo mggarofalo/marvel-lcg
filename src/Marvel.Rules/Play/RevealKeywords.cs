@@ -75,7 +75,9 @@ public static class RevealKeywords
             case Reveal.InciteResolutionOrdinal:
                 long incite = StateFields.Modified(
                     world, card, "incite", facts, world.Players);
-                if (incite > 0 && world.TheCardIn(DeckType.MainSchemesArea) is { } scheme)
+                // rr:incite-x: "place X threat on the main scheme" -- the one in the
+                // revealed card's game area while the table is split (pack:mc11:game-areas).
+                if (incite > 0 && CardReferences.TheCardIn(world, DeckType.MainSchemesArea, card) is { } scheme)
                 {
                     Threat.Place(world, facts, abilities, scheme, incite, "incite", events);
                     CompleteKeyword(occurrence, ability, applied: true);

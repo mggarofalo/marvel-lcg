@@ -14,7 +14,7 @@ public sealed class KangPhaseClosureReviewTests : CoreCardTestBase
     [InlineData(PhaseTransitionKind.EndPlayerPhase, PhaseEnd.PlayerPhaseEnds)]
     [InlineData(PhaseTransitionKind.EndVillainPhase, PhaseEnd.VillainPhaseEnds)]
     [InlineData(PhaseTransitionKind.EndVillainPhase, PhaseEnd.RoundEnds)]
-    public void RepeatedRefusalPreservesDelayedUseCountAndOriginalDeparture(
+    public void AskingForTheOrderPreservesDelayedUseCountAndOriginalDeparture(
         PhaseTransitionKind boundary, string condition)
     {
         var world = Hero("01001a,01001b", 2);
@@ -33,24 +33,15 @@ public sealed class KangPhaseClosureReviewTests : CoreCardTestBase
             DelayedEffects.DiscardFromPlay, Card: target.ObjectId, Affects: target.ObjectId,
             Lasts: Duration.NextTime(condition, times: 2)));
         world.Agenda.Add(new PhaseStep(new PhaseTransitionOperation(boundary), 7, 6));
-        var registered = world.Effects.Registered.ToArray();
-        string digest = world.Digest().Canonical();
-        long words = world.Random.Generator.WordsConsumed;
         var events = new List<GameEvent>();
 
-        for (int attempt = 0; attempt < 2; attempt++)
-        {
-            Assert.Throws<RulesNotImplementedException>(() =>
-                Sequence.Work(world, Cards, new NoCardAbilities(), events));
-            Assert.Equal(registered, world.Effects.Registered);
-            Assert.Equal(digest, world.Digest().Canonical());
-            Assert.Equal(words, world.Random.Generator.WordsConsumed);
-            Assert.Same(departure, Assert.Single(world.Agenda.KangTransitions.Pending));
-            Assert.Same(source, world.GameAreaOf(PlayArea.Of(0)));
-            Assert.Same(destination, world.GameAreaOf(PlayArea.Of(1)));
-            Assert.Empty(events);
-        }
+        var order = Sequence.Work(world, Cards, new NoCardAbilities(), events)!;
+        Assert.Equal(KangPhaseEndOrderOperation.Order, order.Trigger);
+        Assert.Single(world.Effects.Registered, effect => effect.Source == EffectSource.DelayedEffect);
+        Assert.Same(departure, Assert.Single(world.Agenda.KangTransitions.Pending));
+        Assert.Same(world.Seats[0].Hero, target.Area);
 
+        // Asking first changes nothing: the delayed effect keeps both uses.
         // A two-use registration must still survive its first actual occurrence.
         // This observes retained remaining uses, which Registered alone omits.
         DelayedEffects.Occur(world, condition, events);

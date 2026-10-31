@@ -105,5 +105,5 @@ internal static class AbilityThreatExecution
         AbilityDamageAndThreatContext context, Card scheme) =>
         !removal.IgnoresCrisis && scheme.Area.Type == DeckType.MainSchemesArea
         && AbilityCardQueries.IsPlayerCard(context.World.Facts, context.Source)
-        && MainScheme.Crisis(context.World, context.World.Facts);
+        && MainScheme.Crisis(context.World, context.World.Facts, scheme);
 }

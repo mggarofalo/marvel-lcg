@@ -133,7 +133,10 @@ public static class BasicPowers
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
 
-        var enemies = BasicPowerStatus.Enemies(world, facts);
+        // pack:mc11:game-areas: "Players cannot attack or defend enemies in other
+        // game areas." An ordinary game has one game area, so nothing is removed.
+        var enemies = BasicPowerStatus.Enemies(world, facts)
+            .Where(enemy => Places.CanAffect(world, player, enemy)).ToList();
         bool guarded = enemies.Any(enemy =>
             EffectiveCards.Kind(enemy, facts) == CardKind.Minion
             && BasicPowerStatus.Engaged(world, enemy) == player
@@ -184,10 +187,11 @@ public static class BasicPowers
 
         // `rr:crisis-icon.1`, as a constant ability: "player cards cannot remove
         // threat from the main scheme." A hero's identity and an ally are both
-        // player cards, so a crisis icon anywhere in play takes the main scheme
+        // player cards, so a crisis icon that can affect the main scheme takes it
         // off everybody's list -- unlike `rr:patrol`, which is one player's.
         // `.2` exempts encounter card abilities, which do not come through here.
-        bool crisis = MainScheme.Crisis(world, facts);
+        // pack:mc11:game-areas: a player "cannot target any game elements in the
+        // other game areas", and an icon there cannot affect this player's scheme.
 
         var schemes = new List<Card>();
         foreach (var area in world.Areas)
@@ -197,13 +201,15 @@ public static class BasicPowers
                 continue;
             }
 
-            if (area.Type == DeckType.MainSchemesArea && (patrolled || crisis))
+            if (area.Type == DeckType.MainSchemesArea && patrolled)
             {
                 continue;
             }
 
             schemes.AddRange(area.Cards.Where(scheme =>
-                scheme.Tokens.GetValueOrDefault("k_threat") > 0
+                Places.CanAffect(world, player, scheme)
+                && !(area.Type == DeckType.MainSchemesArea && MainScheme.Crisis(world, facts, scheme))
+                && scheme.Tokens.GetValueOrDefault("k_threat") > 0
                 && world.ThreatAbilities.CanThwartScheme(world, scheme)));
         }
 

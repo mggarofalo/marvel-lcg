@@ -241,6 +241,10 @@ public static class EncounterDeck
     /// <c>.2.1</c> makes a token beside the main scheme permanent across its
     /// stages. Encounter-deck resets use this same operation, so a token from a
     /// card and one from an empty deck have identical state and event spelling.
+    /// The token goes to the main scheme in the villain's play area. While Kang's
+    /// players are in separate game areas that is central stage 2B, whose printed
+    /// "When an acceleration token would be placed on another scheme, place it
+    /// here instead" this satisfies: each stage 3B sits in its player's play area.
     /// </remarks>
     /// <param name="world">The board.</param>
     /// <param name="trigger">What placed it, for the event stream.</param>

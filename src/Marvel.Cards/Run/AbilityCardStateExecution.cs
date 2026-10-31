@@ -278,7 +278,7 @@ internal static class AbilityCardStateExecution
         _ => throw new InvalidOperationException("Unknown compiled search area"),
     };
     internal static IEnumerable<int> Players(AbilityPlayerSelection players, AbilityCardStateContext context) => players switch
-    { AbilityPlayerSelection.AllPlayers => context.World.PlayerOrder, AbilityPlayerSelection.OnePlayer one => [new AbilityExpressionEvaluation(context.Expressions, new AbilitySelectorEvaluation(context.Expressions.Bindings)).Seat(one.Player)], _ => throw new InvalidOperationException("Unknown compiled player selection") };
+    { AbilityPlayerSelection.AllPlayers => EachPlayerEffects.Players(context.World, context.Source), AbilityPlayerSelection.OnePlayer one => [new AbilityExpressionEvaluation(context.Expressions, new AbilitySelectorEvaluation(context.Expressions.Bindings)).Seat(one.Player)], _ => throw new InvalidOperationException("Unknown compiled player selection") };
     private static T Publish<T>(AbilityQueryResult<T> result, World world)
     { foreach (var observation in result.Information) world.RecordInformation(observation); return result.Value; }
 }

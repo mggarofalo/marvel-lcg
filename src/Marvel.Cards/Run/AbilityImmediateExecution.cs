@@ -137,7 +137,7 @@ internal static class AbilityImmediateExecution
         var seat = context.Admission.Evaluator().Seat;
         if (effect is AbilityEffect.Draw draw)
         {
-            foreach (int player in Seats(draw.Players, seat, world))
+            foreach (int player in Seats(draw.Players, seat, world, context.Admission.Source))
             {
                 if (AbilityRepeatedStatusTrace.CanDraw(world, player))
                     Draw.Cards(world, player, draw.Count, context.Trigger, context.Events);
@@ -276,7 +276,7 @@ internal static class AbilityImmediateExecution
     private static void AdvanceMainScheme(AbilityImmediateContext context)
     {
         World world = context.Admission.World;
-        var scheme = world.TheCardIn(DeckType.MainSchemesArea) ?? throw new RulesNotImplementedException(
+        var scheme = CardReferences.TheCardIn(world, DeckType.MainSchemesArea, context.Admission.Source) ?? throw new RulesNotImplementedException(
             $"'{context.Admission.Source.FaceId}' advances a main scheme that is not in play");
         MainScheme.Advance(world, world.Facts, context.EncounterAbilities, scheme, context.Trigger, context.Events);
     }
@@ -288,9 +288,9 @@ internal static class AbilityImmediateExecution
             Affects: context.Admission.Query.Occurrence.Subject,
             Lasts: new Duration(Uses: 1)));
 
-    private static IEnumerable<int> Seats(AbilityPlayerSelection players, Func<AbilityPlayer, int> seat, World world) => players switch
+    private static IEnumerable<int> Seats(AbilityPlayerSelection players, Func<AbilityPlayer, int> seat, World world, Card source) => players switch
     {
-        AbilityPlayerSelection.AllPlayers => world.PlayerOrder,
+        AbilityPlayerSelection.AllPlayers => EachPlayerEffects.Players(world, source),
         AbilityPlayerSelection.OnePlayer one => [seat(one.Player)],
         _ => throw new InvalidOperationException("Unknown compiled player selection"),
     };

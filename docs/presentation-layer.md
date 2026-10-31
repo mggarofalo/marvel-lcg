@@ -336,12 +336,14 @@ visibility configuration, durable sessions and shutdown behavior.
 
 ## Wire protocol
 
+Protocol 44 adds each seat's and each addressable card's game area id (`game_area`), null when the engine places it in no game area, such as Kang's central stage 2B. In an ordinary table every participating seat, and every card in a participating play area or the villain's, names the single game area. Player elimination removes the eliminated seat's play area from its game area (`rr:player-elimination.step.5`: "Remove the eliminated player’s play area … from the game"), so that seat reports null. Protocol 43 peers are rejected before gameplay because their strict decoder does not recognize this field. The client accepts only ids the same response lists in `game_areas`.
+
 Protocol 43 adds a conditional resource bonus with its generated types and qualifying cost-component mask. Protocol 42 peers are rejected before gameplay because their strict decoder does not recognize this field. Unconditional sources retain their prior JSON shape. Replay compatibility for the integrated rules/content revision is separately assessed under MARVEL-870.
 
 The socket protocol uses source-generated JSON inside a 4-byte big-endian length
 frame. Frames are bounded. Unknown operations, unsupported protocol versions and
 unknown JSON members fail before they reach the engine. Both endpoints must use
-protocol 43. Setup and decisions replay under engine-replay-v28, with session
+protocol 44. Setup and decisions replay under engine-replay-v31, with session
 schema 7 retaining the exact ordered decks. Requests carry engine-authored
 commitments and explicit payment allocations; authorized responses include
 readable choices, active attack participants, attack completion events and

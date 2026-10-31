@@ -5,6 +5,16 @@ namespace Marvel.Client;
 /// <summary>Checks passive public metadata before a response becomes recoverable client state.</summary>
 internal static class ClientTableValidation
 {
+    /// <summary>Whether every seat and card names only a listed game area, or none.</summary>
+    internal static bool KnownGameAreas(WorldDescriptor world)
+    {
+        var known = world.GameAreas.Select(area => area.Id).ToHashSet();
+        bool Known(int? id) => id is null || known.Contains(id.Value);
+        return world.Players.All(player => Known(player.GameArea))
+            && world.Areas.SelectMany(area => area.Cards.Concat(area.Removed))
+                .All(card => card.Location is null || Known(card.Location.GameArea));
+    }
+
     internal static bool Complete(WorldDescriptor world)
     {
         if (world.Table is not { } table) return true;

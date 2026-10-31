@@ -51,7 +51,12 @@ internal static class AttackDefenderCandidates
 
     private static List<Card> AvailableForAttack(World world, ICardFacts facts, EnemyAttack attack)
     {
-        if (!attack.IsDefended) return Defenders(world, facts);
+        // pack:mc11:game-areas: "Players cannot attack or defend enemies in
+        // other game areas." In an ordinary game every card shares the one game
+        // area, so this narrows nothing.
+        var enemy = world.Cards[attack.Enemy];
+        if (!attack.IsDefended)
+            return [.. Defenders(world, facts).Where(card => Places.CanAffect(world, enemy, card))];
         var current = world.Cards[attack.Defender];
         return !attack.BasicDefense && current.Ready
             && EffectiveCards.Kind(current, facts) == CardKind.Hero

@@ -195,7 +195,10 @@ internal static class AbilityWindowAdmission
         {
             return [occurrence.Player];
         }
-        return world.PlayerOrder;
+        // pack:mc11:game-areas: players cannot affect a card in another game area.
+        // No authored ability sets anyPlayer, so a mutant returning
+        // world.PlayerOrder here survives every current card.
+        return EachPlayerEffects.Players(world, card);
     }
 
     private static int Controller(

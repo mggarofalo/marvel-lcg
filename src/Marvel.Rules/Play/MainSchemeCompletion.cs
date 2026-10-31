@@ -70,7 +70,8 @@ internal static class MainSchemeCompletion
         // Printed 11009b-11012b continue in their Forced Response window.
         if (local) return;
 
-        if (world.AreaOf(DeckType.MainSchemesDeck).Cards.Count > 0)
+        if (!KangFirstSplit.LosesWhenCompleted(scheme)
+            && world.AreaOf(DeckType.MainSchemesDeck).Cards.Count > 0)
         {
             MainScheme.Advance(world, facts, abilities, scheme, "main scheme completed", events);
             return;

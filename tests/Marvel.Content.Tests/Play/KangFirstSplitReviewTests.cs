@@ -40,29 +40,59 @@ public sealed class KangFirstSplitReviewTests : CoreCardTestBase
     }
 
     [Theory]
-    [InlineData(1)]
+    [Rule("rr:player-elimination.6")]
     [InlineData(2)]
     [InlineData(3)]
     [InlineData(4)]
-    public void EliminatedSeatsRaiseBeforeThePhaseBoundaryMutates(int players)
+    public void AnEliminatedPlayerRevealsNoStageThreeAtTheSplit(int players)
     {
+        // "Effects that refer to the players in the game ignore eliminated
+        // players." 11008a: "Each player reveals a random stage 3A in turn order."
         var (world, kang, _, _) = Board(0, false, players: players);
         var events = new List<GameEvent>();
+        int eliminated = players - 1;
+        Elimination.Eliminate(world, Cards, eliminated, "prepared elimination", events);
+        Split(world, kang, events);
+
+        Assert.Null(world.GameAreaOf(PlayArea.Of(eliminated)));
+        Assert.Empty(world.AreaOf(DeckType.MainSchemesArea, PlayArea.Of(eliminated)).Cards);
+        Assert.All(world.PlayerOrder, player =>
+        {
+            Assert.Single(world.AreaOf(DeckType.MainSchemesArea, PlayArea.Of(player)).Cards);
+            Assert.Single(world.AreaOf(DeckType.VillainArea, PlayArea.Of(player)).Cards);
+        });
+        Assert.Equal(players - 1, world.Cards.Count(card => card.FaceId is "11009b" or "11010b" or "11011b" or "11012b"));
+        Assert.Equal(Outcome.Unfinished, world.Result);
+    }
+
+    [Fact]
+    [Rule("rr:first-player.3")]
+    public void AnotherDelayedEffectWaitsForTheWholeSplitWhenKangGoesFirst()
+    {
+        // "If two or more effects would resolve simultaneously, the first player
+        // decides the order" (MARVEL-894 Q6). Resolving Kang's first resolves all
+        // of it -- every stage 3A and game area -- before the other effect.
+        var (world, kang, _, _) = Board(0, false);
+        var events = new List<GameEvent>();
+        var target = world.CreateCard("01011", world.Seats[0].Hero);
+        world.Effects.Register(new Marvel.Rules.Timing.ContinuousEffect(Marvel.Rules.Timing.EffectSource.DelayedEffect,
+            DelayedEffects.DiscardFromPlay, Card: target.ObjectId, Affects: target.ObjectId,
+            Lasts: Marvel.Rules.Timing.Duration.NextTime(PhaseEnd.PlayerPhaseEnds)));
         Agendas.Happening(world);
         Defeat.Character(world, Cards, kang, "prepared defeat", events);
         Sequence.Finish(world, Cards, world.Abilities, events);
-        world.Seats[players - 1].Eliminated = true;
-        var pending = world.Agenda.KangSplit.Pending;
-        var before = world.Digest().Canonical();
-        int eventCount = events.Count;
         world.Agenda.Add(new PhaseStep(new PhaseTransitionOperation(PhaseTransitionKind.EndPlayerPhase), 1, 4));
-        var error = Assert.Throws<RulesNotImplementedException>(() => Sequence.Finish(world, Cards, world.Abilities, events));
-        Assert.Contains("without elimination", error.Message, StringComparison.Ordinal);
-        Assert.Equal(before, world.Digest().Canonical());
-        Assert.Same(pending, world.Agenda.KangSplit.Pending);
-        Assert.Equal(eventCount, events.Count);
-        Assert.Equal(0, world.Random.Generator.WordsConsumed);
-        Assert.Single(world.GameAreas);
+
+        var order = Sequence.Work(world, Cards, world.Abilities, events)!;
+        Assert.Equal(KangPhaseEndOrderOperation.Order, order.Trigger);
+        Sequence.Answer(world, Cards, world.Abilities, order, Decision.Take(0), events);
+        Sequence.Finish(world, Cards, world.Abilities, events);
+
+        int discarded = events.FindIndex(happened => happened is CardsMoved moved
+            && moved.Cards.Any(landing => landing.Card == target.ObjectId));
+        int lastJoin = events.FindLastIndex(happened => happened is PlayAreaJoined);
+        Assert.True(lastJoin >= 0 && discarded > lastJoin);
+        Assert.All(world.PlayerOrder, player => Assert.NotNull(world.GameAreaOf(PlayArea.Of(player))));
     }
 
     [Fact]
@@ -101,7 +131,7 @@ public sealed class KangFirstSplitReviewTests : CoreCardTestBase
         scheme.TurnTo("11007b");
         var kang = world.CreateCard(expert ? "11034" : "11001", world.AreaOf(DeckType.VillainArea));
         var aside = world.AreaOf(DeckType.AsideDeck);
-        world.CreateCard("11008a,11008b", aside);
+        world.CreateCard("11008a,11008b", world.AreaOf(DeckType.MainSchemesDeck));
         for (int index = 0; index < 4; index++)
         {
             world.CreateCard($"{11009 + index}a,{11009 + index}b", aside);

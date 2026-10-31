@@ -23,13 +23,13 @@ public static class KangLocalCompletion
     private static (Card Host, Card Dominion, Card Villain) Require(World world, Card scheme)
     {
         var hosts = world.Cards.Where(card => card.FaceId == "11013a"
-            && card.Area.Type == DeckType.AsideDeck && card.Owner == -1 && card.Incarnation == 0).ToArray();
+            && card.Area.Type == DeckType.MainSchemesDeck && card.Owner == -1 && card.Incarnation == 0).ToArray();
         var dominions = world.Cards.Where(card => card.FaceId == "11023" && card.Owner == -1
             && card.Area.Type == DeckType.AsideDeck).OrderBy(card => card.ObjectId).ToArray();
         var villains = LocalVillains(world, scheme);
         if (hosts.Length != 1 || dominions.Length == 0 || villains.Length != 1
             || world.Agenda.KangTransitions.Pending.Any(item => item.Source == Places.GameAreaOf(world, scheme)))
-            throw new RulesNotImplementedException("Kang's Dominion storage requires one set-aside 4A, a Dominion and its live local Kang II");
+            throw new RulesNotImplementedException("Kang's Dominion storage requires one unrevealed 4A, a set-aside Dominion and its live local Kang II");
         return (hosts[0], dominions[0], villains[0]);
     }
 

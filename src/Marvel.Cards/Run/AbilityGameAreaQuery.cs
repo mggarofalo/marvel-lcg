@@ -14,13 +14,12 @@ namespace Marvel.Cards.Run;
 /// play" is read the same way (Q17), as a minion in his game area.
 /// </para>
 /// <para>
-/// Every answer comes from <see cref="Places.CanAffect"/> and nowhere else, so an
+/// Every answer comes from <see cref="Places.CanAffect(World, Card, Card)"/> and nowhere else, so an
 /// ordinary game, which has one game area holding every play area, reads the
-/// whole table. While the table is split, a source in no game area raises: the
-/// engine places a revealed side scheme in the villain's play area
-/// (rr:reveal.5), which a split leaves in no game area, so such a card has no
-/// game area of its own to read. More than one villain in reach also raises
-/// rather than choosing.
+/// whole table. While the table is split, a side scheme revealed by a player
+/// enters that player's game area (MARVEL-894 Q15), and a card in no game area
+/// reaches every area, as 2B does. More than one villain in reach raises rather
+/// than choosing.
 /// </para>
 /// </remarks>
 internal static class AbilityGameAreaQuery
@@ -69,14 +68,7 @@ internal static class AbilityGameAreaQuery
     // is turned face up", so the activating enemy's place stands for it. That
     // anchoring is our reading; ruling 5ecfc71ddff64d39 treats a boost as
     // belonging to the activation's game area.
-    private static Card Anchor(AbilityQueryContext cast)
-    {
-        var anchor = cast.Source.Area.Type == DeckType.BoostingArea && cast.World.Activation is { } activation
+    private static Card Anchor(AbilityQueryContext cast) =>
+        cast.Source.Area.Type == DeckType.BoostingArea && cast.World.Activation is { } activation
             ? cast.World.Cards[activation.Enemy] : cast.Source;
-        if (Places.GameAreaOf(cast.World, anchor) is null
-            && cast.World.GameAreas.Count(area => area.PlayAreas.Count > 0) > 1)
-            throw new RulesNotImplementedException(
-                $"'{cast.Source.FaceId}' is in no game area while the table is split, so its game area is undefined");
-        return anchor;
-    }
 }

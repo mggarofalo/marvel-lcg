@@ -41,6 +41,10 @@ public abstract record ContinuousAmount
 
     private static long CounterValue(World world, MainSchemeCounters count)
     {
+        // A captured amount has no referring card to choose between the
+        // separate game areas' main schemes, so it refuses rather than guess.
+        if (SeparateGameAreas.Active(world))
+            throw new RulesNotImplementedException("main scheme counters while game areas are separate");
         var card = world.TheCardIn(DeckType.MainSchemesArea);
         if (card is null) return 0;
         return count.Counter == "allPurpose"

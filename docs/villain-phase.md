@@ -41,6 +41,35 @@ card flips to its B side, receives starting threat, and resolves that side. If
 there is no later stage, the villain wins immediately and the remaining agenda
 is abandoned.
 
+## Separate game areas
+
+While the players are in separate game areas (Kang's stages 2B and 3, where the
+villain's play area belongs to no game area), each step still runs once, across
+the areas in turn order (`pack:mc11:game-areas`; ruling 97d62cdb9ce436a7).
+`SeparateGameAreas` owns the differences:
+
+- Step 1 places each game area's own main-scheme threat, in turn order of the
+  area's earliest player: its acceleration field plus the acceleration icons and
+  tokens on cards in that area. Central 2B has no threat values and receives
+  none; its tokens wait for stage 4A (MARVEL-894 Q1). Two players who share an
+  area after a join share one placement; that is the engine's choice.
+- Step 3 deals each area's hazard cards to that area's players.
+- A side scheme revealed during the split enters the revealing player's play
+  area, and so their game area (MARVEL-894 Q15). An environment entering play
+  while the table is separated raises.
+
+Basic attacks, thwarts, defences and crisis icons respect the same partition.
+Cards in no game area reach every area, but the separated steps count none of
+them: the only one in play is 2B, which prints no icons and holds the
+acceleration tokens it redirects to itself.
+
+Kang's departures are delayed effects due at a phase ending. When another delayed
+effect is due at the same ending, the first player chooses which resolves first
+(`rr:first-player.3`, MARVEL-894 Q6; `KangPhaseEndOrderProcedure`). The other
+effects resolve together in registration order; when Kang's goes first they wait
+until it has completely resolved. An eliminated player takes no stage 3A at the
+split.
+
 ## Enemy activations
 
 An enemy scheme resolves its boost cards and Boost abilities before placing its

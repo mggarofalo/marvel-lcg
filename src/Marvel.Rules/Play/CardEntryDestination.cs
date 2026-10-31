@@ -25,13 +25,21 @@ internal static class CardEntryDestination
             // which area the minion is in, which is what `rr:engage` describes.
             CardKind.Minion => world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(player)),
 
-            // `rr:reveal.5`: "it enters play in the villain's play area."
-            CardKind.EncounterSideScheme => world.AreaOf(DeckType.SideSchemesArea),
+            // `rr:reveal.5`: "it enters play in the villain's play area." While the
+            // players are in separate game areas the villain's play area is in
+            // none, so the side scheme enters the revealing player's play area and
+            // with it their game area (MARVEL-894 Q15).
+            CardKind.EncounterSideScheme => SeparateGameAreas.Active(world)
+                ? SeparateGameAreas.SideSchemeArea(world, card, player)
+                : world.AreaOf(DeckType.SideSchemesArea),
 
             // `rr:reveal.2`: the same place, and an area of its own because
             // `rr:environment` makes an environment "active so long as it
             // remains in play" rather than something that resolves and goes.
-            CardKind.Environment => world.AreaOf(DeckType.EnvironmentArea),
+            CardKind.Environment => SeparateGameAreas.Active(world)
+                ? throw new RulesNotImplementedException(
+                    $"environment '{card.FaceId}' entering play while the players are in separate game areas")
+                : world.AreaOf(DeckType.EnvironmentArea),
 
             // `rr:reveal.4`: "it enters play in the play area of the player
             // revealing it."

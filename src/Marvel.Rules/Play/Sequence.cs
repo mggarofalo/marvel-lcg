@@ -236,7 +236,7 @@ public static class Sequence
     }
 
     private static bool QuestionAdvancesByIdentity(PhaseStep step) =>
-        step.Operation is KangJoinOperation or KangDepartureOrderOperation
+        step.Operation is KangJoinOperation or KangDepartureOrderOperation or KangPhaseEndOrderOperation
             or CharacterAttackOperation or CharacterThwartOperation || step.What is Steps.ChooseOption
             or Steps.ChooseAttachmentTarget
             or Steps.ChooseWouldBeDefeated

@@ -24283,7 +24283,7 @@
     {
       "card": "11014",
       "name": "Temporal Shield",
-      "note": "Attach to Kang. Forced Interrupt: When Kang is attacked, discard Temporal Shield -> prevent all damage from this attack and deal 1 damage to the attacker. (Max 1 per attack.) MARVEL-894 (Q2) reads Kang as the villain in this card's game area (villainInThisGameArea). The discard is the arrow cost. Ruling 310af249be272877: it \"only prevents the damage that would be dealt to Kang during an attack\". Ruling a806907d1743e0d1: it \"resolves entirely before the tough status card, meaning the tough status card will have no damage to prevent and will not be discarded\", so the prevention fixes the damage dealt at rr:damage.step.1. The attacker is the attacking character, an ally included.",
+      "note": "Attach to Kang. Forced Interrupt: When Kang is attacked, discard Temporal Shield -> prevent all damage from this attack and deal 1 damage to the attacker. (Max 1 per attack.) MARVEL-894 (Q2) reads Kang as the villain in this card's game area (villainInThisGameArea). The discard is the arrow cost. Ruling 310af249be272877: it \"only prevents the damage that would be dealt to Kang during an attack\". Ruling a806907d1743e0d1: it \"resolves entirely before the tough status card, meaning the tough status card will have no damage to prevent and will not be discarded\", so the prevention takes away the damage Kang would take at rr:damage.step.1. Ruling bafde43c1a76c982 (RR 1.7-1.8): \"Effects that 'prevent damage' prevent damage taken, not dealt\", so a piercing attack still deals its damage and discards Tough before the prevention applies (rr:piercing.1, MARVEL-900). The attacker is the attacking character, an ally included.",
       "attachTo": { "query": "villainInThisGameArea" },
       "abilities": [
         {
@@ -24872,6 +24872,150 @@
         {
           "trigger": { "event": "WhenCardDefeated", "timing": "WhenDefeated", "subject": "this" },
           "effect": { "captureKangStageTwoDefeat": "this" }
+        }
+      ]
+    },
+    {
+      "card": "11007a",
+      "name": "Kang's Arrival",
+      "note": "Main scheme stage 1, the A side. Contents: Kang (I), each Kang (II), and Kang (III); Kang and Standard encounter sets; one modular set (Temporal). Setup: set each Kang (II), Kang (III) and Kang's Dominion aside; remove each player's obligation cards from the game; shuffle the encounter deck. Neither is an ability this card runs: scenario setup composition owns the set-aside cards, the excluded hero obligations and the shuffle (pack:mc11:setup), and rr:appendix-ii-setup.step.12.b flips the scheme to 1B. This face has no runtime ability; no public Kang setup recipe is admitted.",
+      "abilities": []
+    },
+    {
+      "card": "11007b",
+      "name": "Kang's Arrival",
+      "note": "When Revealed: Deal each player an encounter card. If this stage is completed, the players lose the game. Stages 2 and 4 wait beneath this stage in the main scheme deck (MARVEL-894 Q13), so the loss is not the generic final-stage loss: rr:winning-the-game.1 makes it an alternate loss condition that cannot be blanked or canceled, and the engine owns it (KangFirstSplit.LosesWhenCompleted). The printed per-player target 7 and acceleration 1 multiply by the players who started the scenario (rr:per-player-icon; ruling 0c9221b6940b4007).",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "dealEncounterCards": { "count": 1 } }
+        }
+      ]
+    },
+    {
+      "card": "11008a",
+      "name": "The Master of Time",
+      "note": "When Revealed: Place 1 acceleration token here for each side scheme in play, then discard each side scheme. Each player reveals a random stage 3A in turn order. Remove any unused stage 3 schemes from the game. splitKangStageTwo places the tokens, discards the side schemes, assigns one seeded random stage 3A from the separate stage-3 pool to each player in turn order (MARVEL-894 Q13), schedules each reveal, and removes the unused stages before 2B flips (pack:mc11:areas).",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "splitKangStageTwo": "this" }
+        }
+      ]
+    },
+    {
+      "card": "11008b",
+      "name": "The Master of Time",
+      "note": "Forced Interrupt: When an acceleration token would be placed on another scheme, place it here instead. Players cannot join this game area unless there are no other game areas remaining. When all the players have joined this game area, advance to stage 4A. pack:mc11:areas keeps 2B in a central location outside every game area. The engine places every acceleration token on the main scheme in the villain's play area, which during the split holds only 2B; each stage 3B sits in its player's play area, so a token never reaches another scheme. Tokens here add no threat during the split and carry into 4A (MARVEL-894 Q1; rr:acceleration-token.2.1). The join restriction and the advance to 4A are the engine-owned phase-end reunion: a departing group may choose only another game area holding players, and the last group's departure advances to 4A. This face therefore has no ability row.",
+      "abilities": []
+    },
+    {
+      "card": "11009a",
+      "name": "The Chronopolis",
+      "note": "When Revealed: Create your own game area and place this scheme in it. Add Kang (Immortus) to the game area and deal yourself an encounter card. createKangGameArea creates the revealing player's game area, places this scheme in front of their play area, puts the matching Kang (II) into it (the Expert copy in expert mode) and deals that player an encounter card (pack:mc11:areas).",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "createKangGameArea": "this" }
+        }
+      ]
+    },
+    {
+      "card": "11009b",
+      "name": "The Chronopolis",
+      "note": "Forced Response: After this stage is completed, place 1 set-aside Kang's Dominion facedown under stage 4A. At the end of the phase, remove Kang (Immortus) and this stage from the game and combine your game area with another game area. If all the players at this stage are defeated, this stage is completed. captureKangLocalCompletion stores one set-aside Dominion facedown under 4A in the main scheme deck and retains this stage and its Kang (II) for the next phase ending, where the scenario-owned departure removes both and joins the group to another game area (pack:mc11:game-areas). The completion of a local stage is not the players' loss. The engine owns the second sentence: when the last player in this game area is eliminated, it completes this stage. Printed starting threat 0, target 9 and acceleration 1 carry no per-player icon.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenMainSchemeCompleted", "timing": "ForcedResponse", "subject": "this" },
+          "effect": { "captureKangLocalCompletion": "this" }
+        }
+      ]
+    },
+    {
+      "card": "11010a",
+      "name": "Inexorable Fate",
+      "note": "When Revealed: Create your own game area and place this scheme in it. Add Kang (Iron Lad) to the game area and deal yourself an encounter card. createKangGameArea creates the revealing player's game area, places this scheme in front of their play area, puts the matching Kang (II) into it (the Expert copy in expert mode) and deals that player an encounter card (pack:mc11:areas).",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "createKangGameArea": "this" }
+        }
+      ]
+    },
+    {
+      "card": "11010b",
+      "name": "Inexorable Fate",
+      "note": "Forced Response: After this stage is completed, place 1 set-aside Kang's Dominion facedown under stage 4A. At the end of the phase, remove Kang (Iron Lad) and this stage from the game and combine your game area with another game area. If all the players at this stage are defeated, this stage is completed. captureKangLocalCompletion stores one set-aside Dominion facedown under 4A in the main scheme deck and retains this stage and its Kang (II) for the next phase ending, where the scenario-owned departure removes both and joins the group to another game area (pack:mc11:game-areas). The completion of a local stage is not the players' loss. The engine owns the second sentence: when the last player in this game area is eliminated, it completes this stage. Printed starting threat 1, target 9 and acceleration 1 carry no per-player icon.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenMainSchemeCompleted", "timing": "ForcedResponse", "subject": "this" },
+          "effect": { "captureKangLocalCompletion": "this" }
+        }
+      ]
+    },
+    {
+      "card": "11011a",
+      "name": "The Realm of Rama-Tut",
+      "note": "When Revealed: Create your own game area and place this scheme in it. Add Kang (Rama-Tut) to the game area and deal yourself an encounter card. createKangGameArea creates the revealing player's game area, places this scheme in front of their play area, puts the matching Kang (II) into it (the Expert copy in expert mode) and deals that player an encounter card (pack:mc11:areas).",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "createKangGameArea": "this" }
+        }
+      ]
+    },
+    {
+      "card": "11011b",
+      "name": "The Realm of Rama-Tut",
+      "note": "Forced Response: After this stage is completed, place 1 set-aside Kang's Dominion facedown under stage 4A. At the end of the phase, remove Kang (Rama-Tut) and this stage from the game and combine your game area with another game area. If all the players at this stage are defeated, this stage is completed. captureKangLocalCompletion stores one set-aside Dominion facedown under 4A in the main scheme deck and retains this stage and its Kang (II) for the next phase ending, where the scenario-owned departure removes both and joins the group to another game area (pack:mc11:game-areas). The completion of a local stage is not the players' loss. The engine owns the second sentence: when the last player in this game area is eliminated, it completes this stage. Printed starting threat 1, target 9 and acceleration 1 carry no per-player icon.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenMainSchemeCompleted", "timing": "ForcedResponse", "subject": "this" },
+          "effect": { "captureKangLocalCompletion": "this" }
+        }
+      ]
+    },
+    {
+      "card": "11012a",
+      "name": "The Present Future War",
+      "note": "When Revealed: Create your own game area and place this scheme in it. Add Kang (Scarlet Centurion) to the game area and deal yourself an encounter card. createKangGameArea creates the revealing player's game area, places this scheme in front of their play area, puts the matching Kang (II) into it (the Expert copy in expert mode) and deals that player an encounter card (pack:mc11:areas).",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "createKangGameArea": "this" }
+        }
+      ]
+    },
+    {
+      "card": "11012b",
+      "name": "The Present Future War",
+      "note": "Forced Response: After this stage is completed, place 1 set-aside Kang's Dominion facedown under stage 4A. At the end of the phase, remove Kang (Scarlet Centurion) and this stage from the game and combine your game area with another game area. If all the players at this stage are defeated, this stage is completed. captureKangLocalCompletion stores one set-aside Dominion facedown under 4A in the main scheme deck and retains this stage and its Kang (II) for the next phase ending, where the scenario-owned departure removes both and joins the group to another game area (pack:mc11:game-areas). The completion of a local stage is not the players' loss. The engine owns the second sentence: when the last player in this game area is eliminated, it completes this stage. Printed starting threat 2, target 9 and acceleration 1 carry no per-player icon.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenMainSchemeCompleted", "timing": "ForcedResponse", "subject": "this" },
+          "effect": { "captureKangLocalCompletion": "this" }
+        }
+      ]
+    },
+    {
+      "card": "11013a",
+      "name": "Kang's Wrath",
+      "note": "When Revealed: Reveal Kang (III) and add him to the game area. Reveal each face down Kang's Dominion under this stage. revealKangStageThree puts the set-aside Kang (III) (the Expert copy in expert mode) into the reunited game area and resolves his reveal, then reveals each stored Dominion through the ordinary encounter reveal before 4B flips.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "revealKangStageThree": "this" }
+        }
+      ]
+    },
+    {
+      "card": "11013b",
+      "name": "Kang's Wrath",
+      "note": "When Revealed: Each player searches the encounter deck, discard pile, and set-aside area for their nemesis minion and puts it into play engaged with them. Shuffle the encounter deck. If this stage is completed, the players lose the game. putKangNemesesIntoPlay searches for each player's physically associated nemesis minion in player order, puts each found minion into play engaged with that player without revealing it (rr:when-revealed-abilities.2), then shuffles the encounter deck once. This is the last stage of the main scheme deck, so its completion is the generic loss (rr:main-scheme-main-scheme-deck.2.1). The printed per-player target 10 and acceleration 1 multiply by the players who started the scenario (rr:per-player-icon).",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "putKangNemesesIntoPlay": "this" }
         }
       ]
     }
