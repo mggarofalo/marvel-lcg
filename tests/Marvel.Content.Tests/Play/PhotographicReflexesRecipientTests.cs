@@ -23,7 +23,8 @@ public sealed class PhotographicReflexesRecipientTests : CoreCardTestBase
     [Rule("rr:triggering-condition.2")]
     public void ShieldTossReflectsTaskmastersShareWhereverHeIsListed(bool taskmasterFirst)
     {
-        // Taskmaster's 4 goes to Captain America; the Hydra Soldier takes its own 4.
+        // Taskmaster's 4 goes to Captain America; Sandman (01102, 4 hit points, placed
+        // without his tough status card) takes his own 4.
         var (game, world, taskmaster, minion, attached) = AttackRecipientFixture.ShieldToss(Reflexes, 1, Taskmaster);
         var attack = Assert.Single(game.Pending!.Affordances);
 

@@ -60,7 +60,8 @@ public sealed class AttackedHostTriggerReachTests
 
     private static bool AnswersHostAttack(JsonElement ability) =>
         ability.GetProperty("trigger") is var trigger
-        && trigger.TryGetProperty("event", out var name) && name.GetString() == "WhenAttackInitiated"
+        && (trigger.TryGetProperty("event", out var name) && name.GetString() == "WhenAttackInitiated"
+            || trigger.TryGetProperty("also", out var also) && also.GetString() == "WhenAttackInitiated")
         && trigger.TryGetProperty("target", out var target) && target.GetString() == "attachedTo";
 
     private static IEnumerable<JsonElement> Nodes(JsonElement element)

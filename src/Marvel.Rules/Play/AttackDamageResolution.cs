@@ -192,8 +192,10 @@ internal sealed class AttackDamageResolution
         };
         if (onto is not null)
             spill = DamageAttacks.Begin(world, facts,
+                // rr:overkill.2: the excess "does not constitute an attack against
+                // that character", so the spill is announced as no late recipient.
                 request with { Target = onto, Amount = Excess, Verb = Keywords.Overkill, Retaliate = false,
-                    Replacement = null, EnemyAttack = null, Prepared = null, BasicRecipient = null },
+                    Replacement = null, EnemyAttack = null, Prepared = null, BasicRecipient = null, LateRecipient = false },
                 events, spillOnly: true);
     }
 

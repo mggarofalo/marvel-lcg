@@ -63,8 +63,10 @@ internal static class AbilityAttackRecipients
         context.World.Cards.FirstOrDefault(card => card.FaceUp && card.Area.Host == target.ObjectId
             && context.Program.On(card.FaceId).Any(ability => AnswersHostAttack(ability.Trigger)));
 
-    // The event clause restates the attack-initiated trigger; every authored
-    // attachedTo target on another event names its host's damage, not its attack.
+    // Only the simultaneous splash guard reads this, and splash recipients are
+    // minions. Every authored attachment keyed to its host on any event (an
+    // attack, damage, or an attack's end, as Distracting Taunts) attaches to a
+    // villain or an identity, so the event clause changes no current outcome.
     internal static bool AnswersHostAttack(AbilityTrigger trigger) =>
         (trigger.Event == Steps.AttackInitiated || trigger.Also == Steps.AttackInitiated)
         && trigger.Target == AbilityRoles.AttachedTo;

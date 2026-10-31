@@ -1,6 +1,7 @@
 using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
+using Marvel.Rules.Timing;
 using Marvel.Tests;
 using Xunit;
 using static Marvel.Content.Tests.Play.KangObligationFixture;
@@ -27,7 +28,8 @@ public sealed class KangAttackRecipientTests : CoreCardTestBase
     {
         // Captain America discards two cards for two recipients, each dealt 4. Ruling
         // 310af249be272877: the shield "only prevents the damage that would be dealt
-        // to Kang"; the Hydra Soldier (3 hit points) takes its 4 and is defeated. The
+        // to Kang"; Sandman (01102, 4 hit points, placed without his tough status card)
+        // takes his 4 and is defeated. The
         // attacker takes the shield's 1 damage either way.
         var (game, world, villain, minion, shields) = AttackRecipientFixture.ShieldToss(TemporalShield, 1);
         var shield = shields[0];
@@ -92,10 +94,11 @@ public sealed class KangAttackRecipientTests : CoreCardTestBase
     {
         // "Deal 1 damage to each minion": every minion is attacked (ruling
         // 310af249be272877), and the holder of Fear of Kang cannot attack the Master
-        // of Time. The Hydra Soldier is damaged either way; the 8 goes to Rhino.
+        // of Time. Sandman (placed without his tough status card) is damaged either way;
+        // the 8 goes to Rhino.
         var (world, f, stomp, pay) = AttackRecipientFixture.AntMan();
         var kang = KangTemporalFixture.Engaged(world, MasterOfTime, 0);
-        var soldier = KangTemporalFixture.Engaged(world, "01102", 0);
+        var sandman = KangTemporalFixture.Engaged(world, "01102", 0);
         if (fear) Obligation(world, FearOfKang, 0);
         AttackRecipientFixture.Execute(f, stomp, pay);
         var offered = new List<int>();
@@ -107,7 +110,7 @@ public sealed class KangAttackRecipientTests : CoreCardTestBase
         });
 
         Assert.Equal(fear ? 0 : 1, kang.Damage);
-        Assert.Equal(1, soldier.Damage);
+        Assert.Equal(1, sandman.Damage);
         Assert.Equal(8, f.Villain.Damage);
         Assert.Equal(!fear, offered.Contains(kang.ObjectId));
     }
@@ -290,20 +293,47 @@ public sealed class KangAttackRecipientTests : CoreCardTestBase
     }
 
     [Fact]
+    [Rule("rr:overkill.2")]
+    public void OverkillFromALateRecipientIsNoAttackOnTheShieldedVillain()
+    {
+        // Giant Ant-Man has overkill from a lasting effect. The splash deals Sandman (4
+        // hit points, placed without his tough status card) 1, then Ant-Man chooses him
+        // for the 8: he is attacked and defeated, and the 5 beyond his remaining 3 hit
+        // points goes to Rhino. rr:overkill.2: that excess "does not constitute an
+        // attack against that character", so Temporal Shield does not answer it.
+        var (world, f, stomp, pay) = AttackRecipientFixture.AntMan();
+        var shield = f.Reveal(TemporalShield, 0);
+        f.Finish();
+        var sandman = KangTemporalFixture.Engaged(world, "01102", 0);
+        Assert.False(Statuses.Has(world, sandman, Statuses.Tough));
+        world.Effects.Register(new(EffectSource.LastingEffect, Keywords.Overkill, Amount: 1,
+            Affects: world.Seats[0].IdentityCard.ObjectId));
+        AttackRecipientFixture.Execute(f, stomp, pay);
+
+        f.Finish(prompt => Decision.Take(sandman.ObjectId));
+
+        Assert.Equal(DeckType.EncounterDiscardPile, sandman.Area.Type);
+        Assert.Equal(5, f.Villain.Damage);
+        Assert.Equal(f.Villain.ObjectId, shield.Area.Host);
+        Assert.Equal(0, world.Seats[0].IdentityCard.Damage);
+    }
+
+    [Fact]
     [Rule("rr:attack-player-ability-type.5")]
     public void GiantStompMayAvoidAShieldedVillain()
     {
-        // The splash and the 8 both go to the Hydra Soldier; the shielded villain is
+        // The splash and the 8 both go to Sandman (4 hit points, placed without his
+        // tough status card); the shielded villain is
         // never attacked, so nothing raises and the shield stays.
         var (world, f, stomp, pay) = AttackRecipientFixture.AntMan();
         var shield = f.Reveal(TemporalShield, 0);
         f.Finish();
-        var soldier = KangTemporalFixture.Engaged(world, "01102", 0);
+        var sandman = KangTemporalFixture.Engaged(world, "01102", 0);
         AttackRecipientFixture.Execute(f, stomp, pay);
 
-        f.Finish(prompt => Decision.Take(soldier.ObjectId));
+        f.Finish(prompt => Decision.Take(sandman.ObjectId));
 
-        Assert.Equal(DeckType.EncounterDiscardPile, soldier.Area.Type);
+        Assert.Equal(DeckType.EncounterDiscardPile, sandman.Area.Type);
         Assert.Equal(0, f.Villain.Damage);
         Assert.Equal(f.Villain.ObjectId, shield.Area.Host);
     }
