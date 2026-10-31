@@ -104,6 +104,38 @@ public sealed class KangSplitAreaIsolationTests
     }
 
     [Fact]
+    [Rule("rr:each-player.1")]
+    public void MariaHillDrawsOnlyForThePlayersInHerGameArea()
+    {
+        // 01067: "Response: After Maria Hill enters play, each player draws 1 card."
+        // Ruling 4799b99ecc0e5dea limits "each player" to her game area.
+        var events = new List<GameEvent>();
+        var world = Split(2, false, events);
+        var hill = world.CreateCard("01067", world.Seats[1].Hand);
+        string theirs = Snapshot(world, 0);
+        int mine = world.Seats[1].Hand.Cards.Count;
+        Agendas.Happening(world);
+        bool responded = false;
+
+        CardPlay.PutAllyIntoPlay(world, world.Facts, world.Abilities, hill, 1, "prepared entry", events);
+        var prompt = Sequence.Work(world, world.Facts, world.Abilities, events);
+        for (int step = 0; prompt is not null; step++)
+        {
+            Assert.True(step < 20, prompt.Description);
+            var use = prompt.Affordances.FirstOrDefault(offer => offer.AnchorId == hill.ObjectId);
+            responded |= use is not null;
+            Sequence.Answer(world, world.Facts, world.Abilities, prompt,
+                use is not null ? Decision.Take(use.Id) : new ActingPolicy(7, declineOneIn: 1).Answer(prompt), events);
+            prompt = Sequence.Work(world, world.Facts, world.Abilities, events);
+        }
+
+        Assert.True(responded);
+        Assert.Equal(DeckType.AlliesArea, hill.Area.Type);
+        Assert.Equal(mine, world.Seats[1].Hand.Cards.Count);
+        Assert.Equal(theirs, Snapshot(world, 0));
+    }
+
+    [Fact]
     public void AdvanceSchemesWithTheRevealersOwnKang()
     {
         // 01186: "The villain schemes." Each split game area has its own Kang.
@@ -294,18 +326,32 @@ public sealed class KangSplitAreaIsolationTests
             identity.TurnTo(identity.FaceId.Replace('b', 'a'));
     }
 
+    // Everything belonging to one seat: its game area, seat state (eliminated,
+    // form, identity health and statuses, pile sizes), every card in its play
+    // area with zone, order, face, readiness, damage and tokens, and every
+    // registered effect on one of those cards or scoped to the seat itself.
     private static string Snapshot(World world, int seat)
     {
         var area = PlayArea.Of(seat);
+        var owner = world.Seats[seat];
+        var identity = owner.IdentityCard;
+        string state = string.Join(':', owner.Eliminated,
+            Forms.In(world, owner, world.Facts, Forms.Hero), Damage.Health(world, world.Facts, identity),
+            string.Join(',', new[] { Statuses.Stunned, Statuses.Confused, Statuses.Tough }
+                .Where(status => Statuses.Has(world, identity, status))),
+            owner.Hand.Cards.Count, owner.Deck.Cards.Count);
         var cards = world.Cards.Where(card => card.Area.PlayArea == area)
             .OrderBy(card => card.ObjectId)
             .Select(card => string.Join(':', card.ObjectId, card.Area.Type, card.Area.Id,
-                card.Area.Cards.ToList().IndexOf(card), card.FaceId, card.FaceUp, card.Damage,
+                card.Area.Cards.ToList().IndexOf(card), card.FaceId, card.FaceUp, card.Ready, card.Damage,
                 string.Join(',', card.Tokens.OrderBy(pair => pair.Key, StringComparer.Ordinal)
                     .Select(pair => $"{pair.Key}={pair.Value}"))));
         var effects = world.Effects.Registered
-            .Where(effect => effect.Affects is int target && world.Cards[target].Area.PlayArea == area)
-            .Select(effect => $"{effect.Kind}>{effect.Affects}");
-        return string.Join('\n', [$"area {world.GameAreaOf(area)?.Id}", .. cards, .. effects]);
+            .Where(effect => effect.Scope == ContinuousEffect.CharactersControlledBy
+                ? effect.Affects == seat
+                : effect.Affects is int target && world.Cards[target].Area.PlayArea == area
+                    || effect.Lasts?.NextTurnSeat == seat)
+            .Select(effect => $"{effect.Source}:{effect.Kind}:{effect.Amount}>{effect.Affects}:{effect.Scope}");
+        return string.Join('\n', [$"area {world.GameAreaOf(area)?.Id}", state, .. cards, .. effects]);
     }
 }

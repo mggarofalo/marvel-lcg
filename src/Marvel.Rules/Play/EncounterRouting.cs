@@ -13,19 +13,9 @@ public static class EncounterRouting
             $"'{villain.FaceId}' requires its living corresponding encounter deck");
 
     /// <summary>pack:mc03:new-rules: “the villain” refers to the active villain.</summary>
-    /// <remarks>
-    /// Without a referring card this cannot choose between the villains of
-    /// separate game areas, so it raises there rather than naming whichever
-    /// game area was created first; <see cref="Villain(World, Card)"/> answers it.
-    /// </remarks>
-    public static Card? Villain(World world)
-    {
-        if (world.EncounterTopology is { } topology) return topology.Active.CurrentVillain;
-        if (SeparateGameAreas.Active(world))
-            throw new RulesNotImplementedException(
-                "\"the villain\" needs a referring card while game areas are separate");
-        return world.TheCardIn(DeckType.VillainArea);
-    }
+    public static Card? Villain(World world) =>
+        world.EncounterTopology is { } topology
+            ? topology.Active.CurrentVillain : world.TheCardIn(DeckType.VillainArea);
 
     /// <summary>The villain this card's text means by “the villain”.</summary>
     /// <remarks>

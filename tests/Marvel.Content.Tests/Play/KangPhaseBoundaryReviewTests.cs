@@ -169,6 +169,48 @@ public sealed class KangPhaseBoundaryReviewTests : CoreCardTestBase
     }
 
     [Fact]
+    [Rule("rr:first-player.3")]
+    public void KangFirstResolvesEveryDepartureBeforeACompetingDelayedEffect()
+    {
+        // MARVEL-894 Q6: with Kang's effect chosen first, both departures and their
+        // joins resolve completely before the other delayed effect due now.
+        var (world, kang, _, _) = Split();
+        var other = world.CreateCard("11003", world.AreaOf(DeckType.VillainArea, PlayArea.Of(1)));
+        var target = world.CreateCard("01041", world.Seats[2].Hero);
+        world.Agenda.KangTransitions.CaptureJoin(world, kang, 7, PhaseTransitionKind.EndPlayerPhase);
+        world.Agenda.KangTransitions.CaptureJoin(world, other, 7, PhaseTransitionKind.EndPlayerPhase);
+        world.Effects.Register(new ContinuousEffect(EffectSource.DelayedEffect,
+            DelayedEffects.DiscardFromPlay, Card: target.ObjectId, Affects: target.ObjectId,
+            Lasts: Duration.NextTime(PhaseEnd.PlayerPhaseEnds)));
+        AddBoundary(world);
+        var abilities = new NoCardAbilities();
+        var events = new List<GameEvent>();
+
+        var order = Sequence.Work(world, Cards, abilities, events)!;
+        Assert.Equal(KangPhaseEndOrderOperation.Order, order.Trigger);
+        Sequence.Answer(world, Cards, abilities, order, Decision.Take(0), events);
+        var departure = Sequence.Work(world, Cards, abilities, events)!;
+        Assert.Equal(KangDepartureOrderOperation.Order, departure.Trigger);
+        Sequence.Answer(world, Cards, abilities, departure, Decision.Take(kang.ObjectId), events);
+
+        var prompt = Sequence.Work(world, Cards, abilities, events);
+        for (int step = 0; prompt is not null; step++)
+        {
+            Assert.True(step < 10, prompt.Description);
+            Assert.Equal(KangJoinOperation.Join, prompt.Trigger);
+            Assert.Equal(DeckType.HeroArea, target.Area.Type);
+            Sequence.Answer(world, Cards, abilities, prompt, Decision.Take(prompt.Affordances[0].Id), events);
+            prompt = Sequence.Work(world, Cards, abilities, events);
+        }
+
+        int discarded = events.FindIndex(happened => happened is CardsMoved moved
+            && moved.Cards.Any(landing => landing.Card == target.ObjectId));
+        Assert.Equal(2, events.Count(happened => happened is PlayAreaJoined));
+        Assert.True(discarded > events.FindLastIndex(happened => happened is PlayAreaJoined));
+        Assert.NotEqual(DeckType.HeroArea, target.Area.Type);
+    }
+
+    [Fact]
     public void LastLocalGroupFailsClosed()
     {
         var (world, kang, source, _) = Split();
