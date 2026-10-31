@@ -15,11 +15,6 @@ internal static class AbilityPowerContinuationDependencies
         {
             Cards: AbilityCardSelection.Bound { Binding: AbilityCardBinding.Chosen },
         } => true,
-        // rr:ability.4: "resolve the ability one sentence at a time." Removing threat
-        // chooses nothing, so it resolves on the settled live board after any defeat
-        // window. Its amount is fixed or a receipt recorded earlier, such as the excess
-        // damage dealt (ruling dd353e34); an amount counted from the board stays unsupported.
-        AbilityEffect.RemoveThreat { Amount: AbilityNumber.Constant or AbilityNumber.Result } => true,
         AbilityEffect.Sequence sequence => sequence.Effects.All(IsIndependent),
         AbilityEffect.Conditional conditional => SupportedCondition(conditional.Test)
             && IsIndependent(conditional.Then) && IsIndependent(conditional.Else),

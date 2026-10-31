@@ -11,18 +11,25 @@ namespace Marvel.Content.Tests.Play;
 
 public sealed class DeferredDefeatReceiptBoundaryTests
 {
-    [Fact]
-    public void ABoardCountedTailStillRaisesWithoutChangingCardsAgendaOrRandom()
+    [Theory]
+    [InlineData("{\"query\":\"mainScheme\"}", "{\"result\":\"boostIconsLookedAt\"}", false)]
+    [InlineData("\"chosen\"", "{\"count\":{\"query\":\"minions\"}}", false)]
+    [InlineData("\"that\"", "{\"result\":\"boostIconsLookedAt\"}", false)]
+    [InlineData("\"chosen\"", "{\"result\":\"boostIconsLookedAt\"}", true)]
+    public void BoardReadingTailsStillRaiseWithoutChangingCardsAgendaOrRandom(string target, string amount, bool live)
     {
-        // Synthetic control: after opaque defeat work, an amount counted from the
-        // board is not a recorded receipt, so the tail remains unsupported.
+        // Synthetic controls: after opaque defeat work, a removal from an unretained
+        // card, an amount counted from the board, or a receipt no earlier step of
+        // the ability records cannot resolve live; each raises before the board changes.
         var runner = Runner("""
-            {"chooseCard":{"from":{"titled":"Hydra Patrol"},"effect":{
+            {"chooseCard":{"from":CHOICE,"effect":{
               "thwart":{"target":"chosen","effect":{"seq":[
-                {"removeThreat":{"scheme":"chosen","amount":3}},
-                {"removeThreat":{"scheme":"chosen","amount":{"count":{"query":"minions"}}}}
+                {"removeThreat":{"scheme":INITIAL,"amount":3}},
+                {"removeThreat":{"scheme":TARGET,"amount":AMOUNT}}
               ]}}}}}
-            """);
+            """.Replace("TARGET", target, StringComparison.Ordinal).Replace("AMOUNT", amount, StringComparison.Ordinal)
+                .Replace("CHOICE", live ? """{"query":"mainScheme"}""" : """{"titled":"Hydra Patrol"}""", StringComparison.Ordinal)
+                .Replace("INITIAL", live ? """{"titled":"Hydra Patrol"}""" : "\"chosen\"", StringComparison.Ordinal));
         var world = Board(runner);
         string before = Observe(world);
         long random = world.Random.Generator.WordsConsumed;
@@ -65,6 +72,61 @@ public sealed class DeferredDefeatReceiptBoundaryTests
         Assert.False(DeckTypes.IsInPlay(patrol.Area.Type));
         Assert.Equal(6, main.Tokens["k_threat"]);
         Assert.False(world.Agenda.IsBusy);
+    }
+
+    [Fact]
+    public void AStepAfterALiveRemovalRaisesBeforeTheBoardChanges()
+    {
+        // Synthetic control: the board after a removal left to the live board is not
+        // projected, so a later step of the same thwart raises before anything changes.
+        var runner = Runner("""
+            {"chooseCard":{"from":{"titled":"Hydra Patrol"},"effect":{
+              "thwart":{"target":"chosen","effect":{"seq":[
+                {"removeThreat":{"scheme":"chosen","amount":3}},
+                {"removeThreat":{"scheme":{"query":"mainScheme"},"amount":2}},
+                {"removeThreat":{"scheme":{"query":"mainScheme"},"amount":1}}
+              ]}}}}}
+            """);
+        var world = Board(runner);
+        string digest = world.Digest().Canonical();
+        long random = world.Random.Generator.WordsConsumed;
+        var failure = Assert.Throws<RulesNotImplementedException>(() =>
+        {
+            var action = Assert.Single(runner.Actions(world, 0));
+            var events = runner.ExecuteAction(world, new PlayerAction(action, [], [])).Events.ToList();
+            var choose = Sequence.Work(world, world.Facts, runner, events)!;
+            Sequence.Answer(world, world.Facts, runner, choose, Decision.Take(choose.Affordances[0].Id), events);
+        });
+        Assert.Contains("unprojected defeat window", failure.Message);
+        Assert.Equal(random, world.Random.Generator.WordsConsumed);
+        Assert.Equal(digest, world.Digest().Canonical());
+    }
+
+    [Fact]
+    [Rule("rr:crisis-icon.1")]
+    [Rule("rr:target.3")]
+    public void AThwartCannotTargetTheMainSchemeWhileACrisisSchemeIsInPlay()
+    {
+        // rr:crisis-icon.1: "Each crisis icon is equivalent to the following constant
+        // ability: 'Player cards cannot remove threat from the main scheme.'" rr:target.3:
+        // "A target is valid for an ability or game function if any part of that ability
+        // can affect that target." At initiation Hydra Patrol's crisis icon is in play, so
+        // the main scheme is not a valid thwart target, although a removal earlier in the
+        // same thwart would later defeat Hydra Patrol. The action is not legal, so it is
+        // not offered, and nothing on the board changes.
+        var runner = Runner("""
+            {"chooseCard":{"from":{"query":"mainScheme"},"effect":{
+              "thwart":{"target":"chosen","effect":{"seq":[
+                {"removeThreat":{"scheme":{"titled":"Hydra Patrol"},"amount":3}},
+                {"removeThreat":{"scheme":"chosen","amount":2}}
+              ]}}}}}
+            """);
+        var world = Board(runner);
+        var main = world.TheCardIn(DeckType.MainSchemesArea)!;
+        string before = Observe(world);
+        Assert.DoesNotContain(main, BasicPowers.Thwartable(world, world.Facts, 0));
+        Assert.Empty(runner.Actions(world, 0));
+        Assert.Equal(before, Observe(world));
     }
 
     [Fact]

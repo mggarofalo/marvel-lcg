@@ -7,8 +7,8 @@ namespace Marvel.Cards.Run;
 /// A thwart group schedules thwarts by its performer, as a "Hero Action (thwart)"
 /// does. rr:cannot: "The word 'cannot' is absolute and cannot be countermanded by other
 /// abilities or effects."
-/// A performer that cannot thwart therefore makes the group unplayable rather
-/// than reaching the prohibition after its costs are paid.
+/// A performer that cannot thwart makes the group unplayable, so the prohibition
+/// is checked before any cost is paid.
 /// </remarks>
 internal static class AbilityThwartGroupAdmission
 {
