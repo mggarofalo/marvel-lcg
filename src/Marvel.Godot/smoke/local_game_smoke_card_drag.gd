@@ -2,17 +2,13 @@ extends RefCounted
 
 # Delivers real viewport pointer events and checks lifted intermediate geometry.
 static func perform(driver, card: Control, finish: Vector2, expected_drop_surface: Control = null) -> bool:
-	if not await preload("res://smoke/gesture_settlement.gd").authored_pose(driver, card):
-		driver._fail("card drag could not establish its exact resting baseline")
-		return false
-	var start: Vector2 = driver._card_body_point(card)
-	if not await driver._control_owns_point(card, start):
-		driver._fail("card '%s' has no exposed body from which to begin its drag" % card.name)
-		return false
+	var start := await _settled_start(driver, card)
+	if start == Vector2.INF: return false
 	card.force_update_transform()
 	var original := card.get_global_transform()
 	var pose_snapshot := preload("res://smoke/player_card_pose.gd").capture(driver, card)
 	var origin := card.global_position
+	var local_origin := card.position
 	var collection := card.find_parent("Continuous*")
 	var press := InputEventMouseButton.new()
 	press.button_index = MOUSE_BUTTON_LEFT
@@ -22,6 +18,12 @@ static func perform(driver, card: Control, finish: Vector2, expected_drop_surfac
 	driver.render_viewport.push_input(press, true)
 	await driver.process_frame
 	var pressed_origin := card.global_position
+	# Pressing captures the card but must not displace it. An ancestor container can
+	# still finish a queued layout during that frame; the lift then starts from the
+	# card's new on-screen position, which is where the player sees it under the pointer.
+	if not card.position.is_equal_approx(local_origin):
+		driver._fail("pressing '%s' displaced it before any motion: local %s -> %s" % [card.name, local_origin, card.position])
+		return false
 	var midpoint := start.lerp(finish, 0.55)
 	var move := InputEventMouseMotion.new()
 	move.position = midpoint
@@ -29,7 +31,7 @@ static func perform(driver, card: Control, finish: Vector2, expected_drop_surfac
 	driver.render_viewport.push_input(move, true)
 	var immediate_origin := card.global_position
 	await driver.process_frame
-	if card.global_position.distance_to(origin + midpoint - start) > 4.0 or card.z_index < 120:
+	if card.global_position.distance_to(pressed_origin + midpoint - start) > 4.0 or card.z_index < 120:
 		driver._fail("dragging '%s' produced no lifted intermediate frame: %s" % [card.name, _lift_diagnostic(driver, card, origin, pressed_origin, immediate_origin, start, midpoint)])
 		return false
 	if not card.is_set_as_top_level():
@@ -57,6 +59,20 @@ static func perform(driver, card: Control, finish: Vector2, expected_drop_surfac
 		return false
 	return true
 
+# The resting pose must be authored, still on screen and exposed at the grab point.
+static func _settled_start(driver, card: Control) -> Vector2:
+	if not await preload("res://smoke/gesture_settlement.gd").authored_pose(driver, card):
+		driver._fail("card drag could not establish its exact resting baseline")
+		return Vector2.INF
+	if not await preload("res://smoke/gesture_settlement.gd").stable_global_pose(driver, card):
+		driver._fail("card '%s' kept moving on screen; its drag has no stable baseline" % card.name)
+		return Vector2.INF
+	var start: Vector2 = driver._card_body_point(card)
+	if not await driver._control_owns_point(card, start):
+		driver._fail("card '%s' has no exposed body from which to begin its drag" % card.name)
+		return Vector2.INF
+	return start
+
 static func bounds(card: Control) -> Rect2:
 	var pose := card.get_global_transform()
 	var result := Rect2(pose * Vector2.ZERO, Vector2.ZERO)
@@ -72,7 +88,7 @@ static func _return_diagnostic(card: Control, expected: Transform2D) -> String:
 
 
 static func _lift_diagnostic(driver, card: Control, origin: Vector2, pressed: Vector2, immediate: Vector2, start: Vector2, midpoint: Vector2) -> String:
-	var expected := origin + midpoint - start
+	var expected := pressed + midpoint - start
 	var hovered: Control = driver.render_viewport.gui_get_hovered_control()
 	return "origin=%s after_press=%s after_motion=%s expected=%s actual=%s error=%s z=%s top_level=%s pointer=%s hovered=%s resting=%s" % [
 		origin, pressed, immediate, expected, card.global_position,
