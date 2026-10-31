@@ -24647,6 +24647,14 @@
       "abilities": [
         {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero"}, "labels": ["attack"], "effect": {"chooseCard": {"from": {"query": "attackableMinions"}, "effect": {"attack": {"target": "chosen", "effect": {"seq": [{"dealAttackDamage": {"cards": "chosen", "amount": 6}}, {"removeThreat": {"scheme": {"query": "mainScheme"}, "amount": {"result": "excessDamageDealt"}}}]}}}}}}
       ]
+    },
+    {
+      "card": "13027",
+      "name": "Mother's Orders",
+      "note": "Nemesis side scheme. As an additional cost for each hero to make a basic attack, that hero spends 1 resource of any type, paid simultaneously with the attack's exhaustion (rr:cost.10). The modifier name is an engine choice.",
+      "abilities": [
+        {"trigger": {"timing": "Constant", "subject": "this"}, "effect": {"grantEach": {"cards": {"inObjectIdOrder": {"query": "heroes"}}, "keyword": "attack_resource_cost", "amount": 1}}}
+      ]
     }
   ]
 }

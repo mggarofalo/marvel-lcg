@@ -58,7 +58,10 @@ internal static class GamePowerOffers
     }
 
     private static string? AdditionalAttackCost(Game game, Card character, string verb) =>
-        verb == BasicPowers.AttackVerb && BasicAttackCosts.Count(game.world, character) is > 0 and var count
+        verb != BasicPowers.AttackVerb ? null
+        : BasicAttackCosts.Resources(game.world, character) is > 0 and var resources
+            ? $"Spend {resources} resource(s) of any type in addition to exhausting the attacker."
+        : BasicAttackCosts.Count(game.world, character) is > 0 and var count
             ? $"Discard {count} card(s) from your hand in addition to exhausting the attacker."
             : null;
 
