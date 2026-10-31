@@ -17,6 +17,9 @@ public sealed record CardPowerInvocation(
     /// <remarks>The default retains the ordinary single-target contract. The continuation owns damage resolution.</remarks>
     public ImmutableArray<Card> Targets { get; init; }
 
+    /// <summary>Whether <see cref="Targets"/> is a divided allocation that may name one recipient once per share.</summary>
+    public bool Allocation { get; init; }
+
     /// <summary>A performer already established by the containing labelled ability.</summary>
     public Card? Performer { get; init; }
 

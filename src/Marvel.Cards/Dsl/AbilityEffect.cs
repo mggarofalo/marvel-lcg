@@ -106,6 +106,8 @@ public abstract record AbilityEffect
     {
         /// <summary>Whether every recipient receives damage before any recipient is defeated.</summary>
         public bool SimultaneousPlacement { get; init; }
+        /// <summary>Whether each allocated power-target entry is one share of a divided total.</summary>
+        public bool Distributed { get; init; }
     }
     /// <summary>Move damage between cards, optionally as attack damage.</summary>
     public sealed record MoveDamage(AbilityCardSelection From, AbilityCardSelection To, AbilityNumber Amount, bool Attack) : AbilityEffect;
@@ -276,6 +278,8 @@ public abstract record AbilityEffect
     {
         /// <summary>Choose this many distinct attack targets, or all available if fewer exist.</summary>
         public AbilityNumber? TargetCount { get; init; }
+        /// <summary>Whether <see cref="TargetCount"/> is a total divided among repeated attack targets.</summary>
+        public bool Distributed { get; init; }
     }
     /// <summary>A rule-specific way to select schemes and run a thwart power.</summary>
     public sealed record ThwartGroup(AbilityThwartSelection Selection, AbilityCardSelection Schemes, Power Thwart) : AbilityEffect

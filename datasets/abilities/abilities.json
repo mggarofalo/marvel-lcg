@@ -24605,6 +24605,15 @@
         {"trigger": {"timing": "Constant", "subject": "this"}, "effect": {"grant": {"card": "this", "keyword": "basic_thwart_divided"}}},
         {"trigger": {"timing": "Constant", "subject": "this"}, "effect": {"grant": {"card": "this", "keyword": "basic_attack_divided"}}}
       ]
+    },
+    {
+      "card": "13006",
+      "name": "Wasp Sting",
+      "note": "Two Hero Actions (attack). Giant: deal a total of 4 damage divided among enemies; each enemy dealt damage is attacked (pack:mc13:wasp-hero-pack#rules-clarifications) and all shares are dealt simultaneously. The divided total is an engine-chosen attack shape. Tiny: deal 5 damage to an enemy. Each action is offered only in its printed form; ruling abf1048bf26e566f concerns a hero with neither form.",
+      "abilities": [
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero"}, "labels": ["attack"], "when": {"hasTrait": {"card": "you", "trait": "GIANT"}}, "effect": {"attack": {"target": {"query": "attackableEnemies"}, "total": 4, "effect": {"dealAttackDamage": {"cards": {"query": "powerTargets"}, "amount": 1, "simultaneous": 1}}}}},
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero"}, "labels": ["attack"], "when": {"hasTrait": {"card": "you", "trait": "TINY"}}, "effect": {"chooseCard": {"from": {"query": "attackableEnemies"}, "effect": {"attack": {"target": "chosen", "effect": {"dealAttackDamage": {"cards": "chosen", "amount": 5}}}}}}}
+      ]
     }
   ]
 }

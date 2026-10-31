@@ -76,6 +76,7 @@ internal static class AbilityResolutionEffectChoices
         {
             Performer = cast.AbilityActor,
             Targets = command.Effect.TargetCount is null ? default : command.Targets,
+            Allocation = command.Effect.Distributed,
             UsesThwartStat = command.Verb == BasicPowers.ThwartVerb
                 && AbilityThwartStatUsage.ReadsActor(command.Effect.Effect, cast.QueryContext(),
                     cast.AbilityActor ?? cast.World.Seats[execution.Resolver(cast)].IdentityCard),

@@ -22,10 +22,10 @@ public sealed class WaspDividedBasicPowerTests : CoreCardTestBase
     {
         // Ruling 1b420f298dc7b045: each enemy dealt damage by the divided attack
         // retaliates. Ruling 116e678d0ad83200: Guard keeps every point off the villain.
-        var world = Board("13001c");
+        var world = WaspBoards.Board("13001c");
         var runner = AuthoredCards.Runner();
-        var guard = Engaged(world, Mercenary);
-        var retaliator = Engaged(world, Whiplash);
+        var guard = WaspBoards.Engaged(world, Mercenary);
+        var retaliator = WaspBoards.Engaged(world, Whiplash);
         var villain = world.TheCardIn(DeckType.VillainArea)!;
         var wasp = world.Seats[0].IdentityCard;
         BasicPowerInitiation.BasicAttack(world, Cards, 0, guard, []);
@@ -53,9 +53,9 @@ public sealed class WaspDividedBasicPowerTests : CoreCardTestBase
     public void AnEnemyGivenNoShareIsNotAttacked()
     {
         // Ruling 116e678d0ad83200: an enemy is attacked only when it is dealt at least 1.
-        var world = Board("13001c");
+        var world = WaspBoards.Board("13001c");
         var runner = AuthoredCards.Runner();
-        var declared = Engaged(world, Whiplash);
+        var declared = WaspBoards.Engaged(world, Whiplash);
         var villain = world.TheCardIn(DeckType.VillainArea)!;
         var wasp = world.Seats[0].IdentityCard;
         BasicPowerInitiation.BasicAttack(world, Cards, 0, declared, []);
@@ -76,9 +76,9 @@ public sealed class WaspDividedBasicPowerTests : CoreCardTestBase
     {
         // rr:attack-player-ability-type.5: the villain given a share is attacked, so
         // Temporal Shield's "When Kang is attacked" resolves before the damage.
-        var world = Board("13001c");
+        var world = WaspBoards.Board("13001c");
         var runner = AuthoredCards.Runner();
-        var declared = Engaged(world, Whiplash);
+        var declared = WaspBoards.Engaged(world, Whiplash);
         var villain = world.TheCardIn(DeckType.VillainArea)!;
         var shield = world.CreateCard("11014", world.AreaOf(DeckType.UpgradesArea, PlayArea.Villains, villain.ObjectId));
         var wasp = world.Seats[0].IdentityCard;
@@ -99,9 +99,9 @@ public sealed class WaspDividedBasicPowerTests : CoreCardTestBase
     [Rule("rr:cost.10")]
     public void AnInvalidAllocationLeavesTheBoardUnchanged()
     {
-        var world = Board("13001c");
+        var world = WaspBoards.Board("13001c");
         var runner = AuthoredCards.Runner();
-        var declared = Engaged(world, Whiplash);
+        var declared = WaspBoards.Engaged(world, Whiplash);
         var villain = world.TheCardIn(DeckType.VillainArea)!;
         BasicPowerInitiation.BasicAttack(world, Cards, 0, declared, []);
         var prompt = Assert.IsType<Prompt>(Sequence.Work(world, Cards, runner, []));
@@ -124,9 +124,9 @@ public sealed class WaspDividedBasicPowerTests : CoreCardTestBase
     public void OnlyGiantDividesAndASingleTargetNeedsNoAllocation(string face)
     {
         // Tiny prints no division; a lone legal enemy leaves nothing to divide.
-        var world = Board(face);
+        var world = WaspBoards.Board(face);
         var runner = AuthoredCards.Runner();
-        var guard = Engaged(world, Mercenary);
+        var guard = WaspBoards.Engaged(world, Mercenary);
         BasicPowerInitiation.BasicAttack(world, Cards, 0, guard, []);
         Assert.Null(Sequence.Work(world, Cards, runner, []));
         Assert.Equal(face == "13001c" ? 2 : 1, guard.Damage);
@@ -137,12 +137,12 @@ public sealed class WaspDividedBasicPowerTests : CoreCardTestBase
     public void GiantBasicThwartDividesAmongThwartableSchemesWithinTheirThreat()
     {
         // Ruling f216f6359fb0bf96: crisis keeps every point off the main scheme.
-        var world = Board("13001c");
+        var world = WaspBoards.Board("13001c");
         var runner = AuthoredCards.Runner();
         var main = world.TheCardIn(DeckType.MainSchemesArea)!;
         main.PlaceTokens("k_threat", 5);
-        var crisis = Side(world, CrowdControl, 1);
-        var other = Side(world, DefenseNetwork, 4);
+        var crisis = WaspBoards.Side(world, CrowdControl, 1);
+        var other = WaspBoards.Side(world, DefenseNetwork, 4);
         BasicThwartPowers.BasicThwart(world, Cards, 0, other, []);
         var prompt = Assert.IsType<Prompt>(Sequence.Work(world, Cards, runner, []));
         var offer = Assert.Single(prompt.Affordances);
@@ -156,29 +156,5 @@ public sealed class WaspDividedBasicPowerTests : CoreCardTestBase
         Assert.Equal(3, other.Tokens["k_threat"]);
         Assert.Equal(5, main.Tokens["k_threat"]);
         Assert.False(world.Agenda.IsBusy);
-    }
-
-    private static Card Engaged(World world, string face) =>
-        world.CreateCard(face, world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
-
-    private static Card Side(World world, string face, int threat)
-    {
-        var scheme = world.CreateCard(face, world.AreaOf(DeckType.SideSchemesArea));
-        scheme.PlaceTokens("k_threat", threat);
-        return scheme;
-    }
-
-    private static World Board(string face)
-    {
-        var world = new World(Cards, 1, 241);
-        var seat = world.CreateSeat("p0");
-        seat.IdentityCard = world.CreateCard("13001a,13001b,13001c", seat.Hero);
-        seat.IdentityCard.TurnTo(face);
-        for (int i = 0; i < 12; i++) world.CreateCard("01087", seat.Deck);
-        world.CreateCard("01094", world.AreaOf(DeckType.VillainArea));
-        world.CreateCard("01097a", world.AreaOf(DeckType.MainSchemesArea));
-        for (int i = 0; i < 12; i++) world.CreateCard("01120", world.AreaOf(DeckType.EncounterDeck));
-        world.Abilities = AuthoredCards.Runner();
-        return world;
     }
 }
