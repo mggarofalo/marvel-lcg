@@ -87,6 +87,6 @@ public sealed class KangModularSetupTests
         Assert.DoesNotContain(admitted.Playable, face => Cards.Pack(face) == "toafk");
         Assert.Contains("kree_fanatic", admitted.Setup.EncounterSetNames);
         Assert.Contains("bomb_scare", admitted.Setup.EncounterSetNames);
-        Assert.DoesNotContain("kang", Setup.CampaignNames);
+        Assert.DoesNotContain("kang", admitted.Setup.CampaignNames);
     }
 }

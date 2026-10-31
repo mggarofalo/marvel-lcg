@@ -12,6 +12,7 @@ public sealed class ExpansionSetupAuthorityTests
         {
             "setup:campaign:absorbing_man", "setup:campaign:absorbing_man_expert",
             "setup:campaign:crossbones", "setup:campaign:crossbones_expert",
+            "setup:campaign:kang", "setup:campaign:kang_expert",
             "setup:campaign:mutagen_formula", "setup:campaign:mutagen_formula_expert",
             "setup:campaign:red_skull", "setup:campaign:red_skull_expert",
             "setup:campaign:risky_business", "setup:campaign:risky_business_expert",
@@ -71,7 +72,7 @@ public sealed class ExpansionSetupAuthorityTests
         "setup:hero:quicksilver" => "Quicksilver hero pack",
         "setup:encounter-set:kree_fanatic" => "Ronan Kree Fanatic modular set",
         "setup:encounter-set:anachronauts" or "setup:encounter-set:mot" or "setup:encounter-set:temporal"
-            => "The Once and Future Kang scenario pack",
+            or "setup:campaign:kang" or "setup:campaign:kang_expert" => "The Once and Future Kang scenario pack",
         "setup:encounter-set:a_mess_of_things" or "setup:encounter-set:goblin_gimmicks"
             or "setup:encounter-set:power_drain" or "setup:encounter-set:running_interference" or "setup:campaign:risky_business" or "setup:campaign:risky_business_expert"
             or "setup:campaign:mutagen_formula" or "setup:campaign:mutagen_formula_expert"

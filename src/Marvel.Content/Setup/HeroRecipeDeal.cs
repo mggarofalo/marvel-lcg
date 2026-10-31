@@ -7,18 +7,21 @@ namespace Marvel.Content.Setup;
 internal static class HeroRecipeDeal
 {
     internal static void Append(SetupCatalog catalog, DealRequest request, ICardFacts? facts,
-        bool includeEncounterCards, List<Creation> dealt)
+        CampaignSetup campaign, List<Creation> dealt)
     {
+        // pack:mc03:additional-setup.prepare-encounter-decks excludes both hero
+        // obligations and nemesis sets from independent encounter groups; a
+        // recipe that removes hero obligations keeps each nemesis set aside.
+        bool nemeses = campaign.EncounterGroups is null;
+        bool obligations = nemeses && !campaign.RemovesHeroObligations;
         for (int seat = 0; seat < request.Heroes.Count; seat++)
         {
             var hero = CampaignDeckExclusions.Apply(catalog.Hero(request.Heroes[seat]), request.CampaignExcludedAllies);
             Add(dealt, hero.Hero, CreationSource.Identity, seat);
-            if (includeEncounterCards)
-            {
-                Add(dealt, hero.Obligations, CreationSource.Obligation, seat);
+            if (obligations) Add(dealt, hero.Obligations, CreationSource.Obligation, seat);
+            if (nemeses)
                 foreach (string spec in hero.NemesisSet)
                     dealt.Add(new(spec, CreationSource.Nemesis, seat, hero.NemesisSetIcon));
-            }
             AppendDeck(catalog, request, facts, dealt, hero, seat);
             // Engine allocation choice: each seat's Invocations follow its ordinary deck.
             if (hero.InvocationDeck is { } invocation)

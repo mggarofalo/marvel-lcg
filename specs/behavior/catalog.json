@@ -82278,6 +82278,50 @@
       ]
     },
     {
+      "id": "setup:campaign:kang",
+      "kind": "setup",
+      "title": "Kang",
+      "fingerprint": "sha256:4d008cfa0b5129bd7df968f3560381b1dbb253cc5dfe37b4b28a5333143e4ca1",
+      "scope": "campaign",
+      "disposition": "outside-core",
+      "obligations": [
+        {
+          "id": "behavior:setup:campaign:kang:kang-setup",
+          "summary": "The kang record supplies The Once and Future Kang scenario composition and setup.",
+          "disposition": "outside-core",
+          "reason": "This record requires The Once and Future Kang scenario pack, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
+      "id": "setup:campaign:kang_expert",
+      "kind": "setup",
+      "title": "Kang",
+      "fingerprint": "sha256:32a4fa8fb8f7e7aa7e322a74473a6b9f8cce11021768d5dc71cb75cffc0139e7",
+      "scope": "campaign",
+      "disposition": "outside-core",
+      "obligations": [
+        {
+          "id": "behavior:setup:campaign:kang_expert:kang-setup",
+          "summary": "The kang_expert record supplies The Once and Future Kang scenario composition and setup.",
+          "disposition": "outside-core",
+          "reason": "This record requires The Once and Future Kang scenario pack, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
       "id": "setup:campaign:klaw",
       "kind": "setup",
       "title": "Klaw",

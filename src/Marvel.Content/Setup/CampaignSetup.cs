@@ -30,6 +30,12 @@ public sealed record CampaignSetup(
     /// <summary>Separate villain decks; absence retains ordinary single-deck setup.</summary>
     public EncounterSetupRecipe? EncounterGroups { get; init; }
 
+    /// <summary>
+    /// Whether the scenario's setup removes each player's obligation from the game,
+    /// so the identities' obligations are never dealt. Absent means false.
+    /// </summary>
+    public bool RemovesHeroObligations { get; init; }
+
     /// <summary>Authored scenario mode identity; ordinary rows retain their expert flag.</summary>
     public string? SetupMode { get; init; }
 }
