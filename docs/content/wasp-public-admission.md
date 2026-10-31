@@ -108,6 +108,39 @@ once and reaches a policy loss.
 | Ultron | 1 | 3 | PlayersLose | 6 | 46 | 1 |
 | Wrecking Crew | 1 | 8 | PlayersLose | 2 | 14 | 1 |
 
+`MothersOrdersResourceAttackCostIsPaidThroughACompleteReplayedGame` plays two
+unarranged games in which Shadow of the Past puts Mother's Orders into play.
+The policy pays the offered one-resource attack cost through the public prompt
+at least once in each, and the replay matches.
+
+| Scenario | Players | Seed | Outcome | Round | Decisions |
+|---|---:|---:|---|---:|---:|
+| Rhino | 1 | 16 | PlayersLose | 7 | 42 |
+| Crossbones | 1 | 26 | PlayersLose | 8 | 61 |
+
+No native journey reaches Mother's Orders, so its prompt has no native
+evidence. The scripted client cannot arrange the nemesis side scheme, and no
+native script yet plays an unarranged game as far as Shadow of the Past.
+
+### Unarranged games that raise
+
+A scan of the public starter against six scenarios, seeds 1–40 (240 games),
+found games that end in `RulesNotImplementedException`. In every Wasp-caused
+case, Into the Fray (13013) defeats a minion whose defeat window the
+labelled-power projection cannot predict. The continuation then reads the
+main scheme:
+
+- Advanced Ultron Drone (01143, When Defeated) and Beetle (13028, Forced
+  Interrupt). Example seeds: Ultron 27, 36, 37; Rhino 10, 17; Absorbing Man
+  10, 13, 16, 28, 40. These still raise.
+- Hydra Soldier (01182, When Defeated encounter deal). Example seeds:
+  Crossbones 1, 18, 30; Absorbing Man 1, 35. These now complete, because a
+  facedown dealt card changes no threat
+  (`IntoTheFrayRemovesExcessThreatAfterTheMinionsWhenDefeatedEncounterDeal`).
+
+One further raise, Wrecking Crew seed 32, comes from the Wrecking Crew boost
+card 07045, which has no authored boost ability. It is not Wasp content.
+
 | Scenario | Players | Seed | Outcome | Round | Decisions |
 |---|---:|---:|---|---:|---:|
 | Rhino | 1 | 1 | VillainWins | 5 | 33 |

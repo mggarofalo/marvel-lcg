@@ -31,6 +31,18 @@ public sealed class WaspPublicGameTests(ITestOutputHelper output)
         Assert.True(seats.Divisions > 0);
     }
 
+    [Theory]
+    [InlineData("rhino", 16u)]
+    [InlineData("crossbones", 26u)]
+    public void MothersOrdersResourceAttackCostIsPaidThroughACompleteReplayedGame(string scenario, uint seed)
+    {
+        // Printed 13027: "As an additional cost for each hero to make a basic attack, that
+        // hero must spend 1 of any resource." Shadow of the Past puts it into play in these
+        // unarranged games, and the policy pays the offered resource cost.
+        var seats = PublicStarterGames.Play("wasp", scenario, false, seed, output);
+        Assert.True(seats.ResourceAttackCosts > 0);
+    }
+
     private static Decision? PreferGiant(Game game, Prompt prompt)
     {
         if (prompt.Affordances.SingleOrDefault(offer => offer.Verb == BasicPowerDivision.Verb) is { } divide)
