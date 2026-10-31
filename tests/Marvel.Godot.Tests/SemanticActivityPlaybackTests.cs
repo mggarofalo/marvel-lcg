@@ -109,6 +109,15 @@ public sealed class SemanticActivityPlaybackTests
         Assert.Equal("Wasp → Wrecker, Piledriver", playback[2].Intention);
         IReadOnlyList<EventPresentation> single = EventPlaybackPlan.From([wrecker, retaliation]);
         Assert.Equal("Wasp → Wrecker", single[1].Intention);
+        // An already-open attack is named by this response's own boundaries when it has
+        // them, and by the prior table only when it has none.
+        var prior = new WorldDescriptor([], [], [], Outcome.Unfinished)
+        {
+            ActiveAttack = new(new(1, "Wasp", ActivitySubjectRole.Source), new(4, "Bulldozer", ActivitySubjectRole.Target))
+                { Identity = id },
+        };
+        Assert.Equal("Wasp → Wrecker", EventPlaybackPlan.From([wrecker, retaliation], prior: prior)[1].Intention);
+        Assert.Equal("Wasp → Bulldozer", EventPlaybackPlan.From([retaliation], prior: prior)[0].Intention);
     }
 
     private static EventPresentation Recipient(AttackIdentity id, int target, string name) =>
