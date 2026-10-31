@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using Marvel.Protocol;
@@ -32,6 +33,8 @@ internal sealed class NativeContractServer : IAsyncDisposable
     internal string Endpoint { get; }
     internal List<EngineRequest> Requests { get; } = [];
     internal List<EngineResponse> Responses { get; } = [];
+    /// <summary>Host-side milliseconds per request: authoritative work, then reply delivery.</summary>
+    internal List<string> Timings { get; } = [];
     internal Task Completion => serving;
     internal Exception? SceneFailure => factory.Failure;
     internal Marvel.Rules.Play.Game PreparedGame => factory.PreparedGame;
@@ -55,11 +58,16 @@ internal sealed class NativeContractServer : IAsyncDisposable
         byte[]? bytes = await SocketFrame.ReadAsync(stream, stopping.Token);
         if (bytes is null) return;
         EngineRequest request = EngineJson.ReadRequest(bytes);
+        var elapsed = Stopwatch.StartNew();
         EngineResponse response = AuthoritativeResponse(request);
+        long authority = elapsed.ElapsedMilliseconds;
         if (LoseCommittedReply(request)) return;
         if (contract == "lost-reply" && faultUsed && request.Operation == EngineProtocol.Sync)
             await WaitForSignalAsync("recover");
-        await SocketFrame.WriteAsync(stream, EngineJson.Write(response), stopping.Token);
+        byte[] reply = EngineJson.Write(response);
+        Timings.Add($"{request.Operation} host={authority}ms bytes={reply.Length}");
+        await SocketFrame.WriteAsync(stream, reply, stopping.Token);
+        Timings[^1] += $" delivered={elapsed.ElapsedMilliseconds}ms";
         if (contract == "not-sent" && !faultUsed && request.Operation == EngineProtocol.Open)
         {
             faultUsed = true;

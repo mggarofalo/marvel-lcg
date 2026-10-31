@@ -95,12 +95,14 @@ func _restricted_guest_surface_is_safe() -> bool:
 	return SurfaceChecks.restricted_guest_is_safe(self)
 
 func _copy_invitation() -> String:
-	DisplayServer.clipboard_set("")
+	# Writing the clipboard here would notify the OS clipboard listeners, which can
+	# still hold it open when the host copies. Compare against the prior contents.
+	var previous := DisplayServer.clipboard_get()
 	var copy := _button(host, "Copy invitation")
 	if copy == null or not await _pointer_activate(copy):
 		return ""
 	var invitation := DisplayServer.clipboard_get()
-	if invitation.is_empty():
+	if invitation.is_empty() or invitation == previous:
 		_fail("copying the one-time invitation did not reach the clipboard")
 		return ""
 	if invitation in _visible_text(host) or _button(host, "Copy invitation") != null:

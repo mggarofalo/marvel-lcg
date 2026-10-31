@@ -61,6 +61,13 @@ try {
     if (-not $ready) {
         throw "Restricted hosted smoke server did not become ready: $(Get-Content $serverError -Raw)"
     }
+    if ($IsWindows) {
+        # A rendered Windows Godot client raises itself to above-normal priority while
+        # hosted runners start this server below normal; match the client so the
+        # authoritative host is not starved. The priority class is our choice.
+        $listener = Get-NetTCPConnection -LocalAddress 127.0.0.1 -LocalPort $Port -State Listen | Select-Object -First 1
+        (Get-Process -Id $listener.OwningProcess).PriorityClass = [System.Diagnostics.ProcessPriorityClass]::AboveNormal
+    }
 
     $env:MARVEL_ENGINE_ENDPOINT = "tcp://127.0.0.1:$Port"
     $env:MARVEL_UI_SCALE = "compact"
