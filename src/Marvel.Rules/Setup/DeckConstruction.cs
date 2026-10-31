@@ -125,9 +125,12 @@ public static class DeckConstruction
         IEnumerable<Creation> player, Creation identity, ICardFacts facts,
         IReadOnlyList<Creation> dealt)
     {
+        // Only cards with the unique icon can match, so the pairwise check
+        // reads those alone, in deal order.
         var cards = player.Where(card =>
                 card.Source is CreationSource.HeroDeck or CreationSource.PlayerDeck)
             .Prepend(identity)
+            .Where(card => Uniqueness.IsUnique(facts, card.Faces))
             .ToList();
         for (int left = 0; left < cards.Count; left++)
         {

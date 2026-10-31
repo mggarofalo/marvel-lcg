@@ -53,7 +53,7 @@ public sealed class KangObligationLoweringTests
         var world = new World(CardCatalog.Parse(File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json"))), 1);
         world.CreateSeat("p0").IdentityCard = world.CreateCard("01001a,01001b", world.Seats[0].Hero);
         var card = world.CreateCard(face, world.AreaOf(DeckType.ObligationsArea, PlayArea.Of(0)));
-        var cost = Assert.Single(AbilityLowering.Book(AuthoredCards.Book).On(face), ability => ability.Cost is not null).Cost;
+        var cost = Assert.Single(AuthoredCards.Program.On(face), ability => ability.Cost is not null).Cost;
         Assert.Equal(described, AbilityCostDescription.Summary(world, card, 0, cost));
     }
 

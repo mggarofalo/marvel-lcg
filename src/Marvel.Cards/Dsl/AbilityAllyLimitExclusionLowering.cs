@@ -8,10 +8,10 @@ internal static class AbilityAllyLimitExclusionLowering
 {
     internal static void Validate(AbilityProgram program)
     {
+        var byAbility = program.EffectsByAbility();
         foreach (var ability in program.Abilities)
         {
-            var nodes = program.Effects.Where(pair => pair.Key.Card == ability.Card
-                && pair.Key.Ability == ability.Address.Ability).Select(pair => pair.Value);
+            var nodes = byAbility[(ability.Card, ability.Address.Ability)];
             if (!nodes.Any(node => node is AbilityEffect.GrantField { Field: AllyLimitExclusion.Modifier })) continue;
             if (ability.Trigger.Timing != AbilityType.Constant
                 || ability.Effect is not AbilityEffect.GrantField

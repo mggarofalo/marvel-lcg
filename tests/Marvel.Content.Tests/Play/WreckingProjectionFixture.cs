@@ -28,7 +28,7 @@ internal sealed class WreckingProjectionFixture : CoreCardTestBase
         var expression = new AbilityExpressionContext(query, ImmutableDictionary<string, long>.Empty,
             [], "", 0, false, null);
         var scope = new AbilityAdmission.AbilityAdmissionScope(new AbilityAdmissionContext(
-            AbilityLowering.Book(AuthoredCards.Book), world.ResourceAbilities, expression, new(), null), []);
+            AuthoredCards.Program, world.ResourceAbilities, expression, new(), null), []);
         return (world, groups, scope);
     }
 

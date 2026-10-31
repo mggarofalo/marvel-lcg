@@ -105,7 +105,7 @@ public sealed class FirstAllyCostTests
     [InlineData("crossbones", "hawkeye")]
     public void ExistingProductsDoNotAllocateRoundMarkers(string scenario, string hero)
     {
-        var runner = new AbilityRunner(AuthoredCards.Book);
+        var runner = AuthoredCards.Runner();
         var (_, world) = Playing(_ => { }, scenario: scenario, heroes: [hero], abilities: runner);
         Assert.False(runner.RequiresAllyPlayHistory(world));
         var ally = world.CreateCard("01068", world.Seats[0].Hand);
@@ -120,7 +120,7 @@ public sealed class FirstAllyCostTests
     [InlineData(false, "crossbones", "hawkeye")]
     public void ExtraPricingQueriesPreserveSubsequentPlayAgainstUnprobedControl(bool discount, string scenario, string hero)
     {
-        var runner = discount ? Discount() : new AbilityRunner(AuthoredCards.Book);
+        var runner = discount ? Discount() : AuthoredCards.Runner();
         var (_, control) = Playing(_ => { }, scenario: scenario, heroes: [hero], abilities: runner);
         var (_, probed) = Playing(_ => { }, scenario: scenario, heroes: [hero], abilities: runner);
         var expectedAlly = control.CreateCard("01068", control.Seats[0].Hand);
