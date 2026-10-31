@@ -85,7 +85,7 @@ func _commit_payment() -> bool:
     if submit == null: submit = main.find_child("Submit", true, false) as Button
     if not await ui.expect(func(): return submit != null and not submit.disabled, "explicit paid action commitment"): return false
     if not await ui.click(Locator.control(submit)): return false
-    if not await ui.expect(func(): return witness.Revision() == 1, "initiating action commits once"): return false
+    if not await ui.expect(func(): return witness.Revision() == 1, "initiating action commits once", Driver.COMMIT_DEADLINE_MS): return false
     return true
 
 func _recipients() -> bool:
@@ -116,6 +116,7 @@ func _stage_recipients() -> bool:
 func _completion() -> bool:
     var submit = main.find_child("Submit", true, false) as Button
     if not await ui.click(Locator.control(submit)): return false
+    if not await ui.expect(func(): return witness.Revision() == 2, "one complete subset answer returns to play: commitment accepted", Driver.COMMIT_DEADLINE_MS): return false
     if not await ui.expect(func(): return witness.Revision() == 2 and witness.DecisionKind() == "PlayerAction", "one complete subset answer returns to play"): return false
     if not await _capture("result"): return false
     print("INVOCATION_RESULT " + _visible_text(main))

@@ -2,13 +2,8 @@ extends RefCounted
 
 # Delivers real viewport pointer events and checks lifted intermediate geometry.
 static func perform(driver, card: Control, finish: Vector2, expected_drop_surface: Control = null) -> bool:
-	if not await preload("res://smoke/gesture_settlement.gd").authored_pose(driver, card):
-		driver._fail("card drag could not establish its exact resting baseline")
-		return false
-	var start: Vector2 = driver._card_body_point(card)
-	if not await driver._control_owns_point(card, start):
-		driver._fail("card '%s' has no exposed body from which to begin its drag" % card.name)
-		return false
+	var start := await _settled_start(driver, card)
+	if start == Vector2.INF: return false
 	card.force_update_transform()
 	var original := card.get_global_transform()
 	var pose_snapshot := preload("res://smoke/player_card_pose.gd").capture(driver, card)
@@ -22,6 +17,9 @@ static func perform(driver, card: Control, finish: Vector2, expected_drop_surfac
 	driver.render_viewport.push_input(press, true)
 	await driver.process_frame
 	var pressed_origin := card.global_position
+	if pressed_origin.distance_to(origin) > 1.0:
+		driver._fail("pressing '%s' displaced it on screen: %s -> %s" % [card.name, origin, pressed_origin])
+		return false
 	var midpoint := start.lerp(finish, 0.55)
 	var move := InputEventMouseMotion.new()
 	move.position = midpoint
@@ -56,6 +54,20 @@ static func perform(driver, card: Control, finish: Vector2, expected_drop_surfac
 		driver._fail("released card did not finish returning or retire within 750 ms: " + _return_diagnostic(card, original))
 		return false
 	return true
+
+# The resting pose must be authored, still on screen and exposed at the grab point.
+static func _settled_start(driver, card: Control) -> Vector2:
+	if not await preload("res://smoke/gesture_settlement.gd").authored_pose(driver, card):
+		driver._fail("card drag could not establish its exact resting baseline")
+		return Vector2.INF
+	if not await preload("res://smoke/gesture_settlement.gd").stable_global_pose(driver, card):
+		driver._fail("card '%s' kept moving on screen; its drag has no stable baseline" % card.name)
+		return Vector2.INF
+	var start: Vector2 = driver._card_body_point(card)
+	if not await driver._control_owns_point(card, start):
+		driver._fail("card '%s' has no exposed body from which to begin its drag" % card.name)
+		return Vector2.INF
+	return start
 
 static func bounds(card: Control) -> Rect2:
 	var pose := card.get_global_transform()

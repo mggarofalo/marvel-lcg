@@ -12,6 +12,23 @@ static func wait_for(tree: SceneTree, condition: Callable) -> bool:
 			await tree.process_frame
 	return false
 
+# Container layout can converge over several frames after a decision changes the
+# surrounding chrome, moving a card whose local pose is already authored. A gesture
+# baseline needs the card's on-screen pose unchanged across consecutive frames.
+static func stable_global_pose(tree: SceneTree, card: Control, frames := 3, deadline_ms := 3000) -> bool:
+	var started := Time.get_ticks_msec()
+	var previous := Transform2D()
+	var unchanged := -1
+	while Time.get_ticks_msec() - started < deadline_ms:
+		if not is_instance_valid(card) or not card.is_inside_tree(): return false
+		card.force_update_transform()
+		var current := card.get_global_transform()
+		unchanged = unchanged + 1 if unchanged >= 0 and current.is_equal_approx(previous) else 0
+		if unchanged >= frames: return true
+		previous = current
+		await tree.process_frame
+	return false
+
 static func authored_pose(tree: SceneTree, card: Control) -> bool:
 	var position := card.position
 	var rotation := card.rotation

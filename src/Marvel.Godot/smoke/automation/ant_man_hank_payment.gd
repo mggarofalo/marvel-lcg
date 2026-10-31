@@ -61,7 +61,7 @@ func _stage_hank_payment() -> bool:
 
 func _commit_hank_payment() -> bool:
     if not await ui.click(ui.button("Pay and play Ant-Man · Hank Pym")): return false
-    if not await ui.expect(func(): return witness.Revision() == 2, "one play commitment"): return false
+    if not await ui.expect(func(): return witness.Revision() == 2, "one play commitment", Driver.COMMIT_DEADLINE_MS): return false
     if not await ui.expect(func(): return witness.CanResolve() and not bool(main.get_meta("response_staged", false)), "entry interrupt settles"): return false
     print("HANK_AFTER " + _visible_text(main))
     if not await ui.expect(func(): return witness.DecisionKind() == "Interrupt" and \
@@ -84,6 +84,7 @@ func _accept_hank_interrupt() -> bool:
     var choices: Array = group.find_children("Affordance*", "Button", true, false).filter(func(n): return n.is_visible_in_tree())
     if not await ui.expect(func(): return choices.size() == 1, "one exact Hank entry interrupt"): return false
     if not await ui.click(Locator.control(choices[0])): return false
+    if not await ui.expect(func(): return witness.Revision() == 3, "entry interrupt commits once and settles: commitment accepted", Driver.COMMIT_DEADLINE_MS): return false
     if not await ui.expect(func(): return witness.Revision() == 3 and witness.CanResolve() and not bool(main.get_meta("response_staged", false)), "entry interrupt commits once and settles"): return false
     if not await ui.expect(func(): return witness.DecisionKind() == "PlayerAction" and \
         payment_witness.InArea(hanks[0], "AlliesArea", 0) and \
