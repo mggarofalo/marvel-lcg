@@ -55,6 +55,91 @@ Lie in Wait runs through a public `wasp` game's villain phase.
 pack, or any recipe component changes. `WaspLoweringTests` refuses malformed
 shapes of the new vocabulary.
 
-Native Godot interaction and complete-game, save/restart and replay journeys
-are not established here. The divided basic power uses the existing
-repeated-target allocation contract that the client already renders.
+## Public journeys
+
+`WaspPublicRestartTests` opens the published starter through `EngineHost` with
+seed 851, keeps the dealt hand, changes Nadia to Giant Wasp and suspends at the
+division allocation. Against Ultron the basic attack is divided between Ultron
+and the Drone that Ultron's setup engages; against the Wrecking Crew the basic
+thwart is divided between two side schemes. Each case checks the prompt copy
+and per-target consequences, copies the strict save and authority metadata into
+a fresh host, rejects a stale and an incomplete allocation without changing the
+save or state, then compares events, save, prompt, digest, RNG state and
+pending work against the uninterrupted host. The thwart case then undoes and
+redoes the allocation. In the attack case the Drone's share defeats it and
+reveals its facedown card, so the host refuses that undo with
+`history_frontier` and keeps the session unchanged. A following decision matches
+on both hosts.
+
+`WaspPublicGameTests` plays the unarranged starter with the same scenario, seed
+and policy matrix as Ant-Man, beside an exact same-seed replay of every
+decision's prompt, events, digest and RNG. All seven games reach a terminal
+policy loss; they establish complete games and replay, not victory. The policy
+never changes to Giant, so these games do not exercise the division; the
+restart and native journeys do.
+
+| Scenario | Players | Seed | Outcome | Round | Decisions |
+|---|---:|---:|---|---:|---:|
+| Rhino | 1 | 1 | VillainWins | 5 | 33 |
+| Klaw | 1 | 2 | PlayersLose | 5 | 38 |
+| Ultron | 1 | 3 | PlayersLose | 4 | 34 |
+| Crossbones | 1 | 4 | PlayersLose | 3 | 20 |
+| Absorbing Man | 1 | 5 | PlayersLose | 4 | 29 |
+| Rhino | 2 | 6 | PlayersLose | 7 | 81 |
+| Absorbing Man | 2 | 7 | PlayersLose | 5 | 73 |
+
+The complete-game and restart helpers are shared with Ant-Man
+(`PublicStarterGames`, `PublicRestartJourney`); Ant-Man's seven games reproduce
+its recorded table unchanged.
+
+## Native divided powers
+
+Three scripted journeys use the public Wasp starter with seed 1. Setup
+selections, seed entry, menus and decisions use viewport input, and no gameplay
+fixture is injected:
+
+- `wasp_public_divided_attack.gd` (Ultron): Giant Wasp declares an attack on
+  Ultron and divides 2 between Ultron and the Drone.
+- `wasp_public_divided_retaliate.gd` (Wrecking Crew): she declares an attack
+  on Wrecker and divides 2 with Piledriver, whose Retaliate 1 hits her.
+- `wasp_public_divided_thwart.gd` (Wrecking Crew): she declares a thwart on
+  Pile It On! and divides 2 with Clear the Road.
+
+Each journey checks the following:
+
+- The identity menu says the amount is divided after the declaration, and the
+  declared target's preview applies "if all of it is assigned here".
+- The existing repeated-target editor shows the total ("Divide 2 damage among
+  enemies"), states that each recipient is attacked and its Retaliate applies
+  (or that each scheme is thwarted), and gives a consequence for each
+  recipient. Piledriver's row reads "Attacked if given any damage · first
+  point: 11/11 → 10/11 HP · Retaliate 1 will hit Wasp".
+- One point cannot be committed. A full allocation disables further
+  additions, and nothing commits until the explicit commit.
+- One commitment applies every share. Ultron goes from 17 to 16 and the Drone
+  leaves the table. Wrecker goes from 14 to 13, Piledriver from 11 to 10 and
+  Wasp from 11 to 10. Each scheme loses one threat.
+
+The rendered setup, destination, target menu, allocation and result images were
+inspected. The playback caption for the retaliation names the whole divided
+attack ("Wasp → Piledriver, Wrecker"), rather than only the declared target.
+
+The interaction reuses the repeated-target allocation that indirect damage
+already uses (`contract-repeated-targets-*`). The engine supplies the
+consequence copy, and the client renders the per-target detail it already
+carries for ordinary targets. These are not materially new UI interactions, so
+no owner review item is needed.
+
+On macOS with Godot 4.7.1 at 1920×1080, 100% scale and reduced motion, the
+manifest cases `wasp-divided-attack-100-reduced`,
+`wasp-divided-retaliate-100-reduced` and `wasp-divided-thwart-100-reduced`
+passed headless. The scripts also passed rendered through
+`tools/godot-acceptance.ps1 -Rendered`. The existing
+`contract-repeated-targets-100-motion` and `ant-man-public-form-100-reduced`
+cases still pass. The final evidence is under `~/Source/evidence/wasp-manifest2-*`
+(headless) and `~/Source/evidence/wasp-native-final-*` (rendered).
+
+Windows/Linux native runs, other scales and package journeys are not
+established here. The repeated "Attack resumes." line for each announced
+recipient is the existing attack-boundary copy for an attack that is already
+open.

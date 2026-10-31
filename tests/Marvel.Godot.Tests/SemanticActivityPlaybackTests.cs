@@ -95,6 +95,30 @@ public sealed class SemanticActivityPlaybackTests
         Assert.False(EventActivityTableArrivals.Arrives(new([], []) { DestinationZone = "PlayerDeck" }, "PlayerDeck"));
     }
 
+    [Fact]
+    public void ADividedAttackNamesEveryAnnouncedRecipientForItsConsequences()
+    {
+        // A divided basic attack is one attack with several announced recipients; a
+        // retaliation it causes belongs to that attack, not to its declared target alone.
+        var id = new AttackIdentity(6, true);
+        EventPresentation wrecker = Recipient(id, 2, "Wrecker");
+        EventPresentation piledriver = Recipient(id, 3, "Piledriver");
+        EventPresentation retaliation = Entry(1, EventActivityKind.Consequence) with
+        { Motion = EventMotionKind.Damage, Activity = new([new(1, "Wasp", ActivitySubjectRole.Subject)], []) { AttackIdentity = id } };
+        IReadOnlyList<EventPresentation> playback = EventPlaybackPlan.From([wrecker, piledriver, retaliation]);
+        Assert.Equal("Wasp → Wrecker, Piledriver", playback[2].Intention);
+        IReadOnlyList<EventPresentation> single = EventPlaybackPlan.From([wrecker, retaliation]);
+        Assert.Equal("Wasp → Wrecker", single[1].Intention);
+    }
+
+    private static EventPresentation Recipient(AttackIdentity id, int target, string name) =>
+        EventPresenter.Present(new AttackBoundary(id, 1, target, true)
+        {
+            AttackIdentity = id,
+            Verb = "Attack_Initiated",
+            Subjects = new Dictionary<int, string> { [1] = "Wasp", [target] = name },
+        }, new([], [], [], Outcome.Unfinished));
+
     private static EventPresentation Entry(int card, EventActivityKind kind) => new(kind.ToString(), "", [card], EventMotionKind.State)
     { Activity = new([new(card, "Card", kind == EventActivityKind.Boost ? ActivitySubjectRole.Boost : ActivitySubjectRole.Subject)], []) { Kind = kind } };
 

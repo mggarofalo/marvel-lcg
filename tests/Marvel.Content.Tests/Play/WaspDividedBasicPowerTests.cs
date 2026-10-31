@@ -37,6 +37,11 @@ public sealed class WaspDividedBasicPowerTests : CoreCardTestBase
         Assert.Equal(2, offer.Targets.Max);
         Assert.True(offer.Targets.AllowRepeated);
         Assert.DoesNotContain(villain.ObjectId, offer.Targets.Legal);
+        Assert.Contains("so its Retaliate applies", prompt.Description);
+        Assert.Equal("Attacked if given any damage · first point: 4/4 → 3/4 HP · Retaliate 1 will hit Wasp",
+            offer.Targets.Details![retaliator.ObjectId]);
+        Assert.Equal("Attacked if given any damage · first point: 3/3 → 2/3 HP",
+            offer.Targets.Details[guard.ObjectId]);
         Sequence.Answer(world, Cards, runner, prompt,
             Decision.Take(offer.Id) with { Targets = [guard.ObjectId, retaliator.ObjectId] }, []);
         Sequence.Finish(world, Cards, runner, []);
@@ -149,6 +154,7 @@ public sealed class WaspDividedBasicPowerTests : CoreCardTestBase
         Assert.Equal([crisis.ObjectId, other.ObjectId], offer.Targets!.Legal.Order());
         Assert.Equal(1, offer.Targets.MaximumOccurrences![crisis.ObjectId]);
         Assert.False(offer.Targets.Allows([crisis.ObjectId, crisis.ObjectId]));
+        Assert.Equal("Thwarted if given any threat removal · 4 threat", offer.Targets.Details![other.ObjectId]);
         Sequence.Answer(world, Cards, runner, prompt,
             Decision.Take(offer.Id) with { Targets = [crisis.ObjectId, other.ObjectId] }, []);
         Sequence.Finish(world, Cards, runner, []);
@@ -156,5 +162,29 @@ public sealed class WaspDividedBasicPowerTests : CoreCardTestBase
         Assert.Equal(3, other.Tokens["k_threat"]);
         Assert.Equal(5, main.Tokens["k_threat"]);
         Assert.False(world.Agenda.IsBusy);
+    }
+
+    [Theory]
+    [InlineData("13001c", true, true)]
+    [InlineData("13001c", false, false)]
+    [InlineData("13001a", true, false)]
+    public void TheBasicAttackOfferSaysWhenItsDamageWillBeDivided(string face, bool minion, bool divided)
+    {
+        // Ruling 78f96d5c7974afaa: the hero declares one target before dividing, so the
+        // declared target's preview holds only if every point is assigned to it. With
+        // the villain alone there is nothing to divide among.
+        Card? enemy = null;
+        var (game, world) = Playing(board =>
+        {
+            board.Seats[0].IdentityCard.TurnTo(face);
+            enemy = minion ? WaspBoards.Engaged(board, Whiplash) : board.TheCardIn(DeckType.VillainArea);
+        }, heroes: ["wasp"]);
+        var wasp = world.Seats[0].IdentityCard;
+        var attack = Assert.Single(game.Pending!.Affordances,
+            offer => offer.AnchorId == wasp.ObjectId && offer.Verb == BasicPowers.AttackVerb);
+        Assert.Equal(divided, attack.Description!.EndsWith(" · Then divide the damage among enemies you can attack",
+            StringComparison.Ordinal));
+        Assert.Equal(divided, attack.Targets!.Details![enemy!.ObjectId].EndsWith(" if all of it is assigned here",
+            StringComparison.Ordinal));
     }
 }

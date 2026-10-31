@@ -9,7 +9,7 @@ using Xunit;
 namespace Marvel.Acceptance.Tests.Play;
 
 /// <summary>A public session and its serialized fresh-host continuation.</summary>
-internal sealed class AntManRestartJourney
+internal sealed class PublicRestartJourney
 {
     internal HulkRestartFactory Factory { get; } = new();
     internal MemorySessionStore Store { get; } = new();
@@ -18,16 +18,16 @@ internal sealed class AntManRestartJourney
     private readonly string capability;
     private readonly string gameId;
 
-    internal AntManRestartJourney(GameSpecification specification)
+    internal PublicRestartJourney(GameSpecification specification, string title)
     {
         Host = new EngineHost(Factory, store: Store);
-        Current = Host.Exchange(EngineRequest.OpenGame("open", "ant-man-restart", specification));
+        Current = Host.Exchange(EngineRequest.OpenGame("open", title, specification));
         Assert.Null(Current.Error);
         capability = Current.Capability!;
         gameId = Current.GameId;
     }
 
-    private AntManRestartJourney(AntManRestartJourney original)
+    private PublicRestartJourney(PublicRestartJourney original)
     {
         capability = original.capability;
         gameId = original.gameId;
@@ -52,7 +52,7 @@ internal sealed class AntManRestartJourney
         original.Equivalent(this);
     }
 
-    internal AntManRestartJourney Restart() => new(this);
+    internal PublicRestartJourney Restart() => new(this);
 
     internal void Answer(Decision answer)
     {
@@ -72,7 +72,7 @@ internal sealed class AntManRestartJourney
         Assert.Equal(state, Observation());
     }
 
-    internal void Equivalent(AntManRestartJourney other)
+    internal void Equivalent(PublicRestartJourney other)
     {
         Assert.Equal(Observation(), other.Observation());
         Assert.Equal(SessionSaveJson.Write(Assert.Single(Store.Load()).Save),
@@ -82,7 +82,7 @@ internal sealed class AntManRestartJourney
         Assert.Equal(JsonSerializer.Serialize(Current.History), JsonSerializer.Serialize(other.Current.History));
     }
 
-    internal void Continue(AntManRestartJourney other, Decision answer)
+    internal void Continue(PublicRestartJourney other, Decision answer)
     {
         Answer(answer);
         other.Answer(answer);
@@ -90,9 +90,10 @@ internal sealed class AntManRestartJourney
         Equivalent(other);
     }
 
-    internal void EquivalentState(AntManRestartJourney other) => Assert.Equal(Observation(), other.Observation());
+    internal void EquivalentState(PublicRestartJourney other) => Assert.Equal(Observation(), other.Observation());
 
-    internal void UndoRedo()
+    /// <summary>Undo the last completed step, expecting <paramref name="undoneFace"/>, then redo it.</summary>
+    internal void UndoRedo(string undoneFace)
     {
         var saved = Assert.Single(Store.Load()).Save;
         int cursor = saved.Cursor;
@@ -101,7 +102,7 @@ internal sealed class AntManRestartJourney
         var undo = Host.Exchange(EngineRequest.UndoGame("undo", gameId, capability, cursor - 1, Current.Revision));
         Assert.Null(undo.Error);
         Assert.NotEqual(before, Observation());
-        Assert.Equal("12001b", Factory.Game.State.Seats[0].IdentityCard.FaceId);
+        Assert.Equal(undoneFace, Factory.Game.State.Seats[0].IdentityCard.FaceId);
         Assert.Equal(cursor - 1, Assert.Single(Store.Load()).Save.Cursor);
         var redo = Host.Exchange(EngineRequest.RedoGame("redo", gameId, capability, cursor, undo.Revision));
         Assert.Null(redo.Error);
@@ -111,6 +112,18 @@ internal sealed class AntManRestartJourney
         Assert.Equal(completedStep.Events.Select(item => item.GetRawText()), redoneStep.Events.Select(item => item.GetRawText()));
         Assert.Equal(completedStep.RngWords, redoneStep.RngWords);
         Assert.Equal(completedStep.StateFingerprint, redoneStep.StateFingerprint);
+    }
+
+    /// <summary>Asks to undo the last completed step and expects a refusal that keeps the session.</summary>
+    internal string? RefusedUndo()
+    {
+        string bytes = Stored();
+        string before = Observation();
+        int cursor = Assert.Single(Store.Load()).Save.Cursor;
+        var undo = Host.Exchange(EngineRequest.UndoGame("undo-refused", gameId, capability, cursor - 1, Current.Revision));
+        Assert.Equal(bytes, Stored());
+        Assert.Equal(before, Observation());
+        return undo.Error?.Code;
     }
 
     internal string Stored()

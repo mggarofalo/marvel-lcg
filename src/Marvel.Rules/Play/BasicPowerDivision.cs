@@ -30,9 +30,13 @@ public static class BasicPowerDivision
     /// <summary>Engine-chosen verb of the allocation affordance.</summary>
     public const string Verb = "Divide";
 
+    /// <summary>Whether declaring this basic power will be followed by a division among its targets.</summary>
+    internal static bool FollowsDeclaration(World world, ICardFacts facts, Card performer, string verb, int targets) =>
+        targets >= 2 && Divides(world, facts, performer, verb == BasicPowers.AttackVerb ? AttackField : ThwartField);
+
     /// <summary>The allocation prompt for this power step, or null when nothing can be divided.</summary>
     internal static Prompt? Describe(World world, ICardFacts facts, PhaseStep step) =>
-        Plan(world, facts, step) is { } plan ? Prompt(step, plan) : null;
+        Plan(world, facts, step) is { } plan ? Prompt(world, facts, step, plan) : null;
 
     /// <summary>Validates the allocation and resolves the divided power.</summary>
     internal static void Answer(World world, ICardFacts facts, PhaseStep step, Decision input,
@@ -40,7 +44,7 @@ public static class BasicPowerDivision
     {
         var plan = Plan(world, facts, step)
             ?? throw new RulesNotImplementedException("the basic power no longer has anything to divide");
-        var offered = Prompt(step, plan).Affordances[0];
+        var offered = Prompt(world, facts, step, plan).Affordances[0];
         if (input.IsDecline || input.Affordance != offered.Id || !offered.Targets!.Allows(input.Targets))
             throw new ArgumentException("Allocate exactly the offered amount among legal targets", nameof(input));
         var occurrence = world.Agenda.Occurrence
@@ -65,18 +69,19 @@ public static class BasicPowerDivision
         occurrence.Also(BasicPowerTiming.ThwartEnds);
     }
 
-    private static Prompt Prompt(PhaseStep step, BasicDivisionPlan plan)
+    private static Prompt Prompt(World world, ICardFacts facts, PhaseStep step, BasicDivisionPlan plan)
     {
         string what = plan.Attack ? "damage" : "threat removal";
         string among = plan.Attack ? "enemies" : "schemes";
         string description = plan.Attack
-            ? $"Assign each of {plan.Count} damage to an enemy you can attack. Each enemy dealt damage is attacked; damage is dealt simultaneously."
+            ? $"Assign each of {plan.Count} damage to an enemy you can attack. Each enemy dealt damage is attacked, so its Retaliate applies; damage is dealt simultaneously."
             : $"Assign each of {plan.Count} threat removal to a scheme you can thwart. Each scheme given threat removal is thwarted; threat is removed simultaneously.";
         return new Prompt(plan.Player, Question.Element, TimingPriority.Untimed, step.What,
             $"Divide {plan.Count} {what} among {among}", false,
             [new Affordance(plan.Performer.ObjectId, Verb, plan.Performer.ObjectId, plan.Player,
                 $"Divide {what}", new TargetRequest([.. plan.Candidates.Select(card => card.ObjectId)],
-                    plan.Count, plan.Count, AllowRepeated: true, MaximumOccurrences: plan.Capacities),
+                    plan.Count, plan.Count, AllowRepeated: true, MaximumOccurrences: plan.Capacities)
+                    { Details = plan.Candidates.ToDictionary(card => card.ObjectId, card => Detail(world, facts, plan, card)) },
                 Description: description)
             { DisplayLabel = $"Divide {what}", CommitLabel = plan.Attack ? "Deal damage" : "Remove threat" }])
         {
@@ -85,6 +90,17 @@ public static class BasicPowerDivision
             CauseCardIds = [plan.Performer.ObjectId],
             ContextCardIds = plan.Declared >= 0 ? [plan.Declared] : [],
         };
+    }
+
+    // Engine copy: each share is one point, so a recipient's consequence is described
+    // for its first point; Retaliate follows from being attacked at all.
+    private static string Detail(World world, ICardFacts facts, BasicDivisionPlan plan, Card card)
+    {
+        if (plan.Attack)
+            return "Attacked if given any damage · first point: "
+                + Damage.PreviewBasicAttack(world, facts, plan.Performer, card, 1);
+        long threat = card.Tokens.GetValueOrDefault("k_threat");
+        return $"Thwarted if given any threat removal · {threat} threat";
     }
 
     private static BasicDivisionPlan? Plan(World world, ICardFacts facts, PhaseStep step) => step.Operation switch
