@@ -25,6 +25,7 @@ func _entry_public() -> bool:
     invocation.Bind(main)
     if not await ui.expect_visible(ui.button("Keep hand")): return false
     if not await ui.click(ui.button("Keep hand")): return false
+    if not await ui.expect(func(): return witness.Revision() == 1, "normal mulligan commits once: commitment accepted", Driver.COMMIT_DEADLINE_MS): return false
     if not await ui.expect(func(): return witness.Revision() == 1 and witness.DecisionKind() == "PlayerAction", "normal mulligan commits once"): return false
     if not await _settled(): return false
     if not await ui.expect(func(): return invocation.PileMatches(RINGS, "", 4), "typed seat-0 Invocation deck has one public top and four anonymous cards"): return false
@@ -88,6 +89,7 @@ func _commit(revision: int) -> bool:
     if submit == null or not submit.is_visible_in_tree(): submit = _task_commit()
     if not await ui.expect(func(): return submit != null and not submit.disabled, "explicit enabled commitment"): return false
     if not await ui.click(Locator.control(submit)): return false
+    if not await ui.expect(func(): return witness.Revision() == revision + 1, "exactly one accepted decision returns to play: commitment accepted", Driver.COMMIT_DEADLINE_MS): return false
     if not await ui.expect(func(): return witness.Revision() == revision + 1 and witness.DecisionKind() == "PlayerAction", "exactly one accepted decision returns to play"): return false
     return await _settled()
 

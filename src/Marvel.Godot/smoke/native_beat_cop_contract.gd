@@ -1,6 +1,6 @@
 extends RefCounted
 
-const COMMIT_TIMEOUT_MS := 35000
+const Driver = preload("res://smoke/automation/ui_driver.gd")
 
 # Prepared actual 10029 component scenes. Damage starts ready with three stored threat;
 # no ready helper or gameplay mutation occurs after Start game.
@@ -50,7 +50,7 @@ static func _commit_action(smoke) -> bool:
     if not await _capture(smoke, "action-staged"): return false
     if not await smoke.ui.click(smoke.ui.Locator.control(commit)): return false
     return await smoke.ui.expect(func(): return smoke.witness.Revision() == 1,
-        "one explicit Beat Cop cost commitment creates its separate target choice", COMMIT_TIMEOUT_MS)
+        "one explicit Beat Cop cost commitment creates its separate target choice", Driver.COMMIT_DEADLINE_MS)
 
 static func _target(smoke, damage: bool) -> bool:
     var target: int = smoke.witness.Anchor("Tiger Shark") if damage else smoke.witness.AreaAnchor("The Break-In!", "MainSchemesArea")
@@ -61,7 +61,7 @@ static func _target(smoke, damage: bool) -> bool:
     if not await smoke.ui.expect(func(): return effect in smoke._visible_text(smoke.main),
         "paid Beat Cop target choice retains the supplied known effect"): return false
     if not await _capture(smoke, "target-choice"): return false
-    if not await preload("res://smoke/native_melee_contract.gd")._choose_enemy(smoke, target, 1, COMMIT_TIMEOUT_MS): return false
+    if not await preload("res://smoke/native_melee_contract.gd")._choose_enemy(smoke, target, 1, Driver.COMMIT_DEADLINE_MS): return false
     return await smoke.ui.expect(func(): return smoke.witness.Revision() == 2 and smoke.witness.DecisionKind() == "PlayerAction",
         "explicit target commitment completes actual Beat Cop and returns to the player turn")
 
