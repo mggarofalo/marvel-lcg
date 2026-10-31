@@ -304,8 +304,7 @@ public static class Resources
     /// </summary>
     /// <remarks>
     /// <c>rr:cost.2</c>'s per-player icon is multiplied by the stable starting
-    /// player count. A cost of <c>X</c> still needs the card ability or player
-    /// choice that defines it and is refused by name rather than read as zero.
+    /// player count. A printed X reads as 0 (<see cref="VariableCardCost"/>).
     /// </remarks>
     /// <param name="faceId">A printed card id.</param>
     /// <param name="facts">The printed card data.</param>
@@ -335,8 +334,9 @@ public static class Resources
             return checked(perPlayer * players);
         }
 
+        if (printed == VariableCardCost.Printed) return 0;
+
         throw new RulesNotImplementedException(
-            $"card '{faceId}' costs '{printed}', which is not a number; "
-            + "a cost of X is not implemented");
+            $"card '{faceId}' costs '{printed}', which is not a number");
     }
 }

@@ -34,9 +34,12 @@ internal static class AbilityEffectLowering
                 ? new AbilityEffect.BoostBasicUse(0, Overkill: true)
                 : argument is AbilityValue.Word { Value: "exhaustedAllyPower" }
                 ? new AbilityEffect.BoostBasicUse(0, MatchingAlly: true)
+                : argument is AbilityValue.Map
+                ? new AbilityEffect.BoostBasicUse(0) { Variable = BoostIconNumber(argument, child) }
                 : new AbilityEffect.BoostBasicUse(PositiveCount(argument, child)),
             "modifyPlayedEvent" => PlayedEventModifier(argument, child),
             "seq" => new AbilityEffect.Sequence(Effects(argument, child)),
+            "seqEachTargeted" => new AbilityEffect.Sequence(Effects(argument, child)) { EverySentenceTargeted = true },
             "and" => new AbilityEffect.Simultaneous(Effects(argument, child)),
             "if" => ConditionalEffect(argument, child),
             "then" or "otherwise" => DependentEffect(argument, child, node.Kind),
@@ -76,6 +79,7 @@ internal static class AbilityEffectLowering
             "indirectDamage" => IndirectEffect(argument, child),
             "replaceStatus" => AbilityStatusLowering.Replacement(argument, child),
             "chooseStatusRecipients" => AbilityStatusLowering.Recipients(argument, child),
+            "chooseHealRecipients" => AbilityStatusLowering.HealRecipients(argument, child),
             "giveStatus" => AbilityStatusLowering.Given(argument, child),
             "removeStatuses" => AbilityStatusRemovalLowering.Lower(argument, child),
             "changeForm" => AbilityFormChangeLowering.Lower(argument, child),
@@ -92,6 +96,7 @@ internal static class AbilityEffectLowering
             "gainSurge" => new AbilityEffect.GainSurge(Integer(argument, child)),
             "useAttackForThwart" => FixedEffect(argument, child, "trigger", AbilityFixedInstruction.UseAttackForThwart),
             "readyUndamagedDefender" => FixedEffect(argument, child, "you", AbilityFixedInstruction.ReadyUndamagedDefender),
+            "stunUndamagedDefendersAttacker" => FixedEffect(argument, child, "you", AbilityFixedInstruction.StunUndamagedDefendersAttacker),
             "playersWin" => FixedEffect(argument, child, "game", AbilityFixedInstruction.PlayersWin),
             "captureKangStageTwoDefeat" => FixedEffect(argument, child, "this", AbilityFixedInstruction.CaptureKangStageTwoDefeat),
             "captureKangLocalCompletion" => FixedEffect(argument, child, "this", AbilityFixedInstruction.CaptureKangLocalCompletion),
@@ -296,4 +301,9 @@ internal static class AbilityEffectLowering
         return new(instruction);
     }
 
+    // The only variable basic-use bonus printed so far counts the boost icons the
+    // same resolution discarded.
+    private static AbilityNumber.ResolutionValue BoostIconNumber(AbilityValue value, AbilityLocation location) =>
+        Number(value, location) is AbilityNumber.ResolutionValue { Kind: AbilityResolutionNumber.PrintedBoostIconsDiscarded } number
+            ? number : throw location.Error("a variable basic-use bonus must be printedBoostIconsDiscarded");
 }

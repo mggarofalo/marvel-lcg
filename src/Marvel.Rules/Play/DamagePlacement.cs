@@ -120,6 +120,8 @@ public static class DamagePlacement
         // (including prevention) does not rewrite the amount the source dealt.
         // Step 1 has already fixed that dealt amount; only placement below uses
         // the reduced taken amount.
+        if (request.FromAttack)
+            assignment = assignment.AfterPrevention(AttackDamageReduction.Apply(world, target, assignment.Taken));
         assignment = assignment.AfterPrevention(
             world.DamageAbilities.WouldTake(world, target, source, assignment.Taken, events));
         if (request.PreventAllDamage) assignment = assignment.AfterPrevention(0);

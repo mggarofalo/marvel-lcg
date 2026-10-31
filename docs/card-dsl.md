@@ -381,6 +381,7 @@ Each ability has these fields:
 | `cost` | What must be paid before the effect begins |
 | `effect` | One executable effect node |
 | `limitPerRound`, `limitPerPhase` | A per-instance use limit; mutually exclusive positive integers |
+| `limitGroup` | A face-local name shared by several abilities that count one printed limit |
 | `maxPerRound`, `maxPerPhase`, `maxPerGame`, `maxPerInstance`, `maxPerAttack`, `maxPerActivation` | A title-shared maximum |
 | `anyPlayer` | Printed permission for any player to use the ability |
 | `labels` | Printed attack, defense or thwart labels |
@@ -585,20 +586,20 @@ doubleResourceFor drawToPrintedHandSize dynamic
 eachPlayer else encounterDeck encounterDiscardPile enemies
 enemiesEngagedWithChosenPlayer enemiesWithTrait enemyAttacks enemySchemes exists
 finalStep generate generateTopDiscard giveAdditionalBoost
-grantCharactersControlledBy grantEach grantUntil hasStatus hasTrait heroBasicDefended heroDefended
+chooseHealRecipients grantCharactersControlledBy grantEach grantUntil hasStatus hasTrait heroBasicDefended heroDefended
 heroes heroesAndAllies heroAndAllyTargets identities
 identitiesWithinPerPlayerLimit inForm indirectDamage isEnemyAttacker isKind isTitle
 isYourIdentity keyword kind legalPractice mainScheme makeTheCall maxBy minions
-minionsEngagedWithYou minionsInThisGameArea modified moveAttackDamage mul obligationsInThisGameArea onto options overkill
+minionsEngagedWithYou minionsInThisGameArea modified moveAttackDamage mul namedInPlay obligationsInThisGameArea onto options overkill
 inspectEncounterTop paidWithResource payOrEffect payOrExhaust peekTop perPlayer placeAccelerationToken
 placeAtRandom placeCounters placeThreat power powerAmount powerTargets cardsDiscarded
 preventDamage preventDamageFrom preventDamageWhile preventPlayerAttackDamage preventThreat
 preventThreatRemoval printedResourceCountDiscarded putIntoPlay
-recoverDiscardedByResource reduceNextCardCost remainingHealth removeCounters
+recoverDiscardedByResource reduceNextCardCost remainingHealth removeCounters stunUndamagedDefendersAttacker
 removeFromGame removeThreat replaceReady replaceStatus replaceThreatWithDamage requireAllyDefender
 resolveSpecials returnOwnedToHand returnToHand revealTop scheme schemes search
-shuffle shuffleInto sideSchemes soakDamage sourceKind sourceTrait spend
-spendEnergyX startingCounters statusCards storeDeckTopBeneath takeDamage then threatCause thwartDifferentSchemes thwartSchemes
+seqEachTargeted shuffle shuffleInto sideSchemes soakDamage sourceKind sourceTrait spend
+spendEnergyX spendX startingCounters statusCards storeDeckTopBeneath takeDamage then threatCause thwartDifferentSchemes thwartSchemes
 thwartableSchemes titleInPlay titled tokensOn topEncounterDiscardBoostPlusOne
 undefendedAttack until upgradesAndSupportsYouControl
 upgradesYouControl villainInThisGameArea wasDefeated withStatus withTrait within withoutAnotherCopyAttached
@@ -2080,3 +2081,80 @@ chooses ascending physical object-id order for this new selector in both live an
 projected evaluation. The printed condition requires existence, not attachment
 chronology; `last` therefore selects the greatest matching object id. Other
 queries retain their existing order.
+
+### Shared limits, names in play and identity-set shuffles
+
+`limitGroup` names one printed limit shared by several abilities on the same
+face, for a printed ability with several triggering conditions. Super Speed
+(14001a) responds to a basic thwart, a basic attack and a basic defense as
+three rows that count one "Limit once per phase" (`rr:limit`). Every member
+must declare the same limit and period, and a group needs at least two members.
+The spelling is an engine choice.
+
+`namedInPlay: "Wanda Maximoff"` tests whether a faceup in-play card has that
+title or subtitle. Only an identity's faceup side is in play (`rr:identity.4`),
+and a subtitle is an alias the character uses (`rr:subtitle`), so the Scarlet
+Witch ally (14002) satisfies Pietro Maximoff's "if Wanda Maximoff is in play".
+Reading the name as `rr:team-up.2` reads a named character is an engine choice;
+`titleInPlay` keeps its title-only meaning.
+
+`isKind` alone accepts `kind: "villain"`. Side Step (14015) uses it with
+`minion` to find "that enemy" among the sources of damage.
+
+`chooseDiscardToShuffle` accepts `set`, comparing each discard card's printed
+set exactly, so Serval Industries (14007) shuffles only Quicksilver's
+identity-specific cards (`rr:identity-specific-card`). A minimum larger than the
+eligible cards chooses as many as there are (`rr:choose-game-element.3`).
+
+`resourceRestriction` also accepts `defenseEvent` (Nerves of Steel) and
+`thwartEvent` (Sense of Justice), which read the paid-for event's Defense or
+Thwart trait as `attackEvent` reads Attack.
+
+`grantUntil` with `until: "EndOfNextPlayerTurn"` also accepts the
+`ready_prohibited` keyword on `you`, for Need for Speed's "you cannot ready your
+identity until your next turn ends".
+
+`stunUndamagedDefendersAttacker: "you"` is `readyUndamagedDefender`'s sibling
+for Never Back Down (14014). It captures the same committed hero defense and
+attack activation, and at that attack's end, before responses, stuns the
+attacking enemy if it is still in play and the attack placed no damage on the
+captured hero. The spelling and effect key are engine choices.
+
+`seqEachTargeted: [...]` is a sequence admitted only as a listed `choose`
+option. Its sentences resolve in order, but the option may be chosen only when
+each sentence on its own has a valid target on the current board. Double Time
+(14004) lists every two-choice combination of its options in each resolution
+order this way: ruling `5a46f4ebeb92ff9d` chooses the options before either
+resolves and requires a valid target for each. The spelling is an engine choice.
+
+`WhenCardReadied` is the condition a ready adds to its own occurrence once a card
+has readied (`rr:triggering-condition.2`). A response to it reads the cards that
+instruction readied: `target` matches any of them, and `player: "you"` names the
+controller of that readied card. Friction Resistance (14009) answers
+`target: "hero"` with `player: "you"`: "after you ready Quicksilver". A ready is
+scheduled as its own step only while such a response, or a would-ready
+interrupt, waits for it. The spelling is an engine choice.
+
+`WhenAllyBasicUseInitiated` is the ally counterpart of
+`WhenHeroBasicUseInitiated`: an ally is making one basic attack or thwart, before
+it resolves. The Scarlet Witch ally (14002) answers it with `actor: "this"`.
+
+`boostBasicUse` also accepts `{ "printedBoostIconsDiscarded": "game" }`, read when
+the bonus applies, for "+1 to that power for this use" per boost icon on the
+card the same resolution discarded. A card with no boost icons adds nothing.
+
+`chooseHealRecipients: { from, amount, maximum }` chooses up to `maximum`
+different damaged characters and heals each `amount` (`rr:heal`,
+`rr:choose-game-element.3.1`), as United We Stand (14031) does. Selecting none
+heals nothing.
+
+`chooseStatusRecipients` accepts `count` instead of `maximum`: a number read
+when the choice is made, of which the player chooses exactly as many as are
+available (`rr:choose-game-element.3`). Speed Cyclone (14006) stuns X enemies.
+
+`spendX: "printed"` is the cost of a card whose printed cost is X: the player
+defines a positive X and pays X resources of any type
+(`rr:non-numerical-variable.1`), recorded as the `energy` result as for
+`spendEnergyX`. A printed X reads as 0 everywhere else (`rr:non-numerical-variable`,
+ruling `5636cf3904ac9370`). A card costing X whose ability lacks this cost, or a
+cost reduction applied to X, raises.

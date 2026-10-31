@@ -24,6 +24,7 @@ internal static class AbilityOperationNames
         AbilityCost.Spend { Generic: > 0 } => "spendAny",
         AbilityCost.Spend spend => spend.PrintedOnly ? "spendPrinted" : "spend",
         AbilityCost.InvocationTop => "invocationTop",
+        AbilityCost.SpendEnergy { Resource: null } => "spendX",
         AbilityCost.SpendEnergy => "spendEnergyX",
         AbilityCost.RandomDiscardFromHand => "discardRandomFromHand",
         AbilityCost.DiscardFromHand discard => discard.Range switch
@@ -77,6 +78,7 @@ internal static class AbilityOperationNames
         AbilityEffect.AttachCards => "attachCards",
         AbilityEffect.ReleaseBeneath => "releaseBeneath",
         AbilityEffect.ChooseStatusRecipients => "chooseStatusRecipients",
+        AbilityRecipientEffect.ChooseHealRecipients => "chooseHealRecipients",
         AbilityEffect.ChooseCardsToHand => "chooseCardsToHand",
         AbilityEffect.ExhaustAnyNumber => "exhaustAnyNumber",
         AbilityEffect.StoreBeneath => "storeBeneath",
@@ -177,6 +179,7 @@ internal static class AbilityOperationNames
         {
             AbilityFixedInstruction.UseAttackForThwart => "useAttackForThwart",
             AbilityFixedInstruction.ReadyUndamagedDefender => "readyUndamagedDefender",
+            AbilityFixedInstruction.StunUndamagedDefendersAttacker => "stunUndamagedDefendersAttacker",
             AbilityFixedInstruction.PlayersWin => "playersWin",
             AbilityFixedInstruction.CaptureKangStageTwoDefeat => "captureKangStageTwoDefeat",
             AbilityFixedInstruction.CaptureKangLocalCompletion => "captureKangLocalCompletion",

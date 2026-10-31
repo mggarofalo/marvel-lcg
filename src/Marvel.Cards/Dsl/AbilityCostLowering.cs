@@ -41,6 +41,7 @@ internal static class AbilityCostLowering
             "spendAny" => new AbilityCost.Spend("", PrintedOnly: false) { Generic = PositiveCount(argument, child) },
             "spendPrinted" => new AbilityCost.Spend(ResourceString(argument, child), PrintedOnly: true),
             "spendEnergyX" => EnergyCost(argument, child),
+            "spendX" => PrintedXCost(argument, child),
             "discardRandomFromHand" => new AbilityCost.RandomDiscardFromHand(PositiveCount(argument, child)),
             "discardFromHand" => new AbilityCost.DiscardFromHand(new AbilityCostRange.Exact(PositiveCount(argument, child))),
             "discardResourceFromHand" => new AbilityCost.DiscardFromHand(new AbilityCostRange.Exact(1))
@@ -170,6 +171,14 @@ internal static class AbilityCostLowering
     {
         FixedWord(value, location, "Y");
         return new();
+    }
+
+    // A printed card cost of X: the player defines X and pays X resources of any type
+    // (rr:non-numerical-variable.1).
+    internal static AbilityCost.SpendEnergy PrintedXCost(AbilityValue value, AbilityLocation location)
+    {
+        FixedWord(value, location, "printed");
+        return new() { Resource = null };
     }
 
     internal static AbilityCost.DiscardFromHand AnyDiscardCost(AbilityValue value, AbilityLocation location)

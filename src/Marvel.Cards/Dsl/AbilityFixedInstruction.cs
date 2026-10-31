@@ -72,4 +72,6 @@ public enum AbilityFixedInstruction
     DiscardOtherEnvironments,
     /// <summary>Privately inspect the top card of one chosen deck until acknowledgement.</summary>
     PeekAnyDeck,
+    /// <summary>Stun the attacking enemy if the captured defending hero takes no damage from that attack.</summary>
+    StunUndamagedDefendersAttacker,
 }

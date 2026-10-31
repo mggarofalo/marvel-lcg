@@ -14,6 +14,10 @@ internal static class AbilityCombatImmediateExecution
                 UndamagedDefenseReady.Install(world, context.Admission.Query.Occurrence,
                     context.Admission.Source, context.Admission.Query.Player);
                 return new(true, true);
+            case AbilityFixedInstruction.StunUndamagedDefendersAttacker:
+                UndamagedDefenseStun.Install(world, context.Admission.Query.Occurrence,
+                    context.Admission.Source, context.Admission.Query.Player);
+                return new(true, true);
             case AbilityFixedInstruction.RequireAttackedPlayerAllyDefender:
                 AttackAllyDefenseRequirement.Install(world, context.Admission.Source);
                 return new(true, true);

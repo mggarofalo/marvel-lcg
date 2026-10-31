@@ -22,6 +22,7 @@ namespace Marvel.Rules.Play;
 public sealed class CardReadyBatch
 {
     private readonly HashSet<int> replaced = [];
+    private readonly HashSet<int> readied = [];
 
     /// <summary>Captures the cards an instruction readies, in its resolution order.</summary>
     /// <param name="cards">The cards eligible to ready when the instruction begins.</param>
@@ -67,6 +68,25 @@ public sealed class CardReadyBatch
             // passed it; the authored book's prohibitions do not depend on it.
             && CardReadying.CanReady(world, card, Source is { } source ? world.Cards[source] : card);
     }
+
+    /// <summary>Whether this instruction readied the card, or still would.</summary>
+    /// <remarks>
+    /// A response to a ready answers a card this instruction readied
+    /// (<c>rr:response.1</c>). Before the ready commits, the cards that would
+    /// ready are the ones a waiting response could answer.
+    /// </remarks>
+    public bool Readies(World world, Card card) =>
+        readied.Contains(card.ObjectId) || WouldReady(world, card);
+
+    /// <summary>Snapshots of the cards this instruction readied or still would, in resolution order.</summary>
+    public IReadOnlyList<Timing.OccurrenceCard> ReadiedFacts(World world)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        return [.. Targets.Select(id => world.Cards[id]).Where(card => Readies(world, card))
+            .Select(card => Timing.OccurrenceCard.Capture(card, world.Facts))];
+    }
+
+    internal void RecordReady(Card card) => readied.Add(card.ObjectId);
 
     /// <summary>Replaces this instruction's ready of one card, if it is still imminent.</summary>
     /// <returns>Whether the card's ready was imminent and is now replaced.</returns>

@@ -59,6 +59,9 @@ public sealed record CardAbility(
     /// <summary>Every resource spent toward the adjusted printed price must have this type.</summary>
     public char? PrintedCostResource { get; init; }
 
+    /// <summary>Abilities on one face naming the same group share one printed limit.</summary>
+    public string? LimitGroup { get; init; }
+
     /// <summary>The period of the per-instance use limit.</summary>
     public AbilityLimitPeriod LimitPeriod { get; init; }
 

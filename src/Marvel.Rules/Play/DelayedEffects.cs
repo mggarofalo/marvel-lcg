@@ -112,6 +112,10 @@ public static class DelayedEffects
                 UndamagedDefenseReady.Resolve(world, effect, condition, events);
                 break;
 
+            case UndamagedDefenseStun.Kind:
+                UndamagedDefenseStun.Resolve(world, effect, condition, events);
+                break;
+
             case DiscardFromPlay:
                 Discard(world, effect, condition, events);
                 break;

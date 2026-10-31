@@ -71,12 +71,12 @@ internal static class AbilityPaymentRules
             // so if everything together cannot pay then no choice among them
             // can, and if it can then spending it all is a payment.
             AbilityCost.Spend spend => ResourcePayable(world, card, player, spend, resourceAbilities),
-            AbilityCost.SpendEnergy => Resources.Pays(
+            AbilityCost.SpendEnergy variable => Resources.Pays(
                 string.Concat(CardPayment.Generators(
                         world, world.Facts, world.Seats[player], resourceAbilities, abilitySource: card)
                     .SelectMany(source => source.Generates)),
                 1,
-                "Y"),
+                variable.Required(1)),
 
             // "Discard **a card** from your hand" -- `rr:cost.3` spends
             // resources by discarding cards, and this is the other thing a

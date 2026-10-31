@@ -77,6 +77,7 @@ internal static class AbilityResolutionChoices
         if (choice is AbilityEffect.Damage { Maximum: not null } damage)
             return AbilityDamageRecipients.Describe(execution.StructuralContext(cast), damage);
         if (choice is AbilityEffect.ChooseStatusRecipients recipients) return AbilityStatusRecipients.Describe(execution.StructuralContext(cast), recipients);
+        if (choice is AbilityRecipientEffect.ChooseHealRecipients healed) return AbilityHealRecipients.Describe(execution.StructuralContext(cast), healed);
         if (choice is AbilityEffect.AttackAnotherEnemy staged) return AbilityStagedAttack.Describe(cast, staged, execution.program);
         var structural = execution.StructuralContext(cast);
         string operation = choice.OperationName();

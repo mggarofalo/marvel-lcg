@@ -274,7 +274,7 @@ internal static class AbilityPlayerBindingAnalysis
         AbilityCondition.WasDefeated defeated => Contains(defeated.Card),
         AbilityCondition.IsYourIdentity => true,
         AbilityCondition.PaidWithResource or AbilityCondition.DiscardedWithResource or AbilityCondition.DiscardedWithTrait
-            or AbilityCondition.CausedThreat or AbilityCondition.TitleInPlay
+            or AbilityCondition.CausedThreat or AbilityCondition.TitleInPlay or AbilityCondition.NamedInPlay
             or AbilityCondition.ActivationIs => false,
         _ => throw new InvalidOperationException(
             "Unknown compiled condition in player-binding analysis"),

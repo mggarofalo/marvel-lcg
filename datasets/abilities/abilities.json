@@ -25018,6 +25018,272 @@
           "effect": { "putKangNemesesIntoPlay": "this" }
         }
       ]
+    },
+    {
+      "card": "14003",
+      "name": "Always Be Running",
+      "note": "Hero Action: ready Quicksilver. The resolving player's hero is Quicksilver while this identity-specific event can be played; readying must change the game (rr:ready.1).",
+      "abilities": [
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero"}, "effect": {"ready": "yourHero"}}
+      ]
+    },
+    {
+      "card": "14005",
+      "name": "Maximum Velocity",
+      "note": "Max 1 per phase is a title maximum on playing the event (rr:max-maximum). Hero Action: your hero gets +2 THW, +2 ATK and +2 DEF until the end of the round (rr:lasting-effects).",
+      "abilities": [
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero"}, "maxPerPhase": 1, "effect": {"seq": [{"grantUntil": {"card": "yourHero", "keyword": "thwart", "amount": 2, "until": "EndOfRound"}}, {"grantUntil": {"card": "yourHero", "keyword": "attack", "amount": 2, "until": "EndOfRound"}}, {"grantUntil": {"card": "yourHero", "keyword": "defense", "amount": 2, "until": "EndOfRound"}}]}}
+      ]
+    },
+    {
+      "card": "14008",
+      "name": "Accelerated Reflex",
+      "note": "Quicksilver gets +1 DEF: a constant grant to the controlling identity, which is Quicksilver for this identity-specific upgrade. The alter-ego face prints no such power.",
+      "abilities": [
+        {"trigger": {"timing": "Constant", "subject": "this"}, "effect": {"grant": {"card": "you", "keyword": "defense", "amount": 1}}}
+      ]
+    },
+    {
+      "card": "14010",
+      "name": "Hyper Perception",
+      "note": "Quicksilver gets +1 THW: a constant grant to the controlling identity, which is Quicksilver for this identity-specific upgrade. The alter-ego face prints no such power.",
+      "abilities": [
+        {"trigger": {"timing": "Constant", "subject": "this"}, "effect": {"grant": {"card": "you", "keyword": "thwart", "amount": 1}}}
+      ]
+    },
+    {
+      "card": "14011",
+      "name": "Reinforced Sinew",
+      "note": "Quicksilver gets +1 ATT: a constant grant to the controlling identity, which is Quicksilver for this identity-specific upgrade. The alter-ego face prints no such power.",
+      "abilities": [
+        {"trigger": {"timing": "Constant", "subject": "this"}, "effect": {"grant": {"card": "you", "keyword": "attack", "amount": 1}}}
+      ]
+    },
+    {
+      "card": "14013",
+      "name": "Warlock",
+      "note": "Action: spend a mental resource to heal up to 2 damage from Warlock. Healing must change the game, so the action needs damage on him (rr:heal).",
+      "abilities": [
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this"}, "cost": {"spend": "B"}, "effect": {"heal": {"card": "this", "amount": 2}}}
+      ]
+    },
+    {
+      "card": "14016",
+      "name": "Armored Vest",
+      "note": "Reprint of 01081. The controlling player's hero gets +1 DEF. The play-under-control instruction is handled by card play.",
+      "attachTo": {"query": "identitiesWithinPerPlayerLimit"},
+      "abilities": [
+        {"trigger": {"timing": "Constant", "subject": "this"}, "effect": {"grant": {"card": "yourHero", "keyword": "defense", "amount": 1}}}
+      ]
+    },
+    {
+      "card": "14019",
+      "name": "Energy",
+      "note": "Reprint of the Core resource card. This resource card has no ability. Its two printed energy resources are read from datasets/cards by the resource rules.",
+      "abilities": []
+    },
+    {
+      "card": "14020",
+      "name": "Genius",
+      "note": "Reprint of the Core resource card. This resource card has no ability. Its two printed mental resources are read from datasets/cards by the resource rules.",
+      "abilities": []
+    },
+    {
+      "card": "14021",
+      "name": "Strength",
+      "note": "Reprint of the Core resource card. This resource card has no ability. Its two printed physical resources are read from datasets/cards by the resource rules.",
+      "abilities": []
+    },
+    {
+      "card": "14022",
+      "name": "Adrenaline Rush",
+      "note": "Hero Action: discard this upgrade as the cost; your hero gets +1 ATK until the end of the phase.",
+      "abilities": [
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero"}, "cost": {"discard": "this"}, "effect": {"grantUntil": {"card": "yourHero", "keyword": "attack", "amount": 1, "until": "EndOfPhase"}}}
+      ]
+    },
+    {
+      "card": "14023",
+      "name": "Civic Duty",
+      "note": "Hero Action: discard this upgrade as the cost; your hero gets +1 THW until the end of the phase.",
+      "abilities": [
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero"}, "cost": {"discard": "this"}, "effect": {"grantUntil": {"card": "yourHero", "keyword": "thwart", "amount": 1, "until": "EndOfPhase"}}}
+      ]
+    },
+    {
+      "card": "14025",
+      "name": "Extortion of Seismic Proportion",
+      "note": "Nemesis side scheme with a crisis icon and Incite 1 and no other text. Starting threat 2 per player, crisis (rr:crisis-icon.1) and incite (rr:incite-x) are read from the printed card by the engine.",
+      "abilities": []
+    },
+    {
+      "card": "14026",
+      "name": "Avalanche",
+      "note": "Incite 2 is engine-owned. When Revealed: each player chooses to take 2 indirect damage among the characters they control (rr:indirect-damage) or exhaust their identity. rr:choose-option.1: an encounter option needs a valid target, so an already exhausted identity cannot be chosen to exhaust (rr:exhausted.1). The first player orders the players (rr:each-player.1).",
+      "abilities": [
+        {"trigger": {"event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this"}, "effect": {"eachPlayer": {"effect": {"choose": {"descriptions": ["Take 2 indirect damage", "Exhaust your identity"], "options": [{"indirectDamage": {"among": {"query": "charactersYouControl"}, "amount": 2}}, {"exhaust": "you"}]}}}}}
+      ]
+    },
+    {
+      "card": "14028",
+      "name": "Earthquake",
+      "note": "Incite 1 is engine-owned. When Revealed: choose and discard 2 cards from your hand, then exhaust your identity; both resolve as far as possible. Boost (star): choose to either spend two physical resources or exhaust your identity; the payment option is offered only when payable.",
+      "abilities": [
+        {"trigger": {"event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this"}, "effect": {"seq": [{"discardHandCards": 2}, {"exhaust": "you"}]}},
+        {"trigger": {"event": "WhenCardRevealed", "timing": "Boost", "subject": "this"}, "effect": {"payOrEffect": {"resources": "RR", "otherwise": {"exhaust": "you"}}}}
+      ]
+    },
+    {
+      "card": "14029",
+      "name": "Brute Force",
+      "note": "Your hero gets +1 ATK and your basic attacks gain piercing (rr:piercing). Forced Response: after you make a basic attack, discard Brute Force; a card ability attack is not a basic attack.",
+      "abilities": [
+        {"trigger": {"timing": "Constant", "subject": "this"}, "effect": {"seq": [{"grant": {"card": "yourHero", "keyword": "attack", "amount": 1}}, {"grant": {"card": "yourHero", "keyword": "piercing", "amount": 1, "attackScope": "basic"}}]}},
+        {"trigger": {"event": "WhenBasicAttackEnds", "timing": "ForcedResponse", "actor": "you"}, "effect": {"discard": "this"}}
+      ]
+    },
+    {
+      "card": "14032",
+      "name": "Beat 'Em Up",
+      "note": "Hero Action: deal 1 damage to the villain and to each minion engaged with you as one simultaneous instruction. This is not an attack: the event has no attack label.",
+      "abilities": [
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero"}, "effect": {"dealDamage": {"cards": {"query": "villainAndMinionsEngagedWithYou"}, "amount": 1}}}
+      ]
+    },
+    {
+      "card": "14004",
+      "name": "Double Time",
+      "note": "Hero Action: choose two options, the same one twice if you like. Ruling 5a46f4ebeb92ff9d: the options are chosen after costs and before resolving, each needs a valid target on its own, and they resolve in either order as separate sentences, each choosing its target when it resolves. The four listed options are the two-choice combinations in each resolution order, and seqEachTargeted offers one only when each of its sentences has a valid target. Ruling fc2d762cb30f31fa: removing 2 threat may remove only 1 from a scheme holding 1. Neither option is an attack or a thwart: the event has no label.",
+      "abilities": [
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero"}, "effect": {"choose": {"descriptions": ["Deal 2 damage to an enemy, then deal 2 damage to an enemy", "Remove 2 threat from a scheme, then remove 2 threat from a scheme", "Deal 2 damage to an enemy, then remove 2 threat from a scheme", "Remove 2 threat from a scheme, then deal 2 damage to an enemy"], "options": [{"seqEachTargeted": [{"chooseCard": {"from": {"query": "enemies"}, "effect": {"dealDamage": {"cards": "chosen", "amount": 2}}}}, {"chooseCard": {"from": {"query": "enemies"}, "effect": {"dealDamage": {"cards": "chosen", "amount": 2}}}}]}, {"seqEachTargeted": [{"chooseCard": {"from": {"query": "schemes"}, "effect": {"removeThreat": {"scheme": "chosen", "amount": 2}}}}, {"chooseCard": {"from": {"query": "schemes"}, "effect": {"removeThreat": {"scheme": "chosen", "amount": 2}}}}]}, {"seqEachTargeted": [{"chooseCard": {"from": {"query": "enemies"}, "effect": {"dealDamage": {"cards": "chosen", "amount": 2}}}}, {"chooseCard": {"from": {"query": "schemes"}, "effect": {"removeThreat": {"scheme": "chosen", "amount": 2}}}}]}, {"seqEachTargeted": [{"chooseCard": {"from": {"query": "schemes"}, "effect": {"removeThreat": {"scheme": "chosen", "amount": 2}}}}, {"chooseCard": {"from": {"query": "enemies"}, "effect": {"dealDamage": {"cards": "chosen", "amount": 2}}}}]}]}}}
+      ]
+    },
+    {
+      "card": "14012",
+      "name": "Multiple Man",
+      "note": "Response: after Multiple Man enters play, search your deck and hand for a copy of Multiple Man and put it into play, then shuffle your deck. Resolving the response always searches the deck, so the shuffle follows even when the copy came from hand or none was found (rr:search). The copy is put into play, not played: no cost is paid and its own entry response may chain (rr:play-put-into-play). The ally limit applies on entry (rr:ally-limit).",
+      "abilities": [
+        {"trigger": {"event": "WhenCardEntersPlay", "timing": "Response", "subject": "this"}, "effect": {"seq": [{"if": {"test": {"exists": {"cardsIn": {"areas": ["yourDeck", "yourHand"], "title": "Multiple Man"}}}, "then": {"chooseCard": {"from": {"cardsIn": {"areas": ["yourDeck", "yourHand"], "title": "Multiple Man"}}, "effect": {"putIntoPlay": {"card": "chosen", "where": "yourPlayArea"}}}}}}, {"shuffle": "yourDeck"}]}}
+      ]
+    },
+    {
+      "card": "14018",
+      "name": "Order and Chaos",
+      "note": "Team-Up (Quicksilver and Scarlet Witch) is checked by card play (rr:team-up); the Scarlet Witch ally 14002 satisfies it by title. Hero Interrupt: when a treachery is revealed from the encounter deck, cancel its When Revealed effects (rr:cancel), then deal 2 damage to the villain. The damage is not an attack.",
+      "abilities": [
+        {"trigger": {"event": "WhenCardRevealed", "timing": "Interrupt", "subject": "game", "form": "hero", "player": "trigger.player"}, "when": {"and": [{"isKind": {"card": "trigger.subject", "kind": "treachery"}}, {"revealedFromEncounterDeck": "trigger"}]}, "effect": {"seq": [{"cancelWhenRevealed": "trigger.subject"}, {"dealDamage": {"cards": {"query": "villain"}, "amount": 2}}]}}
+      ]
+    },
+    {
+      "card": "14001a",
+      "name": "Quicksilver",
+      "note": "Super Speed -- Response: after you use one of Quicksilver's basic powers (THW, ATK or DEF), ready him (limit once per phase). Ruling 9cfb9119e5c7f0d7: using a basic power includes its action, so the response follows the completed thwart, the completed attack, or the attack Quicksilver defended after its damage. Ruling 983ae8870c226cd4: a stunned or confused removal replaces the use, so it does not trigger. Ruling 71b0ff212c394895: after a basic defense this response, Defense Specialist and Electrostatic Armor share one response window. A defense-labelled ability is not a basic defense (rr:defend-defense.4.3). One printed limit covers the three triggering conditions: limitGroup shares it (rr:limit).",
+      "abilities": [
+        {"name": "Super Speed", "trigger": {"event": "WhenBasicThwartEnds", "timing": "Response", "actor": "this"}, "limitPerPhase": 1, "limitGroup": "Super Speed", "effect": {"ready": "this"}},
+        {"name": "Super Speed", "trigger": {"event": "WhenBasicAttackEnds", "timing": "Response", "actor": "this"}, "limitPerPhase": 1, "limitGroup": "Super Speed", "effect": {"ready": "this"}},
+        {"name": "Super Speed", "trigger": {"event": "WhenAttackEnds", "timing": "Response", "actor": "enemy", "target": "you"}, "when": {"heroBasicDefended": "you"}, "limitPerPhase": 1, "limitGroup": "Super Speed", "effect": {"ready": "this"}}
+      ]
+    },
+    {
+      "card": "14001b",
+      "name": "Pietro Maximoff",
+      "note": "Superpowered Siblings -- Action: discard 2 cards from your hand as the cost, then draw 2 cards, or 3 if Wanda Maximoff is in play (limit once per round). namedInPlay reads a faceup in-play card's title or subtitle: the Scarlet Witch ally 14002 has the subtitle Wanda Maximoff (rr:subtitle), and only an identity's faceup side is in play (rr:identity.4). Engine choice, following rr:team-up.2's reading of a named character.",
+      "abilities": [
+        {"name": "Superpowered Siblings", "trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this"}, "cost": {"discardFromHand": 2}, "limitPerRound": 1, "effect": {"if": {"test": {"namedInPlay": "Wanda Maximoff"}, "then": {"draw": {"player": "you", "count": 3}}, "else": {"draw": {"player": "you", "count": 2}}}}}
+      ]
+    },
+    {
+      "card": "14007",
+      "name": "Serval Industries",
+      "note": "Alter-Ego Action: exhaust Serval Industries to shuffle 2 Quicksilver cards from your discard pile into your deck. Quicksilver cards are the identity-specific cards printed in his set (rr:identity-specific-card); copies may share a title. rr:choose-game-element.3: with fewer than 2 such cards, choose as many as there are.",
+      "abilities": [
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "alter-ego"}, "cost": {"exhaust": "this"}, "effect": {"chooseDiscardToShuffle": {"max": 2, "min": 2, "differentTitles": "false", "set": "qsv"}}}
+      ]
+    },
+    {
+      "card": "14015",
+      "name": "Side Step",
+      "note": "Hero Interrupt (defense): when you would take any amount of damage, prevent 3 of that damage. If you paid for this card using an energy resource, deal 1 damage to that enemy: the enemy dealing the damage, so the sentence has no target when the damage source is not a minion or villain. A defense-labelled ability need not come from an attack (rr:defend-defense.4.8).",
+      "abilities": [
+        {"trigger": {"event": "WhenDamageWouldBeDealt", "damage": "taken", "timing": "Interrupt", "target": "you", "form": "hero"}, "labels": ["defense"], "when": {"isYourIdentity": "trigger.target"}, "effect": {"seq": [{"preventDamage": {"card": "trigger.target", "amount": 3}}, {"if": {"test": {"and": [{"paidWithResource": "Y"}, {"or": [{"isKind": {"card": "trigger.actor", "kind": "minion"}}, {"isKind": {"card": "trigger.actor", "kind": "villain"}}]}]}, "then": {"dealDamage": {"cards": "trigger.actor", "amount": 1}}}}]}}
+      ]
+    },
+    {
+      "card": "14017",
+      "name": "Nerves of Steel",
+      "note": "Play under any player's control; max 1 per player (card play). Resource: exhaust Nerves of Steel to generate an energy resource for a Defense event, the event's Defense trait as Martial Prowess reads Attack (rr:resource-ability.1.1).",
+      "attachTo": {"query": "identitiesWithinPerPlayerLimit"},
+      "abilities": [
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Resource", "subject": "this"}, "cost": {"exhaust": "this"}, "resourceRestriction": "defenseEvent", "effect": {"generate": "Y"}}
+      ]
+    },
+    {
+      "card": "14030",
+      "name": "Sense of Justice",
+      "note": "Play under any player's control; max 1 per player (card play). Resource: exhaust Sense of Justice to generate a mental resource for a Thwart event, the event's Thwart trait (rr:resource-ability.1.1).",
+      "attachTo": {"query": "identitiesWithinPerPlayerLimit"},
+      "abilities": [
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Resource", "subject": "this"}, "cost": {"exhaust": "this"}, "resourceRestriction": "thwartEvent", "effect": {"generate": "B"}}
+      ]
+    },
+    {
+      "card": "14024",
+      "name": "Need for Speed",
+      "note": "Give to the Pietro Maximoff player through obligation routing. You may flip to alter-ego form, then choose: exhaust Pietro Maximoff to remove Need for Speed from the game (rr:then: removal requires the exhaustion), or exhaust your identity, be unable to ready it until your next turn ends, and discard this obligation. The exhaustion is not an arrow cost: the prohibition and discard resolve even if the identity was already exhausted.",
+      "abilities": [
+        {"trigger": {"event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this"}, "effect": {"seq": [{"choose": {"descriptions": ["Change to alter-ego form", "Remain in your current form"], "options": [{"changeForm": {"player": "you", "to": "alter-ego"}}, {"seq": []}]}}, {"choose": {"descriptions": ["Exhaust Pietro Maximoff and remove Need for Speed from the game", "Exhaust your identity; you cannot ready it until your next turn ends; discard Need for Speed"], "options": [{"then": {"effect": {"exhaust": "yourAlterEgo"}, "then": {"removeFromGame": "this"}}}, {"seq": [{"exhaust": "you"}, {"grantUntil": {"card": "you", "keyword": "ready_prohibited", "amount": 1, "until": "EndOfNextPlayerTurn"}}, {"discard": "this"}]}]}}]}}
+      ]
+    },
+    {
+      "card": "14014",
+      "name": "Never Back Down",
+      "note": "Hero Interrupt (defense): when you defend against an attack, your hero gets +2 DEF for this attack. If you take no damage from this attack, stun the attacking enemy: a delayed instruction captures the defending hero and the attack, and at the attack's end stuns its attacker if that attack placed no damage on the hero (rr:delayed-effect.1, rr:stun-stunned). Ruling da8c5c381de666bb: it cannot be played before an ally becomes the defender.",
+      "abilities": [
+        {"trigger": {"event": "WhenHeroDefends", "timing": "Interrupt", "subject": "you", "form": "hero"}, "labels": ["defense"], "effect": {"seq": [{"grantUntil": {"card": "you", "keyword": "defense", "amount": 2, "until": "EndOfAttack"}}, {"stunUndamagedDefendersAttacker": "you"}]}}
+      ]
+    },
+    {
+      "card": "14027",
+      "name": "Vibration Resistance",
+      "note": "Attach to Avalanche if able, otherwise to the villain (rr:attach-to). The attached enemy takes 1 less damage from each attack: a constant reduction applied once per attack after Tough and before interrupt prevention (rulings 3dfec18909dc931e and c8268c2138f6c809); the damage dealt is unchanged (rr:damage.3.2). Hero Action: exhaust your hero to discard this card.",
+      "attachTo": {"firstAvailable": [{"titled": "Avalanche"}, {"query": "villain"}]},
+      "abilities": [
+        {"trigger": {"timing": "Constant", "subject": "this"}, "effect": {"grant": {"card": "attachedTo", "keyword": "attack_damage_reduction", "amount": 1}}},
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero"}, "cost": {"exhaust": "you"}, "effect": {"discard": "this"}}
+      ]
+    },
+    {
+      "card": "14009",
+      "name": "Friction Resistance",
+      "note": "Hero Response: after you ready Quicksilver, ready this card. The readied condition belongs to the ready's own occurrence (rr:triggering-condition.2); the response answers your hero among the cards that instruction readied and needs this upgrade exhausted (rr:ready.1). Resource: exhaust this card to generate a physical resource; ruling 47cf0084407ee2a4 counts it as a printed physical resource.",
+      "abilities": [
+        {"trigger": {"event": "WhenCardReadied", "timing": "Response", "form": "hero", "target": "hero", "player": "you"}, "effect": {"ready": "this"}},
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Resource", "subject": "this"}, "cost": {"exhaust": "this"}, "effect": {"generate": "R"}}
+      ]
+    },
+    {
+      "card": "14002",
+      "name": "Scarlet Witch",
+      "note": "Interrupt: when you use one of Scarlet Witch's basic powers (THW or ATK; an ally has no DEF), discard the top encounter card; she gets +1 to that power for this use per boost icon on it. The bonus belongs to the exact basic-use occurrence (rr:basic-power.1) and reads the printed boost icons of the card this resolution discarded; a card with none adds nothing. Her subtitle Wanda Maximoff is what Superpowered Siblings and Order and Chaos name (rr:subtitle).",
+      "abilities": [
+        {"trigger": {"event": "WhenAllyBasicUseInitiated", "timing": "Interrupt", "actor": "this"}, "effect": {"seq": [{"discardTop": {"from": "encounterDeck", "count": 1}}, {"boostBasicUse": {"printedBoostIconsDiscarded": "game"}}]}}
+      ]
+    },
+    {
+      "card": "14031",
+      "name": "United We Stand",
+      "note": "Play only if your identity has the Avenger trait. Hero Action: heal 1 damage from each of up to X different friendly characters, X the villain's stage number, to a maximum of 3 (rr:choose-game-element.3.1). Ruling 31d886a41646771b: a letter with no defined value is 0, so a villain with no stage number gives X = 0 and the event cannot be played. Fixed recipient bounds selected by stage conditions are engine-chosen composition, as for Muster Courage.",
+      "abilities": [
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero"}, "when": {"and": [{"hasTrait": {"card": "you", "trait": "AVENGER"}}, {"atLeast": {"value": {"modified": {"card": {"query": "villain"}, "field": "printed_stage"}}, "count": 1}}]}, "effect": {"if": {"test": {"atLeast": {"value": {"modified": {"card": {"query": "villain"}, "field": "printed_stage"}}, "count": 3}}, "then": {"chooseHealRecipients": {"from": {"query": "heroesAndAllies"}, "amount": 1, "maximum": 3}}, "else": {"if": {"test": {"atLeast": {"value": {"modified": {"card": {"query": "villain"}, "field": "printed_stage"}}, "count": 2}}, "then": {"chooseHealRecipients": {"from": {"query": "heroesAndAllies"}, "amount": 1, "maximum": 2}}, "else": {"chooseHealRecipients": {"from": {"query": "heroesAndAllies"}, "amount": 1, "maximum": 1}}}}}}}
+      ]
+    },
+    {
+      "card": "14006",
+      "name": "Speed Cyclone",
+      "note": "Printed cost X: the player defines a positive X and pays X resources of any type (rr:non-numerical-variable.1); X is recorded as the energy result. Hero Action: stun X different enemies, as many as can be stunned when fewer are available (rr:choose-game-element.3). A cost reduction applied to X raises until implemented; ruling 5636cf3904ac9370 reads its cost in hand as 0 for other abilities.",
+      "abilities": [
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero"}, "cost": {"spendX": "printed"}, "effect": {"chooseStatusRecipients": {"from": {"query": "enemies"}, "status": "stunned", "count": {"result": "energy"}}}}
+      ]
     }
   ]
 }

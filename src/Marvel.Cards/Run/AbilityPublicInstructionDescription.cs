@@ -93,6 +93,8 @@ internal static class AbilityPublicInstructionDescription
             "Use ATK instead of THW for this thwart (including ally consequential damage)",
         AbilityEffect.Fixed { Instruction: AbilityFixedInstruction.ReadyUndamagedDefender } =>
             "At the end of this attack, ready your defending hero if it took no damage from that attack",
+        AbilityEffect.Fixed { Instruction: AbilityFixedInstruction.StunUndamagedDefendersAttacker } =>
+            "At the end of this attack, stun the attacking enemy if your defending hero took no damage from that attack",
         AbilityEffect.Fixed { Instruction: AbilityFixedInstruction.PlaceAccelerationToken } =>
             "Place 1 acceleration token on the main scheme",
         AbilityEffect.GainSurge { Instances: 1 } =>

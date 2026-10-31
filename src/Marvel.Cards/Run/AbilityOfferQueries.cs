@@ -110,11 +110,16 @@ internal sealed class AbilityOfferQueries
     private static string? ResourceCostDescription(World world, Card card, int player, CompiledCardAbility ability)
     {
         string? cost = AbilityCostDescription.Summary(world, card, player, ability.Cost);
-        if (ability.ResourceRestriction == ResourceRestriction.AttackEvent)
-            return string.Join("; ", new[] { cost, "For an Attack event" }.Where(part => part is not null));
-        return ability.ResourceRestriction == ResourceRestriction.PreparationCard
-            ? string.Join("; ", new[] { cost, "For a Preparation card's resource or ability cost" }.Where(part => part is not null))
-            : cost;
+        string? restriction = ability.ResourceRestriction switch
+        {
+            ResourceRestriction.AttackEvent => "For an Attack event",
+            ResourceRestriction.DefenseEvent => "For a Defense event",
+            ResourceRestriction.ThwartEvent => "For a Thwart event",
+            ResourceRestriction.PreparationCard => "For a Preparation card's resource or ability cost",
+            _ => null,
+        };
+        return restriction is null ? cost
+            : string.Join("; ", new[] { cost, restriction }.Where(part => part is not null));
     }
 
     internal IReadOnlyList<ResourceSource> PrintedResourceAbilities(World world, int player)

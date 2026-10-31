@@ -169,6 +169,7 @@ internal sealed class AbilityCostPreparation
                 { Price = resourcePrice, Allocations = effectiveAllocations.ToImmutableArray() });
             return;
         }
+        var variable = (AbilityCost.SpendEnergy)component;
         long x = AbilityPaymentValidation.DefinedVariable(variables, "X", source);
         var resolvedPrice = resourcePrice is null ? null : resourcePrice with
         {
@@ -176,10 +177,9 @@ internal sealed class AbilityCostPreparation
             Variables = null,
             Components = [new Marvel.Rules.Prompts.ResourceCost(
                 x.ToString(System.Globalization.CultureInfo.InvariantCulture))
-                { RepeatedResource = Resources.Energy }],
+                { RepeatedResource = variable.Resource }],
         };
-        ordered.Add(new Spend(
-            new string(Resources.Energy, checked((int)x)), Energy: x)
+        ordered.Add(new Spend(variable.Required(x), Generic: variable.Resource is null ? checked((int)x) : 0, Energy: x)
             { Price = resolvedPrice, Allocations = effectiveAllocations.ToImmutableArray() });
     }
 

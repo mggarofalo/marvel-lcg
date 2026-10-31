@@ -144,6 +144,7 @@ internal static class AbilityResolutionAdmission
             // these currently expressible effects carry. Their own resolver
             // performs any further rule-specific work.
             "chooseStatusRecipients" => AbilityStatusRecipients.Candidates((AbilityEffect.ChooseStatusRecipients)node, cast.Context).Count > 0,
+            "chooseHealRecipients" => AbilityHealRecipients.Candidates((AbilityRecipientEffect.ChooseHealRecipients)node, cast.Context).Count > 0,
             "generate" or "soakDamage" or "preventDamage" or "cancelWhenRevealed"
                 or "dealEncounterCards" or "dealEncounterCard"
                 or "revealFromVillainDeck" or "revealTop" or "reveal" or "placeAtRandom"
@@ -177,7 +178,7 @@ internal static class AbilityResolutionAdmission
     {
         if (node.OperationName() is "choose" or "chooseCard" or "indirectDamage"
             or "resolveSpecials" or "payOrExhaust" or "chooseTopForHand" or "peekTop" or "inspectEncounterTop" or "inspectDiscardOrderEncounterTop"
-            or "discardHandCards" or "discardResourceIcons" or "chooseStatusRecipients" or "chooseCardsToHand" or "chooseDiscardToShuffle" or "exhaustAnyNumber" or "distributeThreat" or "thwartDifferentSchemes" or "makeTheCall"
+            or "discardHandCards" or "discardResourceIcons" or "chooseStatusRecipients" or "chooseHealRecipients" or "chooseCardsToHand" or "chooseDiscardToShuffle" or "exhaustAnyNumber" or "distributeThreat" or "thwartDifferentSchemes" or "makeTheCall"
             or "playSharedHeroTraitCard" or "legalPractice" or "payOrEffect")
         {
             throw new RulesNotImplementedException(

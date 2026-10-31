@@ -112,6 +112,13 @@ internal sealed class AbilityExpressionEvaluation(
             && BasicThwartPowers.CanAutomaticallyThwart(context.World, context.World.Facts, context.Player, scheme),
         AbilityCondition.TitleInPlay title => context.World.Areas.Where(area => DeckTypes.IsInPlay(area.Type))
             .SelectMany(area => area.Cards).Any(card => string.Equals(context.World.Facts.Title(card.FaceId), title.Title, StringComparison.Ordinal)),
+        // rr:identity.4: only an identity's faceup side is in play. rr:subtitle: a
+        // subtitle is an alias the character uses, so a name matches either one,
+        // as rr:team-up.2 reads a named character.
+        AbilityCondition.NamedInPlay named => context.World.Areas.Where(area => DeckTypes.IsInPlay(area.Type))
+            .SelectMany(area => area.Cards).Any(card =>
+                string.Equals(context.World.Facts.Title(card.FaceId), named.Name, StringComparison.Ordinal)
+                || string.Equals(context.World.Facts.Subtitle(card.FaceId), named.Name, StringComparison.Ordinal)),
         AbilityCondition.AtLeast comparison => Amount(comparison.Value) >= Amount(comparison.Count),
         AbilityCondition.InForm form => Forms.In(context.World, context.World.Seats[Seat(form.Player)], context.World.Facts, form.Form),
         AbilityCondition.ActivationIs activation => context.World.Activation is { } current && current.Attacking == activation.Attack,

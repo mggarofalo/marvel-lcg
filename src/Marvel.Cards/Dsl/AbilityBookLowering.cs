@@ -37,6 +37,7 @@ internal static class AbilityBookLowering
             SchemeDestinations = LowerSchemeDestinations(book),
             HandResourceForms = AbilityHandResourceForms.Lower(book),
         };
+        AbilityLimit.ValidateGroups(program.Abilities);
         AbilityProfileReferences.Validate(book, program.Profiles);
         AbilityPrintedTextLowering.Validate(program);
         AbilityAllyLimitExclusionLowering.Validate(program);
@@ -75,6 +76,7 @@ internal static class AbilityBookLowering
         AbilitySelfPlayCostLowering.Validate(ability, effect, location, nodes);
         AbilityAllyCostLowering.Validate(ability, effect, location, nodes);
         AbilityBasicUseLowering.Validate(ability, effect, location);
+        ValidateTargetedSentences(nodes, location);
         AbilityAttackKeywordLowering.Validate(ability, ordinal, own, location);
         AbilityExcessDamageLowering.Validate(ability, effect, location, nodes);
         var compiledCost = ability.Cost is { } syntaxCost
@@ -90,9 +92,20 @@ internal static class AbilityBookLowering
         ability.PrintedResources, ability.Maximum, address)
     {
         LimitPeriod = AbilityLimit.Validate(ability),
+        LimitGroup = ability.LimitGroup,
         ResourceRestriction = AbilityResourceRestriction.Validate(ability),
         PrintedCostResource = AbilityPrintedCostResource.Validate(ability),
     };
+    }
+
+    // seqEachTargeted describes one listed option of a choice; anywhere else it
+    // would claim a legality rule nothing reads.
+    private static void ValidateTargetedSentences(List<AbilityEffect> nodes, AbilityLocation location)
+    {
+        var options = nodes.OfType<AbilityEffect.Choose>().SelectMany(choose => choose.Options).ToHashSet();
+        if (nodes.OfType<AbilityEffect.Sequence>().Any(sequence => sequence.EverySentenceTargeted
+            && !options.Any(option => ReferenceEquals(option, sequence))))
+            throw location.Error("seqEachTargeted is admitted only as a listed choice option");
     }
 
     private static ImmutableDictionary<string, AbilityCardSelection> LowerAttachments(

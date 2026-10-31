@@ -149,7 +149,7 @@ internal sealed class AbilityPaymentValidation(
             throw new RulesNotImplementedException($"'{source.FaceId}' names an invalid generator for X");
         string generated = string.Concat(generators.Where(generator => paying.Contains(generator.Effect))
             .Select(generator => ResourcePayment.GeneratedBy(generator, allocations)));
-        if (!Resources.Pays(generated, x, new string(Resources.Energy, checked((int)x))))
+        if (!Resources.Pays(generated, x, ((AbilityCost.SpendEnergy)step).Required(x)))
             throw new RulesNotImplementedException(
                 $"'{source.FaceId}' defines X as {x}, but the payment generates '{generated}'");
     }

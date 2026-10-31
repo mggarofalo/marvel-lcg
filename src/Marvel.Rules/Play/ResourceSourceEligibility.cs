@@ -18,9 +18,11 @@ public static class ResourceSourceEligibility
                 && Traits.Has(world, target, "PREPARATION", facts),
             ResourceRestriction.Event => target is not null
                 && EffectiveCards.Kind(target, facts) == CardKind.Event,
-            ResourceRestriction.AttackEvent => target is not null
-                && EffectiveCards.Kind(target, facts) == CardKind.Event
-                && Traits.Has(world, target, "ATTACK", facts),
+            ResourceRestriction.AttackEvent => TraitEvent(world, facts, target, "ATTACK"),
+            // Printed 14017 and 14030 generate a resource "for a Defense event" and
+            // "for a Thwart event": the event's trait, as Martial Prowess reads Attack.
+            ResourceRestriction.DefenseEvent => TraitEvent(world, facts, target, "DEFENSE"),
+            ResourceRestriction.ThwartEvent => TraitEvent(world, facts, target, "THWART"),
             ResourceRestriction.ArrowEvent => target is not null
                 && EffectiveCards.Kind(target, facts) == CardKind.Event
                 && Traits.Of(world, target, facts).Contains("ARROW", StringComparer.Ordinal),
@@ -30,4 +32,9 @@ public static class ResourceSourceEligibility
                     "Aggression" or "Justice" or "Leadership" or "Protection" or "'Pool",
             _ => throw new RulesNotImplementedException("unknown resource spending restriction"),
         };
+
+    private static bool TraitEvent(World world, ICardFacts facts, Card? target, string trait) =>
+        target is not null
+        && EffectiveCards.Kind(target, facts) == CardKind.Event
+        && Traits.Has(world, target, trait, facts);
 }

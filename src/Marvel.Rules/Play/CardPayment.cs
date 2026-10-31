@@ -86,7 +86,9 @@ public static class CardPayment
             amount = Math.Max(0, amount - modifier.Amount);
         }
 
-        amount = Math.Max(0, amount - world.CardPlayAbilities.SelfPlayCostReduction(world, card, seat.Index));
+        long self = world.CardPlayAbilities.SelfPlayCostReduction(world, card, seat.Index);
+        VariableCardCost.RefuseReduction(card.FaceId, facts, modifiers.Count, self, reduction);
+        amount = Math.Max(0, amount - self);
         amount = AllyPlayHistory.AdjustCost(world, card, amount);
         amount = UpgradeHostCost.Adjust(world, card, attachmentHost, amount);
         if (reduction is not null)
