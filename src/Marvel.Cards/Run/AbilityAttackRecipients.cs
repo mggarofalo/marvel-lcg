@@ -44,7 +44,9 @@ internal static class AbilityAttackRecipients
 
     // rr:villain-defeat.3.1: a villain's next stage "is considered the same
     // character", so damage carried to it reaches no new enemy (ruling
-    // 9aa6221cd0950fbb: "the next villain stage is not another enemy").
+    // 9aa6221cd0950fbb: "the next villain stage is not another enemy"). Both
+    // cards must be villains: no authored minion shares a villain's title today,
+    // and one that did would be a different character.
     private static bool SameCharacter(World world, int initiated, Card target)
     {
         if (initiated == target.ObjectId) return true;
