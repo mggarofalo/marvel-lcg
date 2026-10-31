@@ -165,11 +165,14 @@ public sealed class WaspDividedBasicPowerTests : CoreCardTestBase
     }
 
     [Theory]
-    [InlineData("13001c", true, true)]
-    [InlineData("13001c", false, false)]
-    [InlineData("13001a", true, false)]
-    public void TheBasicAttackOfferSaysWhenItsDamageWillBeDivided(string face, bool minion, bool divided)
+    [Rule("rr:stun-stunned.5")]
+    [InlineData("13001c", true, false, true)]
+    [InlineData("13001c", false, false, false)]
+    [InlineData("13001a", true, false, false)]
+    [InlineData("13001c", true, true, false)]
+    public void TheBasicAttackOfferSaysWhenItsDamageWillBeDivided(string face, bool minion, bool stunned, bool divided)
     {
+        // rr:stun-stunned.5: a stunned attacker's attempt is cancelled, so nothing is divided.
         // Ruling 78f96d5c7974afaa: the hero declares one target before dividing, so the
         // declared target's preview holds only if every point is assigned to it. With
         // the villain alone there is nothing to divide among.
@@ -178,6 +181,7 @@ public sealed class WaspDividedBasicPowerTests : CoreCardTestBase
         {
             board.Seats[0].IdentityCard.TurnTo(face);
             enemy = minion ? WaspBoards.Engaged(board, Whiplash) : board.TheCardIn(DeckType.VillainArea);
+            if (stunned) Statuses.Give(board, board.Seats[0].IdentityCard, Statuses.Stunned);
         }, heroes: ["wasp"]);
         var wasp = world.Seats[0].IdentityCard;
         var attack = Assert.Single(game.Pending!.Affordances,
