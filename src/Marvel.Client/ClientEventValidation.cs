@@ -11,7 +11,7 @@ internal static class ClientEventValidation
         && CompleteEventPayload(happened);
 
     // Engine wire choice: a thwart that resolves without a scheme spells its absent
-    // target -1; a scheme activation always names the player it schemes against.
+    // target -1; a scheme activation always names the identity it schemes against.
     private static bool CompleteCause(EventCause cause) =>
         cause is { Source: >= 0, SourceTitle: not null, TargetTitle: not null }
             and ({ Kind: EventCauseKind.Thwart, Target: >= -1 } or { Kind: EventCauseKind.Scheme, Target: >= 0 });
@@ -47,8 +47,9 @@ internal static class ClientEventValidation
                 _ => false,
             };
 
-    // Engine wire choice: an attack that begins before it has a target (Giant Stomp
-    // chooses its enemy in a later sentence) spells its absent target -1.
+    // Engine wire choice: an attack-labeled ability that resolves with no attacked
+    // enemy (Giant Stomp's 8 damage is an independent sentence) spells its absent
+    // target -1.
     private static bool CompleteBoundary(AttackBoundary boundary) => boundary.Identity is not null
         && boundary.Source >= 0 && boundary.Target >= -1 && boundary.AttackIdentity == boundary.Identity;
 
