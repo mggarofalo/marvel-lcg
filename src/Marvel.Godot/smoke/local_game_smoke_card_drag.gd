@@ -63,9 +63,10 @@ static func _settled_start(driver, card: Control) -> Vector2:
 	if not await preload("res://smoke/gesture_settlement.gd").stable_global_pose(driver, card):
 		driver._fail("card '%s' kept moving on screen; its drag has no stable baseline" % card.name)
 		return Vector2.INF
+	var settled := card.global_position
 	var start: Vector2 = driver._card_body_point(card)
 	if not await driver._control_owns_point(card, start):
-		driver._fail("card '%s' has no exposed body from which to begin its drag" % card.name)
+		driver._fail("card '%s' has no exposed body from which to begin its drag: %s" % [card.name, _exposure_diagnostic(driver, card, settled, start)])
 		return Vector2.INF
 	return start
 
@@ -76,6 +77,14 @@ static func bounds(card: Control) -> Rect2:
 		result = result.expand(pose * point)
 	return result
 
+
+
+# Distinguishes a card that moved after its baseline from one another control covers.
+static func _exposure_diagnostic(driver, card: Control, settled: Vector2, point: Vector2) -> String:
+	if not is_instance_valid(card): return "retired"
+	var hovered: Control = driver.render_viewport.gui_get_hovered_control()
+	return "point=%s settled=%s current=%s hovered=%s" % [
+		point, settled, card.global_position, hovered.get_path() if hovered != null else "none"]
 
 
 static func _return_diagnostic(card: Control, expected: Transform2D) -> String:

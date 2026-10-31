@@ -218,6 +218,7 @@ internal sealed class SetupSelectionControls
     internal void RefreshEntryAvailability()
     {
         RefreshStartAvailability();
+        campaigns?.RefreshEntry();
         main.join.Disabled = main.lifecycle.EntryPending || main.endpoint.Text.Length == 0
             || main.gameId.Text.Length == 0
             || main.invitation.Text.Length == 0;

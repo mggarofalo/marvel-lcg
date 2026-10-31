@@ -47,6 +47,7 @@ internal sealed class MainSetupController
 
         main.lifecycle.FinishEntry(generation);
         main.reloadSetup.Disabled = false;
+        RefreshEntryAvailability();
         main.ShowFailure(error);
     }
 
