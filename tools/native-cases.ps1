@@ -46,8 +46,10 @@ if ($ResultsDirectory.Equals([IO.Path]::GetFullPath($repoRoot), [StringCompariso
 Assert-NativeEvidenceFresh $ResultsDirectory
 [IO.Directory]::CreateDirectory($ResultsDirectory) | Out-Null
 Write-Host "Native profile ${Profile}, shard ${ShardIndex}/${ShardCount}: $($selected.Count) cases. Evidence: $ResultsDirectory"
-$version = Invoke-NativeProcess $GodotBin @('--version') @{} 15 "$ResultsDirectory/version.log" $repoRoot
-if ($version.ExitCode -ne 0 -or $version.TimedOut -or -not $version.Output.StartsWith('4.7.')) { throw 'Godot 4.7 .NET is required.' }
+# A cold Windows runner can take well over 15 s to start Godot for the first time.
+$version = Invoke-NativeProcess $GodotBin @('--version') @{} 120 "$ResultsDirectory/version.log" $repoRoot
+if ($version.TimedOut) { throw 'Godot did not report its version within 120 s.' }
+if ($version.ExitCode -ne 0 -or -not $version.Output.StartsWith('4.7.')) { throw 'Godot 4.7 .NET is required.' }
 if (-not $NoBuild) {
     foreach ($project in @('src/Marvel.Godot/Marvel.Godot.csproj', 'tests/Marvel.Godot.Tests/Marvel.Godot.Tests.csproj')) {
         $arguments = @('build', "$repoRoot/$project", '--nologo')
