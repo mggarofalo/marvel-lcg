@@ -37,9 +37,22 @@ internal static class AbilityAttackRecipients
     internal static bool IsLate(AbilityDamageAndThreatContext context, Card target)
     {
         if (context.World.Agenda.PlayerAttackOf(context.PowerOccurrence) is not { } attack) return false;
-        return attack.Enemy != target.ObjectId
+        return !SameCharacter(context.World, attack.Enemy, target)
             && !(attack.Continuation is AbilityPowerContinuation { DeclaredRecipients: { IsDefault: false } declared }
-                && declared.Any(recipient => recipient.Card == target.ObjectId));
+                && declared.Any(recipient => SameCharacter(context.World, recipient.Card, target)));
+    }
+
+    // rr:villain-defeat.3.1: a villain's next stage "is considered the same
+    // character", so damage carried to it reaches no new enemy (ruling
+    // 9aa6221cd0950fbb: "the next villain stage is not another enemy").
+    private static bool SameCharacter(World world, int initiated, Card target)
+    {
+        if (initiated == target.ObjectId) return true;
+        if (initiated < 0) return false;
+        var first = world.Cards[initiated];
+        return CardKinds.IsVillain(EffectiveCards.Kind(target, world.Facts))
+            && CardKinds.IsVillain(EffectiveCards.Kind(first, world.Facts))
+            && EffectiveCards.Title(first, world.Facts) == EffectiveCards.Title(target, world.Facts);
     }
 
     /// <summary>
