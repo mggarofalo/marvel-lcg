@@ -174,6 +174,6 @@ public sealed class DoctorStrangeSearchCardTests
         Assert.Equal(AuthoredCards.ExpectedFaceCount, rows.Length);
         Assert.Equal(SearchFaces, rows.Skip(659).Take(2).Select(r => r.GetProperty("card").GetString()));
         Assert.All(rows.Skip(659).Take(2), row => Assert.False(row.TryGetProperty("startingCounters", out _)));
-        Assert.DoesNotContain("11001", AuthoredCards.Book.Authored);
+        Assert.DoesNotContain("11007a", AuthoredCards.Book.Authored);
     }
 }

@@ -24,7 +24,7 @@ public sealed class HulkThunderclapCardTests
         Assert.Equal("10005", rows[708].GetProperty("card").GetString());
         Assert.False(rows[708].TryGetProperty("startingCounters", out _));
         Assert.Equal(33, AuthoredCards.Book.Authored.Count(id => id.StartsWith("10", StringComparison.Ordinal)));
-        Assert.DoesNotContain("11001", AuthoredCards.Book.Authored);
+        Assert.DoesNotContain("11007a", AuthoredCards.Book.Authored);
     }
 
     [Theory]

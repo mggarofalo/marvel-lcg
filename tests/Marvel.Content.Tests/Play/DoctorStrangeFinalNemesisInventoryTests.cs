@@ -23,7 +23,7 @@ public sealed class DoctorStrangeFinalNemesisInventoryTests
             .Where(face => face.StartsWith("09", StringComparison.Ordinal)).Order().ToArray();
         Assert.Equal(40, faces.Length);
         Assert.Equal(faces, AuthoredCards.Book.Authored.Where(face => face.StartsWith("09", StringComparison.Ordinal)).Order());
-        Assert.DoesNotContain("11001", AuthoredCards.Book.Authored);
+        Assert.DoesNotContain("11007a", AuthoredCards.Book.Authored);
         using var snapshot = JsonDocument.Parse(File.ReadAllText(RepositoryPaths.Dataset("marvelsdb", "pack", "drs_encounter.json")));
         foreach (string face in FinalFaces)
         {

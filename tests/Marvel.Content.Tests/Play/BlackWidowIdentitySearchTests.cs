@@ -177,7 +177,7 @@ public sealed class BlackWidowIdentitySearchTests
             .Where(row => new[] { "08001b", "08002", "08011" }.Contains(row.GetProperty("card").GetString())).ToArray();
         Assert.Equal(3, rows.Length);
         Assert.All(rows, row => Assert.False(row.TryGetProperty("startingCounters", out _)));
-        Assert.DoesNotContain("11001", AuthoredCards.Book.Authored);
+        Assert.DoesNotContain("11007a", AuthoredCards.Book.Authored);
     }
 
 }

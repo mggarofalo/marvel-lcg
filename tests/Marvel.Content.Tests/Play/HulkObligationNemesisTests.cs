@@ -22,7 +22,7 @@ public sealed class HulkObligationNemesisTests
             rows.Skip(712).Take(4).Select(row => row.GetProperty("card").GetString()));
         Assert.All(rows.Skip(712).Take(4), row => Assert.False(row.TryGetProperty("startingCounters", out _)));
         Assert.Equal(33, AuthoredCards.Book.Authored.Count(id => id.StartsWith("10", StringComparison.Ordinal)));
-        Assert.DoesNotContain("11001", AuthoredCards.Book.Authored);
+        Assert.DoesNotContain("11007a", AuthoredCards.Book.Authored);
     }
 
     [Theory]

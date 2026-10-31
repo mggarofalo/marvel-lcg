@@ -173,7 +173,7 @@ public sealed class DoctorStrangeIronFistCardTests
         Assert.Equal("mystic", pool.GetProperty("type").GetString());
         Assert.Equal(2, pool.GetProperty("count").GetInt32());
         Assert.False(pool.GetProperty("uses").GetBoolean());
-        Assert.DoesNotContain("11001", AuthoredCards.Book.Authored);
+        Assert.DoesNotContain("11007a", AuthoredCards.Book.Authored);
     }
 
     private static void Finish(World world, List<GameEvent> events)

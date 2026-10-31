@@ -22,7 +22,7 @@ public sealed class HulkBasicReprintTests
         Assert.All(rows.Skip(688).Take(5), row => Assert.False(row.TryGetProperty("startingCounters", out _)));
         Assert.Equal(new List<string> { "10001a", "10001b", "10004", "10005" }.Concat(faces).Concat(Enumerable.Range(10011, 9).Select(id => id.ToString(System.Globalization.CultureInfo.InvariantCulture))).Concat(["10002", "10003", "10006", "10007", "10008", "10009", "10010", "10030", "10031", "10032", "10025", "10026", "10027", "10028", "10029"]).Order(),
             AuthoredCards.Book.Authored.Where(face => face.StartsWith("10", StringComparison.Ordinal)).Order());
-        Assert.DoesNotContain("11001", AuthoredCards.Book.Authored);
+        Assert.DoesNotContain("11007a", AuthoredCards.Book.Authored);
     }
 
     [Theory]

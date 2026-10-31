@@ -91,7 +91,7 @@ public sealed class MutagenStageAbilityTests : CoreCardTestBase
     }
 
     [Theory]
-    [InlineData("11001")]
+    [InlineData("11007a")]
     public void UnauthoredEncounterFaceFailsClosed(string face)
     {
         var world = Hero("01001a");

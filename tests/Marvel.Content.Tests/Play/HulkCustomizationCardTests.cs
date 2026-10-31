@@ -23,7 +23,7 @@ public sealed class HulkCustomizationCardTests
             rows.Skip(709).Take(3).Select(row => row.GetProperty("card").GetString()));
         Assert.All(rows.Skip(709).Take(3), row => Assert.False(row.TryGetProperty("startingCounters", out _)));
         Assert.Equal(33, AuthoredCards.Book.Authored.Count(id => id.StartsWith("10", StringComparison.Ordinal)));
-        string[] absent = ["11001"];
+        string[] absent = ["11007a"];
         Assert.All(absent,
             id => Assert.DoesNotContain(id, AuthoredCards.Book.Authored));
     }

@@ -21,7 +21,7 @@ public sealed class DoctorStrangeUnflappableTests
         Assert.Equal("09020", rows[671].GetProperty("card").GetString());
         Assert.False(rows[671].TryGetProperty("startingCounters", out _));
         Assert.Equal(40, AuthoredCards.Book.Authored.Count(face => face.StartsWith("09", StringComparison.Ordinal)));
-        string[] blocked = ["11001"];
+        string[] blocked = ["11007a"];
         Assert.All(blocked, face => Assert.DoesNotContain(face, AuthoredCards.Book.Authored));
     }
 

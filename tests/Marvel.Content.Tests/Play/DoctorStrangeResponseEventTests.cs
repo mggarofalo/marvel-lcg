@@ -162,7 +162,7 @@ public sealed class DoctorStrangeResponseEventTests
         Assert.All(rows.Skip(661).Take(4), row => Assert.False(row.TryGetProperty("startingCounters", out _)));
         Assert.Equal(40, AuthoredCards.Book.Authored.Count(face => face.StartsWith("09", StringComparison.Ordinal)));
         Assert.Contains("09001a", AuthoredCards.Book.Authored);
-        Assert.DoesNotContain("11001", AuthoredCards.Book.Authored);
+        Assert.DoesNotContain("11007a", AuthoredCards.Book.Authored);
     }
 
 }

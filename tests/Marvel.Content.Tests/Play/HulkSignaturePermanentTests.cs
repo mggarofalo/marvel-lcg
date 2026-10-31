@@ -18,7 +18,7 @@ public sealed class HulkSignaturePermanentTests
         Assert.Equal(AuthoredCards.ExpectedFaceCount, rows.Length);
         Assert.Equal(expected, rows.Skip(693).Take(7).Take(7).Select(row => row.GetProperty("card").GetString()));
         Assert.All(rows.Skip(693).Take(7).Take(7), row => Assert.False(row.TryGetProperty("startingCounters", out _)));
-        Assert.DoesNotContain("11001", AuthoredCards.Book.Authored);
+        Assert.DoesNotContain("11007a", AuthoredCards.Book.Authored);
     }
 
     [Fact]
