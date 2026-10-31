@@ -24596,6 +24596,15 @@
       "abilities": [
         {"trigger": {"event": "WhenFormChanged", "timing": "Response", "subject": "you", "form": "hero"}, "effect": {"giveStatus": {"card": "yourHero", "status": "tough"}}}
       ]
+    },
+    {
+      "card": "13001c",
+      "name": "Wasp (Giant)",
+      "note": "Two constants: threat removed by her basic thwart and damage dealt by her basic attack can be divided among schemes and enemies. Rulings f4cbf2c7b6abb136, 0bf3bc9df0ca74ad and pack:mc13:wasp-hero-pack#rules-clarifications: each enemy dealt damage is attacked and each scheme is thwarted. Ruling 116e678d0ad83200: Guard prevents assigning any damage to the villain, and an enemy is attacked only if it is dealt at least 1. Ruling 78f96d5c7974afaa: one target is declared first and the final amount, including interrupts on that use, is divided. The modifier names are engine choices.",
+      "abilities": [
+        {"trigger": {"timing": "Constant", "subject": "this"}, "effect": {"grant": {"card": "this", "keyword": "basic_thwart_divided"}}},
+        {"trigger": {"timing": "Constant", "subject": "this"}, "effect": {"grant": {"card": "this", "keyword": "basic_attack_divided"}}}
+      ]
     }
   ]
 }

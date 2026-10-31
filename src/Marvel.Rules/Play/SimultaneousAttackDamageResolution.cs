@@ -22,9 +22,14 @@ internal sealed class SimultaneousAttackDamageResolution
         this.facts = facts;
         Execution = execution;
         Result = new(completion ?? execution);
-        recipients = [.. request.Targets.Select(target => new SimultaneousAttackRecipient(
-            new(request.Attacker, request.Source, target, request.Amount, request.Trigger, request.Verb, request.Retaliate),
-            new DamageRequest(request.Source, target, request.Amount, request.Trigger, request.Verb,
+        recipients = [.. request.Targets.Select((target, index) => new SimultaneousAttackRecipient(
+            new(request.Attacker, request.Source, target, request.AmountFor(index), request.Trigger, request.Verb, request.Retaliate)
+            {
+                Basic = request.Basic,
+                GrantedOverkill = request.GrantedOverkill,
+                BasicRecipient = request.Basic ? Attacked.Capture(target, facts) : null,
+            },
+            new DamageRequest(request.Source, target, request.AmountFor(index), request.Trigger, request.Verb,
                 LabeledAbilities.IdentityPlayer(world, request.Attacker)) { RecordDefeatOn = execution.Occurrence, FromAttack = true },
             OccurrenceCard.Capture(request.Attacker, facts)))];
     }

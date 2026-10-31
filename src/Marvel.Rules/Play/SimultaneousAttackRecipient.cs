@@ -30,7 +30,7 @@ internal sealed class SimultaneousAttackRecipient(AttackDamageRequest request, D
         if (!pierced)
         {
             pierced = true;
-            if (AttackKeywords.Has(world, request.Attacker, request.Source, Keywords.Piercing))
+            if (AttackKeywords.Has(world, request.Attacker, request.Source, Keywords.Piercing, request.Basic))
                 DamageAttacks.DiscardPiercedTough(world, request.Target, request.Amount, request.Trigger, events);
         }
         replacement ??= DamagePlacement.Replace(world,
