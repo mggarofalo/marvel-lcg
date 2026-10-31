@@ -21,7 +21,7 @@ public sealed class DoctorStrangeFinalSignatureEventTests
             .Select(row => row.GetProperty("card").GetString()));
         Assert.All(rows.Skip(675).Take(3), row => Assert.False(row.TryGetProperty("startingCounters", out _)));
         Assert.Equal(40, AuthoredCards.Book.Authored.Count(face => face.StartsWith("09", StringComparison.Ordinal)));
-        Assert.DoesNotContain("11001", AuthoredCards.Book.Authored);
+        Assert.DoesNotContain("52031", AuthoredCards.Book.Authored);
     }
 
     [Theory]

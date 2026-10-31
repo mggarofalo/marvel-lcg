@@ -111,9 +111,15 @@ public static class DamageAttacks
         return resolution!.Result;
     }
     internal static void DiscardPiercedTough(
-        World world, Card target, long amount, string trigger, List<GameEvent> events)
+        World world, Card target, Card source, long amount, string trigger, List<GameEvent> events)
     {
-        if (amount <= 0)
+        // rr:piercing.2: "If an attack with the piercing keyword would deal no
+        // damage to the attacked character, it does not discard tough status
+        // cards". A character that cannot take damage is dealt none (ruling
+        // 76a9465df95e739c keeps Kang's Tough under that prohibition). An enemy
+        // attack whose calculated damage is zero returns before reaching here
+        // (AttackDamage), so the amount test guards only other callers.
+        if (amount <= 0 || !world.DamageAbilities.CanTakeDamage(world, target, source))
         {
             return;
         }

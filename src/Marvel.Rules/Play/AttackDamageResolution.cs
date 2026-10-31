@@ -170,7 +170,7 @@ internal sealed class AttackDamageResolution
         {
             pierced = true;
             if (!spillOnly && AttackKeywords.Has(world, request.Attacker, request.Source, Keywords.Piercing, request.Basic))
-                DamageAttacks.DiscardPiercedTough(world, request.Target, request.Amount, request.Trigger, events);
+                DamageAttacks.DiscardPiercedTough(world, request.Target, request.Source, request.Amount, request.Trigger, events);
         }
         replacement ??= DamagePlacement.Replace(world,
             new(request.Source, request.Target, request.Amount, request.Trigger, request.Verb,

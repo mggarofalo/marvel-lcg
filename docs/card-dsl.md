@@ -176,9 +176,11 @@ affect (`pack:mc11:game-areas`, through `Places.CanAffect`); a faceup boost card
 uses its activating enemy's place. In an ordinary game it is the villain in
 play. More than one candidate raises rather than choosing.
 `obligationsInThisGameArea` selects every obligation in play that the source can
-affect, in object-id order. Both are engine spellings for the Kang scenario's
-"Kang" and "each obligation in play" (MARVEL-894 Q2 and Q4); they are the one
-place a game-area split changes those cards.
+affect, in object-id order. `minionsInThisGameArea` selects every minion in
+play that the source can affect, in object-id order. These are engine spellings
+for the Kang scenario's "Kang", "each obligation in play" (MARVEL-894 Q2 and Q4)
+and Immortus's "a minion is in play" (Q17); they
+are the one place a game-area split changes those cards.
 
 `delayUntil` with `giveStatus: {"card": "damagedHero", "status": "stunned"}`
 stuns only a damaged identity in hero form; `damaged` stuns any damaged
@@ -587,7 +589,7 @@ grantCharactersControlledBy grantEach grantUntil hasStatus hasTrait heroBasicDef
 heroes heroesAndAllies heroAndAllyTargets identities
 identitiesWithinPerPlayerLimit inForm indirectDamage isEnemyAttacker isKind isTitle
 isYourIdentity keyword kind legalPractice mainScheme makeTheCall maxBy minions
-minionsEngagedWithYou modified moveAttackDamage mul obligationsInThisGameArea onto options overkill
+minionsEngagedWithYou minionsInThisGameArea modified moveAttackDamage mul obligationsInThisGameArea onto options overkill
 inspectEncounterTop paidWithResource payOrEffect payOrExhaust peekTop perPlayer placeAccelerationToken
 placeAtRandom placeCounters placeThreat power powerAmount powerTargets cardsDiscarded
 preventDamage preventDamageFrom preventDamageWhile preventPlayerAttackDamage preventThreat

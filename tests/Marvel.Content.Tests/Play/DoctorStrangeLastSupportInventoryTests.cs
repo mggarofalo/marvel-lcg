@@ -16,7 +16,7 @@ public sealed class DoctorStrangeLastSupportInventoryTests
         Assert.Equal(faces, rows.Skip(679).Take(3).Select(row => row.GetProperty("card").GetString()));
         Assert.All(rows.Skip(679).Take(3), row => Assert.False(row.TryGetProperty("startingCounters", out _)));
         Assert.Equal(40, AuthoredCards.Book.Authored.Count(face => face.StartsWith("09", StringComparison.Ordinal)));
-        string[] unauthored = ["11001"];
+        string[] unauthored = ["52031"];
         Assert.All(unauthored, face => Assert.DoesNotContain(face, AuthoredCards.Book.Authored));
     }
 }

@@ -16,6 +16,8 @@ public enum AbilityCardQuery
     VillainInThisGameArea,
     /// <summary>Every obligation in play in the source's game area.</summary>
     ObligationsInThisGameArea,
+    /// <summary>Every minion in play in the source's game area.</summary>
+    MinionsInThisGameArea,
     /// <summary>Controlled upgrades physically attached to the resolving hero.</summary>
     UpgradesOnYourHero,
     /// <summary>The side scheme paired with the current active villain.</summary>

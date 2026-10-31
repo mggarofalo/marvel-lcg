@@ -65,6 +65,7 @@ internal sealed class CardQueryEvaluator(
         AbilityCardQuery.ActiveVillainSideScheme => AbilityActiveSchemeQuery.Live(cast.World),
         AbilityCardQuery.VillainInThisGameArea => AbilityGameAreaQuery.Villain(cast),
         AbilityCardQuery.ObligationsInThisGameArea => AbilityGameAreaQuery.Obligations(cast),
+        AbilityCardQuery.MinionsInThisGameArea => AbilityGameAreaQuery.Minions(cast),
         _ when AbilityEncounterSchemeQueries.IsRanked(query) =>
             EncounterSchemeRelations.AtThreatExtreme(cast.World,
                 query == AbilityCardQuery.VillainsWithMostSchemeThreat),

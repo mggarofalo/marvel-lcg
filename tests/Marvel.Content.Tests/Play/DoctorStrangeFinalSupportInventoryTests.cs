@@ -24,7 +24,7 @@ public sealed class DoctorStrangeFinalSupportInventoryTests
         Assert.Equal("medical", counters.GetProperty("type").GetString());
         Assert.Equal(3, counters.GetProperty("count").GetInt32());
         Assert.True(counters.GetProperty("uses").GetBoolean());
-        Assert.DoesNotContain("11001", AuthoredCards.Book.Authored);
+        Assert.DoesNotContain("52031", AuthoredCards.Book.Authored);
     }
 
     [Fact]
