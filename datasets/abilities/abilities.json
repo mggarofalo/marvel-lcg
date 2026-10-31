@@ -12299,7 +12299,7 @@
     {
       "card": "07045",
       "name": "Uncanny Resilience",
-      "note": "When Revealed: Remove each stunned and confused status card from each villain. If no status cards were removed this way, this card gains surge. Completion counts physical removed statuses; Tough and friendly characters are unaffected.",
+      "note": "When Revealed: Remove each stunned and confused status card from each villain. If no status cards were removed this way, this card gains surge. Completion counts physical removed statuses; Tough and friendly characters are unaffected. Boost: the player resolving the boost places a confused status card on their identity (rr:you-your.5).",
       "abilities": [
         {
           "trigger": {
@@ -12323,6 +12323,19 @@
               "otherwise": {
                 "gainSurge": 1
               }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "Boost",
+            "subject": "this"
+          },
+          "effect": {
+            "giveStatus": {
+              "card": "you",
+              "status": "confused"
             }
           }
         }
