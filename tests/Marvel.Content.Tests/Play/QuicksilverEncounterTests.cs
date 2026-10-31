@@ -1,3 +1,5 @@
+using System.Text.Json.Nodes;
+using Marvel.Cards.Dsl;
 using Marvel.Cards.Run;
 using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
@@ -186,6 +188,41 @@ public sealed class QuicksilverEncounterTests : CoreCardTestBase
         QuicksilverBoards.Drive(world, _ => null);
         Assert.False(quicksilver.Ready);
         Assert.Equal(DeckType.EncounterDiscardPile, vibration.Area.Type);
+    }
+
+    [Fact]
+    [Rule("rr:attack-player-ability-type.1")]
+    public void VibrationResistanceReducesOnlyTheFirstDamageOfOneAttack()
+    {
+        // 14027: "Reduce the damage attached enemy takes from each attack by 1." A
+        // synthetic attack event deals Rhino 2 damage twice within one attack: the
+        // reduction applies to that attack once, so Rhino takes 1 + 2.
+        var world = QuicksilverBoards.Board();
+        world.Abilities = new AbilityRunner(DoubleStrikeBook());
+        var villain = QuicksilverBoards.Villain(world);
+        RevealDealt(world, "14027");
+        var strike = QuicksilverBoards.Hand(world, "01060");
+        var energy = QuicksilverBoards.Hand(world, "01088");
+
+        QuicksilverBoards.Play(world, strike, [energy]);
+        QuicksilverBoards.Drive(world, QuicksilverBoards.Take(villain));
+
+        Assert.Equal(3, villain.Damage);
+    }
+
+    // The production Vibration Resistance row beside a synthetic two-hit attack on For Justice!.
+    private static AbilityBook DoubleStrikeBook()
+    {
+        var production = JsonNode.Parse(File.ReadAllText(RepositoryPaths.Dataset("abilities", "abilities.json")))!;
+        var vibration = production["cards"]!.AsArray().Single(row => (string?)row!["card"] == "14027")!.ToJsonString();
+        return AbilityCatalog.Parse($$$$$$$"""
+            {"cards":[{{{{{{{vibration}}}}}}},{"card":"01060","abilities":[{
+              "trigger":{"event":"WhenActionTriggered","timing":"Action","subject":"this","form":"hero"},
+              "labels":["attack"],
+              "effect":{"chooseCard":{"from":{"query":"attackableEnemies"},"effect":{"attack":{"target":"chosen","effect":{"seq":[
+                {"dealAttackDamage":{"cards":"chosen","amount":2}},
+                {"dealAttackDamage":{"cards":"chosen","amount":2}}]}}}}}}]}]}
+            """);
     }
 
     // Deals the card and runs the encounter reveal stage, which places attachments.

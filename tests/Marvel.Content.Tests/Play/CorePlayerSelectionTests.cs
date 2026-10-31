@@ -39,6 +39,23 @@ public sealed class CorePlayerSelectionTests
         Assert.Contains(third, world.Seats[0].Deck.Cards);
     }
 
+    [Rule("rr:initiating-abilities.step.2")]
+    [Fact]
+    public void AncestralKnowledgeNeedsACardInTheDiscardPile()
+    {
+        // rr:initiating-abilities.step.2: "If the card or ability does not have at least
+        // one valid target, it cannot be played or initiated." The discarded cards it
+        // shuffles are its targets.
+        var world = Board("01040b");
+        var card = world.CreateCard("01042", world.Seats[0].Hand);
+        world.CreateCard("01044", world.Seats[0].Hand);
+        var runner = AuthoredCards.Runner();
+        Assert.DoesNotContain(runner.Actions(world, 0), action => action.Card == card.ObjectId);
+
+        world.CreateCard("01046", world.AreaOf(DeckType.DiscardPile, PlayArea.Of(0), cardOwner: 0));
+        Assert.Contains(runner.Actions(world, 0), action => action.Card == card.ObjectId);
+    }
+
     [Rule("rr:traits")]
     [Rule("rr:threat")]
     [Fact]
