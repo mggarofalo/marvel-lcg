@@ -123,10 +123,10 @@ public sealed class QuicksilverEncounterTests : CoreCardTestBase
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
-    [Rule("rr:boost")]
+    [Rule("rr:boost-boost-icon")]
     public void EarthquakesBoostSpendsTwoPhysicalOrExhaustsTheIdentity(bool pay)
     {
-        // rr:boost: a boost card's star ability resolves when it is turned faceup.
+        // rr:boost-boost-icon: "resolve the \"Boost\" ability when the card is turned face up."
         // Rhino attacks Quicksilver, who declines to defend; the boost asks him.
         var world = QuicksilverBoards.Board();
         var identity = world.Seats[0].IdentityCard;
@@ -164,10 +164,11 @@ public sealed class QuicksilverEncounterTests : CoreCardTestBase
 
 
     [Fact]
-    [Rule("rr:attack")]
+    [Rule("rr:attack-player-ability-type.1")]
     public void VibrationResistanceReducesEachAttackOnceAndLeavesForAnExhaustedHero()
     {
-        // 14027: "Reduce the damage attached enemy takes from each attack by 1.
+        // rr:attack-player-ability-type.1: a basic attack "deals damage equal to the
+        // character's ATK value to the enemy." 14027: "Reduce the damage attached enemy takes from each attack by 1.
         // Hero Action: Exhaust your hero -> discard this card." Quicksilver's ATK 1
         // basic attack deals Rhino nothing while it is attached; Super Speed readies him.
         var world = QuicksilverBoards.Board();

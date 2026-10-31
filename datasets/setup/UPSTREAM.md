@@ -9,8 +9,8 @@ admits a product without its complete face and recipe gates.
 | | |
 |---|---|
 | Kind | authored |
-| Declared products | Marvel Champions Core Set; Rise of Red Skull; The Wrecking Crew; Captain America; Ms. Marvel; Thor; Black Widow; Doctor Strange; Hulk; Ant-Man; Wasp; Green Goblin (both scenarios and four modular sets); Ronan Kree Fanatic modular set; The Once and Future Kang modular sets (declared, not admitted) |
-| Records | 39 scenario modes, 15 heroes, 18 encounter sets; candidate runtime admission exposes 39 modes, 15 heroes and 15 sets |
+| Declared products | Marvel Champions Core Set; Rise of Red Skull; The Wrecking Crew; Captain America; Ms. Marvel; Thor; Black Widow; Doctor Strange; Hulk; Ant-Man; Wasp; Quicksilver; Green Goblin (both scenarios and four modular sets); Ronan Kree Fanatic modular set; The Once and Future Kang modular sets (declared, not admitted) |
+| Records | 39 scenario modes, 16 heroes, 18 encounter sets; candidate runtime admission exposes 39 modes, 16 heroes and 15 sets |
 | Gated by | `SetupDatasetTests`, `RiseOfRedSkullSetupDataTests`, `CaptainAmericaSetupTests`, `MsMarvelSetupTests`, `ThorSetupTests`, `BlackWidowSetupTests`, `MessOfThingsSetupTests`, `RiskyBusinessSetupTests`, `KreeFanaticAdmissionTests`, `KangModularSetupTests`, complete-product admission |
 
 ## Why it is authored
@@ -32,7 +32,7 @@ Rise of Red Skull printed faces before exposing its runtime recipes.
 - every named encounter or modular set is defined;
 - every scenario has valid main schemes and villain stages;
 - every hero has one physical identity with hero and alter-ego faces, an obligation, and a nemesis set;
-- the declared products contain 39 authored modes, 15 heroes, and 18 sets;
+- the declared products contain 39 authored modes, 16 heroes, and 18 sets;
 - required encounter sets remain fixed when optional modular sets change;
 - the header counts match the file.
 
@@ -181,6 +181,16 @@ supplies 15 signature, 16 Aggression and 9 Basic cards; the three-face identity
 is one physical card. Obligation 13026 and nemesis 13027, 13028, 13029 and two
 13030 are separate. Extras 13031–13034 belong to the pack, not its starter. All
 36 faces and the exact recipe are required for candidate admission.
+
+## Quicksilver candidate
+
+The starter is pinned to the vendored MarvelSDB quantities in
+`datasets/marvelsdb/pack/qsv.json` and `qsv_encounter.json`; no printed divider
+was inspected, so the quantities are a repository choice from that snapshot. It
+supplies 15 signature, 15 Protection and 10 Basic cards; the two-face identity
+is one physical card. Obligation 14024 and nemesis 14025, 14026, 14027 and two
+14028 are separate. Extras 14029–14032 belong to the pack, not its starter. All
+33 faces and the exact recipe are required for candidate admission.
 
 ## The Once and Future Kang modular sets
 

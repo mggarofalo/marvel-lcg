@@ -211,7 +211,7 @@ internal static class AbilityEffectTargetAdmission
                 ? TargetLegality.Valid : TargetLegality.Invalid,
             "preventAttackDamage" => cast.World.Attack is { PreventAllDamage: false }
                 ? TargetLegality.Valid : TargetLegality.Invalid,
-            // rr:initiating-abilities.2: "If the card or ability does not have at least
+            // rr:initiating-abilities.step.2: "If the card or ability does not have at least
             // one valid target, it cannot be played or initiated." The discarded cards a
             // required selection names are its targets; an optional one (min 0) has none.
             "chooseDiscardToShuffle" when node is AbilityEffect.ChooseDiscardToShuffle { Minimum: > 0 } discard =>

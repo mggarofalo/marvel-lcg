@@ -291,4 +291,18 @@ public sealed class QuicksilverSignatureTests : CoreCardTestBase
         Assert.All(paying, card => Assert.Equal(DeckType.DiscardPile, card.Area.Type));
         Assert.Equal(DeckType.DiscardPile, cyclone.Area.Type);
     }
+
+    [Fact]
+    [Rule("rr:non-numerical-variable.1")]
+    public void ACostReductionOnSpeedCycloneRaisesUntilXReductionIsImplemented()
+    {
+        // rr:non-numerical-variable.1: "the amount paid may be modified by effects
+        // without changing the value of X". Reducing the paid X is not implemented.
+        var world = QuicksilverBoards.Board();
+        QuicksilverBoards.Hand(world, "14006");
+        QuicksilverBoards.Hand(world, "14004");
+        CardPayment.ReduceNextCardCost(world, world.Seats[0].IdentityCard, 0, 1);
+        var raised = Assert.Throws<RulesNotImplementedException>(() => QuicksilverBoards.Runner(world).Actions(world, 0));
+        Assert.Contains("costs X", raised.Message, StringComparison.Ordinal);
+    }
 }

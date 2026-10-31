@@ -72,6 +72,12 @@ public static class StandaloneProductAdmission
         && setup.HeroNames.Contains("wasp")
         && WaspRecipe.Complete(setup.Hero("wasp"));
 
+    /// <summary>Admits Quicksilver's complete face inventory and published starter.</summary>
+    public static bool Quicksilver(SetupCatalog setup, CardCatalog cards, IReadOnlySet<string> authored) =>
+        Complete("qsv", ["14001a", "14001b", .. Enumerable.Range(2, 31).Select(number => $"14{number:000}")], cards, authored)
+        && setup.HeroNames.Contains("quicksilver")
+        && QuicksilverRecipe.Complete(setup.Hero("quicksilver"));
+
     /// <summary>Admits the complete seven-card Kree Fanatic modular set.</summary>
     public static bool KreeFanatic(SetupCatalog setup, CardCatalog cards, IReadOnlySet<string> authored) =>
         Complete("ron", ["90001", "90002", "90003", "90004", "90005"], cards, authored)

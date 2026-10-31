@@ -233,13 +233,14 @@ public sealed class QuicksilverPlayerCardTests : CoreCardTestBase
     [InlineData("01104", true, 1)]
     [InlineData("01102", false, 1)]
     [Rule("rr:basic-power.1.1")]
-    [Rule("rr:boost")]
+    [Rule("rr:boost-boost-icon")]
     public void ScarletWitchAddsTheDiscardedBoostIconsToHerBasicAttack(string top, bool use, int damage)
     {
         // 14002: "When you use one of Scarlet Witch's basic powers, discard the top card
         // of the encounter deck. For each boost icon discarded this way, Scarlet Witch
         // gets +1 to that power for this use." Sandman (01102) prints two boost icons;
-        // Hard to Keep Down (01104) prints none.
+        // Hard to Keep Down (01104) prints none. rr:boost-boost-icon: "Boost icons are
+        // located at the bottom-right of the card."
         var world = QuicksilverBoards.Board(encounter: top);
         var villain = QuicksilverBoards.Villain(world);
         var wanda = QuicksilverBoards.InPlay(world, "14002", DeckType.AlliesArea);
@@ -291,5 +292,21 @@ public sealed class QuicksilverPlayerCardTests : CoreCardTestBase
 
         Assert.Equal(4 - healed, quicksilver.Damage + warlock.Damage);
         Assert.Equal(DeckType.DiscardPile, stand.Area.Type);
+    }
+
+    [Fact]
+    [Rule("rr:heal")]
+    [Rule("rr:initiating-abilities.step.2")]
+    public void UnitedWeStandNeedsADamagedFriendlyCharacter()
+    {
+        // rr:heal: "damage the character has sustained can be removed", so only a
+        // damaged character is a valid recipient. rr:initiating-abilities.step.2: "If
+        // the card or ability does not have at least one valid target, it cannot be
+        // played or initiated."
+        var world = QuicksilverBoards.Board();
+        var stand = QuicksilverBoards.Hand(world, "14031");
+        Assert.DoesNotContain(QuicksilverBoards.Runner(world).Actions(world, 0), a => a.Card == stand.ObjectId);
+        world.Seats[0].IdentityCard.TakeDamage(1);
+        Assert.Contains(QuicksilverBoards.Runner(world).Actions(world, 0), a => a.Card == stand.ObjectId);
     }
 }

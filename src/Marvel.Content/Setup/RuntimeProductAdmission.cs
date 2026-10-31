@@ -38,6 +38,7 @@ public sealed class RuntimeProductAdmission
         bool hulk = StandaloneProductAdmission.Hulk(setup, cards, authored);
         bool antMan = StandaloneProductAdmission.AntMan(setup, cards, authored);
         bool wasp = StandaloneProductAdmission.Wasp(setup, cards, authored);
+        bool quicksilver = StandaloneProductAdmission.Quicksilver(setup, cards, authored);
         bool kreeFanatic = StandaloneProductAdmission.KreeFanatic(setup, cards, authored);
         if (!kreeFanatic) setup = setup.WithoutEncounterSet("kree_fanatic");
         bool Accepted(string pack) => pack switch
@@ -54,6 +55,7 @@ public sealed class RuntimeProductAdmission
             "hlk" => hulk,
             "ant" => antMan,
             "wsp" => wasp,
+            "qsv" => quicksilver,
             "ron" => kreeFanatic,
             _ => false,
         };

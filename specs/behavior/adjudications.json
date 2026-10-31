@@ -74135,6 +74135,24 @@
       ]
     },
     {
+      "id": "setup:hero:quicksilver",
+      "fingerprint": "sha256:edc0099dbb307dfd460436c635f4aeb928a51c1a6424ddbea1f7b875e433d85b",
+      "obligations": [
+        {
+          "key": "quicksilver-setup",
+          "summary": "The Quicksilver hero record supplies the printed starter deck, obligation and nemesis set.",
+          "disposition": "outside-core",
+          "reason": "This record requires the Quicksilver hero pack, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
       "id": "setup:hero:she_hulk",
       "fingerprint": "sha256:90799e4e30e609a426df0df7323314ba3c4f17c0f2bfda53581ed32b2d99547d",
       "obligations": [
