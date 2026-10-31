@@ -80,7 +80,7 @@ independent identities do:
 |---|---:|---|
 | Engine protocol | `43` | A request, response, affordance, event or descriptor change is not understood by the prior endpoint. |
 | Session schema | `7` | The strict persisted JSON shape changes. |
-| Engine replay contract | `engine-replay-v31` | The same setup and decision trace may resolve differently. |
+| Engine replay contract | `engine-replay-v32` | The same setup and decision trace may resolve differently. |
 | RNG contract | `mt19937-iso-cxx` | The seeded random stream changes. |
 | State digest | `state-digest-v3` | The canonical hidden-state serialization changes. |
 | Runtime datasets | Three SHA-256 values | Any byte in `cards.json`, `setup.json` or `abilities.json` changes. |
@@ -90,7 +90,10 @@ three runtime dataset hashes equal the running server's. There is no upgrade,
 adapter or migration route from any earlier identity: a release that changes
 any of them makes every earlier save unloadable. This is a product choice, not
 a rule of the game; the owner decided that legacy saves need no handling
-(MARVEL-896). Replay v31 keeps a tough status card against a piercing attack on a
+(MARVEL-896). Replay v32 withholds a required discard-pile shuffle, such as
+Ancestral Knowledge (01042), when no discarded card can be chosen
+(rr:initiating-abilities.step.2); see
+[session-ledger.md](session-ledger.md#replay-identity). Replay v31 keeps a tough status card against a piercing attack on a
 character that cannot take damage (rr:piercing.2); see
 [session-ledger.md](session-ledger.md#replay-identity). Replay v30 announces an enemy a player attack reaches after its
 initiation with its own attack-initiated occurrence (`LateAttackRecipient`), so

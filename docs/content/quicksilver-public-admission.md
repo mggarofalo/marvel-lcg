@@ -44,13 +44,11 @@ Each choice below is recorded in the row note or the code comment that owns it.
   raises `RulesNotImplementedException` before anything is paid.
 - **Serval Industries** shuffles in only Quicksilver identity-specific cards
   and is not offered without one in the discard pile
-  (rr:initiating-abilities.step.2). The same gate now applies to every
-  `chooseDiscardToShuffle` with a minimum, such as Ancestral Knowledge (01042),
-  which was previously offered with an empty discard pile and then asked a
-  question nobody could answer.
+  (rr:initiating-abilities.step.2). The same gate applies to every
+  `chooseDiscardToShuffle` with a minimum, such as Ancestral Knowledge (01042).
 - **Friction Resistance** responds to a ready instruction that readied your
-  hero. The readying occurrence now opens a response window (`WhenCardReadied`);
-  no admitted card listened to it before. Ruling 47cf0084407ee2a4: its
+  hero. The readying occurrence opens a response window (`WhenCardReadied`).
+  Ruling 47cf0084407ee2a4: its
   generated resource is a printed physical resource.
 - **Never Back Down** gives +2 DEF for the attack and, if the defending hero
   took no damage from it, stuns the attacker when the attack ends. Ruling
@@ -78,11 +76,13 @@ Each choice below is recorded in the row note or the code comment that owns it.
 ## Shared engine changes
 
 Every change is new vocabulary used only by Quicksilver rows, except the
-following, each of which changes no admitted outcome:
+following:
 
 - The `chooseDiscardToShuffle` target gate described above withholds an
-  offer that could not be completed. No saved session can hold its
-  unanswerable prompt.
+  offer that could not be completed. Ancestral Knowledge was offered with an
+  empty discard pile, so a recorded prompt can differ, and the replay identity
+  moves to `engine-replay-v32`
+  (`AncestralKnowledgeNeedsACardInTheDiscardPile`).
 - The ready instruction raises a `WhenCardReadied` response window, and an
   ally's basic thwart or attack raises `WhenAllyBasicUseInitiated`. Before this
   pack no ability listened to either, so an admitted game opens no new prompt.
@@ -90,7 +90,7 @@ following, each of which changes no admitted outcome:
   ability without `spendX`. Speed Cyclone is the first admitted player card
   with a printed X cost.
 
-Replay identity stays at `engine-replay-v31`.
+The last two change no admitted outcome.
 
 ## Evidence
 

@@ -737,8 +737,12 @@ packet. Public wire support is protocol 38 and rejects protocol 37 peers.
 
 ### Replay identity
 
-The current replay identity is `engine-replay-v31`. Every earlier replay
-identity is refused. Under v31 a piercing attack on a character that cannot
+The current replay identity is `engine-replay-v32`. Every earlier replay
+identity is refused. Under v32 an ability that must shuffle at least one card
+from its player's discard pile is not offered when no discarded card qualifies
+(rr:initiating-abilities.step.2). A v31 trace in which Ancestral Knowledge
+(01042) is offered while its player's discard pile is empty records a prompt v32
+no longer produces. Under v31 a piercing attack on a character that cannot
 take damage leaves its tough status card, because the attack deals it no
 damage (rr:piercing.2; ruling 76a9465df95e739c). A v30 trace in which Black
 Knight (04012) attacks a Tough Red Skull while The Red House (04139) is in play,
