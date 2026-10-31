@@ -14,6 +14,10 @@ public sealed class KangElimination
 
     internal bool Retains(Card card) => GameAreaOf(card) is not null;
 
+    /// <summary>Whether <paramref name="area"/> still holds a departed player's local components.</summary>
+    internal bool Holds(World world, GameArea area) => retained.Any(pair =>
+        ReferenceEquals(pair.Value.Group, area) && Retains(world.Cards[pair.Key]));
+
     internal static void Preflight(World world, int player)
     {
         var source = world.GameAreaOf(PlayArea.Of(player));

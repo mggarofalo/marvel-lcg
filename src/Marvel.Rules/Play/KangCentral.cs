@@ -8,8 +8,17 @@ namespace Marvel.Rules.Play;
 public static class KangCentral
 {
     internal static bool IsLastGroup(World world, KangDeparture departure) =>
-        !world.GameAreas.Any(area => !ReferenceEquals(area, departure.Source)
-            && area.PlayAreas.Any(play => play.IsPlayers));
+        !world.GameAreas.Any(area => !ReferenceEquals(area, departure.Source) && Remains(world, area));
+
+    /// <summary>Whether a game area other than central 2B is still on the table.</summary>
+    /// <remarks>
+    /// 11008b: "Players cannot join this game area unless there are no other game areas
+    /// remaining." An eliminated player's local Kang and stage stay in their game area until
+    /// that stage's printed phase-end removal (rr:player-elimination.step.5 removes only the
+    /// player's own elements), so that area remains, and can be joined, until then.
+    /// </remarks>
+    internal static bool Remains(World world, GameArea area) =>
+        area.PlayAreas.Any(play => play.IsPlayers) || world.Agenda.KangTransitions.Elimination.Holds(world, area);
 
     internal static void Preflight(World world, KangDeparture departure)
     {

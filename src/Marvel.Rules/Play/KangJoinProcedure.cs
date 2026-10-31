@@ -81,7 +81,7 @@ internal static class KangJoinProcedure
 
     private static GameArea[] Destinations(World world, KangDeparture departure) =>
         [.. world.GameAreas.Where(area => !ReferenceEquals(area, departure.Source)
-            && area.PlayAreas.Any(play => play.IsPlayers)).OrderBy(area => area.Id)];
+            && KangCentral.Remains(world, area)).OrderBy(area => area.Id)];
 
     private static Card[] ConflictingCards(World world, KangJoinOperation operation)
     {
