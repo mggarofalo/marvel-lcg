@@ -62,6 +62,43 @@ public sealed class KangRetainedReunionTests
         Assert.Empty(world.Agenda.KangTransitions.Pending);
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    [Rule("rr:first-player.3")]
+    public void AnAreaWithNoPlayersLeftCombinesIntoAnAreaWithPlayers(bool expert)
+    {
+        // Two eliminated players' stages complete at the same phase end beside one survivor.
+        // Each playerless group combines with the survivor's area (our choice: a group needs a
+        // player area to carry its components), so the other retained area is not offered.
+        var events = new List<GameEvent>();
+        var world = KangStageFlowFixture.Split(3, expert, events);
+        var survivorArea = world.GameAreaOf(PlayArea.Of(1))!;
+        var first = KangStageFlowFixture.LocalKang(world, 0);
+        Eliminate(world, 0, events);
+        Eliminate(world, 2, events);
+
+        var order = Assert.IsType<Prompt>(KangStageFlowFixture.EndPlayerPhase(world, 2, events));
+        Assert.Equal(KangDepartureOrderOperation.Order, order.Trigger);
+        Assert.Equal(2, order.Affordances.Count);
+        Sequence.Answer(world, Cards, world.Abilities, order, Decision.Take(first.ObjectId), events);
+        var prompt = Sequence.Work(world, Cards, world.Abilities, events);
+        for (int step = 0; prompt is not null; step++)
+        {
+            Assert.True(step < 40, prompt.Description);
+            if (prompt.Trigger == KangJoinOperation.Join)
+                Assert.Equal(survivorArea.Id, Assert.Single(prompt.Affordances).Id);
+            Sequence.Answer(world, Cards, world.Abilities, prompt, Decision.Take(prompt.Affordances[0].Id), events);
+            prompt = Sequence.Work(world, Cards, world.Abilities, events);
+        }
+
+        Assert.Equal(Outcome.Unfinished, world.Result);
+        Assert.Same(survivorArea, world.GameAreaOf(PlayArea.Of(1)));
+        Assert.True(Places.Separated(world));
+        Assert.Equal(DeckType.RemovedArea, first.Area.Type);
+        Assert.Empty(world.Agenda.KangTransitions.Pending);
+    }
+
     private static Marvel.Content.CardCatalog Cards { get; } = Marvel.Content.CardCatalog.Parse(
         File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")));
 

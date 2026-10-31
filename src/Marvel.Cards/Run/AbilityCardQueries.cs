@@ -70,7 +70,7 @@ internal static class AbilityCardQueries
         // alike.
         AbilityCardBinding.ActivatingEnemy => cast.World.Activation is { } activating
             ? cast.World.Cards[activating.Enemy]
-            : throw new RulesNotImplementedException(
+            : BoostedEnemy(cast) ?? throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' names the activating enemy, and no enemy is "
                 + "activating"),
 
@@ -278,4 +278,15 @@ internal static class AbilityCardQueries
 
     internal static IReadOnlyList<Card> InArea(World world, DeckType type, PlayArea playArea) =>
         world.Areas.FirstOrDefault(area => area.Type == type && area.PlayArea == playArea && area.Host == -1)?.Cards ?? [];
+
+    /// <summary>The enemy a resolving boost card was turned faceup for, after its activation ended.</summary>
+    /// <remarks>
+    /// rr:player-elimination.5: "If a player is eliminated partway through the resolution of
+    /// an ability, resolve the entire ability", while .5.1 ends that player's attack. A boost
+    /// ability's "this enemy" is still the enemy the card was dealt to; an additional boost card
+    /// it gives then waits facedown for that enemy's next activation (rr:boost-boost-icon.6).
+    /// </remarks>
+    private static Card? BoostedEnemy(AbilityQueryContext cast) =>
+        cast.World.Agenda.Current is { Operation: BoostAbilityOperation boost } step && step.Subject == cast.Source.ObjectId
+            ? cast.World.Cards[boost.Faceup.Enemy] : null;
 }
