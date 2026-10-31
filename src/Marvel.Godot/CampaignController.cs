@@ -38,9 +38,7 @@ internal sealed class CampaignController
         ui.Export.Pressed += () => Choose(new("export"));
         ui.Delete.Pressed += () => CampaignManagementDialogs.Delete(ui, connection!.Label, () => Choose(new("delete")));
         ui.Retry.Pressed += Recover;
-        var timer = new global::Godot.Timer { WaitTime = 0.5, Autostart = true };
-        timer.Timeout += () => open.Visible = main.setupChoices?.Campaigns.Count > 0 || saved.Count > 0;
-        main.AddChild(timer);
+        RefreshEntry();
         main.TreeExiting += () => { disposed = true; client?.Dispose(); store?.Dispose(); };
     }
 
@@ -270,8 +268,15 @@ internal sealed class CampaignController
             = busy || connection?.Pending is not null || connection?.Refused == true;
     }
 
+    /// <summary>
+    /// Shows the entry with the setup choices or saved campaigns that admit it. The entry
+    /// sits above the tabletop, so it is laid out with those inputs rather than later.
+    /// </summary>
+    internal void RefreshEntry() => open.Visible = main.setupChoices?.Campaigns.Count > 0 || saved.Count > 0;
+
     private void ReloadSaved()
     {
         CampaignLibrary.Render(ui, saved, connection, catalog, index => { ui.Selected = index; ResumeSaved(); });
+        RefreshEntry();
     }
 }
