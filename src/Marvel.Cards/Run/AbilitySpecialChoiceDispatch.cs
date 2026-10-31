@@ -18,6 +18,7 @@ internal static class AbilitySpecialChoiceDispatch
             AbilityEffect.DiscardResourceIcons discard => AbilityResourceIconDiscard.Describe(context, discard),
             AbilityEffect.ChooseCardsToHand group => AbilityGroupRetrieval.Describe(context, group),
             AbilityEffect.ChooseDiscardToShuffle discard => DescribeDiscardShuffle(context, discard),
+            AbilityEffect.ExhaustAnyNumber exhaust => AbilityAnyNumberExhaustion.Describe(context, exhaust),
             _ => throw new InvalidOperationException($"'{context.SourceFace}' has no special prompt for '{choice.OperationName()}'"),
         };
 
@@ -31,6 +32,7 @@ internal static class AbilitySpecialChoiceDispatch
             AbilityEffect.DiscardResourceIcons discard => AbilityResourceIconDiscard.Answer(context, discard, answer),
             AbilityEffect.ChooseCardsToHand group => AbilityGroupRetrieval.Answer(context, group, answer),
             AbilityEffect.ChooseDiscardToShuffle discard => AnswerDiscardShuffle(context, discard, answer),
+            AbilityEffect.ExhaustAnyNumber exhaust => AbilityAnyNumberExhaustion.Answer(context, exhaust, answer),
             _ => new Unsupported($"'{context.SourceFace}' has no special answer for '{choice.OperationName()}'"),
         };
 

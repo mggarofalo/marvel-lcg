@@ -79,6 +79,8 @@ internal static class AbilityFutureResultAdmission
             AbilityEncounterInspection.Cards(scope.World, inspect).Count > 0,
         AbilityEffect.InspectDiscardOrderEncounterTop when name == "discarded" =>
             EncounterRouting.Deck(scope.World).Cards.Count > 0,
+        AbilityEffect.ExhaustAnyNumber exhaust when name == "exhausted" =>
+            AbilityAnyNumberExhaustion.Candidates(exhaust, scope.Context).Count > 0,
         AbilityEffect.ActivateEnemies when name.StartsWith("activation", StringComparison.Ordinal) => true,
         _ => false,
     };

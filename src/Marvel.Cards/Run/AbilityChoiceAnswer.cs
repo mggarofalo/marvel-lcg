@@ -13,7 +13,7 @@ internal sealed class AbilityChoiceAnswer(
 {
     private static readonly ImmutableArray<string> SpecialOperations =
     [
-        "chooseCardsToHand", "resolveSpecials", "chooseTopForHand", "chooseDiscardToShuffle", "discardHandCards", "discardResourceIcons",
+        "chooseCardsToHand", "resolveSpecials", "chooseTopForHand", "chooseDiscardToShuffle", "exhaustAnyNumber", "discardHandCards", "discardResourceIcons",
         "peekTop", "inspectEncounterTop", "inspectDiscardOrderEncounterTop",
     ];
 
@@ -82,6 +82,7 @@ internal sealed class AbilityChoiceAnswer(
             "resolveSpecials" => ApplyResolveSpecials(choice),
             "chooseTopForHand" => ApplyChooseTopForHand(choice),
             "chooseDiscardToShuffle" => ApplyChooseDiscardToShuffle(choice),
+            "exhaustAnyNumber" => AbilityAnyNumberExhaustion.Commit(execution.StructuralContext(cast), choice, input, cast) ? Continue() : cast.Events,
             "discardHandCards" or "discardResourceIcons" => ApplySelectedHandDiscard(choice),
             _ => throw new InvalidOperationException("Unknown special choice"),
         };

@@ -21,26 +21,34 @@ internal static class AttackProcedure
             return null;
         }
         if (step.Operation is BasicAttackCostOperation) return BasicAttackCosts.Describe(world, step);
-        if (step.Operation is NativeRetaliationOperation)
-        {
-            NativeRetaliationResolution.Resume(world, step, events);
-            return null;
-        }
-        if (step.Operation is SimultaneousAttackDamageOperation)
-        {
-            SimultaneousAttackDamageResolution.Resume(world, step, events);
-            return null;
-        }
-        if (step.Operation is AttackDamageResolutionOperation)
-        {
-            AttackDamageResolution.Resume(world, step, events);
-            return null;
-        }
+        if (step.Operation is CharacterAttackOperation or CharacterThwartOperation
+            && BasicPowerDivision.Describe(world, facts, step) is { } division) return division;
+        if (TryResume(world, step, events)) return null;
         if (TryApplyActivation(world, facts, step, events, out Prompt? prompt)) return prompt;
         if (TryApplyDamage(world, facts, step, events, out prompt)) return prompt;
         if (TryApplyCharacterPower(world, facts, step, events)) return null;
         throw new RulesNotImplementedException(
             $"the attack procedure has no step '{step.What}'");
+    }
+
+    private static bool TryResume(World world, PhaseStep step, List<GameEvent> events)
+    {
+        switch (step.Operation)
+        {
+            case NativeRetaliationOperation:
+                NativeRetaliationResolution.Resume(world, step, events);
+                return true;
+            case BasicAttackDivisionOperation:
+                BasicAttackDivisionResolution.Resume(world, step, events);
+                return true;
+            case SimultaneousAttackDamageOperation:
+                SimultaneousAttackDamageResolution.Resume(world, step, events);
+                return true;
+            case AttackDamageResolutionOperation:
+                AttackDamageResolution.Resume(world, step, events);
+                return true;
+            default: return false;
+        }
     }
 
     private static bool TryApplyActivation(
@@ -140,6 +148,11 @@ internal static class AttackProcedure
         if (step.Operation is BasicAttackCostOperation)
         {
             BasicAttackCosts.Answer(world, step, input, events);
+            return;
+        }
+        if (step.Operation is CharacterAttackOperation or CharacterThwartOperation)
+        {
+            BasicPowerDivision.Answer(world, facts, step, input, events);
             return;
         }
         switch (step.What)

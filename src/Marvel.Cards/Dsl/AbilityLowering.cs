@@ -76,7 +76,7 @@ public static class AbilityLowering
             "printedResourceCountDiscarded" => new AbilityNumber.PrintedResourcesDiscarded(Resource(argument, child)),
             "discardedWithResource" => new AbilityNumber.DiscardedWithResource(Resource(argument, child)),
             // Engine choice: this expression reads the current source's entry receipt.
-            "entryResourceExcess" => FixedNumber(argument, child, "this", AbilityResolutionNumber.EntryResourceExcess),
+            "entryResourceExcess" => EntryExcess(argument, child),
             "receivedAttackDamage" => FixedNumber(argument, child, "game", AbilityResolutionNumber.ReceivedAttackDamage),
             // Engine choice: this spelling names the bound attack-end recipient.
             "attackExcessDamage" => FixedNumber(argument, child, "trigger.target", AbilityResolutionNumber.AttackExcessDamage),
@@ -93,6 +93,17 @@ public static class AbilityLowering
             "topEncounterDiscardBoostPlusOne" => FixedNumber(argument, child, "game", AbilityResolutionNumber.TopEncounterDiscardBoostPlusOne),
             _ => throw child.Error($"'{kind}' is not a numeric operation"),
         };
+    }
+
+    // Engine choice: the object form names a typed overpayment; only energy is admitted.
+    private static AbilityNumber.ResolutionValue EntryExcess(AbilityValue value, AbilityLocation location)
+    {
+        if (value is AbilityValue.Word) return FixedNumber(value, location, "this", AbilityResolutionNumber.EntryResourceExcess);
+        var fields = Fields(value, location, "card", "resource");
+        FixedWord(Required(fields, "card", location), location.Child("card"), "this");
+        return Resource(Required(fields, "resource", location), location.Child("resource")) == 'Y'
+            ? new AbilityNumber.ResolutionValue(AbilityResolutionNumber.EntryEnergyExcess)
+            : throw location.Child("resource").Error("only energy overpayment is supported");
     }
 
     internal static ImmutableArray<AbilityNumber> Operands(
@@ -188,7 +199,7 @@ public static class AbilityLowering
         string name = Text(value, location);
         return name is "exhausted" or "healed" or "discarded" or "found" or "energy" or "resourceTypes" or "schemesCleared"
             or "threatMoved" or "threatRemovedByMove" or "destinationForcedResponseTriggered"
-            or "treacheriesLookedAt" or "boostIconsLookedAt" or "activationDamage" or "activationDamagePlaced" or "activationDamageToYou" or "activationThreat" or "activationMade" or "activationDefeatedCharacters" or "activationUndefended" or "cancelledBoostIcons"
+            or "treacheriesLookedAt" or "boostIconsLookedAt" or "activationDamage" or "activationDamagePlaced" or "activationDamageToYou" or "activationThreat" or "activationMade" or "activationDefeatedCharacters" or "activationUndefended" or "cancelledBoostIcons" or "excessDamageDealt"
             ? name : throw location.Error($"'{name}' is not an authored resolution result");
     }
 }

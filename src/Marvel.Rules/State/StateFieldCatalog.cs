@@ -217,10 +217,11 @@ public static class StateFieldCatalog
         || field is "cannot_be_stunned" or "cannot_be_confused" or "cannot_be_tough"
         || field is  "health" or "ally_limit" or "attack_consequential_damage"
         or Marvel.Rules.Play.VillainAttackRestrictions.OtherVillains
-        or Play.BasicAttackCosts.DiscardField or Play.ThwartPermissions.ProhibitedField
+        or Play.BasicAttackCosts.DiscardField or Play.BasicAttackCosts.ResourceField or Play.ThwartPermissions.ProhibitedField
         or Play.ReadinessPermissions.ProhibitedField or Play.FormChangePermissions.ProhibitedField
         or Play.HeroSpecificPlayPermissions.ProhibitedField or Play.ObligationActionPermissions.ProhibitedField
-        or Play.AttackPermissions.KangProhibitedField;
+        or Play.AttackPermissions.KangProhibitedField
+        or Play.BasicPowerDivision.AttackField or Play.BasicPowerDivision.ThwartField;
 
     /// <summary>Whether a field is one of the five printed basic powers.</summary>
     public static bool IsBasicPowerField(string field) =>

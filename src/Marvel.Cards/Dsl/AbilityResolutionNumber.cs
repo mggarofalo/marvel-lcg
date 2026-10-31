@@ -33,4 +33,6 @@ public enum AbilityResolutionNumber
     AttackExcessDamage,
     /// <summary>Resources generated beyond the exact source card's entry cost.</summary>
     EntryResourceExcess,
+    /// <summary>Energy resources, including overpaid wild resources, generated beyond the source card's entry cost.</summary>
+    EntryEnergyExcess,
 }

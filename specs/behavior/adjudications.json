@@ -74369,6 +74369,24 @@
           "mutation": null
         }
       ]
+    },
+    {
+      "id": "setup:hero:wasp",
+      "fingerprint": "sha256:023e504c3156188d58483fe41cdaa28ab002ee38dae35300e6b1e17b7ab8c5e3",
+      "obligations": [
+        {
+          "key": "wasp-setup",
+          "summary": "The Wasp hero record supplies the printed starter deck, obligation and nemesis set.",
+          "disposition": "outside-core",
+          "reason": "This record requires the Wasp hero pack, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
     }
   ]
 }

@@ -21,11 +21,12 @@ internal static class CardAttackTargets
         // rr:choose-game-element.3.1: "The same target cannot be chosen multiple
         // times this way." rr:guard.1: "The engaged player cannot attack any
         // villain." All recipients are checked against the same pre-attack board.
+        // A divided total names a recipient once per share it receives.
         var candidates = BasicPowers.Attackable(world, facts, power.Player, attacker);
         var chosen = new HashSet<int>();
         foreach (var target in power.Targets)
         {
-            if (!chosen.Add(target.ObjectId)
+            if (!chosen.Add(target.ObjectId) && !power.Allocation
                 || !candidates.Any(candidate => ReferenceEquals(candidate, target))
                 || !world.DamageAbilities.CanTakeDamage(world, target, power.Source))
             {

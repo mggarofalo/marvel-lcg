@@ -43,6 +43,7 @@ public sealed class ExpansionSetupAuthorityTests
             "setup:encounter-set:kree_fanatic", "setup:encounter-set:mot",
             "setup:encounter-set:power_drain", "setup:encounter-set:running_interference", "setup:encounter-set:temporal", "setup:encounter-set:weapon_master", "setup:hero:ant_man", "setup:hero:black_widow", "setup:hero:captain_america",
             "setup:hero:doctor_strange", "setup:hero:hawkeye", "setup:hero:hulk", "setup:hero:ms_marvel", "setup:hero:spider_woman", "setup:hero:thor",
+            "setup:hero:wasp",
         };
         var expansion = Catalog.Build().Sources.Where(source =>
             source.Kind == "setup" && source.Disposition == "outside-core").ToArray();
@@ -66,6 +67,7 @@ public sealed class ExpansionSetupAuthorityTests
         "setup:hero:doctor_strange" => "Doctor Strange hero pack",
         "setup:hero:hulk" => "Hulk hero pack",
         "setup:hero:thor" => "Thor hero pack",
+        "setup:hero:wasp" => "Wasp hero pack",
         "setup:encounter-set:kree_fanatic" => "Ronan Kree Fanatic modular set",
         "setup:encounter-set:anachronauts" or "setup:encounter-set:mot" or "setup:encounter-set:temporal"
             => "The Once and Future Kang scenario pack",
