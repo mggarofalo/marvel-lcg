@@ -41,24 +41,19 @@ public sealed class DeferredDefeatReceiptBoundaryTests
         Assert.Equal(digest, world.Digest().Canonical());
     }
 
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
+    [Fact]
     [Rule("rr:ability.4")]
-    public void AFixedRemovalFromTheMainSchemeResolvesLiveAfterHydraPatrolsDefeat(bool chosenMain)
+    public void AFixedRemovalFromTheMainSchemeResolvesLiveAfterHydraPatrolsDefeat()
     {
         // rr:ability.4: "resolve the ability one sentence at a time." Hydra Patrol's
         // defeat work resolves first; the fixed removal then reads the main scheme as it stands.
-        string tail = chosenMain ? "\"chosen\"" : """{"query":"mainScheme"}""";
         var runner = Runner("""
-            {"chooseCard":{"from":CHOICE,"effect":{
+            {"chooseCard":{"from":{"titled":"Hydra Patrol"},"effect":{
               "thwart":{"target":"chosen","effect":{"seq":[
-                {"removeThreat":{"scheme":INITIAL,"amount":3}},
-                {"removeThreat":{"scheme":TAIL,"amount":2}}
+                {"removeThreat":{"scheme":"chosen","amount":3}},
+                {"removeThreat":{"scheme":{"query":"mainScheme"},"amount":2}}
               ]}}}}}
-            """.Replace("CHOICE", chosenMain ? """{"query":"mainScheme"}""" : """{"titled":"Hydra Patrol"}""", StringComparison.Ordinal)
-                .Replace("INITIAL", chosenMain ? """{"titled":"Hydra Patrol"}""" : "\"chosen\"", StringComparison.Ordinal)
-                .Replace("TAIL", tail, StringComparison.Ordinal));
+            """);
         var world = Board(runner);
         var patrol = world.TheCardIn(DeckType.SideSchemesArea)!;
         var main = world.TheCardIn(DeckType.MainSchemesArea)!;

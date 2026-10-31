@@ -6,6 +6,7 @@ using Marvel.Content.Tests.Cards;
 using Marvel.Rules.Play;
 using Marvel.Rules.State;
 using Marvel.Rules.Timing;
+using Marvel.Tests;
 using Xunit;
 
 namespace Marvel.Content.Tests.Play;
