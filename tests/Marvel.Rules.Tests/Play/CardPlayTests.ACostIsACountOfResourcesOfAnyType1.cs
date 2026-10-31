@@ -112,16 +112,26 @@ public sealed class CardPlayACostIsACountOfResourcesOfAnyTypeTests : CardPlayTes
         Assert.Equal(0, Resources.PrintedCount([doubleWild], Resources.Mental, printed));
     }
 
-    [Rule("rr:non-numerical-variable.1")]
     [Fact]
     public void ACostThatIsNotANumberSaysSoRatherThanReadingAsZero()
     {
-        // For a cost of X the player chooses or card text defines X before
-        // modifiers apply. Reading an unsupported X as zero would silently
-        // make the card free.
-        var printed = new Printed().With("odd", ("Cost", "X"));
+        // A printed cost the engine cannot read would otherwise make the card free.
+        var printed = new Printed().With("odd", ("Cost", "Y"));
         var thrown = Assert.Throws<RulesNotImplementedException>(() => Resources.Cost("odd", printed));
         Assert.Contains("is not a number", thrown.Message, StringComparison.Ordinal);
+    }
+
+    [Rule("rr:non-numerical-variable")]
+    [Rule("rr:non-numerical-variable.1")]
+    [Fact]
+    public void APrintedXCostReadsAsZeroOutsideItsOwnPlay()
+    {
+        // rr:non-numerical-variable: an undefined variable is "equal to 0"; ruling
+        // 5636cf3904ac9370 reads an X cost in hand as 0 for other abilities. The
+        // playing player defines X only through the card's own variable cost.
+        var printed = new Printed().With("variable", ("Cost", "X"));
+        Assert.Equal(0, Resources.Cost("variable", printed));
+        Assert.True(VariableCardCost.Applies("variable", printed));
     }
 
     [Rule("rr:cost.2")]
