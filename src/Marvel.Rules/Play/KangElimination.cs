@@ -23,6 +23,7 @@ public sealed class KangElimination
         {
             KangJoinOperation join => world.Agenda.IsOutstanding(join.Owner, join.Origin),
             KangDepartureOrderOperation order => world.Agenda.IsOutstanding(order.Owner, order.Origin),
+            KangPhaseEndOrderOperation order => world.Agenda.IsOutstanding(order.Owner, order.Origin),
             _ => false,
         }))
             throw new RulesNotImplementedException("Kang local elimination during a suspended departure choice is not implemented");

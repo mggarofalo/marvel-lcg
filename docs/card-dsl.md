@@ -1998,40 +1998,42 @@ two threat, while the enemy activation's ally defeat does not satisfy it.
 
 `captureKangStageOneDefeat: "this"`, `splitKangStageTwo: "this"` and
 `createKangGameArea: "this"` are engine-chosen scenario instructions for Kang's
-nonpublic 1–4-player split. They capture the actual own When Defeated event,
-resolve central 2A, and create a selected 3A's local scheme/villain/deal through
+1–4-player split. Kang I (11001/11034) captures his own When Defeated event;
+stage 2A (11008a) resolves the central reveal; each stage 3A (11009a–11012a)
+creates its revealer's game area, scheme, Kang (II) and encounter deal through
 the retained phase-owned controller. Calling a reveal instruction without that
-controller raises. No production card rows or product admission are added by
-these spellings. See `content/kang-first-split-evidence.md` for exact scope,
-seeded assignment policy and remaining scenario boundaries.
+controller raises. See `content/kang-first-split-evidence.md` for the seeded
+assignment policy.
 
-`captureKangStageTwoDefeat: "this"` connects the matching physical Kang II's
-own When Defeated resolution to removal of its local 3B and a pending whole-group
-join at the next actual phase-ending operation. This scenario instruction's name
-and binding are engine choices. It is available for test overlays only; no
-production card row or scenario admission is added. See
-`content/kang-first-split-evidence.md` for evidence and boundaries.
+`captureKangStageTwoDefeat: "this"` connects each Kang (II)'s own When Defeated
+resolution to removal of its local 3B and a pending whole-group join at the next
+actual phase-ending operation. This scenario instruction's name and binding are
+engine choices.
 
-
-`revealKangStageThree: "this"` and `putKangNemesesIntoPlay: "this"` are
-engine-chosen scenario instructions for the nonpublic 1–4-player central reunion.
-The phase-owned 4A reveal waits for the final villain's entry and reveal before
-4B flips. The 4B instruction searches each associated physical nemesis in player
+`revealKangStageThree: "this"` (11013a) and `putKangNemesesIntoPlay: "this"`
+(11013b) are engine-chosen scenario instructions for the central reunion. The
+phase-owned 4A reveal waits for the final villain's entry and reveal before 4B
+flips. The 4B instruction searches each associated physical nemesis in player
 order, schedules non-reveal encounter entry, then shuffles the encounter deck.
 Both suspend their enclosing ability until their child work finishes. Stored
 Dominions under 4A use ordinary encounter reveal windows after III's complete
-reveal and before 4B; unknown hosted cards and unsupported composition fail closed. These instructions do
-not admit Kang's production rows or complete the scenario.
+reveal and before 4B.
 
-`captureKangLocalCompletion: "this"` is an engine-chosen bounded instruction
-for an actual 11009b–11012b completion Forced Response. The completion occurrence
-retains the exact local stage; the instruction stores one scenario-owned physical
-11023 facedown beneath set-aside 11013a, then retains both local stage and matching
-II until their next actual phase ending. The existing whole-group join owns the
-continuation. Storage permits only that out-of-play physical pair and refuses a
-4A host that has already entered play. Ordered 4A reveals retain stored physical
-incarnations across suspension. No production rows or public admission are added.
-See `content/kang-dominion-storage-evidence.md` for evidence and remaining limits.
+`captureKangLocalCompletion: "this"` is the engine-chosen instruction for each
+stage 3B's (11009b–11012b) completion Forced Response. It stores one
+scenario-owned set-aside 11023 facedown beneath 4A, which waits in the main
+scheme deck (MARVEL-894 Q13), then retains the local stage and its Kang (II)
+until their next actual phase ending, where the whole-group join continues. See
+`content/kang-dominion-storage-evidence.md`.
+
+The remaining printed stage text is engine-owned and so has no row: 1A's
+contents and setup are scenario composition; 1B's "If this stage is completed,
+the players lose the game" is an alternate loss condition
+(`KangFirstSplit.LosesWhenCompleted`, `rr:winning-the-game.1`); 2B's acceleration
+redirect follows from where the engine places tokens, and its join restriction
+and advance to 4A are the reunion; each 3B's "If all the players at this stage
+are defeated, this stage is completed" is the engine's elimination handling.
+Kang is not admitted as a product.
 
 `upgradesOnThis` selects in-play cards of effective Upgrade kind attached to the
 source’s current incarnation. It excludes encounter Attachment cards and cards

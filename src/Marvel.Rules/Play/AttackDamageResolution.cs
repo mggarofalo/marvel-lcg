@@ -187,7 +187,7 @@ internal sealed class AttackDamageResolution
         Card? onto = kind switch
         {
             CardKind.Ally when controller >= 0 => world.Seats[controller].IdentityCard,
-            CardKind.Minion => EncounterRouting.Villain(world),
+            CardKind.Minion => EncounterRouting.Villain(world, request.Attacker),
             _ => null,
         };
         if (onto is not null)

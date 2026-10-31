@@ -101,6 +101,8 @@ public sealed class PresentationAssemblyPolicyTests
             "Marvel.Rules.State.PersistentEffect",
             "Marvel.Rules.State.PersistentThreshold",
             "Marvel.Rules.State.PersistentTrigger",
+            // The engine's game-area answer for each projected card.
+            "Marvel.Rules.State.Places",
             "Marvel.Rules.State.PlayArea",
             // Passive canonical source facts copied into View-owned values.
             "Marvel.Rules.State.PrintedStatFacts",
@@ -109,6 +111,8 @@ public sealed class PresentationAssemblyPolicyTests
             "Marvel.Rules.State.StateFields",
             "Marvel.Rules.State.Traits",
             "Marvel.Rules.State.World",
+            // Only its read-only GameAreaOf(PlayArea) lookup; see the member policy.
+            "Marvel.Rules.State.WorldTopology",
             "Marvel.Rules.Timing.AbilityType",
             "Marvel.Rules.Timing.Duration",
             "Marvel.Rules.Timing.TimingPriority");
@@ -258,6 +262,8 @@ public sealed class PresentationAssemblyPolicyTests
             "Marvel.View.AreaDescriptor",
             "Marvel.View.CardContributionDescriptor",
             "Marvel.View.CardEffectiveValue",
+            // Validates that each card names only a listed game area.
+            "Marvel.View.CardLocationDescriptor",
             "Marvel.View.CardPersistentAbilityDescriptor",
             "Marvel.View.CardPersistentCostDescriptor",
             "Marvel.View.CardPersistentDescriptor",

@@ -9,7 +9,7 @@ internal static class DamageTraceStateFactory
 {
     internal static DamageTraceState Initial(Card target, AbilityAdmissionScope cast)
     {
-        int villain = EncounterRouting.Villain(cast.World)?.ObjectId ?? -1;
+        int villain = EncounterRouting.Villain(cast.World, cast.Source)?.ObjectId ?? -1;
         return new(new Dictionary<int, long>(), target.Damage, [], new(), new(),
             new(), new(), TraceUnavailableMinions(cast), new(), new(), new(), new(), 0,
             cast.World.FirstPlayer, villain, 0, false)

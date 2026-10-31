@@ -224,7 +224,7 @@ internal static class AbilityDeckAndRevealExecution
     private static IEnumerable<int> Players(
         AbilityPlayerSelection players, AbilityDeckAndRevealContext context) => players switch
         {
-            AbilityPlayerSelection.AllPlayers => context.World.PlayerOrder,
+            AbilityPlayerSelection.AllPlayers => EachPlayerEffects.Players(context.World, context.Source),
             AbilityPlayerSelection.OnePlayer one =>
                 [new AbilityExpressionEvaluation(context.Expressions,
                 new AbilitySelectorEvaluation(context.Expressions.Bindings)).Seat(one.Player)],

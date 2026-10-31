@@ -165,6 +165,37 @@ public sealed class KangTemporalShieldTests : CoreCardTestBase
         Assert.False(world.Agenda.IsBusy);
     }
 
+    [Theory]
+    [InlineData(true, false)]
+    [InlineData(false, false)]
+    [Rule("rr:piercing.1")]
+    [Rule("rr:piercing.2")]
+    [Rule("rr:tough.1")]
+    public void APiercingAttackDiscardsToughThatTheShieldWouldHaveKept(bool shielded, bool toughAfter)
+    {
+        // 04012: "Black Knight's basic attack gains piercing." rr:piercing.1 discards
+        // Tough "before this attack deals damage"; rr:piercing.2 withholds that only
+        // when the attack "would deal no damage". Ruling bafde43c1a76c982 (RR 1.7-1.8):
+        // "Effects that 'prevent damage' prevent damage taken, not dealt", and a
+        // piercing attack removes Tough before a prevention takes the damage away.
+        // The shield prevents the damage Rhino would take, so the attack still deals
+        // it and Tough goes; the unshielded control loses Tough to the same attack.
+        var (world, f) = KangTemporalFixture.Board(players: 2);
+        if (shielded) Attach(f, player: 1);
+        Statuses.Give(world, f.Villain, Statuses.Tough);
+        var knight = world.CreateCard("04012", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(1), cardOwner: 1));
+
+        AllyBasicPowers.AllyPower(world, world.Facts, knight, f.Villain, BasicPowers.AttackVerb, []);
+        f.Finish();
+
+        Assert.Equal(toughAfter, Statuses.Has(world, f.Villain, Statuses.Tough));
+        // Black Knight deals ATK 2 and takes 1 consequential damage for attacking;
+        // the shield adds its 1 damage to the attacker.
+        Assert.Equal(shielded ? 0 : 2, f.Villain.Damage);
+        Assert.Equal(shielded ? 2 : 1, knight.Damage);
+        Assert.False(world.Agenda.IsBusy);
+    }
+
     private static (World World, Card Ally) AllyAttack(bool shielded)
     {
         var (world, f) = KangTemporalFixture.Board(players: 2);

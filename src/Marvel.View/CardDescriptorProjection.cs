@@ -44,7 +44,10 @@ internal static class CardDescriptorProjection
                 card.Area.Id,
                 card.Area.Type.ToString(),
                 CardControl.ControllerOf(world, card),
-                card.Area.Type == DeckType.EngagedEnemiesArea ? card.Area.PlayArea.Player : -1),
+                card.Area.Type == DeckType.EngagedEnemiesArea ? card.Area.PlayArea.Player : -1)
+            {
+                GameArea = Places.GameAreaOf(world, card)?.Id,
+            },
             State = new CardStateDescriptor(
                 card.Ready,
                 face.Damage,

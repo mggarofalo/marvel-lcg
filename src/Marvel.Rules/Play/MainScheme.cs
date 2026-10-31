@@ -76,22 +76,52 @@ public static class MainScheme
     public static bool Crisis(World world, ICardFacts facts) =>
         IconsInPlay(world, facts, "crisis") > 0;
 
+    /// <summary>Whether a crisis icon that can affect this main scheme is in play.</summary>
+    /// <remarks>
+    /// <c>pack:mc11:game-areas</c>: "Cards and components in one game area cannot
+    /// affect another game area", so a crisis icon in one game area leaves the
+    /// main scheme of another free. In an ordinary game this is
+    /// <see cref="Crisis(World, ICardFacts)"/>.
+    /// </remarks>
+    /// <param name="world">The board.</param>
+    /// <param name="facts">The printed card data.</param>
+    /// <param name="scheme">The main scheme threat would be removed from.</param>
+    public static bool Crisis(World world, ICardFacts facts, Card scheme)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(scheme);
+        return world.Areas.Where(area => DeckTypes.IsInPlay(area.Type))
+            .SelectMany(area => area.Cards)
+            .Any(card => Places.CanAffect(world, card, scheme)
+                && StateFields.Modified(world, card, "crisis", facts, world.Players) > 0);
+    }
+
     /// <summary>
     /// How many boost icons every boost card gains — <c>rr:amplify-icon</c>.
     /// </summary>
     /// <remarks>
+    /// <para>
     /// "When a boost card is turned faceup <b>during an enemy activation</b>,
     /// add one additional boost icon to that card for each amplify icon in
     /// play", written in <c>.1</c> as the constant ability "each boost card
     /// gains [boost]".
+    /// </para>
+    /// <para>
+    /// While the table is split, "in play" stops at the activating enemy's game
+    /// area: <c>pack:mc11:game-areas</c>, "Cards and components in one game area
+    /// cannot affect another game area", and ruling 5ecfc71ddff64d39 keeps boosts
+    /// local to that area. In an ordinary game every icon reaches the enemy.
+    /// </para>
     /// </remarks>
     /// <param name="world">The board.</param>
     /// <param name="facts">The printed card data.</param>
-    public static long Amplify(World world, ICardFacts facts) =>
-        IconsInPlay(world, facts, "amplify");
+    /// <param name="enemy">The activating enemy, or <c>null</c> outside an activation.</param>
+    public static long Amplify(World world, ICardFacts facts, Card? enemy) =>
+        IconsInPlay(world, facts, "amplify", enemy);
 
-    /// <summary>One printed icon, totalled over everything in play.</summary>
-    private static long IconsInPlay(World world, ICardFacts facts, string field)
+    /// <summary>One printed icon, totalled over everything in play that reaches a card.</summary>
+    private static long IconsInPlay(World world, ICardFacts facts, string field, Card? reaching = null)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
@@ -106,7 +136,8 @@ public static class MainScheme
 
             foreach (var card in area.Cards)
             {
-                total += StateFields.Modified(world, card, field, facts, world.Players);
+                if (reaching is null || Places.CanAffect(world, card, reaching))
+                    total += StateFields.Modified(world, card, field, facts, world.Players);
             }
         }
 

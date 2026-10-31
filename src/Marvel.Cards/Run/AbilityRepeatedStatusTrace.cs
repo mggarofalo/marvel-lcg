@@ -244,7 +244,7 @@ internal static class AbilityRepeatedStatusTrace
         && (IgnoresCrisis(node, cast)
             || scheme.Area.Type != DeckType.MainSchemesArea
             || !IsPlayerCard(cast)
-            || !MainScheme.Crisis(cast.World, cast.World.Facts));
+            || !MainScheme.Crisis(cast.World, cast.World.Facts, scheme));
 
     internal static int OverriddenThreatRemovalSource(AbilityEffect node, AbilityAdmissionScope cast) =>
         EffectOf<AbilityEffect.RemoveThreat>(node, cast).OverridesCannotFrom is { } source

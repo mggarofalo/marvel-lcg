@@ -41,11 +41,11 @@ internal static class AbilityRepeatedEffectAnalysis
         try
         {
             var assumed = RepeatedChange.None;
-            int priorFrames = Math.Max(0, cast.World.PlayerOrder.Count() - 1);
+            int priorFrames = Math.Max(0, EachPlayerEffects.Players(cast.World, cast.Source).Count - 1);
             for (int frame = 0; frame < priorFrames; frame++)
             {
                 var observed = RepeatedChange.None;
-                foreach (int player in cast.World.PlayerOrder)
+                foreach (int player in EachPlayerEffects.Players(cast.World, cast.Source))
                 {
                     cast.RestorePlayer(player);
                     observed |= RepeatedChanges(

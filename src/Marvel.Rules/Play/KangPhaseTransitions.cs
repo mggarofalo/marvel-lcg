@@ -96,12 +96,10 @@ public sealed class KangPhaseTransitions
         if (ready.Select(item => item.Source).Distinct().Count() != ready.Length)
             throw new RulesNotImplementedException("Kang departures require distinct local source areas");
         foreach (var departure in ready) PreflightDeparture(world, departure);
-        string[] conditions = owner.Require<PhaseTransitionOperation>().Kind == PhaseTransitionKind.EndPlayerPhase
-            ? [PhaseEnd.PlayerPhaseEnds] : [PhaseEnd.VillainPhaseEnds, PhaseEnd.RoundEnds];
-        // Ordering Kang's local departures does not admit competing registered work.
-        if (world.Effects.HasDue(conditions))
-            throw new RulesNotImplementedException("Kang phase-end departure and competing delayed effects require ordering");
     }
+
+    /// <summary>Whether a captured departure resolves at this phase ending.</summary>
+    internal bool IsBoundary(PhaseStep owner) => Ready(owner).Length > 0;
 
     internal static void PreflightDeparture(World world, KangDeparture departure)
     {

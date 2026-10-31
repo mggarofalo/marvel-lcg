@@ -46,7 +46,7 @@ internal static class AbilityRepeatedSelectorTrace
                 return group is null ? card : group.CurrentVillain;
             }).OfType<Card>().Distinct().ToList();
         }
-        var current = cast.World.TheCardIn(DeckType.VillainArea);
+        var current = Rules.Play.EncounterRouting.Villain(cast.World, cast.Source);
         var traced = selected.Select(card => new TraceCard(
             card, dynamic ? value : VillainSelector(value, card, cast))).ToList();
         if (current is not null
@@ -65,7 +65,7 @@ internal static class AbilityRepeatedSelectorTrace
         {
             return new TraceCard(found, VillainSelector(value, found, cast));
         }
-        var current = cast.World.TheCardIn(DeckType.VillainArea);
+        var current = Rules.Play.EncounterRouting.Villain(cast.World, cast.Source);
         return current is not null && PotentialVillainSelector(value, cast)
             ? new TraceCard(current, value)
             : null;
@@ -74,7 +74,7 @@ internal static class AbilityRepeatedSelectorTrace
     internal static AbilityCardSelection? VillainSelector(
         AbilityCardSelection value, Card resolved, AbilityAdmissionScope cast)
     {
-        var current = cast.World.TheCardIn(DeckType.VillainArea);
+        var current = Rules.Play.EncounterRouting.Villain(cast.World, cast.Source);
         if (current is null || resolved.ObjectId != current.ObjectId
             || value is AbilityCardSelection.Bound)
         {
@@ -109,7 +109,7 @@ internal static class AbilityRepeatedSelectorTrace
         AbilityCardSelection value, int bound, AbilitySelectorTraceContext trace)
     {
         var world = trace.Cast.World;
-        int boardVillain = Rules.Play.EncounterRouting.Villain(world)?.ObjectId ?? -1;
+        int boardVillain = Rules.Play.EncounterRouting.Villain(world, trace.Cast.Source)?.ObjectId ?? -1;
         int candidateId = trace.EncounterStages is { } stages
             ? AbilityPowerEncounterProjection.Current(world.Cards[bound], trace.Cast, stages)?.ObjectId ?? -1
             : bound == boardVillain ? trace.CurrentVillain : bound;

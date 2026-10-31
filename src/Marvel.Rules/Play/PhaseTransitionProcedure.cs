@@ -14,7 +14,23 @@ internal static class PhaseTransitionProcedure
     {
         world.Agenda.KangSplit.Preflight(world, step);
         world.Agenda.KangTransitions.Preflight(world, step);
+        bool ordered = KangPhaseEndOrderProcedure.Due(world, step);
         int start = events.Count;
+        RunBody(world, facts, step, ordered, events);
+        for (int index = start; index < events.Count; index++)
+            events[index] = events[index] with { Round = step.Round };
+        // rr:delayed-effect.1: resolve delayed work "before responses to that
+        // point or condition may be used". PhaseEnd expires lasting effects and
+        // resolves synchronous delayed work; this typed child retains the phase
+        // frame while its required choices finish before the response window.
+        if (ordered) KangPhaseEndOrderProcedure.Schedule(world, step);
+        else KangPhaseEndOrderProcedure.BeginKang(world, step, events);
+        return null;
+    }
+
+    private static void RunBody(
+        World world, ICardFacts facts, PhaseStep step, bool ordered, List<GameEvent> events)
+    {
         switch (step.What)
         {
             case VillainPhaseBeginning.Begins or VillainStepOneTiming.Completed:
@@ -24,7 +40,7 @@ internal static class PhaseTransitionProcedure
                 PassFirstPlayerToken(world);
                 break;
             case Steps.EndVillainPhase:
-                PhaseEnd.EndVillainPhase(world, facts, events);
+                PhaseEnd.EndVillainPhase(world, facts, events, resolveDelayed: !ordered);
                 break;
             case Steps.DrawToHandSize:
                 PhaseEnd.DrawToHandSize(world, facts, events);
@@ -41,21 +57,12 @@ internal static class PhaseTransitionProcedure
                 PhaseEnd.EndPlayerTurn(world, step.Seat, events);
                 break;
             case Steps.EndPlayerPhase:
-                PhaseEnd.EndPlayerPhase(world, events);
+                PhaseEnd.EndPlayerPhase(world, events, resolveDelayed: !ordered);
                 break;
             default:
                 throw new RulesNotImplementedException(
                     $"the phase-transition procedure has no step '{step.What}'");
         }
-        for (int index = start; index < events.Count; index++)
-            events[index] = events[index] with { Round = step.Round };
-        // rr:delayed-effect.1: resolve delayed work "before responses to that
-        // point or condition may be used". PhaseEnd expires lasting effects and
-        // resolves synchronous delayed work; this typed child retains the phase
-        // frame while its required choices finish before the response window.
-        world.Agenda.KangTransitions.Begin(world, step, events);
-        world.Agenda.KangSplit.Begin(world, step, events);
-        return null;
     }
 
     /// <summary>Step 5. <c>rr:villain-phase.step.5</c>, to the next participating player.</summary>

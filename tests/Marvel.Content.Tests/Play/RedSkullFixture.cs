@@ -40,7 +40,8 @@ internal sealed record RedSkullFixture(World World, AbilityRunner Runner)
     {
         var card = Card(face, DeckType.EncounterDeck);
         var origin = new EncounterRevealOrigin(card.ObjectId, Places.Reference(card.Area));
-        World.MoveToTop(card, World.AreaOf(DeckType.RevealingArea));
+        // Live play reveals into the revealing player's own area (EncounterRevealExposure).
+        World.MoveToTop(card, World.AreaOf(DeckType.RevealingArea, PlayArea.Of(player)));
         World.Agenda.Add(new PhaseStep(new RevealStageOperation(RevealStageKind.RevealEncounterCard, origin),
             1, 2, Subject: card.ObjectId, Seat: player));
         return card;

@@ -252,8 +252,8 @@ public sealed class KangCentralTransitionTests : CoreCardTestBase
             new(captain ? "03028" : "01167", SetupSlot.Nemesis, 0), new("08026", SetupSlot.Nemesis, 1),
             new("11007a,11007b", SetupSlot.MainScheme, -1),
             new(expert ? "11034" : "11001", SetupSlot.Villain, -1),
-            new("11008a,11008b", SetupSlot.SetAside, -1),
-            new("11013a,11013b", SetupSlot.SetAside, -1),
+            new("11008a,11008b", SetupSlot.MainScheme, -1),
+            new("11013a,11013b", SetupSlot.MainScheme, -1),
             new(expert ? "11039" : "11006", SetupSlot.SetAside, -1),
         };
         for (int i = 0; i < 4; i++)

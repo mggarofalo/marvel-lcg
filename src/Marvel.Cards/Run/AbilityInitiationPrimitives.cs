@@ -171,7 +171,7 @@ internal static class AbilityInitiationPrimitives
         AbilityPlayerSelection players, AbilityAdmissionScope scope) => players switch
         {
             AbilityPlayerSelection.OnePlayer one => [Seat(one.Player, scope)],
-            AbilityPlayerSelection.AllPlayers => scope.World.PlayerOrder,
+            AbilityPlayerSelection.AllPlayers => EachPlayerEffects.Players(scope.World, scope.Source),
             _ => throw new InvalidOperationException("Unknown compiled player selection"),
         };
 

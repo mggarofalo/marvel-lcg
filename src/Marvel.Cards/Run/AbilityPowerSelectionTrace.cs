@@ -26,7 +26,7 @@ internal static class AbilityPowerSelectionTrace
             return PowerEvery(value, cast, reachability).FirstOrDefault();
         }
         var found = Find(value, cast);
-        int liveVillain = EncounterRouting.Villain(cast.World)?.ObjectId ?? -1;
+        int liveVillain = EncounterRouting.Villain(cast.World, cast.Source)?.ObjectId ?? -1;
         found = CurrentVillainCard(found, liveVillain, cast, reachability);
         return found is not null && !reachability.Discarded.Contains(found.ObjectId)
             ? found : null;
@@ -49,7 +49,7 @@ internal static class AbilityPowerSelectionTrace
     internal static List<Card> PowerEvery(
         AbilityCardSelection value, AbilityAdmissionScope cast, AbilityPowerState reachability)
     {
-        int liveVillain = EncounterRouting.Villain(cast.World)?.ObjectId ?? -1;
+        int liveVillain = EncounterRouting.Villain(cast.World, cast.Source)?.ObjectId ?? -1;
         bool dynamic = SelectorMembershipCanChange(value)
             || PotentialVillainSelector(value, cast);
         if (dynamic)
