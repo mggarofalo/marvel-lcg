@@ -19,8 +19,9 @@ public sealed class NativeContractJourneyTests
         string contract = Environment.GetEnvironmentVariable("MARVEL_NATIVE_CONTRACT")!;
         string directory = Path.Combine(Path.GetTempPath(), "marvel-native-contract-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(directory);
-        await using var server = new NativeContractServer(contract, directory);
         bool rendered = Environment.GetEnvironmentVariable("MARVEL_NATIVE_RENDERED") == "true";
+        using var priority = new NativeHostPriority(rendered);
+        await using var server = new NativeContractServer(contract, directory);
         var start = new ProcessStartInfo(Environment.GetEnvironmentVariable("GODOT_BIN")!)
         {
             UseShellExecute = false, CreateNoWindow = true,
@@ -48,6 +49,7 @@ public sealed class NativeContractJourneyTests
             log = await output + await error;
             TestContext.Current.TestOutputHelper!.WriteLine(log);
             TestContext.Current.TestOutputHelper.WriteLine("Host requests: " + string.Join(",", server.Requests.Select(request => request.Operation)));
+            TestContext.Current.TestOutputHelper.WriteLine("Host timings: " + string.Join("; ", server.Timings));
             foreach (EngineResponse response in server.Responses.Where(response => response.Error is not null))
                 TestContext.Current.TestOutputHelper.WriteLine("Host rejection: " + response.Error);
             if (server.SceneFailure is { } sceneFailure)

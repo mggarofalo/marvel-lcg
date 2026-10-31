@@ -22,13 +22,15 @@ public sealed class InvocationNativeJourneyTests
         string evidence = Environment.GetEnvironmentVariable("MARVEL_UI_EVIDENCE_DIRECTORY")!;
         string directory = Path.Combine(evidence, scale, path);
         Directory.CreateDirectory(directory);
+        bool rendered = Environment.GetEnvironmentVariable("MARVEL_NATIVE_RENDERED") == "true";
+        using var priority = new NativeHostPriority(rendered);
         await using var server = new NativeContractServer("invocation-" + path, directory);
         var start = new ProcessStartInfo(Environment.GetEnvironmentVariable("GODOT_BIN")!)
         {
             UseShellExecute = false, CreateNoWindow = true,
             RedirectStandardOutput = true, RedirectStandardError = true,
         };
-        foreach (string argument in new[] { Environment.GetEnvironmentVariable("MARVEL_NATIVE_RENDERED") == "true" ? "--minimized" : "--headless",
+        foreach (string argument in new[] { rendered ? "--minimized" : "--headless",
             "--audio-driver", "Dummy", "--path", Path.Combine(RepositoryPaths.Root, "src", "Marvel.Godot"),
             "--script", "res://smoke/automation/invocation_acceptance.gd" }) start.ArgumentList.Add(argument);
         start.Environment["MARVEL_ENGINE_ENDPOINT"] = server.Endpoint;

@@ -140,6 +140,10 @@ Keyboard input goes to the current focus. Drags send held intermediate frames,
 pin the destination and release outside the surface if it moves or is replaced.
 Assertions must check the intended result and authoritative commitment count;
 input delivery alone does not prove success. No action retries after a press.
+`expect` defaults to a 3-second interface deadline. A wait for an accepted
+authoritative commitment passes `Driver.COMMIT_DEADLINE_MS` instead: it includes
+the host's durable save, which hosted Windows runners have taken over two seconds
+to write, and it is bounded by the 30 seconds a socket client grants one exchange.
 
 A failure latches the driver, blocks subsequent input and captures `failure.json`
 with the step trace and visible control descriptions. Editable field values and
@@ -224,6 +228,9 @@ component journeys, not transcripts from an opening deal to the prepared state.
 initial prompt; the repeated-target case records its phase prelude through the
 host before exposing the pending choice. The grouped case is explicitly
 synthetic because the executable Core catalog has no grouped-target producer.
+The host runs inside the test process. Beside a rendered Windows client, which
+raises itself to above-normal priority, the test process takes the same priority
+class for the journey; the output records each request's host and delivery time.
 
 | Contract suffix | Canonical example / kind | Distinguishing observation |
 |---|---|---|
