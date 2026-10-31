@@ -105,6 +105,13 @@ and prevention retain their own events. The visibility filter
 requires every named participant to be readable and retains only those subjects.
 Its engine-chosen verb is `Attack_Completed`, distinct from an `Attack` effect.
 
+`AttackBoundary` names the attacking `source` and the attacked `target`. An
+attack can begin before it has a target, as when Giant Stomp chooses its enemy in
+a later sentence; the engine spells that absent target `-1`.
+Likewise, a thwart cause whose thwart has no scheme carries `target` `-1` and an
+empty target title; a scheme cause always names its player. Clients accept these
+`-1` targets and refuse any other negative target.
+
 `WhenRevealedCanceled` names the card whose When Revealed effects were canceled
 and the card whose ability applied that cancellation (`source` is null when no
 source was recorded). It is emitted when the
