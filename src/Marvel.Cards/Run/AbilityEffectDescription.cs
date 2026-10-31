@@ -30,6 +30,8 @@ internal static class AbilityEffectDescription
         AbilityEffect.ResolveInvocation => "Resolve your captured Invocation top Special",
         AbilityEffect.Fixed { Instruction: AbilityFixedInstruction.PlaySharedHeroTraitCard } =>
             "Play a card from your hand that shares a trait with your hero, reducing its cost by 1",
+        AbilityEffect.Fixed { Instruction: AbilityFixedInstruction.PlayIgnoringResourceCost } =>
+            "Play a card from your hand, ignoring its resource cost",
         AbilityEffect.Damage { Maximum: { } maximum } damage =>
             AbilityBoundedDamageDescription.Instruction(damage.Amount, maximum),
         AbilityEffect.ChooseCard choice => ChoiceSummary(choice),
@@ -142,6 +144,7 @@ internal static class AbilityEffectDescription
         AbilityCardSelection.Query { Kind: AbilityCardQuery.VillainInThisGameArea } => "villain in this game area",
         AbilityCardSelection.Query { Kind: AbilityCardQuery.ObligationsInThisGameArea } => "obligation in this game area",
         AbilityCardSelection.Query { Kind: AbilityCardQuery.MinionsInThisGameArea } => "minion in this game area",
+        AbilityCardSelection.Query { Kind: AbilityCardQuery.UncountedDiscarded } => "card discarded this way, not yet resolved",
         AbilityCardSelection.Query { Kind: AbilityCardQuery.VillainOfAttachedScheme } => "villain corresponding to the attached scheme",
         AbilityCardSelection.Query { Kind: AbilityCardQuery.VillainsWithLeastSchemeThreat } =>
             "villain whose side scheme has the least threat",

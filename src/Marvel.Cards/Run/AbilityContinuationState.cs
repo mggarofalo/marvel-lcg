@@ -18,4 +18,5 @@ internal sealed record AbilityContinuationState(
     internal AbilityPaymentPlan? Payment { get; init; }
     internal AllyEntryBinding? AllyEntryBinding { get; init; }
     internal DamageReplacement? DamageReplacement { get; init; }
+    internal System.Collections.Immutable.ImmutableArray<Marvel.Rules.Play.BoostIconCount> BoostCounts { get; init; } = [];
 }

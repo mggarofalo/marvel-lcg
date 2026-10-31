@@ -46,6 +46,7 @@ internal static class AbilitySelectionAreaReads
             [DeckType.VillainArea, DeckType.EngagedEnemiesArea],
         AbilityCardQuery.Villains or AbilityCardQuery.VillainInThisGameArea => [DeckType.VillainArea],
         AbilityCardQuery.ObligationsInThisGameArea => [DeckType.ObligationsArea],
+        AbilityCardQuery.UncountedDiscarded => [DeckType.EncounterDiscardPile],
         // No authored ability reads this query in a projected or dependent trace;
         // declaring the read keeps a future one refusing rather than reading stale.
         AbilityCardQuery.MinionsInThisGameArea => [DeckType.EngagedEnemiesArea],

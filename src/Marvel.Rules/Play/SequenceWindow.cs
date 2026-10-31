@@ -150,7 +150,8 @@ internal static class SequenceWindow
         // "Forced Interrupt" and "Forced Response" abilities must resolve (rr:forced.1).
         if (!asked.Cancellable)
             throw new RulesNotImplementedException($"'{asked.Label}' cannot be declined");
-        Passed(world, window.Occurrence, world.Windows.Pass());
+        Passed(world, window.Occurrence, world.Windows.Pass(
+            Offering.WouldStage(world, world.WindowAbilities, window)));
     }
     // Answering the last question of a window finishes that part of the step.
     // Without this the walk would find no window open, take that for "not yet

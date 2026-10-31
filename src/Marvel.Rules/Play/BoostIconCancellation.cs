@@ -7,23 +7,26 @@ namespace Marvel.Rules.Play;
 public sealed class BoostIconCancellation
 {
     internal BoostIconCancellation(World world, Card card, int activation, ICardFacts facts)
-    { Game = world; Card = card; Incarnation = card.Incarnation; Activation = activation; Facts = facts; }
+    { Game = world; Card = card; Incarnation = card.Incarnation; Activation = activation; Facts = facts; Count = new(world, card); }
     private World Game { get; }
     private ICardFacts Facts { get; }
     private Card Card { get; }
     private int Incarnation { get; }
     private int Activation { get; }
     internal Occurrence? Occurrence { get; set; }
+    /// <summary>The count of this boost card's icons, which count interrupts may change.</summary>
+    public BoostIconCount Count { get; }
     // Ruling 937d6ff4f970a1da counts icons changed by earlier interrupts.
     // Ruling 1ea208998735ef4b leaves icons added by the later Boost ability intact.
     // Keep actual cancellation separate from the card's live modified total.
     /// <summary>Current modified icons still available after earlier cancellation.</summary>
     public long Remaining => Contribution(Game, Facts);
     private long Cancelled { get; set; }
+    // rr:amplify-icon: "add one additional boost icon to that card for each amplify
+    // icon in play." Engine choice: when a count interrupt counts another card's
+    // icons instead, that card is not a boost card and gains no amplify icon.
     internal long Contribution(World world, ICardFacts facts) => Math.Max(0,
-        (Characteristics.IsLost(world, Card, "boost_const") ? 0
-            : StateFields.Modified(world, Card, "boost_const", facts, world.Players)
-                + MainScheme.Amplify(world, facts, ActivatingEnemy(world))) - Cancelled);
+        Count.Value + (Count.Replaced ? 0 : MainScheme.Amplify(world, facts, ActivatingEnemy(world))) - Cancelled);
     private static Card? ActivatingEnemy(World world) =>
         world.Activation is { Enemy: >= 0 } activation ? world.Cards[activation.Enemy] : null;
     /// <summary>Whether this exact boost window remains live.</summary>

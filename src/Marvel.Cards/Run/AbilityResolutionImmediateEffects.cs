@@ -8,6 +8,7 @@ internal static class AbilityResolutionImmediateEffects
 {
     internal static bool TryRunImmediateEffect(this AbilityResolutionExecution execution, AbilityEffect effect, AbilityResolutionState cast)
     {
+        if (AbilityBoostCountEffects.TryRun(effect, cast)) return true;
         var owner = cast.World.Agenda.Current;
         var occurrence = cast.World.Agenda.Occurrence;
         var result = AbilityImmediateExecution.TryRun(effect, new AbilityImmediateContext(

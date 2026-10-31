@@ -187,7 +187,7 @@ public sealed class CoreCombatResponseTests
         var scheme = world.CreateCard("01125", world.AreaOf(DeckType.SideSchemesArea));
         var minion = Minion(world);
         var runner = AuthoredCards.Runner();
-        var occurrence = Occurrence.ForThwart(
+        var occurrence = OccurrenceCapture.Thwart(
             1, [Steps.CharacterThwartsScheme], world, Cards,
             daredevil.ObjectId, scheme.ObjectId, 0);
 

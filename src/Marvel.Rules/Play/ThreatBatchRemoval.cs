@@ -14,7 +14,7 @@ public static class ThreatBatchRemoval
         // Request order is the engine's event-stream spelling, not an ability order.
         var removed = requests.Select(request => Threat.Removable(world, abilities, request)).ToArray();
         for (int index = 0; index < requests.Count; index++)
-            Threat.ApplyRemoval(requests[index], removed[index], events);
+            Threat.ApplyRemoval(world, requests[index], removed[index], events);
         var defeated = requests.Where((request, index) => removed[index] > 0
             && request.Scheme.Area.Type == DeckType.SideSchemesArea
             && request.Scheme.Tokens.GetValueOrDefault("k_threat") == 0

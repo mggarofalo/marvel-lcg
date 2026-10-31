@@ -14,7 +14,7 @@ internal static class AbilityDiscardReceiptReads
     private static bool NeedsPhysicalMembers(AbilityNumber number) => number switch
     {
         AbilityNumber.PrintedResourcesDiscarded or AbilityNumber.DiscardedWithResource => true,
-        AbilityNumber.ResolutionValue { Kind: AbilityResolutionNumber.PrintedBoostIconsDiscarded
+        AbilityNumber.ResolutionValue { Kind: AbilityResolutionNumber.BoostIconsDiscarded
             or AbilityResolutionNumber.PrintedResourceIconsDiscarded
             or AbilityResolutionNumber.PrintedCostDiscarded
             or AbilityResolutionNumber.DistinctCardTypesDiscarded

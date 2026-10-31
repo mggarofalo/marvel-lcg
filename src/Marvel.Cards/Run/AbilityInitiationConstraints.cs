@@ -112,7 +112,7 @@ internal static class AbilityInitiationConstraints
 
     internal static bool CanInitiateLeaf(AbilityEffect node, AbilityAdmissionScope cast) => node.OperationName() switch
     {
-        "playSharedHeroTraitCard" => AbilitySharedTraitPlay.CanInitiate(cast.Context),
+        "playSharedHeroTraitCard" or "playIgnoringResourceCost" => AbilitySharedTraitPlay.CanInitiate(cast.Context, node),
         "resolveInvocation" => AbilityInvocationPayment.Top(cast.World, cast.Player) is not null,
         "resolveSpecials" when cast.HasContinuation =>
             throw new RulesNotImplementedException(

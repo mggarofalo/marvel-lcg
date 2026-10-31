@@ -68,6 +68,7 @@ public static class AbilityLowering
             "damageOn" => CardNumber(argument, child, AbilityCardNumberProperty.Damage),
             "remainingHealth" => CardNumber(argument, child, AbilityCardNumberProperty.RemainingHealth),
             "startingHealth" => CardNumber(argument, child, AbilityCardNumberProperty.StartingHealth),
+            "boostIcons" => CardNumber(argument, child, AbilityCardNumberProperty.BoostIcons),
             "countersOn" => Counters(argument, child),
             "modified" => Modified(argument, child),
             "count" => new AbilityNumber.Count(SelectCards(argument, child)),
@@ -89,7 +90,8 @@ public static class AbilityLowering
             "cardsDiscarded" => FixedNumber(argument, child, "game", AbilityResolutionNumber.CardsDiscarded),
             "cardsExhaustedForCost" => FixedNumber(argument, child, "game", AbilityResolutionNumber.CardsExhaustedForCost),
             "powerAmount" => FixedNumber(argument, child, "cardsDiscarded", AbilityResolutionNumber.PowerAmount),
-            "printedBoostIconsDiscarded" => FixedNumber(argument, child, "game", AbilityResolutionNumber.PrintedBoostIconsDiscarded),
+            "boostIconsDiscarded" => FixedNumber(argument, child, "game", AbilityResolutionNumber.BoostIconsDiscarded),
+            "starIconsDiscarded" => FixedNumber(argument, child, "game", AbilityResolutionNumber.StarIconsDiscarded),
             "printedResourceIconsDiscarded" => FixedNumber(argument, child, "game", AbilityResolutionNumber.PrintedResourceIconsDiscarded),
             "distinctPrintedResourceTypesDiscarded" => FixedNumber(argument, child, "game", AbilityResolutionNumber.DistinctPrintedResourceTypesDiscarded),
             "topEncounterDiscardBoostPlusOne" => FixedNumber(argument, child, "game", AbilityResolutionNumber.TopEncounterDiscardBoostPlusOne),
@@ -201,7 +203,7 @@ public static class AbilityLowering
         string name = Text(value, location);
         return name is "exhausted" or "healed" or "discarded" or "found" or "energy" or "resourceTypes" or "schemesCleared"
             or "threatMoved" or "threatRemovedByMove" or "destinationForcedResponseTriggered"
-            or "treacheriesLookedAt" or "boostIconsLookedAt" or "activationDamage" or "activationDamagePlaced" or "activationDamageToYou" or "activationThreat" or "activationMade" or "activationDefeatedCharacters" or "activationUndefended" or "cancelledBoostIcons" or "excessDamageDealt"
+            or "treacheriesLookedAt" or "boostIconsLookedAt" or "activationDamage" or "activationDamagePlaced" or "activationDamageToYou" or "activationThreat" or "activationMade" or "activationDefeatedCharacters" or "activationUndefended" or "cancelledBoostIcons" or "excessDamageDealt" or "printedCostPlayed"
             ? name : throw location.Error($"'{name}' is not an authored resolution result");
     }
 }

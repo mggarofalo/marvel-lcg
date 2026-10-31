@@ -21,9 +21,13 @@ public sealed record BoostFaceupOperation(int Enemy, bool Attacking, BoostIconCa
         var enemy = world.Cards[Enemy];
         // Engine choice: one occurrence carries both descriptions. The qualifier
         // belongs to this boost operation, even while another attack is suspended.
-        var occurrence = new Occurrence(id, Attacking ? [Faceup, AttackFaceup] : [Faceup], subject, player, Enemy, subject,
+        // Ruling 937d6ff4f970a1da counts a boost card's icons when it is turned
+        // faceup, so the same occurrence is also its boost-icon count
+        // (rr:triggering-condition.2: one occurrence, one interrupt window).
+        var occurrence = new Occurrence(id, Attacking ? [Faceup, AttackFaceup, BoostIconCounting.Counted]
+                : [Faceup, BoostIconCounting.Counted], subject, player, Enemy, subject,
             OccurrenceCard.Capture(enemy, world.Facts), OccurrenceCard.Capture(world.Cards[subject], world.Facts))
-        { BoostIcons = Icons, BoostAbility = Ability };
+        { BoostIcons = Icons, BoostAbility = Ability, BoostCount = Icons.Count };
         Icons.Occurrence = occurrence;
         if (Ability is not null) Ability.Occurrence = occurrence;
         return occurrence;

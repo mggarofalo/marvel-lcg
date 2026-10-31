@@ -178,7 +178,7 @@ public static class Threat
         ThreatRemovalRequest request, List<GameEvent> events)
     {
         long removed = Removable(world, abilities, request);
-        ApplyRemoval(request, removed, events);
+        ApplyRemoval(world, request, removed, events);
         return removed;
     }
 
@@ -188,7 +188,7 @@ public static class Threat
             : abilities.CanRemoveThreat(world, request.Scheme, request.OverridesCannotFrom))
             ? Math.Min(request.Scheme.Tokens.GetValueOrDefault("k_threat"), Math.Max(0, request.Amount)) : 0;
 
-    internal static void ApplyRemoval(ThreatRemovalRequest request, long removed, List<GameEvent> events)
+    internal static void ApplyRemoval(World world, ThreatRemovalRequest request, long removed, List<GameEvent> events)
     {
         if (removed == 0) return;
         var scheme = request.Scheme;
@@ -199,7 +199,9 @@ public static class Threat
             Trigger = request.Trigger,
             Verb = request.Verb,
         });
-
+        if (held == removed && request.ByThwarting && request.By >= 0
+            && EffectiveCards.Kind(world.Seats[request.By].IdentityCard, world.Facts) == CardKind.Hero)
+            world.Agenda.Occurrence?.Also(CharacterPowerTiming.HeroClearedScheme);
     }
 
     /// <summary>

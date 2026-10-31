@@ -577,7 +577,7 @@ addToHand afterActivation allies alliesAndSupportsYouControl alliesYouControl
 alsoAttackEachOtherHero among
 atLeast attachedToThis attackDamaged attackableEnemies attackableMinions
 automaticTarget canAutomaticThwart canLegalPractice
-canMakeTheCall cancelOccurrence cancelWhenRevealed cardsIn changeForm characters
+canMakeTheCall cancelOccurrence cancelWhenRevealed cardsIn changeForm characters countDiscardedInstead decreaseBoostCount
 charactersYouControl choose chooseCard chooseDiscardToShuffle chooseTopForHand
 countersOn damageOn damagedHero dealAttackDamage dealDamage dealEncounterCards
 deck defeatedByYou delayUntil discardAtRandom discardAnyFromHand discardClassFromHand discardFromHand
@@ -588,23 +588,82 @@ enemiesEngagedWithChosenPlayer enemiesWithTrait enemyAttacks enemySchemes exists
 finalStep generate generateTopDiscard giveAdditionalBoost
 chooseHealRecipients grantCharactersControlledBy grantEach grantUntil hasStatus hasTrait heroBasicDefended heroDefended
 heroes heroesAndAllies heroAndAllyTargets identities
-identitiesWithinPerPlayerLimit inForm indirectDamage isEnemyAttacker isKind isTitle
+identitiesWithinPerPlayerLimit inForm increaseBoostCount indirectDamage isEnemyAttacker isKind isTitle
 isYourIdentity keyword kind legalPractice mainScheme makeTheCall maxBy minions
 minionsEngagedWithYou minionsInThisGameArea modified moveAttackDamage mul namedInPlay obligationsInThisGameArea onto options overkill
 inspectEncounterTop paidWithResource payOrEffect payOrExhaust peekTop perPlayer placeAccelerationToken
-placeAtRandom placeCounters placeThreat power powerAmount powerTargets cardsDiscarded
+placeAtRandom placeCounters placeThreat playIgnoringResourceCost power powerAmount powerTargets cardsDiscarded
 preventDamage preventDamageFrom preventDamageWhile preventDamageWithCounters preventPlayerAttackDamage preventThreat
 preventThreatRemoval printedResourceCountDiscarded putIntoPlay
 recoverDiscardedByResource reduceNextCardCost remainingHealth removeCounters stunUndamagedDefendersAttacker
 removeFromGame removeThreat replaceReady replaceStatus replaceThreatWithDamage requireAllyDefender
 resolveSpecials returnOwnedToHand returnToHand revealTop scheme schemes search
-seqEachTargeted shuffle shuffleInto sideSchemes soakDamage sourceKind sourceTrait spend
+seqEachTargeted shuffle shuffleInto sideSchemes soakDamage sourceKind sourceTrait spend starIconsDiscarded
 spendEnergyX spendX startingCounters startingHealth statusCards storeDeckTopBeneath takeDamage then threatCause thwartDifferentSchemes thwartSchemes
 thwartableSchemes titleInPlay titled tokensOn topEncounterDiscardBoostPlusOne
-undefendedAttack until upgradesAndSupportsYouControl
+uncountedDiscarded undefendedAttack until upgradesAndSupportsYouControl
 upgradesYouControl villainInThisGameArea wasDefeated withStatus withTrait within withoutAnotherCopyAttached
 yourAsideMinion yourAsidePile yourAsideSideScheme
 ```
+
+### Boost-icon counts
+
+Ruling 6962a015e8597900: "Boost icons are counted whenever a game step or card
+ability determines the exact number of boost icons on an encounter card." The
+engine makes each such count an occurrence, `WhenBoostIconsCounted`, with an
+interrupt window. A boost card turned faceup during an enemy activation is
+counted in that faceup occurrence (ruling 937d6ff4f970a1da); an authored
+ability counts the encounter cards a node reads immediately before that node
+resolves, through `boostIconsDiscarded`, `topEncounterDiscardBoostPlusOne` and
+`boostIcons: <card>`. A counted card keeps its number for the rest of that
+resolution. Engine choice: a count that no interrupt could observe completes
+without a window, so a game with no count interrupt plays exactly as before.
+
+`boostIcons: <card>` reads one bound card's counted boost icons.
+`starIconsDiscarded: "game"` counts the cards discarded in this resolution that
+print a star in their boost area; rr:boost-boost-icon.1 says a star "is not
+itself considered a boost icon", so it is not a count.
+`uncountedDiscarded` selects the cards this resolution discarded and has not
+counted yet, so the player chooses the order in which a per-card count resolves
+(rulings a5028ed150b39433 and 805b3f9b199ca68b).
+
+Inside a count's interrupt, `increaseBoostCount: "trigger"` and
+`decreaseBoostCount: "trigger"` change that count by one, never below zero; a
+decrease needs a positive count. `countDiscardedInstead: "trigger"` replaces the
+counted card with the card the same ability last discarded. Only a count still
+being made can be changed. The encounter modifier `encounter_boost_icons`
+granted by a constant adds to every scenario-owned encounter card's icons while
+that constant is in play (ruling 805b3f9b199ca68b).
+
+An optional interrupt with `"would": true` is offered in its own stage before
+interrupts to the same occurrence without it (rr:would). Responses cannot use
+`would`.
+
+`namedInPlay: "Pietro Maximoff"` is true while a card in play has that title or
+subtitle; rr:team-up.2 and ruling 82607e2d70cbf9dd treat a subtitle as a name.
+`card_cost_increase` granted on an identity increases each card that player
+plays by its amount.
+
+### Hand plays and looked-at cards
+
+`playIgnoringResourceCost: "game"` offers the resolving hero a card in hand to
+play ignoring its resource cost, through the same scoped play as
+`playSharedHeroTraitCard`. It must begin an Action without an arrow cost.
+rr:ignore.1: no resources are paid, so no cost increase or reduction is applied
+or consumed, and a paid-resource condition reads the empty payment (ruling
+77085e3b31a219a4). rr:requirement-resources.2 excludes a card with a resource
+requirement. An event plays through its one Action; an event with an arrow cost
+is offered and raises when chosen. `result: "printedCostPlayed"` then reads the
+played card's printed resource cost, per player where printed.
+
+`chooseTopForHand` accepts `rest: "bottomOfDeck"`: the cards not added to hand
+go to the bottom of the deck. With two or more of them the player answers one
+ordered choice, top to bottom; the last card named becomes the bottom card.
+The default `rest` is `discard`.
+
+`WhenHeroThwartRemovesAllThreat` joins a thwart's occurrence when a removal by
+that thwart takes a scheme's last threat while the thwarting identity is in
+hero form. Answer it with `alsoHappened` on `WhenThwartEnds`.
 
 ### Identity form destinations
 
@@ -1060,7 +1119,7 @@ the specific cost type without limiting it to card play; neither cited ruling
 is a Gauntlet-specific clarification. The restriction never supplies the
 card context of an enclosing action to an unrelated nested ability payment.
 
-Discard receipts expose `printedResourceIconsDiscarded` and `distinctPrintedResourceTypesDiscarded` numeric expressions (value `"game"`). They count printed resource icons, including wild as its own type, without payment multipliers. `printedBoostIconsDiscarded` counts numeric boost icons and excludes boost stars. Empty receipts yield zero. `printedCostDiscarded` sums the printed resource costs of the physical cards discarded in this resolution, with undefined X equal to zero. `distinctCardTypesDiscarded` counts distinct printed card types in that same receipt. Both take `"game"`; random hand discards retain the same physical receipt as top-deck discards.
+Discard receipts expose `printedResourceIconsDiscarded` and `distinctPrintedResourceTypesDiscarded` numeric expressions (value `"game"`). They count printed resource icons, including wild as its own type, without payment multipliers. `boostIconsDiscarded` counts numeric boost icons and excludes boost stars. Empty receipts yield zero. `printedCostDiscarded` sums the printed resource costs of the physical cards discarded in this resolution, with undefined X equal to zero. `distinctCardTypesDiscarded` counts distinct printed card types in that same receipt. Both take `"game"`; random hand discards retain the same physical receipt as top-deck discards.
 Arrow costs support `spendAny: N` for a positive number of resources without a required type, and `returnToHand: "this"` for returning the source from play to its owner. Event payment combines generic arrow costs with its printed price without charging twice. Returning a source discards attachments and ends its continuous effects before the post-arrow effect.
 ### Environment trait copying
 

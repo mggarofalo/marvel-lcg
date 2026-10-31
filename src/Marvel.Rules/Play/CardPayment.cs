@@ -13,6 +13,9 @@ namespace Marvel.Rules.Play;
 /// <summary>Calculates and commits resource payment for playing cards.</summary>
 public static class CardPayment
 {
+    /// <summary>Engine spelling of a constant increase to every card the affected identity's player plays.</summary>
+    public const string CostIncreaseField = "card_cost_increase";
+
     /// <summary>Register a one-use reduction for the next card the player plays.</summary>
     public static ContinuousEffects.Registration ReduceNextCardCost(
         World world, Card source, int player, long amount) =>
@@ -77,6 +80,13 @@ public static class CardPayment
         ArgumentNullException.ThrowIfNull(seat);
         ArgumentNullException.ThrowIfNull(card);
 
+        if (reduction is { IgnoresResourceCost: true })
+        {
+            // rr:ignore.1: no resources are paid, so no increase or reduction
+            // is applied or consumed.
+            reduction.Validate(world, seat, card);
+            return new AdjustedCardCost(0, []);
+        }
         long amount = Resources.Cost(card.FaceId, facts, world.Players) ?? 0;
         var modifiers = world.Effects.Active().Where(effect =>
             string.Equals(effect.Kind, CardCostReduction, StringComparison.Ordinal)
@@ -86,7 +96,8 @@ public static class CardPayment
             && effect.Amount > 0).ToList();
 
         var increases = NextEventCost.Applied(world, seat, card);
-        amount = checked(amount + increases.Sum(effect => effect.Amount));
+        amount = checked(amount + increases.Sum(effect => effect.Amount)
+            + Math.Max(0, StateFields.Modified(world, seat.IdentityCard, CostIncreaseField, facts, world.Players)));
         long reduced = amount;
         foreach (var modifier in modifiers)
         {

@@ -5323,7 +5323,7 @@
                 "query": "charactersYouControl"
               },
               "amount": {
-                "printedBoostIconsDiscarded": "game"
+                "boostIconsDiscarded": "game"
               }
             }
           },
@@ -5476,7 +5476,7 @@
                     "query": "charactersYouControl"
                   },
                   "amount": {
-                    "printedBoostIconsDiscarded": "game"
+                    "boostIconsDiscarded": "game"
                   }
                 }
               }
@@ -5633,7 +5633,7 @@
                 "placeThreat": {
                   "scheme": "this",
                   "amount": {
-                    "printedBoostIconsDiscarded": "game"
+                    "boostIconsDiscarded": "game"
                   }
                 }
               }
@@ -8347,7 +8347,7 @@
                 "dealDamage": {
                   "cards": "you",
                   "amount": {
-                    "printedBoostIconsDiscarded": "game"
+                    "boostIconsDiscarded": "game"
                   }
                 }
               }
@@ -8398,7 +8398,7 @@
                 "dealDamage": {
                   "cards": "you",
                   "amount": {
-                    "printedBoostIconsDiscarded": "game"
+                    "boostIconsDiscarded": "game"
                   }
                 }
               }
@@ -8449,7 +8449,7 @@
                 "dealDamage": {
                   "cards": "you",
                   "amount": {
-                    "printedBoostIconsDiscarded": "game"
+                    "boostIconsDiscarded": "game"
                   }
                 }
               }
@@ -13690,7 +13690,7 @@
         "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
         "effect": { "eachPlayer": { "order": "playerOrder", "effect": { "seq": [
           { "discardTop": { "from": "encounterDeck", "count": 1 } },
-          { "dealDamage": { "cards": "you", "amount": { "printedBoostIconsDiscarded": "game" } } }
+          { "dealDamage": { "cards": "you", "amount": { "boostIconsDiscarded": "game" } } }
         ] } } }
       }]
     },
@@ -15146,7 +15146,7 @@
                   "order": "playerOrder",
                   "effect": {
                     "discardResourceIcons": {
-                      "printedBoostIconsDiscarded": "game"
+                      "boostIconsDiscarded": "game"
                     }
                   }
                 }
@@ -15182,7 +15182,7 @@
                     "query": "charactersYouControl"
                   },
                   "amount": {
-                    "printedBoostIconsDiscarded": "game"
+                    "boostIconsDiscarded": "game"
                   }
                 }
               }
@@ -15284,7 +15284,7 @@
                     "query": "charactersYouControl"
                   },
                   "amount": {
-                    "printedBoostIconsDiscarded": "game"
+                    "boostIconsDiscarded": "game"
                   }
                 }
               }
@@ -15333,7 +15333,7 @@
                     "query": "villain"
                   },
                   "amount": {
-                    "printedBoostIconsDiscarded": "game"
+                    "boostIconsDiscarded": "game"
                   }
                 }
               }
@@ -23905,7 +23905,7 @@
       "abilities": [
         {
           "trigger": { "event": "WhenAttackInitiated", "timing": "ForcedInterrupt", "actor": "this", "player": "trigger.player" },
-          "effect": { "indirectDamage": { "among": { "query": "charactersYouControl" }, "amount": { "printedBoostIconsDiscarded": "game" } } },
+          "effect": { "indirectDamage": { "among": { "query": "charactersYouControl" }, "amount": { "boostIconsDiscarded": "game" } } },
           "cost": { "discardTop": { "from": "encounterDeck", "count": 1 } }
         }
       ]
@@ -25267,7 +25267,7 @@
       "name": "Scarlet Witch",
       "note": "Interrupt: when you use one of Scarlet Witch's basic powers (THW or ATK; an ally has no DEF), discard the top encounter card; she gets +1 to that power for this use per boost icon on it. The bonus belongs to the exact basic-use occurrence (rr:basic-power.1) and reads the printed boost icons of the card this resolution discarded; a card with none adds nothing. Her subtitle Wanda Maximoff is what Superpowered Siblings and Order and Chaos name (rr:subtitle).",
       "abilities": [
-        {"trigger": {"event": "WhenAllyBasicUseInitiated", "timing": "Interrupt", "actor": "this"}, "effect": {"seq": [{"discardTop": {"from": "encounterDeck", "count": 1}}, {"boostBasicUse": {"printedBoostIconsDiscarded": "game"}}]}}
+        {"trigger": {"event": "WhenAllyBasicUseInitiated", "timing": "Interrupt", "actor": "this"}, "effect": {"seq": [{"discardTop": {"from": "encounterDeck", "count": 1}}, {"boostBasicUse": {"boostIconsDiscarded": "game"}}]}}
       ]
     },
     {
@@ -25751,6 +25751,263 @@
       "note": "When Revealed: discard cards from the top of the encounter deck until you discard a minion; reveal that minion, then give it a tough status card. The revealing player reveals it. Ruling ef63f3668700ef73: the reveal resolves the minion's keywords, initiating a quickstrike attack, and the tough status card is given in the same sentence, before that attack's steps resolve. rr:encounter-deck.2 ends the discard, fulfilled, when the encounter deck empties first. revealStatus is the engine's spelling.",
       "abilities": [
         {"trigger": {"event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this"}, "effect": {"discardUntil": {"from": "encounterDeck", "kind": "minion", "then": "reveal", "revealStatus": "tough"}}}
+      ]
+    },
+    {
+      "card": "15002",
+      "name": "Quicksilver",
+      "note": "Action: Ready Quicksilver. (Limit once per phase.) The printed Action has no form restriction, and the limit belongs to this copy (rr:limits-and-maximums). Readying an already ready Quicksilver would not change the game state, so the action is not offered then.",
+      "abilities": [
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this"}, "limitPerPhase": 1, "effect": {"ready": "this"}}
+      ]
+    },
+    {
+      "card": "15008",
+      "name": "Magic Shield",
+      "note": "Hero Interrupt: When a friendly character would take any amount of damage, discard Magic Shield to prevent 3 of that damage. The discard is the cost. A 'taken' trigger requires damage remaining after pending prevention (rr:prevent.1.1).",
+      "abilities": [
+        {"trigger": {"event": "WhenDamageWouldBeDealt", "damage": "taken", "timing": "Interrupt", "target": "friendly", "form": "hero"}, "cost": {"discard": "this"}, "effect": {"preventDamage": {"card": "trigger.target", "amount": 3}}}
+      ]
+    },
+    {
+      "card": "15010",
+      "name": "Speed",
+      "note": "Response: After Speed thwarts, ready him. (Limit once per round.) Any thwart by Speed qualifies; a confused replacement is not a thwart (ruling 983ae8870c226cd4).",
+      "abilities": [
+        {"trigger": {"event": "WhenThwartEnds", "timing": "Response", "actor": "this"}, "limitPerRound": 1, "effect": {"ready": "this"}}
+      ]
+    },
+    {
+      "card": "15014",
+      "name": "Swift Retribution",
+      "note": "Hero Action (attack): The villain schemes. Deal 4 damage to the villain. The villain is the declared target of the attack, initiated with the card (rr:initiating-abilities step 6). Rulings 6fd4652a06512d03 and 9817ecd3f1ac49d0: Guard or stun gained during the villain's scheme does not prevent the damage, so the attack is marked initiated. Engine choice, as for All for One (13032): the villain schemes immediately before the attack begins, because the engine does not suspend for an activation inside a labelled attack. rr:stunned replaces the whole attack, so a hero stunned at initiation takes the else branch: the villain does not scheme and the attack removes the stun.",
+      "abilities": [
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero"}, "labels": ["attack"], "effect": {"if": {"test": {"not": {"hasStatus": {"card": "you", "status": "stunned"}}}, "then": {"seq": [{"enemySchemes": {"enemies": {"query": "villain"}}}, {"attack": {"target": {"query": "villain"}, "effect": {"dealAttackDamage": {"cards": {"query": "villain"}, "amount": 4}}, "initiated": 1}}]}, "else": {"attack": {"target": {"query": "villain"}, "effect": {"dealAttackDamage": {"cards": {"query": "villain"}, "amount": 4}}}}}}}
+      ]
+    },
+    {
+      "card": "15016",
+      "name": "The Power of Justice",
+      "note": "Reprint of 01062: generates one wild resource, doubled while paying for a Justice card.",
+      "abilities": [
+        {"trigger": {"timing": "Constant", "subject": "this"}, "effect": {"doubleResourceFor": "Justice"}}
+      ]
+    },
+    {
+      "card": "15017",
+      "name": "Heroic Intuition",
+      "note": "Reprint of 01065: the controlling player's hero gets +1 THW. The play-under-control instruction is handled by card play.",
+      "attachTo": {"query": "identitiesWithinPerPlayerLimit"},
+      "abilities": [
+        {"trigger": {"timing": "Constant", "subject": "this"}, "effect": {"grant": {"card": "yourHero", "keyword": "thwart", "amount": 1}}}
+      ]
+    },
+    {
+      "card": "15019",
+      "name": "Spiritual Meditation",
+      "note": "Play only if your identity has the Mystic trait; the printed-card contract reads that prerequisite. Action: Draw 2 cards. Choose and discard 1 card from your hand. Rulings 8014ac87561991d2 and 43a2366337cfa7fe: abilities resolve one sentence at a time, so it is playable as the only card in hand.",
+      "abilities": [
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this"}, "effect": {"seq": [{"draw": {"player": "you", "count": 2}}, {"discardHandCards": 1}]}}
+      ]
+    },
+    {
+      "card": "15020",
+      "name": "Energy",
+      "note": "Reprint of 01088: a resource card with no ability text.",
+      "abilities": [
+      ]
+    },
+    {
+      "card": "15021",
+      "name": "Genius",
+      "note": "Reprint of 01089: a resource card with no ability text.",
+      "abilities": [
+      ]
+    },
+    {
+      "card": "15022",
+      "name": "Strength",
+      "note": "Reprint of 01090: a resource card with no ability text.",
+      "abilities": [
+      ]
+    },
+    {
+      "card": "15028",
+      "name": "Browbeat",
+      "note": "Play only if your identity has the Avenger trait. Hero Action (attack): deal 2 damage to the villain plus X, where X is the villain's stage number to a maximum of 3, as one damage instance.",
+      "abilities": [
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero"}, "labels": ["attack"], "when": {"hasTrait": {"card": "you", "trait": "AVENGER"}}, "effect": {"attack": {"target": {"query": "villain"}, "effect": {"dealAttackDamage": {"cards": {"query": "villain"}, "amount": {"add": [2, {"min": [3, {"modified": {"card": {"query": "villain"}, "field": "printed_stage"}}]}]}}}}}}
+      ]
+    },
+    {
+      "card": "15030",
+      "name": "Bait and Switch",
+      "note": "Hero Action (thwart): The villain attacks you. Remove 4 threat from the main scheme. The main scheme is the declared thwart target, initiated with the card (rr:initiating-abilities step 6); the removal does not depend on the attack. Ruling ca713a04a3ff5491: confusion or a patrol minion gained during the attack does not stop the thwart, so the thwart is marked initiated. Engine choice, as for All for One (13032): the villain attacks immediately before the thwart begins, because the engine does not suspend for an activation inside a labelled thwart. rr:confused replaces the whole thwart, so a hero confused at initiation takes the else branch: the villain does not attack and the thwart removes the confusion.",
+      "abilities": [
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero"}, "labels": ["thwart"], "effect": {"if": {"test": {"not": {"hasStatus": {"card": "you", "status": "confused"}}}, "then": {"seq": [{"enemyAttacks": {"enemies": {"query": "villain"}, "against": "you"}}, {"thwart": {"target": {"query": "mainScheme"}, "effect": {"removeThreat": {"scheme": {"query": "mainScheme"}, "amount": 4}}, "initiated": 1}}]}, "else": {"thwart": {"target": {"query": "mainScheme"}, "effect": {"removeThreat": {"scheme": {"query": "mainScheme"}, "amount": 4}}}}}}}
+      ]
+    },
+    {
+      "card": "15031",
+      "name": "Recuperation",
+      "note": "Alter-Ego Action: Heal damage from your alter-ego equal to your REC. The amount is the alter-ego's current modified REC.",
+      "abilities": [
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "alter-ego"}, "effect": {"heal": {"card": "you", "amount": {"modified": {"card": "you", "field": "recover"}}}}}
+      ]
+    },
+    {
+      "card": "15001a",
+      "name": "Scarlet Witch",
+      "note": "Chaos Control -- Interrupt: When boost icons on an encounter card would be counted, discard the top card of the encounter deck and count the number of boost icons on that card instead. (Limit once per phase.) Ruling 6962a015e8597900: boost icons are counted whenever a game step or card ability determines the exact number on an encounter card, including a boost card turned faceup (ruling 937d6ff4f970a1da), another player's card (ruling 4e1ff06e6c235760) and a '2 or more' test (ruling 310c4caa404d0f5a). rr:would gives this interrupt priority over Scarlet Witch's Crest on the same count. The count is not restricted to Scarlet Witch's own cards, so it has no player restriction.",
+      "abilities": [
+        {"name": "Chaos Control", "trigger": {"event": "WhenBoostIconsCounted", "timing": "Interrupt", "would": true, "subject": "game"}, "limitPerPhase": 1, "effect": {"seq": [{"discardTop": {"from": "encounterDeck", "count": 1}}, {"countDiscardedInstead": "trigger"}]}}
+      ]
+    },
+    {
+      "card": "15001b",
+      "name": "Wanda Maximoff",
+      "note": "Superpowered Siblings -- Action: Discard 2 cards from your hand to draw 2 cards, or 3 if Pietro Maximoff is in play. (Limit once per round.) The discard is the cost. Engine choice: rr:team-up.2 counts a character as named when its title or subtitle matches, and ruling 82607e2d70cbf9dd applies that to subtitles; Quicksilver (15002) carries the subtitle Pietro Maximoff. A limit on an identity survives a form change (ruling e015aa6cd98e8ef2).",
+      "abilities": [
+        {"name": "Superpowered Siblings", "trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this"}, "limitPerRound": 1, "cost": {"discardFromHand": 2}, "effect": {"if": {"test": {"namedInPlay": "Pietro Maximoff"}, "then": {"draw": {"player": "you", "count": 3}}, "else": {"draw": {"player": "you", "count": 2}}}}}
+      ]
+    },
+    {
+      "card": "15009",
+      "name": "Scarlet Witch's Crest",
+      "note": "Interrupt: When boost icons on an encounter card are counted, exhaust Scarlet Witch's Crest to increase or decrease the number of boost icons on that card by 1 for this count. Ruling 937d6ff4f970a1da: it changes a boost card turned faceup before Preemptive Strike cancels. Ruling 82458879502bce23: it changes one card's count at a time. A decrease needs a positive count, since an ability must change the game state.",
+      "abilities": [
+        {"trigger": {"event": "WhenBoostIconsCounted", "timing": "Interrupt", "subject": "game"}, "cost": {"exhaust": "this"}, "effect": {"choose": {"descriptions": ["Increase the number of boost icons on that card by 1 for this count", "Decrease the number of boost icons on that card by 1 for this count"], "options": [{"increaseBoostCount": "trigger"}, {"decreaseBoostCount": "trigger"}]}}}
+      ]
+    },
+    {
+      "card": "15011",
+      "name": "Wiccan",
+      "note": "Response: After Wiccan thwarts, discard the top card of the encounter deck. For each boost icon discarded this way, deal 1 damage to an enemy. Ruling 0870bc11f295fbb0 and rr:for-each.1: one enemy is dealt the whole amount, as one instance (rr:for-each.2). With no boost icon there is no damage to deal.",
+      "abilities": [
+        {"trigger": {"event": "WhenThwartEnds", "timing": "Response", "actor": "this"}, "effect": {"seq": [{"discardTop": {"from": "encounterDeck", "count": 1}}, {"if": {"test": {"atLeast": {"value": {"boostIconsDiscarded": "game"}, "count": 1}}, "then": {"chooseCard": {"from": {"query": "enemies"}, "effect": {"dealDamage": {"cards": "chosen", "amount": {"boostIconsDiscarded": "game"}}}}}}}]}}
+      ]
+    },
+    {
+      "card": "15005",
+      "name": "Molecular Decay",
+      "note": "Hero Action (attack): Deal 5 damage to an enemy and discard the top 2 cards of the encounter deck. For each boost icon discarded this way, deal 1 additional damage to that enemy. rr:for-each.2 makes the additional damage part of one instance. Engine choice, as for All for One (13032): the enemy is chosen, then the discard and count resolve before the attack begins, because the attack's damage counts them.",
+      "abilities": [
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero"}, "labels": ["attack"], "effect": {"chooseCard": {"from": {"query": "attackableEnemies"}, "effect": {"seq": [{"discardTop": {"from": "encounterDeck", "count": 2}}, {"attack": {"target": "chosen", "effect": {"dealAttackDamage": {"cards": "chosen", "amount": {"add": [5, {"boostIconsDiscarded": "game"}]}}}}}]}}}}
+      ]
+    },
+    {
+      "card": "15024",
+      "name": "The Next Evolution",
+      "note": "Nemesis side scheme. Increase the number of boost icons on each encounter card by 1. Ruling 1ea208998735ef4b: such a constant applies to a boost card before its faceup interrupts. Ruling 805b3f9b199ca68b: the increase applies to discarded encounter cards while this scheme is in play and ends as soon as it leaves. Starting threat is per player.",
+      "abilities": [
+        {"trigger": {"timing": "Constant", "subject": "this"}, "effect": {"grant": {"card": "this", "keyword": "encounter_boost_icons", "amount": 1}}}
+      ]
+    },
+    {
+      "card": "15025",
+      "name": "Luminous",
+      "note": "Elite. Forced Response: After Luminous activates against you, discard the top card of the encounter deck. If 2 or more boost icons were discarded this way, deal yourself 1 encounter card. An activation is an attack or a scheme (rr:activation). Ruling 310c4caa404d0f5a: the '2 or more' test is a count Chaos Control and the Crest can change.",
+      "abilities": [
+        {"trigger": {"event": "WhenAttackEnds", "timing": "ForcedResponse", "actor": "this", "player": "trigger.player"}, "effect": {"seq": [{"discardTop": {"from": "encounterDeck", "count": 1}}, {"if": {"test": {"atLeast": {"value": {"boostIconsDiscarded": "game"}, "count": 2}}, "then": {"dealEncounterCards": {"player": "you", "count": 1}}}}]}},
+        {"trigger": {"event": "WhenSchemeEnds", "timing": "ForcedResponse", "actor": "this", "player": "trigger.player"}, "effect": {"seq": [{"discardTop": {"from": "encounterDeck", "count": 1}}, {"if": {"test": {"atLeast": {"value": {"boostIconsDiscarded": "game"}, "count": 2}}, "then": {"dealEncounterCards": {"player": "you", "count": 1}}}}]}}
+      ]
+    },
+    {
+      "card": "15026",
+      "name": "Magical Suspension",
+      "note": "Attach to your identity. Each card you play costs 1 additional resource. Hero Action: Exhaust your hero to discard this card. rr:ignore.1: a card played ignoring its resource cost pays nothing, including this increase. The modifier name is an engine choice.",
+      "attachTo": "you",
+      "abilities": [
+        {"trigger": {"timing": "Constant", "subject": "this"}, "effect": {"grant": {"card": "attachedTo", "keyword": "card_cost_increase", "amount": 1}}},
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero"}, "cost": {"exhaust": "you"}, "effect": {"discard": "this"}}
+      ]
+    },
+    {
+      "card": "15027",
+      "name": "Chaos Manipulation",
+      "note": "When Revealed: Search the encounter deck and discard pile for Luminous and put her into play engaged with you. Discard the top card of the encounter deck. If 2 or more boost icons were discarded this way, Luminous activates against you. rr:activation.1 and .2: an attack against a hero, a scheme against an alter-ego. rr:search.3 shuffles the searched deck upon completion of the ability, so the discard reads the unshuffled deck. Luminous already in play still activates.",
+      "abilities": [
+        {"trigger": {"event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this"}, "effect": {"seq": [{"if": {"test": {"exists": {"cardsIn": {"areas": ["encounterDeck", "encounterDiscardPile"], "title": "Luminous"}}}, "then": {"putIntoPlay": {"card": {"cardsIn": {"areas": ["encounterDeck", "encounterDiscardPile"], "title": "Luminous"}}, "where": "engagedWithYou"}}}}, {"discardTop": {"from": "encounterDeck", "count": 1}}, {"if": {"test": {"and": [{"atLeast": {"value": {"boostIconsDiscarded": "game"}, "count": 2}}, {"titleInPlay": "Luminous"}]}, "then": {"if": {"test": {"inForm": {"player": "you", "form": "hero"}}, "then": {"enemyAttacks": {"enemies": {"titled": "Luminous"}, "against": "you"}}, "else": {"enemySchemes": {"enemies": {"titled": "Luminous"}, "against": "you"}}}}}}, {"shuffle": "encounterDeck"}]}}
+      ]
+    },
+    {
+      "card": "15023",
+      "name": "Slipping Sanity",
+      "note": "Obligation: you may flip to alter-ego form, then choose: exhaust Wanda Maximoff to remove Slipping Sanity from the game, or discard the top 5 cards of the encounter deck, place 1 threat on the main scheme for each star icon in the boost area of a card discarded this way, and discard this obligation. rr:then: removal requires the exhaustion. rr:boost-boost-icon.1: a star icon is not a boost icon, so this is not a boost-icon count. Ruling b29d66914e946389: the pack has two copies.",
+      "abilities": [
+        {"trigger": {"event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this"}, "effect": {"seq": [{"choose": {"descriptions": ["Change to alter-ego form", "Remain in your current form"], "options": [{"changeForm": {"player": "you", "to": "alter-ego"}}, {"seq": []}]}}, {"choose": {"descriptions": ["Exhaust Wanda Maximoff and remove Slipping Sanity from the game", "Discard the top 5 cards of the encounter deck, place 1 threat on the main scheme for each star icon discarded, and discard Slipping Sanity"], "options": [{"then": {"effect": {"exhaust": "yourAlterEgo"}, "then": {"removeFromGame": "this"}}}, {"seq": [{"discardTop": {"from": "encounterDeck", "count": 5}}, {"placeThreat": {"scheme": {"query": "mainScheme"}, "amount": {"starIconsDiscarded": "game"}}}, {"discard": "this"}]}]}}]}}
+      ]
+    },
+    {
+      "card": "15006",
+      "name": "Warp Reality",
+      "note": "Hero Interrupt: When an encounter card is revealed from the encounter deck, cancel all of its effects and discard it. Discard cards from the top of the encounter deck equal to the number of boost icons on that card. rr:cancel.4 and ruling 45f030cf3575fbe8: the card is still revealed. Ruling 0a495c671ed3b575 permits a revealed minion. The number of boost icons on that card is a count (ruling 6962a015e8597900).",
+      "abilities": [
+        {"trigger": {"event": "WhenCardRevealed", "timing": "Interrupt", "subject": "game", "form": "hero"}, "when": {"revealedFromEncounterDeck": "trigger"}, "effect": {"seq": [{"cancelOccurrence": "trigger"}, {"discard": "trigger.subject"}, {"discardTop": {"from": "encounterDeck", "count": {"boostIcons": "trigger.subject"}}}]}}
+      ]
+    },
+    {
+      "card": "15004",
+      "name": "Hex Bolt",
+      "note": "Hero Action: Discard the top 3 cards of the encounter deck. For each card discarded this way that has boost icons equal to 0, deal 2 damage to an enemy; 1, remove 2 threat from a scheme; 2, draw 1 card; 3 or more, place a status card on a character. Ruling 123a79b5c8900e0c: the discard resolves completely first. Rulings a5028ed150b39433 and 805b3f9b199ca68b: the player chooses the order the cards resolve, and each card is counted as it resolves, so a constant that leaves play changes the later counts. Ruling 0870bc11f295fbb0 and 89231097b60d9dfe: each card resolves separately and may choose a different target. rr:encounter-deck.2: the discard stops when the encounter deck empties and does not continue into the reshuffled deck, so fewer than three cards may be discarded; an iteration with no uncounted card left does nothing. The status card is chosen from tough, stunned and confused.",
+      "abilities": [
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero"}, "effect": {"seq": [{"discardTop": {"from": "encounterDeck", "count": 3}}, {"forEach": {"count": 3, "effect": {"if": {"test": {"exists": {"query": "uncountedDiscarded"}}, "then": {"chooseCard": {"from": {"query": "uncountedDiscarded"}, "effect": {"if": {"test": {"atLeast": {"value": {"boostIcons": "chosen"}, "count": 3}}, "then": {"chooseCard": {"from": {"query": "characters"}, "effect": {"choose": {"descriptions": ["Give it a tough status card", "Give it a stunned status card", "Give it a confused status card"], "options": [{"giveStatus": {"card": "chosen", "status": "tough"}}, {"giveStatus": {"card": "chosen", "status": "stunned"}}, {"giveStatus": {"card": "chosen", "status": "confused"}}]}}}}, "else": {"if": {"test": {"atLeast": {"value": {"boostIcons": "chosen"}, "count": 2}}, "then": {"draw": {"player": "you", "count": 1}}, "else": {"if": {"test": {"atLeast": {"value": {"boostIcons": "chosen"}, "count": 1}}, "then": {"chooseCard": {"from": {"query": "schemes"}, "effect": {"removeThreat": {"scheme": "chosen", "amount": 2}}}}, "else": {"chooseCard": {"from": {"query": "enemies"}, "effect": {"dealDamage": {"cards": "chosen", "amount": 2}}}}}}}}}}}}}}}}]}}
+      ]
+    },
+    {
+      "card": "15012",
+      "name": "Crisis Averted",
+      "note": "Hero Action (thwart): Remove 6 threat from the main scheme. If you paid for this card using a mental resource, this thwart ignores the crisis icon. The committed payment decides; generated but unallocated excess does not qualify.",
+      "abilities": [
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero"}, "labels": ["thwart"], "effect": {"thwart": {"target": {"query": "mainScheme"}, "effect": {"if": {"test": {"paidWithResource": "B"}, "then": {"removeThreat": {"scheme": {"query": "mainScheme"}, "amount": 6, "ignoresCrisis": "true"}}, "else": {"removeThreat": {"scheme": {"query": "mainScheme"}, "amount": 6}}}}}}}
+      ]
+    },
+    {
+      "card": "15013",
+      "name": "Multitasking",
+      "note": "Hero Action (thwart): Remove 2 threat from a scheme. If you paid for this card using a mental resource, remove 2 threat from a different scheme. The paid branch is Crisis Interdiction's (01012) two-scheme thwart.",
+      "abilities": [
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero"}, "labels": ["thwart"], "effect": {"if": {"test": {"paidWithResource": "B"}, "then": {"thwartDifferentSchemes": {"schemes": {"query": "thwartableSchemes"}, "power": {"thwart": {"target": "chosen", "effect": {"removeThreat": {"scheme": {"query": "powerTargets"}, "amount": 2}}}}}}, "else": {"chooseCard": {"from": {"query": "thwartableSchemes"}, "effect": {"thwart": {"target": "chosen", "effect": {"removeThreat": {"scheme": "chosen", "amount": 2}}}}}}}}}
+      ]
+    },
+    {
+      "card": "15018",
+      "name": "Order and Chaos",
+      "note": "Team-Up (Quicksilver and Scarlet Witch); card play checks it. Max 1 per deck. Hero Interrupt: When a treachery card is revealed from the encounter deck, cancel its When Revealed effects, then deal 2 damage to the villain. rr:then: the damage requires the cancellation; the cancellation always resolves against the treachery that triggered the interrupt, so the damage follows it in sequence, as in the reprint 14018. rr:cancel.4 leaves the treachery revealed and discarded. No player restriction is printed, so another player's reveal qualifies.",
+      "abilities": [
+        {"trigger": {"event": "WhenCardRevealed", "timing": "Interrupt", "subject": "game", "form": "hero"}, "when": {"and": [{"isKind": {"card": "trigger.subject", "kind": "treachery"}}, {"revealedFromEncounterDeck": "trigger"}]}, "effect": {"seq": [{"cancelWhenRevealed": "trigger.subject"}, {"dealDamage": {"cards": {"query": "villain"}, "amount": 2}}]}}
+      ]
+    },
+    {
+      "card": "15003",
+      "name": "Chaos Magic",
+      "note": "Hero Action: Play a card from your hand, ignoring its resource cost. Discard cards from the top of the encounter deck equal to that card's printed resource cost. rr:ignore.1: no resources are paid, so cost increases and reductions do not apply and paid-resource conditions read an empty payment (ruling 77085e3b31a219a4). rr:requirement-resources.2 excludes a card with a resource requirement. The played card may be any card in hand its own play restrictions and timing allow now; an event is played by its Action. A per-player cost is printed per player (ruling 40fe8b059f2f5282). The discard follows the play's completion.",
+      "abilities": [
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero"}, "effect": {"seq": [{"playIgnoringResourceCost": "game"}, {"discardTop": {"from": "encounterDeck", "count": {"result": "printedCostPlayed"}}}]}}
+      ]
+    },
+    {
+      "card": "15007",
+      "name": "Agatha Harkness",
+      "note": "Alter-Ego Action: Exhaust Agatha Harkness -> look at the top 3 cards of your deck. Add 1 of those to your hand and place the rest on the bottom of your deck in any order. The player chooses the order of the remaining cards; with fewer cards in the deck the look takes what is there.",
+      "abilities": [
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "alter-ego"}, "cost": {"exhaust": "this"}, "effect": {"chooseTopForHand": {"count": 3, "rest": "bottomOfDeck"}}}
+      ]
+    },
+    {
+      "card": "15015",
+      "name": "Turn the Tide",
+      "note": "Response (attack): After your hero thwarts and removes all threat from a scheme, deal 3 damage to an enemy. Ruling 2f5ce668fd00dbb2: the identity must be in hero form when the last threat is removed; ruling 0e978ae1cc77dc8c: the event may then be played in alter-ego form. Ruling 05f47a1bee74848c: it answers the thwart's response window. Ruling 350ab70047bb342d: only a thwart counts. The damage is an attack (rr:attack).",
+      "abilities": [
+        {"trigger": {"event": "WhenThwartEnds", "timing": "Response", "actor": "you", "alsoHappened": "WhenHeroThwartRemovesAllThreat"}, "labels": ["attack"], "effect": {"chooseCard": {"from": {"query": "attackableEnemies"}, "effect": {"attack": {"target": "chosen", "effect": {"dealAttackDamage": {"cards": "chosen", "amount": 3}}}}}}}
+      ]
+    },
+    {
+      "card": "15029",
+      "name": "Last Stand",
+      "note": "Hero Interrupt: When an ally you control attacks, it gets +3 ATK for that attack. After that attack resolves, discard that ally. Ruling 01d17bfed5e5dad8 discards the ally before its consequential damage; rr:delayed-effect.1 resolves the discard before responses to the attack's end. The delay is registered first so an attack the engine cannot bound raises before any change.",
+      "abilities": [
+        {"trigger": {"event": "WhenAttackInitiated", "timing": "Interrupt", "actor": "ally", "player": "you", "form": "hero"}, "effect": {"seq": [{"delayUntil": {"condition": "WhenAttackEnds", "effect": {"discard": "trigger.actor"}}}, {"grantUntil": {"card": "trigger.actor", "keyword": "attack", "amount": 3, "until": "EndOfAttack"}}]}}
       ]
     }
   ]

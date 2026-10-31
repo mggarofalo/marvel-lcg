@@ -226,7 +226,8 @@ public static class Offering
         var tiers = AbilityWindow.Tiers(abilities.Waiting(world, window.Occurrence, window.Kind),
             window.Kind, window.Occurrence);
         var forced = Forced(tiers);
-        return forced.Count > 0 ? forced : Eligible(world, window.Occurrence, tiers, player);
+        return forced.Count > 0 ? forced : Eligible(world, window.Occurrence, tiers, player)
+            .Where(ability => OfferedInStage(ability, window, tiers)).ToArray();
     }
 
     private static IReadOnlyList<PendingAbility> Forced(IReadOnlyList<AbilityTier> tiers)
@@ -264,8 +265,9 @@ public static class Offering
                 return null;
             }
 
-            var eligible = Eligible(world, occurrence, tiers, window.Asking);
-            if (eligible.Count > 0)
+            var eligible = Eligible(world, occurrence, tiers, window.Asking)
+                .Where(ability => OfferedInStage(ability, window, tiers)).ToArray();
+            if (eligible.Length > 0)
             {
                 return new Prompt(
                     Player: window.Asking,
@@ -283,7 +285,7 @@ public static class Offering
                 };
             }
 
-            if (world.Windows.Pass())
+            if (world.Windows.Pass(WouldStage(window, tiers)))
             {
                 return null;
             }
@@ -291,6 +293,23 @@ public static class Offering
 
         return null;
     }
+
+    /// <summary>Whether the window is still offering optional "would" interrupts first.</summary>
+    /// <remarks>
+    /// rr:would: a "would" interrupt has "a higher timing priority" than an
+    /// interrupt to the same condition without it. Forced abilities already
+    /// resolve by tier; this keeps the optional ones in the same order.
+    /// </remarks>
+    internal static bool WouldStage(Window window, IReadOnlyList<AbilityTier> tiers) =>
+        !window.PastWould && tiers.Any(tier => AbilityWindow.Split(tier).Optional.Any(ability => ability.Would));
+
+    /// <summary>Whether the decline of this window ends its "would" stage.</summary>
+    internal static bool WouldStage(World world, IWindowAbilities abilities, Window window) =>
+        WouldStage(window, AbilityWindow.Tiers(abilities.Waiting(world, window.Occurrence, window.Kind),
+            window.Kind, window.Occurrence));
+
+    private static bool OfferedInStage(PendingAbility ability, Window window, IReadOnlyList<AbilityTier> tiers) =>
+        WouldStage(window, tiers) ? ability.Would : !(window.PastWould && ability.Would);
 
     private static Prompt Ordering(
         World world,

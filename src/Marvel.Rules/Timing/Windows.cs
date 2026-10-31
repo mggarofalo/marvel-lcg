@@ -75,11 +75,18 @@ public sealed class Windows(World world)
     /// is.
     /// </remarks>
     /// <returns>True when the window closed.</returns>
-    public bool Pass()
+    public bool Pass(bool wouldStage = false)
     {
         var window = Innermost();
         world.Agenda.Executions.RequireWindowComplete(window.Occurrence);
         var passed = window.Passed + 1;
+        if (passed >= world.Players && wouldStage)
+        {
+            // rr:would: every player passed on the higher-priority "would"
+            // interrupts, so the ordinary interrupts are offered round the table.
+            open[^1] = window with { Asking = world.FirstPlayer, Passed = 0, PastWould = true };
+            return false;
+        }
         if (passed >= world.Players)
         {
             open.RemoveAt(open.Count - 1);

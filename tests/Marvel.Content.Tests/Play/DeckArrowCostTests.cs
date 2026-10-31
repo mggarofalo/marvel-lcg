@@ -55,7 +55,7 @@ public sealed class DeckArrowCostTests
     public void EncounterDiscardCostSuppliesItsPrintedBoostReceipt()
     {
         var runner = Runner("01006", "Action",
-            """{"placeCounters":{"card":"you","counter":"observed","count":{"printedBoostIconsDiscarded":"game"}}}""",
+            """{"placeCounters":{"card":"you","counter":"observed","count":{"boostIconsDiscarded":"game"}}}""",
             cost: """{"discardTop":{"from":"encounterDeck","count":1}}""");
         var (_, world) = Playing(_ => { }, abilities: runner);
         var source = InPlay(world, "01006");

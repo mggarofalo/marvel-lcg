@@ -19,7 +19,7 @@ public sealed class ConstrainedResourceDiscardTests
         var runner = Runner("02041", """
             {"seq":[{"discardTop":{"from":"encounterDeck","count":2}},
               {"choose":{"options":[{"choose":{"options":[{"exhaust":"this"},{"exhaust":"you"}]}},{"exhaust":"you"}]}},
-              {"eachPlayer":{"order":"playerOrder","effect":{"discardResourceIcons":{"printedBoostIconsDiscarded":"game"}}}},
+              {"eachPlayer":{"order":"playerOrder","effect":{"discardResourceIcons":{"boostIconsDiscarded":"game"}}}},
               {"placeCounters":{"card":"this","counter":"finished","count":1}}]}
             """);
         var world = Board(runner);

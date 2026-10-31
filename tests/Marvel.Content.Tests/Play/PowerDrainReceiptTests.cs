@@ -24,7 +24,7 @@ public sealed class PowerDrainReceiptTests
         // proves that quantity separately from the hand-resource prerequisite.
         var runner = RevealRunner("02041", """
             {"seq":[{"discardTop":{"from":"encounterDeck","count":7}},
-              {"placeCounters":{"card":"you","counter":"observed","count":{"add":[1,{"printedBoostIconsDiscarded":"game"}]}}},
+              {"placeCounters":{"card":"you","counter":"observed","count":{"add":[1,{"boostIconsDiscarded":"game"}]}}},
               {"placeCounters":{"card":"you","counter":"milled","count":{"cardsDiscarded":"game"}}}]}
             """);
         var world = Board(runner);
@@ -91,7 +91,7 @@ public sealed class PowerDrainReceiptTests
                 {"choose":{"options":[{"exhaust":"you"},{"exhaust":"this"}]}},
                 {"exhaust":"this"}]}},
               {"recruitDiscarded":"02042"},
-              {"placeCounters":{"card":"you","counter":"observed","count":{"printedBoostIconsDiscarded":"game"}}}]}
+              {"placeCounters":{"card":"you","counter":"observed","count":{"boostIconsDiscarded":"game"}}}]}
             """);
         var world = Board(runner);
         var electro = world.CreateCard("02042", world.AreaOf(DeckType.EncounterDeck));

@@ -47,14 +47,7 @@ public readonly record struct PhaseStep(
     public Occurrence OccurrenceOf(World world, ICardFacts facts)
     {
         int id = OccurrenceId ?? Moment.Id(Round, Number, Index);
-        if (Operation is BoostFaceupOperation boost) return boost.Occurrence(id, world, Subject, Seat);
-        if (Operation is HeroDefenseOperation defense) return defense.Occurrence(id, world);
-        if (Operation is CardReadyOperation ready) return ready.Occurrence(id);
-
-        if (Operation is EncounterEntryOperation entry)
-            return new Occurrence(id, EncounterEntry.IsCurrent(world, entry.Entry)
-                && EncounterEntry.WillEnter(world, world.Cards[Subject], entry.Entry.Player, entry.Entry.Placement)
-                    ? [Steps.CardEntersPlay] : [], Subject, Seat);
+        if (OperationOccurrence(id, world) is { } owned) return owned;
         return What switch
         {
             EventPlayTiming.Initiated => new Occurrence(id, Conditions, Subject, Seat)
@@ -91,7 +84,7 @@ public readonly record struct PhaseStep(
             LateAttackRecipientOperation.Step when Require<LateAttackRecipientOperation>() is { } late =>
                 Occurrence.ForAttack(id, Conditions, world, facts, late.Attacker, late.Recipient, late.Player),
             Steps.CharacterThwarts when Require<CharacterThwartOperation>().Thwart is { } thwart =>
-                Occurrence.ForThwart(
+                OccurrenceCapture.Thwart(
                     id,
                     BasicUse.ThwartConditions(world, facts, thwart, Conditions),
                     world,
@@ -129,6 +122,19 @@ public readonly record struct PhaseStep(
             _ => new Occurrence(id, Conditions, Subject, Seat),
         };
     }
+
+    // Operations that build their own occurrence from their typed state.
+    private Occurrence? OperationOccurrence(int id, World world) => Operation switch
+    {
+        BoostFaceupOperation boost => boost.Occurrence(id, world, Subject, Seat),
+        HeroDefenseOperation defense => defense.Occurrence(id, world),
+        CardReadyOperation ready => ready.Occurrence(id),
+        BoostIconCountOperation count => count.Occurrence(id, Seat),
+        EncounterEntryOperation entry => new Occurrence(id, EncounterEntry.IsCurrent(world, entry.Entry)
+            && EncounterEntry.WillEnter(world, world.Cards[Subject], entry.Entry.Player, entry.Entry.Placement)
+                ? [Steps.CardEntersPlay] : [], Subject, Seat),
+        _ => null,
+    };
 
     private Occurrence VillainPhaseThreat(int id, World world, ICardFacts facts)
     {
@@ -200,7 +206,8 @@ public readonly record struct PhaseStep(
     /// <summary>An occurrence that needs no live attack roles, or null.</summary>
     public Occurrence? ScheduledOccurrence => Operation is DirectDamagePreventionOperation prevention
         ? prevention.Prevention.Occurrence : Operation is CompletedCardEffectOperation { Occurrence: { } response }
-        ? response : Operation is EncounterEntryOperation or HeroDefenseOperation or BoostFaceupOperation or CardReadyOperation ? null : What is
+        ? response : Operation is EncounterEntryOperation or HeroDefenseOperation or BoostFaceupOperation or CardReadyOperation
+            or BoostIconCountOperation ? null : What is
         Steps.Attack or Steps.CharacterAttacks or LateAttackRecipientOperation.Step or Steps.CharacterThwarts or Steps.EndAttack
             or Steps.PlaceThreat or Steps.SchemeThreat or Steps.PlaceThreatEffect
             or Steps.PrepareIndirectAttackDamage

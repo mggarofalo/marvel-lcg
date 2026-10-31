@@ -76,6 +76,7 @@ public static class AgendaProcedures
             AgendaProcedureKind.Campaign => CampaignRecoveryProcedure.Apply(world, step, events),
             AgendaProcedureKind.EncounterEntry => EncounterEntry.Apply(world, step, events),
             AgendaProcedureKind.Readying => CardReadying.Apply(world, step, events),
+            AgendaProcedureKind.BoostCount => BoostIconCounting.Apply(step),
             AgendaProcedureKind.Lifecycle when step.Operation is PlayerAllyEntryOperation => PlayerAllyEntry.Apply(world, step, events),
             AgendaProcedureKind.Lifecycle => step.Operation is IdentityFormChangeOperation form
                 ? form.Apply(world, step, events) : null,

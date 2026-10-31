@@ -222,7 +222,8 @@ public static class StateFieldCatalog
         or Play.HeroSpecificPlayPermissions.ProhibitedField or Play.ObligationActionPermissions.ProhibitedField
         or Play.AttackPermissions.KangProhibitedField
         or Play.BasicPowerDivision.AttackField or Play.BasicPowerDivision.ThwartField
-        or Play.AttackDamageReduction.Field;
+        or Play.AttackDamageReduction.Field
+        or Play.BoostIconCounting.EncounterIncreaseField or Play.CardPayment.CostIncreaseField;
 
     /// <summary>Whether a field is one of the five printed basic powers.</summary>
     public static bool IsBasicPowerField(string field) =>

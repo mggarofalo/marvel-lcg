@@ -38,7 +38,7 @@ internal static class AbilityFutureDiscardAdmission
     private static bool UsesDiscardReceipt(AbilityNumber number) => number switch
     {
         AbilityNumber.ResolutionValue { Kind: AbilityResolutionNumber.CardsDiscarded
-            or AbilityResolutionNumber.PrintedBoostIconsDiscarded
+            or AbilityResolutionNumber.BoostIconsDiscarded
             or AbilityResolutionNumber.PrintedResourceIconsDiscarded
             or AbilityResolutionNumber.PrintedCostDiscarded
             or AbilityResolutionNumber.DistinctCardTypesDiscarded

@@ -98,6 +98,7 @@ internal static class AbilitySelectorLowering
         "attachmentsOnVillain" => AbilityCardQuery.AttachmentsOnVillain,
         "attachmentsOnThis" => AbilityCardQuery.AttachmentsOnThis,
         "upgradesOnThis" => AbilityCardQuery.UpgradesOnThis,
+        "uncountedDiscarded" => AbilityCardQuery.UncountedDiscarded,
         "beneathThis" => AbilityCardQuery.BeneathThis,
         "invocationTop" => AbilityCardQuery.InvocationTop,
         "statusCards" => AbilityCardQuery.StatusCards,

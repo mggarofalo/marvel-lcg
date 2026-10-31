@@ -69,14 +69,16 @@ internal sealed class AbilityExpressionEvaluation(
         AbilityResolutionNumber.CardsExhaustedForCost => context.Bindings.ExhaustedForCost.Count,
         AbilityResolutionNumber.ActivationAttacksAgainstYou =>
             context.Results.GetValueOrDefault(AbilityActivationReceipts.PlayerKey(context.Player)),
-        AbilityResolutionNumber.PrintedBoostIconsDiscarded => context.Discarded.Sum(card =>
-            context.World.Facts.PrintedValue(card.FaceId, "Boost", context.World.Players)),
+        AbilityResolutionNumber.BoostIconsDiscarded => context.Discarded.Sum(card =>
+            AbilityBoostCounting.Counted(context.World, context.Results, card)),
+        AbilityResolutionNumber.StarIconsDiscarded => context.Discarded.LongCount(card =>
+            AbilityBoostCounting.HasStarIcon(context.World, card)),
         AbilityResolutionNumber.PrintedResourceIconsDiscarded => context.Discarded.Sum(card =>
             (long)Resources.GeneratedBy(card.FaceId, context.World.Facts).Length),
         AbilityResolutionNumber.DistinctPrintedResourceTypesDiscarded => context.Discarded.SelectMany(card =>
             Resources.GeneratedBy(card.FaceId, context.World.Facts)).Distinct().LongCount(),
         AbilityResolutionNumber.TopEncounterDiscardBoostPlusOne => 1 + (context.Discarded.LastOrDefault() is { } card
-            ? context.World.Facts.PrintedValue(card.FaceId, "Boost", context.World.Players) : 0),
+            ? AbilityBoostCounting.Counted(context.World, context.Results, card) : 0),
         _ => throw new InvalidOperationException("Unknown compiled resolution number"),
     };
 
@@ -89,6 +91,7 @@ internal sealed class AbilityExpressionEvaluation(
             AbilityCardNumberProperty.Damage => context.Bindings.Quantities(card).Damage,
             AbilityCardNumberProperty.RemainingHealth => Math.Max(0, DamagePlacement.Health(context.World, context.World.Facts, card) - context.Bindings.Quantities(card).Damage),
             AbilityCardNumberProperty.StartingHealth => StartingHealth(card),
+            AbilityCardNumberProperty.BoostIcons => AbilityBoostCounting.Counted(context.World, context.Results, card),
             _ => throw new InvalidOperationException("Unknown compiled card number"),
         };
     }

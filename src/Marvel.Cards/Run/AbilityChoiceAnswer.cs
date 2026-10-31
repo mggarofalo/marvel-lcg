@@ -40,7 +40,7 @@ internal sealed class AbilityChoiceAnswer(
     private List<Marvel.Rules.Events.GameEvent> ApplyRemaining(AbilityEffect choice, string operation)
     {
         if (operation == "makeTheCall") return ApplyMakeTheCall(choice);
-        if (operation == "playSharedHeroTraitCard") return AbilitySharedTraitPlay.Commit(execution, cast, choice, input);
+        if (operation is "playSharedHeroTraitCard" or "playIgnoringResourceCost") return AbilitySharedTraitPlay.Commit(execution, cast, choice, input);
         if (operation == "indirectDamage") return ApplyIndirectDamage(choice);
         if (operation == "attack") return ApplyCountedAttack((AbilityEffect.Power)choice);
         return ApplyResumableEffectChoice(choice);
@@ -82,6 +82,7 @@ internal sealed class AbilityChoiceAnswer(
             "peekTop" => AbilityDeckPeek.Answer(execution, choice, cast, input) ? Continue() : cast.Events,
             "inspectEncounterTop" => ApplyInspection((AbilityEffect.InspectEncounterTop)choice),
             "resolveSpecials" => ApplyResolveSpecials(choice),
+            "chooseTopForHand" when choice is AbilityEffect.ChooseTopForHand { RestToBottom: true } bottom => AbilityTopForHandBottomOrder.Apply(execution, bottom, cast, input) ? Continue() : cast.Events,
             "chooseTopForHand" => ApplyChooseTopForHand(choice),
             "chooseDiscardToShuffle" => ApplyChooseDiscardToShuffle(choice),
             "exhaustAnyNumber" => AbilityAnyNumberExhaustion.Commit(execution.StructuralContext(cast), choice, input, cast) ? Continue() : cast.Events,

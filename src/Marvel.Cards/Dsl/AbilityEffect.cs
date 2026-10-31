@@ -242,8 +242,8 @@ public abstract record AbilityEffect
         /// <summary>Engage the first player rather than the resolver.</summary>
         public bool FirstPlayer { get; init; }
     }
-    /// <summary>Choose one of the top cards for hand.</summary>
-    public sealed record ChooseTopForHand(int Count) : AbilityEffect;
+    /// <summary>Choose one of the top cards for hand; the others are discarded or, with <paramref name="RestToBottom"/>, ordered onto the deck bottom.</summary>
+    public sealed record ChooseTopForHand(int Count, bool RestToBottom = false) : AbilityEffect;
     /// <summary>Privately inspect encounter deck tops and retain the number of treacheries.</summary>
     public sealed record InspectEncounterTop(int Count, string Result) : AbilityEffect;
     /// <summary>Privately look at a bounded encounter group, discard one, and order survivors.</summary>

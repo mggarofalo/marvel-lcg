@@ -13,10 +13,10 @@ public sealed class DiscardedPrintedNumberTests
     [InlineData("printedResourceIconsDiscarded", "yourDeck", "01088,01088,01089,01090,01055", 9)]
     [InlineData("distinctPrintedResourceTypesDiscarded", "yourDeck", "01088,01088,01089,01090,01055", 4)]
     [InlineData("distinctPrintedResourceTypesDiscarded", "yourDeck", "01088,01088", 1)]
-    [InlineData("printedBoostIconsDiscarded", "encounterDeck", "01100,01101,01121", 3)]
+    [InlineData("boostIconsDiscarded", "encounterDeck", "01100,01101,01121", 3)]
     [InlineData("printedResourceIconsDiscarded", "yourDeck", "", 0)]
     [InlineData("distinctPrintedResourceTypesDiscarded", "yourDeck", "", 0)]
-    [InlineData("printedBoostIconsDiscarded", "encounterDeck", "", 0)]
+    [InlineData("boostIconsDiscarded", "encounterDeck", "", 0)]
     public void CountsPrintedIconsWithoutConditionalMultipliersOrBoostStars(string expression, string area, string faces, int expected)
     {
         string[] discarded = faces.Split(',', StringSplitOptions.RemoveEmptyEntries);

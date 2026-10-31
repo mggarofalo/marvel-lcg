@@ -64,13 +64,14 @@ public sealed class WouldAttackPriorityTests
     }
 
     [Fact]
-    public void UnsupportedOptionalWouldTimingIsRejectedExplicitly()
+    [Rule("rr:would")]
+    public void WouldTimingOutsideAnInterruptIsRejectedExplicitly()
     {
-        // The executable Core boundary needs forced-would ordering. Optional
-        // would subwindows require a separate pass lifecycle and are not guessed.
+        // rr:would: "The word 'would' is used to define the triggering condition of
+        // some interrupt abilities." A response cannot carry it.
         const string json = """
             { "cards": [{ "card": "01001a", "name": "Synthetic", "abilities": [{
-              "trigger": { "event": "WhenAttackInitiated", "timing": "Interrupt", "would": true },
+              "trigger": { "event": "WhenAttackEnds", "timing": "Response", "would": true },
               "effect": { "draw": { "player": "you", "count": 1 } }
             }] }] }
             """;
