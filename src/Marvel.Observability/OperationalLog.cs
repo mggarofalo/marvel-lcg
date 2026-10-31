@@ -140,6 +140,7 @@ public sealed class OperationalLog
             or "restore_failed" or "save_failed"
             or "server_start_failed"
             or "diagnostics_unavailable"
+            or "save_incompatible"
             or "session_not_found" or "setup_unavailable" or "stale_decision"
             or "stale_history" or "transport_cancelled" or "transport_failed"
             or "unsupported_version"
@@ -149,7 +150,9 @@ public sealed class OperationalLog
             or "digest_identity_mismatch"
             or "cards_dataset_mismatch"
             or "setup_dataset_mismatch"
-            or "abilities_dataset_mismatch" => value,
+            or "abilities_dataset_mismatch"
+            or "campaign_compatibility"
+            or "save_schema_mismatch" => value,
         _ => "unknown_error",
     };
 
@@ -172,7 +175,7 @@ public sealed class OperationalLog
 
     internal static string? SafeStage(string? value) => value switch
     {
-        null or "restore" or "migration" or "quarantine" => value,
+        null or "restore" or "refused" or "quarantine" => value,
         _ => "unknown",
     };
 

@@ -32,12 +32,9 @@ All five actual authored rows have independent review. The integrated book has
   cards outside the eliminated player's area, ordered minion transfer followed
   by owned-card disposal, projections and canonical transcript changes.
 
-Replay contract v28 is the published aggregate boundary; v27 journals are
-explicitly rejected. Existing frozen Core/RoRS routes still require exact replay.
-[Played campaign reconciliation](played-campaign-v28-reconciliation.md) proves
-the corrected elimination moves cause earlier rejection of incompatible old
-campaigns, without changing their source files or losing the original later
-divergence controls. No protocol 42, save 7, RNG or digest-v3 format change occurs.
+Replay contract v28 changed the elimination outcome. Saves under every earlier
+replay identity are refused without changing their files; there is no upgrade
+route (MARVEL-896). No protocol 42, save 7, RNG or digest-v3 format change occurs.
 
 ## Verification and remaining gate
 

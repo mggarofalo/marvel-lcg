@@ -15,12 +15,24 @@ internal static class CampaignCommands
         if (host.Factory.CampaignDefinition is null)
             return CampaignHost.Failure(request, "campaign_unavailable", "This campaign is not admitted by the installed content.");
         if (query.Action is "create" or "import") return Create(host, request, query);
-        if (host.Deleted.TryGetValue(request.GameId, out var deletion))
-            return CampaignManagement.Deleted(request, deletion);
+        if (Withdrawn(host, request, query) is { } withdrawn) return withdrawn;
         if (!host.Campaigns.TryGetValue(request.GameId, out var campaign) || request.Capability is null
             || campaign.OwnerVerifier != SessionAuthorityRegistry.Verifier(request.Capability))
             return CampaignHost.Failure(request, "campaign_not_found", "The campaign owner capability is not valid.");
         return Authorized(host, request, query, campaign);
+    }
+
+    private static EngineResponse? Withdrawn(CampaignHost host, EngineRequest request, CampaignQuery query)
+    {
+        if (host.Deleted.TryGetValue(request.GameId, out var deletion))
+            return CampaignManagement.Deleted(request, deletion);
+        if (!host.Refused.TryGetValue(request.GameId, out var refused) || !refused.OwnedBy(request.Capability))
+            return null;
+        // A refused archive is never loaded, but its owner may still remove it permanently.
+        if (query.Action != "delete")
+            return CampaignHost.Failure(request, RefusedSaves.Code, RefusedSaves.Message(refused.Category));
+        host.DeleteRefused(request.GameId, request);
+        return CampaignHost.Success(request) with { CampaignDeleted = true };
     }
 
     private static bool ValidQuery(EngineRequest request, CampaignQuery query)

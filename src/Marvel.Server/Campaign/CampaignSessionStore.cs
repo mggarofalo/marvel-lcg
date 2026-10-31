@@ -2,7 +2,7 @@ using Marvel.Session;
 namespace Marvel.Server;
 
 /// <summary>Routes every campaign-owned session commit into its campaign's single aggregate publication.</summary>
-internal sealed class CampaignSessionStore : IContentUpgradeStore
+internal sealed class CampaignSessionStore : ISessionStore
 {
     private readonly ISessionStore ordinary;
     private readonly CampaignHost owner;
@@ -29,12 +29,5 @@ internal sealed class CampaignSessionStore : IContentUpgradeStore
         if (owner.StartingRequest is { } request)
             proposed = CampaignCommands.AddReceipt(proposed, request, session.Save.Session.Label);
         return owner.Publish(proposed);
-    }
-
-    public string? CommitContentUpgrade(StoredSession previous, StoredSession candidate, string? generation)
-    {
-        if (previous.Save.Setup.Campaign is not null || ordinary is not IContentUpgradeStore upgrades)
-            throw new SessionSaveException("campaign content upgrades require complete aggregate verification");
-        return upgrades.CommitContentUpgrade(previous, candidate, generation);
     }
 }

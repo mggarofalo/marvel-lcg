@@ -74,6 +74,7 @@ public sealed class GameProgressPresentationTests
     [InlineData("unsupported_version", GameProgressKind.VersionMismatch, "VERSION MISMATCH")]
     [InlineData("session_unavailable", GameProgressKind.SessionUnavailable, "SESSION UNAVAILABLE")]
     [InlineData("invitation_unavailable", GameProgressKind.SessionUnavailable, "SESSION UNAVAILABLE")]
+    [InlineData("save_incompatible", GameProgressKind.SessionUnavailable, "SAVE INCOMPATIBLE")]
     [InlineData("save_failed", GameProgressKind.StorageFailure, "STORAGE FAILURE")]
     public void OperationalFailuresHaveDistinctBoundedStates(
         string code,

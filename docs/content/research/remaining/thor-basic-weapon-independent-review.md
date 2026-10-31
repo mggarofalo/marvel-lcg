@@ -63,10 +63,7 @@ copy applies when a qualifying optional observer actually produces that window.
 
 Replay 26 is unreleased. Keep the agreed Thor replay boundary and check the final
 integrated revision, without rewriting frozen fixtures. Concrete expectations are:
-`EngagementReplayRouteTests` retains the frozen v19/v20/v21 routes to v26 and refuses
-other destinations before opening gameplay; `EngagementReplayReviewTests` retains
-independent RNG/digest/dataset guards and refuses a pending-prompt mismatch without
-publishing or changing the durable predecessor; `BasicAttackCostReplayTests`
+saves under earlier replay identities are refused (MARVEL-896); `BasicAttackCostReplayTests`
 reconstructs a suspended basic cost and the same paid/stunned outcome;
 `NestedInterruptReplayTests` reconstructs the inner authority and future. Final
 book integration additionally needs an actual 06015 pending interrupt saved and
@@ -90,7 +87,7 @@ All logs are outside the repository under
   `restored-build.log` is a successful non-incremental Release rebuild of the
   restored sources before the passing 85-case run.
 - `replay.log`: 23 server cases passed using
-  `EngagementReplay|BasicAttackCostReplayTests|NestedInterruptReplayTests`.
+  `BasicAttackCostReplayTests|NestedInterruptReplayTests`.
 
 The candidate's separate compiled host-filter mutation remains its own evidence;
 this review does not count it as a newly executed experiment. Full managed,

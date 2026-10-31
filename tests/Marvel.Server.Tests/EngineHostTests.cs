@@ -26,10 +26,11 @@ public abstract class EngineHostTestBase
     protected static IReadOnlyList<Marvel.View.CardDescriptor> Hand(EngineResponse response, int seat) => Assert.Single(Assert.IsType<WorldDescriptor>(response.World).Areas, area => area.Zone == "HandsArea" && area.Owner == seat).Cards;
     protected static string RequiredCapability(EngineResponse response) => Assert.IsType<string>(response.Capability);
     protected static Decision TakeOnly(EngineResponse response) => new(Assert.Single(Assert.IsType<Marvel.Rules.Prompts.Prompt>(response.Prompt).Affordances).Id, []);
-    protected static void AssertQuarantined(IDurableGameFactory factory, StoredSession stored, string gameId, string capability)
+    protected static void AssertQuarantined(IDurableGameFactory factory, StoredSession stored, string gameId, string capability,
+        string expected = "session_not_found")
     {
         var restarted = new EngineHost(factory, store: new FixedSessionStore(stored));
-        Assert.Equal("session_not_found", restarted.Exchange(EngineRequest.SyncGame("quarantined", gameId, capability)).Error?.Code);
+        Assert.Equal(expected, restarted.Exchange(EngineRequest.SyncGame("quarantined", gameId, capability)).Error?.Code);
     }
 
     protected static Decision PayFirstPlayableCard(Prompt prompt)

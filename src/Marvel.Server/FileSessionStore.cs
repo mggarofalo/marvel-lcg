@@ -9,7 +9,7 @@ using Marvel.Session;
 namespace Marvel.Server;
 
 /// <summary>Generation-based filesystem persistence with one atomic manifest switch.</summary>
-public sealed class FileSessionStore : IContentUpgradeStore
+public sealed class FileSessionStore : ISessionStore
 {
     private const string Current = "current";
     private static readonly Encoding StrictUtf8 = new UTF8Encoding(
@@ -131,11 +131,7 @@ public sealed class FileSessionStore : IContentUpgradeStore
                 or JsonException
                 or SessionSaveException)
             {
-                results.Add(new SessionLoadResult(
-                    null,
-                    storageId,
-                    "restore_failed",
-                    ValidGeneration(generation ?? string.Empty) ? generation : null));
+                results.Add(Unreadable(directory, storageId, generation));
             }
         }
 
@@ -148,27 +144,14 @@ public sealed class FileSessionStore : IContentUpgradeStore
         ArgumentNullException.ThrowIfNull(session);
         string directory = PrepareDirectory(session.Save.Session.StorageId);
         using var lease = DurableFiles.AcquireWriterLease(directory);
-        SessionContentPublication.RequireUnchanged(directory, session.Save.Compatibility);
         return CommitGeneration(session);
     }
 
-    /// <inheritdoc />
-    public string? CommitContentUpgrade(StoredSession previous, StoredSession candidate, string? generation)
+    private static SessionLoadResult Unreadable(string directory, string storageId, string? generation)
     {
-        string directory = PrepareDirectory(previous.Save.Session.StorageId);
-        using var lease = DurableFiles.AcquireWriterLease(directory);
-        string actualGeneration = ReadStrict(Path.Combine(directory, Current)).Trim();
-        if (!ValidGeneration(actualGeneration) || actualGeneration != generation
-            || candidate.Save.Session != previous.Save.Session)
-            throw new SessionSaveException("content upgrade predecessor changed");
-        var current = new StoredSession(
-            SessionSaveJson.Read(ReadStrict(Path.Combine(directory, actualGeneration + ".session.json"))),
-            StoredAuthorityJson.Read(ReadStrict(Path.Combine(directory, actualGeneration + ".authority.json"))));
-        if (StoredSessionJson.Write(current) != StoredSessionJson.Write(previous))
-            throw new SessionSaveException("content upgrade predecessor changed");
-        ContentUpgradeBackup.Preserve(directory, actualGeneration + ".session.json");
-        ContentUpgradeBackup.Preserve(directory, actualGeneration + ".authority.json");
-        return CommitGeneration(candidate);
+        string? valid = ValidGeneration(generation ?? string.Empty) ? generation : null;
+        RefusedSchema? refused = valid is null ? null : SessionSchemaProbe.Read(directory, valid);
+        return new SessionLoadResult(null, storageId, refused?.Category ?? "restore_failed", valid) { Refused = refused };
     }
 
     private string PrepareDirectory(string storageId)

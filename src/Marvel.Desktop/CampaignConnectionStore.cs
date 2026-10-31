@@ -45,6 +45,7 @@ public sealed class CampaignConnectionStore : IDisposable
             if (connection.Snapshot is null) json.WriteNullValue();
             else json.WriteRawValue(EngineJson.Write(new EngineResponse(EngineProtocol.Version, "cache",
                 connection.CampaignId!, null, null, []) { Campaign = connection.Snapshot }));
+            if (connection.Refused) json.WriteBoolean("refused", true);
             json.WriteEndObject();
         }
         files.Write(connection.LocalId, bytes.ToArray());
@@ -66,10 +67,14 @@ public sealed class CampaignConnectionStore : IDisposable
             game is null || secret is null ? null : new(game, secret),
             pending.ValueKind == JsonValueKind.Null ? null : EngineJson.ReadRequest(System.Text.Encoding.UTF8.GetBytes(pending.GetRawText())))
         {
-            Snapshot = json.TryGetProperty("snapshot", out var snapshot) && snapshot.ValueKind != JsonValueKind.Null
-                ? EngineJson.ReadResponse(System.Text.Encoding.UTF8.GetBytes(snapshot.GetRawText())).Campaign : null,
+            Snapshot = SnapshotOf(json),
+            Refused = json.TryGetProperty("refused", out var refused) && refused.GetBoolean(),
         };
     }
+
+    private static CampaignDescriptor? SnapshotOf(JsonElement json) =>
+        json.TryGetProperty("snapshot", out var snapshot) && snapshot.ValueKind != JsonValueKind.Null
+            ? EngineJson.ReadResponse(System.Text.Encoding.UTF8.GetBytes(snapshot.GetRawText())).Campaign : null;
 
     /// <summary>Releases the local writer lease.</summary>
     public void Dispose() => files.Dispose();

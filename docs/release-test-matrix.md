@@ -14,10 +14,10 @@ the artifact produced earlier in the same protected-tag workflow.
 | Linux server forward upgrade | Exact release digest over a save from lower product `0.0.0` built from compatible source | Same signed release image | Same replay, RNG, digest, protocol, and datasets; product version increases | Existing schema `7` save | Replay-verify and publish the saved session without replacing the backup |
 | Linux server backup restore | Exact release digest with a stopped-volume archive restored into a fresh volume | Same signed release image | Same as forward upgrade | Restored schema `7` save | Replay-verify and publish the saved session |
 | Linux server interrupted candidate | Exact release digest killed after valid restore against a copied pre-upgrade volume | No weakened trust or parsing | Abrupt termination uses the last atomic generation | Interrupted volume remains recoverable; matching backup and prior image remain runnable |
-| Linux server downgrade | Lower product `0.0.0` over a save last written by the release | Deliberately local test image, never published | Product version is below the save's last-writer floor | Newer schema `7` save preserved | Quarantine as `unsupported_downgrade`; direct recovery to newer image or matching backup |
+| Linux server downgrade | Lower product `0.0.0` over a save last written by the release | Deliberately local test image, never published | Product version is below the save's last-writer floor | Newer schema `7` save preserved | Refuse, logging `unsupported_downgrade`; direct recovery to newer image or matching backup |
 | Release-candidate journey | Exact desktop artifact identities plus the immutable signed server digest | Each platform keeps its community trust limitation | Two authorized clients synchronize after a lower-version restart and a monotonic upgrade to the release image | One saved Core game remains authoritative throughout | Complete the game, retain redacted diagnostics and a read-only incident manifest, then publish one hash-bound acceptance record |
 
-Unsupported save schema quarantine, replay/RNG/digest
+Unsupported save schema refusal, replay/RNG/digest
 refusal, dataset mismatch, atomic storage failure, and last-writer stamping are
 managed integration tests because constructing those invalid states through a
 public package interface would bypass the strict parser being tested. The

@@ -29,6 +29,6 @@ and the digest changes. Old digest:
 Checkpoint-635 digest:
 `77c777ea8a31016391770494a06f430472b818d2cf831a7cbb5791bd030e5252`.
 
-This fixture proves a semantic replay change and strict rejection, not successful
-save migration. The production compatibility decision must be assessed against
-the final merged v20 predecessor before MARVEL-635 acceptance.
+This fixture is a frozen game journal kept as regression evidence: strict replay
+rejects the original trace at the changed retaliation outcome rather than
+rewriting it. It is not a save, and no save from that runtime is loadable.

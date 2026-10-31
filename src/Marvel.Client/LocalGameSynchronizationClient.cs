@@ -60,7 +60,7 @@ internal static class LocalGameSynchronizationClient
         if (!Complete(error)) return SynchronizationFailed(
             "invalid_response", "The game service returned an incomplete error.");
         return error.Disposition == EngineFailureDisposition.SessionUnavailable
-            ? UnavailableSynchronization()
+            ? UnavailableSynchronization(error)
             : new ClientSynchronizationResult(null, Error(error.Code, error.Message),
                 ClientSessionDisposition.Active);
     }

@@ -14,7 +14,7 @@ public interface ISessionStore
     /// <summary>Loads only complete generations selected by committed manifests.</summary>
     IReadOnlyList<StoredSession> Load();
 
-    /// <summary>Loads independent candidates so one corrupt session can be quarantined.</summary>
+    /// <summary>Loads each session independently, so one unreadable or refused save withholds only itself.</summary>
     IReadOnlyList<SessionLoadResult> LoadForRestore() =>
         [.. Load().Select(session => new SessionLoadResult(session, null, null))];
 

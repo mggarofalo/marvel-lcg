@@ -190,7 +190,7 @@ internal static class LocalGameMutationClient
             Error("invalid_response", "The game service returned an incomplete error."),
             ClientMutationDisposition.Uncertain);
         if (error.Disposition == EngineFailureDisposition.SessionUnavailable) return new(
-            UnavailableResolution(ClientMutationDisposition.Rejected), null,
+            UnavailableResolution(ClientMutationDisposition.Rejected, error), null,
             ClientMutationDisposition.Rejected);
         if (error.Disposition == EngineFailureDisposition.CommitUncertain) return new(
             null, Error(error.Code, error.Message), ClientMutationDisposition.Uncertain);
@@ -252,7 +252,7 @@ internal static class LocalGameMutationClient
             errorCode = envelope.Code;
             return ActiveFailure(failure, mutation);
         }
-        if (Unavailable(response.Error, out errorCode)) return UnavailableResolution(mutation);
+        if (Unavailable(response.Error, out errorCode)) return UnavailableResolution(mutation, response.Error);
         if (!CurrentResponse(client, session, response)) return ActiveFailure(failure, mutation);
         disposition = "accepted";
         client.RememberRevision(session, response);

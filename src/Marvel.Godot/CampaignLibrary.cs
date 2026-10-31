@@ -26,9 +26,10 @@ internal static class CampaignLibrary
             ? "No archived campaigns." : "No saved campaigns yet.\nCreate one or import a backup."));
     }
 
-    private static string Summary(CampaignConnection item, DeckCatalog? catalog)
+    internal static string Summary(CampaignConnection item, DeckCatalog? catalog)
     {
         if (item.Pending is not null) return item.Label + "\nChoice awaiting recovery";
+        if (item.Refused) return item.Label + "\nSaved by another version · delete only";
         if (item.Snapshot is not { } summary) return item.Label + "\nOpen to load progress";
         string heroes = string.Join(", ", summary.State.Players.Select(player =>
             catalog?.Heroes.FirstOrDefault(hero => hero.Key == player.Hero)?.Name ?? player.Hero.Replace('_', ' ')));

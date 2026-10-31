@@ -142,10 +142,8 @@ above describe the earlier 17-face integration, not a repeated full suite.
 
 Replay identity is **engine-replay-v27**, protocol **41**, save schema **7**.
 Live amounts change accepted Ultron/Berserk Mutate behavior; actor incarnation
-also changes a stale actor's eligibility. Named v19/v20/v21 Core/RoRS upgrade
-routes retain every original fact and verify strict replay before changing only
-compatibility. Existing named routes remain explicit; arbitrary v26 saves are
-not silently relabeled. No archived save bytes were edited. Integrated history,
+also changes a stale actor's eligibility. Saves under earlier replay
+identities are refused; there is no upgrade route (MARVEL-896). No archived save bytes were edited. Integrated history,
 played campaign, route, live restart and identity checks pass **44/44** in
 `widow-v27-history.log`. Independent identity review remains required.
 
@@ -272,10 +270,8 @@ MARVEL-792 remains open for visible cost/consequence explanation defects.
 The replay review raised intermediate-v27 compatibility. Remote main was verified
 at `c14a045c`, whose build identity is v26. V27 is the unpublished aggregate
 Black Widow candidate, covering all integrated semantic changes; no intermediate
-worker revision is admitted as a supported predecessor. Existing explicit frozen
-v19/v20/v21 routes still require complete original-history verification on the
-final candidate, and v26 remains quarantined unchanged. This is an explicit
-compatibility decision, not a claim that same-candidate restart proves upgrades.
+worker revision is admitted as a supported predecessor. Saves under v26 and
+every earlier identity are refused unchanged (MARVEL-896).
 
 
 ## Final regression and public-game review

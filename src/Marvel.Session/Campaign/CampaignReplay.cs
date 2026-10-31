@@ -12,6 +12,7 @@ public static class CampaignReplay
         Func<SessionSetup, ReplayOpenedGame> open, Func<Game, CampaignGameProgress> inspect)
     {
         _ = CampaignSaveJson.Write(save);
+        SessionReplay.RequireRuntimeCompatibility(compatibility, save.Compatibility);
         if (save.Configuration.Product != definition.Product
             || CampaignSaveJson.Canonical(save.Compatibility with { Application = compatibility.Application })
                 != CampaignSaveJson.Canonical(compatibility))

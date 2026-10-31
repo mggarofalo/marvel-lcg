@@ -81,10 +81,15 @@ internal static class EngineHostLifecycle
         }
     }
 
-    private static void LogUnreadable(EngineHost host, SessionLoadResult candidate) =>
+    private static void LogUnreadable(EngineHost host, SessionLoadResult candidate)
+    {
+        if (candidate.Refused is { } refused)
+            host.refused.Refuse(refused.GameId, refused.Authorities, refused.Category);
         host.log.Write(OperationalEventIds.SessionRestoreFailed, "rejected",
             gameId: candidate.StorageId, saveGeneration: candidate.Generation,
-            stage: "quarantine", errorCode: candidate.ErrorCode ?? "restore_failed");
+            stage: candidate.Refused is null ? "quarantine" : "refused",
+            errorCode: candidate.ErrorCode ?? "restore_failed");
+    }
 
     private static void RestoreCandidate(
         EngineHost host, SessionLoadResult candidate, StoredSession stored)
@@ -196,7 +201,7 @@ internal static class EngineHostLifecycle
             Error: new EngineError(
                 Bounded(code, EngineProtocol.MaximumIdentifierLength),
                 Bounded(message, EngineProtocol.MaximumErrorLength),
-                code == "session_not_found" ? EngineFailureDisposition.SessionUnavailable
+                code is "session_not_found" or RefusedSaves.Code ? EngineFailureDisposition.SessionUnavailable
                     : EngineFailureDisposition.Rejected));
 
     internal static string Bounded(string? value, int maximum) => value switch

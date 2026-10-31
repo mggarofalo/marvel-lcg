@@ -76,8 +76,6 @@ Independent Release evidence, logs outside the repository at
 - `lockjaw-final-core.log`: `FullyQualifiedName~CoreCardFaceTranscript`, all 20
   pinned Core transcript tests passed. The earlier exact `...TranscriptTests`
   filter did not match their refactored class names and is not Core evidence.
-- `lockjaw-final-replay.log`: SessionPersistenceTests, ReplayContractUpgradeTests
-  and QuinjetReplayTests, 33 passed.
 - `lockjaw-final-negative.log`: independent controls, 3 passed and the one
   stale-payment information assertion failed as described above.
 

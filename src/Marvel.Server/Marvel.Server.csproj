@@ -13,9 +13,6 @@
     <ProjectReference Include="../Marvel.Observability/Marvel.Observability.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="ContentCompatibility/core-rors-91098022.json" />
-  </ItemGroup>
-  <ItemGroup>
     <InternalsVisibleTo Include="Marvel.Server.Tests" />
     <InternalsVisibleTo Include="Marvel.Godot.Tests" />
     <InternalsVisibleTo Include="Marvel.Architecture.Tests" />
