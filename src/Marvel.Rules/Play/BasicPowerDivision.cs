@@ -85,6 +85,7 @@ public static class BasicPowerDivision
                 Description: description)
             { DisplayLabel = $"Divide {what}", CommitLabel = plan.Attack ? "Deal damage" : "Remove threat" }])
         {
+            PublicKind = PublicDecisionKind.VisibleCardSelection,
             DisplayQuestion = $"Divide {plan.Count} {what} among {among}",
             Description = description,
             CauseCardIds = [plan.Performer.ObjectId],

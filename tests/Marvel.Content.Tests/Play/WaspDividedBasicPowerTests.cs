@@ -20,6 +20,8 @@ public sealed class WaspDividedBasicPowerTests : CoreCardTestBase
     [Rule("rr:retaliate-x.1")]
     public void GiantBasicAttackDividesAmongAttackableEnemiesAndEachRecipientRetaliates()
     {
+        // rr:guard.1: "The guard keyword is equivalent to the following constant ability: “The engaged player cannot attack any villain.”"
+        // rr:retaliate-x.1: "The retaliate X keyword is equivalent to the following triggered ability: “Forced Response: After this character is attacked, deal X damage to the attacker.”"
         // Ruling 1b420f298dc7b045: each enemy dealt damage by the divided attack
         // retaliates. Ruling 116e678d0ad83200: Guard keeps every point off the villain.
         var world = WaspBoards.Board("13001c");
@@ -32,6 +34,7 @@ public sealed class WaspDividedBasicPowerTests : CoreCardTestBase
         var prompt = Assert.IsType<Prompt>(Sequence.Work(world, Cards, runner, []));
         var offer = Assert.Single(prompt.Affordances);
         Assert.Equal(BasicPowerDivision.Verb, offer.Verb);
+        Assert.Equal(PublicDecisionKind.VisibleCardSelection, prompt.PublicKind);
         Assert.Equal([guard.ObjectId, retaliator.ObjectId], offer.Targets!.Legal.Order());
         Assert.Equal(2, offer.Targets.Min);
         Assert.Equal(2, offer.Targets.Max);
@@ -57,6 +60,7 @@ public sealed class WaspDividedBasicPowerTests : CoreCardTestBase
     [Rule("rr:attack-player-ability-type.5")]
     public void AnEnemyGivenNoShareIsNotAttacked()
     {
+        // rr:attack-player-ability-type.5: "When an attack targets multiple enemies, the attacking character is considered to have attacked each of those enemies."
         // Ruling 116e678d0ad83200: an enemy is attacked only when it is dealt at least 1.
         var world = WaspBoards.Board("13001c");
         var runner = AuthoredCards.Runner();
@@ -79,6 +83,7 @@ public sealed class WaspDividedBasicPowerTests : CoreCardTestBase
     [Rule("rr:interrupt.3")]
     public void ALateRecipientIsAnnouncedAsAttackedBeforeItsShare()
     {
+        // rr:interrupt.3: "An interrupt ability is resolved when its triggering condition initiates, but before that triggering condition resolves."
         // rr:attack-player-ability-type.5: the villain given a share is attacked, so
         // Temporal Shield's "When Kang is attacked" resolves before the damage.
         var world = WaspBoards.Board("13001c");
@@ -104,6 +109,7 @@ public sealed class WaspDividedBasicPowerTests : CoreCardTestBase
     [Rule("rr:cost.10")]
     public void AnInvalidAllocationLeavesTheBoardUnchanged()
     {
+        // rr:cost.10: "Some card abilities may reference an “additional cost.” A player must pay all additional costs simultaneously with the cost that is being added to."
         var world = WaspBoards.Board("13001c");
         var runner = AuthoredCards.Runner();
         var declared = WaspBoards.Engaged(world, Whiplash);
@@ -128,6 +134,7 @@ public sealed class WaspDividedBasicPowerTests : CoreCardTestBase
     [Rule("rr:attack-player-ability-type.1")]
     public void OnlyGiantDividesAndASingleTargetNeedsNoAllocation(string face)
     {
+        // rr:attack-player-ability-type.1: "A hero or ally can use their basic attack power to attack an enemy."
         // Tiny prints no division; a lone legal enemy leaves nothing to divide.
         var world = WaspBoards.Board(face);
         var runner = AuthoredCards.Runner();
@@ -141,6 +148,7 @@ public sealed class WaspDividedBasicPowerTests : CoreCardTestBase
     [Rule("rr:crisis-icon.1")]
     public void GiantBasicThwartDividesAmongThwartableSchemesWithinTheirThreat()
     {
+        // rr:crisis-icon.1: "Each crisis icon is equivalent to the following constant ability: “Player cards cannot remove threat from the main scheme.”"
         // Ruling f216f6359fb0bf96: crisis keeps every point off the main scheme.
         var world = WaspBoards.Board("13001c");
         var runner = AuthoredCards.Runner();
@@ -164,6 +172,40 @@ public sealed class WaspDividedBasicPowerTests : CoreCardTestBase
         Assert.False(world.Agenda.IsBusy);
     }
 
+    [Fact]
+    [Rule("rr:interrupt")]
+    public void TheDeclaredTargetsAttackInterruptsResolveEvenWhenItIsGivenNoShare()
+    {
+        // rr:interrupt: an interrupt "resolves immediately before that triggering condition resolves."
+        // Ruling 78f96d5c7974afaa: Giant Wasp "will initially choose one target for the attack",
+        // and that target's attack interrupt (Befuddle) resolves before her damage is divided.
+        // Ruling 116e678d0ad83200 decides only who counts as attacked after the damage: a
+        // target given no share is not attacked and does not retaliate.
+        var world = WaspBoards.Board("13001c");
+        var runner = AuthoredCards.Runner();
+        World.MoveToTop(world.TheCardIn(DeckType.VillainArea)!, world.AreaOf(DeckType.RemovedArea));
+        var taskmaster = world.CreateCard("04093", world.AreaOf(DeckType.VillainArea));
+        var reflexes = world.CreateCard("04104", world.AreaOf(DeckType.UpgradesArea, PlayArea.Villains, taskmaster.ObjectId));
+        var minion = WaspBoards.Engaged(world, "01121");
+        var wasp = world.Seats[0].IdentityCard;
+        BasicPowerInitiation.BasicAttack(world, Cards, 0, taskmaster, []);
+        var prompt = Assert.IsType<Prompt>(Sequence.Work(world, Cards, runner, []));
+        while (prompt.Affordances.All(offer => offer.Verb != BasicPowerDivision.Verb))
+        {
+            Sequence.Answer(world, Cards, runner, prompt,
+                prompt.Cancellable ? Decision.Decline : Decision.Take(prompt.Affordances[0].Id), []);
+            prompt = Assert.IsType<Prompt>(Sequence.Work(world, Cards, runner, []));
+        }
+        Assert.Equal(DeckType.EncounterDiscardPile, reflexes.Area.Type);
+        var divide = Assert.Single(prompt.Affordances);
+        Sequence.Answer(world, Cards, runner, prompt,
+            Decision.Take(divide.Id) with { Targets = [minion.ObjectId, minion.ObjectId] }, []);
+        Sequence.Finish(world, Cards, runner, []);
+        Assert.Equal(0, taskmaster.Damage);
+        Assert.Equal(DeckType.EncounterDiscardPile, minion.Area.Type);
+        Assert.Equal(0, wasp.Damage);
+    }
+
     [Theory]
     [Rule("rr:stun-stunned.5")]
     [InlineData("13001c", true, false, true)]
@@ -172,6 +214,7 @@ public sealed class WaspDividedBasicPowerTests : CoreCardTestBase
     [InlineData("13001c", true, true, false)]
     public void TheBasicAttackOfferSaysWhenItsDamageWillBeDivided(string face, bool minion, bool stunned, bool divided)
     {
+        // rr:stun-stunned.5: "If a stunned identity or ally attempts to attack or use an attack ability, discard the stunned card instead."
         // rr:stun-stunned.5: a stunned attacker's attempt is cancelled, so nothing is divided.
         // Ruling 78f96d5c7974afaa: the hero declares one target before dividing, so the
         // declared target's preview holds only if every point is assigned to it. With

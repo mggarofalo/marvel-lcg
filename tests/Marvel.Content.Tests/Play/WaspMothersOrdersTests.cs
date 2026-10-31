@@ -28,6 +28,7 @@ public sealed class WaspMothersOrdersTests : CoreCardTestBase
         BasicPowerInitiation.BasicAttack(world, Cards, 0, villain, []);
         var prompt = Assert.IsType<Prompt>(Sequence.Work(world, Cards, runner, []));
         var cost = Assert.Single(prompt.Affordances);
+        Assert.Equal(PublicDecisionKind.Choice, prompt.PublicKind);
         Assert.Equal("1", Assert.Single(cost.Costs!).Cost);
         Assert.True(wasp.Ready);
         string digest = world.Digest().Canonical();
@@ -45,6 +46,7 @@ public sealed class WaspMothersOrdersTests : CoreCardTestBase
     [Rule("rr:cost.10")]
     public void ASpentCardsResponseResolvesBeforeTheAttack()
     {
+        // rr:cost.10: "Some card abilities may reference an “additional cost.” A player must pay all additional costs simultaneously with the cost that is being added to."
         // Pym Particles answers the completed cost; the attack follows its window.
         var (world, runner, villain) = Board();
         var particles = world.CreateCard(PymParticles, world.Seats[0].Hand);
@@ -67,6 +69,7 @@ public sealed class WaspMothersOrdersTests : CoreCardTestBase
     [Rule("rr:cost.3")]
     public void WithoutAResourceTheHeroCannotAttackAndAlliesAreUnaffected()
     {
+        // rr:cost.3: "To pay a resource cost, a player spends resources that they generate by discarding cards from their hand or by using “Resource” card abilities."
         var (world, _, _) = Board();
         foreach (var card in world.Seats[0].Hand.Cards.ToArray()) World.MoveToTop(card, world.Seats[0].Deck);
         var ally = WaspBoards.InPlay(world, "01067", DeckType.AlliesArea);

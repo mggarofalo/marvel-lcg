@@ -17,6 +17,7 @@ public sealed class WaspExcessDealtReceiptTests : CoreCardTestBase
     [Rule("rr:excess-damage")]
     public void ADividedSimultaneousAttackRecordsEachRecipientsExcessDealt()
     {
+        // rr:excess-damage: "Excess damage is any amount of damage that is dealt to a character beyond that character’s remaining hit points."
         var root = JsonNode.Parse(AuthoredCards.Text)!;
         var cards = root["cards"]!.AsArray();
         cards.Remove(cards.First(row => (string?)row!["card"] == "13006"));

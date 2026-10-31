@@ -24392,9 +24392,9 @@
     {
       "card": "13003",
       "name": "Giant Help",
-      "note": "Hero Action (thwart): in Giant hero form remove a total of 4 threat divided among schemes (pack:mc13:wasp-hero-pack#rules-clarifications: each scheme is thwarted); otherwise remove 3 threat from one scheme. Each reading is its own form-gated Action, so the form is read when the card is played; distributeThreat schedules its own thwart, as Inconspicuous (04038) does.",
+      "note": "Hero Action (thwart): in Giant hero form remove a total of 4 threat divided among schemes (pack:mc13:wasp-hero-pack#rules-clarifications: each scheme is thwarted); otherwise remove 3 threat from one scheme. Each reading is its own form-gated Action, so the form is read when the card is played; distributeThreat schedules its own thwart, as Inconspicuous (04038) does. Both readings carry the thwart label, so a hero who cannot thwart (rr:cannot) is offered neither.",
       "abilities": [
-        {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero"}, "when": {"hasTrait": {"card": "you", "trait": "GIANT"}}, "effect": {"distributeThreat": {"schemes": {"query": "schemes"}, "amount": 4}}},
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero"}, "labels": ["thwart"], "when": {"hasTrait": {"card": "you", "trait": "GIANT"}}, "effect": {"distributeThreat": {"schemes": {"query": "schemes"}, "amount": 4}}},
         {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero"}, "labels": ["thwart"], "when": {"not": {"hasTrait": {"card": "you", "trait": "GIANT"}}}, "effect": {"chooseCard": {"from": {"query": "thwartableSchemes"}, "effect": {"thwart": {"target": "chosen", "effect": {"removeThreat": {"scheme": "chosen", "amount": 3}}}}}}}
       ]
     },

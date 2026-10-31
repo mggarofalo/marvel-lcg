@@ -18,6 +18,7 @@ public sealed class WaspEncounterCardTests : CoreCardTestBase
     [Rule("rr:obligation.1")]
     public void RedDreamsMayFlipThenExhaustNadiaToLeaveTheGame()
     {
+        // rr:obligation.1: "Abilities on obligations that use the words “you” or “your” apply only to the player whose play area the obligation is in."
         var runner = AuthoredCards.Runner();
         var world = WaspBoards.Board("13001a");
         var identity = world.Seats[0].IdentityCard;
@@ -36,6 +37,7 @@ public sealed class WaspEncounterCardTests : CoreCardTestBase
     [Rule("rr:obligation.1")]
     public void RedDreamsOtherwiseDiscardsPrintedMentalCardsAndDealsOne()
     {
+        // rr:obligation.1: "Abilities on obligations that use the words “you” or “your” apply only to the player whose play area the obligation is in."
         var runner = AuthoredCards.Runner();
         var world = WaspBoards.Board("13001a");
         var identity = world.Seats[0].IdentityCard;
@@ -47,7 +49,8 @@ public sealed class WaspEncounterCardTests : CoreCardTestBase
         var choice = Assert.IsType<Prompt>(Sequence.Work(world, world.Facts, runner, []));
         Assert.Equal("13001a", identity.FaceId);
         // A hero cannot exhaust Nadia Van Dyne, so only the second option remains.
-        Sequence.Answer(world, world.Facts, runner, choice, Decision.Take(choice.Affordances[^1].Id), []);
+        var remaining = Assert.Single(choice.Affordances);
+        Sequence.Answer(world, world.Facts, runner, choice, Decision.Take(remaining.Id), []);
         Sequence.Finish(world, world.Facts, runner, []);
         Assert.Equal(DeckType.DiscardPile, genius.Area.Type);
         Assert.Same(world.Seats[0].Hand, energy.Area);
@@ -61,6 +64,7 @@ public sealed class WaspEncounterCardTests : CoreCardTestBase
     [Rule("rr:forced.1")]
     public void BeetleDefeatedAsksForAPhysicalResourceOrReturnsToTheEncounterDeck(bool pay)
     {
+        // rr:forced.1: "“Forced Interrupt” and “Forced Response” abilities must be resolved when their triggering conditions are met."
         // Ruling 30744014e3139d48: the defeating player chooses.
         var runner = AuthoredCards.Runner();
         var world = WaspBoards.Board("13001c");
@@ -89,6 +93,7 @@ public sealed class WaspEncounterCardTests : CoreCardTestBase
     [Rule("rr:surge.1")]
     public void BeetleManiaSurgesWithoutBeetle()
     {
+        // rr:surge.1: "The surge keyword is equivalent to the following triggered ability: “When Revealed: Deal yourself 1 facedown encounter card.”"
         var runner = AuthoredCards.Runner();
         var world = WaspBoards.Board("13001a");
         int dealt = Dealt(world);
@@ -103,6 +108,7 @@ public sealed class WaspEncounterCardTests : CoreCardTestBase
     [Rule("rr:activation")]
     public void BeetleManiaMakesBeetleAttackWithOneMore()
     {
+        // rr:activation: "There are two types of enemy activations: an attack activation and a scheme activation."
         var runner = AuthoredCards.Runner();
         var world = WaspBoards.Board("13001a");
         var identity = world.Seats[0].IdentityCard;
@@ -122,6 +128,7 @@ public sealed class WaspEncounterCardTests : CoreCardTestBase
     [Rule("rr:defend-defense.2")]
     public void RapidGrowthOnABasicDefenseTurnsGiantAndAddsTwoDefense(bool growth, int damage)
     {
+        // rr:defend-defense.2: "A hero can use their basic defense power to defend against an enemy attack."
         // Beetle Mania: Beetle attacks with ATK 1 + 1 = 2. Tiny DEF 2 already absorbs
         // it; Rapid Growth turns Wasp Giant before the damage.
         var runner = AuthoredCards.Runner();
@@ -156,6 +163,7 @@ public sealed class WaspEncounterCardTests : CoreCardTestBase
     [Rule("rr:response.1")]
     public void LieInWaitDiscardsToAttackTheMinionThatEngaged()
     {
+        // rr:response.1: "Players can only trigger response abilities on cards they control or on encounter cards."
         Card? lie = null, minion = null;
         var (game, world) = Playing(board =>
         {
@@ -193,6 +201,7 @@ public sealed class WaspEncounterCardTests : CoreCardTestBase
     [Rule("rr:response.1")]
     public void ThorDealsOneMoreWhenPaidWithAPhysicalResource(string resource, int damage)
     {
+        // rr:response.1: "Players can only trigger response abilities on cards they control or on encounter cards."
         var runner = AuthoredCards.Runner();
         var world = WaspBoards.Board("13001a");
         var seat = world.Seats[0];

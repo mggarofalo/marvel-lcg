@@ -21,6 +21,16 @@ Each choice below is recorded in the row note or the code comment that owns it.
   and Guard keeps the villain out of the pool. Rulings 1b420f29 and 44010c0f:
   each recipient retaliates. Rulings aefac89a and f216f635: the damage is
   simultaneous, and crisis and patrol bound the candidates.
+- **Interrupts to a divided attack resolve against the declared target**, even
+  when the division later gives it no share. Ruling 78f96d5c: she "will
+  initially choose one target", and an interrupt such as Befuddle resolves
+  before the damage is split. rr:interrupt resolves an interrupt before its
+  triggering condition, so no share exists yet. Ruling 116e678d governs only
+  the "attacked" status after damage, so responses and Retaliate follow the
+  shares (rr:attack-player-ability-type.5). In
+  `TheDeclaredTargetsAttackInterruptsResolveEvenWhenItIsGivenNoShare`,
+  Taskmaster's Photographic Reflexes is discarded although every point goes to
+  a minion.
 - **Wasp Sting** divides a total of 4 in Giant form and deals 5 to one enemy in
   Tiny form. Each version is a separate form-gated Action.
 - **Into the Fray** removes threat equal to the excess damage the attack
@@ -39,7 +49,16 @@ Each choice below is recorded in the row note or the code comment that owns it.
   attack that counts them. The engine does not yet support stopping for a
   choice inside a labelled attack.
 - **Giant Help** is two form-gated Actions: divide 4 threat while Giant,
-  otherwise remove 3 threat from one scheme.
+  otherwise remove 3 threat from one scheme. Both carry the thwart label, so a
+  hero who cannot thwart, such as one engaged with Baron Zemo (03028), is
+  offered neither (rr:cannot). Every thwart-group effect (`distributeThreat`,
+  `thwartSchemes`, `thwartDifferentSchemes`, `legalPractice`) is offered only
+  when its performer can thwart. That covers the unlabelled Inconspicuous
+  (04038) and the Core thwart-group cards too. Resolving such an offer raises
+  `cannot thwart`, so no saved session can hold one; withholding it changes no
+  admitted outcome or replay.
+  Inconspicuous stays unlabelled, so confusion still cancels its whole thwart
+  as before (`ThwartGroupProhibitionTests`).
 - **Rapid Growth** has two readings. It interrupts a basic attack or thwart, and
   it interrupts the hero-defense occurrence when the defense is basic. In both
   cases Wasp changes to her Giant face and gains +2 for that use.
@@ -49,7 +68,8 @@ Each choice below is recorded in the row note or the code comment that owns it.
 The runtime tests use the production ability book on synthetic boards:
 `WaspDividedBasicPowerTests`, `WaspStingTests`, `WaspResourceCardTests`,
 `WaspIntoTheFrayTests`, `WaspMothersOrdersTests`, `WaspAllForOneTests`,
-`WaspSupportCardTests`, `WaspFormCardTests` and `WaspEncounterCardTests`.
+`WaspSupportCardTests`, `WaspFormCardTests`, `WaspEncounterCardTests`,
+`WaspSmallButMightyTests` and `ThwartGroupProhibitionTests`.
 Lie in Wait runs through a public `wasp` game's villain phase.
 `WaspAdmissionTests` closes the pack when a face is missing, a face changes
 pack, or any recipe component changes. `WaspLoweringTests` refuses malformed

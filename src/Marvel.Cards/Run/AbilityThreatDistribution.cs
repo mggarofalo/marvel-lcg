@@ -10,7 +10,8 @@ namespace Marvel.Cards.Run;
 internal static class AbilityThreatDistribution
 {
     internal static bool HasTargets(AbilityEffect.ThwartGroup group, AbilityAdmission.AbilityAdmissionScope cast) =>
-        Eligible(group, cast.Context.Query).Count > 0 && Total(group, cast.World, cast.Source) > 0;
+        AbilityThwartGroupAdmission.PerformerCanThwart(cast)
+        && Eligible(group, cast.Context.Query).Count > 0 && Total(group, cast.World, cast.Source) > 0;
 
     private static IReadOnlyList<Card> Eligible(AbilityEffect.ThwartGroup group, AbilityQueryContext query)
     {

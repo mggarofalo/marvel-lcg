@@ -123,8 +123,10 @@ internal static class AbilityInitiationConstraints
         "draw" => CanInitiateDraw(node, cast),
         "placeCounters" => CanInitiateCounters((AbilityEffect.PlaceCounters)node, cast),
         "distributeThreat" => AbilityThreatDistribution.HasTargets((AbilityEffect.ThwartGroup)node, cast),
-        "thwartDifferentSchemes" => Every(EffectOf<AbilityEffect.ThwartGroup>(node, cast).Schemes, cast).Count > 0,
-        "legalPractice" => cast.World.Seats[cast.Player].Hand.Cards.Any(card =>
+        "thwartDifferentSchemes" => AbilityThwartGroupAdmission.PerformerCanThwart(cast)
+            && Every(EffectOf<AbilityEffect.ThwartGroup>(node, cast).Schemes, cast).Count > 0,
+        "legalPractice" => AbilityThwartGroupAdmission.PerformerCanThwart(cast)
+            && cast.World.Seats[cast.Player].Hand.Cards.Any(card =>
                 card.ObjectId != cast.Source.ObjectId)
             && Every(EffectOf<AbilityEffect.ThwartGroup>(node, cast).Schemes, cast).Count > 0,
         "thwartSchemes" when SuspendsPowerEffect(
@@ -132,7 +134,8 @@ internal static class AbilityInitiationConstraints
             throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' suspends inside a labelled power, "
                 + "which is not implemented"),
-        "thwartSchemes" => Every(EffectOf<AbilityEffect.ThwartGroup>(node, cast).Schemes, cast).Count > 0,
+        "thwartSchemes" => AbilityThwartGroupAdmission.PerformerCanThwart(cast)
+            && Every(EffectOf<AbilityEffect.ThwartGroup>(node, cast).Schemes, cast).Count > 0,
         "attack" or "thwart" when SuspendsPowerEffect(
             EffectBody(node), cast) =>
             throw new RulesNotImplementedException(

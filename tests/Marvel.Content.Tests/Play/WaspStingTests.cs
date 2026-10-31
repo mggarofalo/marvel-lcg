@@ -19,6 +19,8 @@ public sealed class WaspStingTests : CoreCardTestBase
     [Rule("rr:retaliate-x.1")]
     public void GiantStingDividesFourDamageAndEachRecipientIsAttacked()
     {
+        // rr:guard.1: "The guard keyword is equivalent to the following constant ability: “The engaged player cannot attack any villain.”"
+        // rr:retaliate-x.1: "The retaliate X keyword is equivalent to the following triggered ability: “Forced Response: After this character is attacked, deal X damage to the attacker.”"
         // pack:mc13:wasp-hero-pack#rules-clarifications: "Each enemy is considered to
         // have been attacked." Guard keeps the villain out of the pool.
         var world = WaspBoards.Board("13001c");
@@ -46,9 +48,13 @@ public sealed class WaspStingTests : CoreCardTestBase
     }
 
     [Fact]
-    [Rule("rr:choose-game-element.3")]
+    [Rule("rr:attack-player-ability-type.2.1")]
     public void GiantStingMayGiveTheWholeTotalToOneEnemy()
     {
+        // rr:attack-player-ability-type.2.1: "An ability labeled as an attack is considered a single attack, even if that attack deals multiple instances of damage."
+        // Printed 13006: "deal a total of 4 damage divided among enemies as you choose."
+        // Ruling 116e678d0ad83200: an enemy given no damage is simply not attacked, so
+        // the whole total may go to one enemy as one attack.
         var world = WaspBoards.Board("13001c");
         var runner = AuthoredCards.Runner();
         var villain = world.TheCardIn(DeckType.VillainArea)!;
@@ -70,6 +76,7 @@ public sealed class WaspStingTests : CoreCardTestBase
     [Rule("rr:ability.8")]
     public void EachStingActionIsOfferedOnlyInItsForm(string face, bool giant, bool tiny)
     {
+        // rr:ability.8: "The resolution of the following ability types is optional: “Action”, “Interrupt”, “Response”, “Resource”."
         var world = WaspBoards.Board(face);
         var runner = AuthoredCards.Runner();
         var sting = world.CreateCard("13006", world.Seats[0].Hand);
@@ -82,6 +89,7 @@ public sealed class WaspStingTests : CoreCardTestBase
     [Rule("rr:attack-player-ability-type.1")]
     public void TinyStingDealsFiveToOneEnemy()
     {
+        // rr:attack-player-ability-type.1: "A hero or ally can use their basic attack power to attack an enemy."
         var world = WaspBoards.Board("13001a");
         var runner = AuthoredCards.Runner();
         var retaliator = WaspBoards.Engaged(world, Whiplash);

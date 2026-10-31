@@ -14,7 +14,9 @@ namespace Marvel.Acceptance.Tests.Play;
 internal static class PublicStarterGames
 {
     /// <summary>Plays <paramref name="hero"/>'s published starter, with Captain Marvel when multiplayer.</summary>
-    internal static void Play(string hero, string scenario, bool multiplayer, uint seed, ITestOutputHelper output)
+    /// <remarks><paramref name="prefer"/> may answer a prompt before the policy does; the replay receives the same answer.</remarks>
+    internal static SeatParticipation Play(string hero, string scenario, bool multiplayer, uint seed, ITestOutputHelper output,
+        Func<Game, Prompt, Decision?>? prefer = null)
     {
         var factory = DatasetGameFactory.Load(RepositoryPaths.Root);
         string[] heroes = multiplayer ? [hero, "captain_marvel"] : [hero];
@@ -35,7 +37,7 @@ internal static class PublicStarterGames
         {
             Assert.True(policy.Answered < 2000, $"{scenario}, seed={seed}: {prompt.Label}");
             string beforePolicy = Observe(game);
-            var answer = policy.Answer(game);
+            var answer = prefer?.Invoke(game, prompt) ?? policy.Answer(game);
             Assert.Equal(beforePolicy, Observe(game));
             seats.Record(prompt, answer);
             Resolution result;
@@ -61,6 +63,7 @@ internal static class PublicStarterGames
             + $"round={game.Round}, decisions={policy.Answered}, cards={policy.CardsPlayed}, payments={policy.Payments}, "
             + $"attacks={policy.PlayerAttacks}, divisions={seats.Divisions}, stages={string.Join(',', policy.VillainStages.Order())}, "
             + $"rngWords={game.State.Random.Generator.WordsConsumed}");
+        return seats;
     }
 
     private static string Observe(Game game, Resolution? result = null) => JsonSerializer.Serialize(new

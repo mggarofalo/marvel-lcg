@@ -21,6 +21,7 @@ public sealed class WaspAllForOneTests : CoreCardTestBase
     [Rule("rr:attack-player-ability-type.1")]
     public void EachExhaustedAvengerAddsOneDamage(int exhausting, int damage)
     {
+        // rr:attack-player-ability-type.1: "A hero or ally can use their basic attack power to attack an enemy."
         var runner = AuthoredCards.Runner();
         var world = WaspBoards.Board("13001a");
         var wasp = world.Seats[0].IdentityCard;
@@ -54,6 +55,7 @@ public sealed class WaspAllForOneTests : CoreCardTestBase
     [Rule("rr:attack-player-ability-type.1")]
     public void WithNoReadyAvengerTheAttackDealsThree()
     {
+        // rr:attack-player-ability-type.1: "A hero or ally can use their basic attack power to attack an enemy."
         var runner = AuthoredCards.Runner();
         var world = WaspBoards.Board("13001a");
         world.Seats[0].IdentityCard.Exhaust();

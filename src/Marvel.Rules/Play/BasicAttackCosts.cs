@@ -12,6 +12,8 @@ public static class BasicAttackCosts
     public const string DiscardField = "attack_hand_discard_cost";
     /// <summary>The engine-selected modifier name for additional resources of any type.</summary>
     public const string ResourceField = "attack_resource_cost";
+    /// <summary>The engine-selected verb of the offer that pays an additional attack cost.</summary>
+    public const string PayVerb = "PayAttackCost";
 
     /// <summary>The current additional discard cost, without changing the board.</summary>
     public static int Count(World world, Card character) => Modified(world, character, DiscardField);
@@ -71,7 +73,8 @@ public static class BasicAttackCosts
         return new Prompt(step.Seat, Question.Element, TimingPriority.Untimed, step.What,
             "Pay the additional attack cost", false, [Offer(world, step, cost, character)])
         {
-            PublicKind = PublicDecisionKind.VisibleCardSelection,
+            // A discard chooses visible hand cards; a resource payment carries spent sources, not a target request.
+            PublicKind = cost.Resources > 0 ? PublicDecisionKind.Choice : PublicDecisionKind.VisibleCardSelection,
             DisplayQuestion = "Pay the additional attack cost",
             Description = (cost.Resources > 0 ? $"Spend {cost.Resources} resource(s) of any type."
                     : $"Choose {cost.Count} card(s) from your hand to discard.")
@@ -83,12 +86,12 @@ public static class BasicAttackCosts
 
     private static Affordance Offer(World world, PhaseStep step, BasicAttackCostOperation cost, Card character) =>
         cost.Resources > 0
-            ? new Affordance(character.ObjectId, "PayAttackCost", character.ObjectId, step.Seat, "Spend resources",
+            ? new Affordance(character.ObjectId, PayVerb, character.ObjectId, step.Seat, "Spend resources",
                 Costs: [new CostOption(character.ObjectId,
                     cost.Resources.ToString(System.Globalization.CultureInfo.InvariantCulture), [],
                     Sources: Generators(world, character, step.Seat))])
             { DisplayLabel = $"Spend {cost.Resources} resource(s)", CommitLabel = "Pay and attack" }
-            : new Affordance(character.ObjectId, "PayAttackCost", character.ObjectId, step.Seat,
+            : new Affordance(character.ObjectId, PayVerb, character.ObjectId, step.Seat,
                 "Discard from hand", new TargetRequest(
                     [.. world.Seats[step.Seat].Hand.Cards.Select(card => card.ObjectId)], cost.Count, cost.Count,
                     Rule: "rr:cost.10"))

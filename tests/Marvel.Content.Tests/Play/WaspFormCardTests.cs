@@ -18,6 +18,7 @@ public sealed class WaspFormCardTests : CoreCardTestBase
     [Rule("rr:form-change-form.1")]
     public void SwarmTacticsChangesToTheOtherHeroFormAndReadies()
     {
+        // rr:form-change-form.1: "Once each round, during their turn, each player is permitted to change form by flipping their identity card."
         var runner = AuthoredCards.Runner();
         var world = WaspBoards.Board("13001a");
         var wasp = world.Seats[0].IdentityCard;
@@ -32,6 +33,7 @@ public sealed class WaspFormCardTests : CoreCardTestBase
     [Rule("rr:response.1")]
     public void PerseveranceAnswersTheFormChangeWithATough()
     {
+        // rr:response.1: "Players can only trigger response abilities on cards they control or on encounter cards."
         var runner = AuthoredCards.Runner();
         var world = WaspBoards.Board("13001a");
         var wasp = world.Seats[0].IdentityCard;
@@ -53,6 +55,7 @@ public sealed class WaspFormCardTests : CoreCardTestBase
     [Rule("rr:attack-player-ability-type.1")]
     public void SurpriseAttackDealsOneMoreWhenPaidWithAPhysicalResource(string resource, int damage)
     {
+        // rr:attack-player-ability-type.1: "A hero or ally can use their basic attack power to attack an enemy."
         var runner = AuthoredCards.Runner();
         var world = WaspBoards.Board("13001a");
         var villain = world.TheCardIn(DeckType.VillainArea)!;
@@ -75,6 +78,7 @@ public sealed class WaspFormCardTests : CoreCardTestBase
     [Rule("rr:interrupt.1")]
     public void RapidGrowthTurnsTinyGiantAndAddsTwoToThatAttack()
     {
+        // rr:interrupt.1: "Players can only trigger interrupt abilities on cards they control or on encounter cards."
         // Ruling 9cfb9119e5c7f0d7: the interrupt boosts the basic power being used.
         var runner = AuthoredCards.Runner();
         var world = WaspBoards.Board("13001a");
@@ -102,6 +106,7 @@ public sealed class WaspFormCardTests : CoreCardTestBase
     [Rule("rr:thwart.1")]
     public void GiantHelpDividesFourWhileGiantAndOtherwiseRemovesThree(string face)
     {
+        // rr:thwart.1: "A hero or ally can use their basic thwart power to thwart a scheme."
         var runner = AuthoredCards.Runner();
         var world = WaspBoards.Board(face);
         var main = world.TheCardIn(DeckType.MainSchemesArea)!;

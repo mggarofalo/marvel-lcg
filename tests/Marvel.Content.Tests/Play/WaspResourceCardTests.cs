@@ -50,6 +50,7 @@ public sealed class WaspResourceCardTests : CoreCardTestBase
     [Rule("rr:wild-resource.1")]
     public void PowerOfAggressionOverpaysOneWildCountedAsEnergy()
     {
+        // rr:wild-resource.1: "Wild resources can be spent to pay the resource cost of cards and abilities."
         // Ruling 5e6ac90dc4187eef: "The Power Of cards will only generate one resource
         // for these allies." The engine counts the overpaid wild as declared energy.
         var runner = AuthoredCards.Runner();
@@ -70,6 +71,7 @@ public sealed class WaspResourceCardTests : CoreCardTestBase
     [Rule("rr:wild-resource.3")]
     public void NadiaShufflesOnlyCardsWithAPrintedMentalResourceOncePerRound()
     {
+        // rr:wild-resource.3: "When resources are not being generated for a cost, a wild resource does not have any characteristic other than “wild resource.” In such contexts, wild resources cannot be interpreted as any of the other resource types."
         // A wild icon is not a mental icon outside payment (rr:wild-resource.3).
         var runner = AuthoredCards.Runner();
         var world = WaspBoards.Board("13001b");
@@ -102,6 +104,7 @@ public sealed class WaspResourceCardTests : CoreCardTestBase
     [Rule("rr:status-cards.2")]
     public void AthleticConditioningDiscardsOnlyAStunOrConfuse()
     {
+        // rr:status-cards.2: "Status card abilities have timing priority over all conflicting triggered abilities."
         var runner = AuthoredCards.Runner();
         var world = WaspBoards.Board("13001a");
         var hero = world.Seats[0].IdentityCard;
@@ -128,6 +131,7 @@ public sealed class WaspResourceCardTests : CoreCardTestBase
     [Rule("rr:status-cards.2")]
     public void AthleticConditioningIsNotOfferedWithOnlyATough()
     {
+        // rr:status-cards.2: "Status card abilities have timing priority over all conflicting triggered abilities."
         var runner = AuthoredCards.Runner();
         var world = WaspBoards.Board("13001a");
         Statuses.Give(world, world.Seats[0].IdentityCard, Statuses.Tough);

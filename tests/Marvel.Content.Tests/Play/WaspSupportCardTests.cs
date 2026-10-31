@@ -23,6 +23,7 @@ public sealed class WaspSupportCardTests : CoreCardTestBase
     [Rule("rr:traits.1")]
     public void AntManFollowsTheIdentitysSizeForm(string face, int attack, int thwart, string? trait)
     {
+        // rr:traits.1: "Traits have no inherent effects on the game."
         var world = WaspBoards.Board("13001b");
         var antMan = WaspBoards.InPlay(world, "13002", DeckType.AlliesArea);
         long baseAttack = Value(world, antMan, "attack");
@@ -39,6 +40,7 @@ public sealed class WaspSupportCardTests : CoreCardTestBase
     [Rule("rr:upgrade.1")]
     public void WaspsHelmetBoostsTheOtherSizePower(string face, int attack, int thwart)
     {
+        // rr:upgrade.1: "An upgrade is active so long as it is in play, and it remains in play until a card ability causes it to leave play."
         var world = WaspBoards.Board(face);
         var wasp = world.Seats[0].IdentityCard;
         long baseAttack = Value(world, wasp, "attack");
@@ -56,6 +58,8 @@ public sealed class WaspSupportCardTests : CoreCardTestBase
     [Rule("rr:retaliate-x.1")]
     public void RedRoomTrainingGrantsRetaliateOrBasicPiercingByForm(string face, long retaliate, bool piercing)
     {
+        // rr:piercing: "An attack with the piercing keyword discards any tough status cards from the attacked character before dealing damage."
+        // rr:retaliate-x.1: "The retaliate X keyword is equivalent to the following triggered ability: “Forced Response: After this character is attacked, deal X damage to the attacker.”"
         var world = WaspBoards.Board(face);
         var wasp = world.Seats[0].IdentityCard;
         WaspBoards.InPlay(world, "13008", DeckType.UpgradesArea);
@@ -68,6 +72,7 @@ public sealed class WaspSupportCardTests : CoreCardTestBase
     [Rule("rr:piercing")]
     public void TinyBasicAttackWithRedRoomTrainingDiscardsTough()
     {
+        // rr:piercing: "An attack with the piercing keyword discards any tough status cards from the attacked character before dealing damage."
         var runner = AuthoredCards.Runner();
         var world = WaspBoards.Board("13001a");
         WaspBoards.InPlay(world, "13008", DeckType.UpgradesArea);
@@ -85,6 +90,7 @@ public sealed class WaspSupportCardTests : CoreCardTestBase
     [Rule("rr:prevent.1")]
     public void BioSyntheticWingsPreventOneRetaliationDamageWhileTiny(string face, bool prevents)
     {
+        // rr:prevent.1: "When damage is prevented, reduce the amount of damage the target takes (i.e. the amount of damage that is placed on the target)."
         // Whiplash's retaliate deals Wasp 1 damage after her basic attack.
         var runner = AuthoredCards.Runner();
         var world = WaspBoards.Board(face);
@@ -114,6 +120,7 @@ public sealed class WaspSupportCardTests : CoreCardTestBase
     [Rule("rr:traits.1")]
     public void BioSyntheticWingsGrantNoTraitToNadia()
     {
+        // rr:traits.1: "Traits have no inherent effects on the game."
         var world = WaspBoards.Board("13001b");
         WaspBoards.InPlay(world, "13009", DeckType.UpgradesArea);
         Assert.False(Traits.Has(world, world.Seats[0].IdentityCard, "AERIAL", world.Facts));
@@ -123,6 +130,7 @@ public sealed class WaspSupportCardTests : CoreCardTestBase
     [Rule("rr:ally.1")]
     public void BootCampBoostsOnlyItsControllersAllies()
     {
+        // rr:ally.1: "If an ally enters play, it remains in play until a card ability or game effect causes it to leave play."
         var world = WaspBoards.Board("13001a", players: 2);
         var mine = WaspBoards.InPlay(world, "01020", DeckType.AlliesArea);
         var theirs = WaspBoards.InPlay(world, "01068", DeckType.AlliesArea, player: 1);
@@ -137,6 +145,7 @@ public sealed class WaspSupportCardTests : CoreCardTestBase
     [Rule("rr:attachment.1")]
     public void BeetleArmorAddsFourHitPointsToItsHost()
     {
+        // rr:attachment.1: "If an attachment attaches to a character, it may modify that character’s ATK, SCH, and/or THW values, as indicated by the values in the associated fields on the attachment card."
         var world = WaspBoards.Board("13001a");
         var beetle = WaspBoards.Engaged(world, "13028");
         long health = DamagePlacement.Health(world, world.Facts, beetle);
@@ -151,6 +160,7 @@ public sealed class WaspSupportCardTests : CoreCardTestBase
     [Rule("rr:thwart.1")]
     public void RunningInterferenceRemovesTwoPlusTheStageToThree(int stage, int removed)
     {
+        // rr:thwart.1: "A hero or ally can use their basic thwart power to thwart a scheme."
         var runner = AuthoredCards.Runner();
         var world = WaspBoards.Board("13001a");
         var printed = world.TheCardIn(DeckType.VillainArea)!;
@@ -170,6 +180,7 @@ public sealed class WaspSupportCardTests : CoreCardTestBase
     [Rule("rr:attack-player-ability-type.1")]
     public void PinpointStrikeGainsADamageAndOverkillOnlyWhileTiny()
     {
+        // rr:attack-player-ability-type.1: "A hero or ally can use their basic attack power to attack an enemy."
         foreach (var (face, expectedVillain) in new[] { ("13001a", 5L), ("13001c", 0L) })
         {
             var runner = AuthoredCards.Runner();
@@ -195,6 +206,7 @@ public sealed class WaspSupportCardTests : CoreCardTestBase
     [Rule("rr:response.1")]
     public void IronheartDrawsOneAfterBeingPlayedFromHand()
     {
+        // rr:response.1: "Players can only trigger response abilities on cards they control or on encounter cards."
         var runner = AuthoredCards.Runner();
         var world = WaspBoards.Board("13001a");
         var seat = world.Seats[0];
@@ -215,6 +227,7 @@ public sealed class WaspSupportCardTests : CoreCardTestBase
     [Rule("rr:response.1")]
     public void MilesMoralesGainsTwoInTheChosenPower(int option, string field)
     {
+        // rr:response.1: "Players can only trigger response abilities on cards they control or on encounter cards."
         var runner = AuthoredCards.Runner();
         var world = WaspBoards.Board("13001a");
         var seat = world.Seats[0];
