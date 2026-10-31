@@ -1214,7 +1214,13 @@ constant source remains in play. `putIntoPlay` accepts
 `where: "engagedWithFirstPlayer"` for explicit first-player engagement.
 `chooseDiscardToShuffle` defaults to at least one card and distinct titles;
 `min: 0, differentTitles: "false"` represents an optional selection permitting
-multiple physical cards with the same title.
+multiple physical cards with the same title. `resource: "B"` (or `"R"`, `"Y"`,
+`"G"`) restricts the selection to cards whose printed icons include that
+resource; outside payment a wild icon is only a wild resource (`rr:wild-resource.3`).
+`{ "exhaustAnyNumber": { "from": <selector> } }` asks the resolving player to
+choose any number, including none, of the selected ready in-play cards and
+exhausts them. It records `{ "result": "exhausted" }` as the number exhausted;
+with no ready candidate it asks nothing. The spelling is an engine choice.
 `attachmentsOnVillain` selects only printed encounter attachments hosted by the current villain, excluding hosted statuses and player upgrades.
 `supportsYouControl` selects the resolving player's controlled supports in play.
 `forEach` takes a numeric `count` and an `effect` body, repeating that body for the resolved count. It supports printed counted instructions such as one additional boost card per side scheme.
@@ -1252,6 +1258,13 @@ engine-owned selection of distinct, jointly legal enemies. Under
 the number of available legal targets. `cardsDiscarded` can supply the count from
 the physical cost receipt; event resource payments do not contribute. The
 ordinary attack form remains a single declared target.
+
+An `attack` may instead specify a positive constant `total` with no `count`. Its
+body must be one `dealAttackDamage` of `amount: 1`, `simultaneous: 1` over
+`powerTargets` without overkill. The player divides the total among legal
+enemies, repeating a target once per point; each enemy given a share is dealt
+that many points as one simultaneous placement and is attacked. The spelling is
+an engine choice.
 
 Counted targets retain incarnation bindings and public attack facts through
 interrupts. Damage resolves only against the original copies still in play;
@@ -1371,6 +1384,19 @@ them simultaneously with exhaustion. Stun cancels only after payment, including
 when no enemy can be targeted. Permission to attack without exhausting does not
 waive this separate cost. The suspended cost decision reconstructs through the
 ordinary session decision replay; it does not introduce a separate save format.
+
+`attack_resource_cost` is the engine-selected derived modifier for resources of
+any type a hero spends as an additional cost to make a basic attack. The attack
+asks for a resource payment priced from the controller's generators and pays it
+simultaneously with exhaustion (`rr:cost.10`); responses to spent cards resolve
+before the attack. One attack carrying both additional costs raises.
+
+`basic_attack_divided` and `basic_thwart_divided` let the hero holding the
+modifier divide a basic attack's or thwart's final amount among every legal
+target, one share per point. The player declares one target, then allocates;
+each enemy dealt at least 1 damage is attacked and each scheme given a share is
+thwarted. Guard, crisis and each scheme's threat bound the candidates. Both
+spellings are engine choices.
 
 `inAttackChain: "attack"` is a strict typed condition on the current scheduled
 work. It is true during an enemy attack and schemes causally initiated by that
@@ -1727,7 +1753,10 @@ Other power suspension and conditional admission shapes retain their existing ga
 
 `{"entryResourceExcess":"this"}` reads resources generated beyond those paid
 for the bound source card's completed entry cost (`rr:cost.4.1`). Its spelling
-is an engine choice. The payer and physical card incarnation must match the
+is an engine choice. `{"entryResourceExcess":{"card":"this","resource":"Y"}}`
+counts only overpaid icons usable as energy: printed energy plus overpaid wild
+icons, which the engine counts as declared energy (`rr:wild-resource.1`). Other
+typed overpayments are refused. The payer and physical card incarnation must match the
 entry receipt; an unpaid entry, unrelated source or reentered copy reads zero.
 The expression composes with numeric operators such as `min` for a printed cap.
 ### Player attack excess damage
@@ -1737,6 +1766,11 @@ bound attack-end recipient. The spelling is an engine choice. The value uses
 the same calculation as overkill (`rr:overkill.3`) and is zero without a
 matching recipient or an actual defeat. It survives the recipient leaving play
 and is independent of overkill damage subsequently prevented on its spill target.
+
+`{ "result": "excessDamageDealt" }` reads the attack damage the most recent
+damage node dealt beyond each target's remaining hit points (`rr:excess-damage`),
+whether or not the target took it (ruling:dd353e3498f6b923). Direct damage is
+not an attack and contributes nothing. The result name is an engine choice.
 
 ### Received enemy-attack damage
 
@@ -1856,7 +1890,9 @@ is captured before staging movement and belongs to that one revelation.
 
 `{ "statusCardsOn": "chosen" }` selects physical status cards attached to the
 exact bound character. A nested `chooseCard` can discard one of those cards,
-including Tough; it does not select statuses on a different character.
+including Tough; it does not select statuses on a different character. The
+object form `{ "statusCardsOn": { "card": "yourHero", "statuses": ["stunned",
+"confused"] } }` keeps only the named distinct kinds.
 
 `{ "reduceUpgradeCostOnThis": 1 }` is a direct unconditional Constant that
 reduces an upgrade's play cost when its eligible attachment host is the exact

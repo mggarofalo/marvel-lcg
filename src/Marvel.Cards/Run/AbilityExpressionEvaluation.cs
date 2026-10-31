@@ -54,6 +54,7 @@ internal sealed class AbilityExpressionEvaluation(
     {
         AbilityResolutionNumber.PowerAmount => context.PowerAmount,
         AbilityResolutionNumber.EntryResourceExcess => AbilityEntryResourceQuery.Excess(context),
+        AbilityResolutionNumber.EntryEnergyExcess => AbilityEntryResourceQuery.EnergyExcess(context),
         AbilityResolutionNumber.ReceivedAttackDamage => ReceivedAttackDamageQuery.Amount(context),
         AbilityResolutionNumber.CardsDiscarded => context.Discarded.Length,
         AbilityResolutionNumber.PrintedCostDiscarded => context.Discarded.Sum(card =>
@@ -200,7 +201,10 @@ internal sealed class AbilityExpressionEvaluation(
     // rr:defend-defense.4.3: a defense-labeled ability "is not a basic defense".
     private bool YourIdentityDefended(bool basicOnly)
     {
-        if (context.World.FinishedAttack is not { } attack || basicOnly && !attack.BasicDefense) return false;
+        // The committed hero-defense interrupt reads the live attack; every other
+        // occurrence reads the completed attack.
+        var observed = context.Occurrence.Is(HeroDefenseTiming.Defends) ? context.World.Attack : context.World.FinishedAttack;
+        if (observed is not { } attack || basicOnly && !attack.BasicDefense) return false;
         return attack.Defender == context.World.Seats[AbilityCardQueries.Resolver(context.Bindings)].IdentityCard.ObjectId;
     }
 

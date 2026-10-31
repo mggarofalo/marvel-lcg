@@ -172,6 +172,7 @@ internal static class AbilityPlayerBindingAnalysis
         AbilityEffect.DiscardUntil discard => discard.Player == AbilityPlayer.You,
         AbilityEffect.AttachCards attach => Contains(attach.Cards) || Contains(attach.Host),
         AbilityEffect.ChooseCardsToHand group => Contains(group.From),
+        AbilityEffect.ExhaustAnyNumber exhaust => Contains(exhaust.From),
         AbilityEffect.ReleaseBeneath or AbilityPricingEffect.IncreaseNextEventCost => false,
         AbilityEffect.StoreBeneath store => Contains(store.Cards) || Contains(store.Host),
         AbilityEffect.StoreDeckTopBeneath => true,

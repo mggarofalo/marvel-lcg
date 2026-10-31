@@ -17,7 +17,11 @@ internal static class AbilityResumedEffectCompletion
 
     private static void RestoreOutcome(AbilityResolutionState cast, AbilityContinuationState state)
     {
-        if (state.DamageCompletion is { } damageReceipt) cast.DamageDefeats = damageReceipt.Defeats;
+        if (state.DamageCompletion is { } damageReceipt)
+        {
+            cast.DamageDefeats = damageReceipt.Defeats;
+            damageReceipt.RecordExcessDealt(cast.Results);
+        }
         cast.CompletedOutcome = state.DamageCompletion is { } damage ? damage.Complete()
             : state.Completion is { } receipt
             ? AbilityCompletion.Amount(receipt.Applied, receipt.Requested)

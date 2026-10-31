@@ -6,6 +6,7 @@ using Marvel.Content.Tests.Cards;
 using Marvel.Rules.Play;
 using Marvel.Rules.State;
 using Marvel.Rules.Timing;
+using Marvel.Tests;
 using Xunit;
 
 namespace Marvel.Content.Tests.Play;
@@ -15,11 +16,14 @@ public sealed class DeferredDefeatProjectionReviewTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public void OpaqueDefeatProjectionCannotAuthorizeAReceiptRemovalFromALiveChosenScheme(bool chooseDeparted)
+    [Rule("rr:ability.4")]
+    public void OpaqueDefeatProjectionLeavesAReceiptRemovalToTheLiveBoard(bool chooseDeparted)
     {
         // Synthetic projection contract, not a claimed admitted action shape.
-        // Engine choice: unknown defeat-window work cannot justify later reads
-        // of a different live scheme. A departed retained recipient needs none.
+        // rr:ability.4: "resolve the ability one sentence at a time." An excess-damage
+        // receipt removal chooses nothing, so it is left to the live board after the
+        // unknown defeat-window work, whether its retained recipient departed or stayed.
+        // DeferredDefeatReceiptBoundaryTests resolves such tails on the live board.
         var world = ThorActualFixture.Board("06001a");
         var source = world.CreateCard("09003", world.Seats[0].Hand);
         var patrol = world.CreateCard("04154", world.AreaOf(DeckType.SideSchemesArea));
@@ -31,7 +35,7 @@ public sealed class DeferredDefeatProjectionReviewTests
             source.Incarnation, new AbilityCardReference(chosen, chosen.Area.Id, chosen.Incarnation),
             null, null, []);
         var expressions = new AbilityExpressionContext(query,
-            ImmutableDictionary<string, long>.Empty.Add("boostIconsLookedAt", 2), [], "", 0, false, null);
+            ImmutableDictionary<string, long>.Empty.Add("excessDamageDealt", 2).Add("boostIconsLookedAt", 2), [], "", 0, false, null);
         var scope = new AbilityAdmission.AbilityAdmissionScope(new AbilityAdmissionContext(
             AuthoredCards.Program, world.ResourceAbilities, expressions, new(), "thwart"), []);
         string before = Observe(world);
@@ -44,13 +48,20 @@ public sealed class DeferredDefeatProjectionReviewTests
         Assert.Contains(patrol.ObjectId, state.Discarded);
         Assert.DoesNotContain(main.ObjectId, state.Discarded);
         var tail = new AbilityEffect.RemoveThreat(new AbilityCardSelection.Bound(AbilityCardBinding.Chosen),
-            new AbilityNumber.Result("boostIconsLookedAt"), false, null);
-        if (chooseDeparted)
-            AbilityProjectedDefeatWindows.ValidateContinuation(tail, state, scope);
-        else
+            new AbilityNumber.Result("excessDamageDealt"), false, null);
+        AbilityProjectedDefeatWindows.ValidateContinuation(tail, state, scope);
+        // An amount counted from the board raises. So does a receipt no attack damage
+        // records, unless the retained recipient has left play.
+        AbilityNumber[] unsupportedAmounts = chooseDeparted
+            ? [new AbilityNumber.Count(new AbilityCardSelection.Query(AbilityCardQuery.Minions))]
+            : [new AbilityNumber.Result("boostIconsLookedAt"),
+                new AbilityNumber.Count(new AbilityCardSelection.Query(AbilityCardQuery.Minions))];
+        foreach (var amount in unsupportedAmounts)
         {
+            var unsupported = new AbilityEffect.RemoveThreat(new AbilityCardSelection.Bound(AbilityCardBinding.Chosen),
+                amount, false, null);
             var failure = Assert.Throws<RulesNotImplementedException>(() =>
-                AbilityProjectedDefeatWindows.ValidateContinuation(tail, state, scope));
+                AbilityProjectedDefeatWindows.ValidateContinuation(unsupported, state, scope));
             Assert.Contains("unprojected defeat window", failure.Message);
         }
         Assert.Equal(before, Observe(world));

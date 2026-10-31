@@ -12299,7 +12299,7 @@
     {
       "card": "07045",
       "name": "Uncanny Resilience",
-      "note": "When Revealed: Remove each stunned and confused status card from each villain. If no status cards were removed this way, this card gains surge. Completion counts physical removed statuses; Tough and friendly characters are unaffected.",
+      "note": "When Revealed: Remove each stunned and confused status card from each villain. If no status cards were removed this way, this card gains surge. Completion counts physical removed statuses; Tough and friendly characters are unaffected. Boost: the player resolving the boost places a confused status card on their identity (rr:you-your.5).",
       "abilities": [
         {
           "trigger": {
@@ -12323,6 +12323,19 @@
               "otherwise": {
                 "gainSurge": 1
               }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "Boost",
+            "subject": "this"
+          },
+          "effect": {
+            "giveStatus": {
+              "card": "you",
+              "status": "confused"
             }
           }
         }
@@ -24370,6 +24383,300 @@
           "cost": { "discardRandomFromHand": 1 },
           "effect": { "discard": "this" }
         }
+      ]
+    },
+    {
+      "card": "13001a",
+      "name": "Wasp (Tiny)",
+      "note": "Small but Mighty -- Response: After Wasp (or an event you play) defeats a minion or side scheme, deal 1 damage to the villain. rr:you-your.12-14 make events, resources and identity upgrades extensions of the identity, so the engine's identity defeat credit (defeatedByYou) is exactly the printed 'Wasp (or an event you play)'; allies and supports never qualify (rr:you-your.15, .18). Each defeated minion or side scheme is its own triggering condition. The damage is not an attack.",
+      "abilities": [
+        {"name": "Small but Mighty", "trigger": {"event": "WhenCardDefeated", "timing": "Response", "subject": "game"}, "when": {"and": [{"or": [{"isKind": {"card": "defeated", "kind": "minion"}}, {"isKind": {"card": "defeated", "kind": "sideScheme"}}]}, {"defeatedByYou": "you"}]}, "effect": {"dealDamage": {"cards": {"query": "villain"}, "amount": 1}}}
+      ]
+    },
+    {
+      "card": "13002",
+      "name": "Ant-Man",
+      "note": "While the controller's identity is in Giant hero form, Ant-Man gains Giant and +1 ATK; while in Tiny hero form, Tiny and +1 THW. The identity's current Giant or Tiny trait identifies its hero form; Nadia Van Dyne has neither.",
+      "abilities": [
+        {"trigger": {"timing": "Constant", "subject": "this"}, "effect": {"if": {"test": {"hasTrait": {"card": "you", "trait": "GIANT"}}, "then": {"seq": [{"grant": {"card": "this", "trait": "GIANT"}}, {"grant": {"card": "this", "keyword": "attack", "amount": 1}}]}}}},
+        {"trigger": {"timing": "Constant", "subject": "this"}, "effect": {"if": {"test": {"hasTrait": {"card": "you", "trait": "TINY"}}, "then": {"seq": [{"grant": {"card": "this", "trait": "TINY"}}, {"grant": {"card": "this", "keyword": "thwart", "amount": 1}}]}}}}
+      ]
+    },
+    {
+      "card": "13003",
+      "name": "Giant Help",
+      "note": "Hero Action (thwart): in Giant hero form remove a total of 4 threat divided among schemes (pack:mc13:wasp-hero-pack#rules-clarifications: each scheme is thwarted); otherwise remove 3 threat from one scheme. Each reading is its own form-gated Action, so the form is read when the card is played; distributeThreat schedules its own thwart, as Inconspicuous (04038) does. Both readings carry the thwart label, so a hero who cannot thwart (rr:cannot) is offered neither.",
+      "abilities": [
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero"}, "labels": ["thwart"], "when": {"hasTrait": {"card": "you", "trait": "GIANT"}}, "effect": {"distributeThreat": {"schemes": {"query": "schemes"}, "amount": 4}}},
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero"}, "labels": ["thwart"], "when": {"not": {"hasTrait": {"card": "you", "trait": "GIANT"}}}, "effect": {"chooseCard": {"from": {"query": "thwartableSchemes"}, "effect": {"thwart": {"target": "chosen", "effect": {"removeThreat": {"scheme": "chosen", "amount": 3}}}}}}}
+      ]
+    },
+    {
+      "card": "13004",
+      "name": "Pinpoint Strike",
+      "note": "Hero Action (attack): deal 7 damage to an enemy; in Tiny hero form the same attack deals 8 and gains overkill.",
+      "abilities": [
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero"}, "labels": ["attack"], "effect": {"chooseCard": {"from": {"query": "attackableEnemies"}, "effect": {"attack": {"target": "chosen", "effect": {"if": {"test": {"hasTrait": {"card": "you", "trait": "TINY"}}, "then": {"dealAttackDamage": {"cards": "chosen", "amount": 8, "overkill": 1}}, "else": {"dealAttackDamage": {"cards": "chosen", "amount": 7}}}}}}}}}
+      ]
+    },
+    {
+      "card": "13005",
+      "name": "Rapid Growth",
+      "note": "Hero Interrupt when your hero uses a basic power: change to the Giant hero face and add 2 to that use. Ruling 6bff49b5ea66043b: using a basic power means exhausting to apply the stat to its action. Ruling 9cfb9119e5c7f0d7: the interrupt boosts the stat being used for that action. The change of form and the bonus are independent instructions; already being Giant leaves the bonus. A basic defense (DEF) uses the committed hero-defense interrupt and adds 2 DEF until that attack ends; a defense-labeled ability is not a basic power use.",
+      "abilities": [
+        {"trigger": {"event": "WhenHeroBasicUseInitiated", "timing": "Interrupt", "subject": "you", "form": "hero"}, "effect": {"seq": [{"changeForm": {"player": "you", "to": {"face": "13001c"}}}, {"boostBasicUse": 2}]}},
+        {"trigger": {"event": "WhenHeroDefends", "timing": "Interrupt", "subject": "you", "form": "hero"}, "when": {"heroBasicDefended": "you"}, "effect": {"seq": [{"changeForm": {"player": "you", "to": {"face": "13001c"}}}, {"grantUntil": {"card": "you", "keyword": "defense", "amount": 2, "until": "EndOfAttack"}}]}}
+      ]
+    },
+    {
+      "card": "13007",
+      "name": "Pym Particles",
+      "note": "Reprint of 12006: the spent physical card responds after the completed cost; Giant heals 2 from your hero, Tiny draws 1.",
+      "abilities": [
+        {"trigger": {"event": "WhenResourceCardSpent", "timing": "Response", "subject": "this", "player": "you", "form": "hero"}, "effect": {"if": {"test": {"hasTrait": {"card": "you", "trait": "GIANT"}}, "then": {"heal": {"card": "yourHero", "amount": 2}}, "else": {"if": {"test": {"hasTrait": {"card": "you", "trait": "TINY"}}, "then": {"draw": {"player": "you", "count": 1}}}}}}}
+      ]
+    },
+    {
+      "card": "13008",
+      "name": "Red Room Training",
+      "note": "Giant hero form: you gain retaliate 1. Tiny hero form: your basic attacks gain piercing (pack:mc13:wasp-hero-pack#new-keyword-piercing; rr:piercing).",
+      "abilities": [
+        {"trigger": {"timing": "Constant", "subject": "this"}, "effect": {"if": {"test": {"hasTrait": {"card": "you", "trait": "GIANT"}}, "then": {"grant": {"card": "you", "keyword": "retaliate", "amount": 1}}}}},
+        {"trigger": {"timing": "Constant", "subject": "this"}, "effect": {"if": {"test": {"hasTrait": {"card": "you", "trait": "TINY"}}, "then": {"grant": {"card": "you", "keyword": "piercing", "attackScope": "basic"}}}}}
+      ]
+    },
+    {
+      "card": "13009",
+      "name": "Bio-Synthetic Wings",
+      "note": "Wasp gains Aerial (the identity named Wasp, not Nadia Van Dyne). Interrupt: when you would take damage, if in Tiny hero form, exhaust to prevent 1 of that damage. A 'taken' trigger requires damage remaining after pending prevention.",
+      "abilities": [
+        {"trigger": {"timing": "Constant", "subject": "this"}, "effect": {"if": {"test": {"isTitle": {"card": "you", "title": "Wasp"}}, "then": {"grant": {"card": "you", "trait": "AERIAL"}}}}},
+        {"trigger": {"event": "WhenDamageWouldBeDealt", "damage": "taken", "timing": "Interrupt", "target": "you"}, "when": {"and": [{"isYourIdentity": "trigger.target"}, {"hasTrait": {"card": "you", "trait": "TINY"}}]}, "cost": {"exhaust": "this"}, "effect": {"preventDamage": {"card": "trigger.target", "amount": 1}}}
+      ]
+    },
+    {
+      "card": "13010",
+      "name": "Wasp's Helmet",
+      "note": "Giant hero form: +1 THW. Tiny hero form: +1 ATK.",
+      "abilities": [
+        {"trigger": {"timing": "Constant", "subject": "this"}, "effect": {"if": {"test": {"hasTrait": {"card": "you", "trait": "GIANT"}}, "then": {"grant": {"card": "yourHero", "keyword": "thwart", "amount": 1}}}}},
+        {"trigger": {"timing": "Constant", "subject": "this"}, "effect": {"if": {"test": {"hasTrait": {"card": "you", "trait": "TINY"}}, "then": {"grant": {"card": "yourHero", "keyword": "attack", "amount": 1}}}}}
+      ]
+    },
+    {
+      "card": "13011",
+      "name": "Thor",
+      "note": "Response after you play Thor (Jane Foster) from hand: deal 2 damage to the villain, or 3 when the card's paid price included a physical resource. Ruling 448f32c9a40357d3: putting her into play is not playing her from hand. The damage is not an attack.",
+      "abilities": [
+        {"trigger": {"event": "WhenCardPlayed", "timing": "Response", "subject": "this"}, "effect": {"if": {"test": {"paidWithResource": "R"}, "then": {"dealDamage": {"cards": {"query": "villain"}, "amount": 3}}, "else": {"dealDamage": {"cards": {"query": "villain"}, "amount": 2}}}}}
+      ]
+    },
+    {
+      "card": "13014",
+      "name": "Surprise Attack",
+      "note": "Hero Response (attack) after you change form: deal 3 damage to an enemy, or 4 when the event's paid price included a physical resource. Ruling 0c42b72128ba00a5: the response window follows the form change itself.",
+      "abilities": [
+        {"trigger": {"event": "WhenFormChanged", "timing": "Response", "subject": "you", "form": "hero"}, "labels": ["attack"], "effect": {"chooseCard": {"from": {"query": "attackableEnemies"}, "effect": {"attack": {"target": "chosen", "effect": {"if": {"test": {"paidWithResource": "R"}, "then": {"dealAttackDamage": {"cards": "chosen", "amount": 4}}, "else": {"dealAttackDamage": {"cards": "chosen", "amount": 3}}}}}}}}}
+      ]
+    },
+    {
+      "card": "13015",
+      "name": "The Power of Aggression",
+      "note": "Generates one wild resource, doubled while paying for an Aggression card.",
+      "abilities": [
+        {"trigger": {"timing": "Constant", "subject": "this"}, "effect": {"doubleResourceFor": "Aggression"}}
+      ]
+    },
+    {
+      "card": "13016",
+      "name": "Boot Camp",
+      "note": "Play under any player's control, max 1 per player; each ally its controller controls gets +1 ATK. Ruling bd57adbe1f58a44a confirms another player's control.",
+      "attachTo": {"query": "identitiesWithinPerPlayerLimit"},
+      "abilities": [
+        {"trigger": {"timing": "Constant", "subject": "this"}, "effect": {"grantEach": {"cards": {"query": "alliesYouControl"}, "keyword": "attack", "amount": 1}}}
+      ]
+    },
+    {
+      "card": "13017",
+      "name": "Lie in Wait",
+      "note": "Max 1 per player. Hero Response (attack): after a minion engages you, discard Lie in Wait to deal 3 attack damage to that minion. Ruling c19705d175b8f85e: its When Revealed and Incite resolve first.",
+      "abilities": [
+        {"trigger": {"event": "WhenMinionEngaged", "timing": "Response", "subject": "you", "form": "hero"}, "labels": ["attack"], "cost": {"discard": "this"}, "effect": {"attack": {"target": "trigger.subject", "effect": {"dealAttackDamage": {"cards": "trigger.subject", "amount": 3}}}}}
+      ]
+    },
+    {
+      "card": "13018",
+      "name": "Ironheart",
+      "note": "Response after you play Ironheart from hand: draw 1 card.",
+      "abilities": [
+        {"trigger": {"event": "WhenCardPlayed", "timing": "Response", "subject": "this"}, "effect": {"draw": {"player": "you", "count": 1}}}
+      ]
+    },
+    {
+      "card": "13019",
+      "name": "Spider-Man",
+      "note": "Response after you play Spider-Man (Miles Morales) from hand: choose THW or ATK; he gets +2 to it until the end of the phase.",
+      "abilities": [
+        {"trigger": {"event": "WhenCardPlayed", "timing": "Response", "subject": "this"}, "effect": {"choose": {"descriptions": ["Spider-Man gets +2 THW until the end of the phase", "Spider-Man gets +2 ATK until the end of the phase"], "options": [{"grantUntil": {"card": "this", "keyword": "thwart", "amount": 2, "until": "EndOfPlayerPhase"}}, {"grantUntil": {"card": "this", "keyword": "attack", "amount": 2, "until": "EndOfPlayerPhase"}}]}}}
+      ]
+    },
+    {
+      "card": "13020",
+      "name": "Swarm Tactics",
+      "note": "Reprint of 12020: change to the other hero form, then ready your hero; printed Team-Up governs play.",
+      "abilities": [
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero"}, "effect": {"seq": [{"changeForm": {"player": "you", "to": "other-hero"}}, {"ready": "yourHero"}]}}
+      ]
+    },
+    {
+      "card": "13021",
+      "name": "Energy",
+      "note": "This resource card has no ability. Its two printed energy resources are read from datasets/cards by the resource rules.",
+      "abilities": []
+    },
+    {
+      "card": "13022",
+      "name": "Genius",
+      "note": "This resource card has no ability. Its two printed mental resources are read from datasets/cards by the resource rules.",
+      "abilities": []
+    },
+    {
+      "card": "13023",
+      "name": "Strength",
+      "note": "This resource card has no ability. Its two printed physical resources are read from datasets/cards by the resource rules.",
+      "abilities": []
+    },
+    {
+      "card": "13024",
+      "name": "The Power in All of Us",
+      "note": "Generates one wild resource, doubled while paying for a Basic card.",
+      "abilities": [
+        {"trigger": {"timing": "Constant", "subject": "this"}, "effect": {"doubleResourceFor": "Basic"}}
+      ]
+    },
+    {
+      "card": "13025",
+      "name": "Quincarrier",
+      "note": "Reprint of 08023. The catalog enforces the current identity Avenger trait when played.",
+      "abilities": [
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Resource", "subject": "this"}, "cost": {"exhaust": "this"}, "effect": {"generate": "G"}, "printedResources": "G"}
+      ]
+    },
+    {
+      "card": "13026",
+      "name": "Red Dreams",
+      "note": "Obligation: you may flip to alter-ego form, then choose: exhaust Nadia Van Dyne to remove Red Dreams from the game, or discard each hand card with a printed mental resource, take 1 damage and discard this obligation. rr:then: removal requires the exhaustion.",
+      "abilities": [
+        {"trigger": {"event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this"}, "effect": {"seq": [{"choose": {"descriptions": ["Change to alter-ego form", "Remain in your current form"], "options": [{"changeForm": {"player": "you", "to": "alter-ego"}}, {"seq": []}]}}, {"choose": {"descriptions": ["Exhaust Nadia Van Dyne and remove Red Dreams from the game", "Discard each card with a printed mental resource from your hand, take 1 damage and discard Red Dreams"], "options": [{"then": {"effect": {"exhaust": "yourAlterEgo"}, "then": {"removeFromGame": "this"}}}, {"seq": [{"discardHandWithResource": "B"}, {"dealDamage": {"cards": "you", "amount": 1}}, {"discard": "this"}]}]}}]}}
+      ]
+    },
+    {
+      "card": "13028",
+      "name": "Beetle",
+      "note": "Guard is read from the printed keyword line. Forced Interrupt when Beetle is defeated: the defeating player chooses to spend a physical resource or shuffle Beetle into the encounter deck (ruling 30744014e3139d48).",
+      "abilities": [
+        {"trigger": {"event": "WhenCardDefeated", "timing": "ForcedInterrupt", "subject": "this"}, "effect": {"eachPlayer": {"player": "defeater", "effect": {"payOrEffect": {"resources": "R", "otherwise": {"shuffleInto": {"cards": "this", "deck": "encounterDeck"}}}}}}}
+      ]
+    },
+    {
+      "card": "13029",
+      "name": "Beetle Armor MK IV",
+      "note": "Attach to Beetle if able, otherwise to the villain. The attached character gets +4 hit points.",
+      "attachTo": {"firstAvailable": [{"titled": "Beetle"}, {"query": "villain"}]},
+      "abilities": [
+        {"trigger": {"timing": "Constant", "subject": "this"}, "effect": {"grant": {"card": "attachedTo", "keyword": "health", "amount": 4}}}
+      ]
+    },
+    {
+      "card": "13030",
+      "name": "Beetle Mania",
+      "note": "When Revealed (Alter-Ego): surge. When Revealed (Hero): Beetle attacks you with +1 ATK; if no attack was made this way (Beetle not in play, or stun replaced it), surge.",
+      "abilities": [
+        {"trigger": {"event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this", "form": "alter-ego"}, "effect": {"gainSurge": 1}},
+        {"trigger": {"event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this", "form": "hero"}, "effect": {"seq": [{"enemyAttacks": {"enemies": {"titled": "Beetle"}, "against": "you", "modifier": 1}}, {"if": {"test": {"not": {"atLeast": {"value": {"result": "activationMade"}, "count": 1}}}, "then": {"gainSurge": 1}}}]}}
+      ]
+    },
+    {
+      "card": "13031",
+      "name": "Running Interference",
+      "note": "Play only if your identity has the Avenger trait. Hero Action (thwart): remove 2 threat from the main scheme plus X more, where X is the villain's stage number to a maximum of 3, in one thwart.",
+      "abilities": [
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero"}, "labels": ["thwart"], "when": {"hasTrait": {"card": "you", "trait": "AVENGER"}}, "effect": {"thwart": {"target": {"query": "mainScheme"}, "effect": {"removeThreat": {"scheme": {"query": "mainScheme"}, "amount": {"add": [2, {"min": [3, {"modified": {"card": {"query": "villain"}, "field": "printed_stage"}}]}]}}}}}}
+      ]
+    },
+    {
+      "card": "13033",
+      "name": "Perseverance",
+      "note": "Hero Response after you change form: give your hero a tough status card.",
+      "abilities": [
+        {"trigger": {"event": "WhenFormChanged", "timing": "Response", "subject": "you", "form": "hero"}, "effect": {"giveStatus": {"card": "yourHero", "status": "tough"}}}
+      ]
+    },
+    {
+      "card": "13001c",
+      "name": "Wasp (Giant)",
+      "note": "Two constants: threat removed by her basic thwart and damage dealt by her basic attack can be divided among schemes and enemies. Rulings f4cbf2c7b6abb136, 0bf3bc9df0ca74ad and pack:mc13:wasp-hero-pack#rules-clarifications: each enemy dealt damage is attacked and each scheme is thwarted. Ruling 116e678d0ad83200: Guard prevents assigning any damage to the villain, and an enemy is attacked only if it is dealt at least 1. Ruling 78f96d5c7974afaa: one target is declared first and the final amount, including interrupts on that use, is divided. The modifier names are engine choices.",
+      "abilities": [
+        {"trigger": {"timing": "Constant", "subject": "this"}, "effect": {"grant": {"card": "this", "keyword": "basic_thwart_divided"}}},
+        {"trigger": {"timing": "Constant", "subject": "this"}, "effect": {"grant": {"card": "this", "keyword": "basic_attack_divided"}}}
+      ]
+    },
+    {
+      "card": "13006",
+      "name": "Wasp Sting",
+      "note": "Two Hero Actions (attack). Giant: deal a total of 4 damage divided among enemies; each enemy dealt damage is attacked (pack:mc13:wasp-hero-pack#rules-clarifications) and all shares are dealt simultaneously. The divided total is an engine-chosen attack shape. Tiny: deal 5 damage to an enemy. Each action is offered only in its printed form; ruling abf1048bf26e566f concerns a hero with neither form.",
+      "abilities": [
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero"}, "labels": ["attack"], "when": {"hasTrait": {"card": "you", "trait": "GIANT"}}, "effect": {"attack": {"target": {"query": "attackableEnemies"}, "total": 4, "effect": {"dealAttackDamage": {"cards": {"query": "powerTargets"}, "amount": 1, "simultaneous": 1}}}}},
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero"}, "labels": ["attack"], "when": {"hasTrait": {"card": "you", "trait": "TINY"}}, "effect": {"chooseCard": {"from": {"query": "attackableEnemies"}, "effect": {"attack": {"target": "chosen", "effect": {"dealAttackDamage": {"cards": "chosen", "amount": 5}}}}}}}
+      ]
+    },
+    {
+      "card": "13001b",
+      "name": "Nadia Van Dyne",
+      "note": "G.I.R.L. -- Action: shuffle up to 2 cards with a printed mental resource from your discard pile into your deck, limit once per round. A printed wild icon is not a mental resource (rr:wild-resource.3). 'Up to' in an effect permits fewer cards; repeated titles are allowed because the printed text does not require different cards.",
+      "abilities": [
+        {"name": "G.I.R.L.", "trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this"}, "limitPerRound": 1, "effect": {"chooseDiscardToShuffle": {"max": 2, "min": 0, "differentTitles": "false", "resource": "B"}}}
+      ]
+    },
+    {
+      "card": "13012",
+      "name": "Wasp",
+      "note": "Wasp (Janet Van Dyne) gets +1 hit point per pym counter. Interrupt on entry: place one pym counter (maximum 3) per energy resource overpaid for her cost. rr:cost.4.1: overpaid resources were not paid for the cost. Ruling 5e6ac90dc4187eef: The Power of cards do not double resources for this overpayment.",
+      "abilities": [
+        {"trigger": {"timing": "Constant", "subject": "this"}, "effect": {"grant": {"card": "this", "keyword": "health", "amount": {"countersOn": {"card": "this", "counter": "pym"}}}}},
+        {"trigger": {"event": "WhenCardEntersPlay", "timing": "Interrupt", "subject": "this"}, "effect": {"placeCounters": {"card": "this", "counter": "pym", "count": {"min": [3, {"entryResourceExcess": {"card": "this", "resource": "Y"}}]}}}}
+      ]
+    },
+    {
+      "card": "13034",
+      "name": "Athletic Conditioning",
+      "note": "Hero Action: discard one stunned or confused status card from your hero.",
+      "abilities": [
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero"}, "effect": {"chooseCard": {"from": {"statusCardsOn": {"card": "yourHero", "statuses": ["stunned", "confused"]}}, "effect": {"discard": "chosen"}}}}
+      ]
+    },
+    {
+      "card": "13013",
+      "name": "Into the Fray",
+      "note": "Hero Action (attack): deal 6 damage to a minion, then remove 1 threat from the main scheme per point of excess damage dealt by this attack. Ruling dd353e3498f6b923: excess damage is damage dealt beyond remaining hit points, independent of damage taken or defeat.",
+      "abilities": [
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero"}, "labels": ["attack"], "effect": {"chooseCard": {"from": {"query": "attackableMinions"}, "effect": {"attack": {"target": "chosen", "effect": {"seq": [{"dealAttackDamage": {"cards": "chosen", "amount": 6}}, {"removeThreat": {"scheme": {"query": "mainScheme"}, "amount": {"result": "excessDamageDealt"}}}]}}}}}}
+      ]
+    },
+    {
+      "card": "13027",
+      "name": "Mother's Orders",
+      "note": "Nemesis side scheme. As an additional cost for each hero to make a basic attack, that hero spends 1 resource of any type, paid simultaneously with the attack's exhaustion (rr:cost.10). The modifier name is an engine choice.",
+      "abilities": [
+        {"trigger": {"timing": "Constant", "subject": "this"}, "effect": {"grantEach": {"cards": {"inObjectIdOrder": {"query": "heroes"}}, "keyword": "attack_resource_cost", "amount": 1}}}
+      ]
+    },
+    {
+      "card": "13032",
+      "name": "All for One",
+      "note": "Hero Action (attack): choose the enemy, exhaust any number of ready Avenger characters you control, then attack for 3 damage plus 1 per character exhausted as one damage instance. Engine choice: the exhaustion resolves before the attack begins because its additional damage counts it, and the engine does not suspend for a choice inside a labelled attack.",
+      "abilities": [
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero"}, "labels": ["attack"], "effect": {"chooseCard": {"from": {"query": "attackableEnemies"}, "effect": {"seq": [{"exhaustAnyNumber": {"from": {"withTrait": {"cards": {"query": "charactersYouControl"}, "trait": "AVENGER"}}}}, {"attack": {"target": "chosen", "effect": {"dealAttackDamage": {"cards": "chosen", "amount": {"add": [3, {"result": "exhausted"}]}}}}}]}}}}
       ]
     },
     {

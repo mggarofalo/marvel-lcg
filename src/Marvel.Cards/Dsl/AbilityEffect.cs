@@ -106,6 +106,8 @@ public abstract record AbilityEffect
     {
         /// <summary>Whether every recipient receives damage before any recipient is defeated.</summary>
         public bool SimultaneousPlacement { get; init; }
+        /// <summary>Whether each allocated power-target entry is one share of a divided total.</summary>
+        public bool Distributed { get; init; }
     }
     /// <summary>Move damage between cards, optionally as attack damage.</summary>
     public sealed record MoveDamage(AbilityCardSelection From, AbilityCardSelection To, AbilityNumber Amount, bool Attack) : AbilityEffect;
@@ -244,6 +246,8 @@ public abstract record AbilityEffect
     public sealed record InspectEncounterTop(int Count, string Result) : AbilityEffect;
     /// <summary>Privately look at a bounded encounter group, discard one, and order survivors.</summary>
     public sealed record InspectDiscardOrderEncounterTop(int Count) : AbilityEffect;
+    /// <summary>Exhaust any number of the selected ready cards, recording how many were exhausted.</summary>
+    public sealed record ExhaustAnyNumber(AbilityCardSelection From) : AbilityEffect;
     /// <summary>Choose differently titled discarded cards to shuffle into the deck.</summary>
     public sealed record ChooseDiscardToShuffle(int Maximum) : AbilityEffect
     {
@@ -251,6 +255,8 @@ public abstract record AbilityEffect
         public int Minimum { get; init; } = 1;
         /// <summary>Whether selected cards must have different printed titles.</summary>
         public bool DifferentTitles { get; init; } = true;
+        /// <summary>A printed resource every selected card must generate, or null for any card.</summary>
+        public char? Resource { get; init; }
     }
     /// <summary>Discard a minimal hand-card group providing the requested printed icons, as far as possible.</summary>
     public sealed record DiscardResourceIcons(AbilityNumber Count) : AbilityEffect
@@ -276,6 +282,8 @@ public abstract record AbilityEffect
     {
         /// <summary>Choose this many distinct attack targets, or all available if fewer exist.</summary>
         public AbilityNumber? TargetCount { get; init; }
+        /// <summary>Whether <see cref="TargetCount"/> is a total divided among repeated attack targets.</summary>
+        public bool Distributed { get; init; }
     }
     /// <summary>A rule-specific way to select schemes and run a thwart power.</summary>
     public sealed record ThwartGroup(AbilityThwartSelection Selection, AbilityCardSelection Schemes, Power Thwart) : AbilityEffect

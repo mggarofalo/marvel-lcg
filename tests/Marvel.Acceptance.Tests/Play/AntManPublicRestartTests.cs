@@ -15,7 +15,7 @@ public sealed class AntManPublicRestartTests
     public void GiantResponseSurvivesFreshHostAndAuthorizedUndoRedo()
     {
         // rr:ability.11: "all interrupt and response abilities are optional" unless forced.
-        var journey = new AntManRestartJourney(new GameSpecification("rhino", ["ant_man"], [], 851));
+        var journey = new PublicRestartJourney(new GameSpecification("rhino", ["ant_man"], [], 851), "ant-man-restart");
         var opening = Assert.Single(journey.Current.Prompt!.Affordances);
         journey.Answer(Decision.Take(opening.Id));
         var identity = journey.Factory.Game.State.Seats[0].IdentityCard;
@@ -38,7 +38,7 @@ public sealed class AntManPublicRestartTests
         // Printed 12001c: "After you change to this form, deal 1 damage to an enemy."
         Assert.Equal(before + 1, fresh.Factory.Game.State.Cards[villain].Damage);
         Assert.True(fresh.Factory.Game.IsRootPrompt);
-        fresh.UndoRedo();
+        fresh.UndoRedo("12001b");
         journey.EquivalentState(fresh);
         var attack = Assert.Single(journey.Current.Prompt!.Affordances,
             offer => offer.AnchorId == identityId && offer.Verb == BasicPowers.AttackVerb);

@@ -46,10 +46,14 @@ internal static class AbilityProjectedDefeatWindows
         var candidates = DefeatCandidates(state, subject, cast);
         // The live defeat procedure owns both the dying card and its attached
         // forced interrupts. Their unknown board changes stay behind the same
-        // continuation and damage-batch read guards.
+        // continuation and damage-batch read guards. rr:when-defeated-abilities.1:
+        // "The 'When Defeated' timing trigger is equivalent to the following trigger:
+        // 'Forced Interrupt: When this card is defeated...'", so the dying card's own
+        // forced interrupt on its defeat joins the same window.
         return candidates.Length > 0 && candidates.All(candidate =>
             candidate.Ability.When is null && candidate.Ability.Cost is null
-            && (candidate.Card == subject && candidate.Ability.Trigger.Timing == AbilityType.WhenDefeated
+            && (candidate.Card == subject && candidate.Ability.Trigger.Timing
+                    is AbilityType.WhenDefeated or AbilityType.ForcedInterrupt
                 || candidate.Card.Area.Host == subject.ObjectId
                 && candidate.Ability.Trigger.Timing == AbilityType.ForcedInterrupt));
     }
@@ -74,13 +78,25 @@ internal static class AbilityProjectedDefeatWindows
         if (state.UnprojectedStageEntry is { } reason
             && !AbilityStageEntryDependencies.PreservesReads(node, state, cast))
             throw new RulesNotImplementedException(reason);
-        if (state.DefeatWindowDeferred && !AbilityDefeatReceiptProjection.PreservesReads(node, state, cast)
-            && !(state.RecoveryWindowDeferred && AbilityProjectedRecoveryWindow.PreservesReads(node, state, cast)))
+        bool live = AbilityLiveThreatRemoval.Resolves(node);
+        if (!live && DeferredWindowHidesReads(node, state, cast))
             throw new RulesNotImplementedException($"A labelled-power continuation reads the board after an {DeferredWindowDescription(state)}.");
-        if (!state.EncounterCardsChanged) return;
-        if (!AbilityEncounterDealProjection.PreservesReads(node))
+        if (!live && EncounterDealHidesReads(node, state))
             throw new RulesNotImplementedException("A labelled-power continuation has an unprojected read after a defeat-triggered encounter deal.");
     }
+
+    /// <summary>Whether <paramref name="node"/> is a removal the projection leaves to the live board.</summary>
+    /// <remarks>The board after such a removal is not projected; a later read of it is unsupported.</remarks>
+    internal static bool LeavesToLiveBoard(AbilityEffect node, AbilityPowerState state, AbilityAdmissionScope cast) =>
+        !AbilityPowerContinuationDependencies.IsIndependent(node) && AbilityLiveThreatRemoval.Resolves(node)
+        && (DeferredWindowHidesReads(node, state, cast) || EncounterDealHidesReads(node, state));
+
+    private static bool DeferredWindowHidesReads(AbilityEffect node, AbilityPowerState state, AbilityAdmissionScope cast) =>
+        state.DefeatWindowDeferred && !AbilityDefeatReceiptProjection.PreservesReads(node, state, cast)
+        && !(state.RecoveryWindowDeferred && AbilityProjectedRecoveryWindow.PreservesReads(node, state, cast));
+
+    private static bool EncounterDealHidesReads(AbilityEffect node, AbilityPowerState state) =>
+        state.EncounterCardsChanged && !AbilityEncounterDealProjection.PreservesReads(node);
 
     internal static string DeferredWindowDescription(AbilityPowerState state) =>
         state.RecoveryWindowDeferred ? "unprojected defeat window (step-6 interrupt)" : "unprojected defeat window";

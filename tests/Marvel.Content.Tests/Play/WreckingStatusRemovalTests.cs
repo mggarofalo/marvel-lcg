@@ -110,5 +110,25 @@ public sealed class WreckingStatusRemovalTests
         Assert.Throws<AbilityException>(() => new AbilityRunner(AbilityCatalog.Parse(book)));
     }
 
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    [Rule("rr:you-your.5")]
+    public void UncannyBoostConfusesTheResolvingPlayersIdentityOnly(int player)
+    {
+        // Printed 07045 Boost: "You are confused." rr:you-your.5: "If a card ability places a
+        // status card on 'you' (such as 'you are stunned'), the player resolving that card
+        // ability places that status card on their identity." Its When Revealed removal does not run.
+        var (world, groups, source) = WreckingEncounterCardFixture.Create("07045", 2, players: 2);
+        var runner = Runner();
+        world.Abilities = runner;
+        Statuses.Give(world, groups[0].Villain, Statuses.Stunned);
+        runner.ExecuteBoost(world, source, player);
+        Sequence.Finish(world, world.Facts, runner, []);
+        Assert.True(Statuses.Has(world, world.Seats[player].IdentityCard, Statuses.Confused));
+        Assert.False(Statuses.Has(world, world.Seats[1 - player].IdentityCard, Statuses.Confused));
+        Assert.Equal(1, Statuses.Count(world, groups[0].Villain, Statuses.Stunned));
+    }
+
     private static AbilityRunner Runner() => AuthoredCards.Runner();
 }

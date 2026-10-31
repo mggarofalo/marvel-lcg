@@ -92,6 +92,14 @@ public sealed partial class NativeGameWitness : RefCounted
     /// <summary>Counts the player's authorized hand.</summary>
     public int HandCount() => table?.CurrentGame?.World?.Areas.Single(area => area.Owner == 0 && area.Zone == "HandsArea").Cards.Count ?? -1;
 
+    /// <summary>Names the displayed zone holding one physical card, or empty when it is not displayed.</summary>
+    public string Zone(int anchor) => table?.CurrentGame?.World?.Areas
+        .FirstOrDefault(area => area.Cards.Any(card => card.Id == anchor))?.Zone ?? string.Empty;
+
+    /// <summary>Reads one displayed physical card's readiness, or false when it is not displayed.</summary>
+    public bool Ready(int anchor) => table?.CurrentGame?.World?.Areas.SelectMany(area => area.Cards)
+        .SingleOrDefault(card => card.Id == anchor)?.Ready ?? false;
+
     /// <summary>Reads the visible identity's exhaustion.</summary>
     public bool IdentityReady() => table?.CurrentGame?.World?.Areas.SelectMany(area => area.Cards)
         .Single(card => card.Face?.Title == "Doctor Strange" || card.Face?.Title == "Stephen Strange").Ready ?? false;

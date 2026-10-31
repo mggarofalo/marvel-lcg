@@ -13,6 +13,8 @@ public static class SimultaneousAttackDamage
     {
         if (request.Targets.Count == 0 || request.Targets.DistinctBy(card => card.ObjectId).Count() != request.Targets.Count)
             throw new ArgumentException("simultaneous attack damage requires distinct targets", nameof(request));
+        if (request.Amounts is { } amounts && amounts.Count != request.Targets.Count)
+            throw new ArgumentException("simultaneous attack shares must match their targets", nameof(request));
         SimultaneousAttackDamageResolution? resolution = null;
         AbilityExecutionResult Apply(Occurrence cause, AbilityExecution? completion) =>
             world.Agenda.Executions.RunBatch(cause, entry =>

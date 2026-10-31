@@ -133,6 +133,7 @@ internal static class AbilityEffectLowering
             "reduceFirstAllyCost" => new AbilityPricingEffect.ReduceFirstAllyCost(PositiveInteger(argument, child)),
             "releaseBeneath" => AbilityBeneathLowering.Release(argument, child),
             "chooseCardsToHand" => AbilityBeneathLowering.ChooseToHand(argument, child),
+            "exhaustAnyNumber" => new AbilityEffect.ExhaustAnyNumber(SelectCards(Required(Fields(argument, child, "from"), "from", child), child.Child("from"))),
             "storeBeneath" => AbilityBeneathLowering.Store(argument, child),
             "storeDeckTopBeneath" => AbilityBeneathLowering.StoreDeckTop(argument, child),
             "initializeAuxiliaryDeck" => AbilityAuxiliaryDeckLowering.Initialize(argument, child),

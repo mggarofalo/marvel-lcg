@@ -3204,7 +3204,7 @@
   "counts": {
     "campaigns": 39,
     "encounter_sets": 18,
-    "heroes": 14
+    "heroes": 15
   },
   "encounter_sets": {
     "running_interference": {
@@ -4202,6 +4202,67 @@
         "12029"
       ],
       "nemesis_set_icon": "ant_nemesis"
+    },
+    "wasp": {
+      "name": "Wasp",
+      "hero": [
+        "13001a,13001b,13001c"
+      ],
+      "hero_deck": [
+        "13002",
+        "13003",
+        "13003",
+        "13004",
+        "13004",
+        "13004",
+        "13005",
+        "13005",
+        "13006",
+        "13006",
+        "13007",
+        "13007",
+        "13008",
+        "13009",
+        "13010"
+      ],
+      "player_deck": [
+        "13011",
+        "13012",
+        "13013",
+        "13013",
+        "13013",
+        "13014",
+        "13014",
+        "13014",
+        "13015",
+        "13015",
+        "13016",
+        "13016",
+        "13016",
+        "13017",
+        "13017",
+        "13017",
+        "13018",
+        "13019",
+        "13020",
+        "13021",
+        "13022",
+        "13023",
+        "13024",
+        "13024",
+        "13025"
+      ],
+      "obligations": [
+        "13026"
+      ],
+      "nemesis_set": [
+        "13027",
+        "13028",
+        "13029",
+        "13030",
+        "13030"
+      ],
+      "nemesis_set_icon": "wsp_nemesis"
     }
   },
   "note": "Authored scenario, hero, and encounter-set setup recipes, admitted by complete-product runtime gates: what a scenario is dealt from is printed in its rules insert rather than on any card, so there is nothing to derive it from and no upstream to copy it from. Gated by SetupDatasetTests -- see datasets/setup/UPSTREAM.md.",
