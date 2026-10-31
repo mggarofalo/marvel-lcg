@@ -5,7 +5,7 @@ namespace Marvel.Rules.Play;
 /// <summary>Validates the jointly selected recipients of a card-labelled attack.</summary>
 internal static class CardAttackTargets
 {
-    internal static void Validate(World world, ICardFacts facts, CardPowerInvocation power)
+    internal static void Validate(World world, ICardFacts facts, CardPowerInvocation power, Card attacker)
     {
         if (power.Targets.IsDefault) return;
 
@@ -21,7 +21,7 @@ internal static class CardAttackTargets
         // rr:choose-game-element.3.1: "The same target cannot be chosen multiple
         // times this way." rr:guard.1: "The engaged player cannot attack any
         // villain." All recipients are checked against the same pre-attack board.
-        var candidates = BasicPowers.Attackable(world, facts, power.Player);
+        var candidates = BasicPowers.Attackable(world, facts, power.Player, attacker);
         var chosen = new HashSet<int>();
         foreach (var target in power.Targets)
         {

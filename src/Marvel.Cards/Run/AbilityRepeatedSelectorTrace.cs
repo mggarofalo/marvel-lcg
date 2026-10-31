@@ -178,12 +178,15 @@ internal static class AbilityRepeatedSelectorTrace
     private static bool IsCharacter(bool villain, CardKind kind) =>
         villain || kind is CardKind.Minion or CardKind.Hero or CardKind.AlterEgo or CardKind.Ally;
 
+    // The trace keeps the live attack-target filter; no admitted action is
+    // offered or withheld on that difference alone.
     private static bool IsAttackableEnemy(
         bool villain, CardKind kind, Card candidate, AbilitySelectorTraceContext trace) =>
-        villain
+        (villain
             ? VillainIsAttackableInTrace(trace, candidate)
             : kind == CardKind.Minion && AbilityDamageProtectionTrace.CanTakeDamageInTrace(
-                trace.Cast, candidate, trace.Discarded);
+                trace.Cast, candidate, trace.Discarded))
+        && AbilityAttackTargets.Permits(trace.Cast.World, Resolver(trace.Cast), trace.Cast.Source, candidate);
 
     private static bool IsEngagedMinion(
         CardKind kind, Card candidate, int player, Dictionary<int, int> engagement) =>

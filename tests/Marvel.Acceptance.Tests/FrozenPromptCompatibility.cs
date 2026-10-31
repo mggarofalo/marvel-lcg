@@ -7,7 +7,7 @@ namespace Marvel.Acceptance.Tests;
 /// <summary>
 /// The one prompt-spelling difference these research journals tolerate. The Power of
 /// Justice (01062): "Double the number of resources this card generates while paying for
-/// a Justice (yellow) card." Replay v29 records that as one {G} with a conditional {G};
+/// a Justice (yellow) card." The current replay records that as one {G} with a conditional {G};
 /// the journals record the unconditional "GG". Only prompts are projected back to that
 /// spelling; events, RNG and state fingerprints remain strict.
 /// </summary>

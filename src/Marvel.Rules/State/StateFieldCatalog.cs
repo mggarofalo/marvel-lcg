@@ -219,7 +219,8 @@ public static class StateFieldCatalog
         or Marvel.Rules.Play.VillainAttackRestrictions.OtherVillains
         or Play.BasicAttackCosts.DiscardField or Play.ThwartPermissions.ProhibitedField
         or Play.ReadinessPermissions.ProhibitedField or Play.FormChangePermissions.ProhibitedField
-        or Play.HeroSpecificPlayPermissions.ProhibitedField or Play.ObligationActionPermissions.ProhibitedField;
+        or Play.HeroSpecificPlayPermissions.ProhibitedField or Play.ObligationActionPermissions.ProhibitedField
+        or Play.AttackPermissions.KangProhibitedField;
 
     /// <summary>Whether a field is one of the five printed basic powers.</summary>
     public static bool IsBasicPowerField(string field) =>

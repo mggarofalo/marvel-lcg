@@ -130,6 +130,8 @@ internal static class AbilityEffectDescription
         AbilityCardSelection.Query { Kind: AbilityCardQuery.InvocationTop } => "public Invocation top",
         AbilityCardSelection.Query { Kind: AbilityCardQuery.OtherVillainSideSchemes } => "each other villain's side scheme",
         AbilityCardSelection.Query { Kind: AbilityCardQuery.ActiveVillainSideScheme } => "active villain's side scheme",
+        AbilityCardSelection.Query { Kind: AbilityCardQuery.VillainInThisGameArea } => "villain in this game area",
+        AbilityCardSelection.Query { Kind: AbilityCardQuery.ObligationsInThisGameArea } => "obligation in this game area",
         AbilityCardSelection.Query { Kind: AbilityCardQuery.VillainOfAttachedScheme } => "villain corresponding to the attached scheme",
         AbilityCardSelection.Query { Kind: AbilityCardQuery.VillainsWithLeastSchemeThreat } =>
             "villain whose side scheme has the least threat",

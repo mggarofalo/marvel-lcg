@@ -53,7 +53,7 @@ internal static class AbilityWindowAdmission
                 int ordinal = written.Take(index).Count(candidate =>
                     candidate.Trigger.Timing == ability.Trigger.Timing);
                 var candidate = new Candidate(card, ability, controller, ordinal);
-                foreach (var instance in AbilityTriggerInstances.For(candidate, occurrence))
+                foreach (var instance in AbilityTriggerInstances.For(world, candidate, occurrence))
                     if (IsWaitingCandidate(program, world, instance, occurrence, window, resourceAbilities, projection))
                         yield return instance;
             }

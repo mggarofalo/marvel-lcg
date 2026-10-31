@@ -24,11 +24,15 @@ internal static class AbilityCombatImmediateExecution
                 Attack.AlsoResolveAgainstEachOtherHero(world);
                 return new(true, false);
             case AbilityFixedInstruction.ReflectAttackDamage:
-                PlayerAttackReflection.Install(world, context.Admission.Source, context.Trigger);
+                PlayerAttackReflection.Install(world, context.Admission.Query.Occurrence, context.Admission.Source, context.Trigger);
                 return new(true, true);
             case AbilityFixedInstruction.MakeAttackIndirect:
                 Attack.MakeIndirect(world);
                 return new(true, false);
+            case AbilityFixedInstruction.PreventPlayerAttackDamage:
+                PlayerAttackPrevention.Install(world, context.Admission.Query.Occurrence,
+                    AbilityCardQueries.Named(AbilityCardBinding.TriggerTarget, context.Admission.Query));
+                return new(true, true);
             case AbilityFixedInstruction.PreventAttackDamage:
                 Attack.PreventDamage(world);
                 return new(true, true);

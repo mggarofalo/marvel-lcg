@@ -46,6 +46,7 @@ public static class StepConditions
         [TurnAction] = [TurnAction],
         [CardDefeated] = [CardDefeated],
         [CharacterAttacks] = [AttackInitiated],
+        [LateAttackRecipientOperation.Step] = [AttackInitiated],
         [CharacterThwarts] = [CharacterThwartsScheme],
         [DamageWouldBeDealt] = [DamageWouldBeDealt],
         [CardWouldBeDefeated] = [CardWouldBeDefeated],

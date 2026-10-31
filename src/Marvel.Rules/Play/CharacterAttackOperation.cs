@@ -7,6 +7,7 @@ namespace Marvel.Rules.Play;
 public sealed record CharacterAttackOperation(CharacterAttack Attack) : AgendaOperation
 {
     internal AttackDamageReflection? Reflection { get; set; }
+    internal (int Card, int Incarnation)? Prevented { get; set; }
 
     /// <inheritdoc/>
     public override string What => Steps.CharacterAttacks;

@@ -735,7 +735,16 @@ semantics remain unchanged under replay v24 and save schema 7. True is preserved
 when captured. There is no authored ability using this contract in this mechanism
 packet. Public wire support is protocol 38 and rejects protocol 37 peers.
 
-The current replay identity is `engine-replay-v29`. Every earlier replay
-identity is refused, including genuine published v28 saves, whose traces diverge
-in persisted prompt representation and event order. See
+### Replay identity
+
+The current replay identity is `engine-replay-v30`. Every earlier replay
+identity is refused. Under v30 an enemy a begun player attack reaches after its
+initiation -- the enemy Giant Stomp (12003) or Melee (05030) chooses for its
+later damage -- is announced by a `LateAttackRecipient` step before that damage,
+and an attack-initiated interrupt keyed to the attacked enemy answers each
+recipient an attack declares, as Shield Toss's (rr:attack-player-ability-type.5).
+A v29 trace in which such an enemy carries Temporal Shield or Photographic
+Reflexes resolves differently, and every late recipient adds a step and its
+windows to the event order. Replay v29 covered the Ant-Man delivery's persisted
+prompt facts and existing-card resolution order; see
 [replay evidence](content/ant-man-replay-v29.md).

@@ -115,6 +115,10 @@ internal static class AttackProcedure
     {
         switch (step.What)
         {
+            case LateAttackRecipientOperation.Step:
+                // The occurrence is the announcement; the damage that follows
+                // resumes in the owning attack-damage procedure.
+                return true;
             case Steps.CharacterAttacks:
                 BasicPowerResolution.ResolveCharacterAttack(world, facts, events, step.Require<CharacterAttackOperation>().Attack);
                 return true;

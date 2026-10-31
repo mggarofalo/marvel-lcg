@@ -171,6 +171,19 @@ complete an activation; an attack whose damage is prevented still does. The
 receipt survives suspension and waits for the activation and its responses.
 Dynamic activation collections remain unsupported as dependent predecessors.
 
+`villainInThisGameArea` selects the villain whose game area the source can
+affect (`pack:mc11:game-areas`, through `Places.CanAffect`); a faceup boost card
+uses its activating enemy's place. In an ordinary game it is the villain in
+play. More than one candidate raises rather than choosing.
+`obligationsInThisGameArea` selects every obligation in play that the source can
+affect, in object-id order. Both are engine spellings for the Kang scenario's
+"Kang" and "each obligation in play" (MARVEL-894 Q2 and Q4); they are the one
+place a game-area split changes those cards.
+
+`delayUntil` with `giveStatus: {"card": "damagedHero", "status": "stunned"}`
+stuns only a damaged identity in hero form; `damaged` stuns any damaged
+character. Both require `WhenDamageDealt`.
+
 `activeVillainSideScheme` selects the side scheme physically paired with the
 current active villain. Execution and projected boards follow their own active
 counter, including movement and stage promotion. Missing topology or a missing
@@ -563,7 +576,7 @@ atLeast attachedToThis attackDamaged attackableEnemies attackableMinions
 automaticTarget canAutomaticThwart canLegalPractice
 canMakeTheCall cancelOccurrence cancelWhenRevealed cardsIn changeForm characters
 charactersYouControl choose chooseCard chooseDiscardToShuffle chooseTopForHand
-countersOn damageOn dealAttackDamage dealDamage dealEncounterCards
+countersOn damageOn damagedHero dealAttackDamage dealDamage dealEncounterCards
 deck defeatedByYou delayUntil discardAtRandom discardAnyFromHand discardClassFromHand discardFromHand
 discardHandOfKind discardHandWithResource discardResourceFromHand discardTop discardUntil discardable discardedWithResource
 doubleResourceFor drawToPrintedHandSize dynamic
@@ -574,10 +587,10 @@ grantCharactersControlledBy grantEach grantUntil hasStatus hasTrait heroBasicDef
 heroes heroesAndAllies heroAndAllyTargets identities
 identitiesWithinPerPlayerLimit inForm indirectDamage isEnemyAttacker isKind isTitle
 isYourIdentity keyword kind legalPractice mainScheme makeTheCall maxBy minions
-minionsEngagedWithYou modified moveAttackDamage mul onto options overkill
+minionsEngagedWithYou modified moveAttackDamage mul obligationsInThisGameArea onto options overkill
 inspectEncounterTop paidWithResource payOrEffect payOrExhaust peekTop perPlayer placeAccelerationToken
 placeAtRandom placeCounters placeThreat power powerAmount powerTargets cardsDiscarded
-preventDamage preventDamageFrom preventDamageWhile preventThreat
+preventDamage preventDamageFrom preventDamageWhile preventPlayerAttackDamage preventThreat
 preventThreatRemoval printedResourceCountDiscarded putIntoPlay
 recoverDiscardedByResource reduceNextCardCost remainingHealth removeCounters
 removeFromGame removeThreat replaceReady replaceStatus replaceThreatWithDamage requireAllyDefender
@@ -586,7 +599,7 @@ shuffle shuffleInto sideSchemes soakDamage sourceKind sourceTrait spend
 spendEnergyX startingCounters statusCards storeDeckTopBeneath takeDamage then threatCause thwartDifferentSchemes thwartSchemes
 thwartableSchemes titleInPlay titled tokensOn topEncounterDiscardBoostPlusOne
 undefendedAttack until upgradesAndSupportsYouControl
-upgradesYouControl wasDefeated withStatus withTrait within withoutAnotherCopyAttached
+upgradesYouControl villainInThisGameArea wasDefeated withStatus withTrait within withoutAnotherCopyAttached
 yourAsideMinion yourAsidePile yourAsideSideScheme
 ```
 
@@ -1146,7 +1159,28 @@ This schedules only that player's resumable frame, without an ordering choice;
 credit raises instead of selecting a default seat. An eliminated recipient is
 not scheduled. Omitting `player` retains the all-player frame behavior.
 
-`reflectAttackDamage: "attack"` installs a replacement on the active player attack for this attachment's host. Every damage instance against that target during the attack is prevented and dealt to the attacking player's identity instead. The replacement survives the attachment leaving play and ends with the owning attack.
+`preventPlayerAttackDamage: "trigger.target"` prevents all damage the player
+attack initiated by the triggering occurrence would deal to the attacked enemy
+the trigger matched. An attack that declares several recipients offers an
+attack-initiated ability keyed to the attacked enemy once per recipient
+(`rr:attack-player-ability-type.5`), so that enemy may be any of them. The damage dealt to that incarnation is fixed at zero at
+`rr:damage.step.1`, so its Tough status card is kept (ruling a806907d1743e0d1);
+damage the same attack deals to other enemies is unaffected (ruling
+310af249be272877). The prevention survives its source leaving play and ends with
+the attack. The spelling is an engine choice.
+
+Every `dealAttackDamage` recipient is an attacked enemy (ruling 310af249be272877).
+A recipient the attacking character cannot attack, such as a Kang for the holder
+of Fear of Kang, is not dealt the damage (`rr:cannot`). A recipient the attack
+reaches only after its initiation window -- a later-chosen enemy such as
+`attackAnyEnemy`'s -- is announced by its own attack-initiated occurrence
+(`LateAttackRecipient`) before its damage, so "when [enemy] is attacked"
+interrupts answer it (`rr:interrupt.3`) and share the attack's per-attack
+maximums. Simultaneous placement has no such announcement; a splash recipient
+whose attachment answers its host being attacked raises, and no authored card
+reaches that shape.
+
+`reflectAttackDamage: "attack"` installs a replacement on the player attack whose initiation (or later-recipient announcement) triggered it, for this attachment's host, whichever recipient that host is. Every damage instance against that target during the attack is prevented and dealt to the attacking player's identity instead. The replacement survives the attachment leaving play and ends with the owning attack.
 The card interpreter supplies `UsesThwartStat` on each scheduled power from its
 compiled numeric dependencies and resolved actor bindings. Stat substitution
 is offered only when that exact power reads its acting character's THW; a
@@ -1411,6 +1445,14 @@ a card is not playing it. `obligation_alter_ego_action_prohibited` granted to an
 identity withholds every Alter-Ego Action on an obligation from that player, at
 offer and at execution. Both are engine-selected constant modifier names, not
 registered card-state or digest fields.
+
+`grantEach` may give an identity the derived `kang_attack_prohibited` modifier.
+A positive value prevents that character, and only that character, from
+attacking an enemy whose title is "Kang (...)" (Fear of Kang; rulings
+af0e9693cc645666 and 8da857fcc70a81a2). Basic attacks, card attacks and the
+attackable-enemy queries all read it for the performing character
+(`rr:you-your.12`, `.15`), so an ally's attack is unaffected. The name is an
+engine choice, not a registered card-state or digest field.
 
 `trigger.discardedEvent` binds the exact physical event named by a card-play
 occurrence only while it remains in the playing owner's discard pile and that

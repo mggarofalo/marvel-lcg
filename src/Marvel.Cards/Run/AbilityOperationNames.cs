@@ -193,6 +193,7 @@ internal static class AbilityOperationNames
             AbilityFixedInstruction.AlsoAttackEachOtherHero => "alsoAttackEachOtherHero",
             AbilityFixedInstruction.MakeAttackIndirect => "makeAttackIndirect",
             AbilityFixedInstruction.ReflectAttackDamage => "reflectAttackDamage",
+            AbilityFixedInstruction.PreventPlayerAttackDamage => "preventPlayerAttackDamage",
             AbilityFixedInstruction.PreventAttackDamage => "preventAttackDamage",
             AbilityFixedInstruction.RevealTop => "revealTop",
             AbilityFixedInstruction.PeekAnyDeck => "peekTop",

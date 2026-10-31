@@ -45,7 +45,7 @@ internal static class AbilityPowerTargetAdmission
             && cast.Reachability.PriorBindingCandidates.Count > 0)
             return EveryCandidateCan(cast, () => CanTargetAttack(node, cast));
         return Find(target, cast) is { } enemy
-            && BasicPowers.Attackable(cast.World, cast.World.Facts, Resolver(cast))
+            && AbilityAttackTargets.For(cast.World, Resolver(cast), cast.Source)
                 .Any(candidate => candidate.ObjectId == enemy.ObjectId)
             && AbilityProgramQueries.CanTakeDamage(
                 cast.World, cast.Context.Program, enemy, cast.Source)
@@ -58,7 +58,7 @@ internal static class AbilityPowerTargetAdmission
             Resolver(cast), cast.Source, [BasicPowers.AttackVerb])) return true;
         var splash = ((AbilityEffect.Sequence)power.Effect).Effects[0];
         return TargetLegalityOf(splash, cast) == TargetLegality.Valid
-            || BasicPowers.Attackable(cast.World, cast.World.Facts, Resolver(cast))
+            || AbilityAttackTargets.For(cast.World, Resolver(cast), cast.Source)
                 .Any(enemy => AbilityProgramQueries.CanTakeDamage(
                     cast.World, cast.Context.Program, enemy, cast.Source));
     }

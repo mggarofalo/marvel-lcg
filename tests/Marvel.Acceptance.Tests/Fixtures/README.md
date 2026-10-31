@@ -19,7 +19,7 @@ Do not replace recorded outcomes to accommodate a changed engine. Investigate
 divergence, preserve the original evidence, and make any compatibility decision
 explicit. Running tests reads these files without modifying them.
 
-Replay v29 records The Power of Justice (01062) as one {G} with a conditional {G}
+The current replay records The Power of Justice (01062) as one {G} with a conditional {G}
 for Justice costs; both journals record the unconditional `GG` (first at seed-10
 decision 21 and seed-13 decision 15). `FrozenPromptCompatibility` projects the
 current prompt record back to that one spelling before comparing it with a

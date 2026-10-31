@@ -25,6 +25,7 @@ internal sealed class AbilitySelectorEvaluation(
                 Kind:
             AbilityCardQuery.Villain or AbilityCardQuery.MainScheme or AbilityCardQuery.YourAsideMinion
             or AbilityCardQuery.InvocationTop or AbilityCardQuery.YourAsideSideScheme or AbilityCardQuery.ActiveVillainSideScheme or AbilityCardQuery.VillainOfAttachedScheme
+            or AbilityCardQuery.VillainInThisGameArea
             } query)
             return FindQuery(query);
         if (selector is AbilityCardSelection.Last last)
