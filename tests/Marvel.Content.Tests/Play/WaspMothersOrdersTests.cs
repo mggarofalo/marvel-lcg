@@ -2,6 +2,7 @@ using Marvel.Content.Tests.Cards;
 using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
+using Marvel.Rules.Timing;
 using Marvel.Tests;
 using Xunit;
 
@@ -72,6 +73,19 @@ public sealed class WaspMothersOrdersTests : CoreCardTestBase
         Assert.False(BasicAttackCosts.CanPay(world, world.Seats[0].IdentityCard));
         Assert.Equal(0, BasicAttackCosts.Resources(world, ally));
         Assert.True(BasicAttackCosts.CanPay(world, ally));
+    }
+
+    [Fact]
+    public void AnAttackOwingBothDiscardAndResourceCostsRaises()
+    {
+        // Engine choice: no admitted card combines the two additional costs, so the
+        // engine names the combination instead of choosing how shared cards pay.
+        var (world, _, _) = Board();
+        var wasp = world.Seats[0].IdentityCard;
+        world.CreateCard(Energy, world.Seats[0].Hand);
+        world.Effects.Register(new ContinuousEffect(EffectSource.LastingEffect,
+            Kind: BasicAttackCosts.DiscardField, Amount: 1, Card: wasp.ObjectId, Affects: wasp.ObjectId));
+        Assert.Throws<RulesNotImplementedException>(() => BasicAttackCosts.CanPay(world, wasp));
     }
 
     private static (World World, Marvel.Cards.Run.AbilityRunner Runner, Card Villain) Board()

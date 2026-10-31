@@ -58,6 +58,8 @@ internal static class AbilityAnyNumberExhaustion
         long exhausted = command.Targets.Count(id =>
             AbilityCardOperations.Exhaust(cast.World.Cards[id], cast.Trigger, cast.Events));
         cast.Results["exhausted"] = exhausted;
+        // Exhausting is an effect that applied. In All for One the attack that follows
+        // always applies too, so dropping this record changes no admitted outcome.
         if (exhausted > 0) cast.ResolveEffect();
         return true;
     }

@@ -15,7 +15,9 @@ internal static class AbilityEntryResourceQuery
     /// specify which resource type" it is being used as. The payment receipt records
     /// no declaration for an overpaid icon, so the engine chooses to count each
     /// overpaid wild as declared energy. A paid declaration consumes its own printed
-    /// type first and a wild icon otherwise.
+    /// type first and a wild icon otherwise. Its only reader is Wasp (13012), whose
+    /// printed cost is 0, so no paid declaration reaches this order today: a mutant
+    /// that always consumes a wild icon survives as equivalent for admitted content.
     /// </remarks>
     internal static long EnergyExcess(AbilityExpressionContext context)
     {
