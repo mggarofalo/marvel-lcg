@@ -23,8 +23,13 @@ namespace Marvel.Content;
 public sealed class CardCatalog : ICardFacts
 {
     private readonly IReadOnlyDictionary<string, CardCatalogEntry> cards;
+    private readonly Dictionary<string, string[]> linkedBy;
 
-    private CardCatalog(IReadOnlyDictionary<string, CardCatalogEntry> cards) => this.cards = cards;
+    private CardCatalog(IReadOnlyDictionary<string, CardCatalogEntry> cards)
+    {
+        this.cards = cards;
+        linkedBy = IndexLinkedCards(cards);
+    }
 
     /// <summary>How many cards the catalog holds.</summary>
     public int Count => cards.Count;
@@ -81,15 +86,22 @@ public sealed class CardCatalog : ICardFacts
     public IReadOnlyList<string> LinkedCards(string bringingFaceId)
     {
         ArgumentNullException.ThrowIfNull(bringingFaceId);
-        return
-        [
-            .. cards
-                .Where(entry => entry.Value.LinkedTo.Contains(
-                    bringingFaceId, StringComparer.Ordinal))
-                .OrderBy(entry => entry.Key, StringComparer.Ordinal)
-                .Select(entry => entry.Key),
-        ];
+        return linkedBy.TryGetValue(bringingFaceId, out string[]? linked) ? [.. linked] : [];
     }
+
+    // Setup asks this for every dealt face, so the reverse of each card's
+    // LinkedTo list is built once at parse time. Each list is in ordinal code
+    // order and names a linked card once, however often its LinkedTo repeats it.
+    private static Dictionary<string, string[]> IndexLinkedCards(
+        IReadOnlyDictionary<string, CardCatalogEntry> cards) =>
+        cards
+            .SelectMany(entry => entry.Value.LinkedTo.Distinct(StringComparer.Ordinal)
+                .Select(bringing => (Bringing: bringing, Linked: entry.Key)))
+            .GroupBy(pair => pair.Bringing, StringComparer.Ordinal)
+            .ToDictionary(
+                group => group.Key,
+                group => group.Select(pair => pair.Linked).Order(StringComparer.Ordinal).ToArray(),
+                StringComparer.Ordinal);
 
     /// <inheritdoc />
     public CardKind Kind(string faceId) => Find(faceId).Kind;

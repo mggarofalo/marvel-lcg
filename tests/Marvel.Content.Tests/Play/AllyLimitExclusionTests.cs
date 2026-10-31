@@ -35,6 +35,21 @@ public sealed class AllyLimitExclusionTests
         Assert.Throws<AbilityException>(() => new AbilityRunner(AbilityCatalog.Parse(book)));
     }
 
+    [Fact]
+    public void AdmissionRejectsASelfExclusionInsideALargerConstantBody()
+    {
+        // The grant alone is a well-formed self grant of 1; only the program
+        // check sees that it is not the ability's whole body.
+        const string book = """
+            {"cards":[{"card":"12014","abilities":[{
+              "trigger":{"timing":"Constant"},
+              "effect":{"seq":[{"grant":{"card":"this","keyword":"ally_limit_excluded"}}]}
+            }]}]}
+            """;
+        var error = Assert.Throws<AbilityException>(() => new AbilityRunner(AbilityCatalog.Parse(book)));
+        Assert.Contains("standalone constant self grant", error.Message, StringComparison.Ordinal);
+    }
+
     [Theory]
     [InlineData("12014", false)]
     [InlineData("21019", true)]

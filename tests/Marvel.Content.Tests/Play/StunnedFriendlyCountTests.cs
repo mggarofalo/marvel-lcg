@@ -78,7 +78,7 @@ public sealed class StunnedFriendlyCountTests
             scheme.Incarnation, null, null, null, []);
         var expressions = new AbilityExpressionContext(query, ImmutableDictionary<string, long>.Empty,
             [], "", 0, false, null);
-        var admission = new AbilityAdmissionContext(AbilityLowering.Book(AuthoredCards.Book),
+        var admission = new AbilityAdmissionContext(AuthoredCards.Program,
             world.ResourceAbilities, expressions, new(), null);
         var projected = new AreaProjectionState(admission);
         string digest = world.Digest().Canonical();
@@ -225,7 +225,7 @@ public sealed class StunnedFriendlyCountTests
             source.Incarnation, null, null, null, []);
         var expressions = new AbilityExpressionContext(query, ImmutableDictionary<string, long>.Empty,
             [], "", 0, false, null);
-        return new AbilityAdmissionContext(AbilityLowering.Book(AuthoredCards.Book),
+        return new AbilityAdmissionContext(AuthoredCards.Program,
             world.ResourceAbilities, expressions, new(), null);
     }
 

@@ -58,6 +58,11 @@ public sealed class AbilityProgram
     /// <summary>The abilities on one printed face, in authored order.</summary>
     public ImmutableArray<CompiledCardAbility> On(string card) => byCard.GetValueOrDefault(card, []);
 
+    /// <summary>Every effect node, grouped by the card ability that holds it.</summary>
+    /// <remarks>Each group keeps the order in which <see cref="Effects"/> enumerates its nodes.</remarks>
+    internal ILookup<(string Card, int Ability), AbilityEffect> EffectsByAbility() =>
+        Effects.ToLookup(pair => (pair.Key.Card, pair.Key.Ability), pair => pair.Value);
+
     /// <summary>Whether the program defines this card's reveal, including known silence.</summary>
     public bool KnowsWhenRevealed(string card) => Authored.Contains(card) || PlacementOnly.Contains(card);
 }

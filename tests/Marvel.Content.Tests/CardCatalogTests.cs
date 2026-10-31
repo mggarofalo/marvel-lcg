@@ -77,6 +77,23 @@ public sealed class CardCatalogTests
         Assert.Equal(["55066"], Cards.LinkedCards("55059"));
     }
 
+    [Fact]
+    public void LinkedCardsAreInCodeOrderAndNamedOnceWhateverTheDatasetOrder()
+    {
+        // Synthetic fixture: the dataset lists the linked faces out of code
+        // order, and one of them names its bringing face twice.
+        CardCatalog catalog = CardCatalog.Parse("""
+            {"cards":[
+              {"card_id":"b2","type":"Minion","linked_to":["a1","a1"]},
+              {"card_id":"b10","type":"Minion","linked_to":["a1","c1"]},
+              {"card_id":"a1","type":"Villain"}]}
+            """);
+
+        Assert.Equal(["b10", "b2"], catalog.LinkedCards("a1"));
+        Assert.Equal(["b10"], catalog.LinkedCards("c1"));
+        Assert.Empty(catalog.LinkedCards("b2"));
+    }
+
     [Theory]
     // Already upper-case in the engine's data, so nothing to resolve.
     [InlineData("CRIMINAL", "CRIMINAL")]

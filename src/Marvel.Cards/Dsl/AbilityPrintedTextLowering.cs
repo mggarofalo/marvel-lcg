@@ -11,10 +11,10 @@ internal static class AbilityPrintedTextLowering
     // contract; a minion kind alone is not evidence that all text is blankable.
     internal static void Validate(AbilityProgram program)
     {
+        var byAbility = program.EffectsByAbility();
         foreach (var ability in program.Abilities)
         {
-            var nodes = program.Effects.Where(pair => pair.Key.Card == ability.Card
-                && pair.Key.Ability == ability.Address.Ability).Select(pair => pair.Value);
+            var nodes = byAbility[(ability.Card, ability.Address.Ability)];
             var all = nodes.ToArray();
             ValidateTech(ability, all);
             if (!all.Any(node => node is AbilityEffect.GrantField { Field: PrintedText.Blanked })) continue;

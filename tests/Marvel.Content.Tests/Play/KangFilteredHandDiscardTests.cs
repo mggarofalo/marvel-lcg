@@ -91,7 +91,7 @@ public sealed class KangFilteredHandDiscardTests : CoreCardTestBase
         var memories = Obligation(world, StolenMemories, 1);
         AlterEgo(world, 1);
         InHand(world, "01088", 1);
-        program = AbilityLowering.Book(Marvel.Content.Tests.Cards.AuthoredCards.Book);
+        program = Marvel.Content.Tests.Cards.AuthoredCards.Program;
         var ability = Assert.Single(program.On(StolenMemories), candidate => candidate.Cost is not null);
         return (world, f, memories, ability);
     }
