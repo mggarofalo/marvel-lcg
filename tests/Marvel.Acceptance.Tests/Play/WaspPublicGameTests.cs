@@ -43,6 +43,25 @@ public sealed class WaspPublicGameTests(ITestOutputHelper output)
         Assert.True(seats.ResourceAttackCosts > 0);
     }
 
+    [Theory]
+    [InlineData("ultron", 27u)]
+    [InlineData("ultron", 36u)]
+    [InlineData("ultron", 37u)]
+    [InlineData("rhino", 10u)]
+    [InlineData("rhino", 17u)]
+    [InlineData("absorbing_man", 10u)]
+    [InlineData("absorbing_man", 13u)]
+    [InlineData("absorbing_man", 16u)]
+    [InlineData("absorbing_man", 28u)]
+    [InlineData("absorbing_man", 40u)]
+    [InlineData("crossbones", 1u)]
+    [InlineData("wrecking_crew_standard", 32u)]
+    public void IntoTheFrayAndBoostGamesReachAnEndingWithExactDecisionReplay(string scenario, uint seed) =>
+        // Into the Fray (13013) defeats an Advanced Ultron Drone (01143), Beetle (13028) or
+        // Hydra Soldier (01182), whose defeat ability resolves before the threat removal
+        // (rr:ability.4). Wrecking Crew seed 32 turns up Uncanny Resilience (07045) as a boost card.
+        PublicStarterGames.Play("wasp", scenario, false, seed, output);
+
     private static Decision? PreferGiant(Game game, Prompt prompt)
     {
         if (prompt.Affordances.SingleOrDefault(offer => offer.Verb == BasicPowerDivision.Verb) is { } divide)

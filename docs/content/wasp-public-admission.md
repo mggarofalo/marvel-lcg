@@ -97,6 +97,16 @@ decision's prompt, events, digest and RNG. All seven games reach a terminal
 policy loss; they establish complete games and replay, not victory. The policy
 never changes to Giant, so these seven games do not exercise the division.
 
+| Scenario | Players | Seed | Outcome | Round | Decisions |
+|---|---:|---:|---|---:|---:|
+| Rhino | 1 | 1 | VillainWins | 5 | 33 |
+| Klaw | 1 | 2 | PlayersLose | 5 | 38 |
+| Ultron | 1 | 3 | PlayersLose | 4 | 34 |
+| Crossbones | 1 | 4 | PlayersLose | 3 | 20 |
+| Absorbing Man | 1 | 5 | PlayersLose | 4 | 29 |
+| Rhino | 2 | 6 | PlayersLose | 7 | 81 |
+| Absorbing Man | 2 | 7 | PlayersLose | 5 | 73 |
+
 `AGiantStarterDividesItsBasicPowersThroughACompleteReplayedGame` plays two more
 unarranged games with the same replay check. Before the policy answers, the
 test changes Wasp to Giant whenever the turn offers it, and spreads each
@@ -122,34 +132,35 @@ No native journey reaches Mother's Orders, so its prompt has no native
 evidence. The scripted client cannot arrange the nemesis side scheme, and no
 native script yet plays an unarranged game as far as Shadow of the Past.
 
-### Unarranged games that raise
+### Defeat windows and boosts
 
-A scan of the public starter against six scenarios, seeds 1–40 (240 games),
-found games that end in `RulesNotImplementedException`. In every Wasp-caused
-case, Into the Fray (13013) defeats a minion whose defeat window the
-labelled-power projection cannot predict. The continuation then reads the
-main scheme:
+Into the Fray (13013) deals 6 damage to a minion, then removes threat from the
+main scheme equal to the excess damage. When that minion has its own defeat
+ability, that ability resolves at the moment of defeat (rr:interrupt,
+rr:when-defeated-abilities). The removal then resolves on the board as it
+stands (rr:ability.4), using the excess recorded when the damage was dealt
+(ruling dd353e34). Nothing about the defeat window is predicted. The engine
+leaves any fixed-amount or recorded-amount threat removal after an opaque
+defeat window to the live board. A removal whose amount is counted from the
+board still raises before anything changes. Beetle's (13028) "Forced
+Interrupt: When Beetle is defeated" joins the window the engine runs for When
+Defeated, because rr:when-defeated-abilities.1 treats the two triggers as
+equivalent. `IntoTheFrayRemovesExcessThreatAfterTheMinionsDefeatAbilityResolves`
+covers Hydra Soldier (01182), Advanced Ultron Drone (01143) and Beetle.
 
-- Advanced Ultron Drone (01143, When Defeated) and Beetle (13028, Forced
-  Interrupt). Example seeds: Ultron 27, 36, 37; Rhino 10, 17; Absorbing Man
-  10, 13, 16, 28, 40. These still raise.
-- Hydra Soldier (01182, When Defeated encounter deal). Example seeds:
-  Crossbones 1, 18, 30; Absorbing Man 1, 35. These now complete, because a
-  facedown dealt card changes no threat
-  (`IntoTheFrayRemovesExcessThreatAfterTheMinionsWhenDefeatedEncounterDeal`).
+Each changed path used to raise `RulesNotImplementedException`, so no saved
+session can hold one, and replay identity is unchanged.
 
-One further raise, Wrecking Crew seed 32, comes from the Wrecking Crew boost
-card 07045, which has no authored boost ability. It is not Wasp content.
+`IntoTheFrayAndBoostGamesReachAnEndingWithExactDecisionReplay` replays the
+unarranged games that used to raise: Ultron 27, 36 and 37; Rhino 10 and 17;
+Absorbing Man 10, 13, 16, 28 and 40; Crossbones 1; and Wrecking Crew 32. The
+Wrecking Crew game turns up Uncanny Resilience (07045) as a boost card. Its
+missing boost ability is fixed on main in a separate PR, and that commit is
+picked onto this branch.
 
-| Scenario | Players | Seed | Outcome | Round | Decisions |
-|---|---:|---:|---|---:|---:|
-| Rhino | 1 | 1 | VillainWins | 5 | 33 |
-| Klaw | 1 | 2 | PlayersLose | 5 | 38 |
-| Ultron | 1 | 3 | PlayersLose | 4 | 34 |
-| Crossbones | 1 | 4 | PlayersLose | 3 | 20 |
-| Absorbing Man | 1 | 5 | PlayersLose | 4 | 29 |
-| Rhino | 2 | 6 | PlayersLose | 7 | 81 |
-| Absorbing Man | 2 | 7 | PlayersLose | 5 | 73 |
+A scan of the public starter against Rhino, Klaw, Ultron, Crossbones,
+Absorbing Man and the Wrecking Crew, seeds 1–40 (240 games), ends every game
+without a raise.
 
 The complete-game and restart helpers are shared with Ant-Man
 (`PublicStarterGames`, `PublicRestartJourney`); Ant-Man's seven games reproduce
