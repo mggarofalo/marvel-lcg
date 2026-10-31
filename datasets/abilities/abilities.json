@@ -24614,6 +24614,31 @@
         {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero"}, "labels": ["attack"], "when": {"hasTrait": {"card": "you", "trait": "GIANT"}}, "effect": {"attack": {"target": {"query": "attackableEnemies"}, "total": 4, "effect": {"dealAttackDamage": {"cards": {"query": "powerTargets"}, "amount": 1, "simultaneous": 1}}}}},
         {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero"}, "labels": ["attack"], "when": {"hasTrait": {"card": "you", "trait": "TINY"}}, "effect": {"chooseCard": {"from": {"query": "attackableEnemies"}, "effect": {"attack": {"target": "chosen", "effect": {"dealAttackDamage": {"cards": "chosen", "amount": 5}}}}}}}
       ]
+    },
+    {
+      "card": "13001b",
+      "name": "Nadia Van Dyne",
+      "note": "G.I.R.L. -- Action: shuffle up to 2 cards with a printed mental resource from your discard pile into your deck, limit once per round. A printed wild icon is not a mental resource (rr:wild-resource.3). 'Up to' in an effect permits fewer cards; repeated titles are allowed because the printed text does not require different cards.",
+      "abilities": [
+        {"name": "G.I.R.L.", "trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this"}, "limitPerRound": 1, "effect": {"chooseDiscardToShuffle": {"max": 2, "min": 0, "differentTitles": "false", "resource": "B"}}}
+      ]
+    },
+    {
+      "card": "13012",
+      "name": "Wasp",
+      "note": "Wasp (Janet Van Dyne) gets +1 hit point per pym counter. Interrupt on entry: place one pym counter (maximum 3) per energy resource overpaid for her cost. rr:cost.4.1: overpaid resources were not paid for the cost. Ruling 5e6ac90dc4187eef: The Power of cards do not double resources for this overpayment.",
+      "abilities": [
+        {"trigger": {"timing": "Constant", "subject": "this"}, "effect": {"grant": {"card": "this", "keyword": "health", "amount": {"countersOn": {"card": "this", "counter": "pym"}}}}},
+        {"trigger": {"event": "WhenCardEntersPlay", "timing": "Interrupt", "subject": "this"}, "effect": {"placeCounters": {"card": "this", "counter": "pym", "count": {"min": [3, {"entryResourceExcess": {"card": "this", "resource": "Y"}}]}}}}
+      ]
+    },
+    {
+      "card": "13034",
+      "name": "Athletic Conditioning",
+      "note": "Hero Action: discard one stunned or confused status card from your hero.",
+      "abilities": [
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero"}, "effect": {"chooseCard": {"from": {"statusCardsOn": {"card": "yourHero", "statuses": ["stunned", "confused"]}}, "effect": {"discard": "chosen"}}}}
+      ]
     }
   ]
 }

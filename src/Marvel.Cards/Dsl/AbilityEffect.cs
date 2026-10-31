@@ -253,6 +253,8 @@ public abstract record AbilityEffect
         public int Minimum { get; init; } = 1;
         /// <summary>Whether selected cards must have different printed titles.</summary>
         public bool DifferentTitles { get; init; } = true;
+        /// <summary>A printed resource every selected card must generate, or null for any card.</summary>
+        public char? Resource { get; init; }
     }
     /// <summary>Discard a minimal hand-card group providing the requested printed icons, as far as possible.</summary>
     public sealed record DiscardResourceIcons(AbilityNumber Count) : AbilityEffect

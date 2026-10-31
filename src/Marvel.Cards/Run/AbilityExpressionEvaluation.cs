@@ -54,6 +54,7 @@ internal sealed class AbilityExpressionEvaluation(
     {
         AbilityResolutionNumber.PowerAmount => context.PowerAmount,
         AbilityResolutionNumber.EntryResourceExcess => AbilityEntryResourceQuery.Excess(context),
+        AbilityResolutionNumber.EntryEnergyExcess => AbilityEntryResourceQuery.EnergyExcess(context),
         AbilityResolutionNumber.ReceivedAttackDamage => ReceivedAttackDamageQuery.Amount(context),
         AbilityResolutionNumber.CardsDiscarded => context.Discarded.Length,
         AbilityResolutionNumber.PrintedCostDiscarded => context.Discarded.Sum(card =>

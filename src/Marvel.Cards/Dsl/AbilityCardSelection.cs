@@ -13,7 +13,11 @@ public abstract record AbilityCardSelection
     /// <summary>A named engine query.</summary>
     public sealed record Query(AbilityCardQuery Kind) : AbilityCardSelection;
     /// <summary>Physical status cards on one currently bound character.</summary>
-    public sealed record StatusCardsOn(AbilityCardBinding Host) : AbilityCardSelection;
+    public sealed record StatusCardsOn(AbilityCardBinding Host) : AbilityCardSelection
+    {
+        /// <summary>The status kinds selected; empty selects every status card.</summary>
+        public System.Collections.Immutable.ImmutableArray<string> Statuses { get; init; } = [];
+    }
     /// <summary>A printed-title reference.</summary>
     public sealed record Titled(string Title) : AbilityCardSelection;
     /// <summary>Enemies carrying a named trait.</summary>
