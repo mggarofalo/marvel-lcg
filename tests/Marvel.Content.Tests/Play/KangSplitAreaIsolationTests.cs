@@ -20,6 +20,8 @@ public sealed class KangSplitAreaIsolationTests
         "11014", "11015", "11016", "11017", "11018", "11019", "11020", "11021", "11022",
         "11024", "11025", "11026", "11027", "11028", "11029",
         "01186", "01187", "01188", "01189", "01190", "01191", "01192", "01193",
+        // Beyond the Kang pool: encounter cards whose text selects every player.
+        "01148", "01166", "01169",
     ];
 
     public static TheoryData<string, int, bool> Reveals()
@@ -71,6 +73,34 @@ public sealed class KangSplitAreaIsolationTests
         var scheme = Assert.Single(world.AreaOf(DeckType.SideSchemesArea, PlayArea.Of(1)).Cards);
         Assert.Equal("11022", scheme.FaceId);
         Assert.Equal(4, scheme.Tokens.GetValueOrDefault("k_threat"));
+    }
+
+    [Fact]
+    [Rule("rr:each-player.1")]
+    public void EachPlayerMeansBothPlayersOfAJoinedGroupAndNotTheThird()
+    {
+        // Ruling 4799b99ecc0e5dea after player 0 joins player 1: Corrupted
+        // Timestream asks both of them, ordered by the first player, and not
+        // player 2. With empty hands each places 2 beside the starting 2.
+        var events = new List<GameEvent>();
+        var world = Split(3, false, events);
+        Defeat(world, LocalKang(world, 0), events);
+        Assert.Null(JoinAreaOf(world, EndPlayerPhase(world, 2, events), 1, events));
+        for (int seat = 0; seat < 2; seat++)
+            foreach (var card in world.Seats[seat].Hand.Cards.ToList()) World.MoveToTop(card, world.Seats[seat].Deck);
+        string third = Snapshot(world, 2);
+        bool ordered = false;
+
+        Reveal(world, "11022", 1, events, prompt =>
+        {
+            ordered |= prompt.Affordances is [{ Verb: "Order" }];
+            return new ActingPolicy(7, declineOneIn: 1).Answer(prompt);
+        });
+
+        Assert.True(ordered);
+        var scheme = Assert.Single(world.AreaOf(DeckType.SideSchemesArea, PlayArea.Of(1)).Cards);
+        Assert.Equal(6, scheme.Tokens.GetValueOrDefault("k_threat"));
+        Assert.Equal(third, Snapshot(world, 2));
     }
 
     [Fact]

@@ -202,6 +202,6 @@ public static class DamageAttacks
     private static Card? CurrentStage(World world, Card prior) =>
         world.EncounterTopology is { } topology
             ? topology.Groups.Single(group => group.Stages.Contains(prior)).CurrentVillain
-            : CardReferences.TheCardIn(world, DeckType.VillainArea, prior);
+            : world.TheCardIn(DeckType.VillainArea);
 
 }

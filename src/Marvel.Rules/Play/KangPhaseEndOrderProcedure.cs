@@ -19,8 +19,8 @@ namespace Marvel.Rules.Play;
 /// which may itself ask further questions, or every other due delayed effect,
 /// which resolve in registration order as they do at any phase ending. That
 /// grouping is the engine's choice. When Kang's goes first, the other effects
-/// wait in a frame that keeps moving behind any work Kang's effect scheduled, so
-/// they resolve only once it has completely resolved.
+/// wait in a frame scheduled behind Kang's, and resolve only once it has
+/// completely resolved, including the frames its own resolution adds.
 /// </para>
 /// </remarks>
 internal static class KangPhaseEndOrderProcedure
@@ -45,11 +45,6 @@ internal static class KangPhaseEndOrderProcedure
     {
         var operation = step.Require<KangPhaseEndOrderOperation>();
         if (!operation.Deferred) return Ask(world);
-        if (world.Agenda.HasWorkBeforeOwner(step, operation.Owner, operation.Origin))
-        {
-            world.Agenda.ContinueBeforeOwner(operation.Origin, operation.Owner, step);
-            return null;
-        }
         ResolveOthers(world, operation.Owner, events);
         return null;
     }

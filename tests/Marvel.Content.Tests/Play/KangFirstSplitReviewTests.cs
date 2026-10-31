@@ -66,6 +66,36 @@ public sealed class KangFirstSplitReviewTests : CoreCardTestBase
     }
 
     [Fact]
+    [Rule("rr:first-player.3")]
+    public void AnotherDelayedEffectWaitsForTheWholeSplitWhenKangGoesFirst()
+    {
+        // "If two or more effects would resolve simultaneously, the first player
+        // decides the order" (MARVEL-894 Q6). Resolving Kang's first resolves all
+        // of it -- every stage 3A and game area -- before the other effect.
+        var (world, kang, _, _) = Board(0, false);
+        var events = new List<GameEvent>();
+        var target = world.CreateCard("01011", world.Seats[0].Hero);
+        world.Effects.Register(new Marvel.Rules.Timing.ContinuousEffect(Marvel.Rules.Timing.EffectSource.DelayedEffect,
+            DelayedEffects.DiscardFromPlay, Card: target.ObjectId, Affects: target.ObjectId,
+            Lasts: Marvel.Rules.Timing.Duration.NextTime(PhaseEnd.PlayerPhaseEnds)));
+        Agendas.Happening(world);
+        Defeat.Character(world, Cards, kang, "prepared defeat", events);
+        Sequence.Finish(world, Cards, world.Abilities, events);
+        world.Agenda.Add(new PhaseStep(new PhaseTransitionOperation(PhaseTransitionKind.EndPlayerPhase), 1, 4));
+
+        var order = Sequence.Work(world, Cards, world.Abilities, events)!;
+        Assert.Equal(KangPhaseEndOrderOperation.Order, order.Trigger);
+        Sequence.Answer(world, Cards, world.Abilities, order, Decision.Take(0), events);
+        Sequence.Finish(world, Cards, world.Abilities, events);
+
+        int discarded = events.FindIndex(happened => happened is CardsMoved moved
+            && moved.Cards.Any(landing => landing.Card == target.ObjectId));
+        int lastJoin = events.FindLastIndex(happened => happened is PlayAreaJoined);
+        Assert.True(lastJoin >= 0 && discarded > lastJoin);
+        Assert.All(world.PlayerOrder, player => Assert.NotNull(world.GameAreaOf(PlayArea.Of(player))));
+    }
+
+    [Fact]
     public void ReachedUnimplementedLocalSchemeCompletionRaisesInsteadOfDeclaringDefeat()
     {
         // 11009b-11012b say "After this stage is completed" place Kang's Dominion

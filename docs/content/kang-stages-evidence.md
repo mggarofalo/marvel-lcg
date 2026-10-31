@@ -71,6 +71,20 @@ partitions; 1B loss; local step 1; turn order; central tokens; local hazard;
 local side-scheme placement; the card and seat game-area projection; and
 client id validation.
 
+Review-round mutants, restored the same way: area-scoped "each player",
+villain routing, main-scheme references (Incite and the `mainScheme` query),
+the separated `sideSchemes`/`schemes`/`villains` search, the reach filter on
+every card query, amplify's partition and its activating-enemy wiring, the
+Q6 prompt and both orders, deferring delayed effects at an ordered ending,
+overkill's spill, the separated counter refusal, the eliminated-player split
+and the reference that never crosses into another area were all killed.
+Survivors, each unreached by any authored card: the `eachPlayer` admission
+read (`EachPlayerEffects.Schedule` narrows again), the any-player window list
+(no row sets `anyPlayer`), main-scheme advance (no row advances it), the
+all-players engage-as-minion admission check, all-players draw, and the
+source-less `EncounterRouting.Villain` refusal (its one caller is Wrecking
+Crew's topology branch).
+
 ## Remaining
 
 - P6 recipe: the setup dataset entry, with excluded hero obligations, set-aside
