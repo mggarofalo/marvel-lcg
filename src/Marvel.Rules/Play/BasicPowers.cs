@@ -147,6 +147,19 @@ public static class BasicPowers
             || !guarded && VillainAttackRestrictions.Allows(enemy, restricted))];
     }
 
+    /// <summary>The enemies one attacking character may attack right now.</summary>
+    /// <remarks>
+    /// <see cref="Attackable(World, ICardFacts, int)"/> narrowed by the
+    /// prohibitions that bind a single character rather than its player
+    /// (<see cref="AttackPermissions"/>).
+    /// </remarks>
+    /// <param name="world">The board.</param>
+    /// <param name="facts">The printed card data.</param>
+    /// <param name="player">Whose character is attacking.</param>
+    /// <param name="attacker">The character performing the attack.</param>
+    public static IReadOnlyList<Card> Attackable(World world, ICardFacts facts, int player, Card attacker) =>
+        [.. Attackable(world, facts, player).Where(enemy => AttackPermissions.CanAttack(world, attacker, enemy))];
+
     /// <summary>
     /// The schemes this player's character may thwart right now.
     /// </summary>

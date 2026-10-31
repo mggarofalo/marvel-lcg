@@ -44,8 +44,14 @@ public static class BasicPowerInitiation
         // basic attack if there is an enemy that can be attacked by that
         // character **or if that character is stunned**." A stunned character
         // attacks nothing, on purpose -- it is how the stun comes off.
+        // rr:stun-stunned.5.1: "A stunned character can attempt to attack or use
+        // an attack ability even if it has no valid target for an attack", and
+        // .7: "that character is not considered to have attacked". The enemy a
+        // stunned attempt names is therefore never attacked, so a prohibition on
+        // attacking it (Fear of Kang) has nothing to forbid. The turn's offer
+        // still lists only legal targets when there are any.
         if (!Statuses.Afflicted(world, facts, character, Statuses.Stunned)
-            && !Attackable(world, facts, player).Any(t => t.ObjectId == enemy.ObjectId))
+            && !Attackable(world, facts, player, character).Any(t => t.ObjectId == enemy.ObjectId))
         {
             // `rr:guard.1` is the case this catches in an ordinary game: a
             // minion with guard engaged with this player makes every villain an
@@ -126,7 +132,7 @@ public static class BasicPowerInitiation
     private static bool ValidTarget(
         World world, ICardFacts facts, Card character, Card enemy, int player) =>
         Statuses.Afflicted(world, facts, character, Statuses.Stunned)
-        || Attackable(world, facts, player).Any(card => card.ObjectId == enemy.ObjectId);
+        || Attackable(world, facts, player, character).Any(card => card.ObjectId == enemy.ObjectId);
 
     private static void ScheduleConsequentialDamage(
         World world, Card character, Card enemy, int player) =>
@@ -200,7 +206,7 @@ public static class BasicPowerInitiation
             world, facts, power.Player, power.Source, [AttackVerb], events);
         if (attacker is null) return false;
 
-        RequireCardAttackTarget(world, facts, power);
+        RequireCardAttackTarget(world, facts, power, attacker);
         ScheduleAttack(world, new CharacterAttack(
             attacker.ObjectId, power.Target?.ObjectId ?? -1, power.Player, power.Amount,
             power.Source.ObjectId, moveFrom?.ObjectId ?? -1, overkill, power.Trigger,
@@ -208,7 +214,7 @@ public static class BasicPowerInitiation
         return true;
     }
 
-    private static void RequireCardAttackTarget(World world, ICardFacts facts, CardPowerInvocation power)
+    private static void RequireCardAttackTarget(World world, ICardFacts facts, CardPowerInvocation power, Card attacker)
     {
         // rr:labeled-ability.2 and ruling 0fc2a7cc9197e127 allow an attack
         // whose independent effect resolves without an attacked enemy. Only
@@ -216,14 +222,14 @@ public static class BasicPowerInitiation
         if (power.Target is null && power.Continuation is null)
             throw new RulesNotImplementedException("an enemy-less attack requires an interpreter continuation");
         if (power.Target is not null
-            && (!Attackable(world, facts, power.Player).Any(card => card.ObjectId == power.Target.ObjectId)
+            && (!Attackable(world, facts, power.Player, attacker).Any(card => card.ObjectId == power.Target.ObjectId)
                 || !world.DamageAbilities.CanTakeDamage(world, power.Target, power.Source)))
         {
             throw new RulesNotImplementedException(
                 $"card {power.Target.ObjectId} is not an enemy {world.Seats[power.Player].Name} can attack");
         }
 
-        CardAttackTargets.Validate(world, facts, power);
+        CardAttackTargets.Validate(world, facts, power, attacker);
     }
 
     /// <summary>

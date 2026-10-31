@@ -62,7 +62,7 @@ public static class DamagePlacement
         var result = world.Agenda.Executions.RunBatch(occurrence, entry =>
         {
             replacement = new DamageReplacement(request, entry);
-            if (request.Amount <= 0 || !world.DamageAbilities.CanTakeDamage(world, request.Target, request.Source))
+            if (request.Amount <= 0 || !world.DamageAbilities.CanTakeDamage(world, request.Target, request.Source) || PlayerAttackPrevention.Prevents(world, request))
             {
                 replacement.Replace(entry, 0);
                 return entry.Finish([]);

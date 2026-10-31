@@ -23,6 +23,7 @@ internal sealed class AttackDamageResolution
     private Damage.Outcome outcome;
     private AttackDamageResult? spill;
     private bool aftermath;
+    private bool announced;
     private bool pierced;
     private EffectCompletion? excessThreat;
 
@@ -48,6 +49,7 @@ internal sealed class AttackDamageResolution
     internal void Continue(List<GameEvent> events)
     {
         world.Agenda.Executions.RequireActive(Execution);
+        if (Announce()) { Suspend(events); return; }
         if (placed is null && !Place(events)) { Suspend(events); return; }
         if (world.IsOver) { Suspend(events); return; }
         CompleteDefeatAndBeginSpill(events);
@@ -55,6 +57,22 @@ internal sealed class AttackDamageResolution
         if (spill is { IsComplete: false }) { Suspend(events); return; }
         if (!CompleteExcessThreat(events)) return;
         Finish(events);
+    }
+
+    // Schedules the late recipient's attack-initiated window ahead of this
+    // procedure's continuation, once.
+    private bool Announce()
+    {
+        if (!request.LateRecipient || announced) return false;
+        announced = true;
+        world.Agenda.Then(new PhaseStep(
+            new LateAttackRecipientOperation(request.Attacker.ObjectId, request.Target.ObjectId,
+                LabeledAbilities.IdentityPlayer(world, request.Attacker)),
+            world.Agenda.Current?.Round ?? 0, 2,
+            Index: LabeledAbilities.IdentityPlayer(world, request.Attacker),
+            Subject: request.Target.ObjectId,
+            Seat: LabeledAbilities.IdentityPlayer(world, request.Attacker)));
+        return true;
     }
 
     private void Finish(List<GameEvent> events)
@@ -174,8 +192,10 @@ internal sealed class AttackDamageResolution
         };
         if (onto is not null)
             spill = DamageAttacks.Begin(world, facts,
+                // rr:overkill.2: the excess "does not constitute an attack against
+                // that character", so the spill is announced as no late recipient.
                 request with { Target = onto, Amount = Excess, Verb = Keywords.Overkill, Retaliate = false,
-                    Replacement = null, EnemyAttack = null, Prepared = null, BasicRecipient = null },
+                    Replacement = null, EnemyAttack = null, Prepared = null, BasicRecipient = null, LateRecipient = false },
                 events, spillOnly: true);
     }
 

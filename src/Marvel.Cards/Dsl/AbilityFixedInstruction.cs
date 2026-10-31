@@ -46,6 +46,8 @@ public enum AbilityFixedInstruction
     PreventAttackDamage,
     /// <summary>Reflect damage to this attachment host during the active player attack.</summary>
     ReflectAttackDamage,
+    /// <summary>Prevent all damage the active player attack would deal to the attacked enemy.</summary>
+    PreventPlayerAttackDamage,
     /// <summary>Reveal the top encounter card.</summary>
     RevealTop,
     /// <summary>Place one acceleration token.</summary>

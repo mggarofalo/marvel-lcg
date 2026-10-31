@@ -63,6 +63,8 @@ internal sealed class CardQueryEvaluator(
         AbilityCardQuery.OtherVillainSideSchemes => AbilityOtherVillainSchemeQuery.Live(cast),
         AbilityCardQuery.VillainOfAttachedScheme => AbilityAttachedSchemeVillainQuery.Live(cast),
         AbilityCardQuery.ActiveVillainSideScheme => AbilityActiveSchemeQuery.Live(cast.World),
+        AbilityCardQuery.VillainInThisGameArea => AbilityGameAreaQuery.Villain(cast),
+        AbilityCardQuery.ObligationsInThisGameArea => AbilityGameAreaQuery.Obligations(cast),
         _ when AbilityEncounterSchemeQueries.IsRanked(query) =>
             EncounterSchemeRelations.AtThreatExtreme(cast.World,
                 query == AbilityCardQuery.VillainsWithMostSchemeThreat),
@@ -157,8 +159,8 @@ internal sealed class CardQueryEvaluator(
 
     private IReadOnlyList<Card> Attackable(bool minionsOnly)
     {
-        IEnumerable<Card> candidates = BasicPowers.Attackable(
-            cast.World, cast.World.Facts, Resolver(cast));
+        IEnumerable<Card> candidates = AbilityAttackTargets.For(
+            cast.World, Resolver(cast), cast.Source);
         if (minionsOnly)
             candidates = candidates.Where(enemy =>
                 EffectiveCards.Kind(enemy, cast.World.Facts) == CardKind.Minion);

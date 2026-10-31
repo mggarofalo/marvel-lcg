@@ -23,7 +23,7 @@ internal static class AbilityStagedAttack
             "attackAnotherEnemy requires a retained attack");
         if (power.Kind != BasicPowers.AttackVerb)
             throw new RulesNotImplementedException("attackAnotherEnemy requires an attack");
-        return BasicPowers.Attackable(cast.World, cast.World.Facts, cast.AbilityPlayer)
+        return AbilityAttackTargets.For(cast.World, cast.AbilityPlayer, cast.Source)
             .Where(card => (AbilityStagedAttackLowering.IsSplashBody(power.Decoded.Body)
                     || !power.ExcludedEnemyStages.Contains(card.ObjectId)
                     || (!CardKinds.IsVillain(EffectiveCards.Kind(card, cast.World.Facts))

@@ -14,6 +14,13 @@ public sealed record AttackDamageRequest(
     /// <summary>Overkill granted to this exact attack before damage resolution.</summary>
     public bool GrantedOverkill { get; init; }
 
+    /// <summary>
+    /// Whether the target is an enemy the begun player attack reaches after its
+    /// initiation, announced as attacked before its damage
+    /// (<see cref="LateAttackRecipientOperation"/>).
+    /// </summary>
+    public bool LateRecipient { get; init; }
+
     /// <summary>The exact attack occurrence retained across suspended ability execution; null uses the current occurrence.</summary>
     public Occurrence? Origin { get; init; }
     // The basic attack owns this frozen recipient until its damage settles.

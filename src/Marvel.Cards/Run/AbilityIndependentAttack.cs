@@ -33,7 +33,7 @@ internal static class AbilityIndependentAttack
         && icons.IsCurrent(context.World);
 
     internal static bool CanAttack(World world, int player, Card source, Card enemy) =>
-        BasicPowers.Attackable(world, world.Facts, player)
+        AbilityAttackTargets.For(world, player, source)
             .Any(candidate => candidate.ObjectId == enemy.ObjectId)
         && world.DamageAbilities.CanTakeDamage(world, enemy, source);
 }

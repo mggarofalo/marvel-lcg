@@ -30,13 +30,16 @@ public sealed class StatusAStunnedHeroExhaustsAttacksNothingTests : StatusTestBa
 
     [Rule("rr:attack-player-ability-type.1.1")]
     [Rule("rr:stun-stunned.5.1")]
+    [Rule("rr:stun-stunned.7")]
     [Fact]
-    public void AStunnedCharacterCanAttackWithNoLegalTarget()
+    public void AStunnedCharacterMayNameAnEnemyItCannotAttack()
     {
         // "A character can only initiate a basic attack if there is an enemy
         // that can be attacked **or if that character is stunned**", and
-        // `.5.1` says the same from the other side. Attacking nothing is how
-        // the stun comes off.
+        // `.5.1` says the same from the other side. The guarded villain is not
+        // a legal target (the guarding minion is), yet the stunned attempt may
+        // name it: it attacks nothing (rr:stun-stunned.7), which is how the
+        // stun comes off.
         var printed = Cards().With("minion", ("HP", "3"), ("Guard", "1"));
         var world = Board(printed);
         var hero = world.Seats[0].IdentityCard;

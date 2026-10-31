@@ -293,6 +293,16 @@ the source and target only when both identities are authorized. Retained
 last-attack facts do not keep this context alive after the owning occurrence
 finishes. This read-only projection changes neither replay nor state digest.
 
+An enemy a begun player attack reaches after its initiation (rr:attack-player-
+ability-type.5) -- the enemy Giant Stomp or Melee chooses for its later damage --
+is announced by a `LateAttackRecipient` step whose attack-initiated occurrence
+targets that enemy. Its interrupt window resolves before the damage. While that
+window is open, `ActiveAttack` names the late recipient as the target under the
+owning character attack's identity, so the stream carries an `AttackBoundary`
+(`started`, `resumed`) for the new target and another when the target returns
+to the attack's own. The step name is an engine choice; replay v30 owns the
+resulting order ([session-ledger.md](session-ledger.md#replay-identity)).
+
 `AbilityWindowResult` records the initial resolution of a Forced Interrupt or Forced
 Response once per occurrence/source/timing/ordinal. `completed=false` means a required decision
 suspended resolution; answering that decision does not emit another initial receipt.

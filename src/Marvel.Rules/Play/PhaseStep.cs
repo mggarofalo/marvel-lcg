@@ -88,6 +88,8 @@ public readonly record struct PhaseStep(
                     attack.Attacker,
                     attack.Enemy,
                     attack.Player) with { BasicUse = BasicUse.ForAttack(world, facts, attack) },
+            LateAttackRecipientOperation.Step when Require<LateAttackRecipientOperation>() is { } late =>
+                Occurrence.ForAttack(id, Conditions, world, facts, late.Attacker, late.Recipient, late.Player),
             Steps.CharacterThwarts when Require<CharacterThwartOperation>().Thwart is { } thwart =>
                 Occurrence.ForThwart(
                     id,
@@ -196,7 +198,7 @@ public readonly record struct PhaseStep(
     public Occurrence? ScheduledOccurrence => Operation is DirectDamagePreventionOperation prevention
         ? prevention.Prevention.Occurrence : Operation is CompletedCardEffectOperation { Occurrence: { } response }
         ? response : Operation is EncounterEntryOperation or HeroDefenseOperation or BoostFaceupOperation or CardReadyOperation ? null : What is
-        Steps.Attack or Steps.CharacterAttacks or Steps.CharacterThwarts or Steps.EndAttack
+        Steps.Attack or Steps.CharacterAttacks or LateAttackRecipientOperation.Step or Steps.CharacterThwarts or Steps.EndAttack
             or Steps.PlaceThreat or Steps.SchemeThreat or Steps.PlaceThreatEffect
             or Steps.PrepareIndirectAttackDamage
             or Steps.RevealEncounterCard
