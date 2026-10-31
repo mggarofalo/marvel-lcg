@@ -2,9 +2,11 @@ extends RefCounted
 
 const Locator = preload("res://smoke/automation/ui_locator.gd")
 const Evidence = preload("res://smoke/automation/ui_evidence.gd")
-# Waiting for an authoritative commitment includes the host's durable save, which
-# hosted Windows runners have taken 1.7-2.6 s to write per decision. Commitment
-# waits allow the 30 s a socket client grants one exchange, not the interface default.
+# Waiting for a commitment to be accepted includes the host's durable save, which
+# hosted Windows runners have taken 1.7-2.6 s to write per decision, whether the host
+# is embedded or behind a socket. The 30 s is our choice: generous for a slow runner's
+# save, yet still a bounded failure when no acceptance arrives. Waits for the table to
+# settle after acceptance keep the interface default.
 const COMMIT_DEADLINE_MS := 30000
 var root: Node
 var viewport: Viewport

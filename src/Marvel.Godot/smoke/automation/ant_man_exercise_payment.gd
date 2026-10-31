@@ -46,19 +46,24 @@ func _play_exercise(source: int, helmet: int, army: int) -> bool:
         if not await ui.click_revealed(ui.named("Resource%d" % id)): return false
     if not await ui.expect(func(): return witness.Revision() == 1 and Array(payment_witness.DraftResources()) == [helmet, army], "exact two physical cards staged without commitment"): return false
     if not await _capture_checkpoint("exercise-payment"): return false
+    return await _submit_exercise(source, helmet, army)
+
+func _submit_exercise(source: int, helmet: int, army: int) -> bool:
     if not await ui.click(ui.named("Submit")): return false
+    if not await ui.expect(func(): return witness.Revision() == 2, "one commitment plays the ready Exercise and discards both selected resources: commitment accepted", Driver.COMMIT_DEADLINE_MS): return false
     return await ui.expect(func(): return witness.Revision() == 2 and witness.DecisionKind() == "PlayerAction" and \
         witness.CanResolve() and not bool(main.get_meta("response_staged", false)) and \
         payment_witness.InArea(source, "SupportsArea", 0) and payment_witness.Ready(source) and \
         payment_witness.InArea(helmet, "DiscardPile", 0) and payment_witness.InArea(army, "DiscardPile", 0), \
-        "one commitment plays the ready Exercise and discards both selected resources", Driver.COMMIT_DEADLINE_MS)
+        "one commitment plays the ready Exercise and discards both selected resources")
 
 func _become_tiny() -> bool:
     if not await _open_form_menu(): return false
     if not await ui.click(_menu_choice("Change to Ant-Man (AVENGER, TINY)")): return false
+    if not await ui.expect(func(): return witness.Revision() == 3, "one form commitment changes the same identity to Tiny and returns to player action: commitment accepted", Driver.COMMIT_DEADLINE_MS): return false
     if not await ui.expect(func(): return witness.Revision() == 3 and witness.Face(identity) == "12001a" and \
         witness.DecisionKind() == "PlayerAction" and witness.CanResolve() and not bool(main.get_meta("response_staged", false)), \
-        "one form commitment changes the same identity to Tiny and returns to player action", Driver.COMMIT_DEADLINE_MS): return false
+        "one form commitment changes the same identity to Tiny and returns to player action"): return false
     return await _capture_checkpoint("exercise-tiny")
 
 func _exercise_child(source: int, child: int, helmet: int, spent_army: int) -> bool:
@@ -78,10 +83,11 @@ func _offer_child(source: int, child: int) -> bool:
         "12024" not in _visible_text(menu), "Exercise action is named for the player, not by face id"): return false
     if not await _capture_checkpoint("exercise-action"): return false
     if not await ui.click(Locator.control(actions[0])): return false
+    if not await ui.expect(func(): return witness.Revision() == 4, "Exercise exhausts once and offers the exact Army for zero after its scoped reduction: commitment accepted", Driver.COMMIT_DEADLINE_MS): return false
     if not await ui.expect(func(): return witness.Revision() == 4 and witness.CanResolve() and \
         not bool(main.get_meta("response_staged", false)) and not payment_witness.Ready(source) and \
         Array(witness.OfferedAnchors()).has(child) and payment_witness.OfferedPrice(child) == "0", \
-        "Exercise exhausts once and offers the exact Army for zero after its scoped reduction", Driver.COMMIT_DEADLINE_MS): return false
+        "Exercise exhausts once and offers the exact Army for zero after its scoped reduction"): return false
     return true
 
 func _select_child(source: int, child: int, helmet: int, spent_army: int) -> bool:
@@ -93,12 +99,13 @@ func _select_child(source: int, child: int, helmet: int, spent_army: int) -> boo
     if not await _expect_child_offer(choice.all()[0]): return false
     if not await _capture_checkpoint("exercise-child-payment"): return false
     if not await ui.click(choice): return false
+    if not await ui.expect(func(): return witness.Revision() == 5, "zero-cost child enters once, Exercise remains exhausted, and no other hand card is spent: commitment accepted", Driver.COMMIT_DEADLINE_MS): return false
     if not await ui.expect(func(): return witness.Revision() == 5 and witness.DecisionKind() == "PlayerAction" and \
         witness.CanResolve() and not bool(main.get_meta("response_staged", false)) and \
         payment_witness.InArea(child, "SupportsArea", 0) and payment_witness.InArea(source, "SupportsArea", 0) and \
         not payment_witness.Ready(source) and payment_witness.InArea(helmet, "DiscardPile", 0) and \
         payment_witness.InArea(spent_army, "DiscardPile", 0) and witness.HandCount() == 2, \
-        "zero-cost child enters once, Exercise remains exhausted, and no other hand card is spent", Driver.COMMIT_DEADLINE_MS): return false
+        "zero-cost child enters once, Exercise remains exhausted, and no other hand card is spent"): return false
     return await _capture_checkpoint("exercise-child-result")
 
 func _expect_child_offer(offer: Control) -> bool:

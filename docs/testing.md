@@ -140,10 +140,12 @@ Keyboard input goes to the current focus. Drags send held intermediate frames,
 pin the destination and release outside the surface if it moves or is replaced.
 Assertions must check the intended result and authoritative commitment count;
 input delivery alone does not prove success. No action retries after a press.
-`expect` defaults to a 3-second interface deadline. A wait for an accepted
-authoritative commitment passes `Driver.COMMIT_DEADLINE_MS` instead: it includes
-the host's durable save, which hosted Windows runners have taken over two seconds
-to write, and it is bounded by the 30 seconds a socket client grants one exchange.
+`expect` defaults to a 3-second interface deadline. Waiting for the accepted
+revision after a commitment passes `Driver.COMMIT_DEADLINE_MS` instead, because it
+includes the host's durable save, which hosted Windows runners have taken over two
+seconds to write with either the embedded or the socket host. The 30-second value is
+our choice: ample for a slow save, still a bounded failure. Conditions on the settled
+table are a separate wait with the interface default.
 
 A failure latches the driver, blocks subsequent input and captures `failure.json`
 with the step trace and visible control descriptions. Editable field values and
