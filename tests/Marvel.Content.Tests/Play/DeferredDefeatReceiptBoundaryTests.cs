@@ -11,24 +11,18 @@ namespace Marvel.Content.Tests.Play;
 
 public sealed class DeferredDefeatReceiptBoundaryTests
 {
-    [Theory]
-    [InlineData("{\"query\":\"mainScheme\"}", "{\"result\":\"boostIconsLookedAt\"}", false)]
-    [InlineData("\"chosen\"", "{\"count\":{\"query\":\"minions\"}}", false)]
-    [InlineData("\"that\"", "{\"result\":\"boostIconsLookedAt\"}", false)]
-    [InlineData("\"chosen\"", "{\"result\":\"boostIconsLookedAt\"}", true)]
-    public void BoardReadingTailsStillRaiseWithoutChangingCardsAgendaOrRandom(string target, string amount, bool live)
+    [Fact]
+    public void ABoardCountedTailStillRaisesWithoutChangingCardsAgendaOrRandom()
     {
-        // Synthetic controls: opaque defeat work cannot predict another target,
-        // or a board-dependent amount even for the departed chosen target.
+        // Synthetic control: after opaque defeat work, an amount counted from the
+        // board is not a recorded receipt, so the tail remains unsupported.
         var runner = Runner("""
-            {"chooseCard":{"from":CHOICE,"effect":{
+            {"chooseCard":{"from":{"titled":"Hydra Patrol"},"effect":{
               "thwart":{"target":"chosen","effect":{"seq":[
-                {"removeThreat":{"scheme":INITIAL,"amount":3}},
-                {"removeThreat":{"scheme":TARGET,"amount":AMOUNT}}
+                {"removeThreat":{"scheme":"chosen","amount":3}},
+                {"removeThreat":{"scheme":"chosen","amount":{"count":{"query":"minions"}}}}
               ]}}}}}
-            """.Replace("TARGET", target, StringComparison.Ordinal).Replace("AMOUNT", amount, StringComparison.Ordinal)
-                .Replace("CHOICE", live ? """{"query":"mainScheme"}""" : """{"titled":"Hydra Patrol"}""", StringComparison.Ordinal)
-                .Replace("INITIAL", live ? """{"titled":"Hydra Patrol"}""" : "\"chosen\"", StringComparison.Ordinal));
+            """);
         var world = Board(runner);
         string before = Observe(world);
         long random = world.Random.Generator.WordsConsumed;
@@ -45,6 +39,37 @@ public sealed class DeferredDefeatReceiptBoundaryTests
         Assert.Equal(2, world.TheCardIn(DeckType.SideSchemesArea)!.Tokens["k_threat"]);
         Assert.Equal(random, world.Random.Generator.WordsConsumed);
         Assert.Equal(digest, world.Digest().Canonical());
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    [Rule("rr:ability.4")]
+    public void AFixedRemovalFromTheMainSchemeResolvesLiveAfterHydraPatrolsDefeat(bool chosenMain)
+    {
+        // rr:ability.4: "resolve the ability one sentence at a time." Hydra Patrol's
+        // defeat work resolves first; the fixed removal then reads the main scheme as it stands.
+        string tail = chosenMain ? "\"chosen\"" : """{"query":"mainScheme"}""";
+        var runner = Runner("""
+            {"chooseCard":{"from":CHOICE,"effect":{
+              "thwart":{"target":"chosen","effect":{"seq":[
+                {"removeThreat":{"scheme":INITIAL,"amount":3}},
+                {"removeThreat":{"scheme":TAIL,"amount":2}}
+              ]}}}}}
+            """.Replace("CHOICE", chosenMain ? """{"query":"mainScheme"}""" : """{"titled":"Hydra Patrol"}""", StringComparison.Ordinal)
+                .Replace("INITIAL", chosenMain ? """{"titled":"Hydra Patrol"}""" : "\"chosen\"", StringComparison.Ordinal)
+                .Replace("TAIL", tail, StringComparison.Ordinal));
+        var world = Board(runner);
+        var patrol = world.TheCardIn(DeckType.SideSchemesArea)!;
+        var main = world.TheCardIn(DeckType.MainSchemesArea)!;
+        var action = Assert.Single(runner.Actions(world, 0));
+        var events = runner.ExecuteAction(world, new PlayerAction(action, [], [])).Events.ToList();
+        while (Sequence.Work(world, world.Facts, runner, events) is { } prompt)
+            Sequence.Answer(world, world.Facts, runner, prompt, prompt.Cancellable
+                ? Decision.Decline : Decision.Take(prompt.Affordances[0].Id), events);
+        Assert.False(DeckTypes.IsInPlay(patrol.Area.Type));
+        Assert.Equal(6, main.Tokens["k_threat"]);
+        Assert.False(world.Agenda.IsBusy);
     }
 
     [Fact]

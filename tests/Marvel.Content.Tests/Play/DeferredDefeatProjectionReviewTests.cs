@@ -15,11 +15,13 @@ public sealed class DeferredDefeatProjectionReviewTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public void OpaqueDefeatProjectionCannotAuthorizeAReceiptRemovalFromALiveChosenScheme(bool chooseDeparted)
+    [Rule("rr:ability.4")]
+    public void OpaqueDefeatProjectionLeavesAReceiptRemovalToTheLiveBoard(bool chooseDeparted)
     {
         // Synthetic projection contract, not a claimed admitted action shape.
-        // Engine choice: unknown defeat-window work cannot justify later reads
-        // of a different live scheme. A departed retained recipient needs none.
+        // rr:ability.4: "resolve the ability one sentence at a time." A receipt removal
+        // chooses nothing, so it resolves on the live board after the unknown
+        // defeat-window work, whether its retained recipient departed or stayed.
         var world = ThorActualFixture.Board("06001a");
         var source = world.CreateCard("09003", world.Seats[0].Hand);
         var patrol = world.CreateCard("04154", world.AreaOf(DeckType.SideSchemesArea));
@@ -45,14 +47,12 @@ public sealed class DeferredDefeatProjectionReviewTests
         Assert.DoesNotContain(main.ObjectId, state.Discarded);
         var tail = new AbilityEffect.RemoveThreat(new AbilityCardSelection.Bound(AbilityCardBinding.Chosen),
             new AbilityNumber.Result("boostIconsLookedAt"), false, null);
-        if (chooseDeparted)
-            AbilityProjectedDefeatWindows.ValidateContinuation(tail, state, scope);
-        else
-        {
-            var failure = Assert.Throws<RulesNotImplementedException>(() =>
-                AbilityProjectedDefeatWindows.ValidateContinuation(tail, state, scope));
-            Assert.Contains("unprojected defeat window", failure.Message);
-        }
+        AbilityProjectedDefeatWindows.ValidateContinuation(tail, state, scope);
+        var counted = new AbilityEffect.RemoveThreat(new AbilityCardSelection.Bound(AbilityCardBinding.Chosen),
+            new AbilityNumber.Count(new AbilityCardSelection.Query(AbilityCardQuery.Minions)), false, null);
+        var failure = Assert.Throws<RulesNotImplementedException>(() =>
+            AbilityProjectedDefeatWindows.ValidateContinuation(counted, state, scope));
+        Assert.Contains("unprojected defeat window", failure.Message);
         Assert.Equal(before, Observe(world));
     }
 
