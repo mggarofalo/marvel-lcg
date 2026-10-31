@@ -108,6 +108,39 @@ public sealed class KangSplitAreaIsolationTests
     }
 
     [Fact]
+    public void TheMainSchemeQueryNamesTheRevealersOwnScheme()
+    {
+        // 01178: "When Revealed: Place 1 threat on the main scheme."
+        var events = new List<GameEvent>();
+        var world = Split(2, false, events);
+        var central = Assert.Single(world.AreaOf(DeckType.MainSchemesArea).Cards);
+        long centralThreat = central.Tokens.GetValueOrDefault("k_threat");
+        long mine = LocalScheme(world, 1).Tokens.GetValueOrDefault("k_threat");
+        long theirs = LocalScheme(world, 0).Tokens.GetValueOrDefault("k_threat");
+
+        Reveal(world, "01178", 1, events);
+
+        Assert.Equal(mine + 1, LocalScheme(world, 1).Tokens.GetValueOrDefault("k_threat"));
+        Assert.Equal(theirs, LocalScheme(world, 0).Tokens.GetValueOrDefault("k_threat"));
+        Assert.Equal(centralThreat, central.Tokens.GetValueOrDefault("k_threat"));
+    }
+
+    [Fact]
+    public void AReferenceNeverReachesAnotherGameAreasCard()
+    {
+        // pack:mc11:game-areas: with no main scheme in the source's own game area
+        // and none central, the other area's scheme is still out of reach.
+        var world = Split(2, false, []);
+        var removed = world.AreaOf(DeckType.RemovedArea);
+        World.MoveToTop(LocalScheme(world, 1), removed);
+        World.MoveToTop(Assert.Single(world.AreaOf(DeckType.MainSchemesArea).Cards), removed);
+
+        Assert.Null(CardReferences.TheCardIn(world, DeckType.MainSchemesArea, world.Seats[1].IdentityCard));
+        Assert.Same(LocalScheme(world, 0),
+            CardReferences.TheCardIn(world, DeckType.MainSchemesArea, world.Seats[0].IdentityCard));
+    }
+
+    [Fact]
     public void MasterplanFindsTheSideSchemeInTheRevealersGameArea()
     {
         // 01192: "Place 4 threat on each side scheme. If there are no side schemes

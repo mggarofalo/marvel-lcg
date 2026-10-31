@@ -367,6 +367,8 @@ public sealed class PresentationSourcePolicyTests
             // The engine's game-area answer, including retained scenario cards.
             "Marvel.Rules.State.Places.GameAreaOf(Marvel.Rules.State.World, Marvel.Rules.State.Card)",
             "Marvel.Rules.State.PlayArea.IsPlayers",
+            // Names a seat's play area for the engine's game-area lookup below.
+            "Marvel.Rules.State.PlayArea.Of(int)",
             "Marvel.Rules.State.PlayArea.Player",
             // Passive canonical facts; the renderer never parses their notation.
             "Marvel.Rules.State.PrintedStatFacts.From(Marvel.Rules.State.CardKind, System.Collections.Generic.IReadOnlyDictionary<string, string>)",
@@ -386,6 +388,8 @@ public sealed class PresentationSourcePolicyTests
             "Marvel.Rules.State.World.EncounterTopology",
             "Marvel.Rules.State.World.Facts",
             "Marvel.Rules.State.World.FirstPlayer",
+            // The engine's game-area answer for a seat's play area.
+            "Marvel.Rules.State.World.GameAreaOf(Marvel.Rules.State.PlayArea)",
             "Marvel.Rules.State.World.GameAreas",
             "Marvel.Rules.State.World.LossReason",
             "Marvel.Rules.State.World.Players",

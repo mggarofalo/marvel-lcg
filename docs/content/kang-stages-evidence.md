@@ -35,6 +35,14 @@ While the villain's play area is in no game area (`SeparateGameAreas.Active`):
   environment raises;
 - defence candidates (MARVEL-899), basic attack and thwart targets and crisis
   icons are narrowed by `Places.CanAffect`.
+- "each player" means the players in the source's game area (ruling
+  4799b99ecc0e5dea) everywhere the card runner resolves it;
+- "the villain", "the main scheme" and Incite name the card in the source's own
+  game area; side scheme, scheme and villain queries search every play area, and
+  every card query drops what its source cannot affect;
+- amplify counts only icons that reach the activating enemy (Q14);
+- the first player orders Kang's phase-end departure against other due delayed
+  effects (Q6), and an eliminated player takes no stage 3A.
 
 MARVEL-900: a piercing attack discards Tough on a villain whose damage Temporal
 Shield prevents. Ruling bafde43c1a76c982 (RR 1.7–1.8): "Effects that 'prevent
@@ -50,6 +58,12 @@ no damage. The engine already behaved so; the test and comments pin it.
 `GameAreaTransportTests` deal the full authored book. They run stage 1 through
 the split, Kang II defeat, joining, local completion with a stored Dominion,
 4A, Kang III and victory, and the 1B threat loss.
+
+`KangSplitAreaIsolationTests` reveals each Kang, Standard and Expert encounter
+card for each side of a live two-player split, through the revealer's own
+revealing area, and holds the other player's play area unchanged. It also pins
+the review probes: Corrupted Timestream, Advance, Past Machinations' Incite,
+Masterplan, Time-Travel Tactics, Gang-Up, amplify and overkill.
 
 Thirteen compiled mutants, each restored with `git checkout` and a touch,
 were all killed by the focused tests: defence, attack, thwart and crisis

@@ -137,6 +137,29 @@ game area*, not *the others*, and it can be just you. An implementation reading
 it as "the others" is wrong by one in the exact case the clarification exists to
 settle.
 
+`EachPlayerEffects.Players` is the one answer: `Places.EachPlayer` for the card
+that said it, in player order without eliminated players. Every "each player"
+frame, every all-players draw, deal, search or discard, and every "choose a
+player" candidate list in the card runner asks it, as does the list of players
+who may trigger an "any player" ability on a card.
+
+### "The villain" and "the main scheme" while separated
+
+A card that names one villain or one main scheme means the one in its own game
+area (`CardReferences.TheCardIn`; `EncounterRouting.Villain(world, source)`).
+Central 2B is the answer only when the source's game area holds no main scheme or
+the source is itself central. Incite, the `mainScheme` and `villain` queries, a
+card that advances the main scheme, and overkill's spill onto the villain use it.
+A central card naming "the villain" while two Kangs stand raises, because nothing
+says which it means, and so does a source-less lookup such as a captured
+main-scheme counter.
+
+The `sideSchemes`, `schemes` and `villains` queries search every play area while
+the table is separated, since each split area holds its own Kang and side
+schemes. In an ordinary game, side schemes and villains only ever sit in the
+villain's play area, so the answer is unchanged there. Every card query then
+drops a card its source cannot affect.
+
 ### Reach — `pack:mc11:game-areas`, `pack:mc55:game-areas`
 
 Same game area, or either card in **no** game area.
@@ -183,8 +206,10 @@ discarded before the group joins (`KangJoinProcedure`).
 areas, and they cannot target any game elements in the other game areas."
 Defender candidates, `BasicPowers.Attackable` and `BasicPowers.Thwartable` are
 narrowed by `Places.CanAffect`, and `MainScheme.Crisis(world, facts, scheme)`
-counts only crisis icons that can affect that scheme. The villain phase's
-separated steps are in [villain-phase.md](villain-phase.md).
+counts only crisis icons that can affect that scheme. `MainScheme.Amplify` counts
+only amplify icons that can affect the activating enemy, whose area holds the
+boost card (MARVEL-894 Q14). The villain phase's separated steps are in
+[villain-phase.md](villain-phase.md).
 
 **A client is told each seat's and card's game area.** `PlayerDescriptor` and
 `CardLocationDescriptor` carry a `GameArea` id (protocol 44), null for a card in

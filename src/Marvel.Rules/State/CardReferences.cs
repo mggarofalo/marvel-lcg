@@ -58,26 +58,4 @@ public static class CardReferences
 
         return reachable;
     }
-
-    /// <summary>The cards in the source's own game area when any are, else all of them.</summary>
-    /// <remarks>
-    /// The same preference as <see cref="TheCardIn(World, DeckType, Card)"/>, for
-    /// a list the caller has already limited to what the source can affect.
-    /// </remarks>
-    /// <param name="world">The world.</param>
-    /// <param name="source">The card whose text refers to the cards.</param>
-    /// <param name="reachable">Cards the source can affect.</param>
-    public static IReadOnlyList<Card> InHomeGameArea(
-        World world, Card source, IReadOnlyList<Card> reachable)
-    {
-        ArgumentNullException.ThrowIfNull(world);
-        ArgumentNullException.ThrowIfNull(reachable);
-        if (Places.GameAreaOf(world, source) is not { } home)
-        {
-            return reachable;
-        }
-
-        var local = reachable.Where(card => ReferenceEquals(Places.GameAreaOf(world, card), home)).ToList();
-        return local.Count > 0 ? local : reachable;
-    }
 }

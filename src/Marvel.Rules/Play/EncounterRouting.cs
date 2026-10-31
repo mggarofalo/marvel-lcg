@@ -39,9 +39,8 @@ public static class EncounterRouting
     {
         if (world.EncounterTopology is { } topology) return topology.Active.CurrentVillain;
         if (!SeparateGameAreas.Active(world)) return world.TheCardIn(DeckType.VillainArea);
-        var reachable = world.Areas.Where(area => area.Type == DeckType.VillainArea)
+        var candidates = world.Areas.Where(area => area.Type == DeckType.VillainArea)
             .SelectMany(area => area.Cards).Where(card => Places.CanAffect(world, source, card)).ToList();
-        var candidates = CardReferences.InHomeGameArea(world, source, reachable);
         return candidates.Count switch
         {
             0 => null,

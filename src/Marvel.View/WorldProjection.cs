@@ -87,7 +87,7 @@ public static class WorldProjection
         var players = world.Seats.Select(seat =>
             new PlayerDescriptor(seat.Index, seat.Name, seat.Eliminated)
             {
-                GameArea = world.GameAreas.FirstOrDefault(area => area.PlayAreas.Any(play => play.Player == seat.Index))?.Id,
+                GameArea = world.GameAreaOf(PlayArea.Of(seat.Index))?.Id,
             }).ToList();
         var gameAreas = world.GameAreas.Select(area =>
             new GameAreaDescriptor(

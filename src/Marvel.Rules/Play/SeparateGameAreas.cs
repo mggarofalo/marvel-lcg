@@ -112,6 +112,13 @@ internal static class SeparateGameAreas
             : throw new RulesNotImplementedException(
                 $"side scheme '{card.FaceId}' enters play with no player game area while the table is separated");
 
+    // Cards in no game area are left out on purpose, although they reach every
+    // area (Places.CanAffect). While separated the only such card in play is 2B:
+    // environments refuse to enter (CardEntryDestination) and the encounter deck
+    // and discard pile are not in play. 2B prints neither icon, and its tokens are
+    // the ones 11008b gathers "here instead" of on another scheme -- counting them
+    // for every area would place the threat the redirect exists to withhold
+    // (MARVEL-894 Q1). They join the count again once 4A shares the one area.
     private static IEnumerable<Card> InPlay(World world, GameArea area) =>
         world.Areas.Where(zone => DeckTypes.IsInPlay(zone.Type)).SelectMany(zone => zone.Cards)
             .Where(card => ReferenceEquals(Places.GameAreaOf(world, card), area));

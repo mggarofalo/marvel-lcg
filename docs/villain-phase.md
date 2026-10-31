@@ -59,6 +59,16 @@ the areas in turn order (`pack:mc11:game-areas`; ruling 97d62cdb9ce436a7).
   while the table is separated raises.
 
 Basic attacks, thwarts, defences and crisis icons respect the same partition.
+Cards in no game area reach every area, but the separated steps count none of
+them: the only one in play is 2B, which prints no icons and holds the
+acceleration tokens it redirects to itself.
+
+Kang's departures are delayed effects due at a phase ending. When another delayed
+effect is due at the same ending, the first player chooses which resolves first
+(`rr:first-player.3`, MARVEL-894 Q6; `KangPhaseEndOrderProcedure`). The other
+effects resolve together in registration order; when Kang's goes first they wait
+until it has completely resolved. An eliminated player takes no stage 3A at the
+split.
 
 ## Enemy activations
 

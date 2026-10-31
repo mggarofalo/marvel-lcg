@@ -111,6 +111,8 @@ public sealed class PresentationAssemblyPolicyTests
             "Marvel.Rules.State.StateFields",
             "Marvel.Rules.State.Traits",
             "Marvel.Rules.State.World",
+            // Only its read-only GameAreaOf(PlayArea) lookup; see the member policy.
+            "Marvel.Rules.State.WorldTopology",
             "Marvel.Rules.Timing.AbilityType",
             "Marvel.Rules.Timing.Duration",
             "Marvel.Rules.Timing.TimingPriority");
