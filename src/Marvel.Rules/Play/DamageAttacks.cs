@@ -118,7 +118,11 @@ public static class DamageAttacks
         // cards". A character that cannot take damage is dealt none (ruling
         // 76a9465df95e739c keeps Kang's Tough under that prohibition). An enemy
         // attack whose calculated damage is zero returns before reaching here
-        // (AttackDamage), so the amount test guards only other callers.
+        // (AttackDamage), so the amount test guards only other callers. A
+        // prevention effect does not withhold the discard: ruling bafde43c1a76c982
+        // (RR 1.7-1.8) says "Effects that 'prevent damage' prevent damage taken,
+        // not dealt", so an attack whose damage Temporal Shield will prevent still
+        // deals damage here and discards Tough first.
         if (amount <= 0 || !world.DamageAbilities.CanTakeDamage(world, target, source))
         {
             return;
