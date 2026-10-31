@@ -192,7 +192,8 @@ internal static class AbilityAdmissionMutation
         AbilityEffect node, AbilityAdmissionScope cast, ulong before, bool bindingMayChange)
     {
         var change = FormChangeOf(node, cast);
-        if (change.Destination is AbilityFormDestination.OtherHero && change.Player == AbilityPlayer.You)
+        if (change.Destination is AbilityFormDestination.OtherHero or AbilityFormDestination.Face
+            && change.Player == AbilityPlayer.You)
         {
             int seat = Seat(change.Player, cast);
             return AbilityAdmissionFacts.CanChangeForm(cast.World, seat, change.Destination)

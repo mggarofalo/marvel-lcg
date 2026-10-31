@@ -177,7 +177,7 @@ internal static class AbilityResolutionAdmission
     {
         if (node.OperationName() is "choose" or "chooseCard" or "indirectDamage"
             or "resolveSpecials" or "payOrExhaust" or "chooseTopForHand" or "peekTop" or "inspectEncounterTop" or "inspectDiscardOrderEncounterTop"
-            or "discardHandCards" or "discardResourceIcons" or "chooseStatusRecipients" or "chooseCardsToHand" or "chooseDiscardToShuffle" or "distributeThreat" or "thwartDifferentSchemes" or "makeTheCall"
+            or "discardHandCards" or "discardResourceIcons" or "chooseStatusRecipients" or "chooseCardsToHand" or "chooseDiscardToShuffle" or "exhaustAnyNumber" or "distributeThreat" or "thwartDifferentSchemes" or "makeTheCall"
             or "playSharedHeroTraitCard" or "legalPractice" or "payOrEffect")
         {
             throw new RulesNotImplementedException(

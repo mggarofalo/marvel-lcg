@@ -68,6 +68,15 @@ public sealed class WaspLoweringTests
         Assert.Contains("resource", failure.Message, StringComparison.Ordinal);
     }
 
+    [Theory]
+    [InlineData("""{"exhaustAnyNumber":{}}""", "from")]
+    [InlineData("""{"exhaustAnyNumber":{"from":{"query":"charactersYouControl"},"max":2}}""", "max")]
+    public void AnAnyNumberExhaustionRefusesAnyOtherShape(string effect, string says)
+    {
+        var failure = Assert.Throws<AbilityException>(() => AbilityLowering.Book(Action(effect)));
+        Assert.Contains(says, failure.Message, StringComparison.Ordinal);
+    }
+
     internal static AbilityBook Action(string effect) => AbilityCatalog.Parse($$"""
         {"cards":[{"card":"13006","abilities":[{
           "trigger":{"event":"WhenActionTriggered","timing":"Action","subject":"this","form":"hero"},

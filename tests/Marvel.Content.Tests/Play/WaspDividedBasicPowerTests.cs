@@ -17,7 +17,7 @@ public sealed class WaspDividedBasicPowerTests : CoreCardTestBase
 
     [Fact]
     [Rule("rr:guard.1")]
-    [Rule("rr:retaliate.1")]
+    [Rule("rr:retaliate-x.1")]
     public void GiantBasicAttackDividesAmongAttackableEnemiesAndEachRecipientRetaliates()
     {
         // Ruling 1b420f298dc7b045: each enemy dealt damage by the divided attack

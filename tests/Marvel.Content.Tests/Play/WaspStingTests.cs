@@ -16,7 +16,7 @@ public sealed class WaspStingTests : CoreCardTestBase
 
     [Fact]
     [Rule("rr:guard.1")]
-    [Rule("rr:retaliate.1")]
+    [Rule("rr:retaliate-x.1")]
     public void GiantStingDividesFourDamageAndEachRecipientIsAttacked()
     {
         // pack:mc13:wasp-hero-pack#rules-clarifications: "Each enemy is considered to
@@ -94,7 +94,7 @@ public sealed class WaspStingTests : CoreCardTestBase
         Sequence.Answer(world, Cards, runner, response, Decision.Take(small.Id), []);
         Sequence.Finish(world, Cards, runner, []);
         Assert.Equal(DeckType.EncounterDiscardPile, retaliator.Area.Type);
-        // rr:retaliate.1: a defeated character is no longer in play to retaliate.
+        // rr:retaliate-x.2: the character "must be in play after the attack resolves".
         Assert.Equal(0, world.Seats[0].IdentityCard.Damage);
         Assert.Equal(1, world.TheCardIn(DeckType.VillainArea)!.Damage);
     }

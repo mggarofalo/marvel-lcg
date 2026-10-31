@@ -78,6 +78,7 @@ internal static class AbilityOperationNames
         AbilityEffect.ReleaseBeneath => "releaseBeneath",
         AbilityEffect.ChooseStatusRecipients => "chooseStatusRecipients",
         AbilityEffect.ChooseCardsToHand => "chooseCardsToHand",
+        AbilityEffect.ExhaustAnyNumber => "exhaustAnyNumber",
         AbilityEffect.StoreBeneath => "storeBeneath",
         AbilityEffect.StoreDeckTopBeneath => "storeDeckTopBeneath",
         AbilityEffect.InitializeAuxiliaryDeck => "initializeAuxiliaryDeck",

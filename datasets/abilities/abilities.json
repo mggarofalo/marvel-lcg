@@ -24392,9 +24392,10 @@
     {
       "card": "13003",
       "name": "Giant Help",
-      "note": "Hero Action (thwart): in Giant hero form remove a total of 4 threat divided among schemes (pack:mc13:wasp-hero-pack#rules-clarifications: each scheme is thwarted); otherwise remove 3 threat from one scheme. The form is read when the action resolves.",
+      "note": "Hero Action (thwart): in Giant hero form remove a total of 4 threat divided among schemes (pack:mc13:wasp-hero-pack#rules-clarifications: each scheme is thwarted); otherwise remove 3 threat from one scheme. Each reading is its own form-gated Action, so the form is read when the card is played; distributeThreat schedules its own thwart, as Inconspicuous (04038) does.",
       "abilities": [
-        {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero"}, "labels": ["thwart"], "effect": {"if": {"test": {"hasTrait": {"card": "you", "trait": "GIANT"}}, "then": {"distributeThreat": {"schemes": {"query": "schemes"}, "amount": 4}}, "else": {"chooseCard": {"from": {"query": "thwartableSchemes"}, "effect": {"thwart": {"target": "chosen", "effect": {"removeThreat": {"scheme": "chosen", "amount": 3}}}}}}}}}
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero"}, "when": {"hasTrait": {"card": "you", "trait": "GIANT"}}, "effect": {"distributeThreat": {"schemes": {"query": "schemes"}, "amount": 4}}},
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero"}, "labels": ["thwart"], "when": {"not": {"hasTrait": {"card": "you", "trait": "GIANT"}}}, "effect": {"chooseCard": {"from": {"query": "thwartableSchemes"}, "effect": {"thwart": {"target": "chosen", "effect": {"removeThreat": {"scheme": "chosen", "amount": 3}}}}}}}
       ]
     },
     {
@@ -24408,9 +24409,10 @@
     {
       "card": "13005",
       "name": "Rapid Growth",
-      "note": "Hero Interrupt when your hero uses a basic power: change to the Giant hero face and add 2 to that use. Ruling 6bff49b5ea66043b: using a basic power means exhausting to apply the stat to its action. Ruling 9cfb9119e5c7f0d7: the interrupt boosts the stat being used for that action. The change of form and the bonus are independent instructions; already being Giant leaves the bonus.",
+      "note": "Hero Interrupt when your hero uses a basic power: change to the Giant hero face and add 2 to that use. Ruling 6bff49b5ea66043b: using a basic power means exhausting to apply the stat to its action. Ruling 9cfb9119e5c7f0d7: the interrupt boosts the stat being used for that action. The change of form and the bonus are independent instructions; already being Giant leaves the bonus. A basic defense (DEF) uses the committed hero-defense interrupt and adds 2 DEF until that attack ends; a defense-labeled ability is not a basic power use.",
       "abilities": [
-        {"trigger": {"event": "WhenHeroBasicUseInitiated", "timing": "Interrupt", "subject": "you", "form": "hero"}, "effect": {"seq": [{"changeForm": {"player": "you", "to": {"face": "13001c"}}}, {"boostBasicUse": 2}]}}
+        {"trigger": {"event": "WhenHeroBasicUseInitiated", "timing": "Interrupt", "subject": "you", "form": "hero"}, "effect": {"seq": [{"changeForm": {"player": "you", "to": {"face": "13001c"}}}, {"boostBasicUse": 2}]}},
+        {"trigger": {"event": "WhenHeroDefends", "timing": "Interrupt", "subject": "you", "form": "hero"}, "when": {"heroBasicDefended": "you"}, "effect": {"seq": [{"changeForm": {"player": "you", "to": {"face": "13001c"}}}, {"grantUntil": {"card": "you", "keyword": "defense", "amount": 2, "until": "EndOfAttack"}}]}}
       ]
     },
     {
@@ -24654,6 +24656,14 @@
       "note": "Nemesis side scheme. As an additional cost for each hero to make a basic attack, that hero spends 1 resource of any type, paid simultaneously with the attack's exhaustion (rr:cost.10). The modifier name is an engine choice.",
       "abilities": [
         {"trigger": {"timing": "Constant", "subject": "this"}, "effect": {"grantEach": {"cards": {"inObjectIdOrder": {"query": "heroes"}}, "keyword": "attack_resource_cost", "amount": 1}}}
+      ]
+    },
+    {
+      "card": "13032",
+      "name": "All for One",
+      "note": "Hero Action (attack): choose the enemy, exhaust any number of ready Avenger characters you control, then attack for 3 damage plus 1 per character exhausted as one damage instance. Engine choice: the exhaustion resolves before the attack begins because its additional damage counts it, and the engine does not suspend for a choice inside a labelled attack.",
+      "abilities": [
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero"}, "labels": ["attack"], "effect": {"chooseCard": {"from": {"query": "attackableEnemies"}, "effect": {"seq": [{"exhaustAnyNumber": {"from": {"withTrait": {"cards": {"query": "charactersYouControl"}, "trait": "AVENGER"}}}}, {"attack": {"target": "chosen", "effect": {"dealAttackDamage": {"cards": "chosen", "amount": {"add": [3, {"result": "exhausted"}]}}}}}]}}}}
       ]
     }
   ]

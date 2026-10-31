@@ -246,6 +246,8 @@ public abstract record AbilityEffect
     public sealed record InspectEncounterTop(int Count, string Result) : AbilityEffect;
     /// <summary>Privately look at a bounded encounter group, discard one, and order survivors.</summary>
     public sealed record InspectDiscardOrderEncounterTop(int Count) : AbilityEffect;
+    /// <summary>Exhaust any number of the selected ready cards, recording how many were exhausted.</summary>
+    public sealed record ExhaustAnyNumber(AbilityCardSelection From) : AbilityEffect;
     /// <summary>Choose differently titled discarded cards to shuffle into the deck.</summary>
     public sealed record ChooseDiscardToShuffle(int Maximum) : AbilityEffect
     {

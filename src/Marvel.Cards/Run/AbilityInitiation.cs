@@ -100,7 +100,9 @@ internal static class AbilityInitiation
         if (node.OperationName() == "if")
             return ConditionalGuaranteesOnePower(node, power);
         if (node.OperationName() != "seq") return false;
-        var steps = OrderedEffects(node).ToList();
+        // Engine choice: an any-number exhaustion whose count feeds the attack may
+        // resolve immediately before the labelled power it modifies.
+        var steps = OrderedEffects(node).SkipWhile(step => step is AbilityEffect.ExhaustAnyNumber).ToList();
         return steps.Count > 0 && GuaranteesOneLabeledPower(steps[0], power)
             && steps.Skip(1).All(step => !PowerNodes(step, power).Any());
     }

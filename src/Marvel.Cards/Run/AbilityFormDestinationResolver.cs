@@ -19,10 +19,21 @@ internal static class AbilityFormDestinationResolver
                 || sequence.Effects[1] is AbilityEffect.CardAction
                     { Instruction: AbilityCardInstruction.Ready,
                       Selection: AbilityCardSelection.Bound { Binding: AbilityCardBinding.YourHero } })) return;
+        if (IsExactFaceThenUseBonus(effect)) return;
         if (ContainsExplicitDestination(effect))
             throw new RulesNotImplementedException(
                 "projecting a composed exact or other-hero form change is not implemented");
     }
+
+    // A fixed bonus to the current basic use, or a lasting constant grant to the same
+    // physical identity, reads nothing the face change can alter.
+    private static bool IsExactFaceThenUseBonus(AbilityEffect effect) =>
+        effect is AbilityEffect.Sequence { Effects.Length: 2 } sequence
+        && sequence.Effects[0] is AbilityEffect.ChangeForm
+            { Player: AbilityPlayer.You, Destination: AbilityFormDestination.Face }
+        && sequence.Effects[1] is AbilityEffect.BoostBasicUse { MatchingAlly: false, Overkill: false }
+            or AbilityEffect.GrantField { Cards: AbilityCardSelection.Bound { Binding: AbilityCardBinding.You },
+                Amount: AbilityNumber.Constant, EachCard: false, Until: not null, AttackRestriction: null };
 
     private static bool ContainsExplicitDestination(AbilityEffect effect) =>
         effect is AbilityEffect.ChangeForm { Destination: not AbilityFormDestination.Form }
