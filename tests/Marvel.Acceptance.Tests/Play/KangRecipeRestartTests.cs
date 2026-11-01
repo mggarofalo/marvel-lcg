@@ -26,18 +26,18 @@ public sealed class KangRecipeRestartTests
         while (!Places.Separated(journey.Factory.Game.State) || !journey.Factory.Game.IsRootPrompt)
         {
             Assert.True(policy.Answered < 3000);
-            journey.Answer(KangRecipeGames.Answer(policy, journey.Factory.Game));
+            journey.Answer(KangInsertAdvice.Answer(policy, journey.Factory.Game));
         }
         var fresh = journey.Restart();
-        journey.Continue(fresh, KangRecipeGames.Answer(policy, journey.Factory.Game));
+        journey.Continue(fresh, KangInsertAdvice.Answer(policy, journey.Factory.Game));
         while (journey.Factory.Game.Pending!.Trigger != KangJoinOperation.Join)
-            Both(journey, fresh, KangRecipeGames.Answer(policy, journey.Factory.Game), policy);
+            Both(journey, fresh, KangInsertAdvice.Answer(policy, journey.Factory.Game), policy);
         journey.Equivalent(fresh);
         Assert.True(Places.Separated(fresh.Factory.Game.State));
         var second = fresh.Restart();
-        journey.Continue(second, KangRecipeGames.Answer(policy, journey.Factory.Game));
+        journey.Continue(second, KangInsertAdvice.Answer(policy, journey.Factory.Game));
         while (Places.Separated(journey.Factory.Game.State))
-            Both(journey, second, KangRecipeGames.Answer(policy, journey.Factory.Game), policy);
+            Both(journey, second, KangInsertAdvice.Answer(policy, journey.Factory.Game), policy);
         journey.Equivalent(second);
         var world = second.Factory.Game.State;
         Assert.Equal(Outcome.Unfinished, world.Result);

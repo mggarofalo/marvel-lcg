@@ -4,6 +4,7 @@ using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
 using Marvel.Server;
 using Marvel.Session;
+using Marvel.Tests;
 using Xunit;
 
 namespace Marvel.Acceptance.Tests.Play;

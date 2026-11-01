@@ -9,9 +9,8 @@ using Marvel.Rules.Setup;
 using Marvel.Rules.State;
 using Marvel.Server;
 using Marvel.Session;
-using Marvel.Tests;
 
-namespace Marvel.Acceptance.Tests.Play;
+namespace Marvel.Tests;
 
 /// <summary>
 /// Deals the declared Kang recipes through the production dealer and setup path,

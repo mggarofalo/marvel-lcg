@@ -36,7 +36,8 @@ public sealed class NativeContractJourneyTests
         Task<string> output = process.StandardOutput.ReadToEndAsync(TestContext.Current.CancellationToken);
         Task<string> error = process.StandardError.ReadToEndAsync(TestContext.Current.CancellationToken);
         using var deadline = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
-        deadline.CancelAfter(TimeSpan.FromSeconds(rendered ? 180 : 80));
+        // A Kang journey's host answers each prelude between the client's synchronizations.
+        deadline.CancelAfter(TimeSpan.FromSeconds((rendered ? 180 : 80) * (KangNativeScene.Handles(contract) ? 3 : 1)));
         string log;
         try
         {
@@ -68,7 +69,8 @@ public sealed class NativeContractJourneyTests
         EngineRequest[] mutations = server.Requests.Where(request => request.Operation == EngineProtocol.Resolve).ToArray();
         int expected = contract switch
         {
-            "dense-table" => 0,
+            "dense-table" or "kang-3" or "kang-4" => 0,
+            "kang-2" => 1,
             "melee-sequential" => 3,
             "beat-cop-move" or "beat-cop-damage" => 2,
             "heimdall-order" => 4,
@@ -78,6 +80,7 @@ public sealed class NativeContractJourneyTests
             _ => 1,
         };
         Assert.Equal(expected, mutations.Length);
+        if (KangNativeScene.Handles(contract)) KangNativeAssertions.Verify(contract, server, mutations);
         if (expected == 0) return;
         VerifyOutcome(contract, server);
         if (contract == "lost-reply") Assert.Contains(server.Requests, request => request.Operation == EngineProtocol.Sync);

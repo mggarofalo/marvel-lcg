@@ -37,7 +37,7 @@ public sealed class KangSplitTableViewTests
         while (factory.Game.Pending is { } prompt && !reunited)
         {
             Assert.True(policy.Answered < 3000);
-            var answer = KangRecipeGames.Answer(policy, factory.Game);
+            var answer = KangInsertAdvice.Answer(policy, factory.Game);
             // The host authorizes the seat an offer acts for, which an off-turn Action can differ from.
             int actor = answer.IsDecline ? prompt.Player
                 : DecisionAssessment.ActingSeat(prompt, prompt.Affordances.Single(option => option.Id == answer.Affordance));

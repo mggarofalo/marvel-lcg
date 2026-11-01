@@ -23,6 +23,9 @@
   <ItemGroup>
     <Compile Include="../Shared/CoreGamePolicy.cs" Link="CoreGamePolicy.cs" />
     <Compile Include="../Shared/PolicyTargetSelection.cs" Link="PolicyTargetSelection.cs" />
+    <Compile Include="../Shared/KangRecipeFactory.cs" Link="KangRecipeFactory.cs" />
+    <Compile Include="../Shared/IObservedGameFactory.cs" Link="IObservedGameFactory.cs" />
+    <Compile Include="../Shared/KangInsertAdvice.cs" Link="KangInsertAdvice.cs" />
     <Compile Include="../Shared/PresentationAssemblyPolicy.cs" Link="PresentationAssemblyPolicy.cs" />
     <Compile Include="../Shared/RepositoryPaths.cs" Link="RepositoryPaths.cs" />
     <Compile Include="../Shared/Rule.cs" Link="Rule.cs" />

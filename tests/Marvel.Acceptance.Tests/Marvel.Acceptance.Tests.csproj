@@ -31,6 +31,9 @@
     <Compile Include="../Shared/CoreGamePolicy.cs" Link="CoreGamePolicy.cs" />
     <Compile Include="../Shared/PolicyTargetSelection.cs" Link="PolicyTargetSelection.cs" />
     <Compile Include="../Shared/Agendas.cs" Link="Agendas.cs" />
+    <Compile Include="../Shared/KangRecipeFactory.cs" Link="KangRecipeFactory.cs" />
+    <Compile Include="../Shared/IObservedGameFactory.cs" Link="IObservedGameFactory.cs" />
+    <Compile Include="../Shared/KangInsertAdvice.cs" Link="KangInsertAdvice.cs" />
     <Compile Include="../Marvel.Content.Tests/Cards/AuthoredCards.cs" Link="Cards/AuthoredCards.cs" />
   </ItemGroup>
 
