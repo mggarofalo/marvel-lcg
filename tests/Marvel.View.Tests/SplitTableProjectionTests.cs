@@ -116,6 +116,42 @@ public sealed class SplitTableProjectionTests
     }
 
     [Fact]
+    public void BeforeTheSplitProgressNamesKangIAndThenHisPendingSplit()
+    {
+        // 11001: Kang (I)'s defeat splits the table at the end of the phase.
+        var world = new World(Facts, 1, 42);
+        world.CreateSeat("p0").IdentityCard = world.CreateCard("01001a", world.Seats[0].Hero);
+        var kang = world.CreateCard("11001", world.AreaOf(DeckType.VillainArea));
+        var scope = new PermissiveVisibilityPolicy().Authorize(null, 1);
+
+        var before = Assert.IsType<KangTableDescriptor>(WorldProjection.For(world, null, [], scope).World.Kang);
+        world.Agenda.KangSplit.Capture(world, kang);
+        var after = Assert.IsType<KangTableDescriptor>(WorldProjection.For(world, null, [], scope).World.Kang);
+
+        Assert.Equal((1, (int?)null), (before.Stage, before.PendingSplit));
+        Assert.Equal("Defeat Kang (I) to split the table into separate game areas.", before.Progress);
+        Assert.Empty(before.Notes);
+        Assert.Equal((1, (int?)kang.ObjectId), (after.Stage, after.PendingSplit));
+        Assert.StartsWith("Kang (I) is defeated.", after.Progress, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ASolePlayerReadsThatPerPlayerValuesCountOnePlayer()
+    {
+        // rr:per-player-icon: "multiplies that value by the number of players who started the scenario".
+        var world = new World(Facts, 1, 42);
+        world.CreateSeat("p0").IdentityCard = world.CreateCard("01001a", world.Seats[0].Hero);
+        world.Join(PlayArea.Of(0), world.CreateGameArea(), "prepared split", []);
+        world.CreateCard("11002", world.AreaOf(DeckType.VillainArea, PlayArea.Of(0)));
+        world.Detach(PlayArea.Villains, "prepared split", []);
+
+        var kang = WorldProjection.For(world, null, [], new PermissiveVisibilityPolicy().Authorize(null, 1)).World.Kang!;
+
+        Assert.Contains(kang.Notes, note => note.EndsWith("counts the 1 player who started the scenario.", StringComparison.Ordinal));
+        Assert.StartsWith("1 Kang (II) remains.", kang.Progress, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void TopologyEventsNameTheSeatsInsteadOfAreaNumbers()
     {
         var (world, _, _, _) = Separated();
