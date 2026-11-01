@@ -65,11 +65,11 @@ public sealed class BadoonSchemeTests : CoreCardTestBase
         var world = BadoonBoards.Board();
         var drang = GrootBoards.Villain(world);
         var spear = ShipCommandBoards.Attach(world, drang, BadoonBoards.Spear);
-        var genius = GrootBoards.Hand(world, ShipCommandBoards.Genius);
-        var first = GrootBoards.Hand(world, ShipCommandBoards.Strength);
-        var second = GrootBoards.Hand(world, ShipCommandBoards.Strength);
+        // Swinging Web Kick prints one [mental]; Strength prints [physical][physical].
+        var mental = GrootBoards.Hand(world, "01005");
+        var strength = GrootBoards.Hand(world, ShipCommandBoards.Strength);
 
-        ShipCommandBoards.Act(world, spear, 0, genius, first, second);
+        ShipCommandBoards.Act(world, spear, 0, mental, strength);
 
         Assert.Equal(DeckType.EncounterDiscardPile, spear.Area.Type);
         Assert.Equal(0, StateFields.Modified(world, drang, "stalwart", world.Facts, world.Players));
@@ -77,15 +77,15 @@ public sealed class BadoonSchemeTests : CoreCardTestBase
 
     [Fact]
     [Rule("rr:cost")]
-    public void DrangsSpearNeedsTheMentalResource()
+    public void DrangsSpearNeedsBothPhysicalResources()
     {
-        // A physical resource cannot stand in for the [mental] one.
+        // A second [mental] resource cannot stand in for a [physical] one.
         var world = BadoonBoards.Board();
         var spear = ShipCommandBoards.Attach(world, GrootBoards.Villain(world), BadoonBoards.Spear);
-        var strength = new[] { GrootBoards.Hand(world, ShipCommandBoards.Strength),
-            GrootBoards.Hand(world, ShipCommandBoards.Strength), GrootBoards.Hand(world, ShipCommandBoards.Strength) };
+        var genius = GrootBoards.Hand(world, ShipCommandBoards.Genius);
+        var mental = GrootBoards.Hand(world, "01005");
 
-        Assert.ThrowsAny<Exception>(() => ShipCommandBoards.Act(world, spear, 0, strength));
+        Assert.ThrowsAny<Exception>(() => ShipCommandBoards.Act(world, spear, 0, genius, mental));
 
         Assert.Equal(DeckType.UpgradesArea, spear.Area.Type);
     }
