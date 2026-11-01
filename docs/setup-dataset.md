@@ -285,8 +285,9 @@ and removes each player's obligation cards from the game. A recipe records:
   the cards nor the insert place them, and the set-aside area is our reading;
 - `encounters`: the other 26 Kang-set cards at their pinned quantities;
 - `encounter_sets`: Standard, plus Expert in `kang_expert`; and
-- `remove_hero_obligations: true`, so no identity's obligation is dealt while
-  every nemesis set is still set aside for stage 4B.
+- `remove_hero_obligations: true`, so each identity's obligation is dealt into
+  the removed-from-game area while every nemesis set is still set aside for
+  stage 4B.
 
 `pack:mc11:adjustable-difficulty` defines Expert as replacing "all six villains
 in the Kang encounter set with the six villains from the Expert Kang set" and
@@ -297,10 +298,13 @@ place. Those three modular choices, both modes and one to four players are the
 production dealer.
 
 `remove_hero_obligations` is optional and false when absent; a non-boolean
-value is rejected. Not dealing the obligations is equivalent to dealing and
-then removing them at step 12a, because nothing reads a removed obligation and
-the encounter deck is shuffled once at step 10 either way; leaving them undealt is
-our choice.
+value is rejected. A removed card still exists in the removed-from-game area,
+and cards read it there: 27135 Loose Ends searches that area for your obligation
+(ruling 78ee6578c6efb661), and `pack:mc11:adjustable-difficulty` lets modular
+sets move between scenarios. The dealer therefore creates each obligation
+directly in that area, in its usual allocation position. Creating it there
+rather than in the encounter deck and moving it out before the step-10 shuffle
+is our choice; the board is the same.
 
 Mutagen Formula declares Standard and Expert recipes with 26 encounter cards,
 the selected I/II or II/III villain pair, and two physical double-sided main

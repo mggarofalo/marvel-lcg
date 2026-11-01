@@ -18,9 +18,10 @@ Public admission is withheld until the client can show separated game areas;
 - The other 26 Kang-set cards are the scenario's encounter cards, at the pinned
   MarvelSDB quantities. Standard, plus Expert in `kang_expert`, and the
   recommended Temporal set complete the encounter deck.
-- `remove_hero_obligations: true` leaves every identity's obligation undealt
-  ("remove each player's obligation cards from the game"); nemesis sets stay
-  set aside for 4B. Fear of Kang (11049) is a Master of Time encounter card, not
+- `remove_hero_obligations: true` deals every identity's obligation into the
+  removed-from-game area ("remove each player's obligation cards from the
+  game"), where 27135 Loose Ends can still find it (ruling 78ee6578c6efb661);
+  nemesis sets stay set aside for 4B. Fear of Kang (11049) is a Master of Time encounter card, not
   a player's obligation, so it stays in that set (Q13).
 
 The recommended combinations are both modes, each of Temporal, Master of Time
@@ -28,7 +29,8 @@ and Anachronauts, and one to four players: 24. `KangRecipeSetupTests` deals all
 24 through `ScenarioDealer.Prepare` and `WorldSetup`, then checks the villain,
 the main scheme deck under 1B, the set-aside pool, the absence of the other
 mode's villains, one dealt encounter card per player, the complete encounter
-composition, removed obligations with nemesis sets aside, and seeded
+composition, the obligations in the removed-from-game area with nemesis sets
+aside, and seeded
 determinism. `KangRecipeAdmissionTests` checks that all 58 printed faces are
 authored and that admission excludes both recipes even when every face is
 authored. The two records are adjudicated `outside-core`, and the behavior
@@ -73,15 +75,28 @@ pending. Every later answer goes to both hosts until the reunion reveals 4A and
 Kang (III). After every answer the state digest, RNG, phase, prompt, agenda and
 effects match. After the first answer and at each checkpoint, the strict save
 bytes, revision, world and history projections also match. The unrestarted
-game (`KangRecipeGames`, same seed) ends with all players eliminated in round 6. The shared `PublicRestartJourney` now takes a factory, so the Hulk-based
-callers are unchanged.
+game (`KangRecipeGames`, same seed) ends with all players eliminated in round 6.
+`PublicRestartJourney` takes a factory, shared with the Hulk-based callers.
 
 ## Engine changes
 
-The scan reached these paths. Each one raised or threw before, and each now has
-a focused test and a killed mutant. Only Kang content separates the table or
-grants the hero-specific prohibition, so admitted content and saved prompts are
-unaffected. The replay identity stays `engine-replay-v32`.
+The scan and review reached these paths. Each has a focused test and a killed
+mutant. The replay identity stays `engine-replay-v32`, because no admitted game
+or saved prompt changes:
+
+- Only Kang content separates the table, retains an eliminated player's area,
+  completes a stage by elimination, removes hero obligations or grants the
+  hero-specific prohibition, so those paths never run for admitted content.
+- Three changes are generic, and each leaves admitted content unchanged.
+  - The boost-ability fallback for "the activating enemy" runs only when no
+    enemy is activating. Only 01164, 04027 and 90005 name the activating enemy,
+    and none can eliminate a player, so an admitted activation never ends
+    under them.
+  - Placing a card under a host that has left play does nothing (rr:then.1).
+    Every admitted host is in play when its ability resolves: 04003, 04122,
+    04028, 04107, 05007 and 09029.
+  - Work that elimination requires waits behind the running ability. Only the
+    Kang stage completion schedules work that way.
 
 | Path | Rule | Test |
 |---|---|---|
@@ -90,7 +105,8 @@ unaffected. The replay identity stays `engine-replay-v32`.
 | An eliminated player's local area remains until its own phase-end departure, so a co-due last group joins it instead of going central | 11008b, rr:player-elimination.step.5, rr:first-player.3 | `KangRetainedReunionTests` |
 | A departing group with no players combines into an area with players (our choice) | 11009b–11012b | `KangRetainedReunionTests` |
 | Sir Raston's boost, after its damage eliminates the player, still gives its enemy a boost card, which waits facedown | rr:player-elimination.5, rr:boost-boost-icon.6 | `KangSirRastonEliminationTests` |
-| An ability resumes after the local stage completion that eliminating an area's last player schedules ahead of it | rr:player-elimination.5 | `KangEliminatingAbilityTests` |
+| Eliminating an area's last player completes its stage after the eliminating ability resolves entirely: Sir Raston's extra boost card is dealt before the completion stores a Dominion | rr:player-elimination.5, 11009b–11012b | `KangSirRastonEliminationTests`, `KangEliminatingAbilityTests`, `AfterRunningAbilityTests` |
+| The removed hero obligations are dealt into the removed-from-game area and still validated against their identity | 11007a, rr:obligation.4 | `KangRecipeSetupTests`, `DeckConstructionRulesTests` |
 | Time-Travel Hijinks' storage does nothing when its obligation left play with the eliminated player | rr:then.1 | `KangTimeTravelHijinksEliminationTests` |
 
 ## Interpretation choices
@@ -121,11 +137,16 @@ restored with `git checkout` and a touch.
 | `Remains` ignores retained components | killed, 4/4 |
 | Join destinations ignore retained areas | killed, survivor-first cases |
 | Playerless groups may join retained areas | killed, 3-player case |
-| `Holds` drops the live-retention check | survived; equivalent. Every retained group departs, clearing its entries, before any of its cards can leave another way, because no player remains to affect that area |
-| Boosted enemy fallback returns nothing | killed, 2/2 |
-| Resume only when the ability frame is current | killed, 2/2 |
+| `Holds` drops the live-retention check | survived; equivalent, remarked on `KangElimination.Holds` |
+| Boosted enemy fallback returns nothing | killed, 4/4 |
+| Stage completion goes ahead of the eliminating ability | killed, 4/4 |
+| Completion follows the innermost invocation rather than the outermost | killed (`AfterRunningAbilityTests`; `KangEliminatingAbilityTests` 2/2) |
+| Completion follows the first owned frame rather than the last | killed (`AfterRunningAbilityTests`) |
+| Completion registered as the ability's own work | killed, 2/2 |
 | Storage guard removed | killed |
 | Obligation flag ignored | killed, 26 cases |
+| Removed obligations dealt to the set-aside area | killed, 26 cases |
+| Removed obligations skip identity validation | killed (`DeckConstructionRulesTests`) |
 | Nemesis sets also removed | killed |
 | Flag accepts only `true` without rejecting other values | killed |
 
@@ -151,8 +172,8 @@ areas, each with its own Kang and main scheme, beside a central 2B. The Godot
 client renders one villain area and one main scheme, and has no presentation
 for game areas. Playing Kang there would hide which Kang threatens whom,
 which cards a player can target, and why. The skill reserves owner review for
-"multiple villains ... sharing a location the heroes must protect", which
-this is.
+"multiple villains or alternating villains sharing a location the heroes must
+protect", which this is.
 
 ## P8 client specification
 
@@ -196,6 +217,21 @@ this is.
 5. The join, departure-order and phase-end-order prompts, with seat names and
    each area's Kang named in every option.
 6. Event text that names the seats in a game area rather than its number.
+7. That completing a stage 3B is not a loss. It ends that area's stage and
+   stores a Kang's Dominion under 4A. Show the insert's advice beside the
+   threat: "It is better to let Kang (II) complete his main scheme than to let
+   Kang (II) defeat your hero" (`pack:mc11:game-areas`).
+8. Which area is acting. While the table is separated, each villain-phase step
+   runs for every area in turn order before the next step begins (ruling
+   97d62cdb9ce436a7): threat on each main scheme, then each Kang's
+   activation, then each player's encounter card.
+9. What "each player" means. On an encounter card it means each player in the
+   same game area (ruling 4799b99ecc0e5dea), but a per-player value still
+   counts every player who started the scenario (ruling 0c9221b6940b4007).
+10. That all areas share one encounter deck and one encounter discard pile
+    (`pack:mc11:game-areas`).
+11. Progress toward winning: Kang (I), then a Kang (II) in each area, then
+    Kang (III) after the reunion.
 
 ### What is missing
 
@@ -204,9 +240,14 @@ this is.
   has been stored. Add an engine-owned, visibility-safe descriptor of pending
   departures: source area, group, cause (defeat or completion) and boundary.
 - **A semantic summary per area.** Clients would have to assemble the local
-  Kang, scheme and threat from zones and owners. Add a `GameAreaDescriptor`
-  summary: local villain id, local main scheme id, seats, whether the area is
-  retained, and whether it is central.
+  Kang, scheme and threat from zones and owners. `GameAreaDescriptor`
+  (`src/Marvel.View/GameAreaDescriptor.cs`) carries only the id and play
+  areas. Extend it with the local villain id, the local main scheme id,
+  whether the area is retained, and whether it is central.
+- **Villain-phase progress.** Item 8 needs the game area acting in the
+  current villain-phase step as a View fact.
+- **Win progress.** Item 11 needs the current Kang stage and how many local
+  Kang (II) remain, as engine facts rather than a count of cards.
 - **Stored Dominions.** The concealed pile under 4A sits in the main scheme
   deck. Its count, the stored-Dominion total, needs an explicit public fact.
 - **Prompt and event labels.** They use numeric area ids ("game area 3").
