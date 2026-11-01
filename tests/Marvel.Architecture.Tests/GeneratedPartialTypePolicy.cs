@@ -29,7 +29,7 @@ internal static class GeneratedPartialTypePolicy
             "src/Marvel.Godot/EventActivityPulse.cs" => (Namespace: "Marvel.Godot", Type: "EventActivityPulse"),
             "src/Marvel.Godot/SourceGridGesture.cs" => (Namespace: "Marvel.Godot", Type: "SourceGridGesture"),
             "src/Marvel.Godot/SmoothRelationshipLine.cs" => (Namespace: "Marvel.Godot", Type: "SmoothRelationshipLine"),
-            "src/Marvel.Godot/StatusCardBadge.cs" => (Namespace: "Marvel.Godot", Type: "StatusCardBadge"),
+            "src/Marvel.Godot/StatusBadge.cs" => (Namespace: "Marvel.Godot", Type: "StatusBadge"),
             // Global transform notifications track actual themed table placement.
             "src/Marvel.Godot/TableCanvasSurface.cs" => (Namespace: "Marvel.Godot", Type: "TableCanvasSurface"),
             "src/Marvel.Godot/smoke/ResourceFinalizerProbe.cs" => (Namespace: "Marvel.Godot", Type: "ResourceFinalizerProbe"),

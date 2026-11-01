@@ -23,13 +23,16 @@ internal static class CardGlyphRendering
         };
     }
 
-    private static Texture2D Texture(string glyph, int pixels)
+    private static Texture2D Texture(string glyph, int pixels) =>
+        Rasterize($"Marvel.Godot.Assets.CardIcons.{glyph}.svg", pixels);
+
+    /// <summary>Rasterizes one embedded white-outline SVG at an exact square pixel size, once per size.</summary>
+    internal static Texture2D Rasterize(string resource, int pixels)
     {
-        string key = $"{glyph}:{pixels}";
+        string key = $"{resource}:{pixels}";
         if (Textures.TryGetValue(key, out Texture2D? cached)) return cached;
-        using Stream source = typeof(CardGlyphRendering).Assembly.GetManifestResourceStream(
-            $"Marvel.Godot.Assets.CardIcons.{glyph}.svg")
-            ?? throw new InvalidOperationException($"Missing card glyph {glyph}");
+        using Stream source = typeof(CardGlyphRendering).Assembly.GetManifestResourceStream(resource)
+            ?? throw new InvalidOperationException($"Missing embedded icon {resource}");
         using var reader = new StreamReader(source);
         XElement svg = XElement.Parse(reader.ReadToEnd());
         svg.SetAttributeValue("width", pixels);
