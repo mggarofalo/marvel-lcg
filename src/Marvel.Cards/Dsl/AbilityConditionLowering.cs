@@ -70,6 +70,7 @@ internal static class AbilityConditionLowering
             "isTitle" => CardText(argument, child, "title", AbilityCardTextProperty.Title),
             "isKind" => IsKind(argument, child),
             "isInPlay" => new AbilityCondition.IsInPlay(SelectCards(argument, child)),
+            "isExhausted" => new AbilityCondition.IsExhausted(SelectCards(argument, child)),
             "wasDefeatedByDamage" => new AbilityCondition.WasDefeatedByDamage(SelectCards(argument, child)),
             "wasDefeated" => new AbilityCondition.WasDefeated(SelectCards(argument, child)),
             "isYourIdentity" => new AbilityCondition.IsYourIdentity(SelectCards(argument, child)),

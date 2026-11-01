@@ -588,7 +588,7 @@ enemiesEngagedWithChosenPlayer enemiesWithTrait enemyAttacks enemySchemes exists
 finalStep generate generateTopDiscard giveAdditionalBoost
 chooseHealRecipients grantCharactersControlledBy grantEach grantUntil hasStatus hasTrait heroBasicDefended heroDefended
 heroes heroesAndAllies heroAndAllyTargets identities
-identitiesWithinPerPlayerLimit inForm indirectDamage isEnemyAttacker isKind isTitle
+identitiesWithinPerPlayerLimit inForm indirectDamage isEnemyAttacker isExhausted isKind isTitle
 isYourIdentity keyword kind legalPractice mainScheme makeTheCall maxBy minions
 minionsEngagedWithYou minionsInThisGameArea modified moveAttackDamage mul namedInPlay obligationsInThisGameArea onto options overkill
 inspectEncounterTop paidWithResource payOrEffect payOrExhaust peekTop perPlayer placeAccelerationToken
@@ -913,6 +913,11 @@ card has reentered as a new incarnation. Retained out-of-play facts remain
 available to other conditions. A follow-up that engages an attacked enemy can
 combine this condition with its printed trait requirement before `putIntoPlay`.
 This condition also participates in projected entry and departure checks.
+
+`{"isExhausted":{"titled":"Groot"}}` asks whether the selected card is in play and
+exhausted. Flora and Fauna uses it to withhold an action that would change
+nothing: at 10 growth counters it can only ready Groot, and an ability with no
+effect cannot be initiated (rulings 342e7b62e13a6806, e015aa6cd98e8ef2).
 
 Constant abilities describe values the engine reads from the current board.
 They do not run once and cache their answer. The interpreter evaluates their

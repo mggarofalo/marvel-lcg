@@ -1,5 +1,6 @@
 using Marvel.Protocol;
 using Marvel.Rules.Play;
+using Marvel.Rules.Setup;
 using Marvel.Tests;
 using Xunit;
 
@@ -51,8 +52,16 @@ public sealed class PublicMsMarvelDeckIndependentTests
         // Groot (16001a–16028) is the only open part of The Galaxy's Most Wanted.
         Assert.DoesNotContain(factory.DiscoverDecks().Cards, card => card.Face.StartsWith("16", StringComparison.Ordinal)
             && string.CompareOrdinal(card.Face, "16029") >= 0);
+        // Booster Boots (16052) is a Basic GUARDIAN card from Rocket Raccoon's part of the
+        // same box: Groot may play it in principle, but the closed part of the box is
+        // not admitted, so assessment and game creation refuse it.
+        var starter = factory.DiscoverDecks().Heroes.Single(hero => hero.Key == "groot").Starter;
+        int deft = starter.ToList().IndexOf("16024");
+        string[] draft = [.. starter.Where((_, index) => index != deft), "16052"];
+        var preview = factory.AssessDeck("groot", draft);
+        Assert.Contains(preview.Diagnostics, item => item.Code == "unsupported-face" && item.Face == "16052");
         var rejected = new EngineHost(factory).Exchange(EngineRequest.OpenGame("adjacent", "adjacent-rocket",
-            new GameSpecification("rhino", ["rocket_raccoon"], [], 3)));
+            new GameSpecification("rhino", ["groot"], [], 3, PlayerDecks: [new PlayerDeckRecipe(draft)])));
         Assert.NotNull(rejected.Error);
         Assert.Null(rejected.Capability);
     }

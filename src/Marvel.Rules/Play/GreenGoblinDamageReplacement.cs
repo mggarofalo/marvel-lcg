@@ -25,7 +25,11 @@ public static class GreenGoblinDamageReplacement
     public static PendingAbility? Waiting(World world, DamageReplacement replacement)
     {
         Card target = replacement.Target;
+        // "Would take any amount of damage" is rr:damage step 3, after tough status
+        // cards (step 2); a tough status card prevents the damage first, so Norman
+        // removes no infamy (ruling c8268c2138f6c809).
         return replacement.CurrentAmount > 0
+            && (replacement.IgnoresTough || !Statuses.Has(world, target, Statuses.Tough))
             && target.Incarnation == replacement.TargetIncarnation
             && DeckTypes.IsInPlay(target.Area.Type)
             && target.FaceId is ("02001a" or "02002a" or "02003a")

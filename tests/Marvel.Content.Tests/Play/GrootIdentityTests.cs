@@ -9,6 +9,8 @@ namespace Marvel.Content.Tests.Play;
 // Actual production rows for Groot's identity on synthetic boards.
 public sealed class GrootIdentityTests : CoreCardTestBase
 {
+    private const string HydraHunter = "04101";
+
     [Theory]
     [InlineData(3, 1, 0)]
     [InlineData(1, 0, 1)]
@@ -78,6 +80,50 @@ public sealed class GrootIdentityTests : CoreCardTestBase
 
         Assert.Equal(offers, offered.Count);
         Assert.Equal(0, spider.Damage);
+    }
+
+    [Fact]
+    [Rule("rr:piercing.1")]
+    [Rule("rr:damage")]
+    public void APiercingAttackDiscardsToughBeforeAWouldTakeInterruptIsOffered()
+    {
+        // rr:piercing.1: "discard each tough status card on that character before this
+        // attack deals damage to a character". Hydra Hunter's attacks gain piercing, so
+        // Backflip (01003) still has its 2 damage to prevent.
+        var world = GrootBoards.Board(players: 2);
+        var spider = world.Seats[1].IdentityCard;
+        var backflip = GrootBoards.Hand(world, "01003", 1);
+        Statuses.Give(world, spider, Statuses.Tough);
+        var hunter = GrootBoards.Engaged(world, HydraHunter, 1);
+        var offered = new List<int>();
+
+        KangTemporalFixture.Attack(world, hunter, 1);
+        GrootBoards.Drive(world, GrootBoards.Take(backflip, offered));
+
+        Assert.Single(offered);
+        Assert.Equal(0, spider.Damage);
+        Assert.False(Statuses.Has(world, spider, Statuses.Tough));
+    }
+
+    [Fact]
+    [Rule("rr:piercing.1")]
+    [Rule("rr:damage")]
+    public void APiercingAttackLeavesFloraColossusTheDamageToughNoLongerPrevents()
+    {
+        // The pierced tough status card is gone before rr:damage step 3, so Flora
+        // Colossus spends 2 of Groot's 3 growth counters on Hydra Hunter's 2 damage.
+        var world = GrootBoards.Board();
+        var groot = GrootBoards.Groot(world);
+        GrootBoards.Grow(groot, 3);
+        Statuses.Give(world, groot, Statuses.Tough);
+        var hunter = GrootBoards.Engaged(world, HydraHunter);
+
+        KangTemporalFixture.Attack(world, hunter, 0);
+        GrootBoards.Drive(world, _ => null);
+
+        Assert.Equal(1, GrootBoards.Growth(groot));
+        Assert.Equal(0, groot.Damage);
+        Assert.False(Statuses.Has(world, groot, Statuses.Tough));
     }
 
     [Theory]

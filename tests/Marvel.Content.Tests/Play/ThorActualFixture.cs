@@ -6,7 +6,7 @@ namespace Marvel.Content.Tests.Play;
 
 internal static class ThorActualFixture
 {
-    internal static World Board(string face, int players = 1)
+    internal static World Board(string face, int players = 1, string villain = "01094")
     {
         var cards = CardCatalog.Parse(File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")));
         var world = new World(cards, players);
@@ -17,7 +17,7 @@ internal static class ThorActualFixture
             if (p == 0) seat.IdentityCard.TurnTo(face);
             for (int i = 0; i < 12; i++) world.CreateCard("01088", seat.Deck);
         }
-        world.CreateCard("01094", world.AreaOf(DeckType.VillainArea));
+        world.CreateCard(villain, world.AreaOf(DeckType.VillainArea));
         world.CreateCard("01097a", world.AreaOf(DeckType.MainSchemesArea));
         for (int i = 0; i < 12; i++) world.CreateCard("01120", world.AreaOf(DeckType.EncounterDeck));
         world.Abilities = AuthoredCards.Runner();

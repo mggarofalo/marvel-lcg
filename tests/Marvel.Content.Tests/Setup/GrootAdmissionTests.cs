@@ -39,6 +39,23 @@ public sealed class GrootAdmissionTests
             result.Playable.Where(face => Cards.Pack(face) == "gmw").Order(StringComparer.Ordinal));
     }
 
+    [Fact]
+    public void ARecipeNamingAClosedFaceOfTheBoxIsWithheld()
+    {
+        // A Rocket Raccoon record built from Groot's with Rocket's identity, both faces
+        // authored, still names a closed face of The Galaxy's Most Wanted.
+        var json = JsonNode.Parse(SetupJson)!;
+        var rocket = json["heroes"]!["groot"]!.DeepClone();
+        rocket["hero"] = new JsonArray("16029a,16029b");
+        rocket["name"] = "Rocket Raccoon";
+        json["heroes"]!["rocket_raccoon"] = rocket;
+        var authored = AuthoredCards.Book.Authored.Concat(["16029a", "16029b"]).ToHashSet(StringComparer.Ordinal);
+        var result = RuntimeProductAdmission.Discover(SetupCatalog.Parse(json.ToJsonString()), Cards, authored);
+        Assert.Contains("groot", result.Setup.HeroNames);
+        Assert.DoesNotContain("rocket_raccoon", result.Setup.HeroNames);
+        Assert.DoesNotContain("16029a", result.Playable);
+    }
+
     [Theory]
     [InlineData("missing")]
     [InlineData("hero")]

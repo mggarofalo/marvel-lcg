@@ -46,6 +46,8 @@ public abstract record AbilityCondition
     public sealed record IsKind(AbilityCardSelection Card, CardKind Kind) : AbilityCondition;
     /// <summary>The selected current incarnation is in play.</summary>
     public sealed record IsInPlay(AbilityCardSelection Card) : AbilityCondition;
+    /// <summary>Whether the selected card is in play and exhausted.</summary>
+    public sealed record IsExhausted(AbilityCardSelection Card) : AbilityCondition;
     /// <summary>The occurrence defeated the selected card.</summary>
     public sealed record WasDefeatedByDamage(AbilityCardSelection Card) : AbilityCondition;
     /// <summary>Tests defeat in the invoking occurrence.</summary>

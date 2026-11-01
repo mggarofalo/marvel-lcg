@@ -1,26 +1,38 @@
 using Marvel.Cards.Dsl;
+using Marvel.Rules.Play;
 
 namespace Marvel.Cards.Run;
 
 /// <summary>Describes occurrence-bound bonuses and unresolved resource conditions.</summary>
 internal static class AbilityBasicUseDescription
 {
-    internal static string? Summary(AbilityEffect effect) => effect switch
+    /// <summary>Describes <paramref name="effect"/>; <paramref name="trigger"/> names the basic use it answers.</summary>
+    internal static string? Summary(AbilityEffect effect, string? trigger = null) => effect switch
     {
         AbilityEffect.BoostBasicUse { Overkill: true } => "Grant overkill to this basic attack only",
         AbilityEffect.BoostBasicUse { Variable: not null } =>
             "Add 1 to this basic power use for each boost icon on the discarded card",
-        AbilityEffect.BoostBasicUse { MatchingAlly: false } bonus => $"Add {bonus.Amount} ATK for this basic attack only",
+        AbilityEffect.BoostBasicUse { MatchingAlly: false } bonus => Bonus(bonus.Amount, trigger),
         AbilityEffect.Conditional { Then: AbilityEffect.BoostBasicUse { Overkill: true }, Else: null } conditional
             when Condition(conditional.Test) is { } condition =>
             $"If {condition}, grant overkill to this basic attack only",
-        AbilityEffect.Sequence sequence => Sequence(sequence),
+        AbilityEffect.Sequence sequence => Sequence(sequence, trigger),
         _ => null,
     };
 
-    private static string? Sequence(AbilityEffect.Sequence sequence)
+    // The trigger names the power: a thwart-only interrupt boosts THW, a use-level
+    // interrupt boosts whichever basic power is being used, and otherwise ATK.
+    private static string Bonus(int amount, string? trigger) => trigger switch
     {
-        string?[] parts = [.. sequence.Effects.Select(Summary)];
+        BasicPowerTiming.HeroThwartInitiated => $"Add {amount} THW for this basic thwart only",
+        BasicPowerTiming.HeroUseInitiated or BasicPowerTiming.AllyUseInitiated =>
+            $"Add {amount} to this basic attack or thwart only",
+        _ => $"Add {amount} ATK for this basic attack only",
+    };
+
+    private static string? Sequence(AbilityEffect.Sequence sequence, string? trigger)
+    {
+        string?[] parts = [.. sequence.Effects.Select(effect => Summary(effect, trigger))];
         return parts.Length == 0 || parts.Any(part => part is null) ? null : string.Join("; ", parts);
     }
 

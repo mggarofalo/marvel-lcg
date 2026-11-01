@@ -200,9 +200,16 @@ public sealed class GrootSignatureTests : CoreCardTestBase
         var main = GrootBoards.MainScheme(world);
         main.PlaceTokens("k_threat", 5);
 
-        BasicThwartPowers.BasicThwart(world, Cards, 0, main, []);
-        GrootBoards.Drive(world, GrootBoards.Take(vines));
+        string? described = null;
 
+        BasicThwartPowers.BasicThwart(world, Cards, 0, main, []);
+        GrootBoards.Drive(world, prompt =>
+        {
+            described ??= prompt.Affordances.FirstOrDefault(a => a.AnchorId == vines.ObjectId)?.Description;
+            return GrootBoards.Take(vines)(prompt);
+        });
+
+        Assert.Equal("Add 2 THW for this basic thwart only", described);
         Assert.Equal(2, main.Tokens["k_threat"]);
         Assert.Equal(1, GrootBoards.Growth(groot));
         Assert.False(vines.Ready);
@@ -220,9 +227,16 @@ public sealed class GrootSignatureTests : CoreCardTestBase
         var spikes = GrootBoards.InPlay(world, "16011", DeckType.UpgradesArea);
         var villain = GrootBoards.Villain(world);
 
-        BasicPowers.BasicAttack(world, Cards, 0, villain, []);
-        GrootBoards.Drive(world, GrootBoards.Take(spikes));
+        string? described = null;
 
+        BasicPowers.BasicAttack(world, Cards, 0, villain, []);
+        GrootBoards.Drive(world, prompt =>
+        {
+            described ??= prompt.Affordances.FirstOrDefault(a => a.AnchorId == spikes.ObjectId)?.Description;
+            return GrootBoards.Take(spikes)(prompt);
+        });
+
+        Assert.Equal("Add 2 ATK for this basic attack only", described);
         Assert.Equal(4, villain.Damage);
         Assert.Equal(0, GrootBoards.Growth(groot));
         Assert.False(spikes.Ready);
