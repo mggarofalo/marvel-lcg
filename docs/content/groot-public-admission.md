@@ -65,6 +65,12 @@ entries in `datasets/rulings/`.
   value after setup; Rules Reference 1.8 governs.
 - **Hard to Ignore** follows Unflappable (09020): a defense event used outside
   an attack is not a defense against an attack (ruling f6b7f9804304980b).
+- **No-effect offers.** Flora and Fauna is not offered at 10 growth counters
+  with Groot ready: no part of it can resolve, and an ability with no effect
+  cannot be initiated (rulings 342e7b62e13a6806, e015aa6cd98e8ef2). Wilt's
+  optional flip, like every obligation's, offers only "Remain in your current
+  form" to a player already in alter-ego form, because the flip has no target
+  (rr:choose-option.1); the Core corpus pins that one-option decision.
 - **Flora and Fauna** needs Groot and Rocket Raccoon in play, in either form or
   as an ally (rr:team-up; ruling 9e3a063b5c91ec99). Rocket Raccoon's upgrades
   are not authored, so none can be in play, and the row authors only the Groot
@@ -94,9 +100,20 @@ Every change is new vocabulary used only by Groot rows, except the following:
   has no damage left for such an interrupt
   (`DamageWindowEligibility.RemainingDamage`). Backflip (01003) and the other
   admitted "would take" interrupts are no longer offered to a character
-  holding a tough status card unless the damage ignores Tough. A v32 trace can
-  record a prompt that v33 does not produce, so the replay identity is
-  `engine-replay-v33` (`AToughStatusCardLeavesNoDamageForAWouldTakeInterrupt`).
+  holding a tough status card unless the damage ignores Tough. A piercing enemy
+  attack discards the tough status card before its damage window opens
+  (rr:piercing.1), so those interrupts still see its damage. Crossbones' Armor
+  (04065) and Norman Osborn's infamy replacement (02001a–02003a) are "would take"
+  abilities too: a tough status card prevents the damage first and nothing
+  reaches them (ruling c8268c2138f6c809), while damage that ignores Tough still
+  does. A v32 trace can record a prompt or outcome that v33 does not produce, so
+  the replay identity is `engine-replay-v33`
+  (`AToughStatusCardLeavesNoDamageForAWouldTakeInterrupt`,
+  `APiercingAttackDiscardsToughBeforeAWouldTakeInterruptIsOffered`,
+  `WouldTakeAfterToughTests`).
+- **Basic-use bonus descriptions.** A bonus offered on a thwart-only interrupt
+  reads "Add 2 THW for this basic thwart only" (Entangling Vines); any other
+  fixed bonus keeps its ATK wording.
 - **Prevention spent against the remaining damage.** `preventDamageWithCounters`
   removes only as many counters as there is damage left to prevent.
 - **Basic-use interrupt views.** The two new step conditions fire on existing

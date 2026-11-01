@@ -93,8 +93,9 @@ adapter or migration route from any earlier identity: a release that changes
 any of them makes every earlier save unloadable. This is a product choice, not
 a rule of the game; the owner decided that legacy saves need no handling
 (MARVEL-896). Replay v33 withholds a "would take" damage interrupt, such as
-Backflip (01003), from a character whose tough status card prevents that
-damage first (rr:damage); see
+Backflip (01003), or a "would take" replacement such as Crossbones' Armor
+(04065), from a character whose tough status card prevents that damage first
+(rr:damage); see
 [session-ledger.md](session-ledger.md#replay-identity). Replay v32 withholds a required discard-pile shuffle, such as
 Ancestral Knowledge (01042), when no discarded card can be chosen
 (rr:initiating-abilities.step.2); see
