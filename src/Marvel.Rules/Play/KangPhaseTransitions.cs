@@ -24,7 +24,7 @@ public sealed class KangPhaseTransitions
             && card.Area.Type == DeckType.MainSchemesArea
             && ReferenceEquals(Places.GameAreaOf(world, card), source));
         if (scheme is not null && !source.PlayAreas.Any(area => area.IsPlayers))
-            MainSchemeCompletion.Schedule(world, scheme);
+            MainSchemeCompletion.ScheduleAfterElimination(world, scheme);
     }
 
     /// <summary>A detached snapshot of departures which have not reached their boundary.</summary>

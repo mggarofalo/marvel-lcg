@@ -28,6 +28,28 @@ public sealed class DeckConstructionRulesTests
         Assert.Contains("does not share the identity set icon", refused.Message);
     }
 
+    [Rule("rr:obligation.4")]
+    [Theory]
+    [InlineData(CreationSource.Obligation)]
+    [InlineData(CreationSource.RemovedObligation)]
+    public void AnObligationMustShareItsIdentitySetIconWhereverItIsDealt(CreationSource source)
+    {
+        // "Identity-specific obligation cards can only be used alongside an identity if
+        // those cards share a set icon with that identity." A scenario that removes the
+        // obligations from the game still deals the identity's own.
+        var facts = Cards()
+            .Card("identity", CardKind.AlterEgo, "Hero", "hero")
+            .Card("wrong", CardKind.Obligation, "Wrong", "other");
+
+        var refused = Assert.Throws<ArgumentException>(() => DeckConstruction.Validate(
+        [
+            new Creation("identity", CreationSource.Identity, 0),
+            new Creation("wrong", source, 0),
+        ], facts));
+
+        Assert.Contains("does not share the identity set icon", refused.Message);
+    }
+
     [Rule("rr:aspect-card.2")]
     [Rule("rr:basic-card.2")]
     [Rule("rr:campaign-specific-card.1")]

@@ -79,9 +79,15 @@ internal static class KangJoinProcedure
             ContextCardIds = [operation.Departure.Defeated.Card],
         };
 
+    // A departing group with players may join any remaining game area, including an
+    // eliminated player's area that still holds its Kang (KangCentral.Remains). A group
+    // with no players left combines straight into an area with players: our choice, since
+    // its components need a player area to carry them and they would reach one at that
+    // other area's own departure anyway.
     private static GameArea[] Destinations(World world, KangDeparture departure) =>
         [.. world.GameAreas.Where(area => !ReferenceEquals(area, departure.Source)
-            && area.PlayAreas.Any(play => play.IsPlayers)).OrderBy(area => area.Id)];
+            && (departure.Group.Count > 0 ? KangCentral.Remains(world, area)
+                : area.PlayAreas.Any(play => play.IsPlayers))).OrderBy(area => area.Id)];
 
     private static Card[] ConflictingCards(World world, KangJoinOperation operation)
     {

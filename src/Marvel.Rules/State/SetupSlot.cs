@@ -23,5 +23,8 @@ public enum SetupSlot
 
     /// <summary>Set aside for binding to Doctor Strange's separate Invocation deck.</summary>
     InvocationDeck,
+
+    /// <summary>Removed from the game before setup, into the removed-from-game area.</summary>
+    RemovedFromGame,
 #pragma warning restore CS1591, SA1602
 }

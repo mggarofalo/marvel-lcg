@@ -93,6 +93,29 @@ public static class AgendaContinuationScheduling
         agenda.scheduled = 0;
     }
 
+    /// <summary>Schedule work the board requires once the running ability has resolved.</summary>
+    /// <remarks>
+    /// rr:player-elimination.5: "If a player is eliminated partway through the resolution
+    /// of an ability, resolve the entire ability." The step belongs to no ability: it
+    /// follows the agenda frame resolving the running ability's outermost invocation and
+    /// every frame that invocation still owns, such as its effect windows once elimination
+    /// has ended the attack holding it. With no ability running, or none of its frames
+    /// left, the step runs at once.
+    /// </remarks>
+    public static void AfterRunningAbility(this Agenda agenda, PhaseStep step)
+    {
+        int last = -1;
+        if (agenda.Executions.Active is { } ability)
+        {
+            while (ability.Parent is { } parent) ability = parent;
+            var owned = AbilityOwnedWork.All(ability);
+            last = agenda.items.FindLastIndex(item => item.Step.FrameId == ability.SegmentOwnerFrame
+                || owned.Contains(item.Step.FrameId));
+        }
+        if (last < 0) agenda.Now(step);
+        else agenda.items.Insert(last + 1, (agenda.Unowned(step), Stage.Interrupts, step.ScheduledOccurrence));
+    }
+
     /// <summary>Whether any frame waits between this frame and its exact owner.</summary>
     internal static bool HasWorkBeforeOwner(
         this Agenda agenda, PhaseStep frame, PhaseStep owner, Occurrence occurrence)

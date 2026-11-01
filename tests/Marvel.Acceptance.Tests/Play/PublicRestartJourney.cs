@@ -11,15 +11,23 @@ namespace Marvel.Acceptance.Tests.Play;
 /// <summary>A public session and its serialized fresh-host continuation.</summary>
 internal sealed class PublicRestartJourney
 {
-    internal HulkRestartFactory Factory { get; } = new();
+    internal IObservedGameFactory Factory { get; }
     internal MemorySessionStore Store { get; } = new();
     internal EngineHost Host { get; }
     internal EngineResponse Current { get; private set; }
     private readonly string capability;
     private readonly string gameId;
+    private readonly Func<IObservedGameFactory> create;
 
     internal PublicRestartJourney(GameSpecification specification, string title)
+        : this(specification, title, () => new HulkRestartFactory())
     {
+    }
+
+    internal PublicRestartJourney(GameSpecification specification, string title, Func<IObservedGameFactory> create)
+    {
+        this.create = create;
+        Factory = create();
         Host = new EngineHost(Factory, store: Store);
         Current = Host.Exchange(EngineRequest.OpenGame("open", title, specification));
         Assert.Null(Current.Error);
@@ -29,6 +37,8 @@ internal sealed class PublicRestartJourney
 
     private PublicRestartJourney(PublicRestartJourney original)
     {
+        create = original.create;
+        Factory = create();
         capability = original.capability;
         gameId = original.gameId;
         string bytes = original.Stored();

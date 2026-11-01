@@ -157,6 +157,7 @@ public static class Blueprints
         CreationSource.Encounter or CreationSource.EncounterSet => SetupSlot.Encounter,
         CreationSource.ScenarioSetAside => SetupSlot.SetAside,
         CreationSource.InvocationDeck => SetupSlot.InvocationDeck,
+        CreationSource.RemovedObligation => SetupSlot.RemovedFromGame,
         _ => throw new ArgumentOutOfRangeException(nameof(source)),
     };
 }

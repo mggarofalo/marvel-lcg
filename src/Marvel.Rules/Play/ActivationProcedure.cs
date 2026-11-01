@@ -38,12 +38,12 @@ internal static class ActivationProcedure
         }
 
         int seat = playerOrder[step.Index];
-        var villain = EncounterRouting.VillainForPlayer(world, seat);
         var activated = step.Require<ActivationPlanOperation>().ActivatedEnemies ?? [];
 
         // An eliminated seat remains in this procedure's stable order so its
         // removal cannot shift the next player under the current index. It has
-        // no enemies left to activate; advance and clear the per-player set.
+        // no enemies left to activate, and no game area to find a villain in
+        // (pack:mc11:game-areas); advance and clear the per-player set.
         if (world.Seats[seat].Eliminated)
         {
             world.Agenda.Then(step with
@@ -59,6 +59,7 @@ internal static class ActivationProcedure
             return null;
         }
 
+        var villain = EncounterRouting.VillainForPlayer(world, seat);
         var remaining = MinionActivationChoice.Remaining(world, seat, step);
         bool villainActivated = villain is null || HasActivatedVillain(world, villain, activated);
         if (NeedsOrder(step, villainActivated, remaining))

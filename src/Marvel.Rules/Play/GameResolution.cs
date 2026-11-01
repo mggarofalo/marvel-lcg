@@ -88,9 +88,11 @@ public static class GameResolution
         var offer = game.Pending!.Affordances.First(option => option.Id == input.Affordance);
         // rr:cannot: a hero-specific play prohibition is absolute. An offer
         // describes an earlier board, so check again before committing an answer.
+        // rr:player-turn.6: a requested Action is triggered by the other player, so
+        // the prohibition that applies is the acting seat's.
         if (offer.PlaysCard && !DeckTypes.IsInPlay(game.world.Cards[offer.AnchorId].Area.Type)
             && !HeroSpecificPlayPermissions.CanPlay(
-                game.world, game.world.Cards[offer.AnchorId], game.Pending.Player))
+                game.world, game.world.Cards[offer.AnchorId], DecisionAssessment.ActingSeat(game.Pending, offer)))
             throw new ArgumentException("the offered card is a prohibited hero-specific play", nameof(input));
     }
 

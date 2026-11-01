@@ -83,7 +83,7 @@ public static class Dealer
             dealt.Add(new Creation(challenge, CreationSource.Challenge, Creation.Scenario));
         }
 
-        HeroRecipeDeal.Append(catalog, request, facts, campaign.EncounterGroups is null, dealt);
+        HeroRecipeDeal.Append(catalog, request, facts, campaign, dealt);
 
         Add(campaign.Schemes, CreationSource.MainScheme, Creation.Scenario);
         if (campaign.EncounterGroups is null)

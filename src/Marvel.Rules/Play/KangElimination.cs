@@ -14,6 +14,17 @@ public sealed class KangElimination
 
     internal bool Retains(Card card) => GameAreaOf(card) is not null;
 
+    /// <summary>Whether <paramref name="area"/> still holds a departed player's local components.</summary>
+    /// <remarks>
+    /// The <see cref="Retains"/> check is an equivalent mutant: dropping it changes no game.
+    /// A group's entries clear when that group joins. The only earlier removal of its cards,
+    /// the departing Kang and completed stage at the start of that join, happens to the
+    /// group being joined, and both callers exclude that source area. No player remains in
+    /// any other retained group to remove its cards another way.
+    /// </remarks>
+    internal bool Holds(World world, GameArea area) => retained.Any(pair =>
+        ReferenceEquals(pair.Value.Group, area) && Retains(world.Cards[pair.Key]));
+
     internal static void Preflight(World world, int player)
     {
         var source = world.GameAreaOf(PlayArea.Of(player));

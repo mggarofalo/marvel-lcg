@@ -1,7 +1,8 @@
 # Kang main scheme stages and the split table
 
 MARVEL-568 packet, branch `feat/kang-stages` from `79410d45`. Nonpublic: Kang
-is not admitted (`RuntimeProductAdmission`), and no setup recipe exists yet.
+is not admitted (`RuntimeProductAdmission`). The setup recipes and complete
+games through them are in [kang-recipe-evidence.md](kang-recipe-evidence.md).
 
 ## What is authored
 
@@ -88,8 +89,11 @@ check (its resolution path is held by Drone Factory's probe).
 
 ## Remaining
 
-- P6 recipe: the setup dataset entry, with excluded hero obligations, set-aside
-  II/III/Dominions, the stage-3 pool and Expert replacements.
+- The setup recipes, complete games, replay, fresh-host restart and the
+  zero-raise scan are recorded in [kang-recipe-evidence.md](kang-recipe-evidence.md).
 - An environment entering play, or left central, while the table is separated
-  raises (Q8 not implemented; no environment is in the Kang pool).
-- Admission, public journey, save/restart evidence and the Godot split-table UI.
+  raises (Q8 not implemented). No environment is in the Kang recipes, their
+  modular sets, the Standard and Expert sets or any declared nemesis set, so
+  no Kang game reaches it.
+- Public admission waits for the client's separated-table presentation (P8/P9);
+  its specification is in [kang-recipe-evidence.md](kang-recipe-evidence.md#p8-client-specification).

@@ -41,4 +41,7 @@ public enum CreationSource
 
     /// <summary>The identity-owned separate five-card Invocation deck.</summary>
     InvocationDeck,
+
+    /// <summary>A hero obligation the scenario removes from the game.</summary>
+    RemovedObligation,
 }

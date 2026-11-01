@@ -144,6 +144,7 @@ public sealed class SetupCatalog
     {
         EncounterGroups = EncounterRecipeReader.Read(element),
         SetupMode = EncounterRecipeReader.Mode(element),
+        RemovesHeroObligations = OptionalBoolean(element, "remove_hero_obligations"),
     };
 
     private static HeroSetup ReadHero(JsonElement element) => new(
@@ -185,6 +186,9 @@ public sealed class SetupCatalog
         && value.ValueKind is JsonValueKind.True or JsonValueKind.False
             ? value.GetBoolean()
             : throw new JsonException($"expected a boolean '{name}'");
+
+    private static bool OptionalBoolean(JsonElement element, string name) =>
+        element.TryGetProperty(name, out _) && Boolean(element, name);
 
     private static EncounterSetRole Role(JsonElement element) => Text(element, "role") switch
     {

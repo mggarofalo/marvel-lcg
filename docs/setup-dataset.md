@@ -23,7 +23,7 @@ The file has 3 groups:
 
 | Group | Admitted rows | Declared rows |
 |---|---:|---:|
-| `campaigns` | 39 Core Set, Rise of Red Skull, Wrecking Crew and Green Goblin scenario/mode combinations | 39 |
+| `campaigns` | 39 Core Set, Rise of Red Skull, Wrecking Crew and Green Goblin scenario/mode combinations; the two declared Kang modes are not admitted | 41 |
 | `heroes` | 14 Core Set, Rise of Red Skull, Captain America, Ms. Marvel, Thor, Black Widow, Doctor Strange, Hulk and Ant-Man starter decks | 14 |
 | `encounter_sets` | 15 Core Set, Rise of Red Skull, Green Goblin and Kree Fanatic fixed/modular sets; the three declared Kang modular sets are not admitted | 18 |
 
@@ -259,30 +259,52 @@ The runtime does not currently accept:
 A request that needs one of these surfaces fails at setup or card registration.
 It must not produce a partial board.
 
-The Once and Future Kang declares its three modular sets and no scenario
-recipe. Temporal has 11030×3, 11031×2, 11032 and 11033; Anachronauts has
-11040–11044, 11045×2 and 11046×2; Master of Time (key `mot`, the printed set
-code) has 11047, 11048×2, 11049×2, 11050 and 11051×2. The pinned MarvelSDB
-`pack/toafk_encounter.json` supplies the quantities, and
+The Once and Future Kang declares its three modular sets and two scenario
+recipes, `kang` and `kang_expert`. Temporal has 11030×3, 11031×2, 11032 and
+11033; Anachronauts has 11040–11044, 11045×2 and 11046×2; Master of Time (key
+`mot`, the printed set code) has 11047, 11048×2, 11049×2, 11050 and 11051×2.
+The pinned MarvelSDB `pack/toafk_encounter.json` supplies the quantities, and
 `pack:mc11:adjustable-difficulty` makes each set usable in other scenarios.
-Complete-product admission excludes all three, even when every face is
-authored. `KangModularSetupTests` gates composition and that exclusion.
+Complete-product admission excludes the scenario and all three sets, even when
+every face is authored. `KangModularSetupTests` and `KangRecipeAdmissionTests`
+gate composition and that exclusion.
 
-A Kang scenario recipe needs more than the campaign shape records. Stage 1A
-sets every Kang (II), Kang (III) and Kang's Dominion aside, so Kang (I) is the
-only villain in the villain deck (`pack:mc11:setup`), and removes each
-player's obligation cards from the game. Stages 1, 2 and 4 form the
-main-scheme deck in that order, so 4A is in play to hold the Dominions stage 3B
-places under it. The four stage-3 schemes are a separate facedown pool:
-neither the cards nor the insert place them, and this layout is our reading
-(MARVEL-894 Q13). Stage 2A places one acceleration token on itself per side
-scheme, discards every side scheme, has each player in turn order reveal a
-random stage 3A from the pool, and removes the unused stage-3 schemes from the
-game. Each stage 3A creates a game area with its own Kang (II), and stage 4A
-brings in Kang (III) and the stored Dominions.
-Expert replaces all six villains with 11034–11039 and adds the Expert set.
-The `schemes` list is always a sequential deck, so the setup dataset has no
-Kang key, and a request for one fails with `KeyNotFoundException`.
+The recipes follow printed 11007a. Its contents are "Kang (I), each Kang (II),
+and Kang (III). Kang and Standard encounter sets. One modular encounter set
+(Temporal)." Its setup sets every Kang (II), Kang (III) and Kang's Dominion
+aside, so Kang (I) is the only villain in the villain deck (`pack:mc11:setup`),
+and removes each player's obligation cards from the game. A recipe records:
+
+- `villain`: Kang (I) alone, 11001 (Expert 11034);
+- `schemes`: stages 1, 2 and 4 as the main scheme deck in that order, so 4A
+  waits in the deck to hold the Dominions stage 3B places under it (MARVEL-894
+  Q13);
+- `set_aside`: the four Kang (II) (11002–11005, Expert 11035–11038), Kang (III)
+  (11006, Expert 11039), the four double-sided stage-3 schemes and the four
+  Kang's Dominion copies. The stage-3 schemes are the pool 2A draws from; neither
+  the cards nor the insert place them, and the set-aside area is our reading;
+- `encounters`: the other 26 Kang-set cards at their pinned quantities;
+- `encounter_sets`: Standard, plus Expert in `kang_expert`; and
+- `remove_hero_obligations: true`, so each identity's obligation is dealt into
+  the removed-from-game area while every nemesis set is still set aside for
+  stage 4B.
+
+`pack:mc11:adjustable-difficulty` defines Expert as replacing "all six villains
+in the Kang encounter set with the six villains from the Expert Kang set" and
+adding the Expert set; that is the whole difference between the two rows. The
+insert recommends Temporal and permits Master of Time or Anachronauts in its
+place. Those three modular choices, both modes and one to four players are the
+24 recommended combinations; `KangRecipeSetupTests` deals each through the
+production dealer.
+
+`remove_hero_obligations` is optional and false when absent; a non-boolean
+value is rejected. A removed card still exists in the removed-from-game area,
+and cards read it there: 27135 Loose Ends searches that area for your obligation
+(ruling 78ee6578c6efb661), and `pack:mc11:adjustable-difficulty` lets modular
+sets move between scenarios. The dealer therefore creates each obligation
+directly in that area, in its usual allocation position. Creating it there
+rather than in the encounter deck and moving it out before the step-10 shuffle
+is our choice; the board is the same.
 
 Mutagen Formula declares Standard and Expert recipes with 26 encounter cards,
 the selected I/II or II/III villain pair, and two physical double-sided main
