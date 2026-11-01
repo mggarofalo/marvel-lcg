@@ -26011,6 +26011,161 @@
       ]
     },
     {
+      "card": "16058",
+      "name": "Drang",
+      "note": "Drang (I). Forced Response: after Drang schemes, resolve the Badoon Ship's Charge Up ability. Charge Up is the Badoon Ship's Special ability, which resolves only when another ability instructs it (rr:special); resolveSpecials resolves it on the one Badoon Ship in play and does nothing when none is in play.",
+      "abilities": [
+        {"trigger": {"event": "WhenSchemeEnds", "timing": "ForcedResponse", "actor": "this"}, "effect": {"resolveSpecials": {"cards": {"titled": "Badoon Ship"}}}}
+      ]
+    },
+    {
+      "card": "16059",
+      "name": "Drang",
+      "note": "Drang (II). When Revealed: if Drang's Spear is in play, give Drang 1 facedown boost card; otherwise search the encounter deck and discard pile for Drang's Spear, reveal it and shuffle the encounter deck, as for Absorbing Man (04077). A facedown boost card dealt outside an activation waits for Drang's next activation (rr:boost-boost-icon.6). The revealed Spear attaches to Drang by its own text. Forced Response: after Drang schemes, resolve the Badoon Ship's Charge Up ability. Charge Up is the Badoon Ship's Special ability, which resolves only when another ability instructs it (rr:special); resolveSpecials resolves it on the one Badoon Ship in play and does nothing when none is in play.",
+      "abilities": [
+        {"trigger": {"event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this"}, "effect": {"if": {"test": {"titleInPlay": "Drang's Spear"}, "then": {"giveAdditionalBoost": {"enemy": "this"}}, "else": {"search": {"in": [{"encounterDeck": 1}, {"encounterDiscardPile": 1}], "for": "16064"}}}}},
+        {"trigger": {"event": "WhenSchemeEnds", "timing": "ForcedResponse", "actor": "this"}, "effect": {"resolveSpecials": {"cards": {"titled": "Badoon Ship"}}}}
+      ]
+    },
+    {
+      "card": "16061a",
+      "name": "Terrestrial Invasion",
+      "note": "Setup: put the Badoon Ship environment and the Milano support into play. The scenario recipe sets the Badoon Ship aside and this setup puts it into its printed destination. The Milano's own Setup keyword already puts it into play under the first player's control (rr:setup-keyword.1), so this ability does not move it a second time. The contents list is scenario setup data, and rr:appendix-ii-setup.step.12.b performs the printed advance to 1B.",
+      "abilities": [
+        {"trigger": {"timing": "Setup", "subject": "this"}, "effect": {"putIntoPlay": {"card": {"cardsIn": {"area": "scenarioSetAside", "title": "Badoon Ship"}}, "where": "printedDestination"}}}
+      ]
+    },
+    {
+      "card": "16061b",
+      "name": "Terrestrial Invasion",
+      "note": "Forced Response: after resolving step one of the villain phase, resolve the Badoon Ship's Charge Up ability. 'After resolving step one of the villain phase' is the completion of step one whether or not threat was placed (WhenVillainPhaseStepOneCompleted), as for Breakout (07001b). Charge Up is the Badoon Ship's Special ability, which resolves only when another ability instructs it (rr:special); resolveSpecials resolves it on the one Badoon Ship in play and does nothing when none is in play. First Player Action: exhaust the Milano -> remove 3 threat from this scheme. Only the first player can trigger it (isFirstPlayer), as for Cannonade (16144); removing the threat is the encounter card's ability, not the identity's (ruling 965ad06e4059d294, which names Spatial Positioning).",
+      "abilities": [
+        {"trigger": {"event": "WhenVillainPhaseStepOneCompleted", "timing": "ForcedResponse", "subject": "game"}, "effect": {"resolveSpecials": {"cards": {"titled": "Badoon Ship"}}}},
+        {"name": "First Player Action", "trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this"}, "when": {"isFirstPlayer": "you"}, "cost": {"exhaustTitled": "Milano"}, "effect": {"removeThreat": {"scheme": "this", "amount": 3}}}
+      ]
+    },
+    {
+      "card": "16062a",
+      "name": "Protect the Planet",
+      "note": "When Revealed: resolve the Badoon Ship's Charge Up ability. Charge Up is the Badoon Ship's Special ability, which resolves only when another ability instructs it (rr:special); resolveSpecials resolves it on the one Badoon Ship in play and does nothing when none is in play.",
+      "abilities": [
+        {"trigger": {"event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this"}, "effect": {"resolveSpecials": {"cards": {"titled": "Badoon Ship"}}}}
+      ]
+    },
+    {
+      "card": "16062b",
+      "name": "Protect the Planet",
+      "note": "Forced Response: after resolving step one of the villain phase, resolve the Badoon Ship's Charge Up ability. 'After resolving step one of the villain phase' is the completion of step one whether or not threat was placed (WhenVillainPhaseStepOneCompleted), as for Breakout (07001b). Charge Up is the Badoon Ship's Special ability, which resolves only when another ability instructs it (rr:special); resolveSpecials resolves it on the one Badoon Ship in play and does nothing when none is in play. First Player Action: exhaust the Milano -> choose to remove 3 threat from this scheme or deal 3 damage to a minion. Only the first player can trigger it (isFirstPlayer). An option needs a valid target (rr:choose-option.1), so the damage option needs a minion in play. The damage is the encounter card's, not an attack. Completing this final stage loses the game (rr:main-scheme-main-scheme-deck.2.1).",
+      "abilities": [
+        {"trigger": {"event": "WhenVillainPhaseStepOneCompleted", "timing": "ForcedResponse", "subject": "game"}, "effect": {"resolveSpecials": {"cards": {"titled": "Badoon Ship"}}}},
+        {"name": "First Player Action", "trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this"}, "when": {"isFirstPlayer": "you"}, "cost": {"exhaustTitled": "Milano"}, "effect": {"choose": {"descriptions": ["Remove 3 threat from Protect the Planet", "Deal 3 damage to a minion"], "options": [{"removeThreat": {"scheme": "this", "amount": 3}}, {"chooseCard": {"from": {"query": "minions"}, "effect": {"dealDamage": {"cards": "chosen", "amount": 3}}}}]}}}
+      ]
+    },
+    {
+      "card": "16063",
+      "name": "Badoon Ship",
+      "note": "Charge Up -- Special: place 1 barrage counter here. Then, if there are 4 or more barrage counters here, deal 2 indirect damage to each player and remove all barrage counters from here. Only another ability's instruction resolves it (rr:special). Indirect damage is assigned by each player among the characters they control (rr:indirect-damage). Engine choice: one counter is placed per Charge Up and the test follows each placement, so the count reaching the test is exactly 4 and removing 4 removes all of them.",
+      "abilities": [
+        {"name": "Charge Up", "trigger": {"event": "ResolveSpecial", "timing": "Special", "subject": "this"}, "effect": {"seq": [{"placeCounters": {"card": "this", "counter": "barrage", "count": 1}}, {"if": {"test": {"atLeast": {"value": {"countersOn": {"card": "this", "counter": "barrage"}}, "count": 4}}, "then": {"seq": [{"eachPlayer": {"effect": {"indirectDamage": {"among": {"query": "charactersYouControl"}, "amount": 2}}}}, {"removeCounters": {"card": "this", "counter": "barrage", "count": 4}}]}}}]}}
+      ]
+    },
+    {
+      "card": "16064",
+      "name": "Drang's Spear",
+      "attachTo": {"titled": "Drang"},
+      "note": "Attach to Drang. The printed ATK modifier is read from the attachment (rr:attachment.1). Drang gains stalwart: he cannot be stunned or confused (rr:stalwart). Hero Action: spend [mental][physical][physical] resources -> discard this card, as for Program Transmitter (01141).",
+      "abilities": [
+        {"trigger": {"timing": "Constant", "subject": "this"}, "effect": {"grant": {"card": "attachedTo", "keyword": "stalwart", "amount": 1}}},
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero"}, "cost": {"spend": "BRR"}, "effect": {"discard": "this"}}
+      ]
+    },
+    {
+      "card": "16065",
+      "name": "Badoon Engineer",
+      "note": "Forced Response: after Badoon Engineer engages you or activates against you, resolve the Badoon Ship's Charge Up ability. A minion engages the player in whose play area it enters (rr:engage); an activation is an attack or a scheme (rr:activation), and the completed-activation occurrence covers both, as for Furnax (16027). Boost: resolve the Badoon Ship's Charge Up ability. Charge Up is the Badoon Ship's Special ability, which resolves only when another ability instructs it (rr:special); resolveSpecials resolves it on the one Badoon Ship in play and does nothing when none is in play.",
+      "abilities": [
+        {"trigger": {"event": "WhenMinionEngaged", "timing": "ForcedResponse", "subject": "this"}, "effect": {"resolveSpecials": {"cards": {"titled": "Badoon Ship"}}}},
+        {"trigger": {"event": "WhenActivationCompleted", "timing": "ForcedResponse", "actor": "this"}, "effect": {"resolveSpecials": {"cards": {"titled": "Badoon Ship"}}}},
+        {"trigger": {"event": "WhenCardRevealed", "timing": "Boost", "subject": "this"}, "effect": {"resolveSpecials": {"cards": {"titled": "Badoon Ship"}}}}
+      ]
+    },
+    {
+      "card": "16066",
+      "name": "Blockade",
+      "note": "Side scheme. Hinder 2 per hero, its starting threat, crisis icon and boost icon are printed values the engine reads (rr:hinder-x). First Player Action: exhaust the Milano -> remove 3 threat from this scheme. Only the first player can trigger it (isFirstPlayer), as for Cannonade (16144); removing the threat is the encounter card's ability, not the identity's (ruling 965ad06e4059d294, which names Spatial Positioning).",
+      "abilities": [
+        {"name": "First Player Action", "trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this"}, "when": {"isFirstPlayer": "you"}, "cost": {"exhaustTitled": "Milano"}, "effect": {"removeThreat": {"scheme": "this", "amount": 3}}}
+      ]
+    },
+    {
+      "card": "16067",
+      "name": "Bombardment",
+      "note": "Side scheme. Forced Response: after resolving step one of the villain phase, resolve the Badoon Ship's Charge Up ability. 'After resolving step one of the villain phase' is the completion of step one whether or not threat was placed (WhenVillainPhaseStepOneCompleted), as for Breakout (07001b). Charge Up is the Badoon Ship's Special ability, which resolves only when another ability instructs it (rr:special); resolveSpecials resolves it on the one Badoon Ship in play and does nothing when none is in play. First Player Action: exhaust the Milano -> remove 3 threat from this scheme. Only the first player can trigger it (isFirstPlayer), as for Cannonade (16144); removing the threat is the encounter card's ability, not the identity's (ruling 965ad06e4059d294, which names Spatial Positioning).",
+      "abilities": [
+        {"trigger": {"event": "WhenVillainPhaseStepOneCompleted", "timing": "ForcedResponse", "subject": "game"}, "effect": {"resolveSpecials": {"cards": {"titled": "Badoon Ship"}}}},
+        {"name": "First Player Action", "trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this"}, "when": {"isFirstPlayer": "you"}, "cost": {"exhaustTitled": "Milano"}, "effect": {"removeThreat": {"scheme": "this", "amount": 3}}}
+      ]
+    },
+    {
+      "card": "16068",
+      "name": "Oppressive Armada",
+      "note": "Side scheme. Hinder 3 per hero, its starting threat, hazard icon and boost icon are printed values the engine reads (rr:hinder-x). First Player Action: exhaust the Milano -> remove 3 threat from this scheme. Only the first player can trigger it (isFirstPlayer), as for Cannonade (16144); removing the threat is the encounter card's ability, not the identity's (ruling 965ad06e4059d294, which names Spatial Positioning).",
+      "abilities": [
+        {"name": "First Player Action", "trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this"}, "when": {"isFirstPlayer": "you"}, "cost": {"exhaustTitled": "Milano"}, "effect": {"removeThreat": {"scheme": "this", "amount": 3}}}
+      ]
+    },
+    {
+      "card": "16069",
+      "name": "Spatial Positioning",
+      "note": "Side scheme. Its starting threat per hero, amplify icon and boost icons are printed values the engine reads. First Player Action: exhaust the Milano -> remove 3 threat from this scheme. Only the first player can trigger it (isFirstPlayer), as for Cannonade (16144); removing the threat is the encounter card's ability, not the identity's (ruling 965ad06e4059d294, which names Spatial Positioning).",
+      "abilities": [
+        {"name": "First Player Action", "trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this"}, "when": {"isFirstPlayer": "you"}, "cost": {"exhaustTitled": "Milano"}, "effect": {"removeThreat": {"scheme": "this", "amount": 3}}}
+      ]
+    },
+    {
+      "card": "16117",
+      "name": "Badoon Assassin",
+      "note": "Forced Response: after Badoon Assassin engages your hero, it attacks you with +2 ATK. 'Your hero' is quickstrike's wording (rr:quickstrike), so it triggers only while the player it engaged is in hero form. The +2 belongs to that attack alone. Boost: if this activation is an attack, this attack gains overkill, piercing and ranged, until the attack ends, as for Crossfire (04027).",
+      "abilities": [
+        {"trigger": {"event": "WhenMinionEngaged", "timing": "ForcedResponse", "subject": "this"}, "when": {"inForm": {"player": "engagedPlayer", "form": "hero"}}, "effect": {"enemyAttacks": {"enemies": "this", "against": "you", "modifier": 2}}},
+        {"trigger": {"event": "WhenCardRevealed", "timing": "Boost", "subject": "this"}, "effect": {"if": {"test": {"activationIs": "attack"}, "then": {"seq": [{"grantUntil": {"card": "activatingEnemy", "keyword": "overkill", "amount": 1, "until": "EndOfAttack"}}, {"grantUntil": {"card": "activatingEnemy", "keyword": "piercing", "amount": 1, "until": "EndOfAttack"}}, {"grantUntil": {"card": "activatingEnemy", "keyword": "ranged", "amount": 1, "until": "EndOfAttack"}}]}}}}
+      ]
+    },
+    {
+      "card": "16118",
+      "name": "Badoon Grunt",
+      "note": "Forced Response: after Badoon Grunt engages you, if there are no other minions engaged with you, deal yourself 1 facedown encounter card. The dealt card is revealed in this round's villain phase (ruling 8dd7dbf8820fdcfb). Boost: put Badoon Grunt into play engaged with you, as for Weapons Runner (01121).",
+      "abilities": [
+        {"trigger": {"event": "WhenMinionEngaged", "timing": "ForcedResponse", "subject": "this"}, "effect": {"if": {"test": {"not": {"atLeast": {"value": {"count": {"query": "minionsEngagedWithYou"}}, "count": 2}}}, "then": {"dealEncounterCards": {"player": "you", "count": 1}}}}},
+        {"trigger": {"event": "WhenCardRevealed", "timing": "Boost", "subject": "this"}, "effect": {"putIntoPlay": {"card": "this", "where": "engagedWithYou"}}}
+      ]
+    },
+    {
+      "card": "16119",
+      "name": "Badoon Lieutenant",
+      "note": "Patrol and its boost icon are printed values the engine reads (rr:patrol). Boost: if this activation is a scheme, this card gets +2 boost icons for this activation. A Boost ability resolves before the card's icons are added (rr:scheme-enemy-activation.step.2.b, step.2.c), so the +2 is counted, and an interrupt that cancels the printed icons does not cancel it (ruling 1ea208998735ef4b).",
+      "abilities": [
+        {"trigger": {"event": "WhenCardRevealed", "timing": "Boost", "subject": "this"}, "effect": {"if": {"test": {"activationIs": "scheme"}, "then": {"grantUntil": {"card": "this", "keyword": "boost_const", "amount": 2, "until": "EndOfActivation"}}}}}
+      ]
+    },
+    {
+      "card": "16120",
+      "name": "Badoon Sentry",
+      "note": "Retaliate 1 and its boost icon are printed values the engine reads (rr:retaliate-x). Boost: give the villain a tough status card. If the villain already has a tough status card, this card gets +2 boost icons for this activation. A character cannot have two tough status cards (rr:status-cards.1), so the condition is read before the status is given. The added icons are counted after the Boost ability (rr:attack-enemy-activation.step.3.b, step.3.c).",
+      "abilities": [
+        {"trigger": {"event": "WhenCardRevealed", "timing": "Boost", "subject": "this"}, "effect": {"if": {"test": {"hasStatus": {"card": {"query": "villain"}, "status": "tough"}}, "then": {"grantUntil": {"card": "this", "keyword": "boost_const", "amount": 2, "until": "EndOfActivation"}}, "else": {"giveStatus": {"card": {"query": "villain"}, "status": "tough"}}}}}
+      ]
+    },
+    {
+      "card": "16121",
+      "name": "Badoon Warlord",
+      "note": "Badoon Warlord's attacks gain overkill (rr:overkill). Boost: if this activation is an attack, this card gets +2 boost icons for this activation, counted after the Boost ability (rr:attack-enemy-activation.step.3.b, step.3.c).",
+      "abilities": [
+        {"trigger": {"timing": "Constant", "subject": "this"}, "effect": {"grant": {"card": "this", "keyword": "overkill", "amount": 1}}},
+        {"trigger": {"event": "WhenCardRevealed", "timing": "Boost", "subject": "this"}, "effect": {"if": {"test": {"activationIs": "attack"}, "then": {"grantUntil": {"card": "this", "keyword": "boost_const", "amount": 2, "until": "EndOfActivation"}}}}}
+      ]
+    },
+    {
       "card": "16142",
       "name": "Milano",
       "controlledBy": "firstPlayer",

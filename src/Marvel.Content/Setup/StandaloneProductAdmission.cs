@@ -109,6 +109,21 @@ public static class StandaloneProductAdmission
     /// <summary>Power Stone's faces within The Galaxy's Most Wanted: one copy of 16149.</summary>
     internal static readonly ImmutableArray<string> PowerStoneFaces = ["16149"];
 
+    /// <summary>Admits The Galaxy's Most Wanted's ten-card Band of Badoon modular set.</summary>
+    public static bool BandOfBadoon(SetupCatalog setup, CardCatalog cards, IReadOnlySet<string> authored) =>
+        // Ruling 408decdf6cd8c4b5 names Band of Badoon one of the box's modular encounter sets.
+        BandOfBadoonFaces.All(face => cards.Has(face) && cards.Pack(face) == "gmw" && authored.Contains(face))
+        && setup.EncounterSetNames.Contains("band_of_badoon")
+        && setup.EncounterRole("band_of_badoon") == EncounterSetRole.Modular
+        // Repository policy pins the MarvelSDB snapshot's physical quantities (2, 3, 1, 2, 2).
+        && setup.EncounterSet("band_of_badoon").SequenceEqual(BandOfBadoonCopies);
+
+    /// <summary>Band of Badoon's faces within The Galaxy's Most Wanted: 16117–16121.</summary>
+    internal static readonly ImmutableArray<string> BandOfBadoonFaces = ["16117", "16118", "16119", "16120", "16121"];
+
+    private static readonly ImmutableArray<string> BandOfBadoonCopies =
+        ["16117", "16117", "16118", "16118", "16118", "16119", "16120", "16120", "16121", "16121"];
+
     /// <summary>Admits the complete seven-card Kree Fanatic modular set.</summary>
     public static bool KreeFanatic(SetupCatalog setup, CardCatalog cards, IReadOnlySet<string> authored) =>
         Complete("ron", ["90001", "90002", "90003", "90004", "90005"], cards, authored)
