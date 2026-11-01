@@ -33,6 +33,14 @@ internal static class AbilityBoostCounting
     internal static long Counted(World world, IReadOnlyDictionary<string, long> results, Card card) =>
         results.TryGetValue(Key(card), out long counted) ? counted : BoostIconCounting.Icons(world, card);
 
+    /// <summary>Whether a discarded card is an encounter card whose boost icons can be counted.</summary>
+    /// <remarks>
+    /// Ruling 6962a015e8597900 counts boost icons "on an encounter card". An
+    /// obligation or a nemesis-set card is an encounter card although a player owns
+    /// it, so the test is the card's kind rather than its owner.
+    /// </remarks>
+    internal static bool IsEncounterCard(World world, Card card) => !CardControl.IsPlayerCard(world.Facts, card);
+
     /// <summary>Whether the card prints a star icon in its boost area.</summary>
     /// <remarks>rr:boost-boost-icon.1: "A star icon is not itself considered a boost icon."</remarks>
     internal static bool HasStarIcon(World world, Card card) =>
@@ -97,7 +105,7 @@ internal static class AbilityBoostCounting
         };
         foreach (var card in read)
         {
-            if (card.Owner == World.Scenario && !cast.Results.ContainsKey(Key(card))
+            if (IsEncounterCard(cast.World, card) && !cast.Results.ContainsKey(Key(card))
                 && !cards.Any(other => ReferenceEquals(other, card)))
                 cards.Add(card);
         }

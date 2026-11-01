@@ -90,6 +90,6 @@ internal sealed class AbilityResolutionBindings(World world, Card source)
             ExhaustedForCost = System.Collections.Immutable.ImmutableHashSet.CreateRange(resolution.ExhaustedForCost),
             // An invocation not yet begun is checked for initiation and has revealed nothing.
             RevealedThisResolution = resolution.Execution?.Revealed ?? [],
-            UncountedDiscarded = [.. resolution.Discarded.Where(card => card.Owner == World.Scenario
+            UncountedDiscarded = [.. resolution.Discarded.Where(card => AbilityBoostCounting.IsEncounterCard(resolution.World, card)
                 && !resolution.Results.ContainsKey(AbilityBoostCounting.Key(card))).Select(card => card.ObjectId)] };
 }

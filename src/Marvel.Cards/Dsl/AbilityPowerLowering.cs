@@ -12,15 +12,16 @@ internal static class AbilityPowerLowering
         AbilityValue value, AbilityLocation location, AbilityPowerKind kind)
     {
         var fields = kind == AbilityPowerKind.Defense ? Fields(value, location, "effect")
-            : kind == AbilityPowerKind.Thwart ? Fields(value, location, "target", "effect", "automaticTarget")
-                : Fields(value, location, "target", "effect", "count", "total");
+            : kind == AbilityPowerKind.Thwart ? Fields(value, location, "target", "effect", "automaticTarget", "initiated")
+                : Fields(value, location, "target", "effect", "count", "total", "initiated");
         bool automatic = Marker(fields, "automaticTarget", location);
+        bool initiated = Marker(fields, "initiated", location);
         var body = LowerEffect(Required(fields, "effect", location), location.Child("effect"));
         if (fields.ContainsKey("total")) return DistributedAttack(fields, body, location);
         var count = AttackCount(fields, body, location);
         var target = PowerTarget(fields, body, kind, automatic, location);
         AbilityStagedAttackLowering.Validate(body, kind, target, count, location);
-        return new(kind, target, body, automatic) { TargetCount = count };
+        return new(kind, target, body, automatic, initiated) { TargetCount = count };
     }
 
     // An engine-chosen shape for "deal a total of N damage divided among enemies":

@@ -72,8 +72,9 @@ public static class BasicThwartPowers
         ArgumentNullException.ThrowIfNull(power);
         ArgumentNullException.ThrowIfNull(events);
 
-        var thwarter = power.Performer ?? LabeledAbilities.Begin(
-            world, facts, power.Player, power.Source, [ThwartVerb], events);
+        var thwarter = power.Performer ?? (power.Initiated
+            ? LabeledAbilities.Performer(world, facts, power.Player, power.Source)
+            : LabeledAbilities.Begin(world, facts, power.Player, power.Source, [ThwartVerb], events));
         if (thwarter is null) return false;
 
         RequireCardThwartTarget(world, facts, power, automaticTarget);
@@ -92,7 +93,7 @@ public static class BasicThwartPowers
         // sentence can resolve as a thwart without any thwarted scheme.
         if (power.Target is null && (power.Continuation is null || automaticTarget))
             throw new RulesNotImplementedException("a scheme-less thwart requires an interpreter continuation");
-        if (power.Target is not null && (automaticTarget
+        if (power.Target is not null && !power.Initiated && (automaticTarget
             ? !CanAutomaticallyThwart(world, facts, power.Player, power.Target)
             : !Thwartable(world, facts, power.Player).Any(card => card.ObjectId == power.Target.ObjectId)))
         {

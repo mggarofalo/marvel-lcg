@@ -214,4 +214,27 @@ public sealed class ScarletWitchPlayerCardTests
         Assert.Equal(DeckType.DiscardPile, order.Area.Type);
         Assert.Equal(DeckType.EncounterDiscardPile, treachery.Area.Type);
     }
+
+    [Theory]
+    [InlineData(true, "B")]
+    [InlineData(false, "")]
+    [Rule("rr:crisis-icon.1")]
+    [Rule("rr:initiating-abilities.step.5")]
+    public void CrisisAvertedOfferRequiresAMentalDeclarationWhileACrisisBlocksTheMainScheme(bool crisis, string required)
+    {
+        // 15012: "Remove 6 threat from the main scheme. If you paid for this card
+        // using a mental resource, this thwart ignores the crisis icon." While a crisis
+        // icon is in play only a payment including a mental resource leaves the thwart
+        // anything to do, so the offer requires one; without a crisis any payment does.
+        var runner = AuthoredCards.Runner();
+        var world = Board();
+        world.TheCardIn(DeckType.MainSchemesArea)!.PlaceTokens("k_threat", 8);
+        if (crisis) world.CreateCard(SideScheme, world.AreaOf(DeckType.SideSchemesArea)).PlaceTokens("k_threat", 2);
+        var averted = world.CreateCard(CrisisAverted, world.Seats[0].Hand);
+        foreach (string resource in new[] { Energy, "01089", "01090" }) world.CreateCard(resource, world.Seats[0].Hand);
+        var action = Assert.Single(runner.Actions(world, 0), offer => offer.Card == averted.ObjectId);
+        var price = Assert.Single(runner.Describe(world, action).CostOptions);
+        Assert.True(price.DeclarationSensitive);
+        Assert.Equal(required, string.Concat(price.Rule ?? []));
+    }
 }

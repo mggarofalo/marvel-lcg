@@ -34,4 +34,16 @@ public sealed record CardPowerInvocation(
 
     /// <summary>Interpreter-owned evidence that the power reads the performer's THW.</summary>
     public bool UsesThwartStat { get; init; }
+
+    /// <summary>
+    /// Whether the containing labelled ability initiated this power before earlier
+    /// steps of its effect resolved, so its performer and target were legal then.
+    /// </summary>
+    /// <remarks>
+    /// Ruling 6fd4652a06512d03: "Guard prevents you from initiating attacks, but does
+    /// not prevent you from dealing damage", and a stunned status placed after the
+    /// attack was initiated does not stop it; ruling ca713a04a3ff5491 applies the same
+    /// to a thwart, confused and patrol.
+    /// </remarks>
+    public bool Initiated { get; init; }
 }

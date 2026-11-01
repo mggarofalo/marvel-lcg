@@ -141,4 +141,109 @@ public sealed class ScarletWitchSignatureTests
         Assert.Equal(2, main.Tokens["k_threat"]);
         Assert.True(world.Seats[0].IdentityCard.Damage > 0);
     }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    [Rule("rr:initiating-abilities.step.6")]
+    [Rule("rr:guard.1")]
+    [Rule("rr:stun-stunned")]
+    public void SwiftRetributionWasInitiatedBeforeTheVillainSchemes(bool stunned)
+    {
+        // Ruling 6fd4652a06512d03: "if you already initiated an attack with Swift
+        // Retribution and were dealt a Goblin Thrall during the activation, you could
+        // still deal the damage." A hero stunned at initiation discards the stun
+        // instead of attacking, so the villain does not scheme.
+        var runner = AuthoredCards.Runner();
+        var world = Board();
+        var hero = world.Seats[0].IdentityCard;
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        var main = world.TheCardIn(DeckType.MainSchemesArea)!;
+        long before = main.Tokens.GetValueOrDefault("k_threat");
+        var thrall = Stack(world, "02024")[0];
+        if (stunned) Statuses.Give(world, hero, Statuses.Stunned);
+        var swift = world.CreateCard(SwiftRetribution, world.Seats[0].Hand);
+        int energy = world.CreateCard(Energy, world.Seats[0].Hand).ObjectId;
+        var action = Assert.Single(runner.Actions(world, 0), offer => offer.Card == swift.ObjectId);
+        runner.ExecuteAction(world, new PlayerAction(action, [energy], []));
+        Drive(world, runner, _ => null);
+        Assert.False(Statuses.Has(world, hero, Statuses.Stunned));
+        Assert.Equal(stunned ? 0 : 4, villain.Damage);
+        Assert.Equal(stunned, main.Tokens.GetValueOrDefault("k_threat") == before);
+        Assert.Equal(stunned ? DeckType.EncounterDeck : DeckType.EngagedEnemiesArea, thrall.Area.Type);
+    }
+
+    [Fact]
+    [Rule("rr:confuse-confused")]
+    public void BaitAndSwitchConfusedAtInitiationOnlyDiscardsTheConfusion()
+    {
+        // rr:confuse-confused replaces the whole thwart: the villain does not attack and no
+        // threat is removed.
+        var runner = AuthoredCards.Runner();
+        var world = Board();
+        var hero = world.Seats[0].IdentityCard;
+        var main = world.TheCardIn(DeckType.MainSchemesArea)!;
+        main.PlaceTokens("k_threat", 6);
+        long threat = main.Tokens["k_threat"];
+        Statuses.Give(world, hero, Statuses.Confused);
+        var bait = world.CreateCard(BaitAndSwitch, world.Seats[0].Hand);
+        int energy = world.CreateCard(Energy, world.Seats[0].Hand).ObjectId;
+        var action = Assert.Single(runner.Actions(world, 0), offer => offer.Card == bait.ObjectId);
+        runner.ExecuteAction(world, new PlayerAction(action, [energy], []));
+        Drive(world, runner, _ => null);
+        Assert.False(Statuses.Has(world, hero, Statuses.Confused));
+        Assert.Equal(threat, main.Tokens["k_threat"]);
+        Assert.Equal(0, hero.Damage);
+    }
+
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    [Rule("rr:for-each.1")]
+    public void HexBoltResolvesEveryDiscardedCardAfterChaosControlCountsAnother(bool reshuffled, bool playerOwned)
+    {
+        // Chaos Control (15001a) counts the top card of the encounter deck instead of
+        // the first card Hex Bolt resolves; the other two discarded cards still resolve.
+        // With exactly three cards left, Hex Bolt's discards empty the deck and the
+        // encounter discard pile is shuffled back into it. An encounter card a player
+        // owns, such as a nemesis-set card, is still an encounter card.
+        var runner = AuthoredCards.Runner();
+        var world = Board();
+        var encounter = world.AreaOf(DeckType.EncounterDeck);
+        if (reshuffled)
+            foreach (var card in encounter.Cards.ToList()) World.MoveToTop(card, world.AreaOf(DeckType.RemovedArea));
+        var cards = Stack(world, ZeroBoost, ZeroBoost, ZeroBoost);
+        if (playerOwned)
+        {
+            var owned = world.CreateCard(ZeroBoost, world.AreaOf(DeckType.AsideDeck, PlayArea.Of(0), cardOwner: 0));
+            World.MoveToTop(owned, encounter);
+            Assert.Equal(0, owned.Owner);
+            cards = [cards[1], cards[2], owned];
+        }
+        var bolt = world.CreateCard(HexBolt, world.Seats[0].Hand);
+        int[] paying = [world.CreateCard(Energy, world.Seats[0].Hand).ObjectId, world.CreateCard(Energy, world.Seats[0].Hand).ObjectId];
+        var action = Assert.Single(runner.Actions(world, 0), offer => offer.Card == bolt.ObjectId);
+        runner.ExecuteAction(world, new PlayerAction(action, paying, []));
+        int resolved = 0;
+        bool chaos = false;
+        Drive(world, runner, prompt =>
+        {
+            if (IsCount(world, prompt))
+            {
+                if (chaos || OfferOn(prompt, world.Seats[0].IdentityCard) is not { } offer) return null;
+                chaos = true;
+                return Decision.Take(offer.Id);
+            }
+            if (prompt.Affordances.FirstOrDefault(offer => cards.Any(card => card.ObjectId == offer.AnchorId)) is { } pick)
+            {
+                resolved++;
+                return Decision.Take(pick.Id);
+            }
+            return prompt.Affordances.Count > 0 ? Decision.Take(prompt.Affordances[0].Id) : null;
+        });
+        Assert.True(chaos);
+        Assert.Equal(3, resolved);
+        Assert.Equal(DeckType.DiscardPile, bolt.Area.Type);
+    }
 }

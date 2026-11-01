@@ -21,8 +21,8 @@ internal static class AbilityAffordanceDescription
         // offered as `Foresight`, so a client has something to render without
         // knowing what the ability does. One string does for both fields
         // because the engine carries one -- see the remarks on `Affordance.Id`.
-        var price = AbilityPaymentPricing.CombinedPrice(
-            world, card, ability.Player, found, execution.resourceAbilities);
+        var price = DeclaredPrice(execution, world, card, found, ability.Player,
+            AbilityPaymentPricing.CombinedPrice(world, card, ability.Player, found, execution.resourceAbilities));
         TargetRequest? recipients = AbilityRecipientCommitment.Targets(execution, world, card, found, ability.Player, ability);
         string? contextual = AbilityReplacementDescription.Caption(execution, world, card, found, ability.Player);
         string? entry = AbilityEntryCounterDescription.Summary(execution, world, card, found, ability.Player);
@@ -47,6 +47,15 @@ internal static class AbilityAffordanceDescription
             DirectRecipientCommit = CanCommitRecipient(recipients, EffectiveCards.Kind(card, world.Facts), found.Trigger.Timing),
             CostDescription = AbilityCostDescription.Summary(world, card, ability.Player, found.Cost),
         };
+    }
+
+    private static CostOption? DeclaredPrice(AbilityResolutionExecution execution, World world, Card card,
+        CompiledCardAbility found, int player, CostOption? price)
+    {
+        if (price is not { DeclarationSensitive: true, Components: null } || price.VariableRequests.Count > 0
+            || found.Trigger.Timing is not AbilityType.Action) return price;
+        string required = execution.offerQueries.ActionReceiptRequirement(world, card, found, player);
+        return required.Length == 0 ? price : price with { Rule = [string.Concat(price.Rule ?? []) + required] };
     }
 
     private static int[] ContextCards(World world, PendingAbility ability)

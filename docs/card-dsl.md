@@ -588,7 +588,7 @@ enemiesEngagedWithChosenPlayer enemiesWithTrait enemyAttacks enemySchemes exists
 finalStep generate generateTopDiscard giveAdditionalBoost
 chooseHealRecipients grantCharactersControlledBy grantEach grantUntil hasStatus hasTrait heroBasicDefended heroDefended
 heroes heroesAndAllies heroAndAllyTargets identities
-identitiesWithinPerPlayerLimit inForm increaseBoostCount indirectDamage isEnemyAttacker isKind isTitle
+identitiesWithinPerPlayerLimit inForm increaseBoostCount indirectDamage initiated isEnemyAttacker isKind isTitle
 isYourIdentity keyword kind legalPractice mainScheme makeTheCall maxBy minions
 minionsEngagedWithYou minionsInThisGameArea modified moveAttackDamage mul namedInPlay obligationsInThisGameArea onto options overkill
 inspectEncounterTop paidWithResource payOrEffect payOrExhaust peekTop perPlayer placeAccelerationToken
@@ -643,6 +643,17 @@ interrupts to the same occurrence without it (rr:would). Responses cannot use
 subtitle; rr:team-up.2 and ruling 82607e2d70cbf9dd treat a subtitle as a name.
 `card_cost_increase` granted on an identity increases each card that player
 plays by its amount.
+
+### Powers initiated before earlier steps
+
+`attack` and `thwart` accept `initiated: 1` when the power follows steps that
+resolve before it, as in Swift Retribution (15014) and Bait and Switch (15030).
+The power was initiated with its card (rr:initiating-abilities step 6), so its
+performer and target are not checked again when it begins: a stunned or
+confused status, or a guard or patrol minion, gained during the earlier steps
+does not stop it (rulings 6fd4652a06512d03, ca713a04a3ff5491). A row tests the
+status at initiation itself and leaves the unmarked power to the hero who was
+already stunned or confused.
 
 ### Hand plays and looked-at cards
 

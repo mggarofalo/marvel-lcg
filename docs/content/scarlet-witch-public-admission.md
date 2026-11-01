@@ -46,8 +46,17 @@ Each choice is recorded in the row note or the code comment that owns it.
 - **Molecular Decay**, **Swift Retribution** and **Bait and Switch**: as for All
   for One (13032), the discard or the enemy activation resolves immediately
   before the labelled power begins, because the engine does not suspend inside
-  one. A stunned hero's Swift Retribution and a confused hero's Bait and Switch
-  skip the activation, since the status replaces the whole power.
+  one. Swift Retribution's attack and Bait and Switch's thwart are initiated
+  with the card (`initiated`), so a guard or patrol minion, or a stun or
+  confusion, gained during the activation does not stop them (rulings
+  6fd4652a06512d03, ca713a04a3ff5491). A hero already stunned or confused at
+  initiation discards the status instead, and the villain does not activate.
+- **Hex Bolt** counts every encounter card it discarded, including one a player
+  owns, such as a nemesis-set card; ownership does not make a card a player card.
+- **Crisis Averted** under a crisis icon removes threat only when paid with a
+  mental resource, so its offer requires a mental declaration then
+  (rr:initiating-abilities step 5, rr:event.3). The requirement is projected
+  only when the declared resources decide whether the event has an effect.
 - **Superpowered Siblings** draws three while a card titled or subtitled
   Pietro Maximoff is in play (rr:team-up.2, ruling 82607e2d70cbf9dd).
 - **Chaos Magic** plays a card ignoring its resource cost (rr:ignore.1): no

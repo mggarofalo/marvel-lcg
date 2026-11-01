@@ -277,8 +277,8 @@ public abstract record AbilityEffect
     /// <summary>Recover cards discarded this way with a printed resource.</summary>
     public sealed record RecoverDiscardedByResource(char Resource) : AbilityEffect;
 
-    /// <summary>A labeled attack, defense, or thwart containing an effect.</summary>
-    public sealed record Power(AbilityPowerKind Kind, AbilityCardSelection? Target, AbilityEffect Effect, bool AutomaticTarget) : AbilityEffect
+    /// <summary>A labeled attack, defense, or thwart containing an effect; <c>Initiated</c> powers began with their ability.</summary>
+    public sealed record Power(AbilityPowerKind Kind, AbilityCardSelection? Target, AbilityEffect Effect, bool AutomaticTarget, bool Initiated = false) : AbilityEffect
     {
         /// <summary>Choose this many distinct attack targets, or all available if fewer exist.</summary>
         public AbilityNumber? TargetCount { get; init; }
