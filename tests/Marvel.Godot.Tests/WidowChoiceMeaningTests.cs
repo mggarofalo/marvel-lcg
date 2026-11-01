@@ -29,6 +29,27 @@ public sealed class WidowChoiceMeaningTests
     }
 
     [Fact]
+    public void ASummaryLeavesOutTheInstructionTheSheetAlreadyShows()
+    {
+        Game game = WidowNativeSceneTests.Create("widow-safe-house");
+        VisibleResult visible = Project(game);
+        PromptPresentation printed = PromptPresentation.From(visible.Prompt!, visible.World);
+        const string description = "Choose a card to discard.";
+        PromptPresentation prompt = printed with
+        {
+            Affordances = [.. printed.Affordances.Select(item =>
+                item.Anchor == "Safe House #29" ? item with { Description = description } : item)],
+        };
+        AffordancePresentation offer = Assert.Single(prompt.Affordances, item => item.Anchor == "Safe House #29");
+        var draft = new DecisionComposer(visible.Prompt!);
+        draft.SelectAffordance(offer.Id);
+        Assert.Contains(description, TableDraftSummary.From(draft, prompt, visible.World));
+        string shown = Assert.IsType<string>(TableDraftSummary.From(draft, prompt, visible.World, shownInstruction: description));
+        Assert.DoesNotContain(description, shown);
+        Assert.Contains("Exhaust Safe House #29", shown);
+    }
+
+    [Fact]
     public void CompletionButtonsRetainSuppliedDamageInstructionAndExhaustionCost()
     {
         Game game = WidowNativeSceneTests.Create("widow-preparation");
