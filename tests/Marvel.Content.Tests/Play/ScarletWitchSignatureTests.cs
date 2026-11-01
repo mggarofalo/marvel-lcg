@@ -1,0 +1,307 @@
+using Marvel.Content.Tests.Cards;
+using Marvel.Rules.Play;
+using Marvel.Rules.Prompts;
+using Marvel.Rules.State;
+using Marvel.Tests;
+using Xunit;
+using static Marvel.Content.Tests.Play.ScarletWitchBoards;
+
+namespace Marvel.Content.Tests.Play;
+
+// Actual production rows on synthetic boards; no public pack admission.
+public sealed class ScarletWitchSignatureTests
+{
+    private const string HexBolt = "15004";
+    private const string NextEvolution = "15024";
+    private const string Quicksilver = "15002";
+    private const string MolecularDecay = "15005";
+    private const string SwiftRetribution = "15014";
+    private const string BaitAndSwitch = "15030";
+    private const string GoblinThrall = "02024";
+    private const string TailSweep = "02040";
+    private const string UncannyResilience = "07045";
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    [Rule("rr:for-each.1")]
+    public void HexBoltResolvesEachDiscardedCardByItsCount(bool evolution)
+    {
+        // rr:for-each.1: the effect resolves once per card. Rulings a5028ed150b39433
+        // and 805b3f9b199ca68b: each card is counted as it resolves, so The Next
+        // Evolution raises Advance from 0 to 1 and Stampede from 1 to 2.
+        var runner = AuthoredCards.Runner();
+        var world = Board();
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        var main = world.TheCardIn(DeckType.MainSchemesArea)!;
+        main.PlaceTokens("k_threat", 6);
+        if (evolution) world.CreateCard(NextEvolution, world.AreaOf(DeckType.SideSchemesArea)).PlaceTokens("k_threat", 9);
+        var cards = Stack(world, ThreeBoost, OneBoost, ZeroBoost);
+        var bolt = world.CreateCard(HexBolt, world.Seats[0].Hand);
+        int[] paying = [world.CreateCard(Energy, world.Seats[0].Hand).ObjectId, world.CreateCard(Energy, world.Seats[0].Hand).ObjectId];
+        int hand = world.Seats[0].Hand.Cards.Count - 3;
+        var action = Assert.Single(runner.Actions(world, 0), offer => offer.Card == bolt.ObjectId);
+        runner.ExecuteAction(world, new PlayerAction(action, paying, []));
+        var order = new List<int>();
+        Drive(world, runner, prompt =>
+        {
+            // Scarlet Witch declines Chaos Control on each count.
+            if (IsCount(world, prompt)) return null;
+            // Resolve Advance first, then Stampede, then Sonic Converter.
+            foreach (var card in new[] { cards[2], cards[1], cards[0] })
+                if (prompt.Affordances.FirstOrDefault(offer => offer.AnchorId == card.ObjectId) is { } pick)
+                {
+                    order.Add(card.ObjectId);
+                    return Decision.Take(pick.Id);
+                }
+            if (prompt.Affordances.FirstOrDefault(offer => offer.AnchorId == villain.ObjectId) is { } enemy) return Decision.Take(enemy.Id);
+            if (prompt.Affordances.FirstOrDefault(offer => offer.AnchorId == main.ObjectId) is { } scheme) return Decision.Take(scheme.Id);
+            return prompt.Affordances.Count > 0 ? Decision.Take(prompt.Affordances[0].Id) : null;
+        });
+        Assert.Equal([cards[2].ObjectId, cards[1].ObjectId, cards[0].ObjectId], order);
+        Assert.All(cards, card => Assert.Equal(DeckType.EncounterDiscardPile, card.Area.Type));
+        // Without the scheme: 0 deals 2 damage and 1 removes 2 threat. With it: 1 removes
+        // 2 threat and 2 draws a card. Sonic Converter (3, or 4) gives a status card.
+        Assert.Equal(evolution ? 0 : 2, villain.Damage);
+        Assert.Equal(4, main.Tokens["k_threat"]);
+        Assert.Equal(hand + (evolution ? 1 : 0), world.Seats[0].Hand.Cards.Count);
+        Assert.Equal(DeckType.DiscardPile, bolt.Area.Type);
+    }
+
+    [Theory]
+    [InlineData(false, 2)]
+    [InlineData(true, 3)]
+    [Rule("rr:team-up.2")]
+    public void SuperpoweredSiblingsDrawsThreeWhilePietroMaximoffIsInPlay(bool pietro, int drawn)
+    {
+        // rr:team-up.2 counts a character named by title or subtitle; ruling
+        // 82607e2d70cbf9dd applies that to Quicksilver's subtitle Pietro Maximoff.
+        var runner = AuthoredCards.Runner();
+        var world = Board(AlterEgo);
+        if (pietro) InPlay(world, Quicksilver, DeckType.AlliesArea);
+        int[] discards = [world.CreateCard(Energy, world.Seats[0].Hand).ObjectId, world.CreateCard(Energy, world.Seats[0].Hand).ObjectId];
+        int deck = world.Seats[0].Deck.Cards.Count;
+        var identity = world.Seats[0].IdentityCard;
+        var action = Assert.Single(runner.Actions(world, 0), offer => offer.Card == identity.ObjectId);
+        runner.ExecuteAction(world, new PlayerAction(action, [], discards));
+        Drive(world, runner, prompt => prompt.Affordances.Count > 0 ? Decision.Take(prompt.Affordances[0].Id) with { Targets = discards } : null);
+        Assert.Equal(deck - drawn, world.Seats[0].Deck.Cards.Count);
+        Assert.All(discards, id => Assert.Equal(DeckType.DiscardPile, world.Cards[id].Area.Type));
+    }
+
+    [Fact]
+    [Rule("rr:for-each.2")]
+    public void MolecularDecayAddsTheDiscardedBoostIconsToOneAttack()
+    {
+        // rr:for-each.2: the additional damage is part of the same instance. Charge (2)
+        // and Stampede (1) add 3 to the printed 5.
+        var runner = AuthoredCards.Runner();
+        var world = Board();
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        Stack(world, OneBoost, TwoBoost);
+        var decay = world.CreateCard(MolecularDecay, world.Seats[0].Hand);
+        int[] paying = [.. Enumerable.Range(0, 3).Select(_ => world.CreateCard(Energy, world.Seats[0].Hand).ObjectId)];
+        var action = Assert.Single(runner.Actions(world, 0), offer => offer.Card == decay.ObjectId);
+        runner.ExecuteAction(world, new PlayerAction(action, paying, []));
+        Drive(world, runner, prompt => IsCount(world, prompt) ? null
+            : prompt.Affordances.FirstOrDefault(offer => offer.AnchorId == villain.ObjectId) is { } enemy ? Decision.Take(enemy.Id) : null);
+        Assert.Equal(8, villain.Damage);
+    }
+
+    [Fact]
+    [Rule("rr:activation.1")]
+    public void SwiftRetributionMakesTheVillainSchemeThenDealsFour()
+    {
+        // rr:activation.1: the villain scheming is an activation; the attack's damage follows.
+        var runner = AuthoredCards.Runner();
+        var world = Board();
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        var main = world.TheCardIn(DeckType.MainSchemesArea)!;
+        long before = main.Tokens.GetValueOrDefault("k_threat");
+        var swift = world.CreateCard(SwiftRetribution, world.Seats[0].Hand);
+        int energy = world.CreateCard(Energy, world.Seats[0].Hand).ObjectId;
+        var action = Assert.Single(runner.Actions(world, 0), offer => offer.Card == swift.ObjectId);
+        runner.ExecuteAction(world, new PlayerAction(action, [energy], []));
+        Drive(world, runner, _ => null);
+        Assert.Equal(4, villain.Damage);
+        Assert.True(main.Tokens.GetValueOrDefault("k_threat") > before);
+    }
+
+    [Fact]
+    [Rule("rr:activation.1")]
+    public void BaitAndSwitchMakesTheVillainAttackThenRemovesFour()
+    {
+        // rr:activation.1: the villain attacking is an activation; the thwart's removal follows.
+        var runner = AuthoredCards.Runner();
+        var world = Board();
+        var main = world.TheCardIn(DeckType.MainSchemesArea)!;
+        main.PlaceTokens("k_threat", 6);
+        var bait = world.CreateCard(BaitAndSwitch, world.Seats[0].Hand);
+        int energy = world.CreateCard(Energy, world.Seats[0].Hand).ObjectId;
+        var action = Assert.Single(runner.Actions(world, 0), offer => offer.Card == bait.ObjectId);
+        runner.ExecuteAction(world, new PlayerAction(action, [energy], []));
+        Drive(world, runner, _ => null);
+        Assert.Equal(2, main.Tokens["k_threat"]);
+        Assert.True(world.Seats[0].IdentityCard.Damage > 0);
+    }
+
+    [Theory]
+    [InlineData(false, GoblinThrall)]
+    [InlineData(true, GoblinThrall)]
+    [InlineData(false, TailSweep)]
+    [Rule("rr:initiating-abilities.step.6")]
+    [Rule("rr:guard.1")]
+    [Rule("rr:stun-stunned")]
+    public void SwiftRetributionWasInitiatedBeforeTheVillainSchemes(bool stunned, string boost)
+    {
+        // Ruling 6fd4652a06512d03: "if you already initiated an attack with Swift
+        // Retribution and were dealt a Goblin Thrall during the activation, you could
+        // still deal the damage", and "If you're already resolving an attack by the
+        // time Stunned is placed on you, you can still finish resolving the attack."
+        // Tail Sweep's boost: "You are stunned." A hero stunned at initiation discards
+        // the stun instead of attacking, so the villain does not scheme.
+        var runner = AuthoredCards.Runner();
+        var world = Board();
+        var hero = world.Seats[0].IdentityCard;
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        var main = world.TheCardIn(DeckType.MainSchemesArea)!;
+        long before = main.Tokens.GetValueOrDefault("k_threat");
+        var dealt = Stack(world, boost)[0];
+        if (stunned) Statuses.Give(world, hero, Statuses.Stunned);
+        var swift = world.CreateCard(SwiftRetribution, world.Seats[0].Hand);
+        int energy = world.CreateCard(Energy, world.Seats[0].Hand).ObjectId;
+        var action = Assert.Single(runner.Actions(world, 0), offer => offer.Card == swift.ObjectId);
+        runner.ExecuteAction(world, new PlayerAction(action, [energy], []));
+        Drive(world, runner, _ => null);
+        Assert.Equal(boost == TailSweep, Statuses.Has(world, hero, Statuses.Stunned));
+        Assert.Equal(stunned ? 0 : 4, villain.Damage);
+        Assert.Equal(stunned, main.Tokens.GetValueOrDefault("k_threat") == before);
+        if (boost == GoblinThrall)
+            Assert.Equal(stunned ? DeckType.EncounterDeck : DeckType.EngagedEnemiesArea, dealt.Area.Type);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    [Rule("rr:confuse-confused")]
+    public void BaitAndSwitchChecksConfusionWhenItIsInitiated(bool confusedFirst)
+    {
+        // rr:confuse-confused replaces the whole thwart of a hero confused at
+        // initiation: the villain does not attack and no threat is removed. Ruling
+        // ca713a04a3ff5491: "if you became Confused after initiating a thwart, you
+        // would still remove threat"; Uncanny Resilience's boost: "You are confused."
+        var runner = AuthoredCards.Runner();
+        var world = Board();
+        var hero = world.Seats[0].IdentityCard;
+        var main = world.TheCardIn(DeckType.MainSchemesArea)!;
+        main.PlaceTokens("k_threat", 6);
+        long threat = main.Tokens["k_threat"];
+        Stack(world, UncannyResilience);
+        if (confusedFirst) Statuses.Give(world, hero, Statuses.Confused);
+        var bait = world.CreateCard(BaitAndSwitch, world.Seats[0].Hand);
+        int energy = world.CreateCard(Energy, world.Seats[0].Hand).ObjectId;
+        var action = Assert.Single(runner.Actions(world, 0), offer => offer.Card == bait.ObjectId);
+        runner.ExecuteAction(world, new PlayerAction(action, [energy], []));
+        Drive(world, runner, _ => null);
+        Assert.Equal(!confusedFirst, Statuses.Has(world, hero, Statuses.Confused));
+        Assert.Equal(confusedFirst ? threat : threat - 4, main.Tokens["k_threat"]);
+        Assert.Equal(confusedFirst, hero.Damage == 0);
+    }
+
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    [Rule("rr:for-each.1")]
+    public void HexBoltResolvesEveryDiscardedCardAfterChaosControlCountsAnother(bool reshuffled, bool playerOwned)
+    {
+        // Chaos Control (15001a) counts the top card of the encounter deck instead of
+        // the first card Hex Bolt resolves; the other two discarded cards still resolve.
+        // With exactly three cards left, Hex Bolt's discards empty the deck and the
+        // encounter discard pile is shuffled back into it. An encounter card a player
+        // owns, such as a nemesis-set card, is still an encounter card.
+        var runner = AuthoredCards.Runner();
+        var world = Board();
+        var encounter = world.AreaOf(DeckType.EncounterDeck);
+        if (reshuffled)
+            foreach (var card in encounter.Cards.ToList()) World.MoveToTop(card, world.AreaOf(DeckType.RemovedArea));
+        var cards = Stack(world, ZeroBoost, ZeroBoost, ZeroBoost);
+        if (playerOwned)
+        {
+            var owned = world.CreateCard(ZeroBoost, world.AreaOf(DeckType.AsideDeck, PlayArea.Of(0), cardOwner: 0));
+            World.MoveToTop(owned, encounter);
+            Assert.Equal(0, owned.Owner);
+            cards = [cards[1], cards[2], owned];
+        }
+        var bolt = world.CreateCard(HexBolt, world.Seats[0].Hand);
+        int[] paying = [world.CreateCard(Energy, world.Seats[0].Hand).ObjectId, world.CreateCard(Energy, world.Seats[0].Hand).ObjectId];
+        var action = Assert.Single(runner.Actions(world, 0), offer => offer.Card == bolt.ObjectId);
+        runner.ExecuteAction(world, new PlayerAction(action, paying, []));
+        int resolved = 0;
+        bool chaos = false;
+        Drive(world, runner, prompt =>
+        {
+            if (IsCount(world, prompt))
+            {
+                if (chaos || OfferOn(prompt, world.Seats[0].IdentityCard) is not { } offer) return null;
+                chaos = true;
+                return Decision.Take(offer.Id);
+            }
+            if (prompt.Affordances.FirstOrDefault(offer => cards.Any(card => card.ObjectId == offer.AnchorId)) is { } pick)
+            {
+                resolved++;
+                return Decision.Take(pick.Id);
+            }
+            return prompt.Affordances.Count > 0 ? Decision.Take(prompt.Affordances[0].Id) : null;
+        });
+        Assert.True(chaos);
+        Assert.Equal(3, resolved);
+        Assert.Equal(DeckType.DiscardPile, bolt.Area.Type);
+    }
+
+    [Fact]
+    [Rule("rr:encounter-deck.2")]
+    public void HexBoltResolvesOnlyTheCardsDiscardedBeforeTheEncounterDeckEmptied()
+    {
+        // rr:encounter-deck.2: "Do not continue the discard effect with the newly
+        // shuffled encounter deck." One card left is the only card Hex Bolt resolves.
+        var runner = AuthoredCards.Runner();
+        var world = Board();
+        var encounter = world.AreaOf(DeckType.EncounterDeck);
+        foreach (var card in encounter.Cards.ToList()) World.MoveToTop(card, world.AreaOf(DeckType.EncounterDiscardPile));
+        var last = Stack(world, ZeroBoost)[0];
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        var bolt = world.CreateCard(HexBolt, world.Seats[0].Hand);
+        int[] paying = [world.CreateCard(Energy, world.Seats[0].Hand).ObjectId, world.CreateCard(Energy, world.Seats[0].Hand).ObjectId];
+        var action = Assert.Single(runner.Actions(world, 0), offer => offer.Card == bolt.ObjectId);
+        runner.ExecuteAction(world, new PlayerAction(action, paying, []));
+        var seen = Drive(world, runner, prompt => IsCount(world, prompt) ? null
+            : prompt.Affordances.Count > 0 ? Decision.Take(prompt.Affordances[0].Id) : null);
+        Assert.Single(seen, prompt => OfferOn(prompt, last) is not null);
+        Assert.Equal(2, villain.Damage);
+        Assert.Equal(DeckType.DiscardPile, bolt.Area.Type);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    [Rule("rr:crisis-icon.1")]
+    [Rule("rr:initiating-abilities.step.6")]
+    public void AnInitiatedThwartKeepsTheSchemeItWasInitiatedAgainst(bool initiated)
+    {
+        // Ruling ca713a04a3ff5491: "if a minion with Patrol engaged you after you
+        // initiated a thwart, you'd still remove threat with the thwart." A crisis icon
+        // that entered play after initiation likewise leaves the declared main scheme
+        // as the thwart's target; a thwart not yet initiated cannot target it.
+        var world = Board();
+        var hero = world.Seats[0].IdentityCard;
+        var main = world.TheCardIn(DeckType.MainSchemesArea)!;
+        main.PlaceTokens("k_threat", 6);
+        world.CreateCard("01125", world.AreaOf(DeckType.SideSchemesArea)).PlaceTokens("k_threat", 2);
+        var bait = world.CreateCard(BaitAndSwitch, world.Seats[0].Hand);
+        var power = new CardPowerInvocation(0, bait, main, 4, "test") { Performer = hero, Initiated = initiated };
+        bool Thwart() => BasicThwartPowers.CardThwart(world, world.Facts, power, []);
+        if (initiated) Assert.True(Thwart());
+        else Assert.Throws<RulesNotImplementedException>(() => Thwart());
+    }
+}

@@ -10,7 +10,7 @@ public sealed class PublicMsMarvelDeckIndependentTests
 {
     private static readonly string[] ReviewedHeroes =
         ["ant_man", "black_panther", "black_widow", "captain_america", "captain_marvel", "doctor_strange", "groot", "hawkeye", "hulk", "iron_man",
-            "ms_marvel", "quicksilver", "rocket_raccoon", "she_hulk", "spider_man", "spider_woman", "thor", "wasp"];
+            "ms_marvel", "quicksilver", "rocket_raccoon", "scarlet_witch", "she_hulk", "spider_man", "spider_woman", "thor", "wasp"];
 
     [Theory]
     [InlineData("05030", "she_hulk")]

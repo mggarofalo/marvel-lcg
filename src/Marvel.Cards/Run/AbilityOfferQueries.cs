@@ -79,6 +79,14 @@ internal sealed class AbilityOfferQueries
         return AbilityPaymentReceiptAdmission.Admit(ability, context, costSelection, reduction);
     }
 
+    /// <summary>Resource declarations every admitted payment of this turn action must include.</summary>
+    internal string ActionReceiptRequirement(World world, Card card, CompiledCardAbility ability, int player)
+    {
+        var context = TurnAction(world, card, player, cost: ability.Cost);
+        return AbilityPaymentReceiptAdmission.RequiredDeclarations(ability,
+            context.WithReachability(context.Reachability with { CheckingInitiation = true }));
+    }
+
     internal IReadOnlyList<ResourceSource> ResourceAbilities(World world, int player)
     {
         ArgumentNullException.ThrowIfNull(world);

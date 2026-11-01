@@ -242,8 +242,8 @@ public abstract record AbilityEffect
         /// <summary>Engage the first player rather than the resolver.</summary>
         public bool FirstPlayer { get; init; }
     }
-    /// <summary>Choose one of the top cards for hand.</summary>
-    public sealed record ChooseTopForHand(int Count) : AbilityEffect;
+    /// <summary>Choose one of the top cards for hand; the others are discarded or, with <paramref name="RestToBottom"/>, ordered onto the deck bottom.</summary>
+    public sealed record ChooseTopForHand(int Count, bool RestToBottom = false) : AbilityEffect;
     /// <summary>Privately inspect encounter deck tops and retain the number of treacheries.</summary>
     public sealed record InspectEncounterTop(int Count, string Result) : AbilityEffect;
     /// <summary>Privately look at a bounded encounter group, discard one, and order survivors.</summary>
@@ -277,8 +277,8 @@ public abstract record AbilityEffect
     /// <summary>Recover cards discarded this way with a printed resource.</summary>
     public sealed record RecoverDiscardedByResource(char Resource) : AbilityEffect;
 
-    /// <summary>A labeled attack, defense, or thwart containing an effect.</summary>
-    public sealed record Power(AbilityPowerKind Kind, AbilityCardSelection? Target, AbilityEffect Effect, bool AutomaticTarget) : AbilityEffect
+    /// <summary>A labeled attack, defense, or thwart containing an effect; <c>Initiated</c> powers began with their ability.</summary>
+    public sealed record Power(AbilityPowerKind Kind, AbilityCardSelection? Target, AbilityEffect Effect, bool AutomaticTarget, bool Initiated = false) : AbilityEffect
     {
         /// <summary>Choose this many distinct attack targets, or all available if fewer exist.</summary>
         public AbilityNumber? TargetCount { get; init; }

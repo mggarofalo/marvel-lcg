@@ -84926,6 +84926,28 @@
       ]
     },
     {
+      "id": "setup:hero:scarlet_witch",
+      "kind": "setup",
+      "title": "Scarlet Witch",
+      "fingerprint": "sha256:f0964cd8386455c5fabf4700539a4a2e8304d23cb791f4c4bca15bb1e2d16bd1",
+      "scope": "hero",
+      "disposition": "outside-core",
+      "obligations": [
+        {
+          "id": "behavior:setup:hero:scarlet_witch:scarlet-witch-setup",
+          "summary": "The Scarlet Witch hero record supplies the printed starter deck, obligations and nemesis set.",
+          "disposition": "outside-core",
+          "reason": "This record requires the Scarlet Witch hero pack, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
       "id": "setup:hero:she_hulk",
       "kind": "setup",
       "title": "She-Hulk",

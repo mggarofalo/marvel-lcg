@@ -15,7 +15,7 @@ public sealed class CounterDiscardReceiptTests
     {
         // A target is valid if any part of the ability can affect it; the hidden cost has not resolved yet.
         var runner = Runner("01006", "Action",
-            """{"placeCounters":{"card":"you","counter":"observed","count":{"printedBoostIconsDiscarded":"game"}}}""",
+            """{"placeCounters":{"card":"you","counter":"observed","count":{"boostIconsDiscarded":"game"}}}""",
             cost: """{"discardTop":{"from":"encounterDeck","count":1}}""");
         var (_, world) = Playing(_ => { }, abilities: runner);
         var source = InPlay(world, "01006");
@@ -46,7 +46,7 @@ public sealed class CounterDiscardReceiptTests
     public void AFixedZeroBoundCannotGainPotentialFromAnUnknownReceipt(string operation)
     {
         // No value of the hidden receipt can make these zero amounts affect the target.
-        string effect = """{"placeCounters":{"card":"you","counter":"observed","count":{"OP":[0,{"printedBoostIconsDiscarded":"game"}]}}}"""
+        string effect = """{"placeCounters":{"card":"you","counter":"observed","count":{"OP":[0,{"boostIconsDiscarded":"game"}]}}}"""
             .Replace("OP", operation, StringComparison.Ordinal);
         var runner = Runner("01006", "Action", effect,
             cost: """{"discardTop":{"from":"encounterDeck","count":1}}""");

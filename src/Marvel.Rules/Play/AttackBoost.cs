@@ -163,8 +163,11 @@ internal static class AttackBoost
 
         // rr:attack-enemy-activation.step.3.c -- count icons after the Boost
         // ability, because step 3b precedes this one. Amplify applies per card.
-        long icons = step.Require<BoostCompletionOperation>().Icons?.Contribution(world, facts)
+        var receipt = step.Require<BoostCompletionOperation>().Icons
             ?? throw new RulesNotImplementedException("boost completion requires its exact faceup icon receipt");
+        // The count completes here, after the faceup interrupts and the Boost ability.
+        receipt.Count.Freeze();
+        long icons = receipt.Contribution(world, facts);
         if (icons > 0)
         {
             world.Effects.Register(new ContinuousEffect(

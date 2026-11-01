@@ -36,6 +36,12 @@ public enum AbilityFixedInstruction
     CancelBoostIcons,
     /// <summary>Cancel the ability on the exact faceup boost card.</summary>
     CancelBoostAbility,
+    /// <summary>Increase the triggering boost-icon count by one.</summary>
+    IncreaseBoostCount,
+    /// <summary>Decrease the triggering boost-icon count by one.</summary>
+    DecreaseBoostCount,
+    /// <summary>Count the icons on the card this ability last discarded instead.</summary>
+    CountDiscardedInstead,
     /// <summary>Cancel the revealed card's When Revealed effects.</summary>
     CancelWhenRevealed,
     /// <summary>Also resolve the attack against each other hero.</summary>
@@ -58,6 +64,8 @@ public enum AbilityFixedInstruction
     MakeTheCall,
     /// <summary>Choose a shared-trait permanent to play at a reduced cost.</summary>
     PlaySharedHeroTraitCard,
+    /// <summary>Choose a card in hand to play ignoring its resource cost.</summary>
+    PlayIgnoringResourceCost,
     /// <summary>Require an ally defender for the engaged player.</summary>
     RequireAllyDefender,
     /// <summary>Require the attacked player's legal ally during this activation.</summary>

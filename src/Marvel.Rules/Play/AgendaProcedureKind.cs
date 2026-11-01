@@ -36,4 +36,6 @@ public enum AgendaProcedureKind
     EncounterEntry,
     /// <summary>A ready instruction after its would-ready interrupt window.</summary>
     Readying,
+    /// <summary>A boost-icon count after its interrupt window.</summary>
+    BoostCount,
 }

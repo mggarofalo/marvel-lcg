@@ -13,7 +13,7 @@ namespace Marvel.Content.Tests.Play;
 public sealed class FutureDiscardIndirectDamageAdmissionTests
 {
     private const string Discard = """{"discardTop":{"from":"encounterDeck","count":1}}""";
-    private const string Damage = """{"indirectDamage":{"among":"you","amount":{"printedBoostIconsDiscarded":"game"}}}""";
+    private const string Damage = """{"indirectDamage":{"among":"you","amount":{"boostIconsDiscarded":"game"}}}""";
 
     [Theory]
     [InlineData("01121", 0)]

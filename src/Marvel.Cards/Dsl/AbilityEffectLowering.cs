@@ -107,8 +107,8 @@ internal static class AbilityEffectLowering
             "revealKangStageThree" => FixedEffect(argument, child, "this", AbilityFixedInstruction.RevealKangStageThree),
             "putKangNemesesIntoPlay" => FixedEffect(argument, child, "this", AbilityFixedInstruction.PutKangNemesesIntoPlay),
             "advanceMainScheme" => FixedEffect(argument, child, "next", AbilityFixedInstruction.AdvanceMainScheme),
-            "cancelBoostAbility" => FixedEffect(argument, child, "trigger", AbilityFixedInstruction.CancelBoostAbility),
-            "cancelBoostIcons" => FixedEffect(argument, child, "trigger", AbilityFixedInstruction.CancelBoostIcons),
+            var kind when AbilityBoostEffectLowering.Owns(kind) =>
+                FixedEffect(argument, child, "trigger", AbilityBoostEffectLowering.Instruction(kind)),
             "cancelOccurrence" => FixedEffect(argument, child, "trigger", AbilityFixedInstruction.CancelOccurrence),
             "replaceReady" => FixedEffect(argument, child, "attachedTo", AbilityFixedInstruction.ReplaceReady),
             "cancelWhenRevealed" => FixedEffect(argument, child, "trigger.subject", AbilityFixedInstruction.CancelWhenRevealed),
@@ -125,6 +125,7 @@ internal static class AbilityEffectLowering
             "generateTopDiscard" => FixedEffect(argument, child, "printed", AbilityFixedInstruction.GenerateTopDiscard),
             "makeTheCall" => FixedEffect(argument, child, "game", AbilityFixedInstruction.MakeTheCall),
             "playSharedHeroTraitCard" => FixedEffect(argument, child, "game", AbilityFixedInstruction.PlaySharedHeroTraitCard),
+            "playIgnoringResourceCost" => FixedEffect(argument, child, "game", AbilityFixedInstruction.PlayIgnoringResourceCost),
             "discardOtherEnvironments" => FixedEffect(argument, child, "game", AbilityFixedInstruction.DiscardOtherEnvironments),
             "blankTechPlayerCards" => FixedEffect(argument, child, "game", AbilityFixedInstruction.BlankTechPlayerCards),
             "gainEnvironmentTraits" => FixedEffect(argument, child, "this", AbilityFixedInstruction.GainEnvironmentTraits),
@@ -309,6 +310,6 @@ internal static class AbilityEffectLowering
     // The only variable basic-use bonus printed so far counts the boost icons the
     // same resolution discarded.
     private static AbilityNumber.ResolutionValue BoostIconNumber(AbilityValue value, AbilityLocation location) =>
-        Number(value, location) is AbilityNumber.ResolutionValue { Kind: AbilityResolutionNumber.PrintedBoostIconsDiscarded } number
-            ? number : throw location.Error("a variable basic-use bonus must be printedBoostIconsDiscarded");
+        Number(value, location) is AbilityNumber.ResolutionValue { Kind: AbilityResolutionNumber.BoostIconsDiscarded } number
+            ? number : throw location.Error("a variable basic-use bonus must be boostIconsDiscarded");
 }

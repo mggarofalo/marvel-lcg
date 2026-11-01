@@ -13,7 +13,7 @@ public sealed class QuicksilverLoweringTests
     [InlineData("""{"chooseHealRecipients":{"from":{"query":"heroesAndAllies"},"amount":1}}""", "maximum")]
     [InlineData("""{"chooseHealRecipients":{"from":{"query":"heroesAndAllies"},"amount":0,"maximum":2}}""", "amount")]
     [InlineData("""{"chooseStatusRecipients":{"from":{"query":"enemies"},"status":"stunned","maximum":2,"count":2}}""", "either")]
-    [InlineData("""{"boostBasicUse":{"result":"energy"}}""", "printedBoostIconsDiscarded")]
+    [InlineData("""{"boostBasicUse":{"result":"energy"}}""", "boostIconsDiscarded")]
     [InlineData("""{"seqEachTargeted":[{"draw":{"player":"you","count":1}}]}""", "choice option")]
     public void NewEffectsRefuseAnyOtherShape(string effect, string says)
     {

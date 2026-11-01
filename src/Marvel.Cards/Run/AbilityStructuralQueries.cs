@@ -109,9 +109,9 @@ internal static class AbilityStructuralQueries
         AbilityContinuationFacts continuation, HashSet<AbilityEffect> evidence)
     {
         var legal = AbilityAdmission.LegalCardChoices(choice, context.Admission());
-        // Mandatory encounter text resolves as much as possible after a legal target is chosen.
+        // Mandatory encounter text and a choice among this resolution's discards resolve as much as possible.
         // Future instructions cannot prohibit this target merely because their state will change.
-        if (!continuation.HasPath || context.IsMandatoryEncounter)
+        if (!continuation.HasPath || context.ChoosesWithoutContinuation(choice))
             return legal;
 
         return legal.Where(candidate =>

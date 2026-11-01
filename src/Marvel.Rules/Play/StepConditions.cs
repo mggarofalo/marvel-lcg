@@ -73,6 +73,7 @@ public static class StepConditions
         [EndVillainPhase] = [PhaseEnd.VillainPhaseEnds, PhaseEnd.RoundEnds],
         [EndPlayerPhase] = [PhaseEnd.PlayerPhaseEnds],
         [CardReadying.WouldReady] = [CardReadying.WouldReady],
+        [BoostIconCounting.Counted] = [BoostIconCounting.Counted],
     });
 
     /// <summary>The triggering conditions a step creates.</summary>
@@ -95,6 +96,6 @@ public static class StepConditions
                 // These depend on the concrete occurrence rather than solely
                 // on its scheduled step name.
                 [ResourceSpentWindow.Condition, PreparationAbilityResolvedOperation.Condition, BasicPowerTiming.HeroAttackInitiated, BasicPowerTiming.HeroThwartInitiated, BasicPowerTiming.HeroUseInitiated, BasicPowerTiming.AllyAttackInitiated, BasicPowerTiming.AllyUseInitiated, DamageDealt, ThreatPlaced, MinionEngagement.Engaged, VillainStepOneTiming.ThreatPlaced, SchemeEnds, BasicAttackEnds, BasicPowerTiming.ThwartEnds,
-                    CharacterPowerTiming.ThwartEnds, BoostFaceupOperation.AttackFaceup, CardReadying.Readied,
+                    CharacterPowerTiming.ThwartEnds, CharacterPowerTiming.HeroClearedScheme, BoostFaceupOperation.AttackFaceup, CardReadying.Readied,
                     ExcessDamageTiming.ExcessDamageDealt, ExcessDamageTiming.AttackExcessDamageWouldBeDealt]).ToFrozenSet(StringComparer.Ordinal);
 }

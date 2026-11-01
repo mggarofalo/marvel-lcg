@@ -134,6 +134,10 @@ public sealed record Occurrence
     [JsonIgnore]
     public Play.BoostAbilityCancellation? BoostAbility { get; internal set; }
 
+    /// <summary>The boost-icon count this occurrence's interrupts may change.</summary>
+    [JsonIgnore]
+    public Play.BoostIconCount? BoostCount { get; internal set; }
+
     private readonly TriggerUses triggers = new();
 
     private readonly List<Occurrence> threatPlacements = [];
@@ -202,23 +206,6 @@ public sealed record Occurrence
         int target,
         int player = -1) =>
         OccurrenceCapture.Attack(id, conditions, world, facts, actor, target, player);
-
-    /// <summary>Create a thwart occurrence with explicit actor and scheme roles.</summary>
-    /// <remarks>
-    /// A thwart is not an attack, but cards still distinguish the character
-    /// doing it from the scheme it acts on. <see cref="Subject"/> retains the
-    /// scheme for existing "this scheme" triggers; actor and target add the
-    /// two roles without changing that established meaning.
-    /// </remarks>
-    public static Occurrence ForThwart(
-        int id,
-        IReadOnlyList<string> conditions,
-        State.World world,
-        State.ICardFacts facts,
-        int actor,
-        int scheme,
-        int player) =>
-        OccurrenceCapture.Thwart(id, conditions, world, facts, actor, scheme, player);
 
     /// <summary>
     /// Every triggering condition this occurrence has created so far.

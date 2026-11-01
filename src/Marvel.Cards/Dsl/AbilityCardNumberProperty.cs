@@ -13,4 +13,6 @@ public enum AbilityCardNumberProperty
     RemainingHealth,
     /// <summary>The identity's printed starting health.</summary>
     StartingHealth,
+    /// <summary>The boost icons this resolution counted on an encounter card.</summary>
+    BoostIcons,
 }

@@ -78,6 +78,8 @@ internal sealed class CardQueryEvaluator(
         AbilityCardQuery.VillainInThisGameArea => AbilityGameAreaQuery.Villain(cast),
         AbilityCardQuery.ObligationsInThisGameArea => AbilityGameAreaQuery.Obligations(cast),
         AbilityCardQuery.MinionsInThisGameArea => AbilityGameAreaQuery.Minions(cast),
+        // Outside a resolution nothing has been discarded this way.
+        AbilityCardQuery.UncountedDiscarded => [.. (cast.UncountedDiscarded ?? []).Select(id => cast.World.Cards[id])],
         _ when AbilityEncounterSchemeQueries.IsRanked(query) =>
             EncounterSchemeRelations.AtThreatExtreme(cast.World,
                 query == AbilityCardQuery.VillainsWithMostSchemeThreat),

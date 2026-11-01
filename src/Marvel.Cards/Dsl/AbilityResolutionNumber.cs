@@ -13,13 +13,15 @@ public enum AbilityResolutionNumber
     ActivationAttacksAgainstYou,
     /// <summary>Damage dealt by the enemy attack completed in this occurrence.</summary>
     CompletedAttackDamageDealt,
-    /// <summary>Printed boost icons on all cards discarded this way.</summary>
-    PrintedBoostIconsDiscarded,
+    /// <summary>Counted boost icons on all cards discarded this way.</summary>
+    BoostIconsDiscarded,
+    /// <summary>Cards discarded this way with a star icon in their boost area.</summary>
+    StarIconsDiscarded,
     /// <summary>All printed resource icons on cards discarded this way, without generator multipliers.</summary>
     PrintedResourceIconsDiscarded,
     /// <summary>Distinct printed resource types on cards discarded this way; wild is its own printed type.</summary>
     DistinctPrintedResourceTypesDiscarded,
-    /// <summary>One plus printed boost icons on the last card discarded this way.</summary>
+    /// <summary>One plus the counted boost icons on the last card discarded this way.</summary>
     TopEncounterDiscardBoostPlusOne,
     /// <summary>Sum of the printed resource costs of cards discarded this way.</summary>
     PrintedCostDiscarded,

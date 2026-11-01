@@ -16,6 +16,8 @@ internal static class AbilityLeafTargetAvailability
     {
         "cancelBoostAbility" => cast.Occurrence.BoostAbility is { } boost && boost.CanCancel(cast.World),
         "cancelBoostIcons" => cast.Occurrence.BoostIcons is { Remaining: > 0 } icons && icons.IsCurrent(cast.World),
+        "increaseBoostCount" or "decreaseBoostCount" or "countDiscardedInstead" =>
+            AbilityBoostCountEffects.CanApply(node, cast.Occurrence, cast.World),
         "boostBasicUse" => BasicUseAllyReceipt.CanApply((AbilityEffect.BoostBasicUse)node, cast.Context),
         "modifyPlayedEvent" => AbilityPlayedEventModifier.CanModify(EffectOf<AbilityEffect.ModifyPlayedEvent>(node, cast), cast.Context),
         "revealFromVillainDeck" => AbilitySelectedDeckReveal.HasTarget(node, cast),

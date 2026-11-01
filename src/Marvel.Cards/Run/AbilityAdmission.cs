@@ -60,12 +60,21 @@ internal static class AbilityAdmission
             && (!IsPlayerCard(scope) || CanPartiallyResolve(option, scope));
     }
 
+    /// <summary>Whether a choice selects among this resolution's uncounted discards.</summary>
+    internal static bool IsDiscardReceiptChoice(AbilityCardSelection from) =>
+        from is AbilityCardSelection.Query { Kind: AbilityCardQuery.UncountedDiscarded };
+
     internal static List<Card> LegalCardChoices(
         AbilityEffect choice, AbilityAdmissionScope scope)
     {
         var legal = new List<Card>();
-        foreach (var card in Every(
-            EffectOf<AbilityEffect.ChooseCard>(choice, scope).From, scope))
+        var from = EffectOf<AbilityEffect.ChooseCard>(choice, scope).From;
+        // Engine choice: each card discarded this way is resolved in the order the
+        // player chooses (ruling a5028ed150b39433), even when its own effect can
+        // change nothing; that effect then resolves as much as it can.
+        if (IsDiscardReceiptChoice(from))
+            return [.. Every(from, scope)];
+        foreach (var card in Every(from, scope))
         {
             var candidate = scope.ForReachability(scope.Reachability);
             candidate.ChooseSelection(card);

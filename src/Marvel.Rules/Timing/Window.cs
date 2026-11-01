@@ -13,4 +13,13 @@ namespace Marvel.Rules.Timing;
 /// has — <c>rr:interrupt.5</c>, <c>rr:response.4</c>.
 /// </param>
 public readonly record struct Window(
-    Occurrence Occurrence, WindowKind Kind, int Asking, int Passed);
+    Occurrence Occurrence, WindowKind Kind, int Asking, int Passed)
+{
+    /// <summary>Whether every player has passed on this window's optional "would" interrupts.</summary>
+    /// <remarks>
+    /// rr:would gives "would" interrupts "a higher timing priority" than interrupts
+    /// to the same condition without it, so optional ones are offered first and the
+    /// others only after every player has passed on them.
+    /// </remarks>
+    public bool PastWould { get; init; }
+}

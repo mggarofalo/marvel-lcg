@@ -160,6 +160,9 @@ internal static class AbilityEffectTargetAdmission
             // rr:target.3.4: "at least one of those effects must be able to
             // affect the target." Deferring resolution retains the bound target.
             "cancelBoostIcons" or "cancelBoostAbility" => BoostCancellationTargetLegality(node, cast),
+            "increaseBoostCount" or "decreaseBoostCount" or "countDiscardedInstead" =>
+                AbilityBoostCountEffects.CanApply(node, cast.Occurrence, cast.World)
+                    ? TargetLegality.Valid : TargetLegality.Invalid,
             "preventThreat" => ThreatPreventionTargetLegality(node, cast),
             "boostBasicUse" => BasicUseLegality((AbilityEffect.BoostBasicUse)node, cast),
             "modifyPlayedEvent" => AbilityPlayedEventModifier.CanModify(EffectOf<AbilityEffect.ModifyPlayedEvent>(node, cast), cast.Context)

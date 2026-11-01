@@ -13,6 +13,9 @@ namespace Marvel.Rules.Play;
 /// <summary>Calculates and commits resource payment for playing cards.</summary>
 public static class CardPayment
 {
+    /// <summary>Engine spelling of a constant increase to every card the affected identity's player plays.</summary>
+    public const string CostIncreaseField = "card_cost_increase";
+
     /// <summary>Register a one-use reduction for the next card the player plays.</summary>
     public static ContinuousEffects.Registration ReduceNextCardCost(
         World world, Card source, int player, long amount) =>
@@ -77,16 +80,19 @@ public static class CardPayment
         ArgumentNullException.ThrowIfNull(seat);
         ArgumentNullException.ThrowIfNull(card);
 
+        if (reduction is { IgnoresResourceCost: true })
+        {
+            // rr:ignore.1: no resources are paid, so no increase or reduction
+            // is applied or consumed.
+            reduction.Validate(world, seat, card);
+            return new AdjustedCardCost(0, []);
+        }
         long amount = Resources.Cost(card.FaceId, facts, world.Players) ?? 0;
-        var modifiers = world.Effects.Active().Where(effect =>
-            string.Equals(effect.Kind, CardCostReduction, StringComparison.Ordinal)
-            && (effect.Affects == seat.IdentityCard.ObjectId
-                || effect.Affects is null && effect.CostFilter is not null)
-            && Matches(world, card, effect.CostFilter)
-            && effect.Amount > 0).ToList();
+        var modifiers = Reductions(world, seat, card);
 
         var increases = NextEventCost.Applied(world, seat, card);
-        amount = checked(amount + increases.Sum(effect => effect.Amount));
+        amount = checked(amount + increases.Sum(effect => effect.Amount)
+            + Math.Max(0, StateFields.Modified(world, seat.IdentityCard, CostIncreaseField, facts, world.Players)));
         long reduced = amount;
         foreach (var modifier in modifiers)
         {
@@ -108,6 +114,14 @@ public static class CardPayment
             VariableReduction = VariableCardCost.Remaining(card, facts, reductions, reduced),
         };
     }
+
+    private static List<ContinuousEffect> Reductions(World world, Seat seat, Card card) =>
+        world.Effects.Active().Where(effect =>
+            string.Equals(effect.Kind, CardCostReduction, StringComparison.Ordinal)
+            && (effect.Affects == seat.IdentityCard.ObjectId
+                || effect.Affects is null && effect.CostFilter is not null)
+            && Matches(world, card, effect.CostFilter)
+            && effect.Amount > 0).ToList();
 
     private static bool Matches(World world, Card card, CardCostFilter? filter) =>
         filter is null || (filter.Kind is null || EffectiveCards.Kind(card, world.Facts) == filter.Kind)

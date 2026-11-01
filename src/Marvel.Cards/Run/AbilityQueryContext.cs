@@ -19,6 +19,9 @@ internal sealed record AbilityQueryContext(
     // Cards revealed earlier in this invocation, including earlier each-player
     // frames; null when the evaluation belongs to no ability resolution.
     internal IReadOnlyList<int>? RevealedThisResolution { get; init; }
+    // Encounter cards this resolution discarded whose boost icons it has not
+    // counted, in discard order; null outside an ability resolution.
+    internal IReadOnlyList<int>? UncountedDiscarded { get; init; }
 
     internal Defeated? TriggeringDefeat { get; init; }
     internal Attacked? TriggeringAttack { get; init; }

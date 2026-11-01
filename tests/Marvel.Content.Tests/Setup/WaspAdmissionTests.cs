@@ -62,7 +62,7 @@ public sealed class WaspAdmissionTests
         var admitted = RuntimeProductAdmission.Discover(SetupCatalog.Parse(SetupJson), Cards, authored);
         Assert.DoesNotContain("wasp", admitted.Setup.HeroNames);
         Assert.DoesNotContain(admitted.Playable, id => Cards.Pack(id) == "wsp");
-        Assert.Equal(17, admitted.Setup.HeroNames.Count);
+        Assert.Equal(18, admitted.Setup.HeroNames.Count);
         Assert.Contains("ant_man", admitted.Setup.HeroNames);
     }
 

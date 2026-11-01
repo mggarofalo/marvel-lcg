@@ -26,7 +26,14 @@ public static class OccurrenceCapture
         { DamageFromAttack = conditions.Contains(Play.Steps.DamageWouldBeDealt, StringComparer.Ordinal) };
     }
 
-    internal static Occurrence Thwart(
+    /// <summary>Create a thwart occurrence with explicit actor and scheme roles.</summary>
+    /// <remarks>
+    /// A thwart is not an attack, but cards still distinguish the character
+    /// doing it from the scheme it acts on. <see cref="Occurrence.Subject"/> retains the
+    /// scheme for existing "this scheme" triggers; actor and target add the
+    /// two roles without changing that established meaning.
+    /// </remarks>
+    public static Occurrence Thwart(
         int id,
         IReadOnlyList<string> conditions,
         State.World world,

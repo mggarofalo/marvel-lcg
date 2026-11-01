@@ -24,9 +24,11 @@ internal static class AbilityTriggerReader
         AbilityType type = TriggerType(trigger, card);
 
         bool would = Flag(trigger, "would", card);
-        if (would && type != AbilityType.ForcedInterrupt)
+        // rr:would gives "would" interrupts priority over interrupts to the same
+        // condition without it; only interrupt timing can carry the word.
+        if (would && type is not (AbilityType.ForcedInterrupt or AbilityType.Interrupt))
             throw new AbilityException(
-                $"'{card}' uses would timing outside the supported forced-interrupt window");
+                $"'{card}' uses would timing outside an interrupt window");
         string? condition = Event(trigger, card, type);
         if (condition == PreparationAbilityResolvedOperation.Condition
             && type is not (AbilityType.Response or AbilityType.ForcedResponse))

@@ -119,11 +119,13 @@ internal static class AbilityResolutionAdmission
     private static bool OtherPartialResolution(
         AbilityEffect node, AbilityAdmissionScope cast) => node.OperationName() switch
         {
-            "playSharedHeroTraitCard" => AbilitySharedTraitPlay.CanInitiate(cast.Context),
+            "playSharedHeroTraitCard" or "playIgnoringResourceCost" => AbilitySharedTraitPlay.CanInitiate(cast.Context, node),
             "inspectDiscardOrderEncounterTop" => EncounterRouting.Deck(cast.World).Cards.Count > 0,
             "cancelOccurrence" or "replaceReady" => TriggerChangeResolves(node, cast),
             "cancelBoostAbility" => cast.Occurrence.BoostAbility is { } boost && boost.CanCancel(cast.World),
             "cancelBoostIcons" => cast.Occurrence.BoostIcons is { Remaining: > 0 } icons && icons.IsCurrent(cast.World),
+            "increaseBoostCount" or "decreaseBoostCount" or "countDiscardedInstead" =>
+                AbilityBoostCountEffects.CanApply(node, cast.Occurrence, cast.World),
             "inspectEncounterTop" => AbilityEncounterInspection.Cards(cast.World,
                 (AbilityEffect.InspectEncounterTop)node).Count > 0,
             "peekTop" => AbilityDeckPeek.Decks(cast.World).Count > 0,
@@ -181,7 +183,7 @@ internal static class AbilityResolutionAdmission
         if (node.OperationName() is "choose" or "chooseCard" or "indirectDamage"
             or "resolveSpecials" or "payOrExhaust" or "chooseTopForHand" or "peekTop" or "inspectEncounterTop" or "inspectDiscardOrderEncounterTop"
             or "discardHandCards" or "discardResourceIcons" or "chooseStatusRecipients" or "chooseHealRecipients" or "chooseCardsToHand" or "chooseDiscardToShuffle" or "exhaustAnyNumber" or "distributeThreat" or "thwartDifferentSchemes" or "makeTheCall"
-            or "playSharedHeroTraitCard" or "legalPractice" or "payOrEffect")
+            or "playSharedHeroTraitCard" or "playIgnoringResourceCost" or "legalPractice" or "payOrEffect")
         {
             throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' uses '{node.OperationName()}' before dependent text and it "
@@ -218,15 +220,17 @@ internal static class AbilityResolutionAdmission
             ? AbilityReadyReplacement.CanReplace(cast.World, cast.Occurrence, cast.Source)
             : AbilityOccurrenceCancellation.CanResolve(cast.World, cast.Occurrence);
 
+    private static AdmissionResolution Whole(bool resolves) =>
+        resolves ? AdmissionResolution.Full : AdmissionResolution.None;
+
     private static AdmissionResolution LeafResolutionOf(
         AbilityEffect node, AbilityAdmissionScope cast) => node.OperationName() switch
         {
-            "cancelOccurrence" or "replaceReady" => TriggerChangeResolves(node, cast)
-                ? AdmissionResolution.Full : AdmissionResolution.None,
-            "cancelBoostAbility" => cast.Occurrence.BoostAbility is { } boost && boost.CanCancel(cast.World)
-                ? AdmissionResolution.Full : AdmissionResolution.None,
-            "cancelBoostIcons" => cast.Occurrence.BoostIcons is { Remaining: > 0 } icons && icons.IsCurrent(cast.World)
-                ? AdmissionResolution.Full : AdmissionResolution.None,
+            "cancelOccurrence" or "replaceReady" => Whole(TriggerChangeResolves(node, cast)),
+            "cancelBoostAbility" => Whole(cast.Occurrence.BoostAbility is { } boost && boost.CanCancel(cast.World)),
+            "cancelBoostIcons" => Whole(cast.Occurrence.BoostIcons is { Remaining: > 0 } icons && icons.IsCurrent(cast.World)),
+            "increaseBoostCount" or "decreaseBoostCount" or "countDiscardedInstead" =>
+                Whole(AbilityBoostCountEffects.CanApply(node, cast.Occurrence, cast.World)),
             "draw" => CombinedOutcomes(Seats(EffectOf<AbilityEffect.Draw>(node, cast).Players, cast).Select(player =>
                 ResolutionOfAmount(
                     cast.World.Seats[player].Deck.Cards.Count

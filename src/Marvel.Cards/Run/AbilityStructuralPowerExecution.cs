@@ -183,8 +183,12 @@ internal static class AbilityStructuralPowerExecution
 
     internal static Prompt DescribeTopForHand(AbilityStructuralContext context, AbilityEffect.ChooseTopForHand top)
     {
+        if (top.RestToBottom && AbilityTopForHandBottomOrder.Ordering(context.Expressions.Results))
+            return AbilityTopForHandBottomOrder.Describe(context);
         var cards = TopCards(context.Expressions.World.Seats[context.Player].Deck, top.Count);
-        string consequence = $"Add 1 of these {cards.Count} cards to your hand and discard the others.";
+        string consequence = top.RestToBottom
+            ? $"Add 1 of these {cards.Count} cards to your hand and place the others on the bottom of your deck in an order you choose."
+            : $"Add 1 of these {cards.Count} cards to your hand and discard the others.";
         return new Prompt(context.Player, Question.Element, TimingPriority.Untimed, Steps.TurnAction,
             $"{context.SourceFace}: choose a top card", false,
             cards.Select(card => new Affordance(card.ObjectId, ChooseVerb,

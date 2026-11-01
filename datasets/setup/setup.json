@@ -3333,7 +3333,7 @@
   "counts": {
     "campaigns": 41,
     "encounter_sets": 18,
-    "heroes": 18
+    "heroes": 19
   },
   "encounter_sets": {
     "running_interference": {
@@ -4575,6 +4575,67 @@
         "16057"
       ],
       "nemesis_set_icon": "rocket_nemesis"
+    },
+    "scarlet_witch": {
+      "name": "Scarlet Witch",
+      "hero": [
+        "15001a,15001b"
+      ],
+      "hero_deck": [
+        "15002",
+        "15003",
+        "15004",
+        "15004",
+        "15004",
+        "15004",
+        "15005",
+        "15005",
+        "15005",
+        "15006",
+        "15007",
+        "15008",
+        "15008",
+        "15008",
+        "15009"
+      ],
+      "player_deck": [
+        "15010",
+        "15011",
+        "15012",
+        "15012",
+        "15012",
+        "15013",
+        "15013",
+        "15013",
+        "15014",
+        "15014",
+        "15014",
+        "15015",
+        "15015",
+        "15015",
+        "15016",
+        "15016",
+        "15017",
+        "15017",
+        "15018",
+        "15019",
+        "15019",
+        "15019",
+        "15020",
+        "15021",
+        "15022"
+      ],
+      "obligations": [
+        "15023",
+        "15023"
+      ],
+      "nemesis_set": [
+        "15024",
+        "15025",
+        "15026",
+        "15027"
+      ],
+      "nemesis_set_icon": "scw_nemesis"
     }
   },
   "note": "Authored scenario, hero, and encounter-set setup recipes, admitted by complete-product runtime gates: what a scenario is dealt from is printed in its rules insert rather than on any card, so there is nothing to derive it from and no upstream to copy it from. Gated by SetupDatasetTests -- see datasets/setup/UPSTREAM.md.",

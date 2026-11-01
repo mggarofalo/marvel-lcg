@@ -166,12 +166,20 @@ internal static class AbilityProcedureLowering
         { AllyUnderYourControl = destination == "yourPlayArea", FirstPlayer = destination == "engagedWithFirstPlayer" };
     }
 
+    private static bool TopRest(IReadOnlyDictionary<string, AbilityValue> fields, AbilityLocation location) =>
+        !fields.TryGetValue("rest", out var rest) ? false : Text(rest, location.Child("rest")) switch
+        {
+            "discard" => false,
+            "bottomOfDeck" => true,
+            var name => throw location.Child("rest").Error($"'{name}' is not a supported place for the other looked-at cards"),
+        };
+
     internal static AbilityEffect ChoiceFromPile(AbilityValue value, AbilityLocation location, bool top)
     {
         string count = top ? "count" : "max";
-        var fields = top ? Fields(value, location, count) : Fields(value, location, count, "min", "differentTitles", "resource", "set");
+        var fields = top ? Fields(value, location, count, "rest") : Fields(value, location, count, "min", "differentTitles", "resource", "set");
         int maximum = NonnegativeCount(Required(fields, count, location), location.Child(count));
-        if (top) return new AbilityEffect.ChooseTopForHand(maximum);
+        if (top) return new AbilityEffect.ChooseTopForHand(maximum, TopRest(fields, location));
         int minimum = fields.TryGetValue("min", out var min) ? NonnegativeCount(min, location.Child("min")) : 1;
         if (minimum > maximum) throw location.Error("minimum cannot exceed maximum");
         return new AbilityEffect.ChooseDiscardToShuffle(maximum)

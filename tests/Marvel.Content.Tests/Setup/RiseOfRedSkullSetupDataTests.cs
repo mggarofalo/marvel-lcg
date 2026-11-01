@@ -17,7 +17,7 @@ public sealed class RiseOfRedSkullSetupDataTests
         var cards = CardCatalog.Parse(File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")));
         var admitted = RuntimeProductAdmission.Discover(Setup, cards, cards.Faces.ToHashSet(StringComparer.Ordinal));
         Assert.Equal(39, admitted.Setup.CampaignNames.Count);
-        Assert.Equal(18, admitted.Setup.HeroNames.Count);
+        Assert.Equal(19, admitted.Setup.HeroNames.Count);
         Assert.Equal(18, Setup.EncounterSetNames.Count);
         Assert.Equal(15, admitted.Setup.EncounterSetNames.Count);
         foreach (string scenario in new[] { "crossbones", "absorbing_man", "taskmaster", "zola", "red_skull" })

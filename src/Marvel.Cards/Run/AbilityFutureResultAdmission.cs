@@ -75,6 +75,7 @@ internal static class AbilityFutureResultAdmission
         AbilityEffect.RemoveThreat remove when name == "schemesCleared" =>
             AbilityEffectTargetAdmission.DamageAndThreatTargetLegality(remove, scope) == AbilityTargetAdmission.TargetLegality.Valid,
         AbilityEffect.Search or AbilityEffect.RecruitDiscarded when name == "found" => true,
+        AbilityEffect.Fixed { Instruction: AbilityFixedInstruction.PlayIgnoringResourceCost } when name == AbilitySharedTraitPlay.PrintedCostPlayed => true,
         AbilityEffect.InspectEncounterTop inspect when name == inspect.Result =>
             AbilityEncounterInspection.Cards(scope.World, inspect).Count > 0,
         AbilityEffect.InspectDiscardOrderEncounterTop when name == "discarded" =>

@@ -222,7 +222,7 @@ public static class BasicPowerInitiation
         if (power.Target is null && power.Continuation is null)
             throw new RulesNotImplementedException("an enemy-less attack requires an interpreter continuation");
         if (power.Target is not null
-            && (!Attackable(world, facts, power.Player, attacker).Any(card => card.ObjectId == power.Target.ObjectId)
+            && (!power.Initiated && !Attackable(world, facts, power.Player, attacker).Any(card => card.ObjectId == power.Target.ObjectId)
                 || !world.DamageAbilities.CanTakeDamage(world, power.Target, power.Source)))
         {
             throw new RulesNotImplementedException(

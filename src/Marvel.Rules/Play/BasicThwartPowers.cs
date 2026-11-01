@@ -92,7 +92,7 @@ public static class BasicThwartPowers
         // sentence can resolve as a thwart without any thwarted scheme.
         if (power.Target is null && (power.Continuation is null || automaticTarget))
             throw new RulesNotImplementedException("a scheme-less thwart requires an interpreter continuation");
-        if (power.Target is not null && (automaticTarget
+        if (power.Target is not null && !power.Initiated && (automaticTarget
             ? !CanAutomaticallyThwart(world, facts, power.Player, power.Target)
             : !Thwartable(world, facts, power.Player).Any(card => card.ObjectId == power.Target.ObjectId)))
         {

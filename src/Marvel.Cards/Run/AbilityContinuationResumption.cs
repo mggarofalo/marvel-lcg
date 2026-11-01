@@ -18,16 +18,7 @@ internal static class AbilityContinuationResumption
         var state = decoded.State;
         if (state.Reason == AbilityResumeReason.PowerAftermath)
             return new ResumeComplete(state with { Reason = AbilityResumeReason.Choice });
-        if (state.Reason == AbilityResumeReason.StartAbility)
-            return new RunResumedNode(decoded.Ability, decoded.Ability.Effect,
-                state with { Reason = AbilityResumeReason.Choice });
-        if (state.Reason is AbilityResumeReason.DelayedEffect or AbilityResumeReason.DefenseBody)
-            return new RunResumedNode(decoded.Ability, decoded.Node,
-                state with { Reason = AbilityResumeReason.Choice });
-        if (state.Reason == AbilityResumeReason.RepeatSpecial)
-            return new RunResumedNode(decoded.Ability, decoded.Node, state with
-            { Reason = AbilityResumeReason.Choice },
-                EffectApplied: true);
+        if (Resumed(decoded, state) is { } resumed) return resumed;
         if (state.Reason == AbilityResumeReason.CostProcedure)
             return new RestartAfterPaidCost(decoded.Ability, state with
             { Reason = AbilityResumeReason.Choice });
@@ -53,6 +44,25 @@ internal static class AbilityContinuationResumption
                     : state.CompletedOutcome,
             },
             effectApplied);
+    }
+
+    // Reasons that resume the suspended node itself.
+    private static RunResumedNode? Resumed(DecodedAbilityContinuation decoded, AbilityContinuationState state)
+    {
+        var choice = state with { Reason = AbilityResumeReason.Choice };
+        return state.Reason switch
+        {
+            AbilityResumeReason.StartAbility => new RunResumedNode(decoded.Ability, decoded.Ability.Effect, choice),
+            AbilityResumeReason.BoostCount => new RunResumedNode(decoded.Ability, decoded.Node, choice with
+            {
+                BoostCounts = [],
+                Memory = state.Memory with { Results = AbilityBoostCounting.Record(state.Memory.Results, state.BoostCounts) },
+            }),
+            AbilityResumeReason.DelayedEffect or AbilityResumeReason.DefenseBody =>
+                new RunResumedNode(decoded.Ability, decoded.Node, choice),
+            AbilityResumeReason.RepeatSpecial => new RunResumedNode(decoded.Ability, decoded.Node, choice, EffectApplied: true),
+            _ => null,
+        };
     }
 
 }

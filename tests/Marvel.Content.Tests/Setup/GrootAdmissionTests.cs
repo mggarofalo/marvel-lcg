@@ -91,7 +91,7 @@ public sealed class GrootAdmissionTests
         var admitted = RuntimeProductAdmission.Discover(SetupCatalog.Parse(SetupJson), Cards, authored);
         Assert.DoesNotContain("groot", admitted.Setup.HeroNames);
         Assert.DoesNotContain(admitted.Playable, Faces.Contains);
-        Assert.Equal(17, admitted.Setup.HeroNames.Count);
+        Assert.Equal(18, admitted.Setup.HeroNames.Count);
         Assert.Contains("ant_man", admitted.Setup.HeroNames);
     }
 

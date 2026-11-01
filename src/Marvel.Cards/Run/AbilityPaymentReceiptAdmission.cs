@@ -31,6 +31,78 @@ internal static class AbilityPaymentReceiptAdmission
         return null;
     }
 
+    /// <summary>
+    /// The resource declarations that every admitted receipt of this event shares
+    /// beyond its printed requirement, or empty when every payable receipt admits it.
+    /// </summary>
+    /// <remarks>
+    /// rr:event.3 and rr:cost.6 make target availability part of whether the cost
+    /// may be paid, so when the declared resources decide whether the event has an
+    /// effect, the offer carries that requirement instead of accepting a payment
+    /// that leaves the event nothing to do. Engine choice: only a requirement that
+    /// every admitted receipt shares is projected; receipts admitted in disjoint
+    /// ways leave the offer unchanged. An admission made before any receipt is
+    /// known preflights every branch a payment can switch, so when it succeeds no
+    /// declaration can be refused. Otherwise expression evaluation reads a receipt
+    /// only through which queried resource types it contains, so admission is
+    /// decided once per such signature rather than once per receipt.
+    /// </remarks>
+    internal static string RequiredDeclarations(CompiledCardAbility ability, AbilityAdmissionContext context)
+    {
+        if (!DeclarationsCanBeRefused(ability, context)) return string.Empty;
+        var price = AbilityPaymentPricing.CombinedPrice(context.World, context.Source,
+            context.Query.Player, ability, context.ResourceAbilities)!;
+        int cost = int.Parse(price.Cost, System.Globalization.CultureInfo.InvariantCulture);
+        string printed = string.Concat(price.Rule ?? []);
+        string generated = string.Concat(price.Generators.Select(source => source.PossibleResources));
+        string[] declared = [.. Receipts(generated, cost).Where(receipt => Resources.PaysDeclared(receipt, cost, printed))];
+        var admits = SignatureAdmission(ability, context);
+        if (declared.All(admits)) return string.Empty;
+        string? shared = null;
+        bool refused = false;
+        foreach (string receipt in declared.Where(receipt => Payable(price, receipt)))
+        {
+            if (!admits(receipt)) refused = true;
+            else shared = shared is null ? receipt : Shared(shared, receipt);
+        }
+        return refused && shared is not null ? Without(shared, printed) : string.Empty;
+    }
+
+    private static bool DeclarationsCanBeRefused(CompiledCardAbility ability, AbilityAdmissionContext context) =>
+        ability.Cost is not AbilityCost.SpendX && Applies(ability, context)
+        && AbilityDiscardReceiptAdmission.Admit(ability, context, null) is null;
+
+    private static Func<string, bool> SignatureAdmission(CompiledCardAbility ability, AbilityAdmissionContext context)
+    {
+        char[] queried = [.. AbilityEffectStructure.PaidResourceQueries(ability.Effect).Distinct().Order()];
+        var decided = new Dictionary<string, bool>(StringComparer.Ordinal);
+        return receipt =>
+        {
+            string signature = string.Concat(queried.Where(receipt.Contains));
+            if (!decided.TryGetValue(signature, out bool admitted))
+                decided[signature] = admitted =
+                    AbilityDiscardReceiptAdmission.Admit(ability, WithReceipt(context, receipt), null) is not null;
+            return admitted;
+        };
+    }
+
+    private static bool Payable(CostOption price, string receipt) =>
+        ResourcePayment.Allocate(price with { Rule = [receipt] },
+            price.Generators.Select(source => source.Effect).ToArray()) is not null;
+
+    private static string Shared(string left, string right)
+    {
+        var remaining = right.ToList();
+        return string.Concat(left.Where(remaining.Remove));
+    }
+
+    private static string Without(string receipt, string printed)
+    {
+        var remaining = receipt.ToList();
+        foreach (char type in printed) remaining.Remove(type);
+        return string.Concat(remaining);
+    }
+
     internal static void Validate(CompiledCardAbility ability, AbilityAdmissionContext context, string receipt, long? energy = null)
     {
         if (ability.Labels.Length > 0 && LabeledAbilities.WouldBeCancelled(

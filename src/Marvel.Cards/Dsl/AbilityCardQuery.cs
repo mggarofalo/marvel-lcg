@@ -44,6 +44,8 @@ public enum AbilityCardQuery
     AttachmentsOnThis,
     /// <summary>In-play upgrades attached to the source.</summary>
     UpgradesOnThis,
+    /// <summary>Encounter cards this resolution discarded and has not yet counted.</summary>
+    UncountedDiscarded,
     /// <summary>Encounter attachments hosted by the current villain.</summary>
     AttachmentsOnVillain,
     /// <summary>Out-of-play cards explicitly stored beneath this source.</summary>

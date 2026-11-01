@@ -154,6 +154,7 @@ internal static class AbilityResolutionInterpreter
         // win or lose accordingly."
         // Nested text can return here before the agenda observes that result.
         if (cast.World.IsOver) return;
+        if (AbilityBoostCounting.TrySuspend(execution, node, cast)) return;
         int eventsBefore = cast.Events.Count;
         long requested = AbilityCompletion.Requested(execution, node, cast);
         cast.CompletedOutcome = null;
