@@ -15,7 +15,12 @@ public static class CardPayment
 {
     /// <summary>Register a one-use reduction for the next card the player plays.</summary>
     public static ContinuousEffects.Registration ReduceNextCardCost(
-        World world, Card source, int player, long amount)
+        World world, Card source, int player, long amount) =>
+        ReduceNextCardCost(world, source, player, amount, null, TimingPoints.EndOfPlayerPhase);
+
+    /// <summary>Register a one-use reduction for the player's next matching card until <paramref name="until"/>.</summary>
+    public static ContinuousEffects.Registration ReduceNextCardCost(
+        World world, Card source, int player, long amount, CardCostFilter? filter, string until)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(source);
@@ -29,7 +34,8 @@ public static class CardPayment
             Amount: amount,
             Card: source.ObjectId,
             Affects: world.Seats[player].IdentityCard.ObjectId,
-            Lasts: new Duration(Until: TimingPoints.EndOfPlayerPhase, Uses: 1)));
+            Lasts: new Duration(Until: until, Uses: 1))
+        { CostFilter = filter });
     }
 
     /// <summary>Reduces the next matching card played by any player this phase.</summary>

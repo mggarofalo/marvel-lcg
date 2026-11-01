@@ -6,7 +6,10 @@ namespace Marvel.Cards.Run;
 /// <summary>Readable effect vocabulary derived from checked ability instructions.</summary>
 internal static class AbilityEffectDescription
 {
-    internal static string? Summary(AbilityEffect effect) => AbilityBasicUseDescription.Summary(effect)
+    internal static string? Summary(AbilityEffect effect) => Summary(effect, null);
+
+    /// <summary>Describes <paramref name="effect"/> offered on <paramref name="trigger"/>.</summary>
+    internal static string? Summary(AbilityEffect effect, string? trigger) => AbilityBasicUseDescription.Summary(effect, trigger)
         ?? AbilityCostReductionDescription.Summary(effect)
         ?? AbilitySearchDescription.Summary(effect)
         ?? AbilityRevealDescription.Summary(effect)

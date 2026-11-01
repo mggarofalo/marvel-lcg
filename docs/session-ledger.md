@@ -737,8 +737,15 @@ packet. Public wire support is protocol 38 and rejects protocol 37 peers.
 
 ### Replay identity
 
-The current replay identity is `engine-replay-v32`. Every earlier replay
-identity is refused. Under v32 an ability that must shuffle at least one card
+The current replay identity is `engine-replay-v33`. Every earlier replay
+identity is refused. Under v33 a tough status card leaves no damage for an
+interrupt to "would take" damage, because rr:damage applies tough status cards
+(step 2) before those abilities (step 3), and a piercing enemy attack discards
+that tough status card before its damage window opens (rr:piercing.1). A v32
+trace in which Backflip (01003), or another such interrupt, is offered while its
+hero holds a tough status card records a prompt v33 no longer produces, and one
+in which Crossbones' Armor (04065) or Norman Osborn (02001a–02003a) absorbs
+damage a tough status card prevents resolves differently. Under v32 an ability that must shuffle at least one card
 from its player's discard pile is not offered when no discarded card qualifies
 (rr:initiating-abilities.step.2). A v31 trace in which Ancestral Knowledge
 (01042) is offered while its player's discard pile is empty records a prompt v32

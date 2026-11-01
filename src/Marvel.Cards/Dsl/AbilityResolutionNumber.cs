@@ -35,4 +35,6 @@ public enum AbilityResolutionNumber
     EntryResourceExcess,
     /// <summary>Energy resources, including overpaid wild resources, generated beyond the source card's entry cost.</summary>
     EntryEnergyExcess,
+    /// <summary>The damage the interrupted damage window's recipient would take after pending prevention.</summary>
+    IncomingDamage,
 }

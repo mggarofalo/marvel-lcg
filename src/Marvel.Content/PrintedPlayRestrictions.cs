@@ -30,11 +30,17 @@ internal static class PrintedPlayRestrictions
                 if (text.StartsWith(prefix, StringComparison.Ordinal)
                     && text.EndsWith(suffix, StringComparison.Ordinal)
                     && text.Length > prefix.Length + suffix.Length)
-                    return CardCatalog.TraitKey(text[prefix.Length..^suffix.Length].ToUpperInvariant());
+                    return CardCatalog.TraitKey(TraitName(text[prefix.Length..^suffix.Length]));
             }
         }
         return null;
     }
+
+    // Later printings show the trait as an icon token, "the [guardian] trait";
+    // the token names the same printed trait as the plain word.
+    private static string TraitName(string printed) =>
+        printed.Trim('[', ']').ToUpperInvariant();
+
     internal static string? Form(string? printed)
     {
         if (printed is null)

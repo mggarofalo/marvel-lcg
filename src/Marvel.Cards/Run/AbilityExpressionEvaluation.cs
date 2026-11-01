@@ -56,6 +56,7 @@ internal sealed class AbilityExpressionEvaluation(
         AbilityResolutionNumber.EntryResourceExcess => AbilityEntryResourceQuery.Excess(context),
         AbilityResolutionNumber.EntryEnergyExcess => AbilityEntryResourceQuery.EnergyExcess(context),
         AbilityResolutionNumber.ReceivedAttackDamage => ReceivedAttackDamageQuery.Amount(context),
+        AbilityResolutionNumber.IncomingDamage => DamageWindowEligibility.RemainingDamage(context.World, context.Occurrence),
         AbilityResolutionNumber.CardsDiscarded => context.Discarded.Length,
         AbilityResolutionNumber.PrintedCostDiscarded => context.Discarded.Sum(card =>
             context.World.Facts.PrintedValue(card.FaceId, "Cost", context.World.Players)),
@@ -269,42 +270,13 @@ internal sealed class AbilityExpressionEvaluation(
                 .Sum(pair => pair.Value)
             : card.Tokens.GetValueOrDefault("c_" + type);
 
-    // Player order and then pile order match the rules query; absent piles are empty.
-    internal static IReadOnlyList<Card> AlliesInPlayerDiscards(World world) =>
-    [
-        .. world.PlayerOrder.SelectMany(player => world.Areas.FirstOrDefault(area =>
-                area.Type == DeckType.DiscardPile && area.PlayArea == PlayArea.Of(player)
-                && area.Host == -1)?.Cards ?? [])
-            .Where(card => EffectiveCards.Kind(card, world.Facts) == CardKind.Ally),
-    ];
-
     private bool CanMakeTheCall()
     {
         var resources = resourceAbilities
             ?? throw new InvalidOperationException(
                 "canMakeTheCall requires the initiating resource capability");
-        return AlliesInPlayerDiscards(context.World).Any(ally =>
-            MakeTheCallAffordable(context.World, ally, MakeTheCallSources(
+        return MakeTheCallOffers.AlliesInPlayerDiscards(context.World).Any(ally =>
+            MakeTheCallOffers.Affordable(context.World, ally, MakeTheCallOffers.Sources(
                 context.World, context.Player, context.Source, ally, resources)));
     }
-
-    internal static CostOption MakeTheCallPrice(World world, Card ally, IReadOnlyList<ResourceSource> sources) =>
-        new(ally.ObjectId,
-            (Resources.Cost(ally.FaceId, world.Facts, world.Players) ?? 0)
-                .ToString(System.Globalization.CultureInfo.InvariantCulture),
-            Resources.Required(world, ally, world.Facts) is { Length: > 0 } rule ? [rule] : null,
-            Sources: sources);
-
-    internal static bool MakeTheCallAffordable(World world, Card ally, IReadOnlyList<ResourceSource> sources) =>
-        ResourcePayment.Allocate(MakeTheCallPrice(world, ally, sources),
-            sources.Select(source => source.Effect).ToArray()) is not null;
-
-    internal static IReadOnlyList<ResourceSource> MakeTheCallSources(
-        World world, int player, Card source, Card ally,
-        IResourceCardAbilities resourceAbilities) =>
-    [
-        .. CardPayment.Generators(
-                world, world.Facts, world.Seats[player], resourceAbilities, payingFor: ally)
-            .Where(generator => generator.Effect != source.ObjectId),
-    ];
 }

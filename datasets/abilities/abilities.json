@@ -5359,11 +5359,12 @@
     {
       "card": "04065",
       "name": "Crossbones' Armor",
-      "note": "Attach to Crossbones.\nForced Interrupt: When Crossbones would take any amount of damage, place it here instead. If there is 5 or more damage here, discard Crossbones' Armor.",
+      "note": "Attach to Crossbones.\nForced Interrupt: When Crossbones would take any amount of damage, place it here instead. If there is 5 or more damage here, discard Crossbones' Armor. 'Would take' is rr:damage step 3, after tough status cards (step 2), so the trigger carries the taken qualifier: a tough status card prevents the damage first and nothing is placed here (ruling c8268c2138f6c809).",
       "abilities": [
         {
           "trigger": {
             "event": "WhenDamageWouldBeDealt",
+            "damage": "taken",
             "timing": "ForcedInterrupt",
             "subject": "attachedTo"
           },
@@ -25284,6 +25285,236 @@
       "abilities": [
         {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero"}, "cost": {"spendX": "printed"}, "effect": {"chooseStatusRecipients": {"from": {"query": "enemies"}, "status": "stunned", "count": {"result": "energy"}}}}
       ]
+    },
+    {
+      "card": "16001a",
+      "name": "Groot",
+      "note": "Flora Colossus -- Forced Interrupt: when Groot would take any amount of damage, remove that many growth counters and prevent 1 of that damage per counter removed. rr:damage orders 'when [character] would take any amount of damage' after tough status cards, so Tough prevents first and no counters are removed (ruling 7cf2a0ea8a6b2a1f; ruling c8268c2138f6c809 gives status cards priority over interrupts). Ruling a1a372ea9b59ba4e: the ability does as much as it can, so 3 counters against 5 damage remove 3 and prevent 3. The trigger needs damage remaining after pending prevention ('taken') and at least one growth counter; preventDamageWithCounters is the engine's spelling of the one-for-one exchange. The counters sit on the identity card, so they stay through form changes (rr:identity.4: only the faceup side is in play; the card is the same).",
+      "abilities": [
+        {"name": "Flora Colossus", "trigger": {"event": "WhenDamageWouldBeDealt", "damage": "taken", "timing": "ForcedInterrupt", "target": "this"}, "when": {"atLeast": {"value": {"countersOn": {"card": "this", "counter": "growth"}}, "count": 1}}, "effect": {"preventDamageWithCounters": {"card": "this", "counter": "growth"}}}
+      ]
+    },
+    {
+      "card": "16001b",
+      "name": "Groot",
+      "note": "Growth Spurt -- Action: place 2 growth counters on Groot (to a maximum of 10), limit once per round (rr:limit). rr:max-maximum.6: '(to a maximum of [value])' imposes a maximum on that ability; ruling 39c26b6b8d77edfd reads it locally, as the most counters this placement can leave on him. The count is min(2, 10 - counters); at 10 the action places nothing and is not offered.",
+      "abilities": [
+        {"name": "Growth Spurt", "trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this"}, "limitPerRound": 1, "when": {"not": {"atLeast": {"value": {"countersOn": {"card": "this", "counter": "growth"}}, "count": 10}}}, "effect": {"placeCounters": {"card": "this", "counter": "growth", "count": {"min": [2, {"add": [10, {"mul": [-1, {"countersOn": {"card": "this", "counter": "growth"}}]}]}]}}}}
+      ]
+    },
+    {
+      "card": "16002",
+      "name": "Fruition",
+      "note": "Action: place 2 growth counters on Groot (to a maximum of 10). Groot is the player's own identity; the cap is local to this ability (rr:max-maximum.6, ruling 39c26b6b8d77edfd). Not offered at 10 counters, where it would place nothing.",
+      "abilities": [
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this"}, "when": {"not": {"atLeast": {"value": {"countersOn": {"card": "you", "counter": "growth"}}, "count": 10}}}, "effect": {"placeCounters": {"card": "you", "counter": "growth", "count": {"min": [2, {"add": [10, {"mul": [-1, {"countersOn": {"card": "you", "counter": "growth"}}]}]}]}}}}
+      ]
+    },
+    {
+      "card": "16003",
+      "name": "\"I am Groot\"",
+      "note": "Hero Action (thwart): remove threat from a scheme equal to Groot's growth counters, read when the threat is removed. With no counters it would remove nothing and is not offered.",
+      "abilities": [
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero"}, "labels": ["thwart"], "when": {"atLeast": {"value": {"countersOn": {"card": "you", "counter": "growth"}}, "count": 1}}, "effect": {"chooseCard": {"from": {"query": "thwartableSchemes"}, "effect": {"thwart": {"target": "chosen", "effect": {"removeThreat": {"scheme": "chosen", "amount": {"countersOn": {"card": "you", "counter": "growth"}}}}}}}}}
+      ]
+    },
+    {
+      "card": "16004",
+      "name": "\"I. AM. GROOT!\"",
+      "note": "Hero Action (attack): deal damage to an enemy equal to Groot's growth counters. With no counters it would deal nothing and is not offered.",
+      "abilities": [
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero"}, "labels": ["attack"], "when": {"atLeast": {"value": {"countersOn": {"card": "you", "counter": "growth"}}, "count": 1}}, "effect": {"chooseCard": {"from": {"query": "attackableEnemies"}, "effect": {"attack": {"target": "chosen", "effect": {"dealAttackDamage": {"cards": "chosen", "amount": {"countersOn": {"card": "you", "counter": "growth"}}}}}}}}}
+      ]
+    },
+    {
+      "card": "16005",
+      "name": "Root Stomp",
+      "note": "Hero Action (attack): deal 5 damage to an enemy; if this attack defeats it, place 1 growth counter on Groot (to a maximum of 10, rr:max-maximum.6). 'Defeats' reads the defeat the attack's damage caused, as Stealth Strike does.",
+      "abilities": [
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero"}, "labels": ["attack"], "effect": {"chooseCard": {"from": {"query": "attackableEnemies"}, "effect": {"seq": [{"attack": {"target": "chosen", "effect": {"dealAttackDamage": {"cards": "chosen", "amount": 5}}}}, {"if": {"test": {"wasDefeatedByDamage": "chosen"}, "then": {"placeCounters": {"card": "you", "counter": "growth", "count": {"min": [1, {"add": [10, {"mul": [-1, {"countersOn": {"card": "you", "counter": "growth"}}]}]}]}}}}}]}}}}
+      ]
+    },
+    {
+      "card": "16006",
+      "name": "\"We Are Groot\"",
+      "note": "Hero Action: remove up to 4 growth counters from Groot -> choose that many friendly characters and give each a tough status card. rr:cost.9 gives an 'up to' cost a minimum of 1. The player picks how many counters to remove; an option needing more counters than Groot has changes nothing and is not offered (rr:choose-option.2); rr:choose-game-element.3 then chooses that many friendly characters, all that can take a tough status card if fewer can. The removal is the first instruction of the chosen option rather than a separate cost step, an engine choice: nothing in the admitted card pool responds between paying growth counters and choosing the characters, so the order changes no outcome. Not offered without a growth counter.",
+      "abilities": [
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero"}, "when": {"atLeast": {"value": {"countersOn": {"card": "you", "counter": "growth"}}, "count": 1}}, "effect": {"choose": {"descriptions": ["Remove 1 growth counter: give 1 friendly character a tough status card", "Remove 2 growth counters: give 2 friendly characters a tough status card", "Remove 3 growth counters: give 3 friendly characters a tough status card", "Remove 4 growth counters: give 4 friendly characters a tough status card"], "options": [{"if": {"test": {"atLeast": {"value": {"countersOn": {"card": "you", "counter": "growth"}}, "count": 1}}, "then": {"seq": [{"removeCounters": {"card": "you", "counter": "growth", "count": 1}}, {"chooseStatusRecipients": {"from": {"query": "heroesAndAllies"}, "status": "tough", "count": 1}}]}}}, {"if": {"test": {"atLeast": {"value": {"countersOn": {"card": "you", "counter": "growth"}}, "count": 2}}, "then": {"seq": [{"removeCounters": {"card": "you", "counter": "growth", "count": 2}}, {"chooseStatusRecipients": {"from": {"query": "heroesAndAllies"}, "status": "tough", "count": 2}}]}}}, {"if": {"test": {"atLeast": {"value": {"countersOn": {"card": "you", "counter": "growth"}}, "count": 3}}, "then": {"seq": [{"removeCounters": {"card": "you", "counter": "growth", "count": 3}}, {"chooseStatusRecipients": {"from": {"query": "heroesAndAllies"}, "status": "tough", "count": 3}}]}}}, {"if": {"test": {"atLeast": {"value": {"countersOn": {"card": "you", "counter": "growth"}}, "count": 4}}, "then": {"seq": [{"removeCounters": {"card": "you", "counter": "growth", "count": 4}}, {"chooseStatusRecipients": {"from": {"query": "heroesAndAllies"}, "status": "tough", "count": 4}}]}}}]}}}
+      ]
+    },
+    {
+      "card": "16007",
+      "name": "Fertile Ground",
+      "note": "Alter-Ego Action: exhaust Fertile Ground -> place 1 growth counter on Groot (to a maximum of 10, rr:max-maximum.6) and draw 1 card. The draw changes the game at 10 counters, so the action stays available there.",
+      "abilities": [
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "alter-ego"}, "cost": {"exhaust": "this"}, "effect": {"seq": [{"placeCounters": {"card": "you", "counter": "growth", "count": {"min": [1, {"add": [10, {"mul": [-1, {"countersOn": {"card": "you", "counter": "growth"}}]}]}]}}}, {"draw": {"player": "you", "count": 1}}]}}
+      ]
+    },
+    {
+      "card": "16008",
+      "name": "Entangling Vines",
+      "note": "Hero Interrupt: when Groot makes a basic thwart, remove 1 growth counter from him and exhaust Entangling Vines -> +2 THW for that thwart. The bonus belongs to that one basic-use occurrence (rr:basic-power.1). WhenHeroBasicThwartInitiated is the hero-thwart-only view of the basic-use interrupt.",
+      "abilities": [
+        {"trigger": {"event": "WhenHeroBasicThwartInitiated", "timing": "Interrupt", "actor": "you", "form": "hero", "player": "you"}, "cost": {"seq": [{"removeCounters": {"card": "you", "counter": "growth", "count": 1}}, {"exhaust": "this"}]}, "effect": {"boostBasicUse": 2}}
+      ]
+    },
+    {
+      "card": "16009",
+      "name": "Lashing Vines",
+      "note": "Hero Response: after Groot uses a basic power, remove 2 growth counters from him and exhaust Lashing Vines -> ready Groot. A Hero response needs hero form, which excludes the alter-ego's recovery, so the basic powers are THW, ATK and DEF. rr:defend-defense.7.2: an ability triggering after a basic power used to defend triggers after that attack resolves. A stunned attack or confused thwart is not a use (ruling 983ae8870c226cd4). Three triggers share no limit; the costs bound repetition.",
+      "abilities": [
+        {"trigger": {"event": "WhenBasicThwartEnds", "timing": "Response", "actor": "you", "form": "hero"}, "cost": {"seq": [{"removeCounters": {"card": "you", "counter": "growth", "count": 2}}, {"exhaust": "this"}]}, "effect": {"ready": "you"}},
+        {"trigger": {"event": "WhenBasicAttackEnds", "timing": "Response", "actor": "you", "form": "hero"}, "cost": {"seq": [{"removeCounters": {"card": "you", "counter": "growth", "count": 2}}, {"exhaust": "this"}]}, "effect": {"ready": "you"}},
+        {"trigger": {"event": "WhenAttackEnds", "timing": "Response", "actor": "enemy", "target": "you", "form": "hero"}, "when": {"heroBasicDefended": "you"}, "cost": {"seq": [{"removeCounters": {"card": "you", "counter": "growth", "count": 2}}, {"exhaust": "this"}]}, "effect": {"ready": "you"}}
+      ]
+    },
+    {
+      "card": "16010",
+      "name": "Vine Shield",
+      "note": "Hero Interrupt: when Groot defends against an attack, remove 1 growth counter from him and exhaust Vine Shield -> +3 DEF for that attack. Any defense counts, as for Desperate Defense; the bonus lasts until the attack ends.",
+      "abilities": [
+        {"trigger": {"event": "WhenHeroDefends", "timing": "Interrupt", "subject": "you", "form": "hero"}, "cost": {"seq": [{"removeCounters": {"card": "you", "counter": "growth", "count": 1}}, {"exhaust": "this"}]}, "effect": {"grantUntil": {"card": "you", "keyword": "defense", "amount": 3, "until": "EndOfAttack"}}}
+      ]
+    },
+    {
+      "card": "16011",
+      "name": "Vine Spikes",
+      "note": "Hero Interrupt: when Groot makes a basic attack, remove 1 growth counter from him and exhaust Vine Spikes -> +2 ATK for that attack, belonging to that basic-use occurrence (rr:basic-power.1).",
+      "abilities": [
+        {"trigger": {"event": "WhenHeroBasicAttackInitiated", "timing": "Interrupt", "actor": "you", "form": "hero", "player": "you"}, "cost": {"seq": [{"removeCounters": {"card": "you", "counter": "growth", "count": 1}}, {"exhaust": "this"}]}, "effect": {"boostBasicUse": 2}}
+      ]
+    },
+    {
+      "card": "16012",
+      "name": "Starhawk",
+      "note": "Interrupt: when Starhawk takes damage exactly equal to his remaining hit points, return him to your hand. Ruling dc116cb456de74af: a card can take damage beyond its remaining hit points, so the comparison uses all the damage he would take after prevention; ruling 7e6dab4d8d2f1fc9: overkill does not reduce what he takes. The engine reads rr:damage step 4 ('when [character] takes any amount of damage') at the damage-taken interrupt, where incomingDamage is the damage remaining after pending prevention. Returning him to hand leaves the damage no recipient.",
+      "abilities": [
+        {"trigger": {"event": "WhenDamageWouldBeDealt", "damage": "taken", "timing": "Interrupt", "target": "this"}, "when": {"and": [{"atLeast": {"value": {"incomingDamage": "trigger"}, "count": {"remainingHealth": "this"}}}, {"atLeast": {"value": {"remainingHealth": "this"}, "count": {"incomingDamage": "trigger"}}}]}, "effect": {"returnToHand": "this"}}
+      ]
+    },
+    {
+      "card": "16014",
+      "name": "Fighting Fit",
+      "note": "Hero Action (attack): deal 2 damage to the villain, 5 instead while your hero's remaining hit points are at least its starting hit points. rr:hit-points.1: 'The phrase \"starting hit points\" refers to an identity's printed hit point value.' Ruling 7cb6a0fe6e2d6039 (pre-1.5) reads it as the value after setup; Rules Reference 1.8 governs, so startingHealth is the printed value. The amount is read when the damage is dealt.",
+      "abilities": [
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero"}, "labels": ["attack"], "effect": {"attack": {"target": {"query": "villain"}, "effect": {"dealAttackDamage": {"cards": {"query": "villain"}, "amount": {"if": {"test": {"atLeast": {"value": {"remainingHealth": "yourHero"}, "count": {"startingHealth": "yourHero"}}}, "then": 5, "else": 2}}}}}}}
+      ]
+    },
+    {
+      "card": "16016",
+      "name": "Dauntless",
+      "attachTo": {"query": "identitiesWithinPerPlayerLimit"},
+      "note": "Play under any player's control; max 1 per player. While your hero's remaining hit points are at least its starting hit points, your hero gains retaliate 1. rr:hit-points.1 makes starting hit points the printed value (see Fighting Fit for ruling 7cb6a0fe6e2d6039). 'Your hero' is the controller's hero; in alter-ego form there is none, so nothing is granted.",
+      "abilities": [
+        {"trigger": {"timing": "Constant", "subject": "this"}, "effect": {"if": {"test": {"atLeast": {"value": {"remainingHealth": "yourHero"}, "count": {"startingHealth": "yourHero"}}}, "then": {"grant": {"card": "yourHero", "keyword": "retaliate", "amount": 1}}}}}
+      ]
+    },
+    {
+      "card": "16017",
+      "name": "Hard to Ignore",
+      "note": "Hero Response: after your hero defends against an attack and takes no damage, exhaust Hard to Ignore -> remove 1 threat from the main scheme. The same after-defense condition as Unflappable (09020); ruling f6b7f9804304980b: a defense event used outside an attack is not a defense against an attack.",
+      "abilities": [
+        {"trigger": {"event": "WhenAttackEnds", "timing": "Response", "actor": "enemy", "target": "you", "form": "hero"}, "when": {"and": [{"heroDefended": "you"}, {"not": {"attackDamagedYou": "you"}}]}, "cost": {"exhaust": "this"}, "effect": {"removeThreat": {"scheme": {"query": "mainScheme"}, "amount": 1}}}
+      ]
+    },
+    {
+      "card": "16019",
+      "name": "Rocket Raccoon",
+      "note": "Play only if your identity has the [guardian] trait: a printed prerequisite read from card text. Interrupt: when Rocket Raccoon attacks a minion, +3 ATK for that attack and it gains overkill. The bonus and overkill belong to that basic attack (rr:basic-power.1); WhenAllyBasicAttackInitiated is the ally-attack-only view of the basic-use interrupt. Ruling 3cd8971cc0a58466: only one card titled Rocket Raccoon can be in play for the group.",
+      "abilities": [
+        {"trigger": {"event": "WhenAllyBasicAttackInitiated", "timing": "Interrupt", "actor": "this"}, "when": {"isKind": {"card": "trigger.target", "kind": "minion"}}, "effect": {"seq": [{"boostBasicUse": 3}, {"boostBasicUse": "overkill"}]}}
+      ]
+    },
+    {
+      "card": "16020",
+      "name": "Flora and Fauna",
+      "note": "Team-Up (Groot and Rocket Raccoon), read from the printed attribute: both named characters must be in play, hero, alter-ego or ally (rr:team-up; ruling 9e3a063b5c91ec99). Hero Action: place 2 growth counters on Groot (to a maximum of 10, rr:max-maximum.6) and ready him, or place 2 charge counters on a Rocket Raccoon upgrade and ready it. Rocket Raccoon's upgrades have no authored rows, so none can be in play and the row authors the Groot option alone; GrootLoweringTests.FloraAndFaunaAuthorsTheRocketOptionWhenARocketUpgradeIsAuthored fails when a Rocket Raccoon upgrade is authored without the second option. Groot is the one card titled Groot in play (ruling 3cd8971cc0a58466). At 10 growth counters with Groot ready the action would change nothing; admission withholds it because no part can resolve (rulings 342e7b62e13a6806, e015aa6cd98e8ef2).",
+      "abilities": [
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero"}, "effect": {"seq": [{"placeCounters": {"card": {"titled": "Groot"}, "counter": "growth", "count": {"min": [2, {"add": [10, {"mul": [-1, {"countersOn": {"card": {"titled": "Groot"}, "counter": "growth"}}]}]}]}}}, {"ready": {"titled": "Groot"}}]}}
+      ]
+    },
+    {
+      "card": "16024",
+      "name": "Deft Focus",
+      "attachTo": {"query": "identitiesWithinPerPlayerLimit"},
+      "note": "Max 1 per player. Hero Action: exhaust Deft Focus -> reduce the resource cost of the next [superpower] card you play this turn by 1. Ruling 01084513ea5772f5: 'this turn' is the player turn in which it was exhausted, which may be another player's turn. The reduction is one use for its controller's next SUPERPOWER card and expires at the end of that turn (until EndOfTurn).",
+      "abilities": [
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero"}, "cost": {"exhaust": "this"}, "effect": {"reduceNextCardCost": {"player": "you", "trait": "SUPERPOWER", "amount": 1, "until": "EndOfTurn"}}}
+      ]
+    },
+    {
+      "card": "16025",
+      "name": "Wilt",
+      "note": "Obligation. You may flip to alter-ego form, then choose: exhaust your alter-ego -> remove Wilt from the game; or remove 3 growth counters from Groot, gaining surge if none were removed, and discard Wilt. The removal does as much as it can: nested conditions remove 3, 2 or 1 by the counters present; with no counters there is nothing to remove and the card gains surge. The structure follows Need for Speed (14024).",
+      "abilities": [
+        {"trigger": {"event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this"}, "effect": {"seq": [{"choose": {"descriptions": ["Change to alter-ego form", "Remain in your current form"], "options": [{"changeForm": {"player": "you", "to": "alter-ego"}}, {"seq": []}]}}, {"choose": {"descriptions": ["Exhaust your alter-ego and remove Wilt from the game", "Remove 3 growth counters from Groot (surge if none are removed); discard Wilt"], "options": [{"then": {"effect": {"exhaust": "yourAlterEgo"}, "then": {"removeFromGame": "this"}}}, {"seq": [{"if": {"test": {"atLeast": {"value": {"countersOn": {"card": "you", "counter": "growth"}}, "count": 3}}, "then": {"removeCounters": {"card": "you", "counter": "growth", "count": 3}}, "else": {"if": {"test": {"atLeast": {"value": {"countersOn": {"card": "you", "counter": "growth"}}, "count": 2}}, "then": {"removeCounters": {"card": "you", "counter": "growth", "count": 2}}, "else": {"if": {"test": {"atLeast": {"value": {"countersOn": {"card": "you", "counter": "growth"}}, "count": 1}}, "then": {"removeCounters": {"card": "you", "counter": "growth", "count": 1}}, "else": {"gainSurge": 1}}}}}}}, {"discard": "this"}]}]}}]}}
+      ]
+    },
+    {
+      "card": "16026",
+      "name": "Blazing Inferno",
+      "note": "Groot's nemesis side scheme. Forced Response: after the villain phase begins, deal 2 indirect damage to each player; each player assigns it among the characters they control (rr:indirect-damage).",
+      "abilities": [
+        {"trigger": {"event": "WhenVillainPhaseBegins", "timing": "ForcedResponse", "subject": "game"}, "effect": {"eachPlayer": {"effect": {"indirectDamage": {"among": {"query": "charactersYouControl"}, "amount": 2}}}}}
+      ]
+    },
+    {
+      "card": "16027",
+      "name": "Furnax",
+      "note": "Groot's nemesis minion. Forced Response: after Furnax activates, deal 2 indirect damage to each player. An activation is an attack or a scheme (rr:activation); the completed-activation occurrence covers both, as for Madame Hydra (01181).",
+      "abilities": [
+        {"trigger": {"event": "WhenActivationCompleted", "timing": "ForcedResponse", "actor": "this"}, "effect": {"eachPlayer": {"effect": {"indirectDamage": {"among": {"query": "charactersYouControl"}, "amount": 2}}}}}
+      ]
+    },
+    {
+      "card": "16028",
+      "name": "Fan the Flames",
+      "note": "When Revealed: take 2 indirect damage, plus 1 if Blazing Inferno is in play and 1 if Furnax is in play, read when the damage is assigned. The revealing player assigns it among the characters they control (rr:indirect-damage).",
+      "abilities": [
+        {"trigger": {"event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this"}, "effect": {"indirectDamage": {"among": {"query": "charactersYouControl"}, "amount": {"add": [2, {"if": {"test": {"titleInPlay": "Blazing Inferno"}, "then": 1}}, {"if": {"test": {"titleInPlay": "Furnax"}, "then": 1}}]}}}}
+      ]
+    },
+    {
+      "card": "16013",
+      "name": "Desperate Defense",
+      "note": "Reprint of 09015.",
+      "abilities": [
+        {"trigger": {"event": "WhenHeroDefends", "timing": "Interrupt", "subject": "you", "form": "hero"}, "labels": ["defense"], "effect": {"seq": [{"grantUntil": {"card": "you", "keyword": "defense", "amount": 2, "until": "EndOfAttack"}}, {"readyUndamagedDefender": "you"}]}}
+      ]
+    },
+    {
+      "card": "16015",
+      "name": "The Power of Protection",
+      "note": "Reprint of 01079.",
+      "abilities": [
+        {"trigger": {"timing": "Constant", "subject": "this"}, "effect": {"doubleResourceFor": "Protection"}}
+      ]
+    },
+    {
+      "card": "16018",
+      "name": "Indomitable",
+      "note": "Reprint of 01082.",
+      "abilities": [
+        {"trigger": {"event": "WhenAttackEnds", "timing": "Response", "actor": "enemy", "target": "you"}, "when": {"heroDefended": "you"}, "effect": {"seq": [{"discard": "this"}, {"ready": "you"}]}}
+      ]
+    },
+    {
+      "card": "16021",
+      "name": "Energy",
+      "note": "Reprint of 01088.",
+      "abilities": []
+    },
+    {
+      "card": "16022",
+      "name": "Genius",
+      "note": "Reprint of 01089.",
+      "abilities": []
+    },
+    {
+      "card": "16023",
+      "name": "Strength",
+      "note": "Reprint of 01090.",
+      "abilities": []
     }
   ]
 }

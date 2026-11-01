@@ -275,16 +275,31 @@ internal static class AbilityDamageAndThreatExecution
 
     private static void PreventDamage(AbilityEffect.PreventDamage prevention, AbilityDamageAndThreatContext context)
     {
+        long amount = Amount(prevention.Amount, context);
+        if (prevention.Payment is { } payment && !SpendCounters(payment, ref amount, context)) return;
         if (context.Occurrence.DirectDamage is { } direct)
         {
-            direct.Prevent(context.World, Amount(prevention.Amount, context));
+            direct.Prevent(context.World, amount);
             return;
         }
         int target = context.Occurrence.Target >= 0 ? context.Occurrence.Target : context.Occurrence.Subject;
         context.World.Effects.Register(new ContinuousEffect(EffectSource.LastingEffect,
-            Kind: "preventDamage", Amount: Amount(prevention.Amount, context), Card: context.Source.ObjectId,
+            Kind: "preventDamage", Amount: amount, Card: context.Source.ObjectId,
             Affects: target, Lasts: new Duration(Uses: 1)));
     }
 
-
+    // Ruling a1a372ea9b59ba4e: the ability does as much as it can -- three counters
+    // against five damage remove three and prevent three.
+    private static bool SpendCounters(AbilityCounterPayment payment, ref long amount, AbilityDamageAndThreatContext context)
+    {
+        var holder = Find(payment.Holder, context) ?? throw new RulesNotImplementedException(
+            $"'{context.Source.FaceId}' would prevent damage with counters on a card that is not there");
+        amount = Math.Min(amount, DamageWindowEligibility.RemainingDamage(context.World, context.Occurrence));
+        // Equivalent mutant: the trigger needs remaining damage and a counter, so a
+        // resolved payment is positive; the guard keeps an empty payment from registering.
+        if (amount <= 0) return false;
+        AbilityCardOperations.RemoveCounters(context.World, context.World.CounterPools, holder, payment.Counter,
+            amount, context.Trigger, context.Events);
+        return true;
+    }
 }

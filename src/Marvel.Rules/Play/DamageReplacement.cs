@@ -11,6 +11,7 @@ public sealed class DamageReplacement
         Target = request.Target;
         TargetIncarnation = Target.Incarnation;
         CurrentAmount = Math.Max(0, request.Amount);
+        IgnoresTough = request.IgnoresTough;
         Execution = execution;
         execution.Occurrence.Damage = this;
     }
@@ -21,6 +22,8 @@ public sealed class DamageReplacement
     public Card Target { get; }
     /// <summary>The recipient's in-play identity when damage began.</summary>
     public int TargetIncarnation { get; }
+    /// <summary>Whether this damage is placed past a tough status card.</summary>
+    public bool IgnoresTough { get; }
     /// <summary>The invocation owning all replacement work.</summary>
     public AbilityExecution Execution { get; }
     /// <summary>The amount available to the currently executing replacement ability.</summary>

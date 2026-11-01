@@ -583,7 +583,7 @@ countersOn damageOn damagedHero dealAttackDamage dealDamage dealEncounterCards
 deck defeatedByYou delayUntil discardAtRandom discardAnyFromHand discardClassFromHand discardFromHand
 discardHandOfKind discardHandWithResource discardResourceFromHand discardTop discardUntil discardable discardedWithResource
 doubleResourceFor drawToPrintedHandSize dynamic
-eachPlayer else encounterDeck encounterDiscardPile enemies
+eachPlayer else encounterDeck encounterDiscardPile enemies incomingDamage
 enemiesEngagedWithChosenPlayer enemiesWithTrait enemyAttacks enemySchemes exists
 finalStep generate generateTopDiscard giveAdditionalBoost
 chooseHealRecipients grantCharactersControlledBy grantEach grantUntil hasStatus hasTrait heroBasicDefended heroDefended
@@ -593,13 +593,13 @@ isYourIdentity keyword kind legalPractice mainScheme makeTheCall maxBy minions
 minionsEngagedWithYou minionsInThisGameArea modified moveAttackDamage mul namedInPlay obligationsInThisGameArea onto options overkill
 inspectEncounterTop paidWithResource payOrEffect payOrExhaust peekTop perPlayer placeAccelerationToken
 placeAtRandom placeCounters placeThreat power powerAmount powerTargets cardsDiscarded
-preventDamage preventDamageFrom preventDamageWhile preventPlayerAttackDamage preventThreat
+preventDamage preventDamageFrom preventDamageWhile preventDamageWithCounters preventPlayerAttackDamage preventThreat
 preventThreatRemoval printedResourceCountDiscarded putIntoPlay
 recoverDiscardedByResource reduceNextCardCost remainingHealth removeCounters stunUndamagedDefendersAttacker
 removeFromGame removeThreat replaceReady replaceStatus replaceThreatWithDamage requireAllyDefender
 resolveSpecials returnOwnedToHand returnToHand revealTop scheme schemes search
 seqEachTargeted shuffle shuffleInto sideSchemes soakDamage sourceKind sourceTrait spend
-spendEnergyX spendX startingCounters statusCards storeDeckTopBeneath takeDamage then threatCause thwartDifferentSchemes thwartSchemes
+spendEnergyX spendX startingCounters startingHealth statusCards storeDeckTopBeneath takeDamage then threatCause thwartDifferentSchemes thwartSchemes
 thwartableSchemes titleInPlay titled tokensOn topEncounterDiscardBoostPlusOne
 undefendedAttack until upgradesAndSupportsYouControl
 upgradesYouControl villainInThisGameArea wasDefeated withStatus withTrait within withoutAnotherCopyAttached
@@ -2160,3 +2160,30 @@ ruling `5636cf3904ac9370`). A cost reduction lowers the amount paid for X,
 never below 0, and leaves X unchanged; the offered component reads `X-1` for a
 reduction of 1. An event costing X whose ability lacks this cost, and any other
 card kind costing X, raises.
+
+## Counter prevention, incoming damage and basic-use views
+
+`preventDamageWithCounters: { "card": <selector>, "counter": <type> }` resolves
+in a damage interrupt. It removes as many counters of that type from the card
+as damage remains after pending prevention, then prevents one damage per counter
+removed (Groot's Flora Colossus, ruling `a1a372ea9b59ba4e`). With no counters
+or no remaining damage it does nothing. The spelling is an engine choice.
+
+`incomingDamage: "trigger"` is the damage the interrupted damage window's
+recipient would take after pending prevention, uncapped by its remaining hit
+points (ruling `dc116cb456de74af`). Outside a damage window it raises.
+`startingHealth` reads an identity's printed hit points (`rr:hit-points.1`).
+
+`WhenHeroBasicThwartInitiated` is the hero-thwart-only view of the hero
+basic-use interrupt, and `WhenAllyBasicAttackInitiated` the ally-attack-only
+view of the ally basic-use interrupt. `boostBasicUse: "overkill"` is admitted
+on either basic-attack interrupt.
+
+`reduceNextCardCost` for one player accepts `trait`, `kind` and
+`until: "EndOfTurn"` ("this turn"). Without `until` a single player's reduction
+lasts until the end of the player phase; a reduction for any player lasts the
+phase and rejects `until`.
+
+A printed prerequisite "Play only if your identity has the [guardian] trait"
+names the trait by its icon token; the bracketed and plain spellings name the
+same trait.

@@ -1,5 +1,6 @@
 using Marvel.Protocol;
 using Marvel.Rules.Play;
+using Marvel.Rules.Setup;
 using Marvel.Tests;
 using Xunit;
 
@@ -8,7 +9,7 @@ namespace Marvel.Server.Tests;
 public sealed class PublicMsMarvelDeckIndependentTests
 {
     private static readonly string[] ReviewedHeroes =
-        ["ant_man", "black_panther", "black_widow", "captain_america", "captain_marvel", "doctor_strange", "hawkeye", "hulk", "iron_man",
+        ["ant_man", "black_panther", "black_widow", "captain_america", "captain_marvel", "doctor_strange", "groot", "hawkeye", "hulk", "iron_man",
             "ms_marvel", "quicksilver", "she_hulk", "spider_man", "spider_woman", "thor", "wasp"];
 
     [Theory]
@@ -48,9 +49,19 @@ public sealed class PublicMsMarvelDeckIndependentTests
         var factory = DatasetGameFactory.Load(RepositoryPaths.Root);
         Assert.Equal(ReviewedHeroes,
             factory.DiscoverSetup().Heroes.Select(hero => hero.Key).Order(StringComparer.Ordinal));
-        Assert.DoesNotContain(factory.DiscoverDecks().Cards, card => card.Face.StartsWith("16", StringComparison.Ordinal));
-        var rejected = new EngineHost(factory).Exchange(EngineRequest.OpenGame("adjacent", "adjacent-groot",
-            new GameSpecification("rhino", ["groot"], [], 3)));
+        // Groot (16001a–16028) is the only open part of The Galaxy's Most Wanted.
+        Assert.DoesNotContain(factory.DiscoverDecks().Cards, card => card.Face.StartsWith("16", StringComparison.Ordinal)
+            && string.CompareOrdinal(card.Face, "16029") >= 0);
+        // Booster Boots (16052) is a Basic GUARDIAN card from Rocket Raccoon's part of the
+        // same box: Groot may play it in principle, but the closed part of the box is
+        // not admitted, so assessment and game creation refuse it.
+        var starter = factory.DiscoverDecks().Heroes.Single(hero => hero.Key == "groot").Starter;
+        int deft = starter.ToList().IndexOf("16024");
+        string[] draft = [.. starter.Where((_, index) => index != deft), "16052"];
+        var preview = factory.AssessDeck("groot", draft);
+        Assert.Contains(preview.Diagnostics, item => item.Code == "unsupported-face" && item.Face == "16052");
+        var rejected = new EngineHost(factory).Exchange(EngineRequest.OpenGame("adjacent", "adjacent-rocket",
+            new GameSpecification("rhino", ["groot"], [], 3, PlayerDecks: [new PlayerDeckRecipe(draft)])));
         Assert.NotNull(rejected.Error);
         Assert.Null(rejected.Capability);
     }

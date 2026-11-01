@@ -208,16 +208,31 @@ internal static class AbilityProcedureLowering
 
     internal static AbilityPricingEffect.ReduceNextCardCost ReduceCostEffect(AbilityValue value, AbilityLocation location)
     {
-        var fields = Fields(value, location, "player", "amount", "kind", "trait");
+        var fields = Fields(value, location, "player", "amount", "kind", "trait", "until");
         bool any = Required(fields, "player", location) is AbilityValue.Word { Value: "any" };
         var kind = fields.TryGetValue("kind", out var cardKind)
             ? ConditionCardKind(cardKind, location.Child("kind")) : (Marvel.Rules.State.CardKind?)null;
         string? trait = OptionalText(fields, "trait", location);
-        if (!any && (kind is not null || trait is not null))
-            throw location.Error("filtered reductions currently require player any");
+        var filter = kind is null && trait is null ? null : new Marvel.Rules.Play.CardCostFilter(kind, trait);
         return new(any ? AbilityPlayer.You : LowerPlayer(fields["player"], location.Child("player")),
             Numeric(fields, "amount", location))
-        { AnyPlayer = any, Filter = any ? new(kind, trait) : null };
+        {
+            AnyPlayer = any,
+            Filter = any ? new(kind, trait) : filter,
+            Until = ReductionExpiry(fields, any, location),
+        };
+    }
+
+    // Engine choice: "this turn" spells EndOfTurn; omitted, a reduction lasts the phase.
+    private static string ReductionExpiry(
+        IReadOnlyDictionary<string, AbilityValue> fields, bool any, AbilityLocation location)
+    {
+        string? until = OptionalText(fields, "until", location);
+        if (until is not (null or Marvel.Rules.Timing.TimingPoints.EndOfTurn))
+            throw location.Child("until").Error("a card cost reduction can only last until EndOfTurn");
+        if (any && until is not null)
+            throw location.Child("until").Error("a reduction for any player lasts the phase");
+        return until ?? Marvel.Rules.Timing.TimingPoints.EndOfPlayerPhase;
     }
 
     internal static AbilityEffect.ThwartGroup DistributedThwart(AbilityValue value, AbilityLocation location)

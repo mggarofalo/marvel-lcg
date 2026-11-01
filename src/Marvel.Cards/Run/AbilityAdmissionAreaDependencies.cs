@@ -52,7 +52,7 @@ internal static class AbilityAdmissionAreaDependencies
         typeof(AbilityEffect.GrantControlledCharacters),
         typeof(AbilityEffect.DiscardAtRandom), typeof(AbilityEffect.DiscardTop),
         typeof(AbilityPricingEffect.ReduceNextCardCost), typeof(AbilityEffect.DiscardHandCards),
-        typeof(AbilityEffect.DiscardResourceIcons),
+        typeof(AbilityEffect.DiscardResourceIcons), typeof(AbilityEffect.ChooseStatusRecipients),
     ];
 
     // This engine-owned preflight collects dependencies of singular lookups,
@@ -223,6 +223,10 @@ internal static class AbilityAdmissionAreaDependencies
             AbilityEffect.DiscardAtRandom discard => discard.Count,
             AbilityEffect.DiscardTop discard => discard.Count,
             AbilityPricingEffect.ReduceNextCardCost reduction => reduction.Amount,
+            // The recipients are a plural selection made at their own prompt; only the
+            // count read when they are chosen can depend on a singular lookup.
+            // Equivalent mutant: every authored count is a constant, which depends on no area.
+            AbilityEffect.ChooseStatusRecipients status => status.Count ?? new AbilityNumber.Constant(status.Maximum),
             _ => throw new InvalidOperationException("Unknown numeric area dependency"),
         };
         CollectSingularAreaDependencies(number, context, areas);

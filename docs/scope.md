@@ -60,7 +60,7 @@ a later product executable.
 The executable ability book contains the 209 Core Set, 181 Rise of Red Skull,
 35 Captain America and 60 Wrecking Crew faces, plus the candidates' 57 Green
 Goblin, 34 Ms. Marvel, 35 Thor, 34 Black Widow, 40 Doctor Strange and 33 Hulk faces
-five Ronan Kree Fanatic faces, 35 Ant-Man faces, 36 Wasp faces and 33 Quicksilver faces (827 total). Product admission requires complete
+five Ronan Kree Fanatic faces, 35 Ant-Man faces, 36 Wasp faces, 33 Quicksilver faces and 29 Groot faces (856 total). Product admission requires complete
 playable content and the verified published starter; physical packaging copy
 quantities are outside that requirement. Language support for a later card pattern
 does not admit that product.
@@ -127,7 +127,7 @@ exact pack membership, modular role and the complete seven-copy recipe are requi
 together. A missing face or malformed recipe closes the entire set while preserving
 predecessor products. Standard and Expert scenario slots accept its normal modular
 selection with starter or legal custom player decks. Recommended defaults remain
-scenario-owned. Discovery has sixteen heroes, 39 scenario/mode recipes and fifteen
+scenario-owned. Discovery has seventeen heroes, 39 scenario/mode recipes and fifteen
 encounter sets, thirteen of them modular. The separate Galaxy’s Most Wanted Ronan
 scenario remains unsupported. Focused evidence is in
 `docs/content/ronan-public-admission.md`; this gate does not establish complete-game,
@@ -150,3 +150,11 @@ exact 40-card starter, obligation and nemesis composition. The two identity
 faces represent one physical card. Four extra customization cards are outside
 the starter. Missing a face or changing a required recipe closes the pack.
 Focused evidence is in `docs/content/quicksilver-public-admission.md`.
+
+Groot has candidate public admission for his 29 printed faces in The Galaxy's
+Most Wanted and his exact 40-card starter, obligation and nemesis composition.
+The two identity faces represent one physical card. The rest of that box,
+including Rocket Raccoon, its villains and its campaign, is outside the
+boundary; admission opens Groot's faces only. Missing a face or changing the
+required recipe closes him. Focused evidence is in
+`docs/content/groot-public-admission.md`.

@@ -78,6 +78,13 @@ public static class StandaloneProductAdmission
         && setup.HeroNames.Contains("quicksilver")
         && QuicksilverRecipe.Complete(setup.Hero("quicksilver"));
 
+    /// <summary>Admits Groot's complete face inventory within The Galaxy's Most Wanted and his published starter.</summary>
+    public static bool Groot(SetupCatalog setup, CardCatalog cards, IReadOnlySet<string> authored) =>
+        // The Galaxy's Most Wanted is admitted in parts; Groot's faces are one product.
+        GrootRecipe.Faces.All(face => cards.Has(face) && cards.Pack(face) == "gmw" && authored.Contains(face))
+        && setup.HeroNames.Contains("groot")
+        && GrootRecipe.Complete(setup.Hero("groot"));
+
     /// <summary>Admits the complete seven-card Kree Fanatic modular set.</summary>
     public static bool KreeFanatic(SetupCatalog setup, CardCatalog cards, IReadOnlySet<string> authored) =>
         Complete("ron", ["90001", "90002", "90003", "90004", "90005"], cards, authored)

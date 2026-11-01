@@ -170,7 +170,7 @@ internal static class AbilityImmediateExecution
                         evaluator.Amount(reduction.Amount), reduction.Filter!);
                 else CardPayment.ReduceNextCardCost(
                     world, source, evaluator.Seat(reduction.Player),
-                    evaluator.Amount(reduction.Amount));
+                    evaluator.Amount(reduction.Amount), reduction.Filter, reduction.Until);
                 return new(true, true);
             case AbilityEffect.GrantField { Until: { } until } field:
                 GrantUntil(

@@ -11,8 +11,8 @@ internal static class MakeTheCallPayment
         Decision input, Card source, Card ally, int player, List<GameEvent> events)
     {
         var allocations = input.Allocated;
-        var price = allocations.Count == 0 ? null : AbilityExpressionEvaluation.MakeTheCallPrice(
-            world, ally, AbilityExpressionEvaluation.MakeTheCallSources(world, player, source, ally, abilities));
+        var price = allocations.Count == 0 ? null : MakeTheCallOffers.Price(
+            world, ally, MakeTheCallOffers.Sources(world, player, source, ally, abilities));
         return CardResourcePayments.Spend(world, abilities, new CardResourcePaymentRequest
         {
             Hands = [world.Seats[player].Hand], Paying = input.Spent,

@@ -261,14 +261,14 @@ internal static class AbilityStructuralExecution
     internal static Prompt DescribeMakeTheCall(AbilityStructuralContext context)
     {
         var world = context.Expressions.World;
-        var offers = AbilityExpressionEvaluation.AlliesInPlayerDiscards(world)
-            .Select(ally => (Ally: ally, Sources: AbilityExpressionEvaluation.MakeTheCallSources(
+        var offers = MakeTheCallOffers.AlliesInPlayerDiscards(world)
+            .Select(ally => (Ally: ally, Sources: MakeTheCallOffers.Sources(
                 world, context.Player, context.Expressions.Source, ally,
                 context.ResourceAbilities)))
-            .Where(candidate => AbilityExpressionEvaluation.MakeTheCallAffordable(world, candidate.Ally, candidate.Sources))
+            .Where(candidate => MakeTheCallOffers.Affordable(world, candidate.Ally, candidate.Sources))
             .Select(candidate => new Affordance(candidate.Ally.ObjectId, ChooseVerb,
                 candidate.Ally.ObjectId, candidate.Ally.Owner, candidate.Ally.FaceId,
-                Costs: [AbilityExpressionEvaluation.MakeTheCallPrice(world, candidate.Ally, candidate.Sources)])).ToList();
+                Costs: [MakeTheCallOffers.Price(world, candidate.Ally, candidate.Sources)])).ToList();
         return new Prompt(context.Player, Question.Element, TimingPriority.Untimed, Steps.TurnAction,
             $"{context.SourceFace}: choose an ally", false, offers);
     }
@@ -276,11 +276,11 @@ internal static class AbilityStructuralExecution
     internal static AbilityStructuralTransition AnswerMakeTheCall(
         AbilityStructuralContext context, Decision answer)
     {
-        var offered = AbilityExpressionEvaluation.AlliesInPlayerDiscards(context.Expressions.World)
-            .Select(ally => (Ally: ally, Sources: AbilityExpressionEvaluation.MakeTheCallSources(
+        var offered = MakeTheCallOffers.AlliesInPlayerDiscards(context.Expressions.World)
+            .Select(ally => (Ally: ally, Sources: MakeTheCallOffers.Sources(
                 context.Expressions.World, context.Player, context.Expressions.Source, ally,
                 context.ResourceAbilities)))
-            .Where(candidate => AbilityExpressionEvaluation.MakeTheCallAffordable(
+            .Where(candidate => MakeTheCallOffers.Affordable(
                 context.Expressions.World, candidate.Ally, candidate.Sources))
             .Select(candidate => candidate.Ally.ObjectId).ToHashSet();
         return !answer.IsDecline && offered.Contains(answer.Affordance)

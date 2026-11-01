@@ -35,7 +35,7 @@ internal static class AbilityAffordanceDescription
             AnchorPlayer: ability.Player,
             Label: found.Name,
             Targets: recipients ?? AdmittedCostTargets(execution, world, card, found, ability.Player),
-            Costs: price is null ? null : [price], Description: Description(execution, world, card, ability, found.Effect, contextual, entry))
+            Costs: price is null ? null : [price], Description: Description(execution, world, card, ability, found, contextual, entry))
         {
             Timing = found.Trigger.Timing,
             ContextCardIds = ContextCards(world, ability),
@@ -89,16 +89,16 @@ internal static class AbilityAffordanceDescription
             : caption;
 
     private static string? Description(AbilityResolutionExecution execution, World world, Card source,
-        PendingAbility ability, AbilityEffect effect, string? contextual, string? entry) =>
+        PendingAbility ability, CompiledCardAbility found, string? contextual, string? entry) =>
         entry ??
         AbilitySourceThreatDescription.Summary(execution.StructuralContext(
             new AbilityResolutionState(world, source, new Occurrence(0, [Steps.TurnAction],
-                Subject: source.ObjectId, Player: ability.Player), ability.Player, [])), effect)
-        ?? AbilityAttackHealingDescription.Summary(effect, ability.TriggeringAttack)
-        ?? AbilityInvocationDescription.Summary(execution, world, ability.Player, effect)
+                Subject: source.ObjectId, Player: ability.Player), ability.Player, [])), found.Effect)
+        ?? AbilityAttackHealingDescription.Summary(found.Effect, ability.TriggeringAttack)
+        ?? AbilityInvocationDescription.Summary(execution, world, ability.Player, found.Effect)
         ?? (contextual is not null
             ? contextual + ". Damage prevention and interrupts can change the result."
-            : AbilityEffectDescription.Summary(effect) ?? AbilitySourceActionDescription.Caption(effect));
+            : AbilityEffectDescription.Summary(found.Effect, found.Trigger.Event) ?? AbilitySourceActionDescription.Caption(found.Effect));
 
     private static bool CanCommitRecipient(TargetRequest? recipients, CardKind kind, AbilityType timing) =>
         recipients is not null && (kind != CardKind.Event
