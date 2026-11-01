@@ -12,9 +12,9 @@ internal static class SpatialTableContextRenderer
     {
         if (world is null) return;
         result.RegisterContextualWorld(world);
-        // Four encounter groups use the entire far mat. Their timeline occupies
+        // Encounter groups and separated game areas use the entire far mat. Their timeline occupies
         // the seam below the group piles, rather than the source-tableau column.
-        Rect2 activity = geometry.HasEncounterGroups
+        Rect2 activity = geometry.HasScenarioColumns
             ? new Rect2(22, 360, geometry.Width - 44, 44)
             : new Rect2(geometry.SourceTableau.Position.X,
                 geometry.Revealing.Position.Y, geometry.SourceTableau.Size.X,
