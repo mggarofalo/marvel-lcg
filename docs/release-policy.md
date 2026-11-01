@@ -82,7 +82,7 @@ independent identities do:
 |---|---:|---|
 | Engine protocol | `45` | A request, response, affordance, event or descriptor change is not understood by the prior endpoint. |
 | Session schema | `7` | The strict persisted JSON shape changes. |
-| Engine replay contract | `engine-replay-v34` | The same setup and decision trace may resolve differently. |
+| Engine replay contract | `engine-replay-v35` | The same setup and decision trace may resolve differently. |
 | RNG contract | `mt19937-iso-cxx` | The seeded random stream changes. |
 | State digest | `state-digest-v3` | The canonical hidden-state serialization changes. |
 | Runtime datasets | Three SHA-256 values | Any byte in `cards.json`, `setup.json` or `abilities.json` changes. |
@@ -92,7 +92,9 @@ three runtime dataset hashes equal the running server's. There is no upgrade,
 adapter or migration route from any earlier identity: a release that changes
 any of them makes every earlier save unloadable. This is a product choice, not
 a rule of the game; the owner decided that legacy saves need no handling
-(MARVEL-896). Replay v34 names excess damage an identity deals among its
+(MARVEL-896). Replay v35 makes a turn-action event, such as Tackle (05015)
+against a stalwart enemy, offer the resource declaration its effect requires;
+see [session-ledger.md](session-ledger.md#replay-identity). Replay v34 names excess damage an identity deals among its
 occurrence's conditions and lets a fully prevented attack still deal its
 damage (rr:prevent.1.3), so Into the Fray (13013, 16042) counts that excess.
 Replay v33 withholds a "would take" damage interrupt, such as

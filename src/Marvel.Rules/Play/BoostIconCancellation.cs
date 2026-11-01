@@ -24,9 +24,11 @@ public sealed class BoostIconCancellation
     private long Cancelled { get; set; }
     // rr:amplify-icon: "add one additional boost icon to that card for each amplify
     // icon in play." Engine choice: when a count interrupt counts another card's
-    // icons instead, that card is not a boost card and gains no amplify icon.
+    // icons instead, that card is not a boost card and gains no amplify icon. A
+    // boost card that lost its icons gains none either (rr:loses.2).
     internal long Contribution(World world, ICardFacts facts) => Math.Max(0,
-        Count.Value + (Count.Replaced ? 0 : MainScheme.Amplify(world, facts, ActivatingEnemy(world))) - Cancelled);
+        Count.Value + (Count.Replaced || BoostIconCounting.Lost(world, Card) ? 0
+            : MainScheme.Amplify(world, facts, ActivatingEnemy(world))) - Cancelled);
     private static Card? ActivatingEnemy(World world) =>
         world.Activation is { Enemy: >= 0 } activation ? world.Cards[activation.Enemy] : null;
     /// <summary>Whether this exact boost window remains live.</summary>

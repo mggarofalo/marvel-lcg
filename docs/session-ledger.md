@@ -737,8 +737,15 @@ packet. Public wire support is protocol 38 and rejects protocol 37 peers.
 
 ### Replay identity
 
-The current replay identity is `engine-replay-v34`. Every earlier replay
-identity is refused. Under v34 a player identity that deals excess damage to an
+The current replay identity is `engine-replay-v35`. Every earlier replay
+identity is refused. Under v35 a turn-action event whose effect depends on the
+declared payment offers the declaration it requires: when every payment that
+leaves the event something to do declares the same resources, the offer's cost
+carries that requirement (rr:initiating-abilities.step.5, rr:event.3). A v34
+trace in which Tackle (05015) or Concussive Blow (05031) is offered against a
+stalwart enemy records a prompt whose cost v35 no longer produces, and a
+non-physical declaration v34 accepted for the offer and then refused is now
+rejected as an invalid payment. Under v34 a player identity that deals excess damage to an
 enemy (rr:excess-damage) adds the engine's `WhenExcessDamageDealt` condition to
 that damage's occurrence, and a response window names its occurrence's
 conditions, so a v33 trace with a response prompt after excess damage records a

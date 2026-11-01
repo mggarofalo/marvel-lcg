@@ -19,13 +19,15 @@ public sealed class ConditionalStatusPaymentReviewTests
     public void RejectedDeclarationLeavesTheSameOfferRetryable(string face, string status)
     {
         // "The target is valid if at least one of those effects can affect the target."
+        // Only a physical declaration leaves the event an effect, so the offer requires one.
         var (game, world, runner, card, wild, mental) = Prepare(face, status);
         var action = Assert.Single(game.Pending!.Affordances, a => a.AnchorId == card.ObjectId);
+        Assert.Equal("R", string.Concat(Assert.Single(action.CostOptions).Rule ?? []));
         var before = world.Digest().Canonical();
         var pending = game.Pending;
         var random = world.Random.Generator.GetState();
         var agenda = world.Agenda.Outstanding.ToArray();
-        Assert.Throws<RulesNotImplementedException>(() => game.Resolve(new Decision(action.Id, [],
+        Assert.Throws<ArgumentException>(() => game.Resolve(new Decision(action.Id, [],
             [wild.ObjectId, mental.ObjectId], Allocations:
             [new(wild.ObjectId, 0, "Y"), new(mental.ObjectId, 0, "BB")])));
         Assert.Equal(before, world.Digest().Canonical());
@@ -81,7 +83,7 @@ public sealed class ConditionalStatusPaymentReviewTests
         if (!valid)
         {
             var before = world.Digest().Canonical();
-            Assert.Throws<RulesNotImplementedException>(() => game.Resolve(answer));
+            Assert.Throws<ArgumentException>(() => game.Resolve(answer));
             Assert.Equal(before, world.Digest().Canonical());
             return;
         }

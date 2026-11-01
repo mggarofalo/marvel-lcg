@@ -100,7 +100,15 @@ pending.
 `ScarletWitchAdmissionTests` closes the pack when a face is missing, a face
 changes pack, or any recipe component changes, including a single obligation.
 
-SCAN_RESULTS
+A zero-raise scan played the public starter against every admitted scenario
+(Rhino, Klaw, Ultron, Crossbones, Absorbing Man, Taskmaster, Zola, Red Skull,
+Wrecking Crew, Risky Business, Mutagen Formula), seeds 1–40, twice: once with
+the research policy, which declines optional abilities, and once also taking
+every free optional ability her own cards offer. None of the 880 games raised
+`RulesNotImplementedException`. Fifteen games (seven and eight) ended before
+the policy-coverage checks were met: the hero was defeated before playing a
+card, attacking or acting in every seat. Those are complete games, not engine
+failures.
 
 ## Native evidence
 

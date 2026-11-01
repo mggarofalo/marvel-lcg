@@ -48,9 +48,11 @@ public sealed class BoostIconCount
     /// <summary>The number this count currently reads.</summary>
     /// <remarks>
     /// Engine choice: an adjustment never makes a count negative. A card cannot
-    /// carry fewer than zero icons, and no printed decrease says otherwise.
+    /// carry fewer than zero icons, and no printed decrease says otherwise. A card
+    /// that lost its boost icons cannot regain them (rr:loses.2), so no adjustment applies.
     /// </remarks>
-    public long Value => Final ?? Math.Max(0, BoostIconCounting.Icons(Game, Counted) + Adjustment);
+    public long Value => Final ?? (BoostIconCounting.Lost(Game, Counted) ? 0
+        : Math.Max(0, BoostIconCounting.Icons(Game, Counted) + Adjustment));
 
     /// <summary>Whether this count belongs to the game and has not completed.</summary>
     public bool IsCurrent(World world) => ReferenceEquals(Game, world) && Final is null;

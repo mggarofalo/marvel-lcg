@@ -36,15 +36,21 @@ public static class BoostIconCounting
     /// apply, and an encounter card also gains one icon for each in-play
     /// <see cref="EncounterIncreaseField"/> modifier (The Next Evolution, 15024).
     /// Amplify belongs to a boost card during its activation and is added there.
+    /// rr:loses.2: "A lost characteristic cannot be regained while the ability
+    /// causing it to be lost is in effect", so a card that lost its boost icons has
+    /// none and gains none.
     /// </remarks>
     public static long Icons(World world, Card card)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(card);
-        long printed = Characteristics.IsLost(world, card, "boost_const") ? 0
-            : StateFields.Modified(world, card, "boost_const", world.Facts, world.Players);
+        if (Lost(world, card)) return 0;
+        long printed = StateFields.Modified(world, card, "boost_const", world.Facts, world.Players);
         return Math.Max(0, printed + (card.Owner == World.Scenario ? EncounterIncrease(world) : 0));
     }
+
+    /// <summary>Whether the card has lost its boost icons.</summary>
+    public static bool Lost(World world, Card card) => Characteristics.IsLost(world, card, "boost_const");
 
     /// <summary>The icons every encounter card gains from constants in play.</summary>
     public static long EncounterIncrease(World world)
