@@ -213,6 +213,17 @@ required for candidate admission. Groot and Rocket Raccoon are the only parts of
 The Galaxy's Most Wanted declared here; every other face of the box stays
 closed.
 
+## Scarlet Witch candidate
+
+The starter is pinned to the vendored MarvelSDB quantities in
+`datasets/marvelsdb/pack/scw.json` and `scw_encounter.json`; no printed divider
+was inspected, so the quantities are a repository choice from that snapshot. It
+supplies 15 signature, 16 Justice and 9 Basic cards. Both copies of obligation
+15023 are separate (ruling b29d66914e946389: the two obligations are
+intentional), as are nemesis 15024–15027. Extras 15028–15031 belong to the pack,
+not its starter. All 32 faces and the exact recipe are required for candidate
+admission.
+
 ## The Once and Future Kang
 
 Temporal, Anachronauts and Master of Time (key `mot`) are declared from the

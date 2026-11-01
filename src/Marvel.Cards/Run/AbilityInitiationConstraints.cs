@@ -189,6 +189,10 @@ internal static class AbilityInitiationConstraints
 
     internal static bool CanInitiateChooseCard(AbilityEffect node, AbilityAdmissionScope cast)
     {
+        // The cards an earlier discard of this ability produces are not discarded yet.
+        if (node is AbilityEffect.ChooseCard { From: AbilityCardSelection.Query { Kind: AbilityCardQuery.UncountedDiscarded } }
+            && AbilityFutureDiscardAdmission.MayHaveDiscarded(cast))
+            return true;
         bool CanChooseFromCurrentBinding() =>
             (!RequiresChosenPlayer(((AbilityEffect.ChooseCard)node).From)
                 || (cast.PlayerSelection ?? cast.Chosen) is { Owner: >= 0 })

@@ -104,12 +104,20 @@ internal static class AbilityInitiation
         if (node.OperationName() == "if")
             return ConditionalGuaranteesOnePower(node, power);
         if (node.OperationName() != "seq") return false;
-        // Engine choice: an any-number exhaustion whose count feeds the attack may
-        // resolve immediately before the labelled power it modifies.
-        var steps = OrderedEffects(node).SkipWhile(step => step is AbilityEffect.ExhaustAnyNumber).ToList();
+        var steps = OrderedEffects(node).SkipWhile(PrecedesPower).ToList();
         return steps.Count > 0 && GuaranteesOneLabeledPower(steps[0], power)
             && steps.Skip(1).All(step => !PowerNodes(step, power).Any());
     }
+
+    // Engine choice: an any-number exhaustion, a top-deck discard or an enemy
+    // activation that the printed power contains may resolve immediately before
+    // the labelled power, because the engine does not suspend inside one.
+    private static bool PrecedesPower(AbilityEffect step) => step switch
+    {
+        AbilityEffect.ExhaustAnyNumber or AbilityEffect.DiscardTop or AbilityEffect.ActivateEnemies => true,
+        AbilityEffect.Conditional { Then: { } then, Else: null } => PrecedesPower(then),
+        _ => false,
+    };
 
     private static bool ChoiceGuaranteesOnePower(AbilityEffect.Choose choice, string power) =>
         choice.Options.Length >= 2

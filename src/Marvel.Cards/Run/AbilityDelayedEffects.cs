@@ -31,6 +31,10 @@ internal static class AbilityDelayedEffects
     {
         var target = find(delayed.Card) ?? throw new RulesNotImplementedException(
             $"'{context.Admission.Source.FaceId}' would delay a discard of a card that is not there");
+        if (delayed.Condition == Steps.AttackEnds && context.Admission.Query.Occurrence.ActorFacts is { IsEnemy: false }
+            && !CharacterAttackEnd.Bounded(context.Admission.World))
+            throw new RulesNotImplementedException(
+                $"'{context.Admission.Source.FaceId}' would delay past a player attack made during an enemy attack");
         context.Admission.World.Effects.Register(new ContinuousEffect(
             EffectSource.DelayedEffect, Kind: DelayedEffects.DiscardFromPlay,
             Card: context.Admission.Source.ObjectId, Affects: target.ObjectId,

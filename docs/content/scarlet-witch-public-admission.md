@@ -1,0 +1,85 @@
+# Scarlet Witch candidate public admission
+
+The Scarlet Witch hero pack (`scw`, `pack:mc15`) has 32 printed faces: the
+identity 15001a/b, 8 signature card titles (15 copies), 8 Justice and 5 Basic
+starter titles (25 copies), obligation 15023 (two copies), the Luminous nemesis
+set (15024–15027) and extras 15028–15031. The setup record pins the vendored
+MarvelSDB quantities (`datasets/marvelsdb/pack/scw.json`,
+`scw_encounter.json`); no printed divider was inspected, so those quantities
+are a repository choice from that snapshot. Ruling b29d66914e946389 confirms the
+two obligations are intentional. Admission requires every face to be authored
+and the exact recipe (`ScarletWitchRecipe`).
+
+## Boost-icon counts
+
+Ruling 6962a015e8597900: "Boost icons are counted whenever a game step or card
+ability determines the exact number of boost icons on an encounter card." The
+engine makes each count an occurrence, `WhenBoostIconsCounted`, with an
+interrupt window that Chaos Control and Scarlet Witch's Crest answer.
+
+- An attack boost card turned faceup is counted in its faceup occurrence, so the
+  Crest changes it before Preemptive Strike cancels icons (ruling
+  937d6ff4f970a1da).
+- An authored ability counts the encounter cards a node reads immediately
+  before that node resolves (`boostIconsDiscarded`,
+  `topEncounterDiscardBoostPlusOne`, `boostIcons: <card>`). A "2 or more" test
+  is a count (ruling 310c4caa404d0f5a). Another player's count qualifies
+  (ruling 4e1ff06e6c235760).
+- Engine choice: a count no interrupt could observe completes without a window.
+  Admitted games without Scarlet Witch therefore resolve exactly as before, and
+  the replay identity is unchanged.
+- Chaos Control is a `would` interrupt. rr:would gives it priority over the
+  Crest on the same count, so optional `would` interrupts now get their own
+  offer stage.
+- The Next Evolution adds 1 to every scenario-owned encounter card while it is
+  in play (rulings 1ea208998735ef4b, 805b3f9b199ca68b). A count is never
+  negative, and a decrease needs a positive count.
+
+## Interpretations
+
+Each choice is recorded in the row note or the code comment that owns it.
+
+- **Hex Bolt** discards three cards, then resolves each in the order the player
+  chooses, counting each as it resolves (rulings 123a79b5c8900e0c,
+  a5028ed150b39433, 805b3f9b199ca68b, 0870bc11f295fbb0). The encounter deck
+  reshuffles, so three cards are discarded.
+- **Molecular Decay**, **Swift Retribution** and **Bait and Switch**: as for All
+  for One (13032), the discard or the enemy activation resolves immediately
+  before the labelled power begins, because the engine does not suspend inside
+  one. A stunned hero's Swift Retribution and a confused hero's Bait and Switch
+  skip the activation, since the status replaces the whole power.
+- **Superpowered Siblings** draws three while a card titled or subtitled
+  Pietro Maximoff is in play (rr:team-up.2, ruling 82607e2d70cbf9dd).
+- **Chaos Magic** plays a card ignoring its resource cost (rr:ignore.1): no
+  increase or reduction applies, and a paid-resource condition reads the empty
+  payment (ruling 77085e3b31a219a4). A card with a resource requirement is not
+  offered (rr:requirement-resources.2). It then discards encounter cards equal
+  to the printed cost.
+- **Agatha Harkness** adds one looked-at card to hand; two or more remaining
+  cards are ordered onto the deck bottom in one answer.
+- **Turn the Tide** answers a thwart whose removal took a scheme's last threat
+  while the identity was a hero (rulings 2f5ce668fd00dbb2, 0e978ae1cc77dc8c).
+- **Last Stand** grants +3 ATK for the attack and delays the discard to the
+  attack's end, before consequential damage (ruling 01d17bfed5e5dad8,
+  rr:delayed-effect.1). A player attack's end now ends attack-bounded effects
+  and delays when no enemy attack is in progress; Last Stand raises before any
+  change if an ally attack happens inside an enemy attack.
+- **Chaos Manipulation** searches, discards, and shuffles the searched deck at
+  the end (rr:search.3). **Slipping Sanity** counts star icons, which are not
+  boost icons (rr:boost-boost-icon.1).
+
+## Evidence
+
+`ScarletWitchBoostCountTests`, `ScarletWitchPlayerCardTests` and
+`ScarletWitchSignatureTests` run the production rows on synthetic boards.
+`ScarletWitchAdmissionTests` closes the pack when a face is missing, a face
+changes pack, or any recipe component changes, including a single obligation.
+
+SCAN_RESULTS
+
+## Native evidence
+
+No interaction is materially new. A count opens an ordinary interrupt window;
+Agatha's order uses the ordered card-look prompt Thor's inspection introduced;
+Chaos Magic uses the scoped hand-play prompt. No native journey was recorded for
+this pack.

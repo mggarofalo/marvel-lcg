@@ -9,6 +9,11 @@ internal static class AbilityFutureDiscardAdmission
     internal static bool MayHavePositiveAmount(AbilityNumber number, AbilityAdmissionScope scope) =>
         AbilityInitiationPrimitives.Amount(number, scope) > 0 || HasPendingAmount(number, scope);
 
+    /// <summary>Whether an earlier step or cost of this ability discards cards a later choice reads.</summary>
+    internal static bool MayHaveDiscarded(AbilityAdmissionScope scope) =>
+        scope.Reachability.PriorSteps.Any(effect => ProducesReceipt(effect, scope))
+        || scope.Reachability.PaymentMayMutate && ProducesReceipt(scope.Reachability.PaymentCost);
+
     private static bool HasPendingAmount(AbilityNumber number, AbilityAdmissionScope scope) =>
         UsesDiscardReceipt(number) && !HasFixedZeroBound(number)
         && (scope.Reachability.PriorSteps.Any(effect => ProducesReceipt(effect, scope))

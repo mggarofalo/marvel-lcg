@@ -69,7 +69,7 @@ internal sealed class BasicAttackDivisionResolution
                 GrantedOverkill = overkill,
             }, events);
         if (!damage.IsComplete || world.IsOver) { Suspend(events); return; }
-        Execution.Occurrence.Also(Steps.AttackEnds);
+        CharacterAttackEnd.Complete(world, Execution.Occurrence, events);
         Execution.Occurrence.Also(Steps.BasicAttackEnds);
         Execution.Finish(events);
     }

@@ -92,6 +92,12 @@ public static class StandaloneProductAdmission
         && setup.HeroNames.Contains("rocket_raccoon")
         && RocketRaccoonRecipe.Complete(setup.Hero("rocket_raccoon"));
 
+    /// <summary>Admits Scarlet Witch's complete face inventory and published starter.</summary>
+    public static bool ScarletWitch(SetupCatalog setup, CardCatalog cards, IReadOnlySet<string> authored) =>
+        Complete("scw", ["15001a", "15001b", .. Enumerable.Range(2, 30).Select(number => $"15{number:000}")], cards, authored)
+        && setup.HeroNames.Contains("scarlet_witch")
+        && ScarletWitchRecipe.Complete(setup.Hero("scarlet_witch"));
+
     /// <summary>Admits the complete seven-card Kree Fanatic modular set.</summary>
     public static bool KreeFanatic(SetupCatalog setup, CardCatalog cards, IReadOnlySet<string> authored) =>
         Complete("ron", ["90001", "90002", "90003", "90004", "90005"], cards, authored)

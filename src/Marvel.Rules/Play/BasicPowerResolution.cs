@@ -124,7 +124,7 @@ public static class BasicPowerResolution
         if (attack.Continuation is not null)
         {
             world.PowerAbilities.ResolveCardAttack(world, attack, occurrence, events);
-            occurrence.Also(Steps.AttackEnds);
+            CharacterAttackEnd.Complete(world, occurrence, events);
             return;
         }
 
@@ -163,7 +163,7 @@ public static class BasicPowerResolution
             world.Effects.Use(temporaryOverkill);
         }
 
-        occurrence.Also(Steps.AttackEnds);
+        CharacterAttackEnd.Complete(world, occurrence, events);
         occurrence.Also(Steps.BasicAttackEnds);
     }
 

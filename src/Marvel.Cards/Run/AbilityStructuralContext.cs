@@ -33,6 +33,10 @@ internal sealed record AbilityStructuralContext(
         !AbilityCardQueries.IsPlayerCard(Expressions.World.Facts, Expressions.Source)
         && Tier is { } tier && AbilityTypes.IsMandatory(tier);
 
+    /// <summary>Whether a card choice offers its legal cards without filtering by later text.</summary>
+    internal bool ChoosesWithoutContinuation(AbilityEffect.ChooseCard choice) =>
+        IsMandatoryEncounter || AbilityAdmission.IsDiscardReceiptChoice(choice.From);
+
     internal AbilityAdmissionContext Admission() => new(
         Program, ResourceAbilities, Expressions, Reachability, Power, HasContinuation);
 }

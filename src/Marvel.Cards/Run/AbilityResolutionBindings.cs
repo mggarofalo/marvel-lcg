@@ -91,6 +91,5 @@ internal sealed class AbilityResolutionBindings(World world, Card source)
             // An invocation not yet begun is checked for initiation and has revealed nothing.
             RevealedThisResolution = resolution.Execution?.Revealed ?? [],
             UncountedDiscarded = [.. resolution.Discarded.Where(card => card.Owner == World.Scenario
-                && card.Area.Type == DeckType.EncounterDiscardPile
                 && !resolution.Results.ContainsKey(AbilityBoostCounting.Key(card))).Select(card => card.ObjectId)] };
 }

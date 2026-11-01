@@ -79,11 +79,11 @@ public sealed class ScarletWitchBoostCountTests
     }
 
     [Fact]
-    [Rule("rr:alter-ego-form.1")]
+    [Rule("rr:identity.4")]
     public void AnUnobservedCountOpensNoWindow()
     {
-        // rr:alter-ego-form.1: only the faceup side's abilities are active, so the
-        // alter-ego has no Chaos Control and there is no Crest.
+        // rr:identity.4: "The facedown side of an identity card is considered to be
+        // out of play", so the alter-ego has no Chaos Control and there is no Crest.
         var runner = AuthoredCards.Runner();
         var world = Board(AlterEgo);
         var luminous = world.CreateCard(Luminous, world.AreaOf(DeckType.EncounterDiscardPile));
