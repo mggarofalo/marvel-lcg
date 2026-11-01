@@ -14,6 +14,7 @@ public sealed class DecisionSheetHeadTests
         Assert.Equal(["Thor", "Required", "Heimdall"], facts.Select(fact => fact.Label));
         Assert.Equal("Decision for Thor · Inspecting False Alarm", facts[0].Tooltip);
         Assert.Equal("Choose to continue.", facts[1].Tooltip);
+        Assert.Equal("This card's effect caused the decision. Heimdall.", facts[2].Tooltip);
         Assert.DoesNotContain(facts, fact => fact.Label.Contains(frame.Instruction, StringComparison.Ordinal)
             || fact.Tooltip.Contains(frame.Instruction, StringComparison.Ordinal));
     }
