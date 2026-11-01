@@ -41,26 +41,47 @@ public sealed class WouldTakeAfterToughTests : CoreCardTestBase
     public void DamageThatIgnoresToughStillReachesCrossbonesArmor()
     {
         // 06006: with the Aerial trait, Lightning Strike's damage ignores Tough without
-        // discarding it, so Crossbones would take it and the Armor holds it. Mjolnir
-        // (06009) gives Thor the Aerial trait.
+        // discarding it, so Crossbones would take it and the Armor holds it.
         var world = ThorActualFixture.Board("06001a", villain: Crossbones);
-        world.CreateCard("06009", world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), cardOwner: 0));
         var villain = world.TheCardIn(DeckType.VillainArea)!;
         var armor = world.CreateCard(Armor, world.AreaOf(DeckType.UpgradesArea, PlayArea.Villains, villain.ObjectId));
         Statuses.Give(world, villain, Statuses.Tough);
+
+        AerialLightningStrike(world);
+
+        Assert.Equal((1, 0, true), (armor.Damage, villain.Damage, Statuses.Has(world, villain, Statuses.Tough)));
+    }
+
+    [Fact]
+    [Rule("rr:damage")]
+    public void DamageThatIgnoresToughStillReachesNormanOsbornsReplacement()
+    {
+        // Lightning Strike's ignore-Tough damage passes Norman's tough status card, so he
+        // would take it and removes 1 infamy instead.
+        var world = ThorActualFixture.Board("06001a", villain: "02001a,02001b");
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        var environment = world.CreateCard("02006a,02006b", world.AreaOf(DeckType.EnvironmentArea));
+        environment.PlaceTokens("c_infamy", 5);
+        Statuses.Give(world, villain, Statuses.Tough);
+
+        AerialLightningStrike(world);
+
+        Assert.Equal((4L, 0, true), (environment.Tokens["c_infamy"], villain.Damage, Statuses.Has(world, villain, Statuses.Tough)));
+    }
+
+    // Thor plays Lightning Strike for X = 1 with Mjolnir (06009) giving him the Aerial trait.
+    private static void AerialLightningStrike(World world)
+    {
+        world.CreateCard("06009", world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), cardOwner: 0));
         var runner = (Marvel.Cards.Run.AbilityRunner)world.Abilities;
         var strike = world.CreateCard("06006", world.Seats[0].Hand);
         var energy = world.CreateCard("01088", world.Seats[0].Hand);
         var mental = world.CreateCard("01089", world.Seats[0].Hand);
         var action = Assert.Single(runner.Actions(world, 0), a => a.Card == strike.ObjectId);
-
         runner.ExecuteAction(world, new PlayerAction(action, [energy.ObjectId, mental.ObjectId], [],
             new Dictionary<string, long> { ["X"] = 1 },
             [new(mental.ObjectId, Cost: 0, PaidAs: "B"), new(energy.ObjectId, Cost: 1, PaidAs: "Y")]));
         Sequence.Finish(world, world.Facts, runner, []);
-
-        Assert.Equal((1, 0, true), (armor.Damage, villain.Damage, Statuses.Has(world, villain, Statuses.Tough)));
-        Assert.True(Statuses.Has(world, villain, Statuses.Tough));
     }
 
     [Theory]

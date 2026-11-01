@@ -269,7 +269,6 @@ internal static class AbilityPlayerBindingAnalysis
         AbilityCondition.CardText text => Contains(text.Card),
         AbilityCondition.IsKind kind => Contains(kind.Card),
         AbilityCondition.IsInPlay inPlay => Contains(inPlay.Card),
-        AbilityCondition.IsExhausted exhausted => Contains(exhausted.Card),
         AbilityCondition.IsEnemyAttacker attacker => Contains(attacker.Card),
         AbilityCondition.WasDefeatedByDamage defeated => Contains(defeated.Card),
         AbilityCondition.WasDefeated defeated => Contains(defeated.Card),

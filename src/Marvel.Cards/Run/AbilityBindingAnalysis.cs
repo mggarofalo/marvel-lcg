@@ -24,7 +24,6 @@ internal static class AbilityBindingAnalysis
         AbilityCondition.CardText text => BindingCanChange(text.Card),
         AbilityCondition.IsKind kind => BindingCanChange(kind.Card),
         AbilityCondition.IsInPlay inPlay => BindingCanChange(inPlay.Card),
-        AbilityCondition.IsExhausted exhausted => BindingCanChange(exhausted.Card),
         AbilityCondition.IsEnemyAttacker attacker => BindingCanChange(attacker.Card),
         AbilityCondition.WasDefeatedByDamage defeated => BindingCanChange(defeated.Card),
         AbilityCondition.WasDefeated defeated => BindingCanChange(defeated.Card),
@@ -119,7 +118,7 @@ internal static class AbilityBindingAnalysis
             or AbilityCondition.AutomaticThwart or AbilityCondition.TitleInPlay or AbilityCondition.NamedInPlay or AbilityCondition.InForm
             or AbilityCondition.ActivationIs or AbilityCondition.CardText or AbilityCondition.IsKind
             or AbilityCondition.WasDefeatedByDamage or AbilityCondition.WasDefeated or AbilityCondition.IsYourIdentity
-            or AbilityCondition.IsEnemyAttacker or AbilityCondition.IsInPlay or AbilityCondition.IsExhausted => false,
+            or AbilityCondition.IsEnemyAttacker or AbilityCondition.IsInPlay => false,
         _ => throw new InvalidOperationException("Unknown compiled condition in power-binding analysis"),
     };
 

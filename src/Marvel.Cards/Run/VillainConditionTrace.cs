@@ -254,8 +254,6 @@ internal sealed class VillainConditionTrace(
             AbilityCondition.IsKind kind => PotentialVillainSelector(kind.Card, cast)
                 || Find(kind.Card, cast) is { } card
                     && changes.Discarded.Contains(card.ObjectId),
-            // Readiness can change during a traced villain activation.
-            AbilityCondition.IsExhausted => true,
             AbilityCondition.IsInPlay inPlay => PotentialVillainSelector(inPlay.Card, cast)
                 || Find(inPlay.Card, cast) is { } selected
                     && changes.Discarded.Contains(selected.ObjectId),

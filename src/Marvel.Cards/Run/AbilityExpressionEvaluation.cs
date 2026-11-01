@@ -126,8 +126,9 @@ internal sealed class AbilityExpressionEvaluation(
         AbilityCondition.CardText text => TestCardText(text),
         AbilityCondition.IsKind kind => IsKind(kind),
         AbilityCondition.IsInPlay inPlay => IsInPlay(inPlay.Card),
-        AbilityCondition.IsExhausted exhausted => IsInPlay(exhausted.Card) && !selectors.Find(exhausted.Card)!.Ready,
-        AbilityCondition.IsEnemyAttacker attacker => IsEnemyAttacker(attacker.Card),
+        AbilityCondition.IsEnemyAttacker attacker => selectors.Find(attacker.Card) is { } source
+            && DeckTypes.IsInPlay(source.Area.Type)
+            && context.World.Attack is { } attack && attack.Enemy == source.ObjectId,
         AbilityCondition.WasDefeatedByDamage defeated => WasDefeatedByDamage(defeated.Card),
         AbilityCondition.WasDefeated defeated => WasDefeated(defeated.Card),
         AbilityCondition.IsYourIdentity identity => selectors.Find(identity.Card)?.ObjectId == context.World.Seats[AbilityCardQueries.Resolver(context.Bindings)].IdentityCard.ObjectId,
@@ -138,9 +139,6 @@ internal sealed class AbilityExpressionEvaluation(
     // Find preserves the selected incarnation; retained out-of-play facts alone do not qualify.
     private bool IsInPlay(AbilityCardSelection selection) =>
         selectors.Find(selection) is { } current && DeckTypes.IsInPlay(current.Area.Type);
-
-    private bool IsEnemyAttacker(AbilityCardSelection selection) =>
-        IsInPlay(selection) && context.World.Attack is { } attack && attack.Enemy == selectors.Find(selection)!.ObjectId;
 
     private bool WasDefeated(AbilityCardSelection selection)
     {

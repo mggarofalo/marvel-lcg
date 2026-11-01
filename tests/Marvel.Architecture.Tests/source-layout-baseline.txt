@@ -1,6 +1,6 @@
-src/Marvel.Cards/Run/AbilityConditionProjection.cs:113: SL005: TryTraceConstantTest=14
-src/Marvel.Cards/Run/AbilityConditionProjection.cs:127: SL005: AmountCanDifferInVillainTrace=14
-src/Marvel.Cards/Run/AbilityConditionProjection.cs:141: SL005: TestCanChangeOnVillainAdvance=14
+src/Marvel.Cards/Run/AbilityConditionProjection.cs:112: SL005: TryTraceConstantTest=14
+src/Marvel.Cards/Run/AbilityConditionProjection.cs:126: SL005: AmountCanDifferInVillainTrace=14
+src/Marvel.Cards/Run/AbilityConditionProjection.cs:140: SL005: TestCanChangeOnVillainAdvance=14
 src/Marvel.Cards/Run/AbilityPowerProjection.cs:106: SL005: BranchCanRetargetVillain=13
 src/Marvel.Cards/Run/AbilityPowerProjection.cs:120: SL005: HasLiveVillainRetargetingConstant=12
 src/Marvel.Cards/Run/AbilityPowerProjection.cs:182: SL005: ConditionalModifierCanDiffer=15
