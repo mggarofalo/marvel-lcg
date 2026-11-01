@@ -195,6 +195,28 @@ public sealed class SplitTableProjectionTests
             Present(new PlayAreaDetached(-1, 0) { Members = [0, 1, 2] }));
     }
 
+    [Fact]
+    public void TheBoardPresentationCarriesTheSplitFactsAndEachCardsGameArea()
+    {
+        var (world, kangs, schemes, central) = Separated();
+        var visible = WorldProjection.For(world, null, [], new RestrictedVisibilityPolicy(0).Authorize(null, 2)).World;
+
+        var board = BoardPresentation.From(visible);
+
+        Assert.Equal(visible.GameAreas, board.GameAreas);
+        Assert.Same(visible.Kang, board.Kang);
+        Assert.Equal(visible.Players, board.Players);
+        var cards = board.Areas.SelectMany(area => area.Cards).Where(card => card.TargetId is not null)
+            .ToDictionary(card => card.TargetId!.Value);
+        for (int seat = 0; seat < 2; seat++)
+        {
+            int? area = world.GameAreaOf(PlayArea.Of(seat))!.Id;
+            Assert.Equal(area, cards[kangs[seat].ObjectId].GameArea);
+            Assert.Equal(area, cards[schemes[seat].ObjectId].GameArea);
+        }
+        Assert.Null(cards[central.ObjectId].GameArea);
+    }
+
     private static (World World, Card[] Kangs, Card[] Schemes, Card Central) Separated()
     {
         var world = new World(Facts, 2, 42);
