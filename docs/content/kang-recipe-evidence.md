@@ -299,13 +299,15 @@ weighs a fifth more than the central column. `GameAreaColumnLayout` places the
 one-line header, a badge margin, the cards and a strip reserved for
 attachments, and stands the shared piles side by side under 2B. A Kang table
 that is not separated (stage 1, or stage 3 after the reunion) keeps the single
-villain mat and adds only the tracker. A game without Kang facts or a split
+villain mat and adds only the tracker, as a caption line above the main
+scheme. A game without Kang facts or a split
 has no game-area presentation.
 
 The tabletop seat rail shows each seat as a `SeatTile`: a portrait (the hero's
-initials), the hero's name with role icons, an HP bar against the identity's
-published maximum, and badges for form, statuses and engaged enemies. Its words
-are in the tooltip. An `OverflowCue` counts seats the rail cannot show.
+initials), the hero's name, an HP bar against the identity's published
+maximum, and a wrapping row of role icons and badges for form, statuses and
+engaged enemies; the tile grows rather than clip a row. Its words are in the
+tooltip. An `OverflowCue` counts seats the rail cannot show.
 
 The native contracts `kang-2`, `kang-3` and `kang-4` deal each recipe through
 `KangRecipeFactory` behind the native contract host. `KangNativeScene` opens
