@@ -72,9 +72,8 @@ public static class BasicThwartPowers
         ArgumentNullException.ThrowIfNull(power);
         ArgumentNullException.ThrowIfNull(events);
 
-        var thwarter = power.Performer ?? (power.Initiated
-            ? LabeledAbilities.Performer(world, facts, power.Player, power.Source)
-            : LabeledAbilities.Begin(world, facts, power.Player, power.Source, [ThwartVerb], events));
+        var thwarter = power.Performer ?? LabeledAbilities.Begin(
+            world, facts, power.Player, power.Source, [ThwartVerb], events);
         if (thwarter is null) return false;
 
         RequireCardThwartTarget(world, facts, power, automaticTarget);

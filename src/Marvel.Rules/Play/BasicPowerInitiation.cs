@@ -202,9 +202,8 @@ public static class BasicPowerInitiation
         ArgumentNullException.ThrowIfNull(power);
         ArgumentNullException.ThrowIfNull(events);
 
-        var attacker = power.Performer ?? (power.Initiated
-            ? LabeledAbilities.Performer(world, facts, power.Player, power.Source)
-            : LabeledAbilities.Begin(world, facts, power.Player, power.Source, [AttackVerb], events));
+        var attacker = power.Performer ?? LabeledAbilities.Begin(
+            world, facts, power.Player, power.Source, [AttackVerb], events);
         if (attacker is null) return false;
 
         RequireCardAttackTarget(world, facts, power, attacker);

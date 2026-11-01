@@ -37,7 +37,7 @@ public sealed record CardPowerInvocation(
 
     /// <summary>
     /// Whether the containing labelled ability initiated this power before earlier
-    /// steps of its effect resolved, so its performer and target were legal then.
+    /// steps of its effect resolved, so its target was legal then and is not checked again.
     /// </summary>
     /// <remarks>
     /// Ruling 6fd4652a06512d03: "Guard prevents you from initiating attacks, but does

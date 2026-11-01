@@ -649,11 +649,11 @@ plays by its amount.
 `attack` and `thwart` accept `initiated: 1` when the power follows steps that
 resolve before it, as in Swift Retribution (15014) and Bait and Switch (15030).
 The power was initiated with its card (rr:initiating-abilities step 6), so its
-performer and target are not checked again when it begins: a stunned or
-confused status, or a guard or patrol minion, gained during the earlier steps
-does not stop it (rulings 6fd4652a06512d03, ca713a04a3ff5491). A row tests the
-status at initiation itself and leaves the unmarked power to the hero who was
-already stunned or confused.
+target is not checked again when it begins: a guard or patrol minion gained
+during the earlier steps does not stop it (rulings 6fd4652a06512d03,
+ca713a04a3ff5491). As for any labelled ability, the performer's stunned or
+confused status is resolved at initiation, so a status gained during the earlier
+steps does not stop the power either.
 
 ### Hand plays and looked-at cards
 

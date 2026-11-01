@@ -281,4 +281,27 @@ public sealed class ScarletWitchSignatureTests
         Assert.Equal(2, villain.Damage);
         Assert.Equal(DeckType.DiscardPile, bolt.Area.Type);
     }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    [Rule("rr:crisis-icon.1")]
+    [Rule("rr:initiating-abilities.step.6")]
+    public void AnInitiatedThwartKeepsTheSchemeItWasInitiatedAgainst(bool initiated)
+    {
+        // Ruling ca713a04a3ff5491: "if a minion with Patrol engaged you after you
+        // initiated a thwart, you'd still remove threat with the thwart." A crisis icon
+        // that entered play after initiation likewise leaves the declared main scheme
+        // as the thwart's target; a thwart not yet initiated cannot target it.
+        var world = Board();
+        var hero = world.Seats[0].IdentityCard;
+        var main = world.TheCardIn(DeckType.MainSchemesArea)!;
+        main.PlaceTokens("k_threat", 6);
+        world.CreateCard("01125", world.AreaOf(DeckType.SideSchemesArea)).PlaceTokens("k_threat", 2);
+        var bait = world.CreateCard(BaitAndSwitch, world.Seats[0].Hand);
+        var power = new CardPowerInvocation(0, bait, main, 4, "test") { Performer = hero, Initiated = initiated };
+        bool Thwart() => BasicThwartPowers.CardThwart(world, world.Facts, power, []);
+        if (initiated) Assert.True(Thwart());
+        else Assert.Throws<RulesNotImplementedException>(() => Thwart());
+    }
 }
