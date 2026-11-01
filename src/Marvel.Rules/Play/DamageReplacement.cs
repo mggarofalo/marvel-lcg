@@ -26,6 +26,8 @@ public sealed class DamageReplacement
     public bool IgnoresTough { get; }
     /// <summary>The invocation owning all replacement work.</summary>
     public AbilityExecution Execution { get; }
+    /// <summary>The identity whose attack would deal this damage beyond the target's remaining hit points, if any.</summary>
+    public Timing.OccurrenceCard? ExcessDealer { get; init; }
     /// <summary>The amount available to the currently executing replacement ability.</summary>
     public long CurrentAmount { get; private set; }
     /// <summary>Whether every replacement ability and its children have completed.</summary>
@@ -33,6 +35,37 @@ public sealed class DamageReplacement
     /// <summary>The fixed dealt amount; unavailable while replacement work remains.</summary>
     public long ResolvedAmount => IsComplete ? CurrentAmount
         : throw new InvalidOperationException("damage replacement has not completed");
+
+    /// <summary>The amount an attack-wide prevention removed at step 1; still dealt, never taken.</summary>
+    /// <remarks>
+    /// rr:prevent.1.1: "the amount of damage that character takes is reduced, but the
+    /// amount of damage dealt is not reduced", and rr:prevent.1.3: "If all damage from
+    /// an attack is prevented, the attacking character is considered to have dealt
+    /// damage". Rulings 70423690d446327f and 05670207b5acc4d9 measure excess damage on
+    /// that dealt amount.
+    /// </remarks>
+    public long PreventedAmount { get; private set; }
+
+    /// <summary>Whether an attack-wide prevention removes all of this damage once step 1 finishes.</summary>
+    /// <remarks>
+    /// The prevention was installed when the attack began (Temporal Shield, 11014), so
+    /// no forced step-1 replacement sees the damage. An optional interrupt to the excess
+    /// the attack deals (Follow Through, 16045) still does: rr:prevent.1.3 has the
+    /// attacker deal that damage, and the increased amount is prevented with the rest.
+    /// </remarks>
+    public bool PreventsAll { get; internal init; }
+
+    /// <summary>The step-1 request continuing to placement with the fixed dealt and prevented amounts.</summary>
+    internal DamageRequest Resolve(DamageRequest request) =>
+        request with { Amount = ResolvedAmount, PreventedAtStepOne = PreventedAmount };
+
+    /// <summary>Prevent all the imminent damage from an active ability in this replacement batch.</summary>
+    public void PreventAll(AbilityExecution invocation)
+    {
+        long amount = CurrentAmount;
+        Replace(invocation, 0);
+        PreventedAmount += amount;
+    }
 
     /// <summary>Replace the imminent damage from an active ability in this replacement batch.</summary>
     public void Replace(AbilityExecution invocation, long amount)

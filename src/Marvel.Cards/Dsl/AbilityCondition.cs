@@ -50,6 +50,8 @@ public abstract record AbilityCondition
     public sealed record WasDefeatedByDamage(AbilityCardSelection Card) : AbilityCondition;
     /// <summary>Tests defeat in the invoking occurrence.</summary>
     public sealed record WasDefeated(AbilityCardSelection Card) : AbilityCondition;
+    /// <summary>The card defended against the completed enemy attack.</summary>
+    public sealed record DefendedBy(AbilityCardSelection Card) : AbilityCondition;
     /// <summary>The selected card is the resolver's identity.</summary>
     public sealed record IsYourIdentity(AbilityCardSelection Card) : AbilityCondition;
     /// <summary>The selected in-play card is the current enemy attack's attacker.</summary>

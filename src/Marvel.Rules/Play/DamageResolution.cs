@@ -57,7 +57,7 @@ internal sealed class DamageResolution(World world, ICardFacts facts, DamageRequ
     {
         prevention ??= DirectDamagePrevention.Begin(world, request, replacement!,
             DamagePlacement.PrepareAfterReplacement(world, facts,
-                request with { Amount = replacement!.ResolvedAmount }, events));
+                replacement!.Resolve(request), events));
         if (prevention.IsComplete) return prevention.Placement;
         preventionSuspended = true;
         return null;
@@ -70,6 +70,8 @@ internal sealed class DamageResolution(World world, ICardFacts facts, DamageRequ
         if (settledOutcome is null) AttackDamageAccounting.RecordPlacement(world, request.ActivationId, damage);
         placement = damage;
         if (damage.Landed) request.RecordDefeatOn?.Also(Steps.DamageDealt);
+        ExcessDamageTiming.Record(world, request.Source, damage, damage.RemainingHealth,
+            request.RecordDefeatOn ?? execution.Occurrence, events);
         placed = true;
         var outcome = settledOutcome ?? DamagePlacement.FinishPlaced(world, facts, request.Source, damage,
             request.Trigger, request.Verb, events, request.By, request.RecordDefeatOn);

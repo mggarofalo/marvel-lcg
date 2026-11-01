@@ -155,7 +155,8 @@ internal static class AbilityEffectTargetAdmission
             // ruling:8c9c9d30f4c01189: an Invocation can affect itself by
             // entering its discard pile even when its other targets are invalid.
             "discardInvocation" => InvocationDiscardTargetLegality(cast),
-            "placeCounters" => AbilityCounterTargetAdmission.Of((AbilityEffect.PlaceCounters)node, cast),
+            "placeCounters" => AbilityCounterTargetAdmission.Of((AbilityCounterEffect.PlaceCounters)node, cast),
+            "moveCounters" => AbilityCounterTargetAdmission.Of((AbilityCounterEffect.MoveCounters)node, cast),
             // rr:target.3.4: "at least one of those effects must be able to
             // affect the target." Deferring resolution retains the bound target.
             "cancelBoostIcons" or "cancelBoostAbility" => BoostCancellationTargetLegality(node, cast),

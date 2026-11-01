@@ -255,6 +255,7 @@ internal static class AbilitySelectorLowering
             "yourDiscardPile" => AbilitySearchArea.YourDiscardPile,
             "yourHand" => AbilitySearchArea.YourHand,
             "yourPlayArea" when allowPlayArea => AbilitySearchArea.YourPlayArea,
+            "playerPlayAreas" when allowPlayArea => AbilitySearchArea.PlayerPlayAreas,
             var name => throw location.Error($"'{name}' is not a supported search area"),
         };
 

@@ -205,12 +205,18 @@ internal sealed class AbilitySelectorEvaluation(
         if (area == AbilitySearchArea.YourDeck) return context.World.Seats[context.Player].Deck.Cards;
         if (area == AbilitySearchArea.YourHand) return context.World.Seats[context.Player].Hand.Cards;
         if (area == AbilitySearchArea.YourPlayArea)
-            return [.. context.World.Areas.Where(candidate => DeckTypes.IsInPlay(candidate.Type)
-                && candidate.PlayArea == PlayArea.Of(context.Player)).SelectMany(candidate => candidate.Cards)];
+            return InPlay(playArea => playArea == PlayArea.Of(context.Player));
+        // Equivalent mutant: no villain-area card is a Rocket Raccoon upgrade, so admitting
+        // every play area survives.
+        if (area == AbilitySearchArea.PlayerPlayAreas) return InPlay(playArea => playArea.IsPlayers);
         var playArea = area == AbilitySearchArea.YourDiscardPile ? PlayArea.Of(context.Player) : PlayArea.Villains;
         return context.World.Areas.FirstOrDefault(candidate => candidate.Type == AreaType(area)
             && candidate.PlayArea == playArea && candidate.Host == -1)?.Cards ?? [];
     }
+
+    private Card[] InPlay(Func<PlayArea, bool> playArea) =>
+        [.. context.World.Areas.Where(candidate => DeckTypes.IsInPlay(candidate.Type)
+            && playArea(candidate.PlayArea)).SelectMany(candidate => candidate.Cards)];
 
     internal static DeckType AreaType(AbilitySearchArea area) => area switch
     {

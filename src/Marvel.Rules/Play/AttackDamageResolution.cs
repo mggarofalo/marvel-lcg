@@ -124,9 +124,9 @@ internal sealed class AttackDamageResolution
         remaining = Math.Max(0, DamagePlacement.Health(world, facts, request.Target) - request.Target.Damage);
         kind = EffectiveCards.Kind(request.Target, facts);
         controller = kind == CardKind.Ally ? request.Target.Area.PlayArea.Player : -1;
-        var assignment = new DamageRequest(request.Source, request.Target, replacement.ResolvedAmount,
+        var assignment = replacement.Resolve(new DamageRequest(request.Source, request.Target, request.Amount,
             request.Trigger, request.Verb)
-        { PreventAllDamage = request.EnemyAttack?.PreventAllDamage == true, FromAttack = true };
+        { PreventAllDamage = request.EnemyAttack?.PreventAllDamage == true, FromAttack = true });
         if (spillOnly)
         {
             // rr:overkill.2: excess is "damage from an attack" and has its own recipient.
@@ -148,6 +148,7 @@ internal sealed class AttackDamageResolution
         placed = prepared.Placement;
         if (prepared.SettledOutcome is { } settled)
         {
+            ExcessDamageTiming.Record(world, request.Source, placed!, remaining, Execution.Occurrence, events);
             outcome = settled;
             return true;
         }
@@ -159,6 +160,7 @@ internal sealed class AttackDamageResolution
         if (request.Target.Incarnation != incarnation || !DeckTypes.IsInPlay(request.Target.Area.Type))
             return true;
         AttackDamageAccounting.RecordDamage(world, request, Execution, attacker, placed!, spillOnly, events);
+        ExcessDamageTiming.Record(world, request.Source, placed!, remaining, Execution.Occurrence, events);
         outcome = DamagePlacement.FinishPlaced(world, facts, request.Source, placed!, request.Trigger,
             request.Verb, events, LabeledAbilities.IdentityPlayer(world, request.Attacker), Execution.Occurrence);
         return outcome != Damage.Outcome.Suspended;

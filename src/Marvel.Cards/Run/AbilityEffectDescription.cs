@@ -25,6 +25,8 @@ internal static class AbilityEffectDescription
         AbilityEffect.ModifyPlayedEvent modifier =>
             $"Increase each {(modifier.Kind == "eventDamage" ? "damage" : "threat removal")} instance of this event by {modifier.Amount} until this play finishes",
         AbilityPricingEffect.IncreaseNextEventCost increase => $"Your next event costs {increase.Amount} additional resources; discard this obligation after that event",
+        AbilityEnemyDamageEffect.HealOnEnemyDamage heal => $"Until the end of the turn, heal {heal.Amount} damage from your identity each time you deal damage to an enemy",
+        AbilityEnemyDamageEffect.IncreaseExcessDamage increase => $"Increase this attack's excess damage by {increase.Amount}",
         AbilityEffect.ResolveInvocation => "Resolve your captured Invocation top Special",
         AbilityEffect.Fixed { Instruction: AbilityFixedInstruction.PlaySharedHeroTraitCard } =>
             "Play a card from your hand that shares a trait with your hero, reducing its cost by 1",
@@ -95,6 +97,8 @@ internal static class AbilityEffectDescription
         AbilityEffect.GiveStatus status => StatusAction(status.Status),
         AbilityEffect.ReplaceStatus status => $"Replace with {status.Status}",
         AbilityEffect.RemoveStatuses => "Remove status cards",
+        AbilityCounterEffect.MoveCounters move =>
+            $"move {move.Count} {move.Counter} counter{(move.Count == 1 ? "" : "s")} to",
         AbilityEffect.AttackDamage => "attack",
         AbilityEffect.Damage { Maximum: not null } => "choose damage recipients after selecting",
         AbilityEffect.Damage => "deal damage to",

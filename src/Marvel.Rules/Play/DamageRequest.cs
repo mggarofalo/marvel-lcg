@@ -14,6 +14,8 @@ public sealed record DamageRequest(
     /// <summary>Bypasses Tough for this damage instance while preserving its status cards.</summary>
     public bool IgnoresTough { get; init; }
     internal bool PreventAllDamage { get; init; }
+    /// <summary>Damage an attack-wide prevention removed at step 1: dealt, but never taken.</summary>
+    internal long PreventedAtStepOne { get; init; }
     /// <summary>Explicit attack damage provenance; never inferred from an enclosing activation.</summary>
     public bool FromAttack { get; init; }
 }

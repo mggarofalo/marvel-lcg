@@ -85,6 +85,13 @@ public static class StandaloneProductAdmission
         && setup.HeroNames.Contains("groot")
         && GrootRecipe.Complete(setup.Hero("groot"));
 
+    /// <summary>Admits Rocket Raccoon's complete face inventory within The Galaxy's Most Wanted and his published starter.</summary>
+    public static bool RocketRaccoon(SetupCatalog setup, CardCatalog cards, IReadOnlySet<string> authored) =>
+        // The Galaxy's Most Wanted is admitted in parts; Rocket Raccoon's faces are one product.
+        RocketRaccoonRecipe.Faces.All(face => cards.Has(face) && cards.Pack(face) == "gmw" && authored.Contains(face))
+        && setup.HeroNames.Contains("rocket_raccoon")
+        && RocketRaccoonRecipe.Complete(setup.Hero("rocket_raccoon"));
+
     /// <summary>Admits the complete seven-card Kree Fanatic modular set.</summary>
     public static bool KreeFanatic(SetupCatalog setup, CardCatalog cards, IReadOnlySet<string> authored) =>
         Complete("ron", ["90001", "90002", "90003", "90004", "90005"], cards, authored)

@@ -27,6 +27,7 @@ internal static class AbilityBindingAnalysis
         AbilityCondition.IsEnemyAttacker attacker => BindingCanChange(attacker.Card),
         AbilityCondition.WasDefeatedByDamage defeated => BindingCanChange(defeated.Card),
         AbilityCondition.WasDefeated defeated => BindingCanChange(defeated.Card),
+        AbilityCondition.DefendedBy defender => BindingCanChange(defender.Card),
         AbilityCondition.IsYourIdentity identity => BindingCanChange(identity.Card),
         AbilityCondition.Flag or AbilityCondition.PaidWithResource or AbilityCondition.DiscardedWithResource or AbilityCondition.DiscardedWithTrait
             or AbilityCondition.CausedThreat or AbilityCondition.TitleInPlay or AbilityCondition.NamedInPlay or AbilityCondition.ActivationIs => false,
@@ -117,7 +118,7 @@ internal static class AbilityBindingAnalysis
             or AbilityCondition.CausedThreat or AbilityCondition.Exists or AbilityCondition.LegalPractice
             or AbilityCondition.AutomaticThwart or AbilityCondition.TitleInPlay or AbilityCondition.NamedInPlay or AbilityCondition.InForm
             or AbilityCondition.ActivationIs or AbilityCondition.CardText or AbilityCondition.IsKind
-            or AbilityCondition.WasDefeatedByDamage or AbilityCondition.WasDefeated or AbilityCondition.IsYourIdentity
+            or AbilityCondition.WasDefeatedByDamage or AbilityCondition.WasDefeated or AbilityCondition.DefendedBy or AbilityCondition.IsYourIdentity
             or AbilityCondition.IsEnemyAttacker or AbilityCondition.IsInPlay => false,
         _ => throw new InvalidOperationException("Unknown compiled condition in power-binding analysis"),
     };

@@ -69,7 +69,7 @@ internal static class AbilityEffectStructure
             AbilityEffect.PlaceAtRandom random => random.Count,
             AbilityEffect.DiscardTop discard => discard.Count,
             AbilityEffect.DiscardResourceIcons discard => discard.Count,
-            AbilityEffect.PlaceCounters counters => counters.Count,
+            AbilityCounterEffect.PlaceCounters counters => counters.Count,
             AbilityEffect.PreventThreat prevention => prevention.Amount,
             _ => null,
         };

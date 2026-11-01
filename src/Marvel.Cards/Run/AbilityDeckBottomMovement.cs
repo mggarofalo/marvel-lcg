@@ -7,7 +7,7 @@ using static Marvel.Cards.Run.AbilityAdmission;
 
 namespace Marvel.Cards.Run;
 
-/// <summary>Places one selected card on the resolver's deck without consuming randomness.</summary>
+/// <summary>Places one selected card on the top or bottom of the resolver's deck without consuming randomness.</summary>
 internal static class AbilityDeckBottomMovement
 {
     internal static AdmissionResolution Resolution(
@@ -17,7 +17,7 @@ internal static class AbilityDeckBottomMovement
                 ? AdmissionResolution.Full : AdmissionResolution.None;
 
     internal static AbilityDeckAndRevealResult Run(
-        AbilityCardSelection selection, AbilityDeckAndRevealContext context)
+        AbilityCardSelection selection, AbilityDeckAndRevealContext context, bool top)
     {
         var evaluation = new AbilitySelectorEvaluation(context.Expressions.Bindings);
         var found = evaluation.Result(evaluation.Find(selection));
@@ -30,13 +30,15 @@ internal static class AbilityDeckBottomMovement
         using var departure = ending.Begin();
         if (DeckTypes.IsInPlay(from.Type))
             Discard.Attachments(context.World, card, context.Trigger, context.Events);
-        CardPlacement.MoveToBottom(card, deck);
+        if (top) World.MoveToTop(card, deck);
+        else CardPlacement.MoveToBottom(card, deck);
         // Engine choice: movement uses a semantic verb and bottom-first landing index.
+        string verb = top ? "Place_On_Top" : "Place_On_Bottom";
         context.Events.Add(new CardsMoved(Places.Reference(from), Places.Reference(deck),
-            [new Landing(card.ObjectId, 0)]) { Trigger = context.Trigger, Verb = "Place_On_Bottom" });
+            [new Landing(card.ObjectId, top ? deck.Cards.Count - 1 : 0)]) { Trigger = context.Trigger, Verb = verb });
         if (from.Host >= 0)
             context.Events.Add(new CardDetached(card.ObjectId, from.Host)
-            { Trigger = context.Trigger, Verb = "Place_On_Bottom" });
+            { Trigger = context.Trigger, Verb = verb });
         ending.Complete(context.Trigger, context.Events);
         return new(true, true, null, ImmutableDictionary<string, long>.Empty);
     }

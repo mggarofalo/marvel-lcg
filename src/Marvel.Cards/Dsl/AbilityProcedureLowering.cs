@@ -56,8 +56,10 @@ internal static class AbilityProcedureLowering
 
     internal static AbilityEffect.DiscardUntil DiscardUntilEffect(AbilityValue value, AbilityLocation location)
     {
-        var fields = Fields(value, location, "from", "kind", "trait", "then", "player", "set");
+        var fields = Fields(value, location, "from", "kind", "trait", "then", "player", "set", "revealStatus");
         var from = SearchArea(Required(fields, "from", location), location.Child("from"));
+        if (from == AbilitySearchArea.YourDeck && fields.ContainsKey("revealStatus"))
+            throw location.Child("revealStatus").Error("revealStatus requires an encounter-deck reveal");
         if (from == AbilitySearchArea.YourDeck)
             return PlayerDiscardUntil(fields, location);
         if (from != AbilitySearchArea.EncounterDeck)
@@ -70,7 +72,7 @@ internal static class AbilityProcedureLowering
     {
         bool set = fields.ContainsKey("set");
         var result = EncounterDiscardResult(fields, location);
-        string? setName = EncounterDiscardSet(fields, location, result);
+        string? setName = AbilityEncounterDiscardLowering.Set(fields, location, result);
         CardKind? kind = set ? null : ConditionCardKind(Required(fields, "kind", location), location.Child("kind"));
         // rr:engage: "When a minion enters play in a player's play area, it engages
         // that player." Only a minion engages, so any other kind is refused.
@@ -78,21 +80,10 @@ internal static class AbilityProcedureLowering
             throw location.Child("kind").Error("putIntoPlayEngaged requires kind 'minion'");
         return new(kind,
             OptionalText(fields, "trait", location), result)
-        { Set = setName, Player = fields.TryGetValue("player", out var player) ? AbilityLowering.Player(player, location.Child("player")) : AbilityPlayer.You };
-    }
-
-    private static string? EncounterDiscardSet(
-        IReadOnlyDictionary<string, AbilityValue> fields, AbilityLocation location, AbilityDiscardUntilResult result)
-    {
-        bool set = fields.ContainsKey("set");
-        if (set && (fields.ContainsKey("kind") || fields.ContainsKey("trait")))
-            throw location.Error("encounter discardUntil requires either a set or a kind and optional trait");
-        if (set && result != AbilityDiscardUntilResult.Reveal)
-            throw location.Error("encounter set discardUntil requires reveal");
-        string? setName = OptionalText(fields, "set", location);
-        if (set && string.IsNullOrEmpty(setName))
-            throw location.Child("set").Error("expected a nonempty set");
-        return setName;
+        {
+            Set = setName, Player = fields.TryGetValue("player", out var player) ? AbilityLowering.Player(player, location.Child("player")) : AbilityPlayer.You,
+            RevealStatus = AbilityEncounterDiscardLowering.RevealStatus(fields, location, result),
+        };
     }
 
     private static AbilityDiscardUntilResult EncounterDiscardResult(
@@ -201,9 +192,9 @@ internal static class AbilityProcedureLowering
             throw location.Child("counter").Error("expected a nonempty counter name");
         }
         var card = Selected(fields, "card", location);
-        return remove ? new AbilityEffect.RemoveCounters(card, counter,
+        return remove ? new AbilityCounterEffect.RemoveCounters(card, counter,
             PositiveInteger(Required(fields, "count", location), location.Child("count")))
-            : new AbilityEffect.PlaceCounters(card, counter, Numeric(fields, "count", location));
+            : new AbilityCounterEffect.PlaceCounters(card, counter, Numeric(fields, "count", location));
     }
 
     internal static AbilityPricingEffect.ReduceNextCardCost ReduceCostEffect(AbilityValue value, AbilityLocation location)

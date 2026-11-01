@@ -21,7 +21,7 @@ public sealed class PublicAntManSetupTests : TransportTestBase
             ? await ExchangeOverSocket(new SocketEngineServer(host, IPAddress.Loopback, 0), request)
             : await new InProcessTransport(host).ExchangeAsync(request, TestContext.Current.CancellationToken);
         Assert.Null(response.Error);
-        Assert.Equal(17, response.Setup!.Heroes.Count);
+        Assert.Equal(18, response.Setup!.Heroes.Count);
         Assert.Equal(39, response.Setup.Scenarios.Count);
         Assert.Equal("Ant-Man", response.Setup.Heroes.Single(hero => hero.Key == "ant_man").Name);
         Assert.Contains(response.Setup.Heroes, hero => hero.Key == "ant_man");
@@ -39,7 +39,7 @@ public sealed class PublicAntManSetupTests : TransportTestBase
         var factory = DatasetGameFactory.Load(RepositoryPaths.Root);
         var catalog = factory.DiscoverDecks();
         var hero = catalog.Heroes.Single(item => item.Key == "ant_man");
-        Assert.Equal(17, catalog.Heroes.Count);
+        Assert.Equal(18, catalog.Heroes.Count);
         Assert.Equal(40, hero.Starter.Count);
         Assert.Equal(15, hero.Signature.Count);
         Assert.Equal(Signature, hero.Signature);

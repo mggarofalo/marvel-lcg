@@ -131,6 +131,7 @@ internal sealed class AbilityExpressionEvaluation(
             && context.World.Attack is { } attack && attack.Enemy == source.ObjectId,
         AbilityCondition.WasDefeatedByDamage defeated => WasDefeatedByDamage(defeated.Card),
         AbilityCondition.WasDefeated defeated => WasDefeated(defeated.Card),
+        AbilityCondition.DefendedBy defender => DefendedBy(defender.Card),
         AbilityCondition.IsYourIdentity identity => selectors.Find(identity.Card)?.ObjectId == context.World.Seats[AbilityCardQueries.Resolver(context.Bindings)].IdentityCard.ObjectId,
         _ => throw new InvalidOperationException("Unknown compiled condition"),
     };
@@ -139,6 +140,15 @@ internal sealed class AbilityExpressionEvaluation(
     // Find preserves the selected incarnation; retained out-of-play facts alone do not qualify.
     private bool IsInPlay(AbilityCardSelection selection) =>
         selectors.Find(selection) is { } current && DeckTypes.IsInPlay(current.Area.Type);
+
+    // rr:defend-defense: the completed attack names the character that defended it.
+    // Equivalent mutant: the attack-end occurrence's actor is the finished attack's
+    // enemy, so dropping that comparison survives.
+    private bool DefendedBy(AbilityCardSelection selection)
+    {
+        if (context.World.FinishedAttack is not { } ended || ended.Enemy != context.Occurrence.Actor) return false;
+        return selectors.Find(selection)?.ObjectId == ended.Defender;
+    }
 
     private bool WasDefeated(AbilityCardSelection selection)
     {

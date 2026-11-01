@@ -31,6 +31,7 @@ public sealed class DoctorStrangeThoughtcastingCardTests
         var prompt = Sequence.Work(world, world.Facts, world.Abilities, [])!;
         Assert.Equal(1, prompt.Player);
         Assert.False(prompt.Cancellable);
+        Assert.DoesNotContain("first player", prompt.Description ?? "", StringComparison.Ordinal);
         Assert.Equal(new[] { left.ObjectId, right.ObjectId }, prompt.Affordances.Select(offer => offer.Id));
         Sequence.Answer(world, world.Facts, world.Abilities, prompt, Decision.Take(second ? right.ObjectId : left.ObjectId), []);
         Sequence.Finish(world, world.Facts, world.Abilities, []);

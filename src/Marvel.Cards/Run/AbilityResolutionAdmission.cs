@@ -138,7 +138,9 @@ internal static class AbilityResolutionAdmission
                 && cast.World.Activation is { Attacking: true, Id: >= 0 },
             "replaceThreatWithDamage" => cast.Occurrence.Threat is { Remaining: > 0 },
             "increaseNextEventCost" => NextEventCost.CanRegister(cast.World, cast.Source, cast.Context.Query.Player),
-            "grantCharactersControlledBy" or "grantCharactersWithTrait" or "reduceNextCardCost" => true,
+            "grantCharactersControlledBy" or "grantCharactersWithTrait" or "reduceNextCardCost"
+                or "healEachTimeYouDamageAnEnemy" => true,
+            "increaseExcessDamage" => AbilityExcessDamageIncrease.HasExcess(cast.World, cast.Occurrence),
 
             // Target availability is the only state-dependent precondition
             // these currently expressible effects carry. Their own resolver

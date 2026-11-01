@@ -38,9 +38,12 @@ internal static class AbilityCardStateAdmission
             "exhaust" => Find(EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast)?.Ready == true,
             "returnOwnedToDiscard" => Every(EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast)
                 .Any(card => card.Owner >= 0),
-            "placeOnBottomOfDeck" or "returnOwnedToHand" or "addToHand" => AbilityCardMovementAdmission.HasHandTarget(node, cast),
+            "placeOnBottomOfDeck" or "placeOnTopOfDeck" or "returnOwnedToHand" or "addToHand" => AbilityCardMovementAdmission.HasHandTarget(node, cast),
             "ready" => Every(EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast).Any(card =>
                 !card.Ready && AbilityProgramQueries.CanReady(cast.World, cast.Context.Program, card)),
+            "moveCounters" => AbilityCounterTargetAdmission.CanMove(EffectOf<AbilityCounterEffect.MoveCounters>(node, cast), cast),
+            // Equivalent mutant: see AbilityCounterTargetAdmission.CanPlace.
+            "placeCounters" => AbilityCounterTargetAdmission.CanPlace(EffectOf<AbilityCounterEffect.PlaceCounters>(node, cast), cast),
             "removeCounters" => CounterRemovalOf(node, cast) is var removal
                 && Find(removal.Card, cast) is { } counterCard
                 && CounterKeyForRemoval(

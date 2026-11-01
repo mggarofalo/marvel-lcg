@@ -1,4 +1,3 @@
-using System.Text.Json.Nodes;
 using Marvel.Cards.Dsl;
 using Marvel.Tests;
 using Xunit;
@@ -37,20 +36,5 @@ public sealed class GrootLoweringTests
         Assert.Equal("SUPERPOWER", reduction.Filter!.Trait);
         Assert.Equal(Marvel.Rules.Timing.TimingPoints.EndOfTurn, reduction.Until);
         Assert.False(reduction.AnyPlayer);
-    }
-
-    [Fact]
-    public void FloraAndFaunaAuthorsTheRocketOptionWhenARocketUpgradeIsAuthored()
-    {
-        // 16020/16048: "... or place 2 charge counters on a Rocket Raccoon upgrade and
-        // ready that upgrade." Only an authored Rocket Raccoon upgrade can be in play;
-        // until one is, the row authors the Groot option alone.
-        var book = JsonNode.Parse(File.ReadAllText(RepositoryPaths.Dataset("abilities", "abilities.json")))!;
-        var rows = book["cards"]!.AsArray().Select(row => row!).ToList();
-        string[] rocketUpgrades = ["16034", "16035", "16036", "16037", "16038", "16039"];
-        bool rocketAuthored = rows.Any(row => rocketUpgrades.Contains((string?)row["card"]));
-        var flora = rows.Single(row => (string?)row["card"] == "16020");
-        bool chooses = flora["abilities"]!.ToJsonString().Contains("\"choose\"", StringComparison.Ordinal);
-        Assert.Equal(rocketAuthored, chooses);
     }
 }

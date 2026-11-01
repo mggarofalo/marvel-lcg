@@ -59,7 +59,7 @@ internal static class AbilityTargetAdmission
             return StructuralTargetLegality(node, cast, bindingMayChange);
         }
         if (operation is "removeFromGame" or "revealFromVillainDeck" or "reveal" or "returnToHand"
-            or "placeOnBottomOfDeck" or "returnOwnedToHand" or "addToHand"
+            or "placeOnBottomOfDeck" or "placeOnTopOfDeck" or "returnOwnedToHand" or "addToHand"
             or "exhaust" or "ready" or "moveActiveCounter" or "giveStatus" or "declareDefender"
             or "attachTo" or "grantUntil" or "discard")
         {

@@ -11,4 +11,7 @@ public sealed record EncounterRevealOrigin(int Card, AreaRef From, bool Dealt = 
 {
     /// <summary>Whether this revelation qualifies as from the encounter deck.</summary>
     public bool FromEncounterDeck => Dealt || From.Zone == nameof(DeckType.EncounterDeck);
+
+    /// <summary>A status card the revealing sentence gives the card once its keywords have initiated.</summary>
+    public string? StatusAfterReveal { get; init; }
 }

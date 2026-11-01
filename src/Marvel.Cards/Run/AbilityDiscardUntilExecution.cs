@@ -26,7 +26,7 @@ internal static class AbilityDiscardUntilExecution
                 int player = Seat(effect, context);
                 var revealContext = context with
                 { Expressions = context.Expressions with { Bindings = context.Expressions.Bindings with { Player = player } } };
-                return AbilityDeckAndRevealExecution.RevealCard(found, revealContext);
+                return AbilityDeckAndRevealExecution.RevealCard(found, revealContext, effect.RevealStatus);
             case AbilityDiscardUntilResult.PutIntoPlayFirstPlayer:
                 return AbilityDeckAndRevealResult.Handled with
                 {

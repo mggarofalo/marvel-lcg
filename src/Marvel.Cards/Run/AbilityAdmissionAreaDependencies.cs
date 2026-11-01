@@ -39,8 +39,8 @@ internal static class AbilityAdmissionAreaDependencies
     [
         typeof(AbilityEffect.DelayedDiscard), typeof(AbilityEffect.DealEncounterCard),
         typeof(AbilityEffect.PlaceAtRandom), typeof(AbilityEffect.Search),
-        typeof(AbilityEffect.PutIntoPlay), typeof(AbilityEffect.PlaceCounters),
-        typeof(AbilityEffect.RemoveCounters), typeof(AbilityEffect.StoreBeneath), typeof(AbilityEffect.AttachCards),
+        typeof(AbilityEffect.PutIntoPlay), typeof(AbilityCounterEffect.PlaceCounters),
+        typeof(AbilityCounterEffect.RemoveCounters), typeof(AbilityCounterEffect.MoveCounters), typeof(AbilityEffect.StoreBeneath), typeof(AbilityEffect.AttachCards),
         typeof(AbilityEffect.StoreDeckTopBeneath),
     ];
 
@@ -186,15 +186,30 @@ internal static class AbilityAdmissionAreaDependencies
             case AbilityEffect.PutIntoPlay entering:
                 CollectCardsInDependencies(entering.Card, context, areas);
                 break;
-            case AbilityEffect.PlaceCounters counters:
-                CollectCardsInDependencies(counters.Card, context, areas);
-                CollectSingularAreaDependencies(counters.Count, context, areas);
-                break;
-            case AbilityEffect.RemoveCounters counters:
-                CollectCardsInDependencies(counters.Card, context, areas);
+            case AbilityCounterEffect counters:
+                CollectCounterDependencies(counters, context, areas);
                 break;
             default:
                 throw new InvalidOperationException("Unknown card-mutation area dependency");
+        }
+    }
+
+    private static void CollectCounterDependencies(
+        AbilityCounterEffect effect, AbilityAdmissionContext context, HashSet<DeckType> areas)
+    {
+        switch (effect)
+        {
+            case AbilityCounterEffect.PlaceCounters counters:
+                CollectCardsInDependencies(counters.Card, context, areas);
+                CollectSingularAreaDependencies(counters.Count, context, areas);
+                break;
+            case AbilityCounterEffect.RemoveCounters counters:
+                CollectCardsInDependencies(counters.Card, context, areas);
+                break;
+            case AbilityCounterEffect.MoveCounters move:
+                CollectCardsInDependencies(move.From, context, areas);
+                CollectCardsInDependencies(move.To, context, areas);
+                break;
         }
     }
 
@@ -250,7 +265,8 @@ internal static class AbilityAdmissionAreaDependencies
                 or AbilityEffect.ChooseDiscardToShuffle or AbilityEffect.ExhaustAnyNumber
                 or AbilityEffect.DiscardHandWithResource or AbilityEffect.DiscardHandOfKind
                 or AbilityEffect.RecoverDiscardedByResource or AbilityEffect.RecruitDiscarded
-                or AbilityEffect.ActivateEnemies or AbilityEffect.GrantTraitCharacters or AbilityEffect.ModifyPlayedEvent or AbilityEffect.BoostBasicUse or AbilityPricingEffect.IncreaseNextEventCost => true,
+                or AbilityEffect.ActivateEnemies or AbilityEffect.GrantTraitCharacters or AbilityEffect.ModifyPlayedEvent or AbilityEffect.BoostBasicUse or AbilityPricingEffect.IncreaseNextEventCost
+                or AbilityEnemyDamageEffect.HealOnEnemyDamage or AbilityEnemyDamageEffect.IncreaseExcessDamage => true,
             _ => false,
         };
 

@@ -13,6 +13,7 @@ internal static class AbilityImmediateExecution
         return effect switch
         {
             AbilityPricingEffect.IncreaseNextEventCost increase => IncreaseEventCost(increase, context),
+            AbilityEnemyDamageEffect.HealOnEnemyDamage heal => HealOnEnemyDamage(heal, context),
             AbilityEffect.BoostBasicUse bonus => AbilityBasicUseBoost.Run(bonus, context),
             AbilityEffect.ModifyPlayedEvent modifier => AbilityPlayedEventModifier.Run(modifier, context),
             AbilityEffect.Fixed fixedEffect => RunFixed(fixedEffect, context),
@@ -35,6 +36,16 @@ internal static class AbilityImmediateExecution
     {
         NextEventCost.Register(context.Admission.World, context.Admission.Source,
             context.Admission.Query.Player, increase.Amount);
+        return new(true, true);
+    }
+
+    private static AbilityImmediateResult HealOnEnemyDamage(AbilityEnemyDamageEffect.HealOnEnemyDamage heal, AbilityImmediateContext context)
+    {
+        var world = context.Admission.World;
+        world.Effects.Register(new ContinuousEffect(EffectSource.LastingEffect, EnemyDamageHealing.Kind,
+            Amount: heal.Amount, Card: context.Admission.Source.ObjectId,
+            Affects: world.Seats[context.Admission.Query.Player].IdentityCard.ObjectId,
+            Lasts: Duration.UntilEndOf(heal.Until)));
         return new(true, true);
     }
 

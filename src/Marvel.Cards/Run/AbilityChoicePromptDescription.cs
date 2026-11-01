@@ -54,8 +54,25 @@ internal static class AbilityChoicePromptDescription
             ? AbilityDamageTransferDescription.Summary(context, card)
                 ?? AbilitySourceThreatDescription.Summary(context, card) ?? AbilityEffectDescription.Summary(card)
             : null;
+        if (TieBreak(choice) is { } tie) summary = summary is null ? tie : $"{tie} {summary}";
         return context.Expressions.FinalStep ? $"Final step. {summary}".TrimEnd() : summary;
     }
+
+    // rr:first-player.1: the first player decides when an effect leaves the choice
+    // between several equally ranked cards to no other player.
+    private static string? TieBreak(AbilityEffect choice) =>
+        choice is AbilityEffect.ChooseCard { FirstPlayerChooses: true, From: AbilityCardSelection.Ranked ranked }
+            ? $"As first player, break the tie for the {(ranked.Maximum ? "highest" : "lowest")} {RankNoun(ranked.By)}."
+            : null;
+
+    private static string RankNoun(AbilityCardRank rank) => rank switch
+    {
+        AbilityCardRank.Cost => "cost",
+        AbilityCardRank.Attack => "ATK",
+        AbilityCardRank.PrintedHealth => "printed hit points",
+        AbilityCardRank.RemainingHealth => "remaining hit points",
+        _ => "threat",
+    };
 
     private static IEnumerable<Affordance> CardChoices(AbilityStructuralContext context,
         AbilityEffect.ChooseCard chooseCard, AbilityContinuationFacts continuation,

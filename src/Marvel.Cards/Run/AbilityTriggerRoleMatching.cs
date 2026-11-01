@@ -10,14 +10,19 @@ internal static class AbilityTriggerRoleMatching
         World world, AbilityWindowAdmission.Candidate candidate, Occurrence occurrence, int? restricted)
     {
         var (card, ability, _, _) = candidate;
+        var actor = ActorOf(candidate, occurrence);
         return Subject(world, ability.Trigger.Subject, card, occurrence, restricted, candidate.TriggeringDefeat)
-            && (ability.Trigger.Actor != AbilityRoles.You || occurrence.ActorFacts?.Kind is CardKind.Hero or CardKind.AlterEgo)
-            && Role(world, ability.Trigger.Actor, card, occurrence.ActorFacts, restricted)
+            && (ability.Trigger.Actor != AbilityRoles.You || actor?.Kind is CardKind.Hero or CardKind.AlterEgo)
+            && Role(world, ability.Trigger.Actor, card, actor, restricted)
             && (ReadiedTriggerMatching.Applies(occurrence)
                 ? ReadiedTriggerMatching.Target(world, ability.Trigger, card, occurrence, restricted)
                 : Role(world, ability.Trigger.Target, card, candidate.TriggeringAttack?.Facts ?? occurrence.TargetFacts, restricted))
             && Player(world, ability.Trigger.Player, card, occurrence, restricted);
     }
+
+    // An instance that names its own actor (an identity credited with excess damage) uses it.
+    private static OccurrenceCard? ActorOf(AbilityWindowAdmission.Candidate candidate, Occurrence occurrence) =>
+        candidate.TriggeringActor ?? occurrence.ActorFacts;
 
     private static bool Subject(
         World world, string? subject, Card card, Occurrence occurrence,

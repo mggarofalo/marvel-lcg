@@ -72,19 +72,19 @@ internal static class AbilityEntryCounterDescription
         return counters.Counter == counter;
     }
 
-    private static bool Energy(AbilityEffect.PlaceCounters placement) =>
+    private static bool Energy(AbilityCounterEffect.PlaceCounters placement) =>
         ((AbilityNumber.Minimum)placement.Count).Operands[1] is AbilityNumber.ResolutionValue
             { Kind: AbilityResolutionNumber.EntryEnergyExcess };
 
-    private static string Kind(AbilityEffect.PlaceCounters placement) => Energy(placement) ? "energy " : string.Empty;
+    private static string Kind(AbilityCounterEffect.PlaceCounters placement) => Energy(placement) ? "energy " : string.Empty;
 
-    private static long Cap(AbilityEffect.PlaceCounters placement) =>
+    private static long Cap(AbilityCounterEffect.PlaceCounters placement) =>
         ((AbilityNumber.Constant)((AbilityNumber.Minimum)placement.Count).Operands[0]).Value;
 
     // Only this checked shape has a completed entry-payment receipt and a fixed cap.
-    private static AbilityEffect.PlaceCounters? Match(AbilityEffect effect)
+    private static AbilityCounterEffect.PlaceCounters? Match(AbilityEffect effect)
     {
-        if (effect is not AbilityEffect.PlaceCounters
+        if (effect is not AbilityCounterEffect.PlaceCounters
         {
             Card: AbilityCardSelection.Bound { Binding: AbilityCardBinding.This },
             Count: AbilityNumber.Minimum { Operands.Length: 2 } minimum,

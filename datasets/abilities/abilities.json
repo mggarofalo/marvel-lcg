@@ -25428,9 +25428,9 @@
     {
       "card": "16020",
       "name": "Flora and Fauna",
-      "note": "Team-Up (Groot and Rocket Raccoon), read from the printed attribute: both named characters must be in play, hero, alter-ego or ally (rr:team-up; ruling 9e3a063b5c91ec99). Hero Action: place 2 growth counters on Groot (to a maximum of 10, rr:max-maximum.6) and ready him, or place 2 charge counters on a Rocket Raccoon upgrade and ready it. Rocket Raccoon's upgrades have no authored rows, so none can be in play and the row authors the Groot option alone; GrootLoweringTests.FloraAndFaunaAuthorsTheRocketOptionWhenARocketUpgradeIsAuthored fails when a Rocket Raccoon upgrade is authored without the second option. Groot is the one card titled Groot in play (ruling 3cd8971cc0a58466). At 10 growth counters with Groot ready the action would change nothing; admission withholds it because no part can resolve (rulings 342e7b62e13a6806, e015aa6cd98e8ef2).",
+      "note": "Team-Up (Groot and Rocket Raccoon), read from the printed attribute: both named characters must be in play, hero, alter-ego or ally (rr:team-up; ruling 9e3a063b5c91ec99). Hero Action: place 2 growth counters on Groot (to a maximum of 10, rr:max-maximum.6) and ready him, or place 2 charge counters on a Rocket Raccoon upgrade and ready that upgrade. A Rocket Raccoon upgrade is an upgrade in any play area printed in Rocket Raccoon's identity set. Groot is the one card titled Groot in play (ruling 3cd8971cc0a58466). An option that would change nothing is not offered (rr:choose-option.2); with neither available the action is withheld (rulings 342e7b62e13a6806, e015aa6cd98e8ef2). With no Rocket Raccoon upgrade in play the second option has no valid target and cannot be chosen (rr:choose-option.2.2), so the Groot option resolves without a choice.",
       "abilities": [
-        {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero"}, "effect": {"seq": [{"placeCounters": {"card": {"titled": "Groot"}, "counter": "growth", "count": {"min": [2, {"add": [10, {"mul": [-1, {"countersOn": {"card": {"titled": "Groot"}, "counter": "growth"}}]}]}]}}}, {"ready": {"titled": "Groot"}}]}}
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero"}, "effect": {"if": {"test": {"exists": {"cardsIn": {"area": "playerPlayAreas", "kind": "Upgrade", "set": "rocket"}}}, "then": {"choose": {"descriptions": ["Place 2 growth counters on Groot and ready him", "Place 2 charge counters on a Rocket Raccoon upgrade and ready it"], "options": [{"seq": [{"placeCounters": {"card": {"titled": "Groot"}, "counter": "growth", "count": {"min": [2, {"add": [10, {"mul": [-1, {"countersOn": {"card": {"titled": "Groot"}, "counter": "growth"}}]}]}]}}}, {"ready": {"titled": "Groot"}}]}, {"chooseCard": {"from": {"cardsIn": {"area": "playerPlayAreas", "kind": "Upgrade", "set": "rocket"}}, "effect": {"seq": [{"placeCounters": {"card": "chosen", "counter": "charge", "count": 2}}, {"ready": "chosen"}]}}}]}}, "else": {"seq": [{"placeCounters": {"card": {"titled": "Groot"}, "counter": "growth", "count": {"min": [2, {"add": [10, {"mul": [-1, {"countersOn": {"card": {"titled": "Groot"}, "counter": "growth"}}]}]}]}}}, {"ready": {"titled": "Groot"}}]}}}}
       ]
     },
     {
@@ -25515,6 +25515,243 @@
       "name": "Strength",
       "note": "Reprint of 01090.",
       "abilities": []
+    },
+    {
+      "card": "16029a",
+      "name": "Rocket Raccoon",
+      "note": "\"Murdered You!\" -- Response: after you deal excess damage to an enemy, draw 1 card. rr:excess-damage: excess damage is damage dealt beyond a character's remaining hit points; ruling dd353e3498f6b923 and ruling 70423690d446327f: it is dealt even when the enemy takes less (Tough, reduction), and ruling 05670207b5acc4d9 counts dealt rather than taken damage. 'You' is Rocket's identity together with his events, upgrades and resources (rr:you-your.6, .12-.14); damage from his allies is not his, and nor is damage 'the player' deals (ruling ef838ec89618ef77). Each enemy dealt excess damage is one instance: overkill damage to the villain counts as damage Rocket dealt (ruling 4648617b8449406e), so a minion and the villain both dealt excess draw 2 (ruling 3f57fe6e7dc99dd2). The response opens after the attack or ability that dealt the damage (ruling ed234608b14481f5). WhenExcessDamageDealt is the engine's name for that occurrence.",
+      "abilities": [
+        {"name": "\"Murdered You!\"", "trigger": {"event": "WhenExcessDamageDealt", "timing": "Response", "actor": "you", "target": "enemy"}, "effect": {"draw": {"player": "you", "count": 1}}}
+      ]
+    },
+    {
+      "card": "16029b",
+      "name": "Rocket Raccoon",
+      "note": "Tinkering -- Action: choose and discard a [tech] upgrade you control -> draw 2 cards, limit once per round. The choice and discard is the first instruction rather than a separate cost step; an engine choice that no admitted card can observe. The discard pays the cost even if the upgrade does not reach a discard pile (ruling 9abcb89111e37613), so the draw does not depend on where it lands. Without a TECH upgrade that can be discarded the action is not offered.",
+      "abilities": [
+        {"name": "Tinkering", "trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this"}, "limitPerRound": 1, "effect": {"chooseCard": {"from": {"discardable": {"withTrait": {"cards": {"query": "upgradesYouControl"}, "trait": "TECH"}}}, "effect": {"seq": [{"discard": "chosen"}, {"draw": {"player": "you", "count": 2}}]}}}}
+      ]
+    },
+    {
+      "card": "16030",
+      "name": "I've Got a Plan",
+      "note": "Hero Response: after you make a basic thwart (using your THW), ready Rocket Raccoon; he gets +1 THW while in hero form until the end of the phase. 'You' is Rocket's identity (rr:you-your.6); a confused thwart is not a basic thwart (ruling 983ae8870c226cd4). The bonus sits on the identity card, whose alter-ego face prints no THW.",
+      "abilities": [
+        {"trigger": {"event": "WhenBasicThwartEnds", "timing": "Response", "actor": "you", "form": "hero"}, "effect": {"seq": [{"ready": "you"}, {"grantUntil": {"card": "you", "keyword": "thwart", "amount": 1, "until": "EndOfPhase"}}]}}
+      ]
+    },
+    {
+      "card": "16031",
+      "name": "Reload",
+      "note": "Hero Action: ready each [tech] upgrade you control.",
+      "abilities": [
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero"}, "effect": {"ready": {"withTrait": {"cards": {"query": "upgradesYouControl"}, "trait": "TECH"}}}}
+      ]
+    },
+    {
+      "card": "16032",
+      "name": "Schadenfreude",
+      "note": "Hero Action: until the end of the turn, heal 2 damage from Rocket Raccoon each time you deal any amount of damage to an enemy. A lasting effect (rr:lasting-effects) that heals the resolving player's identity once per damage instance dealt to an enemy by that identity, its events, upgrades or resources (rr:you-your.12-.14). Overkill damage is damage the attacker dealt, so a minion and the villain dealt damage by one attack heal twice (ruling 4648617b8449406e). Damage dealt counts even when Tough prevents what the enemy takes (rr:prevent.1.1). healEachTimeYouDamageAnEnemy is the engine's spelling.",
+      "abilities": [
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero"}, "effect": {"healEachTimeYouDamageAnEnemy": {"amount": 2, "until": "EndOfTurn"}}}
+      ]
+    },
+    {
+      "card": "16033",
+      "name": "Salvage",
+      "note": "Response: after you spend this card, put a [tech] upgrade from your discard pile on top of your deck. The spent card responds after the completed cost, as Pym Particles does. Not offered without a TECH upgrade in your discard pile.",
+      "abilities": [
+        {"trigger": {"event": "WhenResourceCardSpent", "timing": "Response", "subject": "this", "player": "you"}, "effect": {"chooseCard": {"from": {"cardsIn": {"area": "yourDiscardPile", "kind": "Upgrade", "trait": "TECH"}}, "effect": {"placeOnTopOfDeck": "chosen"}}}}
+      ]
+    },
+    {
+      "card": "16034",
+      "name": "Battery Pack",
+      "startingCounters": {"type": "charge", "count": 2, "uses": false},
+      "note": "Enters play with 2 charge counters: not the Uses keyword, so an empty Battery Pack stays in play (ruling c0c1782ca297d006). Action: exhaust Battery Pack -> move a charge counter from this card to another [tech] upgrade you control. Battery Pack itself is not a valid destination because moving a counter to the card it left changes nothing (rr:target.3); with no charge counter here the action is not offered.",
+      "abilities": [
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this"}, "cost": {"exhaust": "this"}, "effect": {"chooseCard": {"from": {"withTrait": {"cards": {"query": "upgradesYouControl"}, "trait": "TECH"}}, "effect": {"moveCounters": {"from": "this", "to": "chosen", "counter": "charge", "count": 1}}}}}
+      ]
+    },
+    {
+      "card": "16035",
+      "name": "Cybernetic Skeleton",
+      "note": "You get +3 hit points. While in hero form, Rocket Raccoon gets +1 ATK: the bonus is granted to your hero, which exists only in hero form.",
+      "abilities": [
+        {"trigger": {"timing": "Constant", "subject": "this"}, "effect": {"seq": [{"grant": {"card": "you", "keyword": "health", "amount": 3}}, {"grant": {"card": "yourHero", "keyword": "attack", "amount": 1}}]}}
+      ]
+    },
+    {
+      "card": "16036",
+      "name": "Particle Cannon",
+      "startingCounters": {"type": "charge", "count": 2, "uses": false},
+      "note": "Restricted. Enters play with 2 charge counters (not Uses; ruling c0c1782ca297d006). Hero Action (attack): exhaust Particle Cannon and remove 1 charge counter from it -> deal 4 damage to an enemy; this attack gains overkill and ranged. Ranged is granted to this card's own attack (attackScope source).",
+      "abilities": [
+        {"trigger": {"timing": "Constant"}, "effect": {"grant": {"card": "this", "keyword": "ranged", "attackScope": "source"}}},
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero"}, "labels": ["attack"], "cost": {"seq": [{"exhaust": "this"}, {"removeCounters": {"card": "this", "counter": "charge", "count": 1}}]}, "effect": {"chooseCard": {"from": {"query": "attackableEnemies"}, "effect": {"attack": {"target": "chosen", "effect": {"dealAttackDamage": {"cards": "chosen", "amount": 4, "overkill": 1}}}}}}}
+      ]
+    },
+    {
+      "card": "16037",
+      "name": "Rocket Launcher",
+      "startingCounters": {"type": "charge", "count": 2, "uses": false},
+      "note": "Restricted. Enters play with 2 charge counters (not Uses; ruling c0c1782ca297d006). Hero Action: exhaust Rocket Launcher and remove 1 charge counter from it -> choose a player; deal 2 damage to the villain and each minion engaged with that player. Not an attack. The player is chosen through their identity and the villain is dealt damage first, as for Explosive Arrow (04006).",
+      "abilities": [
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero"}, "cost": {"seq": [{"exhaust": "this"}, {"removeCounters": {"card": "this", "counter": "charge", "count": 1}}]}, "effect": {"chooseCard": {"from": {"query": "identities"}, "effect": {"seq": [{"dealDamage": {"cards": {"query": "villain"}, "amount": 2}}, {"dealDamage": {"cards": {"query": "enemiesEngagedWithChosenPlayer"}, "amount": 2}}]}}}}
+      ]
+    },
+    {
+      "card": "16038",
+      "name": "Rocket's Pistol",
+      "startingCounters": {"type": "charge", "count": 3, "uses": false},
+      "note": "Restricted. Enters play with 3 charge counters (not Uses; ruling c0c1782ca297d006). Hero Action (attack): exhaust Rocket's Pistol and remove 1 charge counter from it -> deal 2 damage to an enemy.",
+      "abilities": [
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero"}, "labels": ["attack"], "cost": {"seq": [{"exhaust": "this"}, {"removeCounters": {"card": "this", "counter": "charge", "count": 1}}]}, "effect": {"chooseCard": {"from": {"query": "attackableEnemies"}, "effect": {"attack": {"target": "chosen", "effect": {"dealAttackDamage": {"cards": "chosen", "amount": 2}}}}}}}
+      ]
+    },
+    {
+      "card": "16039",
+      "name": "Thruster Boots",
+      "note": "While in hero form, Rocket Raccoon gets +1 THW and gains the [aerial] trait. The THW bonus goes to your hero; the trait is granted only while the identity is in hero form, as Cosmic Flight grants AERIAL.",
+      "abilities": [
+        {"trigger": {"timing": "Constant", "subject": "this"}, "effect": {"seq": [{"grant": {"card": "yourHero", "keyword": "thwart", "amount": 1}}, {"if": {"test": {"inForm": {"player": "you", "form": "hero"}}, "then": {"grant": {"card": "you", "trait": "AERIAL"}}}}]}}
+      ]
+    },
+    {
+      "card": "16040",
+      "name": "Bug",
+      "note": "Hero Response: after your hero makes a basic attack, heal 1 damage from Bug. A stunned attack is not a basic attack (ruling 983ae8870c226cd4). With no damage on Bug the response changes nothing and is not offered.",
+      "abilities": [
+        {"trigger": {"event": "WhenBasicAttackEnds", "timing": "Response", "actor": "you", "form": "hero"}, "effect": {"heal": {"card": "this", "amount": 1}}}
+      ]
+    },
+    {
+      "card": "16041",
+      "name": "Chase Them Down",
+      "note": "Reprint of 01052.",
+      "abilities": [
+        {"trigger": {"event": "WhenAttackEnds", "timing": "Response", "actor": "you", "target": "enemy"}, "when": {"wasDefeated": "trigger.target"}, "effect": {"chooseCard": {"from": {"query": "thwartableSchemes"}, "effect": {"thwart": {"target": "chosen", "effect": {"removeThreat": {"scheme": "chosen", "amount": 2}}}}}}}
+      ]
+    },
+    {
+      "card": "16042",
+      "name": "Into the Fray",
+      "note": "Reprint of 13013.",
+      "abilities": [
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero"}, "labels": ["attack"], "effect": {"chooseCard": {"from": {"query": "attackableMinions"}, "effect": {"attack": {"target": "chosen", "effect": {"seq": [{"dealAttackDamage": {"cards": "chosen", "amount": 6}}, {"removeThreat": {"scheme": {"query": "mainScheme"}, "amount": {"result": "excessDamageDealt"}}}]}}}}}}
+      ]
+    },
+    {
+      "card": "16043",
+      "name": "Looking for Trouble",
+      "note": "Hero Action (thwart): discard cards from the top of the encounter deck until you discard a minion; put that minion into play engaged with you -> remove 3 threat from the main scheme. The pre-arrow discard and engagement is the cost, as for Defender of the Nine Realms (06003); rulings 1fc1a3ff38a01231 and a1f4982cfebcd768 govern an emptied encounter deck and legality after payment.",
+      "abilities": [
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero"}, "labels": ["thwart"], "cost": {"discardUntilMinionEngaged": "you"}, "effect": {"thwart": {"target": {"query": "mainScheme"}, "effect": {"removeThreat": {"scheme": {"query": "mainScheme"}, "amount": 3}}}}}
+      ]
+    },
+    {
+      "card": "16044",
+      "name": "Relentless Assault",
+      "note": "Reprint of 01053.",
+      "abilities": [
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero"}, "labels": ["attack"], "effect": {"chooseCard": {"from": {"query": "attackableMinions"}, "effect": {"attack": {"target": "chosen", "effect": {"if": {"test": {"paidWithResource": "R"}, "then": {"dealAttackDamage": {"cards": "chosen", "amount": 5, "overkill": 1}}, "else": {"dealAttackDamage": {"cards": "chosen", "amount": 5}}}}}}}}}
+      ]
+    },
+    {
+      "card": "16045",
+      "name": "Follow Through",
+      "note": "Hero Interrupt: when your hero's attack deals any amount of excess damage, increase that amount by 1. rr:excess-damage: excess is damage dealt beyond the character's remaining hit points, so it is known when the attack's damage is about to be dealt (rr:damage step 1) and increasing it deals 1 more damage beyond them. Overkill and every ability counting that excess see the larger amount (rr:overkill.3). 'Your hero' is your identity and its events and upgrades (rr:you-your.12, .14), never an ally. The upgrade has no cost or limit, so each attack's excess may be increased once. WhenAttackExcessDamageWouldBeDealt and increaseExcessDamage are the engine's spellings.",
+      "abilities": [
+        {"trigger": {"event": "WhenAttackExcessDamageWouldBeDealt", "timing": "Interrupt", "actor": "you", "target": "enemy", "form": "hero"}, "effect": {"increaseExcessDamage": 1}}
+      ]
+    },
+    {
+      "card": "16046",
+      "name": "Hand Cannon",
+      "startingCounters": {"type": "charge", "count": 3, "uses": true},
+      "note": "Restricted. Uses (3 charge counters): the keyword discards Hand Cannon with its last counter (rr:uses-x-type). Hero Interrupt: when your hero makes a basic attack, exhaust Hand Cannon and remove 1 charge counter from it -> +2 ATK for that attack, which gains overkill. Both belong to that basic-use occurrence (rr:basic-power.1).",
+      "abilities": [
+        {"trigger": {"event": "WhenHeroBasicAttackInitiated", "timing": "Interrupt", "actor": "you", "form": "hero", "player": "you"}, "cost": {"seq": [{"exhaust": "this"}, {"removeCounters": {"card": "this", "counter": "charge", "count": 1}}]}, "effect": {"seq": [{"boostBasicUse": 2}, {"boostBasicUse": "overkill"}]}}
+      ]
+    },
+    {
+      "card": "16047",
+      "name": "Groot",
+      "note": "Play only if your identity has the [guardian] trait: a printed prerequisite read from card text. Response: after Groot defends against an attack, heal 2 damage from him. defendedBy reads the completed attack's defender; a defense event used outside an attack is not a defense against an attack (ruling f6b7f9804304980b). Only one card titled Groot can be in play for the group (ruling 3cd8971cc0a58466).",
+      "abilities": [
+        {"trigger": {"event": "WhenAttackEnds", "timing": "Response", "actor": "enemy"}, "when": {"defendedBy": "this"}, "effect": {"heal": {"card": "this", "amount": 2}}}
+      ]
+    },
+    {
+      "card": "16048",
+      "name": "Flora and Fauna",
+      "note": "Team-Up (Groot and Rocket Raccoon), read from the printed attribute: both named characters must be in play, hero, alter-ego or ally (rr:team-up; ruling 9e3a063b5c91ec99). Hero Action: place 2 growth counters on Groot (to a maximum of 10, rr:max-maximum.6) and ready him, or place 2 charge counters on a Rocket Raccoon upgrade and ready that upgrade. A Rocket Raccoon upgrade is an upgrade in any play area printed in Rocket Raccoon's identity set. Groot is the one card titled Groot in play (ruling 3cd8971cc0a58466). An option that would change nothing is not offered (rr:choose-option.2); with neither available the action is withheld (rulings 342e7b62e13a6806, e015aa6cd98e8ef2). With no Rocket Raccoon upgrade in play the second option has no valid target and cannot be chosen (rr:choose-option.2.2), so the Groot option resolves without a choice.",
+      "abilities": [
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero"}, "effect": {"if": {"test": {"exists": {"cardsIn": {"area": "playerPlayAreas", "kind": "Upgrade", "set": "rocket"}}}, "then": {"choose": {"descriptions": ["Place 2 growth counters on Groot and ready him", "Place 2 charge counters on a Rocket Raccoon upgrade and ready it"], "options": [{"seq": [{"placeCounters": {"card": {"titled": "Groot"}, "counter": "growth", "count": {"min": [2, {"add": [10, {"mul": [-1, {"countersOn": {"card": {"titled": "Groot"}, "counter": "growth"}}]}]}]}}}, {"ready": {"titled": "Groot"}}]}, {"chooseCard": {"from": {"cardsIn": {"area": "playerPlayAreas", "kind": "Upgrade", "set": "rocket"}}, "effect": {"seq": [{"placeCounters": {"card": "chosen", "counter": "charge", "count": 2}}, {"ready": "chosen"}]}}}]}}, "else": {"seq": [{"placeCounters": {"card": {"titled": "Groot"}, "counter": "growth", "count": {"min": [2, {"add": [10, {"mul": [-1, {"countersOn": {"card": {"titled": "Groot"}, "counter": "growth"}}]}]}]}}}, {"ready": {"titled": "Groot"}}]}}}}
+      ]
+    },
+    {
+      "card": "16049",
+      "name": "Energy",
+      "note": "Reprint of 01088.",
+      "abilities": []
+    },
+    {
+      "card": "16050",
+      "name": "Genius",
+      "note": "Reprint of 01089.",
+      "abilities": []
+    },
+    {
+      "card": "16051",
+      "name": "Strength",
+      "note": "Reprint of 01090.",
+      "abilities": []
+    },
+    {
+      "card": "16052",
+      "name": "Booster Boots",
+      "note": "Play only if your identity has the [guardian] trait; max 1 per player (catalog-owned). Hero Interrupt: when you would take any amount of damage from an attack, exhaust Booster Boots and discard the top card of your deck -> prevent 1 of that damage. The window is Backflip's (01003): your identity taking damage from an attack after pending prevention (rr:damage step 3). Prevention leaves the damage dealt unchanged (rr:prevent.1.1).",
+      "abilities": [
+        {"trigger": {"event": "WhenDamageWouldBeDealt", "damage": "taken", "timing": "Interrupt", "target": "you", "form": "hero"}, "when": {"and": [{"isYourIdentity": "trigger.target"}, {"damageFromAttack": "trigger"}]}, "cost": {"seq": [{"exhaust": "this"}, {"discardTop": {"from": "yourDeck", "count": 1}}]}, "effect": {"preventDamage": {"card": "trigger.target", "amount": 1}}}
+      ]
+    },
+    {
+      "card": "16053",
+      "name": "Crisis on Halfworld",
+      "note": "Obligation. You may flip to alter-ego form, then choose: exhaust your alter-ego -> remove Crisis on Halfworld from the game; or discard the highest cost upgrade you control, gaining surge if no upgrade was discarded this way, and discard this obligation. Only upgrades that can be discarded are ranked (rr:permanent.4.1) and the first player breaks a tie for highest cost (rr:first-player.1), as for Oversized Hands (07042). The structure follows Wilt (16025).",
+      "abilities": [
+        {"trigger": {"event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this"}, "effect": {"seq": [{"choose": {"descriptions": ["Change to alter-ego form", "Remain in your current form"], "options": [{"changeForm": {"player": "you", "to": "alter-ego"}}, {"seq": []}]}}, {"choose": {"descriptions": ["Exhaust your alter-ego and remove Crisis on Halfworld from the game", "Discard your highest cost upgrade (surge if none is discarded); discard Crisis on Halfworld"], "options": [{"then": {"effect": {"exhaust": "yourAlterEgo"}, "then": {"removeFromGame": "this"}}}, {"seq": [{"if": {"test": {"exists": {"discardable": {"query": "upgradesYouControl"}}}, "then": {"chooseCard": {"chooser": "firstPlayer", "from": {"maxBy": {"of": {"discardable": {"query": "upgradesYouControl"}}, "by": "cost"}}, "effect": {"discard": "chosen"}}}, "else": {"gainSurge": 1}}}, {"discard": "this"}]}]}}]}}
+      ]
+    },
+    {
+      "card": "16054",
+      "name": "Vendetta",
+      "note": "Rocket Raccoon's nemesis side scheme. Its amplify icon and starting threat are printed values the engine reads; it has no text box. Ruling 3678ade5dd527884: a quickstrike attack resolved before Vendetta enters play does not see its amplify.",
+      "abilities": []
+    },
+    {
+      "card": "16055",
+      "name": "Blackjack O'Hare",
+      "note": "Rocket Raccoon's nemesis minion. Quickstrike and Villainous are printed keywords the engine owns.",
+      "abilities": []
+    },
+    {
+      "card": "16056",
+      "name": "Blackjack's Bazooka",
+      "attachTo": {"firstAvailable": [{"titled": "Blackjack O'Hare"}, {"query": "villain"}]},
+      "note": "Attach to Blackjack O'Hare if able, otherwise to the villain (rr:attach-to). The printed ATK +2 is read from the attachment's attributes. Hero Action: spend [mental][mental][mental] resources -> discard this card, as for Laser Rifle (04072).",
+      "abilities": [
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero"}, "cost": {"spend": "BBB"}, "effect": {"discard": "this"}}
+      ]
+    },
+    {
+      "card": "16057",
+      "name": "Planetary Invasion",
+      "note": "When Revealed: discard cards from the top of the encounter deck until you discard a minion; reveal that minion, then give it a tough status card. The revealing player reveals it. Ruling ef63f3668700ef73: the reveal resolves the minion's keywords, initiating a quickstrike attack, and the tough status card is given in the same sentence, before that attack's steps resolve. rr:encounter-deck.2 ends the discard, fulfilled, when the encounter deck empties first. revealStatus is the engine's spelling.",
+      "abilities": [
+        {"trigger": {"event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this"}, "effect": {"discardUntil": {"from": "encounterDeck", "kind": "minion", "then": "reveal", "revealStatus": "tough"}}}
+      ]
     }
   ]
 }

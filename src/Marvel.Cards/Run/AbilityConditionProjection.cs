@@ -105,6 +105,7 @@ internal static class AbilityConditionProjection
             AbilityCondition.IsEnemyAttacker attacker => ValueReadsVillain(attacker.Card, cast),
             AbilityCondition.WasDefeatedByDamage defeated => ValueReadsVillain(defeated.Card, cast),
             AbilityCondition.WasDefeated defeated => ValueReadsVillain(defeated.Card, cast),
+            AbilityCondition.DefendedBy defender => ValueReadsVillain(defender.Card, cast),
             AbilityCondition.IsYourIdentity identity => ValueReadsVillain(identity.Card, cast),
             _ => false,
         };

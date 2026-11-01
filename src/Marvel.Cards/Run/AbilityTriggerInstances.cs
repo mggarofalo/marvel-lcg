@@ -10,7 +10,9 @@ internal static class AbilityTriggerInstances
         Marvel.Rules.State.World world, AbilityWindowAdmission.Candidate candidate, Occurrence occurrence) =>
         AttackedRecipients(world, candidate, occurrence) is { IsDefault: false } recipients
             ? recipients.Select(recipient => candidate with { TriggeringAttack = recipient })
-            : Instances(candidate, occurrence);
+            : AbilityExcessDamageInstances.Applies(candidate.Ability.Trigger, occurrence)
+                ? AbilityExcessDamageInstances.For(candidate, occurrence)
+                : Instances(candidate, occurrence);
 
     private static IEnumerable<AbilityWindowAdmission.Candidate> Instances(
         AbilityWindowAdmission.Candidate candidate, Occurrence occurrence)

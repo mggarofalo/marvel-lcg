@@ -74207,6 +74207,24 @@
       ]
     },
     {
+      "id": "setup:hero:rocket_raccoon",
+      "fingerprint": "sha256:f9c2a5c52f6a110ab8c8d4393f4cbc02f04fcc5d714e0f55ab94a91ab1818147",
+      "obligations": [
+        {
+          "key": "rocket-raccoon-setup",
+          "summary": "The Rocket Raccoon hero record supplies the printed starter deck, obligation and nemesis set.",
+          "disposition": "outside-core",
+          "reason": "This record requires Rocket Raccoon from The Galaxy's Most Wanted, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
       "id": "setup:hero:she_hulk",
       "fingerprint": "sha256:90799e4e30e609a426df0df7323314ba3c4f17c0f2bfda53581ed32b2d99547d",
       "obligations": [
