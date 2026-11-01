@@ -23,20 +23,14 @@ internal static class GameAreaTableProjection
             ? [Central(board, notes), .. board.GameAreas.Where(area => !area.Central)
                 .Select(area => Column(board, area, seat, reach))]
             : [];
-        return new GameAreaTable(Progress(board.Kang), board.Kang?.Acting?.Summary,
+        return new GameAreaTable(Progress(board.Kang),
             notes.FirstOrDefault(note => note.Kind == KangNoteKind.SharedEncounterDeck)?.Text,
             [.. notes.Where(note => note.Card is null).Select(note => note.Text)], columns, reach);
     }
 
     private static IReadOnlyList<KangNoteDescriptor> Notes(BoardPresentation board) => board.Kang?.Notes ?? [];
 
-    private static string Progress(KangTableDescriptor? kang) => kang switch
-    {
-        null => string.Empty,
-        { StoredDominions: 1 } => $"{kang.Progress} 1 Kang's Dominion stored under stage 4A.",
-        { StoredDominions: > 1 } => $"{kang.Progress} {kang.StoredDominions} Kang's Dominions stored under stage 4A.",
-        _ => kang.Progress,
-    };
+    private static string Progress(KangTableDescriptor? kang) => kang?.Progress ?? string.Empty;
 
     private static GameAreaColumn Central(BoardPresentation board, IReadOnlyList<KangNoteDescriptor> notes)
     {
@@ -49,9 +43,10 @@ internal static class GameAreaTableProjection
     private static GameAreaColumn Column(BoardPresentation board, GameAreaDescriptor area, int seat,
         IReadOnlySet<int> reach)
     {
-        var facts = new GameAreaColumnFacts(board, area, seat, reach);
+        int[] encounter = Encounter(board, area.Id);
+        var facts = new GameAreaColumnFacts(board, area, seat, [.. area.Villains, .. area.MainSchemes, .. encounter], reach);
         return new GameAreaColumn(area.Id, area.Label, facts.Markers(), facts.Details(), area.Villains,
-            area.MainSchemes, Encounter(board, area.Id));
+            area.MainSchemes, encounter);
     }
 
     internal static string[] AnchoredNotes(IReadOnlyList<KangNoteDescriptor> notes, IReadOnlyList<int> cards) =>

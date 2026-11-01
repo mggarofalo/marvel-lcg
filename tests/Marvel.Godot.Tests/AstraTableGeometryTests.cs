@@ -27,6 +27,23 @@ public sealed class AstraTableGeometryTests
     }
 
     [Theory]
+    [InlineData(1320, 962, false)]
+    [InlineData(1670, 962, true)]
+    public void AColumnTablesSeamHoldsReferencesTheSituationAndActivityAboveTheTableau(float width, float height, bool encounterGroups)
+    {
+        var table = new AstraTableGeometry(width, height, true, HasRevealingCard: true, HasSourceTableau: true)
+        {
+            HasEncounterGroups = encounterGroups, HasGameAreas = !encounterGroups,
+        };
+        var situation = new Rect2(table.Revealing.End.X, table.Revealing.Position.Y,
+            table.SourceTableau.Position.X - table.Revealing.End.X, table.Revealing.Size.Y);
+        Assert.True(table.Revealing.Position.Y >= table.VillainMat.End.Y);
+        Assert.False(situation.Intersects(table.ColumnActivity));
+        Assert.True(table.SourceTableau.Position.Y >= table.ColumnActivity.End.Y);
+        Assert.False(table.Revealing.Intersects(table.Identity));
+    }
+
+    [Theory]
     [InlineData(820)]
     [InlineData(900)]
     [InlineData(937)]

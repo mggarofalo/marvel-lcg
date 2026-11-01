@@ -26,7 +26,7 @@ internal sealed record GameAreaColumn(
         GameAreaMarker.Yours => "YOUR AREA",
         GameAreaMarker.Acting => "ACTING NOW",
         GameAreaMarker.Retained => "RETAINED",
-        GameAreaMarker.Departing => "LEAVES AT END OF PHASE",
+        GameAreaMarker.Departing => "LEAVES AT PHASE END",
         GameAreaMarker.OutOfReach => "OUT OF REACH",
         _ => throw new ArgumentOutOfRangeException(nameof(marker), marker, "no word for this marker"),
     };

@@ -4,6 +4,9 @@ namespace Marvel.Godot;
 
 internal static class ActivityConnectorOcclusion
 {
+    /// <summary>Readable table text that activity badges must never cover, such as game-area headings.</summary>
+    internal const string TextGroup = "activity_text_exclusion";
+
     private static readonly string[] surfaces =
         ["ContextualDecision", "EventTimeline", "PaymentWorkspace", "AbilityWindow", "CausalReferenceStack"];
 
@@ -21,6 +24,7 @@ internal static class ActivityConnectorOcclusion
         if (main.FindChild("CausalSituation", true, false) is Control situation)
             foreach (Label label in situation.FindChildren("*", "Label", true, false).OfType<Label>())
                 if (!string.IsNullOrWhiteSpace(label.Text)) yield return label;
+        foreach (Node text in main.GetTree().GetNodesInGroup(TextGroup)) yield return text as Control;
         if (main.promptPanel.TopLevel) yield return main.promptPanel;
         if (main.cardInspector.Visible) yield return main.cardInspectorFrame;
     }

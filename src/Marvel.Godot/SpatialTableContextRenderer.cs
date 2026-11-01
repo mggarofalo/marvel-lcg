@@ -13,9 +13,9 @@ internal static class SpatialTableContextRenderer
         if (world is null) return;
         result.RegisterContextualWorld(world);
         // Encounter groups and separated game areas use the entire far mat. Their timeline occupies
-        // the seam below the group piles, rather than the source-tableau column.
+        // the seam below it, beside the causal references, rather than the source-tableau column.
         Rect2 activity = geometry.HasScenarioColumns
-            ? new Rect2(22, 360, geometry.Width - 44, 44)
+            ? geometry.ColumnActivity
             : new Rect2(geometry.SourceTableau.Position.X,
                 geometry.Revealing.Position.Y, geometry.SourceTableau.Size.X,
                 geometry.SourceTableau.Position.Y - geometry.Revealing.Position.Y - 4);

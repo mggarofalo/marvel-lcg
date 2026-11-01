@@ -29,9 +29,9 @@ public sealed class GameAreaTableProjectionTests
         GameAreaTable table = GameAreaTableProjection.From(Board(), 0)!;
         Assert.Equal([GameAreaMarker.Yours], table.Columns[1].Markers);
         Assert.Equal([GameAreaMarker.Acting, GameAreaMarker.OutOfReach], table.Columns[2].Markers);
-        Assert.Equal(["acting summary", "complete 202", "Out of reach for Alice. iso"], table.Columns[2].Details);
+        Assert.Equal(["Out of reach for Alice. iso", "acting summary", "complete 202"], table.Columns[2].Details);
         Assert.Equal([GameAreaMarker.Retained, GameAreaMarker.Departing, GameAreaMarker.OutOfReach], table.Columns[3].Markers);
-        Assert.Equal(["leaving 7", "Out of reach for Alice. iso"], table.Columns[3].Details);
+        Assert.Equal(["Out of reach for Alice. iso", "leaving 7"], table.Columns[3].Details);
         Assert.Equal(["complete 201"], table.Columns[1].Details);
         Assert.Equal("YOUR AREA", table.Columns[1].MarkerText);
         Assert.Equal("ACTING NOW · OUT OF REACH", table.Columns[2].MarkerText);
@@ -43,7 +43,7 @@ public sealed class GameAreaTableProjectionTests
         GameAreaTable table = GameAreaTableProjection.From(Board(), 2)!;
         Assert.Equal([GameAreaMarker.OutOfReach], table.Columns[1].Markers);
         Assert.Equal([GameAreaMarker.Yours, GameAreaMarker.Acting], table.Columns[2].Markers);
-        Assert.Equal(["Out of reach for Carol. iso"], table.Columns[1].Details.Skip(1));
+        Assert.Equal(["Out of reach for Carol. iso", "complete 201"], table.Columns[1].Details);
     }
 
     [Fact]
@@ -62,28 +62,31 @@ public sealed class GameAreaTableProjectionTests
         GameAreaTable table = GameAreaTableProjection.From(Board(), 0)!;
         Assert.Equal("shared", table.SharedPiles);
         Assert.Equal(["iso", "steps", "shared"], table.Rules);
-        Assert.Equal("acting summary", table.Acting);
-        Assert.Equal("progress 1 Kang's Dominion stored under stage 4A.", table.Progress);
+        Assert.Equal("progress", table.Progress);
         Assert.Equal(Reach.Order(), table.OutOfReach.Order());
     }
 
-    [Theory]
-    [InlineData(0, "progress")]
-    [InlineData(2, "progress 2 Kang's Dominions stored under stage 4A.")]
-    public void ProgressCountsStoredDominionsOnlyWhenThereAreAny(int stored, string expected)
+    [Fact]
+    public void AnAreaHoldingOnlySideSchemesIsStillOutOfReachForItsReason()
     {
+        // The engine lists every addressable card in another area, side schemes included.
         BoardPresentation board = Board();
-        board = board with { Kang = board.Kang! with { StoredDominions = stored } };
-        Assert.Equal(expected, GameAreaTableProjection.From(board, 0)!.Progress);
+        board = board with
+        {
+            GameAreas = [.. board.GameAreas.Select(area => area.Id == 6 ? area with { Villains = [], MainSchemes = [] } : area)],
+            Players = [.. board.Players.Select(player => player.Seat == 0 ? player with { OutOfReach = [401] } : player)],
+        };
+        GameAreaColumn column = GameAreaTableProjection.From(board, 0)!.Columns[2];
+        Assert.Equal([GameAreaMarker.Acting, GameAreaMarker.OutOfReach], column.Markers);
+        Assert.Equal("Out of reach for Alice. iso", column.Details[0]);
     }
 
     [Fact]
-    public void AReunionDepartureSaysTheTableReunites()
+    public void ADepartureShowsTheEngineSummaryAlone()
     {
         BoardPresentation board = Board();
         board = board with { Kang = board.Kang! with { Departures = [new(103, 7, [], 203, [], true, "leaving 7")] } };
-        Assert.Equal("leaving 7 No game area remains for this group to join, so the table reunites at stage 4A.",
-            GameAreaTableProjection.From(board, 0)!.Columns[3].Details[0]);
+        Assert.Equal(["Out of reach for Alice. iso", "leaving 7"], GameAreaTableProjection.From(board, 0)!.Columns[3].Details);
     }
 
     [Fact]

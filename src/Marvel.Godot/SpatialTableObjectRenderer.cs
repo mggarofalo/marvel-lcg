@@ -67,7 +67,8 @@ internal sealed class SpatialTableObjectRenderer
         BoardAreaPresentation[] resolving = SpatialTableZones.Resolving(areas);
         if (context is { Count: > 0 })
             resolving = [new BoardAreaPresentation(-1, "Current decision", "", context, []), .. resolving];
-        CausalCardReferences.Add(surface, geometry.Revealing, resolving.SelectMany(SpatialTableZones.Current), result, scale);
+        CausalCardReferences.Add(surface, geometry.Revealing, resolving.SelectMany(SpatialTableZones.Current), result, scale,
+            geometry.HasScenarioColumns);
     }
 
     internal void RenderPlayer(IReadOnlyList<BoardAreaPresentation> areas)

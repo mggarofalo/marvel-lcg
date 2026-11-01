@@ -20,6 +20,19 @@ internal static class SpatialTableHostAttachments
             TabletopAreaNames.Region(area.Zone)));
     }
 
+    /// <summary>The caption and card rows <see cref="Add"/> and <see cref="AddOther"/> hang below a host.</summary>
+    internal static int Rows(IReadOnlyList<BoardAreaPresentation> areas, int host)
+    {
+        int attached = CardSourceGroups.Attached(areas, host).Length;
+        int rows = attached == 0 ? 0 : 1 + attached;
+        foreach (BoardAreaPresentation area in areas.Where(area => area.Host == host))
+        {
+            BoardCardPresentation[] cards = [.. area.Cards.Where(card => !CardSourceGroups.IsLocalSource(card))];
+            if (cards.Length > 0) rows += cards.All(card => card.Concealed) ? 1 : 1 + cards.Length;
+        }
+        return rows;
+    }
+
     internal static string Caption(BoardAreaPresentation area, BoardCardPresentation[] cards)
     {
         int count = cards.Sum(card => card.Count);
