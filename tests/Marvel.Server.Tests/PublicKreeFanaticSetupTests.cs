@@ -28,7 +28,7 @@ public sealed class PublicKreeFanaticSetupTests : TransportTestBase
         Assert.Equal("Kree Fanatic", choice.Name);
         Assert.Equal(19, response.Setup.Heroes.Count);
         Assert.Equal(39, response.Setup.Scenarios.Count);
-        Assert.Equal(13, response.Setup.ModularSets.Count);
+        Assert.Equal(14, response.Setup.ModularSets.Count);
         Assert.DoesNotContain(response.Setup.Scenarios, item => item.Key.Contains("ronan", StringComparison.Ordinal));
         Assert.DoesNotContain(response.Setup.ModularSets, item => item.Key == "sinister_syndicate");
         response = await Exchange(host, socket, EngineRequest.OpenGame("kree-open", "kree-game",

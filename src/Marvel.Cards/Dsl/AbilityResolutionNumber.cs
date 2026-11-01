@@ -39,4 +39,6 @@ public enum AbilityResolutionNumber
     EntryEnergyExcess,
     /// <summary>The damage the interrupted damage window's recipient would take after pending prevention.</summary>
     IncomingDamage,
+    /// <summary>The damage the triggering attack dealt its bound recipient, whether or not it was taken.</summary>
+    AttackDamageDealt,
 }

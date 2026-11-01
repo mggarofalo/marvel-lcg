@@ -146,6 +146,7 @@ internal sealed class AbilityOfferQueries
         {
             var ability = written[index];
             if (ability.Trigger.Timing != AbilityType.Resource
+                || Peril.KeepsOut(world, card, player)
                 || !MayInitiate(world, ability, card, player)
                 || !AbilityAvailability.Available(world, card, ability, index)
                 || !InForm(world, player, ability.Trigger.Form)

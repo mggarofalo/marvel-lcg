@@ -175,8 +175,10 @@ public static class Offering
         // `rr:peril`, first clause: "while a player is resolving this card,
         // that player cannot consult other players, and **other players cannot
         // trigger abilities**." Not "cannot trigger abilities on this card" --
-        // *any* ability. A peril card is resolved alone.
-        if (seat != occurrence.Player && occurrence.Player >= 0 && Perilous(world, occurrence))
+        // *any* ability. A peril card is resolved alone, including the
+        // occurrences nested in its resolution (Peril.Resolver).
+        if (seat != occurrence.Player && occurrence.Player >= 0 && Perilous(world, occurrence)
+            || Timing.Peril.Resolver(world) is { } resolver && seat != resolver)
         {
             return [];
         }
@@ -216,8 +218,7 @@ public static class Offering
             && Peril(world, world.Cards[card]);
     }
 
-    private static bool Peril(World world, Card card) =>
-        StateFields.Modified(world, card, "peril", world.Facts, world.Players) > 0;
+    private static bool Peril(World world, Card card) => Timing.Peril.Has(world, card);
 
     internal static IReadOnlyList<PendingAbility> CurrentlyAvailable(
         World world, IWindowAbilities abilities, Window window, int player)

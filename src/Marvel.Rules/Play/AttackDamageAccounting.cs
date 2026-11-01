@@ -17,6 +17,7 @@ internal static class AttackDamageAccounting
     {
         RecordAttackPlacement(world, request, execution, attacker, damage, spillOnly);
         RecordCausalDamage(world, request, damage, spillOnly);
+        AttackDealtDamageTiming.Record(world, attacker, damage, execution.Occurrence);
         DamageAttacks.ResolveLandedDamage(world, request.ActivationId, request.Target, damage, events);
     }
 

@@ -46,6 +46,7 @@ public sealed class WorldEliminationLayout : IEliminationLayout
         var current = world.Cards[card];
         return DeckTypes.IsInPlay(current.Area.Type)
             && EffectiveCards.Kind(current, facts) == CardKind.Attachment
-            && StateFields.Modified(world, current, "permanent", facts, world.Players) > 0;
+            && StateFields.Modified(world, current, "permanent", facts, world.Players) > 0
+            && !(current.Area.Host >= 0 && PermanentAttachments.Modelled(world, world.Cards[current.Area.Host], current));
     }
 }

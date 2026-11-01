@@ -104,7 +104,8 @@ face or recipe component closes that product without affecting predecessors.
    Blackjack O'Hare. Public admission. Flora and Fauna's Rocket option becomes
    reachable in a Groot + Rocket game.
 3. **Ship Command and the Milano, Power Stone** — 16142–16149. Prerequisite for
-   scenarios 1, 3, 4 and 5; admitted as research rows, not a public product.
+   scenarios 1, 3, 4 and 5. Power Stone is admitted as a modular set; Ship
+   Command is authored and withheld until cross-seat Milano payment has UI.
 4. **Brotherhood of Badoon** with Band of Badoon — scenario 1 Standard/Expert.
 5. **Remaining modulars** — Galactic Artifacts, Kree Militants, Menagerie Medley,
    Space Pirates; each admitted as a modular set like Kree Fanatic.
@@ -126,3 +127,10 @@ Packet 2 is authored and admitted; its evidence is in
 [rocket-raccoon-public-admission.md](rocket-raccoon-public-admission.md).
 Flora and Fauna's Rocket option is reachable in a Groot and Rocket Raccoon game.
 The first closed face of the box is Drang (16058).
+
+## Packet 3 status
+
+Packet 3 is authored. Power Stone (16149) is admitted as a modular set; Ship
+Command (16142–16148) is authored and withheld because the Milano pays for any
+player and the table cannot yet present one seat spending another seat's card.
+The evidence is in [ship-command-power-stone.md](ship-command-power-stone.md).

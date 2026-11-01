@@ -737,8 +737,12 @@ packet. Public wire support is protocol 38 and rejects protocol 37 peers.
 
 ### Replay identity
 
-The current replay identity is `engine-replay-v35`. Every earlier replay
-identity is refused. Under v35 a turn-action event whose effect depends on the
+The current replay identity is `engine-replay-v36`. Every earlier replay
+identity is refused. Under v36 damage that an enemy attack or a player's attack deals
+adds the engine's `WhenAttackDealtDamage` condition to that attack's occurrence
+(Power Stone, 16149), and a response window names its occurrence's conditions, so a
+v35 trace with a response prompt after a damaging attack records a prompt label v36 no
+longer produces. Under v35 a turn-action event whose effect depends on the
 declared payment offers the declaration it requires: when every payment that
 leaves the event something to do declares the same resources, the offer's cost
 carries that requirement (rr:initiating-abilities.step.5, rr:event.3). A v34

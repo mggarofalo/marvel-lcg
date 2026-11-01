@@ -26009,6 +26009,75 @@
       "abilities": [
         {"trigger": {"event": "WhenAttackInitiated", "timing": "Interrupt", "actor": "ally", "player": "you", "form": "hero"}, "effect": {"seq": [{"delayUntil": {"condition": "WhenAttackEnds", "effect": {"discard": "trigger.actor"}}}, {"grantUntil": {"card": "trigger.actor", "keyword": "attack", "amount": 3, "until": "EndOfAttack"}}]}}
       ]
+    },
+    {
+      "card": "16142",
+      "name": "Milano",
+      "controlledBy": "firstPlayer",
+      "note": "Permanent. Setup. The first player controls the Milano. Piloting -- Resource: exhaust the Milano -> generate a [wild] resource for any player. Setup and Permanent are printed keywords the engine reads (rr:setup-keyword.1, rr:permanent). controlledBy puts the Milano in the first player's play area at setup, and it moves with the first player token: ruling 027e5dbfef0d5861 has 'the first player controls the Milano' follow the first player. It is an encounter card, so the scenario owns it (rr:ownership-and-control). 'For any player' lets its resource pay any player's cost; engine choice: the paying player's payment offers it, as an alliance payment offers another player's sources. While another player resolves a peril card it cannot pay for them (rr:peril.1).",
+      "abilities": [
+        {"name": "Piloting", "trigger": {"event": "WhenActionTriggered", "timing": "Resource", "subject": "this"}, "cost": {"exhaust": "this"}, "effect": {"generate": "G"}, "printedResources": "G"}
+      ]
+    },
+    {
+      "card": "16143",
+      "name": "Rogue Vessel",
+      "note": "Environment. Surge is a printed keyword. Forced Interrupt: when the villain phase ends, deal 1 damage to each player, which is each player's identity. First Player Action: exhaust the Milano and spend 2 resources of any type -> discard this card. Only the first player can trigger it (isFirstPlayer), and the Milano is a cost they pay with a card they control (rr:cost.7). The exhausted Milano cannot also generate one of the two resources (rr:exhausted.1, rr:exhausted.2). An encounter card's ability is not performed by the identity (ruling 965ad06e4059d294).",
+      "abilities": [
+        {"trigger": {"event": "WhenVillainPhaseEnds", "timing": "ForcedInterrupt", "subject": "game"}, "effect": {"eachPlayer": {"effect": {"dealDamage": {"cards": "you", "amount": 1}}}}},
+        {"name": "First Player Action", "trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this"}, "when": {"isFirstPlayer": "you"}, "cost": {"seq": [{"exhaustTitled": "Milano"}, {"spendAny": 2}]}, "effect": {"discard": "this"}}
+      ]
+    },
+    {
+      "card": "16144",
+      "name": "Cannonade",
+      "note": "Side scheme. Hinder 3 per hero, its starting threat, amplify icon and boost icons are printed values the engine reads (rr:hinder-x). First Player Action: exhaust the Milano -> remove 3 threat from this scheme. Only the first player can trigger it (isFirstPlayer). Removing the threat is the encounter card's ability, not the identity's (ruling 965ad06e4059d294).",
+      "abilities": [
+        {"name": "First Player Action", "trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this"}, "when": {"isFirstPlayer": "you"}, "cost": {"exhaustTitled": "Milano"}, "effect": {"removeThreat": {"scheme": "this", "amount": 3}}}
+      ]
+    },
+    {
+      "card": "16145",
+      "name": "Blind Side",
+      "note": "Peril. When Revealed: choose one -- exhaust the Milano; spend [physical][physical] resources; stun the first player. The revealing player chooses and resolves the card alone (rr:peril.1): other players cannot trigger abilities, and the first player's Milano cannot pay for another player (ruling 1a4413236d2a28d8). Ruling 65d0813b02e75e59: the revealing player may exhaust the Milano even if they do not control it. An option needs a valid target (rr:choose-option.1), so an exhausted Milano cannot be chosen (rr:exhausted.1). The spend option is offered first and only when the revealing player can pay it, as for Sonic Boom (01123); declining it leaves the other two options.",
+      "abilities": [
+        {"trigger": {"event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this"}, "effect": {"payOrEffect": {"resources": "RR", "otherwise": {"choose": {"descriptions": ["Exhaust the Milano", "Stun the first player"], "options": [{"exhaust": {"titled": "Milano"}}, {"giveStatus": {"card": {"inPlayerArea": {"area": "identity", "player": "firstPlayer"}}, "status": "stunned"}}]}}}}}
+      ]
+    },
+    {
+      "card": "16146",
+      "name": "Hull Breach",
+      "note": "Peril. When Revealed: choose one -- exhaust the Milano; spend [mental][mental] resources; deal 3 damage to the first player. The revealing player chooses and resolves the card alone (rr:peril.1): other players cannot trigger abilities, and the first player's Milano cannot pay for another player (ruling 1a4413236d2a28d8). Ruling 65d0813b02e75e59: the revealing player may exhaust the Milano even if they do not control it. An option needs a valid target (rr:choose-option.1), so an exhausted Milano cannot be chosen (rr:exhausted.1). The spend option is offered first and only when the revealing player can pay it, as for Sonic Boom (01123); declining it leaves the other two options.",
+      "abilities": [
+        {"trigger": {"event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this"}, "effect": {"payOrEffect": {"resources": "BB", "otherwise": {"choose": {"descriptions": ["Exhaust the Milano", "Deal 3 damage to the first player"], "options": [{"exhaust": {"titled": "Milano"}}, {"dealDamage": {"cards": {"inPlayerArea": {"area": "identity", "player": "firstPlayer"}}, "amount": 3}}]}}}}}
+      ]
+    },
+    {
+      "card": "16147",
+      "name": "Power Siphon",
+      "note": "Peril. When Revealed: choose one -- exhaust the Milano; spend [energy][energy] resources; discard 1 card at random from the first player's hand. The revealing player chooses and resolves the card alone (rr:peril.1): other players cannot trigger abilities, and the first player's Milano cannot pay for another player (ruling 1a4413236d2a28d8). Ruling 65d0813b02e75e59: the revealing player may exhaust the Milano even if they do not control it. An option needs a valid target (rr:choose-option.1), so an exhausted Milano cannot be chosen (rr:exhausted.1). The spend option is offered first and only when the revealing player can pay it, as for Sonic Boom (01123); declining it leaves the other two options.",
+      "abilities": [
+        {"trigger": {"event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this"}, "effect": {"payOrEffect": {"resources": "YY", "otherwise": {"choose": {"descriptions": ["Exhaust the Milano", "Discard 1 card at random from the first player's hand"], "options": [{"exhaust": {"titled": "Milano"}}, {"discardAtRandom": {"player": "firstPlayer", "count": 1}}]}}}}}
+      ]
+    },
+    {
+      "card": "16148",
+      "name": "Special Delivery",
+      "note": "When Revealed (Alter-Ego): you may exhaust the Milano; if you do not, the villain schemes with +1 SCH. When Revealed (Hero): you may exhaust the Milano; if you do not, the villain attacks you with +1 ATK. Only the revealing player's current form resolves. The choice is the revealing player's, who may exhaust the Milano without controlling it (ruling 65d0813b02e75e59); an exhausted Milano cannot be exhausted (rr:exhausted.1), so the activation follows.",
+      "abilities": [
+        {"trigger": {"event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this", "form": "hero"}, "effect": {"choose": {"descriptions": ["Exhaust the Milano", "The villain attacks you with +1 ATK"], "options": [{"exhaust": {"titled": "Milano"}}, {"enemyAttacks": {"enemies": {"query": "villain"}, "against": "you", "modifier": 1}}]}}},
+        {"trigger": {"event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this", "form": "alter-ego"}, "effect": {"choose": {"descriptions": ["Exhaust the Milano", "The villain schemes with +1 SCH"], "options": [{"exhaust": {"titled": "Milano"}}, {"enemySchemes": {"enemies": {"query": "villain"}, "against": "you", "modifier": 1}}]}}}
+      ]
+    },
+    {
+      "card": "16149",
+      "name": "Power Stone",
+      "attachTo": {"query": "villain"},
+      "note": "Setup. Attach to the villain. Permanent. The printed ATK, SCH and THW modifiers are read from the attachment (rr:attachment.1); a modifier the host lacks is ignored (rr:attachment.1.2). Forced Response: after a hero or villain deals 3 or more damage to the attached character with a single attack, attach Power Stone to the attacking hero or villain. The damage is dealt, not taken (ruling ea69fd70a070ee2c), includes overkill (ruling b6fbf7538dd6b8d2) and the attacks of a hero's events and upgrades (rr:you-your.12-.14), but not an ally's (rr:you-your.15). A villain whose final stage the attack defeats ends the game first (ruling fd5a4d77de2f47a6); a defeated earlier stage is succeeded by a new stage that is the same character and keeps the stone (rr:villain-defeat.3.1, .3.2), so the stone moves from it. When its host leaves play, rr:permanent.5 attaches it to the villain again (ruling 8944f7176577c908). The two abilities are the printed one split by the attacker's kind.",
+      "abilities": [
+        {"trigger": {"event": "WhenAttackDealtDamage", "timing": "ForcedResponse", "target": "attachedTo", "actor": "hero"}, "when": {"atLeast": {"value": {"attackDamageDealt": "trigger.target"}, "count": 3}}, "effect": {"attachCards": {"cards": "this", "host": "trigger.actor"}}},
+        {"trigger": {"event": "WhenAttackDealtDamage", "timing": "ForcedResponse", "target": "attachedTo", "actor": "villain"}, "when": {"atLeast": {"value": {"attackDamageDealt": "trigger.target"}, "count": 3}}, "effect": {"attachCards": {"cards": "this", "host": "trigger.actor"}}}
+      ]
     }
   ]
 }

@@ -64,6 +64,7 @@ internal sealed class AbilityExpressionEvaluation(
             context.World.Facts.Kind(card.FaceId)).Distinct().LongCount(),
         // rr:overkill.3: excess uses the same value as overkill, captured at defeat.
         AbilityResolutionNumber.AttackExcessDamage => context.Bindings.TriggeringAttack?.ExcessDamage ?? 0,
+        AbilityResolutionNumber.AttackDamageDealt => context.Bindings.TriggeringAttack?.DamageDealt ?? 0,
         AbilityResolutionNumber.CompletedAttackDamageDealt =>
             context.Occurrence.CompletedEnemyAttack?.DamageDealt ?? 0,
         AbilityResolutionNumber.CardsExhaustedForCost => context.Bindings.ExhaustedForCost.Count,
@@ -207,6 +208,7 @@ internal sealed class AbilityExpressionEvaluation(
             && attack.Enemy == context.Occurrence.Actor && attack.Target == context.Occurrence.Target,
         AbilityConditionFact.AttackDamagedYou => AttackDamagedIdentity(),
         AbilityConditionFact.InExpertMode => context.World.Expert,
+        AbilityConditionFact.IsFirstPlayer => AbilityCardQueries.Resolver(context.Bindings) == context.World.FirstPlayer,
         AbilityConditionFact.DefeatedByYou => context.Bindings.Defeat is { By: >= 0 } defeat && defeat.By == AbilityCardQueries.Resolver(context.Bindings),
         AbilityConditionFact.HeroDefended => YourIdentityDefended(basicOnly: false),
         AbilityConditionFact.HeroBasicDefended => YourIdentityDefended(basicOnly: true),

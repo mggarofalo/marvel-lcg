@@ -92,6 +92,7 @@ internal static class AttackCompletion
         {
             occurrence.CompletedEnemyAttack = completed;
             AttackDamageReceipts.Publish(attack, occurrence);
+            AttackDealtDamageTiming.Publish(attack, occurrence);
         }
         if (world.Activation is { } activation)
             world.Activation = activation with { CompletedAttack = completed };

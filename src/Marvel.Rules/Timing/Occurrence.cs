@@ -159,6 +159,9 @@ public sealed record Occurrence
     /// <summary>Damage player identities dealt to enemies in this occurrence.</summary>
     [JsonIgnore] public DealtEnemyDamageReceipts DealtEnemyDamage { get; } = new();
 
+    /// <summary>Damage the attack this occurrence completes dealt, per attacker and recipient.</summary>
+    [JsonIgnore] public AttackDealtDamageReceipts AttackDealtDamage { get; } = new();
+
     /// <summary>The next play generation of this physical event in this occurrence.</summary>
     public int EventPlay(int card) => triggers.EventPlay(card);
 

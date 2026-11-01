@@ -87,17 +87,9 @@ internal static class SetupCardPlacement
             }
 
             var from = card.Area;
-            // rr:setup-keyword.1 puts player-owned setup cards into play for their owner.
-            int? controller = world.SetupAbilities.SetupController(world, card)
-                ?? (card.Owner >= 0 && EffectiveCards.Kind(card, facts) is
-                    CardKind.Ally or CardKind.Support or CardKind.Upgrade ? card.Owner : null);
-            if (controller is { } player)
-            {
-                Play.CardControlTransfer.TakeScenarioCardOwnership(facts, card, player);
-            }
             Play.Reveal.Resolve(
                 world, facts, card, world.FirstPlayer, happened,
-                placement: new Play.CardEntryPlacement(SetupController: controller));
+                placement: new Play.CardEntryPlacement(SetupController: Controller(world, facts, card)));
 
             if (card.Area == from)
             {
@@ -106,5 +98,19 @@ internal static class SetupCardPlacement
         }
 
         return pending;
+    }
+
+    /// <summary>The player a setup card enters play under, taking ownership where it passes.</summary>
+    private static int? Controller(World world, ICardFacts facts, Card card)
+    {
+        // A card the first player controls by its own text (the Milano, 16142) stays an
+        // encounter card the scenario owns (rr:ownership-and-control); its control follows
+        // the first player token (FirstPlayerControl).
+        if (world.SetupAbilities.SetupController(world, card) is { } firstPlayer) return firstPlayer;
+        // rr:setup-keyword.1 puts player-owned setup cards into play for their owner.
+        if (card.Owner < 0 || EffectiveCards.Kind(card, facts) is not (CardKind.Ally or CardKind.Support or CardKind.Upgrade))
+            return null;
+        Play.CardControlTransfer.TakeScenarioCardOwnership(facts, card, card.Owner);
+        return card.Owner;
     }
 }

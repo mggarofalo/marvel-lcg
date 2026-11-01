@@ -575,7 +575,7 @@ language without documentation.
 ```text
 addToHand afterActivation allies alliesAndSupportsYouControl alliesYouControl
 alsoAttackEachOtherHero among
-atLeast attachedToThis attackDamaged attackableEnemies attackableMinions
+atLeast attachedToThis attackDamageDealt attackDamaged attackableEnemies attackableMinions
 automaticTarget canAutomaticThwart canLegalPractice
 canMakeTheCall cancelOccurrence cancelWhenRevealed cardsIn changeForm characters countDiscardedInstead decreaseBoostCount
 charactersYouControl choose chooseCard chooseDiscardToShuffle chooseTopForHand
@@ -588,7 +588,7 @@ enemiesEngagedWithChosenPlayer enemiesWithTrait enemyAttacks enemySchemes exists
 finalStep generate generateTopDiscard giveAdditionalBoost
 chooseHealRecipients grantCharactersControlledBy grantEach grantUntil hasStatus hasTrait heroBasicDefended heroDefended
 heroes heroesAndAllies heroAndAllyTargets identities
-identitiesWithinPerPlayerLimit inForm increaseBoostCount indirectDamage initiated isEnemyAttacker isKind isTitle
+identitiesWithinPerPlayerLimit inForm increaseBoostCount indirectDamage initiated isEnemyAttacker isFirstPlayer isKind isTitle
 isYourIdentity keyword kind legalPractice mainScheme makeTheCall maxBy minions
 minionsEngagedWithYou minionsInThisGameArea modified moveAttackDamage mul namedInPlay obligationsInThisGameArea onto options overkill
 inspectEncounterTop paidWithResource payOrEffect payOrExhaust peekTop perPlayer placeAccelerationToken
@@ -2310,3 +2310,39 @@ Encounter `discardUntil` with `then: "reveal"` accepts `revealStatus` (`tough`,
 `stunned` or `confused`): the same sentence gives the revealed card that status
 once its keywords have initiated, before a quickstrike attack's steps resolve
 (Planetary Invasion; ruling `ef63f3668700ef73`).
+
+## First-player cards, single-attack damage and permanent hosts
+
+`{"isFirstPlayer": "you"}` is true when the resolving player is the first
+player. A printed "First Player Action" is an `Action` whose `when` is this
+condition (Rogue Vessel, Cannonade). The spelling is an engine choice.
+
+`controlledBy: "firstPlayer"` on a setup card puts it into the first player's
+play area and keeps it there: when the first player token passes, at the end of
+the round or when the first player is eliminated, the card moves to the new
+first player's play area (ruling `027e5dbfef0d5861`). The card stays an
+encounter card the scenario owns. Only a support with nothing attached is
+modelled; any other card raises when it would move.
+
+`WhenAttackDealtDamage` is the condition an attack's occurrence gains when the
+attack deals damage. A player attack carries it on the attack's own occurrence,
+answered after the ability or basic power; an enemy attack carries it on its
+step-six completion. Each recipient is one trigger instance whose actor is the
+attacker and whose target is the recipient, with the damage the attack dealt
+that recipient in total, overkill included (rr:overkill.2) and
+whether or not it was taken (ruling `ea69fd70a070ee2c`).
+`{"attackDamageDealt": "trigger.target"}` reads that total, and `trigger.actor`
+binds the attacker while it remains in play. The spellings are engine choices.
+
+`attachCards` with a card already in play moves it onto the named host without
+it leaving play (rr:attach-to.3.1). When the host of a permanent attachment
+leaves play, the attachment resolves its printed `attachTo` again away from
+that host, and is removed from the game when there is no target
+(rr:permanent.5; ruling `8944f7176577c908`). An attachment hosted on another
+attachment, one with cards attached, one without an authored `attachTo`, or
+an `attachTo` with more than one remaining target, raises.
+
+While a player resolves a peril card from their revealing area, every
+occurrence nested in its resolution is closed to other players' optional
+abilities, and a resource ability on another player's card cannot pay that
+player's costs (rr:peril.1; ruling `1a4413236d2a28d8`).
