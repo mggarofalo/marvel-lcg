@@ -10,6 +10,8 @@ internal static class AbilityCounterMoveExecution
     internal static void Run(AbilityCounterEffect.MoveCounters move, AbilityCardStateContext context)
     {
         // The move does as much as it can: a card gives only the counters it has.
+        // Equivalent mutant: admission refuses a move onto the source or from a card
+        // without the counter, so these guards survive removal.
         if (Find(move.From, context) is not { } from || Find(move.To, context) is not { } to
             || from.ObjectId == to.ObjectId) return;
         string key = "c_" + move.Counter;

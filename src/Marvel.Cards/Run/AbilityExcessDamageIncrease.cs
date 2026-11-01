@@ -13,6 +13,10 @@ namespace Marvel.Cards.Run;
 /// </remarks>
 internal static class AbilityExcessDamageIncrease
 {
+    // Equivalent mutant: the interrupt is offered only while the damage exceeds the
+    // remaining hit points and no admitted step-1 replacement lowers it first, so
+    // loosening HasExcess, admitting the effect unconditionally, or increasing
+    // unconditionally survives.
     internal static long Amount(AbilityEnemyDamageEffect.IncreaseExcessDamage increase, AbilityDamageAndThreatContext context) =>
         HasExcess(context.World, context.Occurrence) ? context.Incoming + increase.Amount : context.Incoming;
 

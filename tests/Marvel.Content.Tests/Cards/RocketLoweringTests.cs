@@ -21,6 +21,7 @@ public sealed class RocketLoweringTests
     [InlineData(Action, """{"healEachTimeYouDamageAnEnemy":{"amount":0,"until":"EndOfTurn"}}""", "positive")]
     [InlineData(Excess, """{"increaseExcessDamage":0}""", "positive")]
     [InlineData(Action, """{"increaseExcessDamage":1}""", "excess-damage interrupt")]
+    [InlineData("""{"event":"WhenAttackExcessDamageWouldBeDealt","timing":"Response","actor":"you","target":"enemy"}""", """{"increaseExcessDamage":1}""", "excess-damage interrupt")]
     [InlineData(Revealed, """{"discardUntil":{"from":"encounterDeck","kind":"minion","then":"putIntoPlay","revealStatus":"tough"}}""", "requires reveal")]
     [InlineData(Revealed, """{"discardUntil":{"from":"encounterDeck","kind":"minion","then":"reveal","revealStatus":"burn"}}""", "not a status")]
     [InlineData(Action, """{"discardUntil":{"from":"yourDeck","kind":"Ally","then":"hand","revealStatus":"tough"}}""", "encounter-deck reveal")]

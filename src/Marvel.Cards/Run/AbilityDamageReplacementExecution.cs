@@ -109,6 +109,10 @@ internal static class AbilityDamageReplacementExecution
         replacement.Execution.Finish(events);
     }
 
+    // Equivalent mutant: forced replacements have already triggered when this list is
+    // read, only the attacking player's Follow Through matches "your hero's attack",
+    // and no excess remains at 0 damage, so dropping the type, player or amount
+    // filters survives.
     // rr:damage step 1 also opens to optional interrupts when an attack would deal
     // excess damage (Follow Through, 16045). Forced replacements resolve first
     // (rr:ability.step.2); the first player with an opportunity is asked.

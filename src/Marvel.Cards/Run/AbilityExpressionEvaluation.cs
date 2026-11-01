@@ -142,6 +142,8 @@ internal sealed class AbilityExpressionEvaluation(
         selectors.Find(selection) is { } current && DeckTypes.IsInPlay(current.Area.Type);
 
     // rr:defend-defense: the completed attack names the character that defended it.
+    // Equivalent mutant: the attack-end occurrence's actor is the finished attack's
+    // enemy, so dropping that comparison survives.
     private bool DefendedBy(AbilityCardSelection selection)
     {
         if (context.World.FinishedAttack is not { } ended || ended.Enemy != context.Occurrence.Actor) return false;

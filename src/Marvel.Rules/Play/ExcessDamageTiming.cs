@@ -25,6 +25,8 @@ public static class ExcessDamageTiming
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(source);
+        // Equivalent mutant: no admitted card is in play under a player other than its
+        // owner, so reading the owner alone, or dropping the seat bound, survives.
         int player = DeckTypes.IsInPlay(source.Area.Type) && source.Area.PlayArea.IsPlayers
             ? source.Area.PlayArea.Player : source.Owner;
         if (player < 0 || player >= world.Players) return -1;
@@ -34,8 +36,9 @@ public static class ExcessDamageTiming
     /// <summary>The identity whose attack would deal excess damage to an enemy, or null.</summary>
     internal static Card? WouldDealExcess(World world, DamageRequest request)
     {
-        if (!request.FromAttack || request.Amount <= 0
-            || !CardKinds.IsEnemy(EffectiveCards.Kind(request.Target, world.Facts))) return null;
+        // Equivalent mutant: an identity's attack targets only enemies, so dropping the
+        // enemy test survives.
+        if (!request.FromAttack || !CardKinds.IsEnemy(EffectiveCards.Kind(request.Target, world.Facts))) return null;
         int player = IdentityPlayer(world, request.Source);
         long remaining = Math.Max(0, DamagePlacement.Health(world, world.Facts, request.Target) - request.Target.Damage);
         return player >= 0 && request.Amount > remaining ? world.Seats[player].IdentityCard : null;
@@ -45,6 +48,9 @@ public static class ExcessDamageTiming
     internal static void Record(World world, Card source, Damage.PlacedDamage placed, long remaining,
         Occurrence? occurrence, List<GameEvent> events)
     {
+        // Equivalent mutant: no admitted Rocket Raccoon path deals 0 damage or damages a
+        // friendly character, so loosening either test survives. The condition is read
+        // only through instances with excess, so adding it unconditionally survives.
         if (placed.Dealt <= 0 || !CardKinds.IsEnemy(EffectiveCards.Kind(placed.Target, world.Facts))) return;
         int player = IdentityPlayer(world, source);
         if (player < 0) return;

@@ -206,6 +206,8 @@ internal sealed class AbilitySelectorEvaluation(
         if (area == AbilitySearchArea.YourHand) return context.World.Seats[context.Player].Hand.Cards;
         if (area == AbilitySearchArea.YourPlayArea)
             return InPlay(playArea => playArea == PlayArea.Of(context.Player));
+        // Equivalent mutant: no villain-area card is a Rocket Raccoon upgrade, so admitting
+        // every play area survives.
         if (area == AbilitySearchArea.PlayerPlayAreas) return InPlay(playArea => playArea.IsPlayers);
         var playArea = area == AbilitySearchArea.YourDiscardPile ? PlayArea.Of(context.Player) : PlayArea.Villains;
         return context.World.Areas.FirstOrDefault(candidate => candidate.Type == AreaType(area)

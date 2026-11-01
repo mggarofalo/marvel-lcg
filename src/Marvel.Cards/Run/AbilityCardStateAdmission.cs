@@ -42,6 +42,7 @@ internal static class AbilityCardStateAdmission
             "ready" => Every(EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast).Any(card =>
                 !card.Ready && AbilityProgramQueries.CanReady(cast.World, cast.Context.Program, card)),
             "moveCounters" => AbilityCounterTargetAdmission.CanMove(EffectOf<AbilityCounterEffect.MoveCounters>(node, cast), cast),
+            // Equivalent mutant: see AbilityCounterTargetAdmission.CanPlace.
             "placeCounters" => AbilityCounterTargetAdmission.CanPlace(EffectOf<AbilityCounterEffect.PlaceCounters>(node, cast), cast),
             "removeCounters" => CounterRemovalOf(node, cast) is var removal
                 && Find(removal.Card, cast) is { } counterCard

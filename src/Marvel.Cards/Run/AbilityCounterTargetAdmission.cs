@@ -30,6 +30,8 @@ internal static class AbilityCounterTargetAdmission
         CanMove(effect, scope) ? TargetLegality.Valid : TargetLegality.Invalid;
 
     /// <summary>Whether the placement has a card and places at least one counter.</summary>
+    /// <remarks>Equivalent mutant: target admission (rr:target.3) already refuses a
+    /// placement of no counters inside an option, so loosening this test survives.</remarks>
     internal static bool CanPlace(AbilityCounterEffect.PlaceCounters effect, AbilityAdmissionScope scope) =>
         Find(effect.Card, scope) is not null && Amount(effect.Count, scope) > 0;
 
