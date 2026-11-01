@@ -24,6 +24,13 @@ public sealed class GameAreaColumnLayoutTests
     }
 
     [Fact]
+    public void AnExplanationThatFitsKeepsItsMeasuredHeightBetweenLines()
+    {
+        var layout = GameAreaColumnLayout.Arrange(300, new GameAreaColumnText(20, 0, 50, 20), 0);
+        Assert.Equal(50, layout.DetailsHeight);
+    }
+
+    [Fact]
     public void ALongExplanationGivesWayToTheCardsAndTheAttachmentStrip()
     {
         var layout = GameAreaColumnLayout.Arrange(200, new GameAreaColumnText(20, 0, 400, 20), 30);

@@ -90,6 +90,14 @@ public sealed class GameAreaTableProjectionTests
     }
 
     [Fact]
+    public void ADepartureComesBeforeTheNotesAnchoredToItsSchemes()
+    {
+        BoardPresentation board = Board();
+        board = board with { Kang = board.Kang! with { Departures = [new(101, 5, [], 201, [], false, "leaving 5")] } };
+        Assert.Equal(["leaving 5", "complete 201"], GameAreaTableProjection.From(board, 0)!.Columns[1].Details);
+    }
+
+    [Fact]
     public void AnEliminatedSeatHasNoAreaOfItsOwn()
     {
         GameAreaTable table = GameAreaTableProjection.From(Board(), 3)!;
