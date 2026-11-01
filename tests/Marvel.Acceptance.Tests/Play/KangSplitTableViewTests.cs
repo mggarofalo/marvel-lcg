@@ -81,7 +81,7 @@ public sealed class KangSplitTableViewTests
         Assert.True(area.Central);
         Assert.Contains(world.Cards.Single(card => KangTable.IsThirdStage(card)
             && card.Area.Type == DeckType.VillainArea).ObjectId, area.Villains);
-        Assert.Equal("Defeat Kang (III) to win.", kang.Progress);
+        Assert.Equal(3, kang.Stage);
         Assert.Empty(kang.Notes);
         Assert.All(views, view => Assert.All(view.Players, player => Assert.Empty(player.OutOfReach)));
     }
@@ -101,8 +101,6 @@ public sealed class KangSplitTableViewTests
             if (world.Seats[seat].Eliminated) continue;
             var area = Assert.Single(views[seat].GameAreas, item => item.PlayAreas.Contains(seat));
             Assert.False(area.Central);
-            Assert.Contains(world.Seats[seat].Name, area.Label, StringComparison.Ordinal);
-            Assert.DoesNotContain("game area " + area.Id, area.Label, StringComparison.Ordinal);
             var engine = world.GameAreaOf(PlayArea.Of(seat))!;
             Assert.Equal(engine.Id, views[seat].Players[seat].GameArea);
             // Another area's villains are out of this seat's reach; its own never are.
@@ -110,6 +108,8 @@ public sealed class KangSplitTableViewTests
                 Assert.All(other.Villains, id => Assert.Contains(id, views[seat].Players[seat].OutOfReach));
             Assert.All(area.Villains, id => Assert.DoesNotContain(id, views[seat].Players[seat].OutOfReach));
             Assert.All(kang.CentralSchemes, id => Assert.DoesNotContain(id, views[seat].Players[seat].OutOfReach));
+            var reach = views[seat].Players[seat];
+            Assert.Equal(reach.OutOfReach.Count == 0 ? null : ReachReason.OtherGameArea, reach.OutOfReachReason);
         }
     }
 
@@ -122,8 +122,6 @@ public sealed class KangSplitTableViewTests
             var engine = pending.Single(item => item.Defeated.Card == departure.Villain);
             Assert.Equal(engine.Source.Id, departure.SourceGameArea);
             Assert.Equal(engine.CompletedScheme?.Card, departure.CompletedScheme);
-            Assert.Contains(departure.CompletedScheme is null ? "was defeated" : "storing a Kang's Dominion",
-                departure.Summary, StringComparison.Ordinal);
             Assert.Equal(departure.Destinations.Count == 0, departure.Reunion);
         }
     }

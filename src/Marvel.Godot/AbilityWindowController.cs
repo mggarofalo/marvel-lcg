@@ -60,7 +60,7 @@ internal sealed class AbilityWindowController(DecisionPanel panel) : IDisposable
         frame = new AbilityModalFrame(ClientSceneHost.MainFor(panel), "AbilityWindow", panel.Theme, choices);
         frame.AddText("AbilityWindowHeading", RequiredNotification?.Title
             ?? (titles.Length == 1 ? titles[0] : prompt.Heading), GodotThemeVariations.Heading);
-        frame.AddText("AbilityWindowCause", RequiredNotification?.Summary ?? prompt.Resolution, GodotThemeVariations.Body);
+        frame.AddText("AbilityWindowCause", RequiredNotification?.Summary ?? prompt.Resolution(), GodotThemeVariations.Body);
         string answerer = panel.world?.Players.FirstOrDefault(player => player.Seat == draft.Prompt.Player)?.Name
             ?? $"Player {draft.Prompt.Player + 1}";
         frame.AddText("AbilityWindowAnswerer", answerer, GodotThemeVariations.Caption);

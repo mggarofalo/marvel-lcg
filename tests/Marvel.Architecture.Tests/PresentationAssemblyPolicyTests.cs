@@ -296,6 +296,7 @@ public sealed class PresentationAssemblyPolicyTests
             "Marvel.View.OutcomeDescription",
             "Marvel.View.PendingSituationDescriptor",
             "Marvel.View.PlayerDescriptor",
+            "Marvel.View.ReachReason",
             "Marvel.View.ViewerClaim",
             "Marvel.View.TableContextDescriptor",
             "Marvel.View.VillainPhaseFocusDescriptor",

@@ -129,7 +129,7 @@ public sealed class TableContractTests
         Assert.Equal(treachery.ObjectId, context.TargetId);
         Assert.Equal("Caught Off Guard", context.Title);
         Assert.Equal("Interrupt Caught Off Guard?", presentation.Heading);
-        Assert.Contains("Resolving Caught Off Guard", presentation.Context);
+        Assert.Equal((DecisionSubject.Resolving, "Caught Off Guard"), (presentation.Frame.Subject, presentation.Frame.SubjectTitle));
     }
 
     [Fact]

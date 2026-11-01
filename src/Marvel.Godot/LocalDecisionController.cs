@@ -89,7 +89,7 @@ internal sealed class LocalDecisionController(DecisionPanel panel) : IDisposable
     private string Requirement(PromptPresentation prompt) =>
         $"Player {panel.composer!.Prompt.Player + 1} · " +
         (panel.composer.Selected is not null && panel.composer.Prompt.PublicKind == Marvel.Rules.Prompts.PublicDecisionKind.PlayerAction
-            ? "Draft — not committed" : prompt.Requirement);
+            ? "Draft — not committed" : prompt.Requirement());
 
     private void AddHeader(PromptPresentation prompt)
     {
@@ -101,8 +101,8 @@ internal sealed class LocalDecisionController(DecisionPanel panel) : IDisposable
                 GodotThemeVariations.Caption, wrap: true));
         if (panel.composer is { } current
             && CardPaymentWorkspaceHeader.ShowsResolution(current.Prompt.PublicKind, current.Prompt.CauseCardIds.Count > 0)
-            && !string.IsNullOrWhiteSpace(prompt.Resolution))
-            Content.AddChild(DecisionPanel.Text(prompt.Resolution, GodotThemeVariations.Body, wrap: true));
+            && !string.IsNullOrWhiteSpace(prompt.Resolution()))
+            Content.AddChild(DecisionPanel.Text(prompt.Resolution(), GodotThemeVariations.Body, wrap: true));
         var recovery = DecisionPanel.Text(notice, GodotThemeVariations.Body, wrap: true);
         recovery.Name = "LocalRecovery";
         recovery.Visible = notice.Length > 0;

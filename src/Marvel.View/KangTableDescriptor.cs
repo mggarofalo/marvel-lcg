@@ -27,9 +27,6 @@ public sealed record KangTableDescriptor(
     /// <summary>The one encounter discard pile every game area shares, by area id.</summary>
     public int EncounterDiscard { get; init; }
 
-    /// <summary>A readable sentence stating progress toward winning.</summary>
-    public string Progress { get; init; } = "";
-
     /// <summary>The separated-table rules the engine says apply now, each keyed by kind.</summary>
     public IReadOnlyList<KangNoteDescriptor> Notes { get; init; } = [];
 }

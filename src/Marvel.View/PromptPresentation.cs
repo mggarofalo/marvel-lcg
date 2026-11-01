@@ -5,11 +5,13 @@ using Marvel.Rules.Timing;
 namespace Marvel.View;
 
 /// <summary>Display text and object references derived only from a visible prompt.</summary>
+/// <param name="Heading">The one-line prompt title.</param>
+/// <param name="Frame">Who answers and what the decision concerns; the client words it.</param>
+/// <param name="Diagnostic">Wire identifiers for diagnostics, never shown as game copy.</param>
+/// <param name="Affordances">The offered answers.</param>
 public sealed record PromptPresentation(
     string Heading,
-    string Context,
-    string Resolution,
-    string Requirement,
+    DecisionFrame Frame,
     string Diagnostic,
     IReadOnlyList<AffordancePresentation> Affordances)
 {
@@ -30,9 +32,7 @@ public sealed record PromptPresentation(
         IReadOnlyList<BoardCardPresentation> contextCards = PresentContextCards(prompt, world);
         return new PromptPresentation(
             BuildHeading(prompt, contextCards),
-            BuildContext(prompt, world, contextCards),
-            BuildResolution(prompt, world),
-            prompt.Cancellable ? $"You may {prompt.DeclineLabel.ToLowerInvariant()}." : "Choose to continue.",
+            BuildFrame(prompt, world, contextCards),
             $"Player {prompt.Player + 1} · {Words(prompt.Asking.ToString())}"
                 + $" · {Words(prompt.When.ToString())} · {Words(prompt.Trigger)}"
                 + $"\nWire label: {prompt.Label.Trim()}",
@@ -63,15 +63,10 @@ public sealed record PromptPresentation(
         return presented;
     }
 
-    private static string BuildResolution(Prompt prompt, WorldDescriptor world)
-    {
-        string[] causes = [.. prompt.CauseCardIds
-            .Where(id => world.Areas.SelectMany(area => area.Cards.Concat(area.Removed))
-                .Any(card => card.Id == id && card.Face is not null))
-            .Select(id => Describe(id, world)).Distinct()];
-        string prefix = causes.Length == 0 ? string.Empty : $"Cause: {string.Join(", ", causes)}. ";
-        return prefix + (prompt.Description?.Trim() ?? string.Empty);
-    }
+    private static string[] Causes(Prompt prompt, WorldDescriptor world) => [.. prompt.CauseCardIds
+        .Where(id => world.Areas.SelectMany(area => area.Cards.Concat(area.Removed))
+            .Any(card => card.Id == id && card.Face is not null))
+        .Select(id => Describe(id, world)).Distinct()];
 
     private static BoardCardPresentation PresentContext(CardDescriptor card, string zone) =>
         BoardCardPresentationFactory.Present([card], zone)[0];
@@ -114,18 +109,20 @@ public sealed record PromptPresentation(
         _ => "Choose what happens next",
     };
 
-    private static string BuildContext(
+    private static DecisionFrame BuildFrame(
         Prompt prompt, WorldDescriptor world,
         IReadOnlyList<BoardCardPresentation> contextCards)
     {
         string player = world.Players.FirstOrDefault(candidate => candidate.Seat == prompt.Player)
             ?.Name ?? $"Player {prompt.Player + 1}";
-        string subject = prompt.PublicKind == PublicDecisionKind.MinionActivationOrder
-            ? " · Choosing the next minion activation"
-            : contextCards.Count > 0
-            ? $" · {(prompt.PublicKind == PublicDecisionKind.CardLook ? "Inspecting" : "Resolving")} {contextCards[0].Title}"
-            : string.Empty;
-        return $"Decision for {player}{subject}";
+        DecisionSubject subject = prompt.PublicKind == PublicDecisionKind.MinionActivationOrder
+            ? DecisionSubject.MinionActivation
+            : contextCards.Count == 0 ? DecisionSubject.None
+            : prompt.PublicKind == PublicDecisionKind.CardLook ? DecisionSubject.Inspecting
+            : DecisionSubject.Resolving;
+        return new DecisionFrame(prompt.Player, player, subject,
+            contextCards.Count > 0 ? contextCards[0].Title : null, prompt.Cancellable,
+            Causes(prompt, world), prompt.Description?.Trim() ?? string.Empty);
     }
 
     /// <summary>Names an authorized board object, or leaves an opaque fallback.</summary>

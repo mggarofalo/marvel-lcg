@@ -21,7 +21,7 @@ public sealed class DefenderInteractionTests
         {
             Source = new AffordanceSourceDescriptor(AffordanceAnchorKind.Card, 10, null, 0),
         };
-        var prompt = new PromptPresentation("", "", "", "", "", [visible]);
+        var prompt = new PromptPresentation("", DecisionFrame.Empty, "", [visible]);
         var control = Assert.Single(BoardInteractionControlProjection.From(new DecisionComposer(source), prompt));
         Assert.Equal(10, control.CardId);
         Assert.True(control.IsDefender);

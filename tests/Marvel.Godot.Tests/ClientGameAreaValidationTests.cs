@@ -24,13 +24,13 @@ public sealed class ClientGameAreaValidationTests
             Players = [world.Players[0], world.Players[1], new PlayerDescriptor(2, "p2", true)],
             Areas = [world.Areas[0] with { Cards = [.. world.Areas[0].Cards, Card(15, 9)] }, world.Areas[1], world.Areas[2]],
             GameAreas = [.. world.GameAreas, new GameAreaDescriptor(9, []) { Retained = true, FormerSeats = [2],
-                Villains = [15], Label = "p2's retained game area" }],
+                Villains = [15] }],
             Kang = world.Kang! with { StartingPlayers = 3 },
         };
         var ordinary = new WorldDescriptor(
             [new PlayerDescriptor(0, "p0", false) { GameArea = 0 }],
             [new AreaDescriptor(2, "VillainArea", -1, -1, [Card(10, 0)], [])],
-            [new GameAreaDescriptor(0, [-1, 0]) { Central = true, Villains = [10], Label = "the game area (Rhino)" }],
+            [new GameAreaDescriptor(0, [-1, 0]) { Central = true, Villains = [10] }],
             Outcome.Unfinished);
 
         Assert.True(ClientGameAreaValidation.Valid(retained));
@@ -46,7 +46,9 @@ public sealed class ClientGameAreaValidationTests
     [InlineData("central without the villain play area")]
     [InlineData("retained with a seat")]
     [InlineData("duplicate game area")]
-    [InlineData("null label")]
+    [InlineData("out-of-reach cards without a reason")]
+    [InlineData("a reason without out-of-reach cards")]
+    [InlineData("undefined reach reason")]
     [InlineData("unknown out-of-reach card")]
     [InlineData("duplicate out-of-reach card")]
     [InlineData("stage 0")]
@@ -64,14 +66,12 @@ public sealed class ClientGameAreaValidationTests
     [InlineData("reunion with a destination")]
     [InlineData("no destination without reunion")]
     [InlineData("duplicate departure")]
-    [InlineData("null departure summary")]
     [InlineData("acting step 3")]
     [InlineData("unknown acting seat")]
     [InlineData("unknown acting area")]
     [InlineData("starting players differ")]
     [InlineData("encounter deck names another pile")]
     [InlineData("encounter discard names another pile")]
-    [InlineData("null progress")]
     [InlineData("out-of-reach card in the seat's own area")]
     [InlineData("seat in no game area with reach limits")]
     [InlineData("villain located in another area")]
@@ -83,7 +83,6 @@ public sealed class ClientGameAreaValidationTests
     [InlineData("anchored note without a card")]
     [InlineData("table note with a card")]
     [InlineData("note names an unknown card")]
-    [InlineData("null note text")]
     [InlineData("null notes list")]
     public void AFactNamingSomethingTheResponseDoesNotListIsRejected(string defect)
     {
@@ -104,8 +103,10 @@ public sealed class ClientGameAreaValidationTests
             "unknown former seat" => Area(area with { FormerSeats = [5] }),
             "central without the villain play area" => Area(area with { Central = true }),
             "retained with a seat" => Area(area with { Retained = true }),
-            "duplicate game area" => world with { GameAreas = [area, world.GameAreas[1], world.GameAreas[1] with { Label = "again" }] },
-            "null label" => Area(area with { Label = null! }),
+            "duplicate game area" => world with { GameAreas = [area, world.GameAreas[1], world.GameAreas[1]] },
+            "out-of-reach cards without a reason" => world with { Players = [world.Players[0] with { OutOfReachReason = null }, world.Players[1]] },
+            "a reason without out-of-reach cards" => world with { Players = [world.Players[0] with { OutOfReach = [] }, world.Players[1]] },
+            "undefined reach reason" => world with { Players = [world.Players[0] with { OutOfReachReason = (ReachReason)99 }, world.Players[1]] },
             "unknown out-of-reach card" => world with { Players = [world.Players[0] with { OutOfReach = [99] }, world.Players[1]] },
             "duplicate out-of-reach card" => world with { Players = [world.Players[0] with { OutOfReach = [11, 11] }, world.Players[1]] },
             "stage 0" => Kang(kang with { Stage = 0 }),
@@ -123,26 +124,23 @@ public sealed class ClientGameAreaValidationTests
             "reunion with a destination" => Departure(departure with { Reunion = true }),
             "no destination without reunion" => Departure(departure with { Destinations = [] }),
             "duplicate departure" => Kang(kang with { Departures = [departure, departure] }),
-            "null departure summary" => Departure(departure with { Summary = null! }),
             "acting step 3" => Kang(kang with { Acting = kang.Acting! with { Step = 3 } }),
             "unknown acting seat" => Kang(kang with { Acting = kang.Acting! with { Seat = 5 } }),
             "unknown acting area" => Kang(kang with { Acting = kang.Acting! with { GameArea = 99 } }),
             "starting players differ" => Kang(kang with { StartingPlayers = 3 }),
             "encounter deck names another pile" => Kang(kang with { EncounterDeck = 21 }),
             "encounter discard names another pile" => Kang(kang with { EncounterDiscard = 20 }),
-            "null progress" => Kang(kang with { Progress = null! }),
             "out-of-reach card in the seat's own area" => world with { Players = [world.Players[0] with { OutOfReach = [10] }, world.Players[1]] },
             "seat in no game area with reach limits" => world with { Players = [world.Players[0] with { GameArea = null }, world.Players[1]] },
             "villain located in another area" => Area(area with { Villains = [12] }),
             "main scheme located in another area" => Area(area with { MainSchemes = [13] }),
             "acting area is not the seat's" => Kang(kang with { Acting = kang.Acting! with { GameArea = 7 } }),
             "departing villain in another area" => Departure(departure with { Villain = 12 }),
-            "undefined note kind" => Notes(new KangNoteDescriptor((KangNoteKind)99, null, "x")),
+            "undefined note kind" => Notes(new KangNoteDescriptor((KangNoteKind)99, null)),
             "duplicate note" => Notes(kang.Notes[0]),
-            "anchored note without a card" => Notes(new KangNoteDescriptor(KangNoteKind.CentralTokensWaitFor4A, null, "x")),
-            "table note with a card" => Notes(new KangNoteDescriptor(KangNoteKind.AreaIsolation, 14, "x")),
-            "note names an unknown card" => Notes(new KangNoteDescriptor(KangNoteKind.CompletionStoresDominion, 99, "x")),
-            "null note text" => Kang(kang with { Notes = [kang.Notes[0] with { Text = null! }] }),
+            "anchored note without a card" => Notes(new KangNoteDescriptor(KangNoteKind.CentralTokensWaitFor4A, null)),
+            "table note with a card" => Notes(new KangNoteDescriptor(KangNoteKind.AreaIsolation, 14)),
+            "note names an unknown card" => Notes(new KangNoteDescriptor(KangNoteKind.CompletionStoresDominion, 99)),
             "null notes list" => Kang(kang with { Notes = null! }),
             _ => throw new ArgumentOutOfRangeException(nameof(defect)),
         };
@@ -159,26 +157,25 @@ public sealed class ClientGameAreaValidationTests
     private static WorldDescriptor World()
     {
         return new WorldDescriptor(
-            [new PlayerDescriptor(0, "p0", false) { GameArea = 7, OutOfReach = [12, 13] },
-                new PlayerDescriptor(1, "p1", false) { GameArea = 8, OutOfReach = [10, 11] }],
+            [new PlayerDescriptor(0, "p0", false) { GameArea = 7, OutOfReach = [12, 13], OutOfReachReason = ReachReason.OtherGameArea },
+                new PlayerDescriptor(1, "p1", false) { GameArea = 8, OutOfReach = [10, 11], OutOfReachReason = ReachReason.OtherGameArea }],
             [new AreaDescriptor(2, "VillainArea", 0, -1, [Card(10, 7), Card(11, 7), Card(12, 8), Card(13, 8), Card(14, null)], []),
                 new AreaDescriptor(20, "EncounterDeck", -1, -1, [], []),
                 new AreaDescriptor(21, "EncounterDiscardPile", -1, -1, [], [])],
-            [new GameAreaDescriptor(7, [0]) { Villains = [10], MainSchemes = [11], Label = "p0's game area" },
-                new GameAreaDescriptor(8, [1]) { Villains = [12], MainSchemes = [13], Label = "p1's game area" }],
+            [new GameAreaDescriptor(7, [0]) { Villains = [10], MainSchemes = [11] },
+                new GameAreaDescriptor(8, [1]) { Villains = [12], MainSchemes = [13] }],
             Outcome.Unfinished)
         {
             Kang = new KangTableDescriptor(2, 1, 1, [14], null,
-                [new KangDepartureDescriptor(10, 7, [0], 11, [8], false, "p0 leaves.")])
+                [new KangDepartureDescriptor(10, 7, [0], 11, [8], false)])
             {
-                Acting = new VillainPhaseFocusDescriptor(2, 1, 8, "step 2"),
+                Acting = new VillainPhaseFocusDescriptor(2, 1, 8),
                 StartingPlayers = 2,
                 EncounterDeck = 20,
                 EncounterDiscard = 21,
-                Progress = "1 Kang (II) remains.",
-                Notes = [new(KangNoteKind.AreaIsolation, null, "isolation"),
-                    new(KangNoteKind.CentralTokensWaitFor4A, 14, "tokens"),
-                    new(KangNoteKind.CompletionStoresDominion, 11, "completion")],
+                Notes = [new(KangNoteKind.AreaIsolation, null),
+                    new(KangNoteKind.CentralTokensWaitFor4A, 14),
+                    new(KangNoteKind.CompletionStoresDominion, 11)],
             },
         };
     }

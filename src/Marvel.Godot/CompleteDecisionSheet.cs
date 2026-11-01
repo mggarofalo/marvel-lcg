@@ -103,13 +103,13 @@ internal sealed class CompleteDecisionSheet : IDisposable
         {
             Marvel.View.PromptPresentation prompt = Marvel.View.PromptPresentation.From(composer.Prompt, world);
             content.AddChild(DecisionPanel.Text(
-                $"{prompt.Context} · {prompt.Requirement}",
+                $"{prompt.Context()} · {prompt.Requirement()}",
                 GodotThemeVariations.Caption, wrap: true));
             if (!DecisionCardChoices.IsChoice(composer.Prompt))
                 content.AddChild(DecisionPanel.Text(prompt.Heading, GodotThemeVariations.Heading, wrap: true));
-            if (!string.IsNullOrWhiteSpace(prompt.Resolution))
+            if (!string.IsNullOrWhiteSpace(prompt.Resolution()))
             {
-                resolution = DecisionPanel.Text(prompt.Resolution, GodotThemeVariations.Body, wrap: true);
+                resolution = DecisionPanel.Text(prompt.Resolution(), GodotThemeVariations.Body, wrap: true);
                 content.AddChild(resolution);
             }
         }

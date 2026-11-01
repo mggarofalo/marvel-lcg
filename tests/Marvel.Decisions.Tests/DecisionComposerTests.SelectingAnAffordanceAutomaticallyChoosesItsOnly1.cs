@@ -34,8 +34,9 @@ public sealed class DecisionComposerSelectingAnAffordanceAutomaticallyChoosesIts
         Assert.DoesNotContain("99", option.Targets);
         Assert.DoesNotContain("Spider-Man", PromptPresentation.Describe(11, world));
         Assert.Equal("Object 99", PromptPresentation.Describe(99, world));
-        Assert.Equal("You may pass this opportunity.", view.Requirement);
-        Assert.DoesNotContain("Untimed", view.Context);
+        Assert.True(view.Frame.Optional);
+        Assert.Equal("Pass this opportunity", view.DeclineLabel);
+        Assert.DoesNotContain("Untimed", view.Frame.SeatName);
     }
 
     [Fact]
@@ -47,8 +48,8 @@ public sealed class DecisionComposerSelectingAnAffordanceAutomaticallyChoosesIts
         };
         var world = new WorldDescriptor([new PlayerDescriptor(0, "Peter Parker", false)], [new AreaDescriptor(2, "HeroArea", 0, -1, [Card(10, "Spider-Man"), Card(11, "Rhino")], [])], [], Outcome.Unfinished);
         PromptPresentation view = PromptPresentation.From(prompt, world);
-        Assert.DoesNotContain(prompt.Description, view.Context);
-        Assert.Equal(prompt.Description, view.Resolution);
+        Assert.Empty(view.Frame.Causes);
+        Assert.Equal(prompt.Description, view.Frame.Instruction);
         Assert.Equal("8/14 HP · Retaliate 1", prompt.Affordances[0].Targets!.Details![11]);
     }
 
@@ -71,7 +72,8 @@ public sealed class DecisionComposerSelectingAnAffordanceAutomaticallyChoosesIts
         var world = new WorldDescriptor([new PlayerDescriptor(0, "Peter Parker", false)], [new AreaDescriptor(2, "SupportsArea", 0, -1, [source, identity], [])], [], Outcome.Unfinished);
         PromptPresentation view = PromptPresentation.From(prompt, world);
         Assert.Equal("Choose a game element", view.Heading);
-        Assert.Equal("Decision for Peter Parker", view.Context);
+        Assert.Equal((0, "Peter Parker", DecisionSubject.None, (string?)null, false), (view.Frame.Seat, view.Frame.SeatName,
+            view.Frame.Subject, view.Frame.SubjectTitle, view.Frame.Optional));
         Assert.Contains("Element", view.Diagnostic);
         Assert.Contains("01092: choose a card", view.Diagnostic);
     }

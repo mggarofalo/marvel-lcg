@@ -11,4 +11,7 @@ public sealed record PlayerDescriptor(int Seat, string Name, bool Eliminated)
     /// game area (<c>pack:mc11:game-areas</c>). Empty while every card shares one game area.
     /// </summary>
     public IReadOnlyList<int> OutOfReach { get; init; } = [];
+
+    /// <summary>Why <see cref="OutOfReach"/> lists its cards, or null when it is empty.</summary>
+    public ReachReason? OutOfReachReason { get; init; }
 }

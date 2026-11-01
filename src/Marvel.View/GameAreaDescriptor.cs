@@ -19,7 +19,4 @@ public sealed record GameAreaDescriptor(int Id, IReadOnlyList<int> PlayAreas)
 
     /// <summary>Eliminated seats whose retained components this area still holds.</summary>
     public IReadOnlyList<int> FormerSeats { get; init; } = [];
-
-    /// <summary>The engine-authored display name, naming its players or central role and its villains.</summary>
-    public string Label { get; init; } = "";
 }

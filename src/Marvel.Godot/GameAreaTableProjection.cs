@@ -23,19 +23,19 @@ internal static class GameAreaTableProjection
             ? [Central(board, notes), .. board.GameAreas.Where(area => !area.Central)
                 .Select(area => Column(board, area, seat, reach))]
             : [];
-        return new GameAreaTable(Progress(board.Kang),
-            notes.FirstOrDefault(note => note.Kind == KangNoteKind.SharedEncounterDeck)?.Text,
-            [.. notes.Where(note => note.Card is null).Select(note => note.Text)], columns, reach);
+        int players = board.Kang?.StartingPlayers ?? 0;
+        return new GameAreaTable(board.Kang is { } kang ? TableWording.Progress(kang) : string.Empty,
+            notes.Any(note => note.Kind == KangNoteKind.SharedEncounterDeck)
+                ? TableWording.Rule(KangNoteKind.SharedEncounterDeck, players) : null,
+            [.. notes.Where(note => note.Card is null).Select(note => TableWording.Rule(note.Kind, players))], columns, reach);
     }
 
     private static IReadOnlyList<KangNoteDescriptor> Notes(BoardPresentation board) => board.Kang?.Notes ?? [];
 
-    private static string Progress(KangTableDescriptor? kang) => kang?.Progress ?? string.Empty;
-
     private static GameAreaColumn Central(BoardPresentation board, IReadOnlyList<KangNoteDescriptor> notes)
     {
         int[] schemes = [.. board.Kang?.CentralSchemes ?? []];
-        return new GameAreaColumn(null, "CENTRAL", [], AnchoredNotes(notes, schemes),
+        return new GameAreaColumn(null, TableWording.CentralTitle, [], AnchoredNotes(board, schemes),
             [.. board.GameAreas.Where(area => area.Central).SelectMany(area => area.Villains)],
             schemes, Encounter(board, null));
     }
@@ -45,12 +45,23 @@ internal static class GameAreaTableProjection
     {
         int[] encounter = Encounter(board, area.Id);
         var facts = new GameAreaColumnFacts(board, area, seat, [.. area.Villains, .. area.MainSchemes, .. encounter], reach);
-        return new GameAreaColumn(area.Id, area.Label, facts.Markers(), facts.Details(), area.Villains,
+        string title = TableWording.AreaTitle(Names(board, area.Retained ? area.FormerSeats : area.PlayAreas), area.Retained);
+        return new GameAreaColumn(area.Id, title, facts.Markers(), facts.Details(), area.Villains,
             area.MainSchemes, encounter);
     }
 
-    internal static string[] AnchoredNotes(IReadOnlyList<KangNoteDescriptor> notes, IReadOnlyList<int> cards) =>
-        [.. notes.Where(note => note.Card is { } card && cards.Contains(card)).Select(note => note.Text)];
+    internal static string[] AnchoredNotes(BoardPresentation board, IReadOnlyList<int> cards) =>
+        [.. Notes(board).Where(note => note.Card is { } card && cards.Contains(card))
+            .Select(note => TableWording.Rule(note.Kind, board.Kang?.StartingPlayers ?? 0))];
+
+    /// <summary>The published names of the given seats, in seat order; the villain's play area has none.</summary>
+    internal static string[] Names(BoardPresentation board, IReadOnlyList<int> seats) =>
+        [.. seats.Where(seat => seat >= 0).Select(seat => board.Players.FirstOrDefault(item => item.Seat == seat)?.Name
+            ?? $"Player {seat + 1}")];
+
+    /// <summary>A visible card's title, or a neutral name when the card is not on the board.</summary>
+    internal static string Title(BoardPresentation board, int card) => board.Areas.SelectMany(SpatialTableZones.Current)
+        .FirstOrDefault(item => item.TargetId == card)?.Title ?? "Kang (II)";
 
     private static int[] Encounter(BoardPresentation board, int? area) => [.. board.Areas
         .Where(SpatialTableZones.IsEncounterSupport)

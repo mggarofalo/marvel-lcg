@@ -233,22 +233,23 @@ separated table ([P9](#p9-godot-split-table)) awaits that review in MARVEL-905.
 11. Progress toward winning: Kang (I), then a Kang (II) in each area, then
     Kang (III) after the reunion.
 
-### Facts the View carries for the split table (protocol 45)
+### Facts the View carries for the split table (protocol 46)
 
-Each fact is derived in the engine and copied by View; the client validates that
-every id it names is one the same response lists (`ClientGameAreaValidation`).
+Each fact is derived in the engine and copied by View without sentences; the client
+validates that every id it names is one the same response lists
+(`ClientGameAreaValidation`) and words each fact through `TableWording`.
 
 | Need | Engine owner | View and wire | Tests |
 |---|---|---|---|
-| Per-area summary: local Kang, local scheme, central, retained, former seats, label | `GameAreaFacts` | `GameAreaDescriptor.Villains`, `MainSchemes`, `Central`, `Retained`, `FormerSeats`, `Label` | `KangTableFactsTests`, `SplitTableProjectionTests` |
-| Pending departures: who, from where, why, where to | `KangTable` over `KangPhaseTransitions.Pending` and `KangJoinProcedure.Destinations` | `KangTableDescriptor.Departures` (`Seats`, `SourceGameArea`, `CompletedScheme`, `Destinations`, `Reunion`, `Summary`) | `KangTableFactsTests`, `SplitTableProjectionTests` |
+| Per-area summary: local Kang, local scheme, central, retained, former seats | `GameAreaFacts` | `GameAreaDescriptor.Villains`, `MainSchemes`, `Central`, `Retained`, `FormerSeats` | `KangTableFactsTests`, `SplitTableProjectionTests` |
+| Pending departures: who, from where, why, where to | `KangTable` over `KangPhaseTransitions.Pending` and `KangJoinProcedure.Destinations` | `KangTableDescriptor.Departures` (`Seats`, `SourceGameArea`, `CompletedScheme`, `Destinations`, `Reunion`) | `KangTableFactsTests`, `SplitTableProjectionTests` |
 | A pending split after Kang (I)'s defeat | `KangFirstSplit.Pending` | `KangTableDescriptor.PendingSplit` | `KangTableFactsTests` |
 | Stored Dominions under 4A | `KangTable` (cards beneath 11013a) | `KangTableDescriptor.StoredDominions` | `KangTableFactsTests` |
-| Win progress | `KangTable` (Kang (I), (II), (III) in play) | `Stage`, `RemainingLocalKangs`, `Progress` | `KangTableFactsTests`, `KangSplitTableViewTests` |
+| Win progress | `KangTable` (Kang (I), (II), (III) in play) | `Stage`, `RemainingLocalKangs`, `StoredDominions`, `PendingSplit` | `KangTableFactsTests`, `KangSplitTableViewTests` |
 | Which area is acting in the villain phase | `VillainPhaseFocus` | `KangTableDescriptor.Acting` | `VillainPhaseFocusTests`, `KangTableFactsTests` |
-| Why another area's cards are not offered | `Places.CanAffect` | `PlayerDescriptor.OutOfReach` | `SplitTableProjectionTests`, `KangSplitTableViewTests` |
+| Why another area's cards are not offered | `Places.CanAffect` | `PlayerDescriptor.OutOfReach`, `OutOfReachReason` | `SplitTableProjectionTests`, `KangSplitTableViewTests` |
 | Player-named prompt and event labels | `GameAreaFacts` labels, `KangDepartureNames` | prompt `DisplayLabel`/`CommitLabel`/`Description`; `GameAreaEventPresentation` | `KangTableFactsTests`, `SplitTableProjectionTests` |
-| "Each player" scope, shared encounter deck and discard, 3B completion is not a loss, turn-order steps, 2B tokens wait for 4A | `KangTable` notes (`KangNoteKind`, anchored to 2B and each uncompleted 3B), `World.Players`, `World.AreaOf` | `Notes` (kind, card, text), `StartingPlayers`, `EncounterDeck`, `EncounterDiscard` | `KangTableFactsTests`, `SplitTableProjectionTests` |
+| "Each player" scope, shared encounter deck and discard, 3B completion is not a loss, turn-order steps, 2B tokens wait for 4A | `KangTable` notes (`KangNoteKind`, anchored to 2B and each uncompleted 3B), `World.Players`, `World.AreaOf` | `Notes` (kind, card), `StartingPlayers`, `EncounterDeck`, `EncounterDiscard` | `KangTableFactsTests`, `SplitTableProjectionTests` |
 | Topology events named as they happened | `PlayAreaJoined`/`PlayAreaDetached` `Members` (journal omits) | `GameAreaEventPresentation` | `KangTableFactsTests`, `SplitTableProjectionTests`, `TopologyEventJournalTests` |
 
 `KangSplitTableViewTests` drives Standard, Temporal, two players, seed 1 through

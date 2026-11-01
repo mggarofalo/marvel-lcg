@@ -19,8 +19,11 @@ public sealed partial class KangNativeWitness : RefCounted
     /// <summary>The ids of the game areas that hold no villain play area, in engine order.</summary>
     public int[] LocalAreas() => [.. World?.GameAreas.Where(area => !area.Central).Select(area => area.Id) ?? []];
 
-    /// <summary>The engine-authored label of one game area.</summary>
-    public string Label(int area) => World?.GameAreas.FirstOrDefault(item => item.Id == area)?.Label ?? string.Empty;
+    /// <summary>The names of the players in one game area, or of its former players when it is retained.</summary>
+    public string[] Names(int area) => World?.GameAreas.FirstOrDefault(item => item.Id == area) is { } found
+        ? [.. (found.Retained ? found.FormerSeats : found.PlayAreas).Where(seat => seat >= 0)
+            .Select(seat => World.Players.First(item => item.Seat == seat).Name)]
+        : [];
 
     /// <summary>The villains in one game area.</summary>
     public int[] Villains(int area) => [.. World?.GameAreas.FirstOrDefault(item => item.Id == area)?.Villains ?? []];
