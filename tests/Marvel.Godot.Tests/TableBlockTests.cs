@@ -67,6 +67,36 @@ public sealed class TableBlockTests
     }
 
     [Fact]
+    public void ASheetsReasonKeepsTheWholeInstruction()
+    {
+        const string instruction = "Choose the order.\nResolve it completely, including its whole-group join, before the other departures.";
+        Assert.Equal(instruction, TablePanel.ReasonText($" {instruction} \n", wrap: true));
+        Assert.Equal(TablePanel.OneLine(instruction), TablePanel.ReasonText(instruction, wrap: false));
+    }
+
+    [Theory]
+    [InlineData(1, true, "")]
+    [InlineData(2, true, "×2")]
+    [InlineData(2, false, "2 × Stunned")]
+    public void ACompactStatusBadgeShowsOnlyACountAboveOne(int count, bool compact, string caption) =>
+        Assert.Equal(caption, StatusBadge.Caption("2 × Stunned", count, compact));
+
+    [Theory]
+    [InlineData("Tough", 8, false)]
+    [InlineData("stunned", 16, false)]
+    [InlineData("CONFUSED", 0, true)]
+    public void EachStatusHasItsOwnShape(string status, int points, bool ring) =>
+        Assert.Equal((points, ring), StatusBadge.Outline(status));
+
+    [Fact]
+    public void AStatusBadgeIsTwoBodyLinesAtTheReadingScale()
+    {
+        Assert.Equal(28, StatusBadge.Side(InterfaceScale.Percent100));
+        Assert.True(StatusBadge.Side(InterfaceScale.Percent150) > StatusBadge.Side(InterfaceScale.Percent100));
+        Assert.NotEqual(StatusBadge.Tint("Tough"), StatusBadge.Tint("Stunned"));
+    }
+
+    [Fact]
     public void APanelReasonIsOneLine()
     {
         Assert.Equal("Choose a card · It goes on top.", TablePanel.OneLine("Choose a card\n It goes on top. \n"));

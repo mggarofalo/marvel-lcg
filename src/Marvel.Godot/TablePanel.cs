@@ -15,6 +15,9 @@ internal static class TablePanel
     internal static string OneLine(string reason) =>
         string.Join(" · ", reason.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
 
+    /// <summary>The reason's text: whole when it wraps, else on one line.</summary>
+    internal static string ReasonText(string reason, bool wrap) => wrap ? reason.Trim() : OneLine(reason);
+
     /// <summary>The panel head: the title row, the fact chips, then the reason when there is one.</summary>
     /// <param name="wrap">Whether the reason wraps in full rather than ellipsizing to one line.</param>
     internal static VBoxContainer Create(string name, Control title, IReadOnlyList<Control> facts, string reason,
@@ -35,7 +38,7 @@ internal static class TablePanel
             foreach (Control fact in facts) chips.AddChild(fact);
             head.AddChild(chips);
         }
-        string line = wrap ? reason.Trim() : OneLine(reason);
+        string line = ReasonText(reason, wrap);
         if (line.Length == 0) return head;
         Label text = wrap ? TableBlockStyle.Wrapped("Reason", line, scale, VisualSystem.Palette.Text)
             : TableBlockStyle.Line("Reason", line, scale, VisualSystem.Palette.Text);
