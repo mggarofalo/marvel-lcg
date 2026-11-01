@@ -29,7 +29,8 @@ public sealed class GreenGoblinAdmissionTests
         Assert.All(Scenarios, key => Assert.Contains(key, result.Setup.CampaignNames));
         Assert.All(Modulars, key => Assert.Contains(key, result.Setup.EncounterSetNames));
         Assert.Contains("ms_marvel", result.Setup.HeroNames);
-        Assert.DoesNotContain(result.Playable, face => Cards.Pack(face) == "gmw");
+        // Groot (16001a–16028) is the only open part of The Galaxy's Most Wanted.
+        Assert.DoesNotContain(result.Playable, face => Cards.Pack(face) == "gmw" && string.CompareOrdinal(face, "16029") >= 0);
     }
 
     [Theory]

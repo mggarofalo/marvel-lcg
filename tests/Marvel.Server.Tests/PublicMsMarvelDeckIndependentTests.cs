@@ -8,7 +8,7 @@ namespace Marvel.Server.Tests;
 public sealed class PublicMsMarvelDeckIndependentTests
 {
     private static readonly string[] ReviewedHeroes =
-        ["ant_man", "black_panther", "black_widow", "captain_america", "captain_marvel", "doctor_strange", "hawkeye", "hulk", "iron_man",
+        ["ant_man", "black_panther", "black_widow", "captain_america", "captain_marvel", "doctor_strange", "groot", "hawkeye", "hulk", "iron_man",
             "ms_marvel", "quicksilver", "she_hulk", "spider_man", "spider_woman", "thor", "wasp"];
 
     [Theory]
@@ -48,9 +48,11 @@ public sealed class PublicMsMarvelDeckIndependentTests
         var factory = DatasetGameFactory.Load(RepositoryPaths.Root);
         Assert.Equal(ReviewedHeroes,
             factory.DiscoverSetup().Heroes.Select(hero => hero.Key).Order(StringComparer.Ordinal));
-        Assert.DoesNotContain(factory.DiscoverDecks().Cards, card => card.Face.StartsWith("16", StringComparison.Ordinal));
-        var rejected = new EngineHost(factory).Exchange(EngineRequest.OpenGame("adjacent", "adjacent-groot",
-            new GameSpecification("rhino", ["groot"], [], 3)));
+        // Groot (16001a–16028) is the only open part of The Galaxy's Most Wanted.
+        Assert.DoesNotContain(factory.DiscoverDecks().Cards, card => card.Face.StartsWith("16", StringComparison.Ordinal)
+            && string.CompareOrdinal(card.Face, "16029") >= 0);
+        var rejected = new EngineHost(factory).Exchange(EngineRequest.OpenGame("adjacent", "adjacent-rocket",
+            new GameSpecification("rhino", ["rocket_raccoon"], [], 3)));
         Assert.NotNull(rejected.Error);
         Assert.Null(rejected.Capability);
     }

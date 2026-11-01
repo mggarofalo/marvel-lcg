@@ -74017,6 +74017,24 @@
       ]
     },
     {
+      "id": "setup:hero:groot",
+      "fingerprint": "sha256:cb85c985b5ca509fd124762874378772871db36a1b31bc7d060daab682e5dc36",
+      "obligations": [
+        {
+          "key": "groot-setup",
+          "summary": "The Groot hero record supplies the printed starter deck, obligation and nemesis set.",
+          "disposition": "outside-core",
+          "reason": "This record requires Groot from The Galaxy's Most Wanted, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
       "id": "setup:hero:hawkeye",
       "fingerprint": "sha256:b0b0c8598534fe8f9461d4e34cd22de1ea5e77fcc967199d1bc500f81a775447",
       "obligations": [

@@ -28,7 +28,8 @@ public sealed class KreeFanaticAdmissionTests
         Assert.All(Faces, face => Assert.Equal("kree_fanatic", Cards.EncounterSet(face)));
         Assert.Contains("kree_fanatic", result.Setup.EncounterSetNames);
         Assert.DoesNotContain("ronan", result.Setup.CampaignNames);
-        Assert.DoesNotContain(result.Playable, face => Cards.Pack(face) == "gmw");
+        // Groot (16001a–16028) is the only open part of The Galaxy's Most Wanted.
+        Assert.DoesNotContain(result.Playable, face => Cards.Pack(face) == "gmw" && string.CompareOrdinal(face, "16029") >= 0);
     }
 
     [Theory]

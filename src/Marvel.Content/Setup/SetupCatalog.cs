@@ -65,10 +65,16 @@ public sealed class SetupCatalog
     public EncounterSetRole EncounterRole(string name) => Get(encounterSets, name, "encounter set").Role;
 
     /// <summary>Excludes one unavailable product while preserving validation of retained recipes.</summary>
-    public SetupCatalog WithoutPack(CardCatalog cards, string pack)
+    public SetupCatalog WithoutPack(CardCatalog cards, string pack) =>
+        WithoutFaces(cards, face => cards.Pack(face) == pack);
+
+    /// <summary>Excludes recipes whose identities, villains or encounter sets name an unavailable face.</summary>
+    public SetupCatalog WithoutFaces(CardCatalog cards, Func<string, bool> unavailable)
     {
+        ArgumentNullException.ThrowIfNull(cards);
+        ArgumentNullException.ThrowIfNull(unavailable);
         bool ContainsPack(IEnumerable<string> specs) => specs.SelectMany(spec => spec.Split(','))
-            .Any(face => cards.Has(face) && cards.Pack(face) == pack);
+            .Any(face => cards.Has(face) && unavailable(face));
         // Product ownership follows identities and villains. A Core recipe that
         // accidentally references an unavailable expansion still fails admission.
         return new SetupCatalog(

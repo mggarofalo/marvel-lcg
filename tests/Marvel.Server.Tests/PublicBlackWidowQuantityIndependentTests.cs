@@ -23,7 +23,7 @@ public sealed class PublicBlackWidowQuantityIndependentTests
         Assert.Equal([0], quantities["01002"]);
         // The invalid draft must remove forbidden cards before any additions.
         Assert.Equal([0], quantities["12024"]);
-        Assert.False(quantities.ContainsKey("16001a"));
+        Assert.False(quantities.ContainsKey("16029a"));
         Assert.All(hero.Signature, face => Assert.False(quantities.ContainsKey(face)));
 
         // Espionage is a Basic extra, outside the pinned printed starter.

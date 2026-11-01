@@ -26,7 +26,7 @@ public sealed class PublicKreeFanaticSetupTests : TransportTestBase
         Assert.Null(response.Error);
         var choice = Assert.Single(response.Setup!.ModularSets, item => item.Key == "kree_fanatic");
         Assert.Equal("Kree Fanatic", choice.Name);
-        Assert.Equal(16, response.Setup.Heroes.Count);
+        Assert.Equal(17, response.Setup.Heroes.Count);
         Assert.Equal(39, response.Setup.Scenarios.Count);
         Assert.Equal(13, response.Setup.ModularSets.Count);
         Assert.DoesNotContain(response.Setup.Scenarios, item => item.Key.Contains("ronan", StringComparison.Ordinal));

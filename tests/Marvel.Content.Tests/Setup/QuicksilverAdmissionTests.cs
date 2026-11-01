@@ -62,7 +62,7 @@ public sealed class QuicksilverAdmissionTests
         var admitted = RuntimeProductAdmission.Discover(SetupCatalog.Parse(SetupJson), Cards, authored);
         Assert.DoesNotContain("quicksilver", admitted.Setup.HeroNames);
         Assert.DoesNotContain(admitted.Playable, id => Cards.Pack(id) == "qsv");
-        Assert.Equal(15, admitted.Setup.HeroNames.Count);
+        Assert.Equal(16, admitted.Setup.HeroNames.Count);
         Assert.Contains("ant_man", admitted.Setup.HeroNames);
     }
 
