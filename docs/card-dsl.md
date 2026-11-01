@@ -617,7 +617,8 @@ ability counts the encounter cards a node reads immediately before that node
 resolves, through `boostIconsDiscarded`, `topEncounterDiscardBoostPlusOne` and
 `boostIcons: <card>`. A counted card keeps its number for the rest of that
 resolution. Engine choice: a count that no interrupt could observe completes
-without a window, so a game with no count interrupt plays exactly as before.
+without a window, so a game with no count interrupt keeps its outcomes; the
+boost faceup window's label still names `WhenBoostIconsCounted`.
 
 `boostIcons: <card>` reads one bound card's counted boost icons.
 `starIconsDiscarded: "game"` counts the cards discarded in this resolution that

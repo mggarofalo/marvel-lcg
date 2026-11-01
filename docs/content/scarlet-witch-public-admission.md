@@ -25,9 +25,10 @@ interrupt window that Chaos Control and Scarlet Witch's Crest answer.
   `topEncounterDiscardBoostPlusOne`, `boostIcons: <card>`). A "2 or more" test
   is a count (ruling 310c4caa404d0f5a). Another player's count qualifies
   (ruling 4e1ff06e6c235760).
-- Engine choice: a count no interrupt could observe completes without a window.
-  Admitted games without Scarlet Witch therefore resolve exactly as before, and
-  the replay identity is unchanged.
+- Engine choice: a count no interrupt could observe completes without a window,
+  so admitted games without Scarlet Witch keep their outcomes. A boost card's
+  faceup occurrence now carries the count condition, so the label of that
+  interrupt window names `WhenBoostIconsCounted` in every game.
 - Chaos Control is a `would` interrupt. rr:would gives it priority over the
   Crest on the same count, so optional `would` interrupts now get their own
   offer stage.
@@ -114,10 +115,15 @@ failures.
 
 The replay identity moves to `engine-replay-v35`. Projecting a payment
 declaration onto an offer changes the prompt Tackle (05015) and Concussive Blow
-(05031) produce against a stalwart or already-statused enemy. Boost-icon counts
-complete inline when no interrupt could observe them, the player-attack end
-expires only effects bounded by that attack, and the other new vocabulary is
-read only by Scarlet Witch rows, so no other admitted outcome changes.
+(05031) produce against a stalwart or already-statused enemy. Prompt labels
+change too: the boost faceup interrupt window names `WhenBoostIconsCounted`
+(for example the prompts that offer Preemptive Strike, Attacrobatics, Target
+Acquired or Foiled!), and a hero's thwart that removes a scheme's last threat
+adds `WhenHeroThwartRemovesAllThreat` to that occurrence, which a response
+window's label then names. Boost-icon counts complete inline when no interrupt
+could observe them, the player-attack end expires only effects bounded by that
+attack, and the other new vocabulary is read only by Scarlet Witch rows, so no
+other admitted outcome changes.
 
 ## Native evidence
 

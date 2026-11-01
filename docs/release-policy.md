@@ -93,8 +93,10 @@ adapter or migration route from any earlier identity: a release that changes
 any of them makes every earlier save unloadable. This is a product choice, not
 a rule of the game; the owner decided that legacy saves need no handling
 (MARVEL-896). Replay v35 makes a turn-action event, such as Tackle (05015)
-against a stalwart enemy, offer the resource declaration its effect requires;
-see [session-ledger.md](session-ledger.md#replay-identity). Replay v34 names excess damage an identity deals among its
+against a stalwart enemy, offer the resource declaration its effect requires,
+and names the boost-icon count and a hero clearing a scheme among the
+conditions a window label lists; see
+[session-ledger.md](session-ledger.md#replay-identity). Replay v34 names excess damage an identity deals among its
 occurrence's conditions and lets a fully prevented attack still deal its
 damage (rr:prevent.1.3), so Into the Fray (13013, 16042) counts that excess.
 Replay v33 withholds a "would take" damage interrupt, such as

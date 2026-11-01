@@ -25756,7 +25756,7 @@
     {
       "card": "15002",
       "name": "Quicksilver",
-      "note": "Action: Ready Quicksilver. (Limit once per phase.) The printed Action has no form restriction, and the limit belongs to this copy (rr:limits-and-maximums). Readying an already ready Quicksilver would not change the game state, so the action is not offered then.",
+      "note": "Action: Ready Quicksilver. (Limit once per phase.) The printed Action has no form restriction, and the limit belongs to this copy (rr:limit). Readying an already ready Quicksilver would not change the game state, so the action is not offered then.",
       "abilities": [
         {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this"}, "limitPerPhase": 1, "effect": {"ready": "this"}}
       ]
@@ -25780,7 +25780,7 @@
     {
       "card": "15014",
       "name": "Swift Retribution",
-      "note": "Hero Action (attack): The villain schemes. Deal 4 damage to the villain. The villain is the declared target of the attack, initiated with the card (rr:initiating-abilities step 6). Rulings 6fd4652a06512d03 and 9817ecd3f1ac49d0: Guard or stun gained during the villain's scheme does not prevent the damage, so the attack is marked initiated. Engine choice, as for All for One (13032): the villain schemes immediately before the attack begins, because the engine does not suspend for an activation inside a labelled attack. rr:stunned replaces the whole attack, so a hero stunned at initiation takes the else branch: the villain does not scheme and the attack removes the stun.",
+      "note": "Hero Action (attack): The villain schemes. Deal 4 damage to the villain. The villain is the declared target of the attack, initiated with the card (rr:initiating-abilities step 6). Rulings 6fd4652a06512d03 and 9817ecd3f1ac49d0: Guard or stun gained during the villain's scheme does not prevent the damage, so the attack is marked initiated. Engine choice, as for All for One (13032): the villain schemes immediately before the attack begins, because the engine does not suspend for an activation inside a labelled attack. rr:stun-stunned replaces the whole attack, so a hero stunned at initiation takes the else branch: the villain does not scheme and the attack removes the stun.",
       "abilities": [
         {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero"}, "labels": ["attack"], "effect": {"if": {"test": {"not": {"hasStatus": {"card": "you", "status": "stunned"}}}, "then": {"seq": [{"enemySchemes": {"enemies": {"query": "villain"}}}, {"attack": {"target": {"query": "villain"}, "effect": {"dealAttackDamage": {"cards": {"query": "villain"}, "amount": 4}}, "initiated": 1}}]}, "else": {"attack": {"target": {"query": "villain"}, "effect": {"dealAttackDamage": {"cards": {"query": "villain"}, "amount": 4}}}}}}}
       ]
@@ -25842,7 +25842,7 @@
     {
       "card": "15030",
       "name": "Bait and Switch",
-      "note": "Hero Action (thwart): The villain attacks you. Remove 4 threat from the main scheme. The main scheme is the declared thwart target, initiated with the card (rr:initiating-abilities step 6); the removal does not depend on the attack. Ruling ca713a04a3ff5491: confusion or a patrol minion gained during the attack does not stop the thwart, so the thwart is marked initiated. Engine choice, as for All for One (13032): the villain attacks immediately before the thwart begins, because the engine does not suspend for an activation inside a labelled thwart. rr:confused replaces the whole thwart, so a hero confused at initiation takes the else branch: the villain does not attack and the thwart removes the confusion.",
+      "note": "Hero Action (thwart): The villain attacks you. Remove 4 threat from the main scheme. The main scheme is the declared thwart target, initiated with the card (rr:initiating-abilities step 6); the removal does not depend on the attack. Ruling ca713a04a3ff5491: confusion or a patrol minion gained during the attack does not stop the thwart, so the thwart is marked initiated. Engine choice, as for All for One (13032): the villain attacks immediately before the thwart begins, because the engine does not suspend for an activation inside a labelled thwart. rr:confuse-confused replaces the whole thwart, so a hero confused at initiation takes the else branch: the villain does not attack and the thwart removes the confusion.",
       "abilities": [
         {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero"}, "labels": ["thwart"], "effect": {"if": {"test": {"not": {"hasStatus": {"card": "you", "status": "confused"}}}, "then": {"seq": [{"enemyAttacks": {"enemies": {"query": "villain"}, "against": "you"}}, {"thwart": {"target": {"query": "mainScheme"}, "effect": {"removeThreat": {"scheme": {"query": "mainScheme"}, "amount": 4}}, "initiated": 1}}]}, "else": {"thwart": {"target": {"query": "mainScheme"}, "effect": {"removeThreat": {"scheme": {"query": "mainScheme"}, "amount": 4}}}}}}}
       ]
@@ -25997,7 +25997,7 @@
     {
       "card": "15015",
       "name": "Turn the Tide",
-      "note": "Response (attack): After your hero thwarts and removes all threat from a scheme, deal 3 damage to an enemy. Ruling 2f5ce668fd00dbb2: the identity must be in hero form when the last threat is removed; ruling 0e978ae1cc77dc8c: the event may then be played in alter-ego form. Ruling 05f47a1bee74848c: it answers the thwart's response window. Ruling 350ab70047bb342d: only a thwart counts. The damage is an attack (rr:attack).",
+      "note": "Response (attack): After your hero thwarts and removes all threat from a scheme, deal 3 damage to an enemy. Ruling 2f5ce668fd00dbb2: the identity must be in hero form when the last threat is removed; ruling 0e978ae1cc77dc8c: the event may then be played in alter-ego form. Ruling 05f47a1bee74848c: it answers the thwart's response window. Ruling 350ab70047bb342d: only a thwart counts. The damage is an attack (rr:attack-player-ability-type).",
       "abilities": [
         {"trigger": {"event": "WhenThwartEnds", "timing": "Response", "actor": "you", "alsoHappened": "WhenHeroThwartRemovesAllThreat"}, "labels": ["attack"], "effect": {"chooseCard": {"from": {"query": "attackableEnemies"}, "effect": {"attack": {"target": "chosen", "effect": {"dealAttackDamage": {"cards": "chosen", "amount": 3}}}}}}}
       ]

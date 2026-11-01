@@ -745,7 +745,13 @@ carries that requirement (rr:initiating-abilities.step.5, rr:event.3). A v34
 trace in which Tackle (05015) or Concussive Blow (05031) is offered against a
 stalwart enemy records a prompt whose cost v35 no longer produces, and a
 non-physical declaration v34 accepted for the offer and then refused is now
-rejected as an invalid payment. Under v34 a player identity that deals excess damage to an
+rejected as an invalid payment. Under v35 a boost card's faceup occurrence also
+carries the `WhenBoostIconsCounted` condition, and a hero's thwart that removes
+a scheme's last threat adds `WhenHeroThwartRemovesAllThreat` to its occurrence,
+so a v34 trace with such an interrupt or response window, such as one offering
+Preemptive Strike (05014), Attacrobatics (08006), Target Acquired (08024) or
+Foiled! (09038), records a prompt label v35 no longer produces; outcomes are
+unchanged. Under v34 a player identity that deals excess damage to an
 enemy (rr:excess-damage) adds the engine's `WhenExcessDamageDealt` condition to
 that damage's occurrence, and a response window names its occurrence's
 conditions, so a v33 trace with a response prompt after excess damage records a
