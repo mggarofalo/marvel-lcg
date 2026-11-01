@@ -40,4 +40,43 @@ public sealed class KangSirRastonEliminationTests
         Assert.Equal(3, events.Skip(from).OfType<CardsMoved>().Count(moved => moved.Verb == "Boost"
             && moved.From.Zone == nameof(DeckType.EncounterDeck)));
     }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    [Rule("rr:player-elimination.5")]
+    public void ABoostThatEliminatesALoneStagePlayerFinishesBeforeTheStageCompletes(bool expert)
+    {
+        // 11042 Boost: "Take 1 damage. Give this enemy another boost card." rr:player-elimination.5:
+        // "If a player is eliminated partway through the resolution of an ability, resolve the
+        // entire ability." 11009b-11012b: "If all the players at this stage are defeated, this
+        // stage is complete[d]", and its Forced Response stores a Dominion beneath 4A. The
+        // entire boost ability resolves first, so the extra boost card is dealt before the
+        // completion stores the Dominion.
+        var events = new List<GameEvent>();
+        var world = KangStageFlowFixture.Split(2, expert, events);
+        const int seat = 0;
+        world.FirstPlayer = seat;
+        var hero = world.Seats[seat].IdentityCard;
+        hero.TurnTo("01001a");
+        hero.TakeDamage(9);
+        var scheme = KangStageFlowFixture.LocalScheme(world, seat);
+        var raston = world.CreateCard("11042", world.AreaOf(DeckType.EncounterDeck));
+        World.MoveToTop(raston, world.AreaOf(DeckType.EncounterDeck));
+        int from = events.Count;
+
+        KangStageFlowFixture.VillainPhase(world, 1, events);
+
+        Assert.True(world.Seats[seat].Eliminated);
+        var played = events.Skip(from).ToList();
+        int flipped = played.FindIndex(e => e is CardsFlipped { Verb: "Boost" } flip
+            && flip.Cards.Contains(raston.ObjectId));
+        int extra = played.FindIndex(flipped + 1, e => e is CardsMoved { Verb: "Boost" } moved
+            && moved.From.Zone == nameof(DeckType.EncounterDeck));
+        int stored = played.FindIndex(e => e is CardsMoved { Verb: "Store_Beneath" } moved
+            && moved.Trigger == scheme.FaceId);
+        Assert.True(flipped >= 0 && extra > flipped && stored > extra,
+            $"flip {flipped}, extra boost {extra}, Dominion stored {stored}");
+        Assert.Equal(Outcome.Unfinished, world.Result);
+    }
 }

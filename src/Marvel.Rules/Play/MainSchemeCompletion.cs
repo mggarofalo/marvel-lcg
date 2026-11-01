@@ -41,12 +41,30 @@ internal static class MainSchemeCompletion
     internal static void Schedule(World world, Card scheme)
     {
         if (AlreadyCompleting(world, scheme)) return;
+        if (world.Agenda.Current is null) world.Agenda.Add(Completion(world, scheme));
+        else world.Agenda.Now(Completion(world, scheme));
+    }
+
+    /// <summary>Complete a Kang stage whose last player was eliminated.</summary>
+    /// <remarks>
+    /// 11009b: "If all the players at this stage are defeated, this stage is complete."
+    /// rr:player-elimination.5: "If a player is eliminated partway through the resolution
+    /// of an ability, resolve the entire ability", so the completion waits for an
+    /// eliminating ability to finish.
+    /// </remarks>
+    internal static void ScheduleAfterElimination(World world, Card scheme)
+    {
+        if (AlreadyCompleting(world, scheme)) return;
+        if (world.Agenda.Current is null) world.Agenda.Add(Completion(world, scheme));
+        else world.Agenda.AfterRunningAbility(Completion(world, scheme));
+    }
+
+    private static PhaseStep Completion(World world, Card scheme)
+    {
         var current = world.Agenda.Current;
-        var completion = new PhaseStep(new MainSchemeCompletionOperation(scheme.Incarnation),
+        return new PhaseStep(new MainSchemeCompletionOperation(scheme.Incarnation),
             current?.Round ?? 0, current?.Number ?? 0, Subject: scheme.ObjectId,
             Seat: world.FirstPlayer) { OccurrenceId = world.Agenda.nextPlayerActionOccurrence-- };
-        if (current is null) world.Agenda.Add(completion);
-        else world.Agenda.Now(completion);
     }
 
     private static bool AlreadyCompleting(World world, Card scheme) =>

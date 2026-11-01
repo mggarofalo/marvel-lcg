@@ -283,10 +283,13 @@ internal static class AbilityCardQueries
     /// <remarks>
     /// rr:player-elimination.5: "If a player is eliminated partway through the resolution of
     /// an ability, resolve the entire ability", while .5.1 ends that player's attack. A boost
-    /// ability's "this enemy" is still the enemy the card was dealt to; an additional boost card
-    /// it gives then waits facedown for that enemy's next activation (rr:boost-boost-icon.6).
+    /// ability's "this enemy" is still the enemy the card was dealt to, read off the boost step
+    /// that waits on the agenda while the ability and its continuations resolve; an additional
+    /// boost card it gives then waits facedown for that enemy's next activation
+    /// (rr:boost-boost-icon.6).
     /// </remarks>
     private static Card? BoostedEnemy(AbilityQueryContext cast) =>
-        cast.World.Agenda.Current is { Operation: BoostAbilityOperation boost } step && step.Subject == cast.Source.ObjectId
-            ? cast.World.Cards[boost.Faceup.Enemy] : null;
+        cast.World.Agenda.Outstanding.Where(step => step.Subject == cast.Source.ObjectId)
+            .Select(step => step.Operation).OfType<BoostAbilityOperation>()
+            .Select(boost => cast.World.Cards[boost.Faceup.Enemy]).FirstOrDefault();
 }

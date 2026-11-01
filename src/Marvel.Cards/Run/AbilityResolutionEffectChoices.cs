@@ -236,10 +236,8 @@ internal static class AbilityResolutionEffectChoices
     /// rr:player-elimination.5: "If a player is eliminated partway through the resolution
     /// of an ability, resolve the entire ability." rr:player-elimination.5.1: "If a player
     /// is eliminated in the middle of an attack, that attack ends", which removes the
-    /// owner's frames. The ability resumes after its own effect windows: the current frame,
-    /// or the next behind the stage completion eliminating a Kang area's last player
-    /// schedules (11009b: "If all the players at this stage are defeated, this stage is
-    /// complete"). Any other missing owner is an engine fault.
+    /// owner's frames. The ability then resumes directly after its own effect windows,
+    /// which must be the current frame. Any other missing owner is an engine fault.
     /// </remarks>
     internal static void ContinueAfterEliminationEndedOwner(
         World world, PhaseStep owner, int source, PhaseStep continuation)
@@ -252,8 +250,8 @@ internal static class AbilityResolutionEffectChoices
     private static bool OwnerEndedByElimination(World world, PhaseStep owner, int source) =>
         owner.Seat >= 0 && owner.ActivationId >= 0
         && world.Seats[owner.Seat].Eliminated && world.Activation?.Id != owner.ActivationId
-        && world.Agenda.Outstanding.Skip(world.Agenda.Current?.Operation is MainSchemeCompletionOperation ? 1 : 0)
-            .FirstOrDefault() is { What: Steps.CardEffectResolved } current && current.Subject == source;
+        && world.Agenda.Current is { What: Steps.CardEffectResolved } current
+        && current.Subject == source;
 
     /// <summary>Resume an initiated ability after its cost procedure settles.</summary>
     internal static void SuspendAfterCost(this AbilityResolutionExecution execution,

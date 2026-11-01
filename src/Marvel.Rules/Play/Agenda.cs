@@ -77,11 +77,14 @@ public sealed class Agenda
 
     internal (PhaseStep Step, Stage Stage, Occurrence? Occurrence) Frame(
         PhaseStep step, Stage stage, Occurrence? occurrence, bool inheritAttackOrigin = true) =>
-        (Executions.Register(step with { FrameId = checked(++nextFrameId), FrameGame = Executions.Identity,
+        (Executions.Register(Unowned(step, inheritAttackOrigin), ContinuationExecution.Of(step)), stage, occurrence);
+
+    /// <summary>A frame no running ability owns: work the board requires rather than the ability.</summary>
+    internal PhaseStep Unowned(PhaseStep step, bool inheritAttackOrigin = true) =>
+        step with { FrameId = checked(++nextFrameId), FrameGame = Executions.Identity,
             AttackOrigin = step.AttackOrigin ?? (inheritAttackOrigin
                 && step.Operation is not (EnemyAttackOperation or EnemySchemeOperation or ActivationCompletionOperation)
-                    ? Current?.AttackOrigin : null) },
-            ContinuationExecution.Of(step)), stage, occurrence);
+                    ? Current?.AttackOrigin : null) };
 
     /// <summary>Whether the game is part-way through anything.</summary>
     public bool IsBusy => items.Count > 0;

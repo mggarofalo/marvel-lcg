@@ -15,7 +15,7 @@ public sealed class KangEliminatingAbilityTests
     [InlineData(false)]
     [InlineData(true)]
     [Rule("rr:player-elimination.5")]
-    public void AnAbilityThatEliminatesTheLastLocalPlayerFinishesBeforeItsStageCompletes(bool expert)
+    public void AnAbilityThatEliminatesTheLastLocalPlayerResolvesAndCompletesTheStage(bool expert)
     {
         // 11031: "When Chitauri Soldier attacks you, discard the top card of the encounter deck
         // → take indirect damage equal to the number of boost icons on that card."
