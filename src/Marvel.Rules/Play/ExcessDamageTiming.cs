@@ -26,10 +26,10 @@ public static class ExcessDamageTiming
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(source);
         // Equivalent mutant: no admitted card is in play under a player other than its
-        // owner, so reading the owner alone, or dropping the seat bound, survives.
+        // owner, so reading the owner alone survives. A board can name an owner with no seat.
         int player = DeckTypes.IsInPlay(source.Area.Type) && source.Area.PlayArea.IsPlayers
             ? source.Area.PlayArea.Player : source.Owner;
-        if (player < 0 || player >= world.Players) return -1;
+        if (player < 0 || player >= world.Seats.Count) return -1;
         return LabeledAbilities.IdentityPlayer(world, LabeledAbilities.Performer(world, world.Facts, player, source));
     }
 

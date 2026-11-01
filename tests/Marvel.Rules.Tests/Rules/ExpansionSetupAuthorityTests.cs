@@ -43,7 +43,7 @@ public sealed class ExpansionSetupAuthorityTests
             "setup:encounter-set:hydra_assault", "setup:encounter-set:hydra_patrol",
             "setup:encounter-set:kree_fanatic", "setup:encounter-set:mot",
             "setup:encounter-set:power_drain", "setup:encounter-set:running_interference", "setup:encounter-set:temporal", "setup:encounter-set:weapon_master", "setup:hero:ant_man", "setup:hero:black_widow", "setup:hero:captain_america",
-            "setup:hero:doctor_strange", "setup:hero:groot", "setup:hero:hawkeye", "setup:hero:hulk", "setup:hero:ms_marvel", "setup:hero:quicksilver", "setup:hero:spider_woman", "setup:hero:thor",
+            "setup:hero:doctor_strange", "setup:hero:groot", "setup:hero:hawkeye", "setup:hero:hulk", "setup:hero:ms_marvel", "setup:hero:quicksilver", "setup:hero:rocket_raccoon", "setup:hero:spider_woman", "setup:hero:thor",
             "setup:hero:wasp",
         };
         var expansion = Catalog.Build().Sources.Where(source =>
@@ -70,7 +70,7 @@ public sealed class ExpansionSetupAuthorityTests
         "setup:hero:thor" => "Thor hero pack",
         "setup:hero:wasp" => "Wasp hero pack",
         "setup:hero:quicksilver" => "Quicksilver hero pack",
-        "setup:hero:groot" => "The Galaxy's Most Wanted",
+        "setup:hero:groot" or "setup:hero:rocket_raccoon" => "The Galaxy's Most Wanted",
         "setup:encounter-set:kree_fanatic" => "Ronan Kree Fanatic modular set",
         "setup:encounter-set:anachronauts" or "setup:encounter-set:mot" or "setup:encounter-set:temporal"
             or "setup:campaign:kang" or "setup:campaign:kang_expert" => "The Once and Future Kang scenario pack",
