@@ -107,11 +107,8 @@ internal static class AbilityEffectLowering
             "revealKangStageThree" => FixedEffect(argument, child, "this", AbilityFixedInstruction.RevealKangStageThree),
             "putKangNemesesIntoPlay" => FixedEffect(argument, child, "this", AbilityFixedInstruction.PutKangNemesesIntoPlay),
             "advanceMainScheme" => FixedEffect(argument, child, "next", AbilityFixedInstruction.AdvanceMainScheme),
-            "cancelBoostAbility" => FixedEffect(argument, child, "trigger", AbilityFixedInstruction.CancelBoostAbility),
-            "cancelBoostIcons" => FixedEffect(argument, child, "trigger", AbilityFixedInstruction.CancelBoostIcons),
-            "increaseBoostCount" => FixedEffect(argument, child, "trigger", AbilityFixedInstruction.IncreaseBoostCount),
-            "decreaseBoostCount" => FixedEffect(argument, child, "trigger", AbilityFixedInstruction.DecreaseBoostCount),
-            "countDiscardedInstead" => FixedEffect(argument, child, "trigger", AbilityFixedInstruction.CountDiscardedInstead),
+            var kind when AbilityBoostEffectLowering.Owns(kind) =>
+                FixedEffect(argument, child, "trigger", AbilityBoostEffectLowering.Instruction(kind)),
             "cancelOccurrence" => FixedEffect(argument, child, "trigger", AbilityFixedInstruction.CancelOccurrence),
             "replaceReady" => FixedEffect(argument, child, "attachedTo", AbilityFixedInstruction.ReplaceReady),
             "cancelWhenRevealed" => FixedEffect(argument, child, "trigger.subject", AbilityFixedInstruction.CancelWhenRevealed),

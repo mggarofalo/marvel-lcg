@@ -32,7 +32,7 @@ public sealed class DoctorStrangeInventoryAdmissionTests
 
         Assert.DoesNotContain("doctor_strange", admitted.Setup.HeroNames);
         Assert.DoesNotContain(admitted.Playable, id => Cards.Pack(id) == "drs");
-        Assert.Equal(17, admitted.Setup.HeroNames.Count);
+        Assert.Equal(18, admitted.Setup.HeroNames.Count);
         Assert.Contains("spider_man", admitted.Setup.HeroNames);
         Assert.Contains("captain_america", admitted.Setup.HeroNames);
         Assert.Contains("hawkeye", admitted.Setup.HeroNames);

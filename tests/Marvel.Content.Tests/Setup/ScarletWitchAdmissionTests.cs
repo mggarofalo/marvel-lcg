@@ -63,7 +63,7 @@ public sealed class ScarletWitchAdmissionTests
         var admitted = RuntimeProductAdmission.Discover(SetupCatalog.Parse(SetupJson), Cards, authored);
         Assert.DoesNotContain("scarlet_witch", admitted.Setup.HeroNames);
         Assert.DoesNotContain(admitted.Playable, id => Cards.Pack(id) == "scw");
-        Assert.Equal(17, admitted.Setup.HeroNames.Count);
+        Assert.Equal(18, admitted.Setup.HeroNames.Count);
         Assert.Contains("ant_man", admitted.Setup.HeroNames);
     }
 

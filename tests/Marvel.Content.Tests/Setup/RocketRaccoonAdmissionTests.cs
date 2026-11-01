@@ -81,7 +81,7 @@ public sealed class RocketRaccoonAdmissionTests
         var admitted = RuntimeProductAdmission.Discover(SetupCatalog.Parse(SetupJson), Cards, authored);
         Assert.DoesNotContain("rocket_raccoon", admitted.Setup.HeroNames);
         Assert.DoesNotContain(admitted.Playable, Faces.Contains);
-        Assert.Equal(17, admitted.Setup.HeroNames.Count);
+        Assert.Equal(18, admitted.Setup.HeroNames.Count);
         Assert.Contains("groot", admitted.Setup.HeroNames);
     }
 

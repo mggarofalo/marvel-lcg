@@ -112,7 +112,7 @@ failures.
 
 ## Replay identity
 
-The replay identity moves to `engine-replay-v34`. Projecting a payment
+The replay identity moves to `engine-replay-v35`. Projecting a payment
 declaration onto an offer changes the prompt Tackle (05015) and Concussive Blow
 (05031) produce against a stalwart or already-statused enemy. Boost-icon counts
 complete inline when no interrupt could observe them, the player-attack end
