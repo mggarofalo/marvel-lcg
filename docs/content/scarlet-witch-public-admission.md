@@ -41,8 +41,9 @@ Each choice is recorded in the row note or the code comment that owns it.
 
 - **Hex Bolt** discards three cards, then resolves each in the order the player
   chooses, counting each as it resolves (rulings 123a79b5c8900e0c,
-  a5028ed150b39433, 805b3f9b199ca68b, 0870bc11f295fbb0). The encounter deck
-  reshuffles, so three cards are discarded.
+  a5028ed150b39433, 805b3f9b199ca68b, 0870bc11f295fbb0). The discard stops
+  when the encounter deck empties (rr:encounter-deck.2), so fewer than three
+  cards may resolve.
 - **Molecular Decay**, **Swift Retribution** and **Bait and Switch**: as for All
   for One (13032), the discard or the enemy activation resolves immediately
   before the labelled power begins, because the engine does not suspend inside
