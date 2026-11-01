@@ -65,7 +65,7 @@ public sealed class SplitTableProjectionTests
         Assert.Equal(2, kang.StartingPlayers);
         Assert.Equal(world.AreaOf(DeckType.EncounterDeck).Id, kang.EncounterDeck);
         Assert.Equal(world.AreaOf(DeckType.EncounterDiscardPile).Id, kang.EncounterDiscard);
-        Assert.Equal(5, kang.Notes.Count);
+        Assert.Equal(6, kang.Notes.Count);
         Assert.Contains(kang.Notes, note => note.Contains("counts all 2 players who started", StringComparison.Ordinal));
         Assert.StartsWith("2 Kang (II) remain.", kang.Progress, StringComparison.Ordinal);
         Assert.Empty(kang.Departures);

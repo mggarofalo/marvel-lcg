@@ -8,7 +8,8 @@ namespace Marvel.View;
 /// <remarks>
 /// Every value comes from <see cref="KangTable.Of"/>; this projection drops ids the
 /// scope cannot address and adds readable copy. The wording is our choice; the notes
-/// quote or paraphrase <c>pack:mc11:game-areas</c> and the rulings they name.
+/// paraphrase <c>pack:mc11:game-areas</c>, rulings 4799b99ecc0e5dea, 0c9221b6940b4007 and
+/// 97d62cdb9ce436a7, and MARVEL-894 Q1 for the tokens on stage 2B.
 /// </remarks>
 internal static class KangTableProjection
 {
@@ -69,6 +70,7 @@ internal static class KangTableProjection
             + (players == 1 ? "counts the 1 player who started the scenario."
                 : $"counts all {players.ToString(CultureInfo.InvariantCulture)} players who started the scenario."),
         "All game areas share one encounter deck and one encounter discard pile.",
+        "Acceleration tokens on stage 2B add no threat during the split; they carry into stage 4A.",
         "Completing a stage 3B does not lose the game: it stores a Kang's Dominion under stage 4A, and that group "
             + "joins another game area at the end of the phase. It is better to let Kang (II) complete his main scheme "
             + "than to let Kang (II) defeat your hero.",

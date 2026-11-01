@@ -89,7 +89,7 @@ public sealed class KangSplitTableViewTests
     {
         Assert.Equal(2, kang.Stage);
         Assert.Equal(2, kang.StartingPlayers);
-        Assert.Equal(5, kang.Notes.Count);
+        Assert.Equal(6, kang.Notes.Count);
         Assert.Equal([Assert.Single(world.AreaOf(DeckType.MainSchemesArea).Cards).ObjectId], kang.CentralSchemes);
         for (int seat = 0; seat < 2; seat++)
         {
