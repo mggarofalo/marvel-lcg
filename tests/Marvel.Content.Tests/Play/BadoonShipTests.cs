@@ -1,5 +1,6 @@
 using Marvel.Rules.Play;
 using Marvel.Rules.State;
+using Marvel.Rules.Timing;
 using Marvel.Tests;
 using Xunit;
 
@@ -100,6 +101,24 @@ public sealed class BadoonShipTests : CoreCardTestBase
 
         StepOne(world);
 
+        Assert.Equal(1, BadoonBoards.Barrage(ship));
+    }
+
+    [Fact]
+    [Rule("rr:villain-phase.step.1")]
+    public void TheMainSchemeChargesTheShipEvenWhenStepOnePlacesNoThreat()
+    {
+        // "After resolving step one" follows the step, not a positive placement: a main scheme
+        // that lost its acceleration field places nothing and still charges the ship.
+        var world = BadoonBoards.Board();
+        var ship = BadoonBoards.Ship(world);
+        var scheme = GrootBoards.MainScheme(world);
+        world.Effects.Register(new ContinuousEffect(EffectSource.LastingEffect,
+            Characteristics.LossOf("escalation_threat"), Affects: scheme.ObjectId));
+
+        StepOne(world);
+
+        Assert.Equal(0, scheme.Tokens.GetValueOrDefault("k_threat"));
         Assert.Equal(1, BadoonBoards.Barrage(ship));
     }
 

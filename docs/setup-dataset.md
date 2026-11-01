@@ -23,9 +23,9 @@ The file has 3 groups:
 
 | Group | Admitted rows | Declared rows |
 |---|---:|---:|
-| `campaigns` | 39 Core Set, Rise of Red Skull, Wrecking Crew and Green Goblin scenario/mode combinations; the two declared Kang modes are not admitted | 41 |
+| `campaigns` | 39 Core Set, Rise of Red Skull, Wrecking Crew and Green Goblin scenario/mode combinations; the two declared Kang modes and two declared Brotherhood of Badoon modes are not admitted | 43 |
 | `heroes` | 14 Core Set, Rise of Red Skull, Captain America, Ms. Marvel, Thor, Black Widow, Doctor Strange, Hulk and Ant-Man starter decks | 14 |
-| `encounter_sets` | 15 Core Set, Rise of Red Skull, Green Goblin and Kree Fanatic fixed/modular sets; the three declared Kang modular sets are not admitted | 18 |
+| `encounter_sets` | 17 Core Set, Rise of Red Skull, Green Goblin, Kree Fanatic, Power Stone and Band of Badoon fixed/modular sets; the three declared Kang modular sets and Ship Command are not admitted | 21 |
 
 Ms. Marvel is admitted as a complete integration candidate. Her 40-card starter,
 obligation and nemesis set follow the pinned FFG divider in
@@ -371,8 +371,20 @@ exact pack membership, modular role and the complete seven-copy recipe are requi
 together. A missing face or malformed recipe closes the entire set while preserving
 predecessor products. Standard and Expert scenario slots accept its normal modular
 selection with starter or legal custom player decks. Recommended defaults remain
-scenario-owned. Discovery has nineteen heroes, 39 scenario/mode recipes and sixteen
-encounter sets, fourteen of them modular. The separate Galaxy’s Most Wanted Ronan
+scenario-owned. Discovery has nineteen heroes, 39 scenario/mode recipes and seventeen
+encounter sets, fifteen of them modular. The separate Galaxy’s Most Wanted Ronan
 scenario remains unsupported. Focused evidence is in
 `docs/content/ronan-public-admission.md`; this gate does not establish complete-game,
 fresh-host or native acceptance.
+
+The Galaxy’s Most Wanted's Band of Badoon is admitted as a modular set of ten
+physical cards: two Badoon Assassin, three Badoon Grunt, one Badoon Lieutenant,
+two Badoon Sentry and two Badoon Warlord (16117–16121), the quantities of the
+vendored MarvelSDB snapshot. All five faces, exact pack membership, the modular
+role and the complete ten-copy recipe are required together. The Brotherhood of
+Badoon scenario declares Standard and Expert recipes: Drang (I)/(II) or
+(II)/(III), Terrestrial Invasion and Protect the Planet, the Standard (and Expert)
+and Ship Command sets, the seven Brotherhood of Badoon encounter cards and the
+Badoon Ship set aside for its main scheme's setup. Both recipes stay outside
+discovery with the withheld Ship Command set. Evidence is in
+`docs/content/brotherhood-of-badoon.md`.
