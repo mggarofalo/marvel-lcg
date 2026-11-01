@@ -39,9 +39,10 @@ internal static class GameAreaTableChrome
     {
         Wording rules = TableWording.For(TableFact.SeparatedRules);
         float width = Math.Min(band.Size.X * 0.45f, 460 * (int)scale / 100f);
+        // An open rules panel draws above the event timeline (90) and below its preview (100).
         var panel = new PanelContainer
         {
-            Name = "SeparatedTableRulesPanel", Visible = false, ZIndex = 80, MouseFilter = Control.MouseFilterEnum.Stop,
+            Name = "SeparatedTableRulesPanel", Visible = false, ZIndex = 95, MouseFilter = Control.MouseFilterEnum.Stop,
             Position = new Vector2(band.End.X - width, band.Position.Y + height + 4), CustomMinimumSize = new Vector2(width, 0),
         };
         using StyleBoxFlat style = TableBlockStyle.Surface(scale, VisualSystem.Palette.Outline);
