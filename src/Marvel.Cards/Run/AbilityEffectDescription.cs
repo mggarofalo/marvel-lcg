@@ -97,6 +97,8 @@ internal static class AbilityEffectDescription
         AbilityEffect.GiveStatus status => StatusAction(status.Status),
         AbilityEffect.ReplaceStatus status => $"Replace with {status.Status}",
         AbilityEffect.RemoveStatuses => "Remove status cards",
+        AbilityCounterEffect.MoveCounters move =>
+            $"move {move.Count} {move.Counter} counter{(move.Count == 1 ? "" : "s")} to",
         AbilityEffect.AttackDamage => "attack",
         AbilityEffect.Damage { Maximum: not null } => "choose damage recipients after selecting",
         AbilityEffect.Damage => "deal damage to",

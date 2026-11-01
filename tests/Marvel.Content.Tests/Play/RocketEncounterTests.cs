@@ -67,8 +67,14 @@ public sealed class RocketEncounterTests : CoreCardTestBase
 
         Answer(world, prompt => prompt.Affordances[^1]);
         Answer(world, prompt => Assert.Single(prompt.Affordances));
-        GrootBoards.Drive(world, GrootBoards.Take(launcher));
+        string? description = null;
+        GrootBoards.Drive(world, prompt =>
+        {
+            description = prompt.Description;
+            return GrootBoards.Take(launcher)(prompt);
+        });
 
+        Assert.StartsWith("As first player, break the tie for the highest cost.", description, StringComparison.Ordinal);
         Assert.Equal(DeckType.DiscardPile, launcher.Area.Type);
         Assert.Equal(DeckType.UpgradesArea, cannon.Area.Type);
     }

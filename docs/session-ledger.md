@@ -737,8 +737,17 @@ packet. Public wire support is protocol 38 and rejects protocol 37 peers.
 
 ### Replay identity
 
-The current replay identity is `engine-replay-v33`. Every earlier replay
-identity is refused. Under v33 a tough status card leaves no damage for an
+The current replay identity is `engine-replay-v34`. Every earlier replay
+identity is refused. Under v34 a player identity that deals excess damage to an
+enemy (rr:excess-damage) adds the engine's `WhenExcessDamageDealt` condition to
+that damage's occurrence, and a response window names its occurrence's
+conditions, so a v33 trace with a response prompt after excess damage records a
+prompt label v34 no longer produces. Under v34 an attack whose damage an
+attack-wide prevention removes entirely -- Temporal Shield (11014) or
+Photographic Reflexes (04104) -- still deals that damage (rr:prevent.1.3;
+rulings 70423690d446327f and 05670207b5acc4d9), so a v33 trace in which Into the
+Fray (13013, 16042) attacks such an enemy removes threat v33 did not remove.
+Under v33 a tough status card leaves no damage for an
 interrupt to "would take" damage, because rr:damage applies tough status cards
 (step 2) before those abilities (step 3), and a piercing enemy attack discards
 that tough status card before its damage window opens (rr:piercing.1). A v32

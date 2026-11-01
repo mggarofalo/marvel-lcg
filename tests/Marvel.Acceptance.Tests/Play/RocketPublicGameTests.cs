@@ -45,6 +45,27 @@ public sealed class RocketPublicGameTests(ITestOutputHelper output)
         Assert.True(taken > 0);
     }
 
+    [Theory]
+    [InlineData("rhino", 12u)]
+    [InlineData("absorbing_man", 21u)]
+    public void FloraAndFaunaChargesARocketUpgradeAtAGrootAndRocketTable(string scenario, uint seed)
+    {
+        // Flora and Fauna (16020, 16048), a Team-Up for Groot and Rocket Raccoon, offers
+        // its Rocket option while a Rocket Raccoon upgrade is in play. This game takes it.
+        int taken = 0;
+        PublicStarterGames.Play("rocket_raccoon", scenario, true, seed, output, (game, prompt) =>
+        {
+            if (prompt.Asking != Question.Option) return null;
+            var rocket = prompt.Affordances.FirstOrDefault(offer => offer.Id == 1
+                && prompt.ContextCardIds.Any(id => game.State.Cards[id].FaceId is "16020" or "16048"));
+            if (rocket is null) return null;
+            taken++;
+            return Decision.Take(rocket.Id);
+        }, partner: "groot");
+        output.WriteLine($"Flora and Fauna Rocket options taken: {taken}");
+        Assert.True(taken > 0);
+    }
+
     internal static bool IsRocketFace(string face) =>
         string.CompareOrdinal(face, "16029") >= 0 && string.CompareOrdinal(face, "16058") < 0;
 }

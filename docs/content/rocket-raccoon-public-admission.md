@@ -34,9 +34,13 @@ entries in `datasets/rulings/`.
   and Rocket draws. "You" is Rocket's identity with his events, upgrades and
   resources (rr:you-your.12–.14); an ally's damage is not his (rr:you-your.15).
   Each enemy dealt excess damage is its own instance (rr:triggering-condition.1):
-  Rocket Launcher dealing excess to two minions draws 2 (ruling
-  3f57fe6e7dc99dd2), and overkill damage counts as damage the attacker dealt
-  (ruling 4648617b8449406e).
+  Relentless Assault's overkill against a 1-hit-point minion that carries excess
+  into a 1-hit-point villain draws 2, because Rocket dealt excess damage to both
+  (ruling 3f57fe6e7dc99dd2), so Rocket Launcher dealing excess to two minions
+  draws 2 as well, and overkill damage counts as damage the attacker dealt
+  (ruling 4648617b8449406e). An attack whose damage Temporal Shield (11014) or
+  Photographic Reflexes (04104) prevents entirely still deals it
+  (rr:prevent.1.3), so its excess draws too.
 - **When "Murdered You!" responds.** The response window opens when the attack
   or ability that dealt the damage finishes (ruling ed234608b14481f5, a
   one-sentence attack event). Ruling 80e8d8516006df27 resolves a two-sentence
@@ -44,18 +48,25 @@ entries in `datasets/rulings/`.
   an ability's occurrence finishes, for every card, so a multi-sentence ability
   draws the same number of cards after its last sentence instead of between
   sentences. No Rocket Raccoon card has a second sentence that reads the hand or
-  deck.
+  deck, but Melee (05030), the ruling's own example, is reachable in a custom
+  deck: Rocket ends with the right count and the right board, and draws after
+  the second sentence rather than after each.
 - **Follow Through** interrupts at rr:damage step 1, when an attack by Rocket's
   identity, event or upgrade is about to deal damage beyond an enemy's remaining
   hit points. It adds 1 to the damage dealt beyond them, so overkill and every
   ability that counts the excess see the larger amount (rr:overkill.3). The
   interrupt is optional and is offered to the first player with one; an
-  attack's excess can be increased once per copy.
+  attack's excess can be increased once per copy. It is offered against an
+  attack Temporal Shield prevents entirely, since that attack still deals its
+  damage, and the increased amount is prevented with the rest.
 - **Schadenfreude** registers a lasting effect until the end of the turn
   (rr:lasting-effects). It heals 2 each time Rocket deals damage to an enemy:
   once per enemy dealt damage, so one attack with overkill into the villain
-  heals twice (ruling 4648617b8449406e). Damage dealt counts even when Tough
-  prevents what the enemy takes.
+  heals twice (ruling 4648617b8449406e). Damage dealt counts even when Tough or
+  Temporal Shield prevents what the enemy takes (rr:prevent.1.3). Damage an enemy
+  cannot take is not dealt (Ultron, 01136), damage to a friendly character is not
+  damage to an enemy, and a card played under another player's control, such as
+  Electrostatic Armor (10031), deals its damage for its controller.
 - **Charge counters.** Battery Pack, Particle Cannon, Rocket Launcher and
   Rocket's Pistol enter play with counters but do not print Uses, so they stay
   in play empty (ruling c0c1782ca297d006). Hand Cannon prints Uses and is
@@ -128,16 +139,28 @@ Fauna:
   `AbilityCounterEffect`; the excess and per-damage effects share
   `AbilityEnemyDamageEffect`.
 
-None of these changes reaches a prompt, event or outcome of an already admitted
-card. Flora and Fauna offers its choice only while a Rocket Raccoon upgrade is
-in play, which no earlier game can contain; without one it resolves the Groot
-option as before. The replay identity therefore stays `engine-replay-v33`.
+Two of these changes reach already admitted cards, so the replay identity is
+`engine-replay-v34`. Damage an identity deals to an enemy beyond its remaining
+hit points adds the `WhenExcessDamageDealt` condition to that damage's
+occurrence, and a response window's persisted label names its occurrence's
+conditions: a v33 trace with a response prompt after excess damage, such as
+Wasp's games against Klaw or Ultron, records a label v34 no longer produces. An
+attack whose damage Temporal Shield (11014) or Photographic Reflexes (04104)
+prevents entirely still deals it (rr:prevent.1.3; rulings 70423690d446327f and
+05670207b5acc4d9), so Into the Fray (13013, 16042) counts that excess and
+removes threat v33 did not remove (`RocketPreventedAttackTests`). Flora and
+Fauna offers its choice only while a Rocket Raccoon upgrade is in play, which no
+earlier game can contain; without one it resolves the Groot option as before.
 
 ## Evidence
 
 The runtime tests use the production ability book on synthetic boards:
 `RocketIdentityTests`, `RocketSignatureTests`, `RocketPlayerCardTests` and
-`RocketEncounterTests`. `RocketRaccoonAdmissionTests` closes Rocket Raccoon when
+`RocketEncounterTests`, with `RocketPreventedAttackTests` and
+`RocketDamageCreditTests` for prevented attacks and for which damage counts as
+Rocket's. The Battery Pack target choice names the counter it moves, and the
+Crisis on Halfworld choice tells the first player it is breaking a tie for the
+highest cost (rr:first-player.1). `RocketRaccoonAdmissionTests` closes Rocket Raccoon when
 a face is missing, a face changes pack, or any recipe component changes, while
 Groot stays open; `GrootAdmissionTests` shows that only the two heroes' faces of
 the box open. `RocketLoweringTests` refuses malformed shapes of the new
@@ -181,6 +204,15 @@ such as "Murdered You!", Follow Through, Hand Cannon and Bug.
 | Rhino | 1 | 9 | VillainWins | 7 | 42 | 21 |
 | Klaw | 1 | 10 | PlayersLose | 4 | 22 | 9 |
 | Crossbones | 1 | 11 | PlayersLose | 4 | 26 | 14 |
+
+`FloraAndFaunaChargesARocketUpgradeAtAGrootAndRocketTable` seats Rocket Raccoon
+beside Groot, both on their published starters, with the same replay check.
+Whenever Flora and Fauna offers its Rocket option it takes it.
+
+| Scenario | Players | Seed | Outcome | Round | Decisions | Taken |
+|---|---:|---:|---|---:|---:|---:|
+| Rhino | 2 | 12 | PlayersLose | 5 | 92 | 2 |
+| Absorbing Man | 2 | 21 | PlayersLose | 6 | 85 | 1 |
 
 A scan of the public starter against every admitted scenario mode (39 modes,
 seeds 1–40, 1,560 games per policy) ends every game without a raise or

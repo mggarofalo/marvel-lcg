@@ -198,12 +198,15 @@ public sealed class RocketSignatureTests : CoreCardTestBase
         var pistol = RocketBoards.Upgrade(world, "16038");
 
         GrootBoards.Play(world, battery, []);
+        string? question = null;
         GrootBoards.Drive(world, prompt =>
         {
             Assert.DoesNotContain(prompt.Affordances, a => a.AnchorId == battery.ObjectId);
+            question = prompt.DisplayQuestion;
             return GrootBoards.Take(pistol)(prompt);
         });
 
+        Assert.Equal("Battery Pack: choose a TECH upgrade to move 1 charge counter to", question);
         Assert.Equal(1, RocketBoards.Charge(battery));
         Assert.Equal(1, RocketBoards.Charge(pistol));
         Assert.False(battery.Ready);

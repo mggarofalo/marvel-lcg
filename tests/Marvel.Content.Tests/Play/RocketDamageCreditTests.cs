@@ -58,9 +58,17 @@ public sealed class RocketDamageCreditTests : CoreCardTestBase
         var offered = new List<int>();
 
         RocketBoards.BasicAttack(world, minion);
-        GrootBoards.Drive(world, GrootBoards.Take(fury, offered));
+        var labels = new List<string>();
+        GrootBoards.Drive(world, prompt =>
+        {
+            labels.Add(prompt.Label);
+            return GrootBoards.Take(fury, offered)(prompt);
+        });
 
         Assert.Single(offered);
+        // The attack's response window names its conditions; with no excess dealt, the
+        // excess-damage condition is not among them.
+        Assert.DoesNotContain(labels, label => label.Contains(ExcessDamageTiming.ExcessDamageDealt, StringComparison.Ordinal));
         Assert.Equal(DeckType.EncounterDiscardPile, minion.Area.Type);
         Assert.True(rocket.Ready);
         Assert.Equal(3, rocket.Damage);

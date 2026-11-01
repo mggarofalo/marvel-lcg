@@ -15,6 +15,9 @@ internal static class AbilityCompletion
         applied <= 0 || requested <= 0 ? AbilityStructuralOutcome.None
         : applied >= requested ? AbilityStructuralOutcome.Full : AbilityStructuralOutcome.Partial;
 
+    private static AbilityStructuralOutcome Moved(IEnumerable<GameEvent> committed, string verb, long requested) =>
+        Amount(committed.OfType<CardsMoved>().Where(item => item.Verb == verb).Sum(item => (long)item.Cards.Count), requested);
+
     internal static AbilityStructuralOutcome? Observe(
         AbilityEffect effect, IReadOnlyList<GameEvent> events, int start, long requested)
     {
@@ -22,8 +25,8 @@ internal static class AbilityCompletion
         return ObserveFieldChanges(effect.OperationName(), committed.OfType<FieldSet>(), requested)
             ?? effect.OperationName() switch
         {
-            "placeOnBottomOfDeck" or "placeOnTopOfDeck" => Amount(committed.OfType<CardsMoved>()
-                .Where(item => item.Verb is "Place_On_Bottom" or "Place_On_Top").Sum(item => (long)item.Cards.Count), requested),
+            "placeOnBottomOfDeck" => Moved(committed, "Place_On_Bottom", requested),
+            "placeOnTopOfDeck" => Moved(committed, "Place_On_Top", requested),
             "placeThreat" => AbilityStructuralOutcome.None,
             "giveStatus" => Amount(committed.OfType<CardAttached>().Count(item => item.Verb == "Give_Status"), requested),
             "draw" => Amount(committed.OfType<CardsMoved>().Where(item => item.Verb == "Draw")
