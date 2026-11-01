@@ -133,7 +133,7 @@ public static class KangCentral
         if (op.Part == KangCentralPart.RevealVillain)
         {
             var villain = world.Cards.Single(card => card.Area.Type == DeckType.AsideDeck
-                && card.FaceId is "11006" or "11039");
+                && KangTable.IsThirdStage(card));
             Move(world, villain, world.AreaOf(DeckType.VillainArea), "11013a", events);
             Reveal.EnterPlay(world, world.Facts, villain, events);
             // Printed 11013a reveals III, then each stored Dominion. Queue this

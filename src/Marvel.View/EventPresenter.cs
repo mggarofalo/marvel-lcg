@@ -123,11 +123,11 @@ public static class EventPresenter
                 [changed.Card],
                 EventMotionKind.Move),
             PlayAreaJoined joined => (
-                $"{PlayArea(joined.PlayArea, world)} joined game area {joined.GameArea.ToString(CultureInfo.InvariantCulture)}.",
+                GameAreaEventPresentation.Joined(joined, world),
                 Array.Empty<int>(),
                 EventMotionKind.Move),
             PlayAreaDetached detached => (
-                $"{PlayArea(detached.PlayArea, world)} left game area {detached.GameArea.ToString(CultureInfo.InvariantCulture)}.",
+                GameAreaEventPresentation.Detached(detached, world),
                 Array.Empty<int>(),
                 EventMotionKind.Move),
             FieldSet set => (

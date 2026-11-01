@@ -159,7 +159,7 @@ internal static class ClientResponseValidation
         return world.Players.All(CompletePlayer)
             && world.GameAreas.All(CompleteGameArea)
             && world.Areas.All(CompleteArea)
-            && ClientTableValidation.KnownGameAreas(world)
+            && ClientGameAreaValidation.Valid(world)
             && ClientTableValidation.Complete(world)
             && EncounterGroupContract.IsValid(world);
     }

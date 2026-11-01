@@ -215,7 +215,10 @@ boost card (MARVEL-894 Q14). The villain phase's separated steps are in
 `CardLocationDescriptor` carry a `GameArea` id (protocol 44), null for a card in
 no game area such as central stage 2B. The card answer comes from
 `Places.GameAreaOf`, which also covers scenario cards whose association outlives
-an eliminated player's membership.
+an eliminated player's membership. Protocol 45 adds each game area's summary
+(`GameAreaFacts`: villains, main schemes, central or retained, label) and each
+seat's `OutOfReach` list, answered by `Places.CanAffect` for every visible card in
+play.
 
 **The engine tells a client each topology change once.** `World.Join` and
 `World.Detach` are operations on a play area and emit one `PlayAreaJoined` or

@@ -85,6 +85,8 @@ public sealed class KangFirstSplitReviewTests : CoreCardTestBase
 
         var order = Sequence.Work(world, Cards, world.Abilities, events)!;
         Assert.Equal(KangPhaseEndOrderOperation.Order, order.Trigger);
+        Assert.StartsWith("Kang (I) was defeated, so each player forms their own game area at the end of the phase.",
+            order.Affordances[0].Description, StringComparison.Ordinal);
         Sequence.Answer(world, Cards, world.Abilities, order, Decision.Take(0), events);
         Sequence.Finish(world, Cards, world.Abilities, events);
 

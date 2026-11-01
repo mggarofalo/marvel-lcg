@@ -101,6 +101,9 @@ public sealed class KangPhaseTransitions
     /// <summary>Whether a captured departure resolves at this phase ending.</summary>
     internal bool IsBoundary(PhaseStep owner) => Ready(owner).Length > 0;
 
+    /// <summary>The captured departures that resolve at this phase ending.</summary>
+    internal IReadOnlyList<KangDeparture> DueAt(PhaseStep owner) => Ready(owner);
+
     internal static void PreflightDeparture(World world, KangDeparture departure)
     {
         RequireParticipatingGroup(world, departure);

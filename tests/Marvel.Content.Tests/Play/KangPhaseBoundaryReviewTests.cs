@@ -60,6 +60,8 @@ public sealed class KangPhaseBoundaryReviewTests : CoreCardTestBase
         Assert.Equal(KangPhaseEndOrderOperation.Order, order.Trigger);
         Assert.Equal(world.FirstPlayer, order.Player);
         Assert.Equal(OrderOffers, order.Affordances.Select(offer => offer.Id));
+        Assert.StartsWith($"{EffectiveCards.Title(kang, world.Facts)} was defeated, so ", order.Affordances[0].Description,
+            StringComparison.Ordinal);
         Assert.Same(world.Seats[0].Hero, first.Area);
         Sequence.Answer(world, Cards, abilities, order, Decision.Take(kangFirst ? 0 : 1), events);
         Assert.Equal(kangFirst, ReferenceEquals(world.Seats[0].Hero, first.Area));

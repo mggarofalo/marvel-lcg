@@ -19,4 +19,12 @@ namespace Marvel.Rules.Events;
 /// membership before removing it and emits the event directly.
 /// </para>
 /// </remarks>
-public sealed record PlayAreaDetached(int PlayArea, int GameArea) : GameEvent;
+public sealed record PlayAreaDetached(int PlayArea, int GameArea) : GameEvent
+{
+    /// <summary>
+    /// The prior game area's play areas just after this change, in seat order with <c>-1</c> for
+    /// the villain's: occurrence-time presentation evidence, which the session journal omits.
+    /// </summary>
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<int>? Members { get; init; }
+}

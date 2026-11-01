@@ -105,6 +105,7 @@ public static class WorldTopology
         destination.Add(area);
         events.Add(new PlayAreaJoined(area.Player, destination.Id)
         {
+            Members = Members(destination),
             Trigger = trigger,
             Verb = "Join",
         });
@@ -145,6 +146,7 @@ public static class WorldTopology
 
         events.Add(new PlayAreaDetached(area.Player, existing.Id)
         {
+            Members = Members(existing),
             Trigger = trigger,
             Verb = "Detach",
         });
@@ -289,4 +291,5 @@ public static class WorldTopology
         return card;
     }
 
+    private static int[] Members(GameArea area) => [.. area.PlayAreas.Select(play => play.Player).Order()];
 }

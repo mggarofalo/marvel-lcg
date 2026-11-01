@@ -53,10 +53,19 @@ public sealed class PresentationAssemblyPolicyTests
             "Marvel.Rules.Events.WhenRevealedCanceled",
             // Passive engine-owned attack lifetime and participants; no timing reconstruction.
             "Marvel.Rules.Play.ActiveAttack",
+            // Engine-owned game-area summaries and Kang progress facts, copied without recomputing them.
+            "Marvel.Rules.Play.GameAreaFacts",
+            "Marvel.Rules.Play.GameAreaSummary",
             // Public area identity from the engine-owned typed auxiliary deck.
             "Marvel.Rules.Play.InvocationDeck",
+            "Marvel.Rules.Play.KangNote",
+            "Marvel.Rules.Play.KangNoteKind",
+            "Marvel.Rules.Play.KangPendingDeparture",
+            "Marvel.Rules.Play.KangTable",
+            "Marvel.Rules.Play.KangTableFacts",
             "Marvel.Rules.Play.Outcome",
             "Marvel.Rules.Play.PlayerLossReason",
+            "Marvel.Rules.Play.VillainPhaseFocus",
             "Marvel.Rules.Prompts.Affordance",
             "Marvel.Rules.Prompts.AffordanceAnchorKind",
             "Marvel.Rules.Prompts.ConditionalResourceBonus",
@@ -278,11 +287,18 @@ public sealed class PresentationAssemblyPolicyTests
             "Marvel.View.CardFaceDescriptor",
             "Marvel.View.EventPresentation",
             "Marvel.View.GameAreaDescriptor",
+            // Validates that Kang facts name only listed cards, seats, game areas and piles.
+            "Marvel.View.KangDepartureDescriptor",
+            "Marvel.View.KangNoteDescriptor",
+            "Marvel.View.KangTableDescriptor",
+            // Validates that each note kind is defined.
+            "Marvel.Rules.Play.KangNoteKind",
             "Marvel.View.OutcomeDescription",
             "Marvel.View.PendingSituationDescriptor",
             "Marvel.View.PlayerDescriptor",
             "Marvel.View.ViewerClaim",
             "Marvel.View.TableContextDescriptor",
+            "Marvel.View.VillainPhaseFocusDescriptor",
             "Marvel.View.WorldDescriptor");
     }
 

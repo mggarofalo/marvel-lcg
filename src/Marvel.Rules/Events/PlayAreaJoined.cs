@@ -21,4 +21,12 @@ namespace Marvel.Rules.Events;
 /// rule establishes the operation, not its JSON representation.
 /// </para>
 /// </remarks>
-public sealed record PlayAreaJoined(int PlayArea, int GameArea) : GameEvent;
+public sealed record PlayAreaJoined(int PlayArea, int GameArea) : GameEvent
+{
+    /// <summary>
+    /// The destination game area's play areas just after this change, in seat order with <c>-1</c> for
+    /// the villain's: occurrence-time presentation evidence, which the session journal omits.
+    /// </summary>
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<int>? Members { get; init; }
+}

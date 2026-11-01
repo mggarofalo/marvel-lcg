@@ -222,6 +222,17 @@ emitted-only events backed by rule-cited state tests.
 These events name public topology and survive visibility filtering. They do not
 expose a concealed card or private seat state.
 
+Each carries `Members`: the area's play areas just after the change, in seat
+order with `-1` for the villain's. This is occurrence-time presentation evidence,
+like `Subjects`, and the session journal omits it, so recorded event lists and
+replay are unchanged. View names the seats from it rather than from the end of
+the response, so when two groups join one area in a single response each event
+names the area as it then stood: "Spider-Man's play area joined Black Widow's
+game area", "… formed its own game area", "… joined the villain's game area",
+and at Kang's split, "The villain play area left the shared game area; the
+players are now in separate game areas." An event without members names no one
+("joined a game area"). The wording is our choice.
+
 ## Fields
 
 `FieldSet` names the card, field, previous value and next value. A missing value

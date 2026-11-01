@@ -24,9 +24,9 @@ internal static class KangJoinProcedure
                 new Affordance(area.Id, "Join_Game_Area", -1, world.FirstPlayer, $"game area {area.Id}")
                 {
                     AnchorKind = AffordanceAnchorKind.Unspecified,
-                    DisplayLabel = $"Join game area {area.Id}",
-                    CommitLabel = $"Join game area {area.Id}",
-                    Description = "Move the entire departing group into this game area after unique copies are reconciled.",
+                    DisplayLabel = $"Join {GameAreaFacts.Of(world, area).Label}",
+                    CommitLabel = $"Join {GameAreaFacts.Of(world, area).Label}",
+                    Description = $"Move {KangDepartureNames.Group(world, operation.Departure)} into this game area after unique copies are reconciled.",
                 }).ToArray());
         }
         var conflicts = ConflictingCards(world, operation);
@@ -75,7 +75,7 @@ internal static class KangJoinProcedure
             TimingPriority.Continuous, KangJoinOperation.Join, question, false, offers)
         {
             DisplayQuestion = question,
-            Description = "Resolve the departing Kang's whole-group join at the end of the phase. The first player records the agreed choice or resolves disagreement.",
+            Description = $"{KangDepartureNames.Departure(world, operation.Departure)} The first player records the agreed choice or resolves disagreement.",
             ContextCardIds = [operation.Departure.Defeated.Card],
         };
 
@@ -84,7 +84,7 @@ internal static class KangJoinProcedure
     // with no players left combines straight into an area with players: our choice, since
     // its components need a player area to carry them and they would reach one at that
     // other area's own departure anyway.
-    private static GameArea[] Destinations(World world, KangDeparture departure) =>
+    internal static GameArea[] Destinations(World world, KangDeparture departure) =>
         [.. world.GameAreas.Where(area => !ReferenceEquals(area, departure.Source)
             && (departure.Group.Count > 0 ? KangCentral.Remains(world, area)
                 : area.PlayAreas.Any(play => play.IsPlayers))).OrderBy(area => area.Id)];

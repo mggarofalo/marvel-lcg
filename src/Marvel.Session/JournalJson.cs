@@ -28,7 +28,12 @@ public static class JournalJson
     public static JsonElement Event(GameEvent happened)
     {
         ArgumentNullException.ThrowIfNull(happened);
-        return JsonSerializer.SerializeToElement<GameEvent>(
-            happened with { Subjects = null }, EventJson.Options);
+        GameEvent bare = happened switch
+        {
+            PlayAreaJoined joined => joined with { Members = null },
+            PlayAreaDetached detached => detached with { Members = null },
+            _ => happened,
+        };
+        return JsonSerializer.SerializeToElement(bare with { Subjects = null }, EventJson.Options);
     }
 }
