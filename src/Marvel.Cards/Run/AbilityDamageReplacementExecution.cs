@@ -74,17 +74,10 @@ internal static class AbilityDamageReplacementExecution
     private static void Continue(AbilityResolutionExecution resolver, World world,
         DamageReplacement replacement, List<GameEvent> events)
     {
-        if (replacement.CurrentAmount > 0 && PlayerAttackReflection.For(world, replacement.Target) is { } reflection)
+        if (!Reflect(world, replacement, events))
         {
-            long amount = replacement.CurrentAmount;
-            replacement.Replace(replacement.Execution, 0);
-            var result = DamagePlacement.Resolve(world, world.Facts,
-                new(reflection.Source, reflection.Recipient, amount, reflection.Trigger, "Damage"), events);
-            if (!result.IsComplete)
-            {
-                Suspend(world, replacement, AbilityContinuationStage.Resume, events);
-                return;
-            }
+            Suspend(world, replacement, AbilityContinuationStage.Resume, events);
+            return;
         }
         while (replacement.CurrentAmount > 0)
         {
@@ -106,7 +99,19 @@ internal static class AbilityDamageReplacementExecution
             Suspend(world, replacement, AbilityContinuationStage.Choose, events);
             return;
         }
+        if (replacement.PreventsAll) replacement.PreventAll(replacement.Execution);
         replacement.Execution.Finish(events);
+    }
+
+    /// <summary>Prevents attack damage reflected to the attacker and deals it there; false while that damage is unfinished.</summary>
+    private static bool Reflect(World world, DamageReplacement replacement, List<GameEvent> events)
+    {
+        if (replacement.CurrentAmount <= 0 || replacement.PreventsAll
+            || PlayerAttackReflection.For(world, replacement.Target) is not { } reflection) return true;
+        long amount = replacement.CurrentAmount;
+        replacement.PreventAll(replacement.Execution);
+        return DamagePlacement.Resolve(world, world.Facts,
+            new(reflection.Source, reflection.Recipient, amount, reflection.Trigger, "Damage"), events).IsComplete;
     }
 
     // Equivalent mutant: forced replacements have already triggered when this list is
@@ -129,6 +134,7 @@ internal static class AbilityDamageReplacementExecution
     private static List<PendingAbility> Pending(AbilityResolutionExecution resolver,
         World world, DamageReplacement replacement)
     {
+        if (replacement.PreventsAll) return [];
         var authored = resolver.Waiting(world, replacement.Execution.Occurrence, WindowKind.Interrupt);
         var native = GreenGoblinDamageReplacement.Waiting(world, replacement);
         return AbilityOfferHandles.Assign(native is { } pending

@@ -57,7 +57,7 @@ internal sealed class DamageResolution(World world, ICardFacts facts, DamageRequ
     {
         prevention ??= DirectDamagePrevention.Begin(world, request, replacement!,
             DamagePlacement.PrepareAfterReplacement(world, facts,
-                request with { Amount = replacement!.ResolvedAmount }, events));
+                replacement!.Resolve(request), events));
         if (prevention.IsComplete) return prevention.Placement;
         preventionSuspended = true;
         return null;

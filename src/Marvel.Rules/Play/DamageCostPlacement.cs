@@ -24,7 +24,7 @@ internal sealed class DamageCostPlacement(World world, ICardFacts facts, DamageR
         prevention ??= DirectDamagePrevention.Begin(world, request, replacement,
             request.Target.Incarnation == incarnation && DeckTypes.IsInPlay(request.Target.Area.Type)
                 ? DamagePlacement.PrepareAfterReplacement(world, facts,
-                    request with { Amount = replacement.ResolvedAmount }, events)
+                    replacement.Resolve(request), events)
                 : new Damage.PlacedDamage(request.Target, 0, 0));
         if (!prevention.IsComplete) { Suspend(events); return; }
         var damage = prevention.Placement;

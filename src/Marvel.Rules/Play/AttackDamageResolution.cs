@@ -126,7 +126,10 @@ internal sealed class AttackDamageResolution
         controller = kind == CardKind.Ally ? request.Target.Area.PlayArea.Player : -1;
         var assignment = new DamageRequest(request.Source, request.Target, replacement.ResolvedAmount,
             request.Trigger, request.Verb)
-        { PreventAllDamage = request.EnemyAttack?.PreventAllDamage == true, FromAttack = true };
+        {
+            PreventAllDamage = request.EnemyAttack?.PreventAllDamage == true, FromAttack = true,
+            PreventedAtStepOne = replacement.PreventedAmount,
+        };
         if (spillOnly)
         {
             // rr:overkill.2: excess is "damage from an attack" and has its own recipient.

@@ -64,10 +64,18 @@ public static class DamagePlacement
         var result = world.Agenda.Executions.RunBatch(occurrence, entry =>
         {
             replacement = new DamageReplacement(request, entry)
-            { ExcessDealer = excessDealer is null ? null : OccurrenceCard.Capture(excessDealer, world.Facts) };
-            if (request.Amount <= 0 || !world.DamageAbilities.CanTakeDamage(world, request.Target, request.Source) || PlayerAttackPrevention.Prevents(world, request))
+            {
+                ExcessDealer = excessDealer is null ? null : OccurrenceCard.Capture(excessDealer, world.Facts),
+                PreventsAll = PlayerAttackPrevention.Prevents(world, request),
+            };
+            if (request.Amount <= 0 || !world.DamageAbilities.CanTakeDamage(world, request.Target, request.Source))
             {
                 replacement.Replace(entry, 0);
+                return entry.Finish([]);
+            }
+            if (replacement.PreventsAll && excessDealer is null)
+            {
+                replacement.PreventAll(entry);
                 return entry.Finish([]);
             }
             return world.DamageAbilities.WouldBeDealt(world, entry, replacement);
@@ -90,7 +98,12 @@ public static class DamagePlacement
             amount, !request.IgnoresTough && amount > 0 && Statuses.Has(world, target, Statuses.Tough));
         if (assignment.Dealt <= 0)
         {
-            return new PlacedDamage(target, 0, 0);
+            // rr:prevent.1.3: damage an attack-wide prevention removed at step 1 is
+            // still dealt; ruling a806907d1743e0d1 leaves no damage for Tough to prevent.
+            return request.PreventedAtStepOne > 0
+                ? new PlacedDamage(target, request.PreventedAtStepOne, 0)
+                { RemainingHealth = Math.Max(0, Health(world, facts, target) - target.Damage) }
+                : new PlacedDamage(target, 0, 0);
         }
 
         // `rr:tough.2`: "if a character with a tough status card would take any

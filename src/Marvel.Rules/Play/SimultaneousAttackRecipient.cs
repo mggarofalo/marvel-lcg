@@ -48,7 +48,8 @@ internal sealed class SimultaneousAttackRecipient(AttackDamageRequest request, D
         int controller = kind == CardKind.Ally ? target.Area.PlayArea.Player : -1;
         var placement = IsCurrent && replacement is { IsComplete: true }
             ? DamagePlacement.PrepareAfterReplacement(world, facts,
-                new DamageRequest(request.Source, target, replacement.ResolvedAmount, request.Trigger, request.Verb), events)
+                new DamageRequest(request.Source, target, replacement.ResolvedAmount, request.Trigger, request.Verb)
+                { PreventedAtStepOne = replacement.PreventedAmount }, events)
             : new Damage.PlacedDamage(target, 0, 0);
         prepared = new(placement, remaining, kind, controller, incarnation, AttackDamagePolicy.Capture(world, request));
     }

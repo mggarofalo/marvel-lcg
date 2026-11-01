@@ -44,7 +44,7 @@ internal sealed class SimultaneousDirectRecipient(DamageRequest request) : ISimu
         if (prevention is not null) { prepared = prevention.Placement; return; }
         prepared = IsCurrent && replacement is { IsComplete: true }
             ? DamagePlacement.PrepareAfterReplacement(world, facts,
-                request with { Amount = replacement.ResolvedAmount }, events)
+                replacement.Resolve(request), events)
             : new Damage.PlacedDamage(request.Target, 0, 0);
     }
     internal void Place(World world, ICardFacts facts, List<GameEvent> events)

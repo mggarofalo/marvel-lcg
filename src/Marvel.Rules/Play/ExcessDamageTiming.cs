@@ -25,8 +25,9 @@ public static class ExcessDamageTiming
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(source);
-        // Equivalent mutant: no admitted card is in play under a player other than its
-        // owner, so reading the owner alone survives. A board can name an owner with no seat.
+        // A card in play is credited to its controller, which differs from its owner for a
+        // card played under another player's control (Electrostatic Armor, 10031). Out of
+        // play, the owner is credited. A board can name an owner with no seat.
         int player = DeckTypes.IsInPlay(source.Area.Type) && source.Area.PlayArea.IsPlayers
             ? source.Area.PlayArea.Player : source.Owner;
         if (player < 0 || player >= world.Seats.Count) return -1;
@@ -48,9 +49,6 @@ public static class ExcessDamageTiming
     internal static void Record(World world, Card source, Damage.PlacedDamage placed, long remaining,
         Occurrence? occurrence, List<GameEvent> events)
     {
-        // Equivalent mutant: no admitted Rocket Raccoon path deals 0 damage or damages a
-        // friendly character, so loosening either test survives. The condition is read
-        // only through instances with excess, so adding it unconditionally survives.
         if (placed.Dealt <= 0 || !CardKinds.IsEnemy(EffectiveCards.Kind(placed.Target, world.Facts))) return;
         int player = IdentityPlayer(world, source);
         if (player < 0) return;
