@@ -43,4 +43,15 @@ public sealed class GameAreaColumnLayoutTests
         Assert.Equal(108, deck.End.X - discard.Position.X, 3);
         Assert.True(stage.End.Y <= discard.Position.Y);
     }
+
+    [Theory]
+    [InlineData(1, 1)]
+    [InlineData(2, 2)]
+    [InlineData(4, 3)]
+    public void TheActingPipsCountTheVillainPhaseStepsReached(int step, int pips) =>
+        Assert.Equal(pips, GameAreaTableChrome.StepIndex(step));
+
+    [Fact]
+    public void AStepWithNoFocusHasNoPips() =>
+        Assert.Throws<ArgumentOutOfRangeException>(() => GameAreaTableChrome.StepIndex(3));
 }
