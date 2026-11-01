@@ -30,7 +30,7 @@ internal static class CardLiveStateRendering
         {
             var cell = new VBoxContainer {
                 MouseFilter = Control.MouseFilterEnum.Ignore };
-            if (StatusCardBadge.Supports(entry.Name)) cell.AddChild(StatusCardBadge.Create(entry.Name, entry.Text, compact));
+            if (StatusBadge.Supports(entry.Name)) cell.AddChild(StatusBadge.Create(entry.Name, entry.Text, compact));
             else AddLabel(cell, entry.Text, $"LiveStatus{grid.GetChildCount()}", compact ? 12 : 16).AutowrapMode = TextServer.AutowrapMode.Off;
             grid.AddChild(cell);
         }

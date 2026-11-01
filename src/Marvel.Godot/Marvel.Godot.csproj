@@ -32,6 +32,8 @@
                       LogicalName="Marvel.Godot.Assets.Cursors.%(Filename).svg" />
     <EmbeddedResource Include="assets/icons/card/*.svg"
                       LogicalName="Marvel.Godot.Assets.CardIcons.%(Filename).svg" />
+    <EmbeddedResource Include="assets/icons/table/*.svg"
+                      LogicalName="Marvel.Godot.Assets.TableIcons.%(Filename).svg" />
     <EmbeddedResource Include="assets/art/*.svg"
                       LogicalName="Marvel.Godot.Assets.Art.%(Filename).svg" />
     <EmbeddedResource Include="assets/icons/resources/*.svg"
