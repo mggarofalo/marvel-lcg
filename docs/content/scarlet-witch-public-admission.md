@@ -110,6 +110,15 @@ the policy-coverage checks were met: the hero was defeated before playing a
 card, attacking or acting in every seat. Those are complete games, not engine
 failures.
 
+## Replay identity
+
+The replay identity moves to `engine-replay-v34`. Projecting a payment
+declaration onto an offer changes the prompt Tackle (05015) and Concussive Blow
+(05031) produce against a stalwart or already-statused enemy. Boost-icon counts
+complete inline when no interrupt could observe them, the player-attack end
+expires only effects bounded by that attack, and the other new vocabulary is
+read only by Scarlet Witch rows, so no other admitted outcome changes.
+
 ## Native evidence
 
 No interaction is materially new. A count opens an ordinary interrupt window;
