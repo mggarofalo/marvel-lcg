@@ -11,9 +11,9 @@ internal static class ClientKangValidation
     internal static bool Valid(WorldDescriptor world, KangTableDescriptor kang, Known known)
     {
         if (kang.Stage is < 1 or > 3 || kang.RemainingLocalKangs < 0 || kang.StoredDominions < 0) return false;
-        // The split deals one Kang (II) per participating player, and none enters play any other way.
-        if (kang.LocalKangsDealt < 0 || kang.LocalKangsDealt > world.Players.Count
-            || kang.RemainingLocalKangs > kang.LocalKangsDealt) return false;
+        // The split deals one Kang (II) per participating player, and none enters play any other way;
+        // a negative count fails the second test, since the remaining count is not negative.
+        if (kang.LocalKangsDealt > world.Players.Count || kang.RemainingLocalKangs > kang.LocalKangsDealt) return false;
         if (kang.StartingPlayers != world.Players.Count || !ValidReferences(world, kang, known)) return false;
         return Zone(world, kang.EncounterDeck, "EncounterDeck") && Zone(world, kang.EncounterDiscard, "EncounterDiscardPile");
     }
