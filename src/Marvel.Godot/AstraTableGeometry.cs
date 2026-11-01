@@ -10,6 +10,14 @@ internal sealed record AstraTableGeometry(
     internal bool HasAllies { get; init; }
     internal bool HasEncounterGroups { get; init; }
     internal bool HasGameAreas { get; init; }
+    internal InterfaceScale ReadingScale { get; init; } = InterfaceScale.Percent100;
+
+    /// <summary>The twelve-column grid over this table's actual width.</summary>
+    internal TableGrid Grid => TableGrid.For(Width, ReadingScale);
+
+    // A separated table lays its far side on the grid: the seat rail takes columns 0–1, the game
+    // areas and the shared column between them take 2–9, and engaged enemies take 10–11.
+    internal Rect2 GameAreaBand => Band(2, 8);
     internal bool HasScenarioColumns => HasEncounterGroups || HasGameAreas;
     internal const float ReferenceWidth = 1320;
     internal const float ReferenceHeight = 962;
@@ -20,8 +28,10 @@ internal sealed record AstraTableGeometry(
     internal Rect2 MainScheme => Scale(new Rect2(194, 34, 230, 236));
     internal Rect2 Villain => Scale(new Rect2(434, 34, 178, 248));
     internal Rect2 SideSchemes => Scale(new Rect2(626, 34, 300, 248));
-    internal Rect2 EngagedEnemies => Scale(new Rect2(944, 34, 354, 248));
-    internal Rect2 SeatStrip => Scale(new Rect2(22, 214, 158, 164));
+    internal Rect2 EngagedEnemies => HasGameAreas ? Band(10, 2) : Scale(new Rect2(944, 34, 354, 248));
+    internal Rect2 SeatStrip => HasGameAreas
+        ? new Rect2(Band(0, 2).Position.X, VillainMat.Position.Y + 8, Band(0, 2).Size.X, VillainMat.Size.Y - 16)
+        : Scale(new Rect2(22, 214, 158, 164));
     // A column-filled mat leaves a seam below it: causal references, then the current situation up
     // to the source-tableau column, then the activity line above that column. The source tableau
     // starts below the seam rather than under it.
@@ -81,6 +91,12 @@ internal sealed record AstraTableGeometry(
     }
 
     private float HandTop => Height - 58 - (int)SpatialCardMetrics.TableScale(InterfaceScale.Percent100, Height) / 100f * 218 - 14;
+    private Rect2 Band(int first, int count)
+    {
+        (float x, float width) = Grid.Span(first, count);
+        return new Rect2(x, VillainMat.Position.Y + 4, width, VillainMat.Size.Y - 8);
+    }
+
     private Rect2 Scale(Rect2 value) => new(ScaleX(value.Position.X), ScaleY(value.Position.Y), ScaleX(value.Size.X), ScaleY(value.Size.Y));
     private float ScaleX(float value) => value * Width / ReferenceWidth;
     private float ScaleY(float value) => value * Height / ReferenceHeight;

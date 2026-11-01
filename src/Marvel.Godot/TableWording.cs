@@ -43,6 +43,16 @@ internal static class TableWording
             + "joins another game area at the end of the phase. It is better to let Kang (II) complete his main scheme "
             + "than to let Kang (II) defeat your hero."),
         [TableFact.SeparatedRules] = new("rules", "Rules", "Show the rules that apply while the table is separated."),
+        [TableFact.ActiveSeat] = new("acting", "Active", "It is this player's turn."),
+        [TableFact.AnsweringSeat] = new("answering", "Answering", "This player must answer the current decision."),
+        [TableFact.YourSeat] = new("your_area", "Your seat", "The seat you play."),
+        [TableFact.PublicFocus] = new("shared", "Public focus", "The table is showing this player's public workspace."),
+        [TableFact.HeroForm] = new("", "Hero", "This player's identity is in hero form."),
+        [TableFact.AlterEgoForm] = new("", "Alter ego", "This player's identity is in alter-ego form."),
+        [TableFact.Engaged] = new("", "Engaged", "Enemies engaged with this player."),
+        [TableFact.DecisionRequired] = new("", "Required", "This choice must be answered to continue."),
+        [TableFact.DecisionOptional] = new("", "Optional", "This choice may be declined."),
+        [TableFact.DecisionCause] = new("", "Cause", "This card's effect caused the decision."),
     };
 
     /// <summary>The wording of one fact.</summary>

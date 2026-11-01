@@ -24,10 +24,8 @@ internal static class Chip
         row.AddThemeConstantOverride("separation", VisualSystem.Spacing(scale).ExtraSmall);
         if (wording.Icon.Length > 0)
             row.AddChild(TableIcon.Create(wording.Icon, TableBlockStyle.Icon(scale), ClientTheme.ToGodot(VisualSystem.Palette.Text)));
-        Label label = TableBlockStyle.Line("Text", Text(wording, count), scale, VisualSystem.Palette.Text);
-        label.ClipText = false;
+        Label label = TableBlockStyle.Whole("Text", Text(wording, count), scale, VisualSystem.Palette.Text);
         label.MouseFilter = Control.MouseFilterEnum.Ignore;
-        label.SizeFlagsHorizontal = Control.SizeFlags.ShrinkBegin;
         row.AddChild(label);
         chip.AddChild(row);
         return chip;

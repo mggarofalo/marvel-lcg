@@ -29,9 +29,8 @@ internal static class Tracker
         };
         row.AddThemeConstantOverride("separation", spacing.Small);
         row.SetMeta("tracker_reading", Reading(state));
-        Label label = TableBlockStyle.Line("Label", state.Label, scale, VisualSystem.Palette.Text);
-        label.ClipText = false;
-        label.SizeFlagsHorizontal = Control.SizeFlags.ShrinkBegin;
+        Label label = TableBlockStyle.Whole("Label", state.Label, scale, VisualSystem.Palette.Text);
+        label.Visible = state.Label.Length > 0;
         label.MouseFilter = Control.MouseFilterEnum.Ignore;
         label.AddThemeFontSizeOverride("font_size", VisualSystem.Type(scale).Heading);
         row.AddChild(label);

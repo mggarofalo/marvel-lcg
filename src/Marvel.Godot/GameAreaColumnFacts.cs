@@ -2,7 +2,7 @@ using Marvel.View;
 
 namespace Marvel.Godot;
 
-/// <summary>The typed facts that mark one game-area column for the inspected seat, and the sentences explaining them.</summary>
+/// <summary>The facts one game-area column states for the inspected seat, and the tooltip that explains them.</summary>
 /// <param name="board">The published board.</param>
 /// <param name="area">The game area the column shows.</param>
 /// <param name="seat">The inspected seat.</param>
@@ -14,42 +14,48 @@ internal sealed class GameAreaColumnFacts(BoardPresentation board, GameAreaDescr
     private readonly KangDepartureDescriptor[] departures =
         [.. (board.Kang?.Departures ?? []).Where(item => item.SourceGameArea == area.Id)];
 
-    private bool Acting => board.Kang?.Acting?.GameArea == area.Id;
+    private VillainPhaseFocusDescriptor? Acting => board.Kang?.Acting is { } acting && acting.GameArea == area.Id ? acting : null;
 
     private bool OutOfReach => placed.Any(reach.Contains);
 
-    /// <summary>The column's markers, in display order.</summary>
-    internal GameAreaMarker[] Markers()
+    // A leaving group's candidate destinations are lit for as long as its departure is pending,
+    // which spans the join prompt that chooses among them.
+    private bool Destination => (board.Kang?.Departures ?? []).Any(item => item.Destinations.Contains(area.Id));
+
+    /// <summary>The step resolving here, if this area is acting.</summary>
+    internal int? ActingStep => Acting?.Step;
+
+    /// <summary>The column's facts, in display order.</summary>
+    internal TableFact[] Facts()
     {
-        var markers = new List<GameAreaMarker>();
-        if (area.PlayAreas.Contains(seat)) markers.Add(GameAreaMarker.Yours);
-        if (Acting) markers.Add(GameAreaMarker.Acting);
-        if (area.Retained) markers.Add(GameAreaMarker.Retained);
-        if (departures.Length > 0) markers.Add(GameAreaMarker.Departing);
-        if (OutOfReach) markers.Add(GameAreaMarker.OutOfReach);
-        return [.. markers];
+        var facts = new List<TableFact>();
+        if (area.PlayAreas.Contains(seat)) facts.Add(TableFact.YourArea);
+        if (Acting is not null) facts.Add(TableFact.Acting);
+        if (area.Retained) facts.Add(TableFact.Retained);
+        if (departures.Length > 0) facts.Add(TableFact.Departing);
+        if (Destination) facts.Add(TableFact.Destination);
+        if (OutOfReach) facts.Add(TableFact.OutOfReach);
+        return [.. facts];
     }
 
     /// <summary>
-    /// The engine sentences behind the markers, most urgent first: why the area is out of reach, what is
-    /// acting and who departs, then the notes anchored to this area's schemes.
+    /// The full explanation, most urgent first: why the area is out of reach, what is acting and who
+    /// departs, then the rules anchored to this area's schemes.
     /// </summary>
-    internal string[] Details()
+    internal string Tooltip(string title)
     {
-        var details = new List<string>();
-        if (OutOfReach) details.Add(OutOfReachReason());
-        if (Acting) details.Add(TableWording.For(TableWording.Step(board.Kang!.Acting!.Step)).Tooltip);
-        details.AddRange(departures.Select(Departure));
-        details.AddRange(GameAreaTableProjection.AnchoredNotes(board, area.MainSchemes));
-        return [.. details];
+        var lines = new List<string> { title };
+        if (OutOfReach) lines.Add(TableWording.For(TableWording.Fact(Reason())).Tooltip);
+        if (Acting is { } acting)
+            lines.Add($"{TableWording.For(TableWording.Step(acting.Step)).Tooltip} ({GameAreaTableProjection.Names(board, [acting.Seat])[0]})");
+        lines.AddRange(departures.Select(Departure));
+        if (Destination) lines.Add(TableWording.For(TableFact.Destination).Tooltip);
+        lines.AddRange(GameAreaTableProjection.AnchoredRules(board, area.MainSchemes));
+        return string.Join("\n", lines);
     }
 
-    private string OutOfReachReason()
-    {
-        ReachReason reason = board.Players.FirstOrDefault(item => item.Seat == seat)?.OutOfReachReason
-            ?? ReachReason.OtherGameArea;
-        return TableWording.For(TableWording.Fact(reason)).Tooltip;
-    }
+    private ReachReason Reason() => board.Players.FirstOrDefault(item => item.Seat == seat)?.OutOfReachReason
+        ?? ReachReason.OtherGameArea;
 
     private string Departure(KangDepartureDescriptor departure) => TableWording.Departure(
         GameAreaTableProjection.Title(board, departure.Villain), GameAreaTableProjection.Names(board, departure.Seats),

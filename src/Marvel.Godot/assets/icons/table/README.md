@@ -16,5 +16,6 @@ distinguishes one fact from another.
 | `your_area.svg` | A person: the inspected seat plays here. |
 | `dominion.svg` | A diamond: Kang's Dominions stored under stage 4A. |
 | `rules.svg` | An information mark: the rules that apply now. |
+| `answering.svg` | A speech mark: this seat must answer the current decision. |
 
 They contain no external art. `TableWording` names which icon states which fact.

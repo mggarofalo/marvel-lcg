@@ -18,9 +18,9 @@ internal sealed class CompleteDecisionSheet : IDisposable
     private int focusGeneration;
     private Label notice = null!;
     private Label selectedSummary = null!;
-    private Label? resolution;
     private Main main = null!;
     private Node inspectorParent = null!;
+    private Control? tableDraft;
 
     internal static CompleteDecisionSheet Open(DecisionPanel panel, Control opener)
     {
@@ -48,6 +48,7 @@ internal sealed class CompleteDecisionSheet : IDisposable
     {
         AddBackdrop();
         AddFrame();
+        HideTableDraft();
         overlay.Resized += Fit;
         Fit();
         Callable.From(FocusFirstChoice).CallDeferred();
@@ -57,7 +58,7 @@ internal sealed class CompleteDecisionSheet : IDisposable
     {
         var backdrop = new ColorRect
         {
-            Color = new Color(0.02f, 0.04f, 0.06f, 0.4f), MouseFilter = Control.MouseFilterEnum.Stop,
+            Color = new Color(0.02f, 0.04f, 0.06f, 0.72f), MouseFilter = Control.MouseFilterEnum.Stop,
         };
         overlay.AddChild(backdrop);
         backdrop.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
@@ -88,31 +89,14 @@ internal sealed class CompleteDecisionSheet : IDisposable
             Name = "CompleteChoicesContent", ThemeTypeVariation = GodotThemeVariations.TightStack,
         };
         frame.AddChild(content);
-        var header = new HBoxContainer();
-        header.AddChild(Heading());
         var close = new Button { Name = "CloseChoiceSheet", Text = "Return to table" };
         openerFallback = close;
         close.Pressed += Close;
-        header.AddChild(close);
-        content.AddChild(header);
+        content.AddChild(DecisionSheetHead.Create(panel, main, close));
         notice = DecisionPanel.Text(string.Empty, GodotThemeVariations.Body, wrap: true);
         notice.Name = "DecisionRecoveryNotice";
         notice.Visible = false;
         content.AddChild(notice);
-        if (panel.composer is { } composer && panel.world is { } world)
-        {
-            Marvel.View.PromptPresentation prompt = Marvel.View.PromptPresentation.From(composer.Prompt, world);
-            content.AddChild(DecisionPanel.Text(
-                $"{prompt.Context()} · {prompt.Requirement()}",
-                GodotThemeVariations.Caption, wrap: true));
-            if (!DecisionCardChoices.IsChoice(composer.Prompt))
-                content.AddChild(DecisionPanel.Text(prompt.Heading, GodotThemeVariations.Heading, wrap: true));
-            if (!string.IsNullOrWhiteSpace(prompt.Resolution()))
-            {
-                resolution = DecisionPanel.Text(prompt.Resolution(), GodotThemeVariations.Body, wrap: true);
-                content.AddChild(resolution);
-            }
-        }
         selectedSummary = DecisionPanel.Text(string.Empty, GodotThemeVariations.Body, wrap: true);
         selectedSummary.Name = "CompleteChoiceSummary";
         content.AddChild(selectedSummary);
@@ -125,45 +109,17 @@ internal sealed class CompleteDecisionSheet : IDisposable
         panel.SetCompleteChoicesVisibility(true);
     }
 
+    // The head already states the engine's instruction, so the draft summary leaves it out.
     private void RefreshSummary(DecisionProgressPresentation? _)
     {
         var prompt = panel.composer is { } composer && panel.world is { } world
             ? Marvel.View.PromptPresentation.From(composer.Prompt, world) : null;
-        selectedSummary.Text = TableDraftSummary.From(panel.composer, prompt, panel.world) ?? string.Empty;
+        selectedSummary.Text = TableDraftSummary.From(panel.composer, prompt, panel.world,
+            shownInstruction: prompt?.Frame.Instruction) ?? string.Empty;
         selectedSummary.Visible = selectedSummary.Text.Length > 0;
-        // The selected action already includes its description. Keep an independent
-        // resolution only when it adds meaning beyond that complete draft summary.
-        if (resolution is not null)
-            resolution.Visible = !selectedSummary.Text.Contains(resolution.Text, StringComparison.Ordinal);
     }
 
     private Control openerFallback = null!;
-
-    private Control Heading()
-    {
-        if (panel.composer is { } composer && panel.world is { } world)
-        {
-            var prompt = Marvel.View.PromptPresentation.From(composer.Prompt, world);
-            if (prompt.ContextCards.Count == 1)
-            {
-                var title = new Button { Name = "DecisionSource", Text = prompt.ContextCards[0].Title,
-                    Flat = true, Alignment = HorizontalAlignment.Left, AutowrapMode = TextServer.AutowrapMode.WordSmart,
-                    SizeFlagsHorizontal = Control.SizeFlags.ExpandFill, TooltipText = "Inspect card" };
-                title.Pressed += () => main.boardController.ShowCardInspector(prompt.ContextCards[0], title, pinned: true);
-                return title;
-            }
-        }
-        return new Label { Text = Title(), SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-            ThemeTypeVariation = GodotThemeVariations.Heading, AutowrapMode = TextServer.AutowrapMode.WordSmart };
-    }
-
-    private string Title()
-    {
-        if (panel.composer is not { } composer || panel.world is not { } world) return "Current choice";
-        var prompt = Marvel.View.PromptPresentation.From(composer.Prompt, world);
-        if (prompt.ContextCards.Count == 1) return prompt.ContextCards[0].Title;
-        return DecisionCardChoices.IsChoice(composer.Prompt) ? DecisionCardChoices.Heading(composer.Prompt) : "Current choice";
-    }
 
     internal void PresentNotice(string copy)
     {
@@ -194,6 +150,21 @@ internal sealed class CompleteDecisionSheet : IDisposable
     {
         Node host = layer.GetParent();
         return host.FindChild(name, recursive: true, owned: false);
+    }
+
+    // The sheet shows the draft in full, so the table's one-line copy of it steps aside until the sheet closes.
+    private void HideTableDraft()
+    {
+        if (FindInHost("ContextualDecision") is not Control draftRow || !draftRow.Visible) return;
+        tableDraft = draftRow;
+        tableDraft.Visible = false;
+    }
+
+    private void RestoreTableDraft()
+    {
+        if (tableDraft is not null && GodotObject.IsInstanceValid(tableDraft) && !tableDraft.IsQueuedForDeletion())
+            tableDraft.Visible = true;
+        tableDraft = null;
     }
 
     private void Fit()
@@ -243,6 +214,7 @@ internal sealed class CompleteDecisionSheet : IDisposable
         panel.Visible = false;
         panel.CompleteChoicesClosed();
         panel.SetCompleteChoicesVisibility(false);
+        RestoreTableDraft();
         RestoreOpenerFocus();
         Dispose();
     }

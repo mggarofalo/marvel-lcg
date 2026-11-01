@@ -29,11 +29,11 @@ static func _split(smoke, kang, players: int) -> bool:
     var seat := int(_surface(smoke).get_meta("expanded_seat"))
     var own := int(kang.SeatArea(seat))
     for area in areas:
-        if not _column_names_its_area(smoke, kang, area) or not _column_marks_reach(smoke, area, own): return false
+        if not _column_names_its_players(smoke, kang, area) or not _column_marks_reach(smoke, area, own): return false
     if not _reach_is_dimmed(smoke, kang, seat, own): return false
     if not _central_and_shared(smoke, kang): return false
-    if "Kang (II)" not in _text(smoke, "KangProgress"):
-        smoke._fail("separated progress does not name the remaining Kang (II)")
+    if "Kang (II)" not in str(_tracker(smoke).get_meta("tracker_reading", "")) or "Kang (II)" not in _tracker(smoke).tooltip_text:
+        smoke._fail("the tracker does not show the remaining Kang (II)")
         return false
     if not await _capture(smoke, "split"): return false
     return await _rules_open_and_close(smoke)
@@ -49,14 +49,17 @@ static func _rules_open_and_close(smoke) -> bool:
     return await smoke.ui.expect(func(): return not _surface(smoke).find_child("SeparatedTableRulesPanel", false, false).visible,
         "the separated-table rules close again")
 
-static func _column_names_its_area(smoke, kang, area: int) -> bool:
+# Each column is titled by its players' names on one line; its Kang (II) stands under it.
+static func _column_names_its_players(smoke, kang, area: int) -> bool:
     var frame = _surface(smoke).find_child("GameArea%d" % area, false, false)
     if frame == null or not frame.is_visible_in_tree():
         smoke._fail("game area %d has no visible column" % area)
         return false
-    if _text(smoke, "GameArea%dHeading" % area) != kang.Label(area):
-        smoke._fail("game area %d heading is not its engine label" % area)
-        return false
+    var title := _title(smoke, area)
+    for name in kang.Names(area):
+        if name not in title:
+            smoke._fail("game area %d title %s does not name %s" % [area, title, name])
+            return false
     for villain in kang.Villains(area):
         if _card(smoke, villain) == null:
             smoke._fail("game area %d does not show its Kang (II)" % area)
@@ -64,12 +67,13 @@ static func _column_names_its_area(smoke, kang, area: int) -> bool:
     return true
 
 static func _column_marks_reach(smoke, area: int, own: int) -> bool:
-    var markers := _text(smoke, "GameArea%dMarkers" % area)
-    if area == own and "YOUR AREA" not in markers:
-        smoke._fail("the inspected seat's area is not marked as theirs: " + markers)
+    var facts := _facts(smoke, area)
+    if area == own and ("YourArea" not in facts or "OutOfReach" in facts):
+        smoke._fail("the inspected seat's area is not marked as theirs: %s" % [facts])
         return false
-    if area != own and ("OUT OF REACH" not in markers or "Out of reach for" not in _text(smoke, "GameArea%dDetails" % area)):
-        smoke._fail("another area lacks its out-of-reach marker and reason: " + markers)
+    if area != own and ("OutOfReach" not in facts or _header(smoke, area).find_child("FactOutOfReach", false, false) == null
+            or "cannot affect another game area" not in _header(smoke, area).tooltip_text):
+        smoke._fail("another area lacks its lock and the reason on hover: %s" % [facts])
         return false
     return true
 
@@ -92,28 +96,43 @@ static func _reach_is_dimmed(smoke, kang, seat: int, own: int) -> bool:
         return false
     return true
 
+# Stage 2B and the shared encounter piles stand in the central column, between the game areas.
 static func _central_and_shared(smoke, kang) -> bool:
     var central: Array = kang.CentralSchemes()
     if central.size() != 1 or _card(smoke, central[0]) == null or _card(smoke, central[0]).get_meta("out_of_reach", false):
         smoke._fail("central stage 2B is not shown within every seat's reach")
         return false
-    if "stage 4A" not in _text(smoke, "GameAreaCentralDetails"):
-        smoke._fail("central stage lacks the note that its tokens wait for stage 4A")
+    var heading = _surface(smoke).find_child("GameAreaCentralHeading", false, false)
+    if heading == null or "stage 4A" not in heading.tooltip_text or "share one encounter deck" not in heading.tooltip_text \
+            or heading.find_child("FactShared", false, false) == null:
+        smoke._fail("the central column does not mark and explain what is shared")
         return false
-    var shared = _surface(smoke).find_child("SharedEncounterNote", true, false)
-    if shared == null or "SHARED BY ALL AREAS" != shared.text or "share one encounter deck" not in shared.tooltip_text:
-        smoke._fail("the shared encounter deck and discard are not explained")
+    var column: Rect2 = _rect(_surface(smoke).find_child("GameAreaCentral", false, false))
+    for pile in kang.SharedPiles():
+        var node = _surface(smoke).find_child("Pile%d" % pile, true, false)
+        if node == null or not column.encloses(_rect(node)):
+            smoke._fail("shared pile %d does not stand in the central column" % pile)
+            return false
+    var left := INF
+    var right := -INF
+    for area in kang.LocalAreas():
+        var bounds := _rect(_surface(smoke).find_child("GameArea%d" % area, false, false))
+        left = min(left, bounds.position.x)
+        right = max(right, bounds.end.x)
+    if column.position.x <= left or column.end.x >= right:
+        smoke._fail("the central column is not between the game areas")
         return false
     return true
 
 static func _acting(smoke, kang) -> bool:
     if not await _synchronize(smoke, func(): return kang.ActingArea() >= 0, "a villain-phase step resolving in one area"): return false
     var area := int(kang.ActingArea())
-    if "ACTING NOW" not in _text(smoke, "GameArea%dMarkers" % area) or "Villain phase step" not in _text(smoke, "GameArea%dDetails" % area):
-        smoke._fail("the acting area is not marked or named")
+    if "Acting" not in _facts(smoke, area) or _header(smoke, area).find_child("ActingStep", false, false) == null \
+            or "Villain phase step" not in _header(smoke, area).tooltip_text:
+        smoke._fail("the acting area lacks its icon, step pips and step on hover")
         return false
     for other in kang.LocalAreas():
-        if other != area and "ACTING NOW" in _text(smoke, "GameArea%dMarkers" % other):
+        if other != area and "Acting" in _facts(smoke, other):
             smoke._fail("more than one area is marked as acting")
             return false
     return await _capture(smoke, "acting")
@@ -121,15 +140,32 @@ static func _acting(smoke, kang) -> bool:
 static func _departure(smoke, kang) -> bool:
     if not await _synchronize(smoke, func(): return kang.DepartureSources().size() > 0, "a pending departure"): return false
     var source := int(kang.DepartureSources()[0])
-    var details := _text(smoke, "GameArea%dDetails" % source)
-    if "LEAVES AT PHASE END" not in _text(smoke, "GameArea%dMarkers" % source) or "at the end of the phase" not in details:
-        smoke._fail("the departing area lacks its marker and the engine's summary: " + details)
+    if "Departing" not in _facts(smoke, source) or "at the end of the phase" not in _header(smoke, source).tooltip_text:
+        smoke._fail("the departing area lacks its arrow and the reason on hover")
         return false
+    if not _destinations_lit(smoke, kang): return false
     return await _capture(smoke, "departure")
+
+static func _destinations_lit(smoke, kang) -> bool:
+    for area in kang.LocalAreas():
+        if ("Destination" in _facts(smoke, area)) != (area in kang.DepartureDestinations()):
+            smoke._fail("game area %d is lit as a destination when it is not one, or not lit when it is" % area)
+            return false
+    return true
 
 static func _join(smoke, kang) -> bool:
     if not await _synchronize(smoke, func(): return kang.Trigger() == "ResolveKangPhaseJoin", "the join prompt"): return false
+    if not _destinations_lit(smoke, kang): return false
     if not await _capture(smoke, "join"): return false
+    if not await _answer_join(smoke, kang): return false
+    var area := int(kang.LocalAreas()[0])
+    if kang.SeatArea(0) != area or kang.SeatArea(1) != area or "YourArea" not in _facts(smoke, area):
+        smoke._fail("the joined area does not hold both seats")
+        return false
+    return await _capture(smoke, "joined")
+
+# Chooses the one named destination, then its named commitment.
+static func _answer_join(smoke, kang) -> bool:
     var before := int(smoke.witness.Revision())
     # Each offer names the destination by its players and Kang (protocol 45 labels).
     var offers = smoke.main.find_children("Affordance*", "Button", true, false).filter(
@@ -147,18 +183,14 @@ static func _join(smoke, kang) -> bool:
     if not await smoke.ui.click(smoke.ui.Locator.control(commit)): return false
     if not await smoke.ui.expect(func(): return smoke.witness.Revision() == before + 1 and kang.LocalAreas().size() == 1,
         "the answered join leaves one game area holding both seats", Driver.COMMIT_DEADLINE_MS): return false
-    var area := int(kang.LocalAreas()[0])
-    if kang.SeatArea(0) != area or kang.SeatArea(1) != area or "YOUR AREA" not in _text(smoke, "GameArea%dMarkers" % area):
-        smoke._fail("the joined area does not hold both seats")
-        return false
-    return await _capture(smoke, "joined")
+    return true
 
 static func _reunion(smoke, kang) -> bool:
     if not await _synchronize(smoke, func(): return kang.Stage() == 3, "the reunion against Kang (III)"): return false
     if _surface(smoke).find_child("GameAreaCentral", false, false) != null:
         smoke._fail("the reunited table still shows separated columns")
         return false
-    if "Defeat Kang (III) to win." not in _text(smoke, "KangProgress"):
+    if "Defeat Kang (III) to win." not in _tracker(smoke).tooltip_text or "Kang (III)" not in str(_tracker(smoke).get_meta("tracker_reading", "")):
         smoke._fail("the reunited table lacks its progress toward winning")
         return false
     return await _capture(smoke, "reunion")
@@ -166,7 +198,7 @@ static func _reunion(smoke, kang) -> bool:
 static func _retained(smoke, kang) -> bool:
     if not await _synchronize(smoke, func(): return kang.RetainedAreas().size() > 0, "a retained area"): return false
     var area := int(kang.RetainedAreas()[0])
-    if "RETAINED" not in _text(smoke, "GameArea%dMarkers" % area) or "retained" not in _text(smoke, "GameArea%dHeading" % area):
+    if "Retained" not in _facts(smoke, area) or "(retained)" not in _title(smoke, area):
         smoke._fail("the retained area is not marked")
         return false
     return await _capture(smoke, "retained")
@@ -182,9 +214,27 @@ static func _surface(smoke) -> Control:
 static func _card(smoke, id: int) -> Control:
     return _surface(smoke).find_child("ProceduralCard%d" % id, false, false) as Control
 
+static func _header(smoke, area: int) -> Control:
+    return _surface(smoke).find_child("GameArea%dHeading" % area, false, false) as Control
+
+# Every fact a column states: its header icons, its step pips and its frame's edge.
+static func _facts(smoke, area: int) -> PackedStringArray:
+    var frame = _surface(smoke).find_child("GameArea%d" % area, false, false)
+    return PackedStringArray() if frame == null else PackedStringArray(frame.get_meta("table_facts", PackedStringArray()))
+
+static func _title(smoke, area: int) -> String:
+    var header := _header(smoke, area)
+    return "" if header == null else str(header.get_node("Title").text)
+
+static func _tracker(smoke) -> Control:
+    return _surface(smoke).find_child("KangTracker", false, false) as Control
+
 static func _text(smoke, name: String) -> String:
     var label = _surface(smoke).find_child(name, true, false)
     return "" if label == null else str(label.text)
+
+static func _rect(node: Control) -> Rect2:
+    return preload("res://smoke/native_kang_layout.gd")._rect(node)
 
 static func _capture(smoke, leaf: String) -> bool:
     if not preload("res://smoke/native_kang_layout.gd").check(smoke, _surface(smoke), leaf): return false

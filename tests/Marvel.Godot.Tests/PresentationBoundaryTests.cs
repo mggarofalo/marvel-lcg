@@ -186,7 +186,9 @@ public sealed class PresentationBoundaryTests
             "Marvel.View.CardPersistentCostDescriptor",
             "Marvel.View.CardPersistentEffectDescriptor",
             "Marvel.View.CardPersistentThresholdDescriptor",
+            "Marvel.View.DecisionFrame",
             "Marvel.View.DecisionReceiptContext",
+            "Marvel.View.DecisionSubject",
             // View groups authorized costs/results around the accepted intention without determining legality.
             "Marvel.View.AcceptedActivityOccurrence",
             "Marvel.View.ResponseReceiptPresenter",
@@ -223,6 +225,7 @@ public sealed class PresentationBoundaryTests
             "Marvel.View.PlayerSummaryDescriptor",
             // The decision heading identifies the acting seat from public player information.
             "Marvel.View.PaymentSourcePresentation",
+            "Marvel.View.ReachReason",
             "Marvel.View.RelationshipKind",
             "Marvel.View.TableContextDescriptor",
             "Marvel.View.TableRelationshipDescriptor",

@@ -16,7 +16,7 @@ internal static class ColumnHeader
     /// <summary>The header's facts in display order, as their keys; native checks read them from <c>table_facts</c>.</summary>
     internal static string[] Keys(IReadOnlyList<TableFact> facts) => [.. facts.Select(fact => fact.ToString())];
 
-    /// <summary>A header with a title, an optional step tracker and one icon per fact.</summary>
+    /// <summary>A header with a title, an optional trailing control such as a step tracker, and one icon per fact.</summary>
     internal static HBoxContainer Create(string name, string title, IReadOnlyList<TableFact> facts, string tooltip,
         InterfaceScale scale, Control? trailing = null)
     {
@@ -29,7 +29,7 @@ internal static class ColumnHeader
         header.SetMeta("table_facts", Keys(facts));
         Label label = TableBlockStyle.Line("Title", title, scale, VisualSystem.Palette.Text);
         label.TooltipText = tooltip;
-        label.AddThemeFontSizeOverride("font_size", VisualSystem.Type(scale).Heading);
+        label.AddThemeFontSizeOverride("font_size", VisualSystem.Type(scale).Body);
         header.AddChild(label);
         if (trailing is not null) header.AddChild(trailing);
         int icon = TableBlockStyle.Icon(scale);

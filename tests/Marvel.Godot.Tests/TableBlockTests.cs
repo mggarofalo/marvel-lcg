@@ -9,7 +9,7 @@ public sealed class TableBlockTests
     public void EveryFactIconIsAnEmbeddedTableIcon()
     {
         string[] embedded = typeof(TableWording).Assembly.GetManifestResourceNames();
-        foreach (TableFact fact in Enum.GetValues<TableFact>())
+        foreach (TableFact fact in Enum.GetValues<TableFact>().Where(fact => TableWording.For(fact).Icon.Length > 0))
             Assert.Contains($"Marvel.Godot.Assets.TableIcons.{TableWording.For(fact).Icon}.svg", embedded);
     }
 

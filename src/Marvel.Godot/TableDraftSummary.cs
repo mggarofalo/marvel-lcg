@@ -8,9 +8,10 @@ namespace Marvel.Godot;
 /// <summary>Describes editable choices using the current engine-authorized draft progress.</summary>
 internal static class TableDraftSummary
 {
+    /// <summary>The draft's summary; an action description equal to <paramref name="shownInstruction"/> is left out.</summary>
     internal static string? From(
         DecisionComposer? composer, PromptPresentation? prompt, WorldDescriptor? world = null,
-        bool compact = false)
+        bool compact = false, string? shownInstruction = null)
     {
         if (composer?.Selected is not { } selected)
         {
@@ -18,8 +19,7 @@ internal static class TableDraftSummary
         }
 
         DecisionProgressPresentation progress = composer.Progress();
-        AffordancePresentation? visible = prompt?.Affordances.FirstOrDefault(
-            affordance => affordance.Id == selected.Id);
+        AffordancePresentation? visible = Visible(prompt, selected.Id, shownInstruction);
         var state = new List<string>();
         AddSelectedDefender(state, composer, visible, compact);
         if (selected.Verb is not (Game.ResolveMulligans or Game.EndPhaseVerb))
@@ -32,6 +32,14 @@ internal static class TableDraftSummary
         TablePaymentSummary.Add(state, progress.Payment, compact);
         AddOutstandingChoice(state, progress, compact);
         return string.Join("  ·  ", state.Where(value => !string.IsNullOrWhiteSpace(value)));
+    }
+
+    private static AffordancePresentation? Visible(PromptPresentation? prompt, int id, string? shownInstruction)
+    {
+        AffordancePresentation? visible = prompt?.Affordances.FirstOrDefault(affordance => affordance.Id == id);
+        return visible?.Description is { Length: > 0 } description
+            && string.Equals(description.Trim(), shownInstruction, StringComparison.Ordinal)
+                ? visible with { Description = null } : visible;
     }
 
     private static void AddSelectedDefender(

@@ -2,114 +2,122 @@ using Godot;
 
 namespace Marvel.Godot;
 
-/// <summary>The readable text and frames around separated game areas; wording beyond engine prose is ours.</summary>
+/// <summary>The separated table's tracker line, rules toggle and column frames, built from the building blocks.</summary>
 internal static class GameAreaTableChrome
 {
-    /// <summary>Adds the progress header, with a toggle for the whole-table rules, and returns its measured height.</summary>
-    internal static float AddHeader(Control surface, Vector2 position, float width, GameAreaTable table)
+    private const float OutOfReachAlpha = 0.55f;
+
+    /// <summary>Adds the tracker line across a band, with the rules toggle at its end; returns the line's height.</summary>
+    internal static float AddTrackerLine(Control surface, Rect2 band, GameAreaTable table, InterfaceScale scale)
     {
-        float rulesWidth = table.Rules.Count > 0 ? 200 : 0;
-        float height = AddMeasured(surface, "KangProgress", position, width - rulesWidth - 8, table.Progress).Size.Y;
-        if (table.Rules.Count == 0) return Math.Max(height, 0);
+        float height = ColumnHeader.Height(scale);
+        HBoxContainer tracker = Tracker.Create("KangTracker", table.Tracker, scale);
+        tracker.Position = band.Position;
+        tracker.Size = new Vector2(band.Size.X / 2, height);
+        tracker.ZIndex = 12;
+        surface.AddChild(tracker);
+        if (table.Rules.Count > 0) AddRules(surface, band, table, scale, height);
+        return height;
+    }
+
+    /// <summary>Adds the tracker for a Kang table that is not separated, at the villain mat's corner.</summary>
+    internal static void AddBanner(Control surface, AstraTableGeometry geometry, GameAreaTable table)
+    {
+        if (table.Tracker.Label.Length == 0) return;
+        HBoxContainer tracker = Tracker.Create("KangTracker", table.Tracker, geometry.ReadingScale);
+        tracker.Position = new Vector2(geometry.MainScheme.Position.X, geometry.VillainMat.Position.Y + 4);
+        tracker.ZIndex = 12;
+        surface.AddChild(tracker);
+    }
+
+    // The rules live behind one toggle: an icon and a short label, never ambient text on the table.
+    private static void AddRules(Control surface, Rect2 band, GameAreaTable table, InterfaceScale scale, float height)
+    {
+        Wording rules = TableWording.For(TableFact.SeparatedRules);
+        float width = Math.Min(band.Size.X * 0.45f, 460 * (int)scale / 100f);
         var panel = new PanelContainer
         {
-            Name = "SeparatedTableRulesPanel", Visible = false, ZIndex = 80,
-            Position = new Vector2(position.X + width - 420, position.Y + 34), CustomMinimumSize = new Vector2(420, 0),
-            MouseFilter = Control.MouseFilterEnum.Stop,
+            Name = "SeparatedTableRulesPanel", Visible = false, ZIndex = 80, MouseFilter = Control.MouseFilterEnum.Stop,
+            Position = new Vector2(band.End.X - width, band.Position.Y + height + 4), CustomMinimumSize = new Vector2(width, 0),
         };
-        using var style = new StyleBoxFlat { BgColor = ClientTheme.ToGodot(VisualSystem.Palette.RaisedSurface),
-            ContentMarginLeft = 10, ContentMarginRight = 10, ContentMarginTop = 8, ContentMarginBottom = 8 };
+        using StyleBoxFlat style = TableBlockStyle.Surface(scale, VisualSystem.Palette.Outline);
+        style.ContentMarginTop = style.ContentMarginBottom = style.ContentMarginLeft;
         panel.AddThemeStyleboxOverride("panel", style);
         panel.AddChild(new Label
         {
             Name = "SeparatedTableRulesText", Text = string.Join("\n\n", table.Rules),
-            AutowrapMode = TextServer.AutowrapMode.WordSmart, CustomMinimumSize = new Vector2(400, 0),
+            AutowrapMode = TextServer.AutowrapMode.WordSmart, CustomMinimumSize = new Vector2(width - 24, 0),
             ThemeTypeVariation = GodotThemeVariations.Caption, MouseFilter = Control.MouseFilterEnum.Ignore,
         });
         var toggle = new Button
         {
-            Name = "SeparatedTableRules", Text = "Separated-table rules", ToggleMode = true, ZIndex = 20,
-            Position = new Vector2(position.X + width - rulesWidth, position.Y), Size = new Vector2(rulesWidth, 30),
-            TooltipText = "Show the rules that apply while the table is separated.",
+            Name = "SeparatedTableRules", Text = rules.Label, ToggleMode = true, ZIndex = 20, TooltipText = rules.Tooltip,
+            Icon = CardGlyphRendering.Rasterize($"Marvel.Godot.Assets.TableIcons.{rules.Icon}.svg", TableBlockStyle.Icon(scale)),
         };
         toggle.Toggled += pressed => panel.Visible = pressed;
         surface.AddChild(toggle);
         surface.AddChild(panel);
         TableCompactButtonStyle.Apply(toggle);
-        return Math.Max(height, 30);
+        toggle.Size = new Vector2(toggle.GetCombinedMinimumSize().X, height);
+        toggle.Position = new Vector2(band.End.X - toggle.Size.X, band.Position.Y);
     }
 
-    /// <summary>Adds the progress line for a Kang table that is not separated.</summary>
-    internal static void AddBanner(Control surface, AstraTableGeometry geometry, GameAreaTable table)
-    {
-        if (table.Progress.Length == 0) return;
-        AddMeasured(surface, "KangProgress", new Vector2(geometry.MainScheme.Position.X, geometry.VillainMat.Position.Y + 4),
-            geometry.VillainMat.End.X - geometry.MainScheme.Position.X - 16, table.Progress);
-    }
-
-    /// <summary>Marks the encounter piles as shared; the engine's full sentence is the tooltip.</summary>
-    internal static void AddSharedCaption(Control surface, Vector2 position, float width, string note) =>
-        AddMeasured(surface, "SharedEncounterNote", position, width, "SHARED BY ALL AREAS").TooltipText = note;
-
-    /// <summary>Adds a bordered column; the acting and inspected-seat areas carry a heavier border.</summary>
+    /// <summary>
+    /// Adds a column's frame: the acting area takes a heavy danger edge, a lit destination the accent edge,
+    /// and the inspected seat's own area the legal edge. Each edge repeats a header icon; none stands alone.
+    /// </summary>
     internal static void AddFrame(Control surface, string name, Rect2 bounds, GameAreaColumn column)
     {
-        bool acting = column.Markers.Contains(GameAreaMarker.Acting);
-        bool yours = column.Markers.Contains(GameAreaMarker.Yours);
-        VisualColor edge = acting ? VisualSystem.Palette.Danger : yours ? VisualSystem.Palette.Legal : VisualSystem.Palette.Outline;
-        int width = acting ? 4 : yours ? 2 : 1;
+        (VisualColor edge, int width) = column.Facts.Contains(TableFact.Acting) ? (VisualSystem.Palette.Danger, 4)
+            : column.Facts.Contains(TableFact.Destination) ? (VisualSystem.Palette.Accent, 3)
+            : column.Facts.Contains(TableFact.YourArea) ? (VisualSystem.Palette.Legal, 2)
+            : (VisualSystem.Palette.Outline, 1);
         var frame = new Panel
         {
             Name = name, Position = bounds.Position, Size = bounds.Size, ZIndex = 1,
-            MouseFilter = Control.MouseFilterEnum.Ignore,
+            MouseFilter = Control.MouseFilterEnum.Ignore, AccessibilityDescription = column.Tooltip,
         };
         using var style = new StyleBoxFlat
         {
-            BgColor = new Color(ClientTheme.ToGodot(VisualSystem.Palette.Surface), 0.35f),
+            BgColor = new Color(ClientTheme.ToGodot(VisualSystem.Palette.Surface), column.Facts.Contains(TableFact.OutOfReach) ? 0.15f : 0.35f),
             BorderColor = ClientTheme.ToGodot(edge),
             BorderWidthLeft = width, BorderWidthRight = width, BorderWidthTop = width, BorderWidthBottom = width,
             CornerRadiusTopLeft = 6, CornerRadiusTopRight = 6, CornerRadiusBottomLeft = 6, CornerRadiusBottomRight = 6,
         };
         frame.AddThemeStyleboxOverride("panel", style);
-        frame.SetMeta("game_area_markers", column.MarkerText);
-        frame.AccessibilityDescription = $"{column.Heading}. {column.MarkerText}. {string.Join(" ", column.Details)}";
+        frame.SetMeta("table_facts", ColumnHeader.Keys(column.Facts));
         surface.AddChild(frame);
     }
 
-    /// <summary>Adds a column's explanation sentences, unplaced until the column is arranged.</summary>
-    internal static GameAreaDetailsText? AddDetails(Control surface, string name, float width, IReadOnlyList<string> details)
+    /// <summary>Adds a column's header; an acting area adds its step as a tracker of the phase's three steps.</summary>
+    internal static HBoxContainer AddHeader(Control surface, string name, Rect2 bounds, GameAreaColumn column,
+        InterfaceScale scale)
     {
-        if (details.Count == 0) return null;
-        var viewport = new ScrollContainer
-        {
-            Name = name + "Viewport", Size = new Vector2(width, 0), ZIndex = 12,
-            HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled,
-            VerticalScrollMode = ScrollContainer.ScrollMode.Auto,
-        };
-        var text = new Label
-        {
-            Name = name, Text = string.Join("\n", details), AutowrapMode = TextServer.AutowrapMode.WordSmart,
-            CustomMinimumSize = new Vector2(width - 12, 0), ThemeTypeVariation = GodotThemeVariations.Caption,
-            MouseFilter = Control.MouseFilterEnum.Ignore,
-        };
-        viewport.AddChild(text);
-        surface.AddChild(viewport);
-        viewport.AddToGroup(ActivityConnectorOcclusion.TextGroup);
-        return new GameAreaDetailsText(viewport, text);
+        Control? step = column.ActingStep is { } acting
+            ? Tracker.Create("ActingStep", new TrackerState("", StepIndex(acting), 3, null, 0,
+                TableWording.For(TableWording.Step(acting)).Tooltip), scale)
+            : null;
+        // The step pips and the heavy border state that the area is acting, so its icon is not repeated.
+        TableFact[] icons = [.. column.Facts.Where(fact => step is null || fact != TableFact.Acting)];
+        HBoxContainer header = ColumnHeader.Create(name + "Heading", column.Title, icons, column.Tooltip, scale, step);
+        header.Position = bounds.Position + new Vector2(GameAreaColumnLayout.Padding + 2, GameAreaColumnLayout.Padding);
+        header.Size = new Vector2(bounds.Size.X - 2 * (GameAreaColumnLayout.Padding + 2), ColumnHeader.Height(scale));
+        header.ZIndex = 12;
+        if (column.Facts.Contains(TableFact.OutOfReach)) header.GetNode<Label>("Title").Modulate = new Color(1, 1, 1, OutOfReachAlpha + 0.2f);
+        surface.AddChild(header);
+        header.AddToGroup(ActivityConnectorOcclusion.TextGroup);
+        return header;
     }
 
-    /// <summary>Adds wrapped caption text sized to its measured height at the given width, so it is never clipped.</summary>
-    internal static Label AddMeasured(Control surface, string name, Vector2 position, float width, string text)
+    /// <summary>How many of the villain phase's three focus steps (1, 2 and 4) have begun when <paramref name="step"/> is resolving.</summary>
+    internal static int StepIndex(int step) => step switch
     {
-        var label = new Label
-        {
-            Name = name, Text = text, Position = position, CustomMinimumSize = new Vector2(width, 0),
-            AutowrapMode = TextServer.AutowrapMode.WordSmart, ThemeTypeVariation = GodotThemeVariations.Caption,
-            TooltipText = text, ZIndex = 12, MouseFilter = Control.MouseFilterEnum.Pass,
-        };
-        surface.AddChild(label);
-        label.AddToGroup(ActivityConnectorOcclusion.TextGroup);
-        label.Size = new Vector2(width, label.GetCombinedMinimumSize().Y);
-        return label;
-    }
+        1 => 1,
+        2 => 2,
+        4 => 3,
+        _ => throw new ArgumentOutOfRangeException(nameof(step), step, "no villain-phase focus has this step"),
+    };
+
+    /// <summary>The alpha an out-of-reach card is drawn with.</summary>
+    internal static float DimmedAlpha => OutOfReachAlpha;
 }

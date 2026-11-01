@@ -83,4 +83,28 @@ public sealed class AstraTableGeometryTests
         var scale = SpatialCardMetrics.TableScale(InterfaceScale.Percent150, 937);
         Assert.True(VisualSystem.Card(CardDisplaySize.Board, scale).Width >= 156);
     }
+
+    [Theory]
+    [InlineData(1864, 990, InterfaceScale.Percent100)]
+    [InlineData(1864, 990, InterfaceScale.Percent150)]
+    [InlineData(2504, 1330, InterfaceScale.Percent100)]
+    public void ASeparatedTableLaysItsFarSideOnTheGrid(float width, float height, InterfaceScale scale)
+    {
+        var table = new AstraTableGeometry(width, height, scale >= InterfaceScale.Percent130) { HasGameAreas = true, ReadingScale = scale };
+        TableGrid grid = TableGrid.For(width, scale);
+        Assert.Equal(grid.Span(2, 8), (table.GameAreaBand.Position.X, table.GameAreaBand.Size.X));
+        Assert.Equal(grid.Span(10, 2), (table.EngagedEnemies.Position.X, table.EngagedEnemies.Size.X));
+        Assert.True(table.SeatStrip.End.X <= table.GameAreaBand.Position.X);
+        Assert.True(table.GameAreaBand.End.X <= table.EngagedEnemies.Position.X);
+        Assert.True(table.VillainMat.Encloses(table.GameAreaBand));
+        Assert.True(table.VillainMat.Encloses(table.EngagedEnemies));
+    }
+
+    [Fact]
+    public void AWholeTableKeepsItsReferenceRegions()
+    {
+        var table = new AstraTableGeometry(1320, 962, false) { ReadingScale = InterfaceScale.Percent150 };
+        Assert.Equal(new Rect2(944, 34, 354, 248), table.EngagedEnemies);
+        Assert.Equal(new Rect2(22, 214, 158, 164), table.SeatStrip);
+    }
 }
