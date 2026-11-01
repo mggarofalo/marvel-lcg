@@ -75,7 +75,7 @@ public sealed class RuntimeProductAdmission
 
     // The Galaxy's Most Wanted is admitted in parts: Groot's and Rocket Raccoon's faces and
     // the Power Stone and Band of Badoon modular sets are products of their own while the
-    // rest of the box stays closed. A closed modular set leaves discovery.
+    // rest of the box stays closed.
     private static ImmutableHashSet<string> GalaxysMostWantedParts(ref SetupCatalog setup, CardCatalog cards,
         IReadOnlySet<string> authored)
     {
@@ -85,9 +85,9 @@ public sealed class RuntimeProductAdmission
         if (StandaloneProductAdmission.PowerStone(setup, cards, authored))
             parts.UnionWith(StandaloneProductAdmission.PowerStoneFaces);
         else setup = setup.WithoutEncounterSet("power_stone");
+        // A closed Band of Badoon set leaves discovery with the box's other closed faces.
         if (StandaloneProductAdmission.BandOfBadoon(setup, cards, authored))
             parts.UnionWith(StandaloneProductAdmission.BandOfBadoonFaces);
-        else setup = setup.WithoutEncounterSet("band_of_badoon");
         return parts.ToImmutable();
     }
 }

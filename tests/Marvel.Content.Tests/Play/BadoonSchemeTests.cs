@@ -77,6 +77,35 @@ public sealed class BadoonSchemeTests : CoreCardTestBase
 
     [Fact]
     [Rule("rr:cost")]
+    public void DrangsSpearNeedsTheMentalResource()
+    {
+        // A physical resource cannot stand in for the [mental] one.
+        var world = BadoonBoards.Board();
+        var spear = ShipCommandBoards.Attach(world, GrootBoards.Villain(world), BadoonBoards.Spear);
+        var strength = new[] { GrootBoards.Hand(world, ShipCommandBoards.Strength),
+            GrootBoards.Hand(world, ShipCommandBoards.Strength), GrootBoards.Hand(world, ShipCommandBoards.Strength) };
+
+        Assert.ThrowsAny<Exception>(() => ShipCommandBoards.Act(world, spear, 0, strength));
+
+        Assert.Equal(DeckType.UpgradesArea, spear.Area.Type);
+    }
+
+    [Fact]
+    [Rule("rr:first-player")]
+    public void OnlyTheFirstPlayerIsOfferedTheFirstPlayerActionEvenWithTheMilanoInHand()
+    {
+        // "First Player Action" belongs to the first player alone: a later seat holding a
+        // ready Milano is still not offered it.
+        var world = BadoonBoards.Board(players: 2);
+        var milano = world.CreateCard("16142", world.AreaOf(DeckType.EncounterDiscardPile));
+        World.MoveToTop(milano, world.AreaOf(DeckType.SupportsArea, PlayArea.Of(1), cardOwner: 1));
+        var scheme = GrootBoards.Side(world, "16066", 5);
+
+        Assert.Empty(ShipCommandBoards.ActionsOn(world, scheme, 1));
+    }
+
+    [Fact]
+    [Rule("rr:cost")]
     public void DrangsSpearIsNotOfferedToAnAlterEgo()
     {
         var world = BadoonBoards.Board(face: "01001b");
