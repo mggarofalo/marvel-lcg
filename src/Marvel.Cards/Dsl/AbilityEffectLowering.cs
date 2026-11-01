@@ -313,6 +313,6 @@ internal static class AbilityEffectLowering
     // The only variable basic-use bonus printed so far counts the boost icons the
     // same resolution discarded.
     private static AbilityNumber.ResolutionValue BoostIconNumber(AbilityValue value, AbilityLocation location) =>
-        Number(value, location) is AbilityNumber.ResolutionValue { Kind: AbilityResolutionNumber.PrintedBoostIconsDiscarded } number
-            ? number : throw location.Error("a variable basic-use bonus must be printedBoostIconsDiscarded");
+        Number(value, location) is AbilityNumber.ResolutionValue { Kind: AbilityResolutionNumber.BoostIconsDiscarded } number
+            ? number : throw location.Error("a variable basic-use bonus must be boostIconsDiscarded");
 }

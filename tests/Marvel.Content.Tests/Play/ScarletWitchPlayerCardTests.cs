@@ -182,4 +182,36 @@ public sealed class ScarletWitchPlayerCardTests
         Assert.Equal(DeckType.DiscardPile, ally.Area.Type);
         Assert.Equal(0, ally.Damage);
     }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    [Rule("rr:team-up")]
+    [Rule("rr:cancel")]
+    [Rule("rr:then")]
+    public void OrderAndChaosCancelsAnyPlayersRevealedTreacheryThenDamagesTheVillain(int revealer)
+    {
+        // 15018: "Hero Interrupt: When a treachery card is revealed from the encounter
+        // deck, cancel its "When Revealed" effects, then deal 2 damage to the villain."
+        // Quicksilver (15002) satisfies the team-up. No player restriction is printed,
+        // so the other player's reveal qualifies. "I'm Tough" (01105) would toughen Rhino.
+        var world = Board(players: 2);
+        var runner = AuthoredCards.Runner();
+        world.Abilities = runner;
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        InPlay(world, "15002", DeckType.AlliesArea);
+        var order = world.CreateCard("15018", world.Seats[0].Hand);
+        var payment = world.CreateCard(Energy, world.Seats[0].Hand);
+        var treachery = world.CreateCard("01105", world.AreaOf(DeckType.EncounterDeck));
+        Deal.EncounterCard(world, treachery, revealer, "Order and Chaos test deal", []);
+        world.Agenda.Add(new PhaseStep(new RevealStageOperation(RevealStageKind.RevealEncounterCards), 1, 4, Plan: true));
+
+        Drive(world, runner, prompt => OfferOn(prompt, order) is { } play
+            ? Decision.Take(play.Id, [], [payment.ObjectId]) : null);
+
+        Assert.Equal(2, villain.Damage);
+        Assert.False(Statuses.Has(world, villain, Statuses.Tough));
+        Assert.Equal(DeckType.DiscardPile, order.Area.Type);
+        Assert.Equal(DeckType.EncounterDiscardPile, treachery.Area.Type);
+    }
 }

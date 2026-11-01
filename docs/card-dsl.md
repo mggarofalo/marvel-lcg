@@ -2198,7 +2198,7 @@ interrupt, waits for it. The spelling is an engine choice.
 `WhenHeroBasicUseInitiated`: an ally is making one basic attack or thwart, before
 it resolves. The Scarlet Witch ally (14002) answers it with `actor: "this"`.
 
-`boostBasicUse` also accepts `{ "printedBoostIconsDiscarded": "game" }`, read when
+`boostBasicUse` also accepts `{ "boostIconsDiscarded": "game" }`, read when
 the bonus applies, for "+1 to that power for this use" per boost icon on the
 card the same resolution discarded. A card with no boost icons adds nothing.
 

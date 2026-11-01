@@ -88,12 +88,7 @@ public static class CardPayment
             return new AdjustedCardCost(0, []);
         }
         long amount = Resources.Cost(card.FaceId, facts, world.Players) ?? 0;
-        var modifiers = world.Effects.Active().Where(effect =>
-            string.Equals(effect.Kind, CardCostReduction, StringComparison.Ordinal)
-            && (effect.Affects == seat.IdentityCard.ObjectId
-                || effect.Affects is null && effect.CostFilter is not null)
-            && Matches(world, card, effect.CostFilter)
-            && effect.Amount > 0).ToList();
+        var modifiers = Reductions(world, seat, card);
 
         var increases = NextEventCost.Applied(world, seat, card);
         amount = checked(amount + increases.Sum(effect => effect.Amount)
@@ -119,6 +114,14 @@ public static class CardPayment
             VariableReduction = VariableCardCost.Remaining(card, facts, reductions, reduced),
         };
     }
+
+    private static List<ContinuousEffect> Reductions(World world, Seat seat, Card card) =>
+        world.Effects.Active().Where(effect =>
+            string.Equals(effect.Kind, CardCostReduction, StringComparison.Ordinal)
+            && (effect.Affects == seat.IdentityCard.ObjectId
+                || effect.Affects is null && effect.CostFilter is not null)
+            && Matches(world, card, effect.CostFilter)
+            && effect.Amount > 0).ToList();
 
     private static bool Matches(World world, Card card, CardCostFilter? filter) =>
         filter is null || (filter.Kind is null || EffectiveCards.Kind(card, world.Facts) == filter.Kind)

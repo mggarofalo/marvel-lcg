@@ -64,6 +64,13 @@ Each choice is recorded in the row note or the code comment that owns it.
   rr:delayed-effect.1). A player attack's end now ends attack-bounded effects
   and delays when no enemy attack is in progress; Last Stand raises before any
   change if an ally attack happens inside an enemy attack.
+- **Magic Shield** is a "would take" interrupt at rr:damage step 3. A tough
+  status card applies first (step 2), so Tough prevents the damage and Magic
+  Shield is not offered (`ScarletWitchMagicShieldTests`).
+- **Order and Chaos** cancels the treachery's When Revealed effects, then deals
+  2 damage to the villain, in sequence as the reprint 14018 does: the
+  cancellation always resolves against the treachery that triggered it. No
+  player restriction is printed, so another player's reveal qualifies.
 - **Chaos Manipulation** searches, discards, and shuffles the searched deck at
   the end (rr:search.3). **Slipping Sanity** counts star icons, which are not
   boost icons (rr:boost-boost-icon.1).
@@ -72,6 +79,14 @@ Each choice is recorded in the row note or the code comment that owns it.
 
 `ScarletWitchBoostCountTests`, `ScarletWitchPlayerCardTests` and
 `ScarletWitchSignatureTests` run the production rows on synthetic boards.
+`ScarletWitchPublicGameTests` plays the public starter to an ending against six
+scenarios, two of them multiplayer, with exact decision replay, and three games
+that take every free optional ability her own cards offer.
+`ScarletWitchPublicRestartTests` reaches Chaos Control's would-count window in a
+public Rhino game, restarts on a fresh host, rejects the stale answer, and
+continues both hosts to identical events and state. History refuses to move
+there (`history_open`), because the villain's activation still has decisions
+pending.
 `ScarletWitchAdmissionTests` closes the pack when a face is missing, a face
 changes pack, or any recipe component changes, including a single obligation.
 
