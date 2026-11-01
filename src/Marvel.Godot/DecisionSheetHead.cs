@@ -4,8 +4,9 @@ using Marvel.View;
 namespace Marvel.Godot;
 
 /// <summary>
-/// The complete-choices sheet's head: the question as its title, who answers, whether it is required, its
-/// causes and its source as chips, and the engine's instruction once, as the one-line reason.
+/// The complete-choices sheet's head: the question as its title, what it concerns as one short line, who
+/// answers, whether it is required, its causes and its source as chips, and the engine's whole instruction
+/// once, wrapped.
 /// </summary>
 internal static class DecisionSheetHead
 {
@@ -19,7 +20,7 @@ internal static class DecisionSheetHead
         },
         .. frame.Causes.Select(cause => TableWording.For(TableFact.DecisionCause) with
         {
-            Label = cause, Tooltip = $"{TableWording.For(TableFact.DecisionCause).Tooltip} {cause}.",
+            Label = cause, Tooltip = TableWording.DecisionCause(cause),
         }),
     ];
 
@@ -28,7 +29,7 @@ internal static class DecisionSheetHead
     {
         InterfaceScale scale = panel.ReadingScale;
         if (panel.composer is not { } composer || panel.world is not { } world)
-            return TablePanel.Create("DecisionHead", Title("Current choice"), [], "", scale, close);
+            return TablePanel.Create("DecisionHead", Title(TableWording.CurrentChoice), [], "", scale, close);
         PromptPresentation prompt = PromptPresentation.From(composer.Prompt, world);
         string title = DecisionCardChoices.IsChoice(composer.Prompt) ? DecisionCardChoices.Heading(composer.Prompt) : prompt.Heading;
         var facts = new List<Control>();
@@ -36,7 +37,15 @@ internal static class DecisionSheetHead
         for (int index = 0; index < wordings.Length; index++)
             facts.Add(Chip.Create($"DecisionFact{index}", wordings[index], null, scale));
         if (prompt.ContextCards.Count == 1) facts.Add(Source(prompt.ContextCards[0], main));
-        return TablePanel.Create("DecisionHead", Title(title), facts, prompt.Frame.Instruction, scale, close);
+        VBoxContainer head = TablePanel.Create("DecisionHead", Title(title), facts, prompt.Frame.Instruction, scale, close,
+            wrap: true);
+        if (TableWording.DecisionSubjectLine(prompt.Frame) is { Length: > 0 } subject)
+        {
+            Label line = TableBlockStyle.Line("DecisionSubject", subject, scale, VisualSystem.Palette.MutedText);
+            head.AddChild(line);
+            head.MoveChild(line, 1);
+        }
+        return head;
     }
 
     private static Label Title(string text) => new()
@@ -48,7 +57,7 @@ internal static class DecisionSheetHead
     // The source stays one press from its inspector.
     private static Button Source(BoardCardPresentation card, Main main)
     {
-        var source = new Button { Name = "DecisionSource", Text = card.Title, Flat = true, TooltipText = "Inspect card" };
+        var source = new Button { Name = "DecisionSource", Text = card.Title, Flat = true, TooltipText = TableWording.InspectCard };
         source.Pressed += () => main.boardController.ShowCardInspector(card, source, pinned: true);
         return source;
     }

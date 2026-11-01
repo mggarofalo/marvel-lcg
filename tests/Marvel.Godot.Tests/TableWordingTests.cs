@@ -17,9 +17,25 @@ public sealed class TableWordingTests
             Assert.False(string.IsNullOrWhiteSpace(wording.Tooltip), fact.ToString());
             Assert.True(wording.Label.Split(' ').Length <= 3, $"{fact} label is not short: {wording.Label}");
             Assert.Equal(fact is not (TableFact.HeroForm or TableFact.AlterEgoForm or TableFact.Engaged
-                or TableFact.DecisionRequired or TableFact.DecisionOptional or TableFact.DecisionCause),
+                or TableFact.DecisionRequired or TableFact.DecisionOptional or TableFact.DecisionCause
+                or TableFact.StepThreat or TableFact.StepActivation or TableFact.StepEncounter),
                 wording.Icon.Length > 0);
         }
+    }
+
+    [Fact]
+    public void FactsShareAnIconOnlyWhereTheIconReadmeSaysTheyStateOneConcept()
+    {
+        // assets/icons/table/README.md: the lock and the diamond each mark one concept.
+        string[][] shared =
+        [
+            [nameof(TableFact.AreaIsolation), nameof(TableFact.OutOfReach)],
+            [nameof(TableFact.CentralTokensWaitFor4A), nameof(TableFact.CompletionStoresDominion), nameof(TableFact.StoredDominions)],
+        ];
+        string[][] groups = [.. Enum.GetValues<TableFact>().Where(fact => TableWording.For(fact).Icon.Length > 0)
+            .GroupBy(fact => TableWording.For(fact).Icon).Where(group => group.Count() > 1)
+            .Select(group => group.Select(fact => fact.ToString()).Order(StringComparer.Ordinal).ToArray())];
+        Assert.Equal(shared, groups.OrderBy(group => group[0], StringComparer.Ordinal));
     }
 
     [Fact]
@@ -83,11 +99,43 @@ public sealed class TableWordingTests
     }
 
     [Fact]
+    public void OnePlayerLeavesAndJoinsInTheSingular()
+    {
+        Assert.Equal("Kang (Iron Lad) was defeated: Spider-Man leaves at the end of the phase and joins another game area.",
+            TableWording.Departure("Kang (Iron Lad)", ["Spider-Man"], completed: false, reunion: false));
+        Assert.Equal("Kang (Iron Lad) completed his stage: Spider-Man leaves at the end of the phase, and the table "
+            + "reunites at stage 4A.", TableWording.Departure("Kang (Iron Lad)", ["Spider-Man"], completed: true, reunion: true));
+    }
+
+    [Theory]
+    [InlineData(7L, 10L, "7/10")]
+    [InlineData(7L, null, "HP 7")]
+    [InlineData(7L, 0L, "HP 7")]
+    [InlineData(null, 10L, "HP —")]
+    public void ASeatsHealthReadsAsAFractionWhenTheMaximumIsKnown(long? health, long? maximum, string expected) =>
+        Assert.Equal(expected, TableWording.Health(health, maximum));
+
+    [Fact]
+    public void ATrackerReadsItsCountsAndCounter()
+    {
+        Assert.Equal("Kang (II) 2 of 3, Dominions 1", TableWording.TrackerReading("Kang (II)", 2, 3, "Dominions", 1));
+        Assert.Equal("Kang (III)", TableWording.TrackerReading("Kang (III)", 0, 0, null, 0));
+        Assert.Equal("Player 3", TableWording.Seat(2));
+    }
+
+    [Theory]
+    [InlineData(DecisionSubject.None, null, "")]
+    [InlineData(DecisionSubject.Resolving, "Rhino", "Resolving Rhino")]
+    [InlineData(DecisionSubject.MinionActivation, "Hydra Soldier", "Choosing the next minion activation")]
+    public void ADecisionsSubjectIsOneShortLine(DecisionSubject subject, string? title, string expected) =>
+        Assert.Equal(expected, TableWording.DecisionSubjectLine(new DecisionFrame("Thor", subject, title, false, [], "")));
+
+    [Fact]
     public void AnAreaIsTitledByItsPlayers()
     {
-        Assert.Equal("Alice · Bob", TableWording.AreaTitle(["Alice", "Bob"], retained: false));
-        Assert.Equal("Dan (retained)", TableWording.AreaTitle(["Dan"], retained: true));
-        Assert.Equal("Retained area", TableWording.AreaTitle([], retained: true));
+        Assert.Equal("Alice · Bob", TableWording.AreaTitle(["Alice", "Bob"]));
+        Assert.Equal("Dan", TableWording.AreaTitle(["Dan"]));
+        Assert.Equal("Retained area", TableWording.AreaTitle([]));
     }
 
     [Theory]
@@ -96,12 +144,12 @@ public sealed class TableWordingTests
     [InlineData(DecisionSubject.Inspecting, "False Alarm", "Decision for Thor · Inspecting False Alarm")]
     [InlineData(DecisionSubject.MinionActivation, "Hydra Soldier", "Decision for Thor · Choosing the next minion activation")]
     public void ADecisionNamesItsAnsweringSeatAndSubject(DecisionSubject subject, string? title, string expected) =>
-        Assert.Equal(expected, TableWording.DecisionContext(new DecisionFrame(0, "Thor", subject, title, false, [], "")));
+        Assert.Equal(expected, TableWording.DecisionContext(new DecisionFrame("Thor", subject, title, false, [], "")));
 
     [Fact]
     public void ADecisionSaysWhetherItMayBeDeclinedAndWhatCausedIt()
     {
-        var frame = new DecisionFrame(0, "Thor", DecisionSubject.None, null, Optional: true, ["Heimdall", "Rhino"], "Look.");
+        var frame = new DecisionFrame("Thor", DecisionSubject.None, null, Optional: true, ["Heimdall", "Rhino"], "Look.");
         Assert.Equal("You may pass this opportunity.", TableWording.DecisionRequirement(frame, "Pass this opportunity"));
         Assert.Equal("Choose to continue.", TableWording.DecisionRequirement(frame with { Optional = false }, "Pass"));
         Assert.Equal("Cause: Heimdall, Rhino. Look.", TableWording.DecisionResolution(frame));

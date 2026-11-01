@@ -30,10 +30,15 @@ public sealed class SeatTileTests
     public void TheFormBadgeComesFromTheIdentityKind(string? kind, string? form) =>
         Assert.Equal(form, SeatTile.Form(kind)?.ToString());
 
-    [Theory]
-    [InlineData("P1 · SPIDER-MAN", "SPIDER-MAN")]
-    [InlineData(null, "Player 3")]
-    public void TheHeroIsTheLanesLastTitlePart(string? title, string hero) => Assert.Equal(hero, SeatTile.Hero(title, 2));
+    [Fact]
+    public void TheHeroIsTheIdentityCardsPublishedTitle()
+    {
+        var identity = new BoardCardPresentation(9, 1, false, "Spider-Man · Peter", "", "HERO", "", []);
+        var board = new BoardPresentation([new BoardAreaPresentation(1, "HeroArea", "", [identity], []) { Zone = "HeroArea" }]);
+        Assert.Equal("Spider-Man · Peter", SeatTile.Hero(board, Summary(2, 9)));
+        Assert.Equal("Player 3", SeatTile.Hero(board, Summary(2, null)));
+        Assert.Equal("Player 3", SeatTile.Hero(board, Summary(2, 404)));
+    }
 
     [Theory]
     [InlineData(7L, 10L, 0.7f, "7/10")]
@@ -44,7 +49,7 @@ public sealed class SeatTileTests
     public void TheHealthBarNeedsBothValues(long? health, long? maximum, float? fraction, string text)
     {
         Assert.Equal(fraction, SeatHealth.Fraction(health, maximum));
-        Assert.Equal(text, SeatHealth.Text(health, maximum));
+        Assert.Equal(text, TableWording.Health(health, maximum));
     }
 
     [Fact]
@@ -62,4 +67,6 @@ public sealed class SeatTileTests
         Assert.Null(SeatHealth.Maximum(board, 8));
         Assert.Null(SeatHealth.Maximum(board, null));
     }
+
+    private static PlayerSummaryDescriptor Summary(int seat, int? identity) => new(seat, identity, "Hero", 7, [], [], []);
 }

@@ -36,7 +36,10 @@ public static class KangTable
         return new(Stage(world, villains), Remaining(villains, pending), StoredDominions(world), central,
             world.Agenda.KangSplit.Pending?.Card,
             [.. pending.OrderBy(item => item.Defeated.Card).Select(item => Describe(world, item))],
-            VillainPhaseFocus.Of(world)) { Notes = Notes(world, central) };
+            VillainPhaseFocus.Of(world))
+        {
+            Notes = Notes(world, central), LocalKangsDealt = world.Agenda.KangSplit.LocalKangsDealt,
+        };
     }
 
     // Each note applies exactly while the table is separated. A stage already completed
@@ -79,7 +82,6 @@ public static class KangTable
         var destinations = KangJoinProcedure.Destinations(world, departure);
         return new(departure.Defeated.Card, departure.Source.Id,
             [.. departure.Group.Where(area => area.IsPlayers).Select(area => area.Player)],
-            departure.CompletedScheme?.Card, [.. destinations.Select(area => area.Id)], destinations.Length == 0,
-            KangDepartureNames.Departure(world, departure));
+            departure.CompletedScheme?.Card, [.. destinations.Select(area => area.Id)], destinations.Length == 0);
     }
 }

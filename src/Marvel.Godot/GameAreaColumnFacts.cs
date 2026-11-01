@@ -39,13 +39,14 @@ internal sealed class GameAreaColumnFacts(BoardPresentation board, GameAreaDescr
     }
 
     /// <summary>
-    /// The full explanation, most urgent first: why the area is out of reach, what is acting and who
-    /// departs, then the rules anchored to this area's schemes.
+    /// The full explanation, most urgent first: why the area is out of reach, that it is retained, what is
+    /// acting and who departs, then the rules anchored to this area's schemes.
     /// </summary>
     internal string Tooltip(string title)
     {
         var lines = new List<string> { title };
         if (OutOfReach) lines.Add(TableWording.For(TableWording.Fact(Reason())).Tooltip);
+        if (area.Retained) lines.Add(TableWording.For(TableFact.Retained).Tooltip);
         if (Acting is { } acting)
             lines.Add($"{TableWording.For(TableWording.Step(acting.Step)).Tooltip} ({GameAreaTableProjection.Names(board, [acting.Seat])[0]})");
         lines.AddRange(departures.Select(Departure));
@@ -54,8 +55,9 @@ internal sealed class GameAreaColumnFacts(BoardPresentation board, GameAreaDescr
         return string.Join("\n", lines);
     }
 
+    // Client validation admits out-of-reach cards only with their reason.
     private ReachReason Reason() => board.Players.FirstOrDefault(item => item.Seat == seat)?.OutOfReachReason
-        ?? ReachReason.OtherGameArea;
+        ?? throw new InvalidOperationException($"seat {seat} has out-of-reach cards without a published reason");
 
     private string Departure(KangDepartureDescriptor departure) => TableWording.Departure(
         GameAreaTableProjection.Title(board, departure.Villain), GameAreaTableProjection.Names(board, departure.Seats),

@@ -18,6 +18,9 @@ public sealed record KangTableDescriptor(
     /// <summary>The villain-phase step and seat resolving now, if any.</summary>
     public VillainPhaseFocusDescriptor? Acting { get; init; }
 
+    /// <summary>How many Kang (II) the split dealt, one per participating player; 0 before the split.</summary>
+    public int LocalKangsDealt { get; init; }
+
     /// <summary>The number of players who started the scenario, which every per-player value counts.</summary>
     public int StartingPlayers { get; init; }
 

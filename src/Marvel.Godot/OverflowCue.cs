@@ -8,9 +8,10 @@ internal static class OverflowCue
     /// <summary>The cue's words, such as "+3 ▸"; nothing when nothing is hidden.</summary>
     internal static string Text(int hidden) => hidden > 0 ? $"+{hidden} ▸" : "";
 
-    /// <summary>How many of <paramref name="count"/> equal rows of <paramref name="row"/> pixels a viewport cannot show.</summary>
-    internal static int Hidden(int count, float row, float viewport) =>
-        row <= 0 ? 0 : Math.Max(0, count - (int)Math.Floor(viewport / row));
+    /// <summary>How many rows, each by its top and bottom edge, do not lie wholly inside the viewport's edges.</summary>
+    /// <remarks>Half a pixel of rounding is tolerated, so a row flush with an edge counts as shown.</remarks>
+    internal static int Hidden(IEnumerable<(float Top, float Bottom)> rows, float viewTop, float viewBottom) =>
+        rows.Count(row => row.Top < viewTop - 0.5f || row.Bottom > viewBottom + 0.5f);
 
     /// <summary>A cue label, hidden when nothing overflows; the tooltip says where the rest is.</summary>
     internal static Label Create(string name, int hidden, string tooltip, InterfaceScale scale)
@@ -19,7 +20,14 @@ internal static class OverflowCue
         cue.TooltipText = tooltip;
         cue.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
         cue.HorizontalAlignment = HorizontalAlignment.Right;
-        cue.Visible = hidden > 0;
+        Show(cue, hidden);
         return cue;
+    }
+
+    /// <summary>Updates a cue to a new hidden count.</summary>
+    internal static void Show(Label cue, int hidden)
+    {
+        cue.Text = Text(hidden);
+        cue.Visible = hidden > 0;
     }
 }

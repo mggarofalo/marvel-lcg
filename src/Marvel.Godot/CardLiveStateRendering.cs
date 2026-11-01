@@ -7,7 +7,8 @@ namespace Marvel.Godot;
 /// <summary>Renders an authorized snapshot as upright readable state, outside printed rules.</summary>
 internal static class CardLiveStateRendering
 {
-    internal static VBoxContainer Create(BoardCardPresentation card, float width, bool compact, bool showProgress = true)
+    internal static VBoxContainer Create(BoardCardPresentation card, float width, bool compact, bool showProgress = true,
+        InterfaceScale scale = InterfaceScale.Percent100)
     {
         var stack = new VBoxContainer { Name = "LiveState", CustomMinimumSize = new Vector2(width, 0),
             MouseFilter = Control.MouseFilterEnum.Ignore, SizeFlagsHorizontal = Control.SizeFlags.Fill };
@@ -16,11 +17,12 @@ internal static class CardLiveStateRendering
         CardProgressValue? progress = CardProgressValue.From(card);
         if (showProgress && progress is not null && card.Fields.Any(field => field.Name == progress.FieldName))
             AddProgress(stack, card, progress, compact);
-        AddStatuses(stack, card, width, compact);
+        AddStatuses(stack, card, width, compact, scale);
         return stack;
     }
 
-    private static void AddStatuses(VBoxContainer stack, BoardCardPresentation card, float width, bool compact)
+    private static void AddStatuses(VBoxContainer stack, BoardCardPresentation card, float width, bool compact,
+        InterfaceScale scale)
     {
         var grid = new HFlowContainer { Name = "LiveStatuses", CustomMinimumSize = new Vector2(width, 0),
             MouseFilter = Control.MouseFilterEnum.Ignore };
@@ -30,7 +32,7 @@ internal static class CardLiveStateRendering
         {
             var cell = new VBoxContainer {
                 MouseFilter = Control.MouseFilterEnum.Ignore };
-            if (StatusBadge.Supports(entry.Name)) cell.AddChild(StatusBadge.Create(entry.Name, entry.Text, compact));
+            if (StatusBadge.Supports(entry.Name)) cell.AddChild(StatusBadge.Create(entry.Name, entry.Text, entry.Count, compact, scale));
             else AddLabel(cell, entry.Text, $"LiveStatus{grid.GetChildCount()}", compact ? 12 : 16).AutowrapMode = TextServer.AutowrapMode.Off;
             grid.AddChild(cell);
         }

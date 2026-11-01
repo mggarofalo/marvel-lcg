@@ -43,7 +43,7 @@ internal sealed class GameAreaTableRenderer(
     {
         var (board, hosted, table, visible, scale, controls) = pass;
         string name = column.GameArea is { } id ? $"GameArea{id}" : "GameAreaCentral";
-        GameAreaTableChrome.AddFrame(surface, name, bounds, column);
+        GameAreaTableChrome.AddFrame(surface, name, bounds, column, scale);
         GameAreaTableChrome.AddHeader(surface, name, bounds, column, scale);
         BoardCardPresentation[] objects = [.. column.Villains.Concat(column.Schemes)
             .Where(visible.ContainsKey).Select(card => visible[card])];
@@ -61,9 +61,9 @@ internal sealed class GameAreaTableRenderer(
         if (board.Kang is not { } kang) return room;
         (Rect2 stage, Rect2 discard, Rect2 deck) = GameAreaColumnLayout.Central(room, VisualSystem.Spacing(scale).Small);
         if (board.Areas.FirstOrDefault(area => area.Id == kang.EncounterDiscard) is { } discardPile)
-            piles.RenderNamed(discardPile, discard, "Shared encounter discard pile", stacked: true);
+            piles.RenderNamed(discardPile, discard, TableWording.SharedDiscard, stacked: true);
         if (board.Areas.FirstOrDefault(area => area.Id == kang.EncounterDeck) is { } deckPile)
-            piles.RenderNamed(deckPile, deck, "Shared encounter deck", stacked: true);
+            piles.RenderNamed(deckPile, deck, TableWording.SharedDeck, stacked: true);
         return stage;
     }
 

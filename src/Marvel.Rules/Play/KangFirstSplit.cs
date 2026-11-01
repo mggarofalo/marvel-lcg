@@ -17,6 +17,8 @@ public sealed class KangFirstSplit
 
     /// <summary>The exact defeated incarnation awaiting its next phase ending.</summary>
     public OccurrenceCard? Pending => defeated;
+    /// <summary>How many Kang (II) the split dealt, one per participating player; 0 before the split.</summary>
+    public int LocalKangsDealt { get; private set; }
     /// <summary>Whether this physical face uses the scenario's stage-I departure policy.</summary>
     public static bool IsFirstStage(Card card) => card.FaceId is "11001" or "11034";
 
@@ -101,6 +103,7 @@ public sealed class KangFirstSplit
         var choices = Enumerable.Range(11009, 4).Select(code => Require(world, $"{code}a")).ToList();
         // Engine choice: one seeded Choice from the ordered remaining printed codes
         // for each seat in player order. Every assignment consumes a bounded draw.
+        LocalKangsDealt = world.PlayerOrder.Count();
         foreach (int player in world.PlayerOrder)
         {
             var chosen = world.Random.Choice(choices);

@@ -34,6 +34,16 @@ internal static class TableBlockStyle
         return label;
     }
 
+    /// <summary>A caption that wraps at word boundaries and is never cut short.</summary>
+    internal static Label Wrapped(string name, string text, InterfaceScale scale, VisualColor color)
+    {
+        Label label = Line(name, text, scale, color);
+        label.ClipText = false;
+        label.TextOverrunBehavior = TextServer.OverrunBehavior.NoTrimming;
+        label.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+        return label;
+    }
+
     /// <summary>A one-line caption that ellipsizes rather than wrapping; its full text is the tooltip.</summary>
     internal static Label Line(string name, string text, InterfaceScale scale, VisualColor color)
     {

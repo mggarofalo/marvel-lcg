@@ -39,7 +39,7 @@ public sealed class GameAreaTableProjectionTests
     public void ColumnsAreTitledByTheirPlayers()
     {
         GameAreaTable table = GameAreaTableProjection.From(Board(), 0)!;
-        Assert.Equal(["Alice · Bob", "Carol", "Central", "Dan (retained)"], table.Columns.Select(column => column.Title));
+        Assert.Equal(["Alice · Bob", "Carol", "Central", "Dan"], table.Columns.Select(column => column.Title));
     }
 
     [Fact]
@@ -60,9 +60,17 @@ public sealed class GameAreaTableProjectionTests
         Assert.Equal(string.Join("\n", "Carol", Reach, TableWording.For(TableFact.StepThreat).Tooltip + " (Carol)",
             TableWording.For(TableFact.Destination).Tooltip, TableWording.Rule(KangNoteKind.CompletionStoresDominion, 4)),
             table.Columns[1].Tooltip);
-        Assert.Equal(string.Join("\n", "Dan (retained)", Reach,
+        Assert.Equal(string.Join("\n", "Dan", Reach, TableWording.For(TableFact.Retained).Tooltip,
             TableWording.Departure("Kang (II)", [], completed: true, reunion: false)), table.Columns[3].Tooltip);
         Assert.Equal(string.Join("\n", "Alice · Bob", Completion), table.Columns[0].Tooltip);
+    }
+
+    [Fact]
+    public void OutOfReachCardsWithoutAReasonFailRatherThanGuessOne()
+    {
+        BoardPresentation board = Board();
+        board = board with { Players = [board.Players[0] with { OutOfReachReason = null }, .. board.Players.Skip(1)] };
+        Assert.Throws<InvalidOperationException>(() => GameAreaTableProjection.From(board, 0));
     }
 
     [Fact]
@@ -131,10 +139,14 @@ public sealed class GameAreaTableProjectionTests
     }
 
     [Fact]
-    public void TheTrackerCountsTheKangIIStillStandingAndLeavingAndTheStoredDominions()
+    public void TheTrackerCountsTheKangIIStillStandingAgainstThoseDealtAtTheSplit()
     {
         TrackerState tracker = GameAreaTableProjection.From(Board(), 0)!.Tracker;
-        Assert.Equal(("Kang (II)", 2, 3, 1), (tracker.Label, tracker.Filled, tracker.Total, tracker.Count));
+        Assert.Equal(("Kang (II)", 2, 4, 1), (tracker.Label, tracker.Filled, tracker.Total, tracker.Count));
+        // A resolved departure leaves its pip hollow: the total is what the split dealt, not what is left.
+        BoardPresentation resolved = Board() with { Kang = Board().Kang! with { Departures = [] } };
+        Assert.Equal((2, 4), (GameAreaTableProjection.From(resolved, 0)!.Tracker.Filled,
+            GameAreaTableProjection.From(resolved, 0)!.Tracker.Total));
         Assert.Equal(TableWording.For(TableFact.StoredDominions), tracker.Counter);
         Assert.Equal(TableWording.Progress(Board().Kang!), tracker.Tooltip);
     }
@@ -200,7 +212,7 @@ public sealed class GameAreaTableProjectionTests
         Kang = new KangTableDescriptor(2, 2, 1, [300], null, [new(103, 7, [], 203, [6], false)])
         {
             Acting = new VillainPhaseFocusDescriptor(1, 2, 6),
-            StartingPlayers = 4,
+            StartingPlayers = 4, LocalKangsDealt = 4,
             Notes =
             [
                 new(KangNoteKind.AreaIsolation, null),

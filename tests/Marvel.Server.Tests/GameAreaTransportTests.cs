@@ -52,6 +52,7 @@ public sealed class GameAreaTransportTests
             {
                 Acting = new VillainPhaseFocusDescriptor(2, 0, 7),
                 StartingPlayers = 2,
+                LocalKangsDealt = 2,
                 EncounterDeck = 20,
                 EncounterDiscard = 21,
                 Notes = [new(KangNoteKind.CentralTokensWaitFor4A, 14)],
@@ -64,7 +65,7 @@ public sealed class GameAreaTransportTests
 
         string text = Encoding.UTF8.GetString(json);
         foreach (string member in new[] { "\"out_of_reach\":[12]", "\"out_of_reach_reason\":1", "\"main_schemes\":[11]", "\"former_seats\":[1]",
-            "\"stored_dominions\":1", "\"kind\":5", "\"remaining_local_kangs\":1", "\"completed_scheme\":13", "\"reunion\":true" })
+            "\"stored_dominions\":1", "\"kind\":5", "\"remaining_local_kangs\":1", "\"local_kangs_dealt\":2", "\"completed_scheme\":13", "\"reunion\":true" })
             Assert.Contains(member, text, StringComparison.Ordinal);
         Assert.Equal([12], restored.Players[0].OutOfReach);
         Assert.Equal([10], restored.GameAreas[0].Villains);
@@ -73,8 +74,8 @@ public sealed class GameAreaTransportTests
         Assert.Equal((true, false), (restored.GameAreas[1].Retained, restored.GameAreas[1].Central));
         Assert.Equal([1], restored.GameAreas[1].FormerSeats);
         var kang = restored.Kang!;
-        Assert.Equal((2, 1, 1, 2, 20, 21), (kang.Stage, kang.RemainingLocalKangs, kang.StoredDominions,
-            kang.StartingPlayers, kang.EncounterDeck, kang.EncounterDiscard));
+        Assert.Equal((2, 1, 1, 2, 2, 20, 21), (kang.Stage, kang.RemainingLocalKangs, kang.StoredDominions,
+            kang.LocalKangsDealt, kang.StartingPlayers, kang.EncounterDeck, kang.EncounterDiscard));
         Assert.Equal(world.Kang.Acting, kang.Acting);
         var departure = Assert.Single(kang.Departures);
         Assert.Equal((12, 8, 13, true), (departure.Villain, departure.SourceGameArea, departure.CompletedScheme, departure.Reunion));

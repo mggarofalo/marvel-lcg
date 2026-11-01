@@ -14,9 +14,8 @@ internal static class Tracker
     }
 
     /// <summary>The tracker's accessible reading, such as "Kang (II) 2 of 3, Dominions 1".</summary>
-    internal static string Reading(TrackerState state) =>
-        state.Label + (state.Total > 0 ? $" {Math.Clamp(state.Filled, 0, state.Total)} of {state.Total}" : "")
-        + (state.Counter is { } counter ? $", {counter.Label} {state.Count}" : "");
+    internal static string Reading(TrackerState state) => TableWording.TrackerReading(state.Label,
+        Math.Clamp(state.Filled, 0, Math.Max(0, state.Total)), state.Total, state.Counter?.Label, state.Count);
 
     /// <summary>The tracker row.</summary>
     internal static HBoxContainer Create(string name, TrackerState state, InterfaceScale scale)

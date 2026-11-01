@@ -89,7 +89,7 @@ public sealed class KangSplitTableViewTests
     private static void Separated(World world, WorldDescriptor[] views, KangTableDescriptor kang)
     {
         Assert.Equal(2, kang.Stage);
-        Assert.Equal(2, kang.StartingPlayers);
+        Assert.Equal((2, 2), (kang.StartingPlayers, kang.LocalKangsDealt));
         Assert.Equal([KangNoteKind.AreaIsolation, KangNoteKind.StepsInTurnOrder, KangNoteKind.EachPlayerIsArea,
                 KangNoteKind.SharedEncounterDeck, KangNoteKind.CentralTokensWaitFor4A],
             kang.Notes.Select(note => note.Kind).Where(kind => kind != KangNoteKind.CompletionStoresDominion));

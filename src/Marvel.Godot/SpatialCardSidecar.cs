@@ -40,7 +40,8 @@ internal static class SpatialCardSidecar
 
     internal static void State(CardControl card, Marvel.View.BoardCardPresentation presentation)
     {
-        var state = CardLiveStateRendering.Create(presentation, Math.Min(card.Size.X, card.Size.Y) - 12, compact: true);
+        var scale = card.HasMeta("card_reading_scale") ? (InterfaceScale)card.GetMeta("card_reading_scale").AsInt32() : InterfaceScale.Percent100;
+        var state = CardLiveStateRendering.Create(presentation, Math.Min(card.Size.X, card.Size.Y) - 12, compact: true, scale: scale);
         if (state.GetChildCount() == 0) { state.QueueFree(); return; }
         For(card);
         if (SpatialTableZones.IsExhausted(presentation))

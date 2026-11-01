@@ -15,12 +15,10 @@ namespace Marvel.Rules.Play;
 /// Whether no game area remains for it to join, so it goes to central stage 2B and the
 /// table reunites at stage 4A (11008b).
 /// </param>
-/// <param name="Summary">The engine-authored sentence naming the cause, the players and the area they leave.</param>
 public sealed record KangPendingDeparture(
     int Villain,
     int SourceGameArea,
     IReadOnlyList<int> Seats,
     int? CompletedScheme,
     IReadOnlyList<int> Destinations,
-    bool Reunion,
-    string Summary);
+    bool Reunion);

@@ -25,6 +25,7 @@ internal static class KangTableProjection
             [.. facts.CentralSchemes.Where(addressable.Contains)], Visible(facts.PendingSplit), departures)
         {
             Acting = facts.Acting is { } acting ? new(acting.Step, acting.Seat, acting.GameArea) : null,
+            LocalKangsDealt = facts.LocalKangsDealt,
             StartingPlayers = world.Players,
             EncounterDeck = world.AreaOf(DeckType.EncounterDeck).Id,
             EncounterDiscard = world.AreaOf(DeckType.EncounterDiscardPile).Id,

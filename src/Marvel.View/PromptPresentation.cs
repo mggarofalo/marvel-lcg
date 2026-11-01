@@ -120,7 +120,7 @@ public sealed record PromptPresentation(
             : contextCards.Count == 0 ? DecisionSubject.None
             : prompt.PublicKind == PublicDecisionKind.CardLook ? DecisionSubject.Inspecting
             : DecisionSubject.Resolving;
-        return new DecisionFrame(prompt.Player, player, subject,
+        return new DecisionFrame(player, subject,
             contextCards.Count > 0 ? contextCards[0].Title : null, prompt.Cancellable,
             Causes(prompt, world), prompt.Description?.Trim() ?? string.Empty);
     }
