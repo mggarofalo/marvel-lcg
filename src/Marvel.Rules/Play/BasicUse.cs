@@ -48,7 +48,7 @@ public sealed class BasicUse(int actor, int incarnation, string field = "attack"
         ForThwart(world, thwart) is null ? ordinary
             : EffectiveCards.Kind(world.Cards[thwart.Thwarter], facts) switch
             {
-                CardKind.Hero => [.. ordinary, BasicPowerTiming.HeroUseInitiated],
+                CardKind.Hero => [.. ordinary, BasicPowerTiming.HeroThwartInitiated, BasicPowerTiming.HeroUseInitiated],
                 CardKind.Ally => [.. ordinary, BasicPowerTiming.AllyUseInitiated],
                 _ => ordinary,
             };
@@ -59,7 +59,7 @@ public sealed class BasicUse(int actor, int incarnation, string field = "attack"
             : EffectiveCards.Kind(world.Cards[attack.Attacker], facts) switch
             {
                 CardKind.Hero => [.. ordinary, BasicPowerTiming.HeroAttackInitiated, BasicPowerTiming.HeroUseInitiated],
-                CardKind.Ally => [.. ordinary, BasicPowerTiming.AllyUseInitiated],
+                CardKind.Ally => [.. ordinary, BasicPowerTiming.AllyAttackInitiated, BasicPowerTiming.AllyUseInitiated],
                 _ => ordinary,
             };
 }

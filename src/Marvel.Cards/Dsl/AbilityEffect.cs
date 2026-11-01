@@ -150,8 +150,8 @@ public abstract record AbilityEffect
     }
     /// <summary>Prevent an amount of the imminent threat.</summary>
     public sealed record PreventThreat(AbilityNumber Amount) : AbilityEffect;
-    /// <summary>Prevent damage to the interrupted occurrence's recipient.</summary>
-    public sealed record PreventDamage(AbilityNumber Amount) : AbilityEffect;
+    /// <summary>Prevent damage to the interrupted occurrence's recipient, paid for by <paramref name="Payment"/> when present.</summary>
+    public sealed record PreventDamage(AbilityNumber Amount, AbilityCounterPayment? Payment = null) : AbilityEffect;
     /// <summary>Increase every damage or removal instance of the paid event.</summary>
     public sealed record ModifyPlayedEvent(string Kind, int Amount) : AbilityEffect;
     /// <summary>Gain this many instances of Surge.</summary>

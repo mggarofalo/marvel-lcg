@@ -81,6 +81,8 @@ public static class AbilityLowering
             // Engine choice: this spelling names the bound attack-end recipient.
             "attackExcessDamage" => FixedNumber(argument, child, "trigger.target", AbilityResolutionNumber.AttackExcessDamage),
             "completedAttackDamageDealt" => FixedNumber(argument, child, "game", AbilityResolutionNumber.CompletedAttackDamageDealt),
+            // Engine choice: this spelling names the interrupted damage occurrence.
+            "incomingDamage" => FixedNumber(argument, child, "trigger", AbilityResolutionNumber.IncomingDamage),
             "activationAttacksAgainstYou" => FixedNumber(argument, child, "game", AbilityResolutionNumber.ActivationAttacksAgainstYou),
             "printedCostDiscarded" => FixedNumber(argument, child, "game", AbilityResolutionNumber.PrintedCostDiscarded),
             "distinctCardTypesDiscarded" => FixedNumber(argument, child, "game", AbilityResolutionNumber.DistinctCardTypesDiscarded),

@@ -88,12 +88,14 @@ public sealed class BasicAttackOverkillTests
     [InlineData("WhenHeroBasicUseInitiated", "Interrupt")]
     [InlineData("WhenActionTriggered", "Action")]
     [InlineData("WhenHeroBasicAttackInitiated", "Response")]
+    [InlineData("WhenAllyBasicUseInitiated", "Interrupt")]
+    [InlineData("WhenHeroBasicThwartInitiated", "Interrupt")]
     public void KeywordOnlyInstructionRequiresExactBasicAttackInterrupt(string occurrence, string timing)
     {
         var text = """{"cards":[{"card":"10003","abilities":[{"trigger":{"event":"EVENT","timing":"TIMING"},"effect":{"boostBasicUse":"overkill"}}]}]}"""
             .Replace("EVENT", occurrence, StringComparison.Ordinal).Replace("TIMING", timing, StringComparison.Ordinal);
         var error = Assert.Throws<AbilityException>(() => new Marvel.Cards.Run.AbilityRunner(AbilityCatalog.Parse(text)));
-        Assert.Contains("hero basic-attack interrupt", error.Message);
+        Assert.Contains("basic-attack interrupt", error.Message);
     }
 
     [Theory]

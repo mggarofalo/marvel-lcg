@@ -28,7 +28,7 @@ namespace Marvel.Rules.Play;
 /// </remarks>
 public static class CardPlay
 {
-    /// <inheritdoc cref="CardPayment.ReduceNextCardCost"/>
+    /// <inheritdoc cref="CardPayment.ReduceNextCardCost(World, Card, int, long)"/>
     public static ContinuousEffects.Registration ReduceNextCardCost(
         World world, Card source, int player, long amount) =>
         CardPayment.ReduceNextCardCost(world, source, player, amount);

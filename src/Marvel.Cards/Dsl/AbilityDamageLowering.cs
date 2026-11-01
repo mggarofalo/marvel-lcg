@@ -51,4 +51,14 @@ internal static class AbilityDamageLowering
         return new(fields.ContainsKey("amount") ? Numeric(fields, "amount", location) : new AbilityNumber.Constant(long.MaxValue));
     }
 
+    // Engine choice: this spelling removes as many counters as damage remains and
+    // prevents one damage per counter removed.
+    internal static AbilityEffect.PreventDamage CounterPreventionEffect(AbilityValue value, AbilityLocation location)
+    {
+        var fields = Fields(value, location, "card", "counter");
+        var holder = Selected(fields, "card", location);
+        string counter = Text(Required(fields, "counter", location), location.Child("counter"));
+        return new(new AbilityNumber.Counters(holder, counter), new AbilityCounterPayment(holder, counter));
+    }
+
 }

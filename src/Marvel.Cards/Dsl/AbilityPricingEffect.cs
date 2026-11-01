@@ -22,5 +22,7 @@ public abstract record AbilityPricingEffect : AbilityEffect
         public bool AnyPlayer { get; init; }
         /// <summary>Optional printed card kind and trait restriction.</summary>
         public Marvel.Rules.Play.CardCostFilter? Filter { get; init; }
+        /// <summary>When an unused reduction for one player expires.</summary>
+        public string Until { get; init; } = Marvel.Rules.Timing.TimingPoints.EndOfPlayerPhase;
     }
 }

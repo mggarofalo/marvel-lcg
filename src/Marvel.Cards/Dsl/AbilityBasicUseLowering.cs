@@ -26,9 +26,10 @@ internal static class AbilityBasicUseLowering
 
     private static void ValidateOverkill(CardAbility ability, AbilityEffect effect, AbilityLocation location)
     {
-        if (ContainsOverkill(effect) && (ability.Trigger.Event != BasicPowerTiming.HeroAttackInitiated
+        if (ContainsOverkill(effect) && (ability.Trigger.Event is not (BasicPowerTiming.HeroAttackInitiated
+                or BasicPowerTiming.AllyAttackInitiated)
             || ability.Trigger.Timing != AbilityType.Interrupt))
-            throw location.Error("basic-use overkill requires the hero basic-attack interrupt");
+            throw location.Error("basic-use overkill requires a basic-attack interrupt");
     }
 
     private static bool ContainsOverkill(AbilityEffect effect) =>

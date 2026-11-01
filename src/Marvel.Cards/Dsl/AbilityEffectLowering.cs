@@ -93,6 +93,7 @@ internal static class AbilityEffectLowering
             "removeThreat" => RemoveThreatEffect(argument, child),
             "preventThreat" => new AbilityEffect.PreventThreat(Number(argument, child)),
             "preventDamage" => PreventDamageEffect(argument, child),
+            "preventDamageWithCounters" => AbilityDamageLowering.CounterPreventionEffect(argument, child),
             "gainSurge" => new AbilityEffect.GainSurge(Integer(argument, child)),
             "useAttackForThwart" => FixedEffect(argument, child, "trigger", AbilityFixedInstruction.UseAttackForThwart),
             "readyUndamagedDefender" => FixedEffect(argument, child, "you", AbilityFixedInstruction.ReadyUndamagedDefender),
