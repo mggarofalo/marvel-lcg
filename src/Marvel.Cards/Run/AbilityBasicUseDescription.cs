@@ -20,15 +20,12 @@ internal static class AbilityBasicUseDescription
         _ => null,
     };
 
-    // The trigger names the power: a thwart-only interrupt boosts THW, a use-level
-    // interrupt boosts whichever basic power is being used, and otherwise ATK.
-    private static string Bonus(int amount, string? trigger) => trigger switch
-    {
-        BasicPowerTiming.HeroThwartInitiated => $"Add {amount} THW for this basic thwart only",
-        BasicPowerTiming.HeroUseInitiated or BasicPowerTiming.AllyUseInitiated =>
-            $"Add {amount} to this basic attack or thwart only",
-        _ => $"Add {amount} ATK for this basic attack only",
-    };
+    // The trigger names the power: a thwart-only interrupt boosts THW, and any
+    // other bonus is described as ATK.
+    private static string Bonus(int amount, string? trigger) =>
+        trigger == BasicPowerTiming.HeroThwartInitiated
+            ? $"Add {amount} THW for this basic thwart only"
+            : $"Add {amount} ATK for this basic attack only";
 
     private static string? Sequence(AbilityEffect.Sequence sequence, string? trigger)
     {
