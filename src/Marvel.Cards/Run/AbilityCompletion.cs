@@ -26,6 +26,8 @@ internal static class AbilityCompletion
             ?? effect.OperationName() switch
         {
             "placeOnBottomOfDeck" => Moved(committed, "Place_On_Bottom", requested),
+            // Equivalent mutant: Salvage (16033), the only placeOnTopOfDeck row, reads no
+            // completion of its placement, so observing another verb here survives.
             "placeOnTopOfDeck" => Moved(committed, "Place_On_Top", requested),
             "placeThreat" => AbilityStructuralOutcome.None,
             "giveStatus" => Amount(committed.OfType<CardAttached>().Count(item => item.Verb == "Give_Status"), requested),

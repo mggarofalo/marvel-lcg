@@ -97,6 +97,32 @@ public sealed class RocketPreventedAttackTests : CoreCardTestBase
         Assert.NotEqual(DeckType.EncounterDiscardPile, minion.Area.Type);
     }
 
+    [Fact]
+    [Rule("rr:prevent.1.3")]
+    [Rule("rr:damage.step.1")]
+    public void TemporalShieldLeavesNoDamageForArmoredRhinoSuitToTake()
+    {
+        // Temporal Shield prevents all damage from the attack before any step-1
+        // replacement sees it; Armored Rhino Suit (01098: "When any amount of damage
+        // would be dealt to Rhino, place it here instead") has nothing to place. The
+        // pistol's 2 still deals 1 excess to Rhino with 1 hit point left.
+        var world = RocketBoards.Board();
+        var rocket = RocketBoards.Rocket(world);
+        var rhino = GrootBoards.Villain(world);
+        rhino.TakeDamage(Damage.Health(world, world.Facts, rhino) - 1);
+        var suit = Attach(world, "01098", rhino);
+        Attach(world, TemporalShield, rhino);
+        var pistol = RocketBoards.Upgrade(world, "16038", charge: 3);
+        var offered = new List<int>();
+
+        GrootBoards.Act(world, pistol, []);
+        GrootBoards.Drive(world, prompt => GrootBoards.Take(rhino)(prompt) ?? RocketIdentityTests.Respond(rocket, offered)(prompt));
+
+        Assert.Equal(0, suit.Damage);
+        Assert.Equal(Damage.Health(world, world.Facts, rhino) - 1, rhino.Damage);
+        Assert.Single(offered);
+    }
+
     private static Card Attach(World world, string face, Card host) =>
         world.CreateCard(face, world.AreaOf(DeckType.UpgradesArea, PlayArea.Villains, host.ObjectId));
 }

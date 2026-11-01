@@ -106,6 +106,9 @@ internal static class AbilityDamageReplacementExecution
     /// <summary>Prevents attack damage reflected to the attacker and deals it there; false while that damage is unfinished.</summary>
     private static bool Reflect(World world, DamageReplacement replacement, List<GameEvent> events)
     {
+        // Equivalent mutant: Temporal Shield attaches only to Kang and Photographic
+        // Reflexes only to Taskmaster, so no enemy is both prevented and reflected, and
+        // dropping the PreventsAll test survives.
         if (replacement.CurrentAmount <= 0 || replacement.PreventsAll
             || PlayerAttackReflection.For(world, replacement.Target) is not { } reflection) return true;
         long amount = replacement.CurrentAmount;
