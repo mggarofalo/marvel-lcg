@@ -108,6 +108,65 @@ public sealed class RocketPlayerCardTests : CoreCardTestBase
     }
 
     [Theory]
+    [InlineData(2, false)]
+    [InlineData(1, true)]
+    [Rule("rr:excess-damage")]
+    public void FollowThroughNeedsDamageBeyondTheRemainingHitPoints(int remaining, bool offers)
+    {
+        // The pistol's 2 against exactly 2 remaining hit points deals no excess;
+        // against 1 it deals 1.
+        var world = RocketBoards.Board();
+        var follow = RocketBoards.Upgrade(world, "16045");
+        var pistol = RocketBoards.Upgrade(world, "16038", charge: 1);
+        var minion = GrootBoards.Engaged(world, WeaponsRunner);
+        minion.TakeDamage(2 - remaining);
+        var offered = new List<int>();
+
+        GrootBoards.Act(world, pistol, []);
+        GrootBoards.Drive(world, prompt => GrootBoards.Take(minion)(prompt) ?? GrootBoards.Take(follow, offered)(prompt));
+
+        Assert.Equal(offers ? 1 : 0, offered.Count);
+        Assert.Equal(DeckType.EncounterDiscardPile, minion.Area.Type);
+    }
+
+    [Fact]
+    [Rule("rr:attack-player-ability-type.1")]
+    public void FollowThroughIgnoresExcessFromDamageThatIsNotAnAttack()
+    {
+        // Rocket Launcher deals 2 to a minion with 1 remaining hit point, but not as an
+        // attack, so "your hero's attack" does not describe it.
+        var world = RocketBoards.Board();
+        var rocket = RocketBoards.Rocket(world);
+        var follow = RocketBoards.Upgrade(world, "16045");
+        var launcher = RocketBoards.Upgrade(world, "16037", charge: 1);
+        GrootBoards.Engaged(world, WeaponsRunner).TakeDamage(1);
+        var offered = new List<int>();
+
+        GrootBoards.Act(world, launcher, []);
+        GrootBoards.Drive(world, prompt => GrootBoards.Take(follow, offered)(prompt) ?? GrootBoards.Take(rocket)(prompt));
+
+        Assert.Empty(offered);
+        Assert.Equal(2, GrootBoards.Villain(world).Damage);
+    }
+
+    [Fact]
+    [Rule("rr:interrupt")]
+    public void DecliningFollowThroughLeavesTheExcessUnchanged()
+    {
+        // Passing the opportunity spends it for that damage; overkill carries the
+        // original 2.
+        var world = RocketBoards.Board();
+        var cannon = RocketBoards.Upgrade(world, "16036", charge: 2);
+        RocketBoards.Upgrade(world, "16045");
+        var minion = GrootBoards.Engaged(world, WeaponsRunner);
+
+        GrootBoards.Act(world, cannon, []);
+        GrootBoards.Drive(world, GrootBoards.Take(minion));
+
+        Assert.Equal(2, GrootBoards.Villain(world).Damage);
+    }
+
+    [Theory]
     [InlineData(3, 2, DeckType.UpgradesArea)]
     [InlineData(1, 0, DeckType.DiscardPile)]
     [Rule("rr:uses-x-type")]
@@ -148,6 +207,50 @@ public sealed class RocketPlayerCardTests : CoreCardTestBase
 
         Assert.Equal(0, groot.Damage);
         Assert.False(groot.Ready);
+    }
+
+    [Fact]
+    [Rule("rr:defend-defense")]
+    public void TheGrootAllyDoesNotHealWhenAnotherCharacterDefends()
+    {
+        var world = RocketBoards.Board();
+        var rocket = RocketBoards.Rocket(world);
+        var groot = GrootBoards.InPlay(world, "16047", DeckType.AlliesArea);
+        groot.TakeDamage(2);
+        var offered = new List<int>();
+        KangTemporalFixture.Attack(world, GrootBoards.Villain(world), 0);
+
+        GrootBoards.Drive(world, prompt =>
+            prompt.Affordances.FirstOrDefault(a => a.Verb == "Defense" && a.AnchorId == rocket.ObjectId) is { } defense
+                ? Decision.Take(defense.Id)
+                : GrootBoards.Take(groot, offered)(prompt));
+
+        Assert.Empty(offered);
+        Assert.Equal(2, groot.Damage);
+    }
+
+    [Fact]
+    [Rule("rr:choose-option.2")]
+    public void FloraAndFaunaOffersOnlyTheRocketOptionWhenGrootCannotChange()
+    {
+        // At 10 growth counters with Groot ready the Groot option changes nothing and
+        // cannot be chosen (rr:choose-option.2).
+        var world = GrootBoards.Board(players: 2, others: RocketBoards.Identity);
+        GrootBoards.Grow(GrootBoards.Groot(world), 10);
+        var pistol = RocketBoards.Upgrade(world, "16038", player: 1);
+        var card = GrootBoards.Hand(world, "16020");
+        var options = new List<int>();
+
+        GrootBoards.Play(world, card, [GrootBoards.Hand(world, RocketBoards.Energy)]);
+        GrootBoards.Drive(world, prompt =>
+        {
+            if (prompt.Affordances.All(a => a.Verb == "Choose_Option" && a.AnchorId == card.ObjectId))
+                options.Add(prompt.Affordances.Count);
+            return GrootBoards.Take(pistol)(prompt) ?? Decision.Take(prompt.Affordances[0].Id);
+        });
+
+        Assert.Equal([1], options);
+        Assert.Equal(2, RocketBoards.Charge(pistol));
     }
 
     [Fact]

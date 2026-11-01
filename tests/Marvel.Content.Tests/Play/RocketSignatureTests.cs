@@ -126,6 +126,29 @@ public sealed class RocketSignatureTests : CoreCardTestBase
     }
 
     [Fact]
+    [Rule("rr:lasting-effects")]
+    public void SchadenfreudeHealsOnlyRocketForHisOwnDamage()
+    {
+        // The lasting effect belongs to Rocket's identity; Spider-Man's attack in the
+        // second seat heals neither hero.
+        var world = RocketBoards.Board(players: 2);
+        var rocket = RocketBoards.Rocket(world);
+        rocket.TakeDamage(4);
+        var spider = world.Seats[1].IdentityCard;
+        spider.TakeDamage(4);
+        var card = GrootBoards.Hand(world, "16032");
+        GrootBoards.Play(world, card, [GrootBoards.Hand(world, RocketBoards.Strength)]);
+        GrootBoards.Drive(world, _ => null);
+
+        BasicPowerInitiation.BasicAttack(world, world.Facts, 1, GrootBoards.Villain(world), []);
+        GrootBoards.Drive(world, _ => null);
+
+        Assert.Equal(2, GrootBoards.Villain(world).Damage);
+        Assert.Equal(4, rocket.Damage);
+        Assert.Equal(4, spider.Damage);
+    }
+
+    [Fact]
     [Rule("rr:resource-card.2")]
     public void SalvagePutsATechUpgradeFromTheDiscardPileOnTopOfTheDeckAfterItIsSpent()
     {
@@ -175,7 +198,11 @@ public sealed class RocketSignatureTests : CoreCardTestBase
         var pistol = RocketBoards.Upgrade(world, "16038");
 
         GrootBoards.Play(world, battery, []);
-        GrootBoards.Drive(world, GrootBoards.Take(pistol));
+        GrootBoards.Drive(world, prompt =>
+        {
+            Assert.DoesNotContain(prompt.Affordances, a => a.AnchorId == battery.ObjectId);
+            return GrootBoards.Take(pistol)(prompt);
+        });
 
         Assert.Equal(1, RocketBoards.Charge(battery));
         Assert.Equal(1, RocketBoards.Charge(pistol));

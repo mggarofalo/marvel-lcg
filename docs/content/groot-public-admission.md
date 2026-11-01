@@ -11,11 +11,13 @@ was inspected, so those quantities are a repository choice from that snapshot.
 Admission requires every one of the 29 faces to be authored, to belong to
 `gmw`, and the exact recipe (`GrootRecipe`).
 
-The rest of the box (Rocket Raccoon, Ship Command, the Brotherhood of Badoon,
-the modular sets, Drang, Collector 1 and 2, Nebula, Ronan and the campaign) is
-outside the boundary. Runtime admission opens a pack's faces part by part:
-Groot's faces become playable while every other `gmw` face stays closed, and a
-setup recipe naming one of those closed faces is withheld
+Rocket Raccoon is admitted beside him
+([rocket-raccoon-public-admission.md](rocket-raccoon-public-admission.md)). The
+rest of the box (Ship Command, the Brotherhood of Badoon, the modular sets,
+Drang, Collector 1 and 2, Nebula, Ronan and the campaign) is outside the
+boundary. Runtime admission opens a pack's faces part by part: Groot's faces
+become playable while every other closed `gmw` face stays closed, and a setup recipe
+naming one of those closed faces is withheld
 (`SetupCatalog.WithoutFaces`). The packet plan is
 [gmw-wave-plan.md](gmw-wave-plan.md) (MARVEL-904).
 
@@ -72,10 +74,9 @@ entries in `datasets/rulings/`.
   form" to a player already in alter-ego form, because the flip has no target
   (rr:choose-option.1); the Core corpus pins that one-option decision.
 - **Flora and Fauna** needs Groot and Rocket Raccoon in play, in either form or
-  as an ally (rr:team-up; ruling 9e3a063b5c91ec99). Rocket Raccoon's upgrades
-  are not authored, so none can be in play, and the row authors only the Groot
-  option. `FloraAndFaunaAuthorsTheRocketOptionWhenARocketUpgradeIsAuthored`
-  fails when an upgrade is authored before the second option is.
+  as an ally (rr:team-up; ruling 9e3a063b5c91ec99). Its Rocket option, and when
+  the choice is offered, are in
+  [rocket-raccoon-public-admission.md](rocket-raccoon-public-admission.md).
 - **Deft Focus** reduces its controller's next SUPERPOWER card by 1 until the
   end of the current turn (ruling 01084513ea5772f5). An unused reduction
   expires then.

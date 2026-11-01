@@ -89,6 +89,27 @@ public sealed class RocketIdentityTests : CoreCardTestBase
     }
 
     [Fact]
+    [Rule("rr:tough")]
+    [Rule("rr:excess-damage")]
+    public void MurderedYouIsNotOfferedWhenToughMeetsDamageWithinTheRemainingHitPoints()
+    {
+        // The pistol's 2 against an undamaged 2-hit-point Weapons Runner holding a tough
+        // status card deals no excess; tough prevents it all.
+        var world = RocketBoards.Board();
+        var rocket = RocketBoards.Rocket(world);
+        var pistol = RocketBoards.Upgrade(world, "16038", charge: 3);
+        var minion = GrootBoards.Engaged(world, WeaponsRunner);
+        Statuses.Give(world, minion, Statuses.Tough);
+        var offered = new List<int>();
+
+        GrootBoards.Act(world, pistol, []);
+        GrootBoards.Drive(world, prompt => GrootBoards.Take(minion)(prompt) ?? Respond(rocket, offered)(prompt));
+
+        Assert.Empty(offered);
+        Assert.Equal(0, minion.Damage);
+    }
+
+    [Fact]
     [Rule("rr:you-your.15")]
     public void MurderedYouIgnoresExcessDamageAnAllyDeals()
     {

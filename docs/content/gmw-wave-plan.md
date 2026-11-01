@@ -119,3 +119,10 @@ face or recipe component closes that product without affecting predecessors.
 
 Packet 1 is authored and admitted; its evidence is in
 [groot-public-admission.md](groot-public-admission.md).
+
+## Packet 2 status
+
+Packet 2 is authored and admitted; its evidence is in
+[rocket-raccoon-public-admission.md](rocket-raccoon-public-admission.md).
+Flora and Fauna's Rocket option is reachable in a Groot and Rocket Raccoon game.
+The first closed face of the box is Drang (16058).

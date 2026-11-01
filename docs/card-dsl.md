@@ -2200,7 +2200,10 @@ Each enemy dealt excess damage is one trigger instance whose actor is the
 dealing identity, so `"actor": "you"` matches the resolving player's identity
 and `"target": "enemy"` the enemy; overkill damage to the villain is a second
 instance (ruling `3f57fe6e7dc99dd2`). The response window is the one after the
-attack or ability that dealt the damage. The condition name is an engine choice.
+attack or ability that dealt the damage, so a multi-sentence ability answers
+after its last sentence (ruling `80e8d8516006df27` answers after each). An
+excess-damage ability is used by its card's controller. The condition name is
+an engine choice.
 
 `WhenAttackExcessDamageWouldBeDealt` joins the `rr:damage` step-one occurrence
 when an attack by a player's identity would deal an enemy more damage than its
@@ -2209,7 +2212,8 @@ interrupts: forced replacements resolve first, then the player whose ability
 waits is asked, and passing spends the opportunity. `{"increaseExcessDamage": N}`
 raises the imminent damage by N while it still exceeds the target's remaining
 hit points, so overkill and every ability counting that excess see the larger
-amount (`rr:overkill.3`). Both spellings are engine choices.
+amount (`rr:overkill.3`). `increaseExcessDamage` is refused in any other
+trigger. Both spellings are engine choices.
 
 `{"healEachTimeYouDamageAnEnemy": {"amount": N, "until": "EndOfTurn"}}` creates
 a lasting effect on the resolving player's identity: each time that identity
