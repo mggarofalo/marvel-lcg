@@ -15,6 +15,8 @@ internal static class KangTableProjection
     internal static KangTableDescriptor? From(World world, WorldDescriptor visible, IReadOnlySet<int> addressable)
     {
         if (KangTable.Of(world) is not { } facts) return null;
+        // A departing Kang is in play or removed from the game, both public; these filters remove
+        // nothing today (equivalent mutants) and keep every id scope-checked.
         int? Visible(int? id) => id is { } known && addressable.Contains(known) ? known : null;
         var departures = facts.Departures.Where(item => addressable.Contains(item.Villain))
             .Select(item => new KangDepartureDescriptor(item.Villain, item.SourceGameArea, item.Seats.ToArray(),

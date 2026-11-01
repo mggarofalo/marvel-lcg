@@ -51,7 +51,8 @@ public static class KangTable
             && !pending.Any(item => item.Defeated.Card == card.ObjectId && item.Defeated.Incarnation == card.Incarnation));
 
     // 11009b–11012b store each Dominion "facedown under stage 4A". The pile's size is
-    // public although its cards are facedown.
+    // public although its cards are facedown. Both filters are equivalent mutants today:
+    // only KangLocalCompletion stores beneath 4A, and it stores nothing but Dominions there.
     private static int StoredDominions(World world) => world.Areas
         .Where(area => area.Type == DeckType.BeneathCardsPile && area.Host >= 0
             && world.Cards[area.Host].Faces[0] == StageFour)

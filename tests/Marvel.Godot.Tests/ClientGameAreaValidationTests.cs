@@ -67,7 +67,7 @@ public sealed class ClientGameAreaValidationTests
             "unknown former seat" => Area(area with { FormerSeats = [5] }),
             "central without the villain play area" => Area(area with { Central = true }),
             "retained with a seat" => Area(area with { Retained = true }),
-            "duplicate game area" => world with { GameAreas = [area, area with { PlayAreas = [1] }] },
+            "duplicate game area" => world with { GameAreas = [area, world.GameAreas[1], world.GameAreas[1] with { Label = "again" }] },
             "null label" => Area(area with { Label = null! }),
             "unknown out-of-reach card" => world with { Players = [world.Players[0] with { OutOfReach = [99] }, world.Players[1]] },
             "duplicate out-of-reach card" => world with { Players = [world.Players[0] with { OutOfReach = [11, 11] }, world.Players[1]] },

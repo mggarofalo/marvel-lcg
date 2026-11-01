@@ -23,8 +23,8 @@ public static class GameAreaFacts
 
     internal static GameAreaSummary Of(World world, GameArea area)
     {
-        int[] villains = InArea(world, area, card => card.Area.Type == DeckType.VillainArea
-            && EffectiveCards.Kind(card, world.Facts) is CardKind.EncounterVillain or CardKind.Leader);
+        // Only villains enter a villain area; their attachments sit in hosted areas of their own.
+        int[] villains = InArea(world, area, card => card.Area.Type == DeckType.VillainArea);
         int[] schemes = InArea(world, area, card => card.Area.Type == DeckType.MainSchemesArea);
         bool central = area.Contains(PlayArea.Villains);
         bool retained = !area.PlayAreas.Any(play => play.IsPlayers) && KangCentral.Remains(world, area);

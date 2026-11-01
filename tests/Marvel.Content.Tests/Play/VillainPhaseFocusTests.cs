@@ -58,6 +58,18 @@ public sealed class VillainPhaseFocusTests : CoreCardTestBase
 
     [Fact]
     [Rule("rr:villain-phase.step.2")]
+    public void AnAttackOutsideStepTwoNamesNoActivatingSeat()
+    {
+        // An attack a revealed card causes is not that seat's step-2 activation.
+        var (world, _) = Separated();
+        world.Agenda.Add(new PhaseStep(new EnemyAttackOperation(), 1, 4, Index: 1, Subject: 0, Seat: 1));
+        EndOfPhase(world);
+
+        Assert.Null(VillainPhaseFocus.Of(world));
+    }
+
+    [Fact]
+    [Rule("rr:villain-phase.step.2")]
     public void AnActivationUnderWayNamesTheActivatedSeat()
     {
         var (world, _) = Separated();

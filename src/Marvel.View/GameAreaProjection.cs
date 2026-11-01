@@ -27,6 +27,8 @@ internal static class GameAreaProjection
         return projected with { Kang = KangTableProjection.From(world, projected, addressable) };
     }
 
+    // Villain and main-scheme areas never conceal a card on entry, so this filter removes
+    // nothing today (an equivalent mutant); it keeps every route to an id scope-checked.
     private static int[] Visible(IReadOnlyList<int> ids, IReadOnlySet<int> addressable) =>
         [.. ids.Where(addressable.Contains)];
 
