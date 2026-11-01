@@ -1,6 +1,9 @@
 extends RefCounted
 
 const Driver = preload("res://smoke/automation/ui_driver.gd")
+# The host answers every prompt up to the next checkpoint before it replies to a Synchronize, and it
+# replays the session for each answer; the run to the reunion takes it about half a minute.
+const SYNC_DEADLINE_MS := 90000
 
 # A real Kang recipe through KangRecipeFactory (tests only). The host answers the prompts between
 # checkpoints; the client opens, synchronizes and answers the join prompt with viewport input.
@@ -171,7 +174,7 @@ static func _retained(smoke, kang) -> bool:
 static func _synchronize(smoke, reached: Callable, description: String) -> bool:
     if not await smoke.ui.click(smoke.ui.named("Synchronize")): return false
     return await smoke.ui.expect(func(): return reached.call() and _surface(smoke) != null, description,
-        Driver.COMMIT_DEADLINE_MS)
+        SYNC_DEADLINE_MS)
 
 static func _surface(smoke) -> Control:
     return smoke.main.find_child("AstraTableSurface", true, false) as Control
