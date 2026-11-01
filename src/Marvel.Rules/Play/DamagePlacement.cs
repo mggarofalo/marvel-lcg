@@ -53,7 +53,9 @@ public static class DamagePlacement
     public static DamageReplacement Replace(World world, DamageRequest request, List<GameEvent> events)
     {
         ArgumentNullException.ThrowIfNull(request);
-        var occurrence = new Occurrence(0, [Steps.DamageWouldBeDealt],
+        var excessDealer = ExcessDamageTiming.WouldDealExcess(world, request);
+        var occurrence = new Occurrence(0, excessDealer is null ? [Steps.DamageWouldBeDealt]
+                : [Steps.DamageWouldBeDealt, ExcessDamageTiming.AttackExcessDamageWouldBeDealt],
             Subject: request.Target.ObjectId, Player: request.Target.Owner, Target: request.Target.ObjectId,
             Actor: request.Source.ObjectId,
             ActorFacts: OccurrenceCard.Capture(request.Source, world.Facts),
@@ -61,7 +63,8 @@ public static class DamagePlacement
         DamageReplacement? replacement = null;
         var result = world.Agenda.Executions.RunBatch(occurrence, entry =>
         {
-            replacement = new DamageReplacement(request, entry);
+            replacement = new DamageReplacement(request, entry)
+            { ExcessDealer = excessDealer is null ? null : OccurrenceCard.Capture(excessDealer, world.Facts) };
             if (request.Amount <= 0 || !world.DamageAbilities.CanTakeDamage(world, request.Target, request.Source) || PlayerAttackPrevention.Prevents(world, request))
             {
                 replacement.Replace(entry, 0);
@@ -113,7 +116,8 @@ public static class DamagePlacement
             // `rr:tough.3`: "as a tough status card prevents damage fully, the
             // character who had the tough status card is **not considered to
             // have taken damage**." So no health event, and no defeat.
-            return new PlacedDamage(target, assignment.Dealt, assignment.Taken);
+            return new PlacedDamage(target, assignment.Dealt, assignment.Taken)
+            { RemainingHealth = Math.Max(0, Health(world, facts, target) - target.Damage) };
         }
 
         // `rr:damage.step.3` and `.3.2`: modifying what the character takes

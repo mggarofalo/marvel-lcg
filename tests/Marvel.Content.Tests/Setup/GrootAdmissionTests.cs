@@ -24,36 +24,35 @@ public sealed class GrootAdmissionTests
     {
         var result = RuntimeProductAdmission.Discover(SetupCatalog.Parse(SetupJson), Cards, AuthoredCards.Book.Authored);
         Assert.Contains("groot", result.Setup.HeroNames);
-        Assert.Equal(29, result.Playable.Count(face => Cards.Pack(face) == "gmw"));
+        Assert.All(Faces, face => Assert.Contains(face, result.Playable));
         var hero = result.Setup.Hero("groot");
         Assert.Equal(40, hero.HeroDeck.Count + hero.PlayerDeck.Count);
     }
 
     [Fact]
-    public void GrootOpensOnlyHisOwnFacesOfTheBox()
+    public void GrootAndRocketRaccoonOpenOnlyTheirOwnFacesOfTheBox()
     {
-        // Rocket Raccoon's identity is outside the boundary even when a row exists for it.
-        var authored = AuthoredCards.Book.Authored.Append("16029a").ToHashSet(StringComparer.Ordinal);
+        // Drang (16058) is outside the boundary even when a row exists for it.
+        var authored = AuthoredCards.Book.Authored.Append("16058").ToHashSet(StringComparer.Ordinal);
         var result = RuntimeProductAdmission.Discover(SetupCatalog.Parse(SetupJson), Cards, authored);
-        Assert.Equal(Faces.Order(StringComparer.Ordinal),
+        string[] rocket = ["16029a", "16029b", .. Enumerable.Range(30, 28).Select(number => $"16{number:000}")];
+        Assert.Equal(Faces.Concat(rocket).Order(StringComparer.Ordinal),
             result.Playable.Where(face => Cards.Pack(face) == "gmw").Order(StringComparer.Ordinal));
     }
 
     [Fact]
     public void ARecipeNamingAClosedFaceOfTheBoxIsWithheld()
     {
-        // A Rocket Raccoon record built from Groot's with Rocket's identity, both faces
-        // authored, still names a closed face of The Galaxy's Most Wanted.
+        // An encounter set naming Drang, authored, still names a closed face of
+        // The Galaxy's Most Wanted.
         var json = JsonNode.Parse(SetupJson)!;
-        var rocket = json["heroes"]!["groot"]!.DeepClone();
-        rocket["hero"] = new JsonArray("16029a,16029b");
-        rocket["name"] = "Rocket Raccoon";
-        json["heroes"]!["rocket_raccoon"] = rocket;
-        var authored = AuthoredCards.Book.Authored.Concat(["16029a", "16029b"]).ToHashSet(StringComparer.Ordinal);
+        json["encounter_sets"]!["closed_badoon"] = JsonNode.Parse(
+            """{"name": "Closed Badoon", "role": "modular", "encounters": ["16058"]}""");
+        var authored = AuthoredCards.Book.Authored.Append("16058").ToHashSet(StringComparer.Ordinal);
         var result = RuntimeProductAdmission.Discover(SetupCatalog.Parse(json.ToJsonString()), Cards, authored);
         Assert.Contains("groot", result.Setup.HeroNames);
-        Assert.DoesNotContain("rocket_raccoon", result.Setup.HeroNames);
-        Assert.DoesNotContain("16029a", result.Playable);
+        Assert.DoesNotContain("closed_badoon", result.Setup.EncounterSetNames);
+        Assert.DoesNotContain("16058", result.Playable);
     }
 
     [Theory]
@@ -78,7 +77,8 @@ public sealed class GrootAdmissionTests
         }
         var result = RuntimeProductAdmission.Discover(setup, Cards, AuthoredCards.Book.Authored);
         Assert.DoesNotContain("groot", result.Setup.HeroNames);
-        Assert.DoesNotContain(result.Playable, face => Cards.Pack(face) == "gmw");
+        Assert.DoesNotContain(result.Playable, Faces.Contains);
+        Assert.Contains("rocket_raccoon", result.Setup.HeroNames);
         Assert.Contains("ant_man", result.Setup.HeroNames);
         Assert.NotNull(result.Campaign);
     }
@@ -90,8 +90,8 @@ public sealed class GrootAdmissionTests
         var authored = AuthoredCards.Book.Authored.Where(id => id != face).ToHashSet(StringComparer.Ordinal);
         var admitted = RuntimeProductAdmission.Discover(SetupCatalog.Parse(SetupJson), Cards, authored);
         Assert.DoesNotContain("groot", admitted.Setup.HeroNames);
-        Assert.DoesNotContain(admitted.Playable, id => Cards.Pack(id) == "gmw");
-        Assert.Equal(16, admitted.Setup.HeroNames.Count);
+        Assert.DoesNotContain(admitted.Playable, Faces.Contains);
+        Assert.Equal(17, admitted.Setup.HeroNames.Count);
         Assert.Contains("ant_man", admitted.Setup.HeroNames);
     }
 

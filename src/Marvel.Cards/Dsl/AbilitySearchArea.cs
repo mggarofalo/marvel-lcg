@@ -20,4 +20,6 @@ public enum AbilitySearchArea
     YourHand,
     /// <summary>In-play areas controlled by the resolving player, for card selection only.</summary>
     YourPlayArea,
+    /// <summary>In-play areas of every player, for card selection only.</summary>
+    PlayerPlayAreas,
 }

@@ -14,7 +14,7 @@ internal static class AbilityEncounterReveal
     /// the card in the revealing area rather than its former deck or pile.
     /// </remarks>
     internal static AbilityRevealRequest? Prepare(
-        Card? card, AbilityDeckAndRevealContext context)
+        Card? card, AbilityDeckAndRevealContext context, string? status = null)
     {
         if (card is null) return null;
         var from = card.Area;
@@ -30,7 +30,7 @@ internal static class AbilityEncounterReveal
         });
         int player = context.Player >= 0 ? context.Player : context.World.FirstPlayer;
         return new AbilityRevealRequest(card.ObjectId, player,
-            new Marvel.Rules.Timing.EncounterRevealOrigin(card.ObjectId, Places.Reference(from)));
+            new Marvel.Rules.Timing.EncounterRevealOrigin(card.ObjectId, Places.Reference(from)) { StatusAfterReveal = status });
     }
 
 }

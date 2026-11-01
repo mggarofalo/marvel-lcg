@@ -121,7 +121,7 @@ internal static class AbilityInitiationConstraints
         "chooseCard" => CanInitiateChooseCard(node, cast),
         "choose" => CanInitiateChoice(node, cast),
         "draw" => CanInitiateDraw(node, cast),
-        "placeCounters" => CanInitiateCounters((AbilityEffect.PlaceCounters)node, cast),
+        "placeCounters" => CanInitiateCounters((AbilityCounterEffect.PlaceCounters)node, cast),
         "distributeThreat" => AbilityThreatDistribution.HasTargets((AbilityEffect.ThwartGroup)node, cast),
         "thwartDifferentSchemes" => AbilityThwartGroupAdmission.PerformerCanThwart(cast)
             && Every(EffectOf<AbilityEffect.ThwartGroup>(node, cast).Schemes, cast).Count > 0,
@@ -158,7 +158,7 @@ internal static class AbilityInitiationConstraints
         _ => true,
     };
 
-    internal static bool CanInitiateCounters(AbilityEffect.PlaceCounters counters, AbilityAdmissionScope cast)
+    internal static bool CanInitiateCounters(AbilityCounterEffect.PlaceCounters counters, AbilityAdmissionScope cast)
     {
         // Admit the reads before payment or preceding effects can change their
         // candidates. Resolution computes the amount again; this is not a

@@ -21,7 +21,7 @@ internal static class AbilityCardActionTargetAdmission
                 ? TargetLegality.Valid : TargetLegality.Invalid,
             "reveal" or "returnToHand" => CardsLegality(
                 Every(EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast)),
-            "placeOnBottomOfDeck" or "returnOwnedToHand" or "addToHand" => AbilityCardMovementAdmission.HasHandTarget(node, cast)
+            "placeOnBottomOfDeck" or "placeOnTopOfDeck" or "returnOwnedToHand" or "addToHand" => AbilityCardMovementAdmission.HasHandTarget(node, cast)
                 ? TargetLegality.Valid : TargetLegality.Invalid,
             "exhaust" or "ready" => Readiness(node, cast),
             "giveStatus" => CardsLegality(StatusTargets(node, cast)),

@@ -9,8 +9,8 @@ admits a product without its complete face and recipe gates.
 | | |
 |---|---|
 | Kind | authored |
-| Declared products | Marvel Champions Core Set; Rise of Red Skull; The Wrecking Crew; Captain America; Ms. Marvel; Thor; Black Widow; Doctor Strange; Hulk; Ant-Man; Wasp; Quicksilver; Groot (The Galaxy's Most Wanted hero faces only); Green Goblin (both scenarios and four modular sets); Ronan Kree Fanatic modular set; The Once and Future Kang scenario and modular sets (declared, not admitted) |
-| Records | 41 scenario modes, 17 heroes, 18 encounter sets; candidate runtime admission exposes 39 modes, 17 heroes and 15 sets |
+| Declared products | Marvel Champions Core Set; Rise of Red Skull; The Wrecking Crew; Captain America; Ms. Marvel; Thor; Black Widow; Doctor Strange; Hulk; Ant-Man; Wasp; Quicksilver; Groot and Rocket Raccoon (The Galaxy's Most Wanted hero faces only); Green Goblin (both scenarios and four modular sets); Ronan Kree Fanatic modular set; The Once and Future Kang scenario and modular sets (declared, not admitted) |
+| Records | 41 scenario modes, 18 heroes, 18 encounter sets; candidate runtime admission exposes 39 modes, 18 heroes and 15 sets |
 | Gated by | `SetupDatasetTests`, `RiseOfRedSkullSetupDataTests`, `CaptainAmericaSetupTests`, `MsMarvelSetupTests`, `ThorSetupTests`, `BlackWidowSetupTests`, `MessOfThingsSetupTests`, `RiskyBusinessSetupTests`, `KreeFanaticAdmissionTests`, `KangModularSetupTests`, `KangRecipeSetupTests`, `KangRecipeAdmissionTests`, complete-product admission |
 
 ## Why it is authored
@@ -32,7 +32,7 @@ Rise of Red Skull printed faces before exposing its runtime recipes.
 - every named encounter or modular set is defined;
 - every scenario has valid main schemes and villain stages;
 - every hero has one physical identity with hero and alter-ego faces, an obligation, and a nemesis set;
-- the declared products contain 41 authored modes, 17 heroes, and 18 sets;
+- the declared products contain 41 authored modes, 18 heroes, and 18 sets;
 - required encounter sets remain fixed when optional modular sets change;
 - the header counts match the file.
 
@@ -199,9 +199,19 @@ The starter is pinned to the vendored MarvelSDB quantities in
 was inspected, so the quantities are a repository choice from that snapshot. It
 supplies 15 signature, 17 Protection and 8 Basic cards; the two-face identity
 is one physical card. Obligation 16025 and nemesis 16026, 16027 and three
-16028 are separate. Groot is the only part of The Galaxy's Most Wanted that is
-declared here: his 29 faces and the exact recipe are required for candidate
-admission, and every other face of the box stays closed.
+16028 are separate. His 29 faces and the exact recipe are required for
+candidate admission.
+
+## Rocket Raccoon candidate
+
+The starter is pinned to the vendored MarvelSDB quantities in
+`datasets/marvelsdb/pack/gmw.json` and `gmw_encounter.json`, read the same way
+as Groot's. It supplies 15 signature, 17 Aggression and 8 Basic cards; the
+two-face identity is one physical card. Obligation 16053 and nemesis 16054,
+16055, 16056 and two 16057 are separate. His 30 faces and the exact recipe are
+required for candidate admission. Groot and Rocket Raccoon are the only parts of
+The Galaxy's Most Wanted declared here; every other face of the box stays
+closed.
 
 ## The Once and Future Kang
 

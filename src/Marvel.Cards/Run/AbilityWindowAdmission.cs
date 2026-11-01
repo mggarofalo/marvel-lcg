@@ -17,6 +17,7 @@ internal static class AbilityWindowAdmission
         internal Defeated? TriggeringDefeat { get; init; }
         internal Attacked? TriggeringAttack { get; init; }
         internal Occurrence? TriggeringThreat { get; init; }
+        internal OccurrenceCard? TriggeringActor { get; init; }
     }
 
     internal static ImmutableHashSet<int> WaitingCards(

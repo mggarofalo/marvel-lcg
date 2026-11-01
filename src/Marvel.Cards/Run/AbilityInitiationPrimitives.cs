@@ -188,9 +188,9 @@ internal static class AbilityInitiationPrimitives
     internal static bool CanAdvanceMainScheme(AbilityAdmissionScope scope) =>
         AbilityAdmissionFacts.CanAdvanceMainScheme(scope.World);
 
-    internal static AbilityEffect.RemoveCounters CounterRemovalOf(
+    internal static AbilityCounterEffect.RemoveCounters CounterRemovalOf(
         AbilityEffect effect, AbilityAdmissionScope _) =>
-        (AbilityEffect.RemoveCounters)effect;
+        (AbilityCounterEffect.RemoveCounters)effect;
 
     internal static string? CounterKeyForRemoval(
         Card card, string type, long count) =>
@@ -247,7 +247,7 @@ internal static class AbilityInitiationPrimitives
         node is AbilityEffect.DelayedStun
         || node.OperationName() is "removeFromGame" or "exhaust" or "ready" or "revealFromVillainDeck" or "reveal"
             or "returnToHand" or "returnOwnedToHand" or "soakDamage"
-            or "placeOnBottomOfDeck" or "addToHand" or "giveStatus" or "attachTo" or "grantUntil"
+            or "placeOnBottomOfDeck" or "placeOnTopOfDeck" or "addToHand" or "giveStatus" or "attachTo" or "grantUntil"
             or "discard" or "heal" or "placeCounters" or "shuffleInto" or "search"
             or "indirectDamage" or "dealDamage" or "moveDamage"
             or "dealAttackDamage" or "moveAttackDamage" or "placeThreat"

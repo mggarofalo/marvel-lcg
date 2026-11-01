@@ -24,6 +24,8 @@ public enum AbilityCardInstruction
     AddToHand,
     /// <summary>Place one selected card on the bottom of the resolving player's deck.</summary>
     PlaceOnBottomOfDeck,
+    /// <summary>Place a card on top of its resolver's deck.</summary>
+    PlaceOnTopOfDeck,
     /// <summary>Reveal the selected encounter card.</summary>
     Reveal,
     /// <summary>Attach the source to the selected host.</summary>

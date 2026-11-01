@@ -25,7 +25,7 @@ public sealed class EngineHostAuthoredSetupChoicesTests : EngineHostTestBase
         Assert.Null(response.World);
         Assert.Empty(response.Events);
         SetupChoices choices = Assert.IsType<SetupChoices>(response.Setup);
-        Assert.Equal(["captain_america", "ms_marvel", "spider_man", "captain_marvel", "she_hulk", "iron_man", "black_panther", "hawkeye", "spider_woman", "black_widow", "thor", "doctor_strange", "hulk", "ant_man", "wasp", "quicksilver", "groot"], choices.Heroes.Select(choice => choice.Key));
+        Assert.Equal(["captain_america", "ms_marvel", "spider_man", "captain_marvel", "she_hulk", "iron_man", "black_panther", "hawkeye", "spider_woman", "black_widow", "thor", "doctor_strange", "hulk", "ant_man", "wasp", "quicksilver", "groot", "rocket_raccoon"], choices.Heroes.Select(choice => choice.Key));
         Assert.Equal("Captain America", choices.Heroes[0].Name);
         Assert.Equal([
             "rhino", "rhino_expert", "klaw", "klaw_expert",

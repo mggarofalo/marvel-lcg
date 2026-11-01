@@ -148,6 +148,7 @@ internal sealed class AttackDamageResolution
         placed = prepared.Placement;
         if (prepared.SettledOutcome is { } settled)
         {
+            ExcessDamageTiming.Record(world, request.Source, placed!, remaining, Execution.Occurrence, events);
             outcome = settled;
             return true;
         }
@@ -159,6 +160,7 @@ internal sealed class AttackDamageResolution
         if (request.Target.Incarnation != incarnation || !DeckTypes.IsInPlay(request.Target.Area.Type))
             return true;
         AttackDamageAccounting.RecordDamage(world, request, Execution, attacker, placed!, spillOnly, events);
+        ExcessDamageTiming.Record(world, request.Source, placed!, remaining, Execution.Occurrence, events);
         outcome = DamagePlacement.FinishPlaced(world, facts, request.Source, placed!, request.Trigger,
             request.Verb, events, LabeledAbilities.IdentityPlayer(world, request.Attacker), Execution.Occurrence);
         return outcome != Damage.Outcome.Suspended;

@@ -56,6 +56,13 @@ public sealed class AbilityDataPrintedTextBoxResourceIconsTests : AbilityDataTes
             ["05024"] = new("energy", 3, Uses: true),
             ["04042"] = new("attack", 3, Uses: true),
             ["04064"] = new("ammo", 2, Uses: true) { PerPlayer = true },
+            // Rocket Raccoon's weapons "enter play with" charge counters and keep
+            // them without Uses (ruling c0c1782ca297d006); Hand Cannon prints Uses.
+            ["16034"] = new("charge", 2, Uses: false),
+            ["16036"] = new("charge", 2, Uses: false),
+            ["16037"] = new("charge", 2, Uses: false),
+            ["16038"] = new("charge", 3, Uses: false),
+            ["16046"] = new("charge", 3, Uses: true),
         };
         Assert.Equal(expected.OrderBy(pair => pair.Key, StringComparer.Ordinal), AuthoredCards.Book.CounterPools!.OrderBy(pair => pair.Key, StringComparer.Ordinal));
     }

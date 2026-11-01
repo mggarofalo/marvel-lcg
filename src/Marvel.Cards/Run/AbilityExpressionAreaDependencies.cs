@@ -27,7 +27,7 @@ internal static class AbilityExpressionAreaDependencies
                 break;
             case AbilityCondition.CardText or AbilityCondition.IsKind or AbilityCondition.IsInPlay
                 or AbilityCondition.IsEnemyAttacker or AbilityCondition.WasDefeatedByDamage
-                or AbilityCondition.WasDefeated:
+                or AbilityCondition.WasDefeated or AbilityCondition.DefendedBy:
                 CollectCardsInDependencies(CardReadBy(condition), cast, areas);
                 break;
             case AbilityCondition.Flag or AbilityCondition.PaidWithResource or AbilityCondition.DiscardedWithResource or AbilityCondition.DiscardedWithTrait
@@ -47,6 +47,7 @@ internal static class AbilityExpressionAreaDependencies
         AbilityCondition.IsEnemyAttacker attacker => attacker.Card,
         AbilityCondition.WasDefeatedByDamage defeated => defeated.Card,
         AbilityCondition.WasDefeated defeated => defeated.Card,
+        AbilityCondition.DefendedBy defender => defender.Card,
         _ => throw new InvalidOperationException("Condition does not read a card selector"),
     };
 

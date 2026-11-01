@@ -122,7 +122,6 @@ public sealed record Occurrence
     [JsonIgnore]
     public Play.DefeatWindow? SharedDefeatWindow { get; internal set; }
 
-
     /// <summary>The ready instruction this would-ready occurrence precedes, reconstructed by replay.</summary>
     [JsonIgnore]
     public Play.CardReadyBatch? Readying { get; init; }
@@ -153,6 +152,9 @@ public sealed record Occurrence
     [JsonIgnore]
     public ReceivedAttackDamagePlacements ReceivedAttackDamage { get; } = new();
 
+    /// <summary>Damage player identities dealt to enemies in this occurrence.</summary>
+    [JsonIgnore] public DealtEnemyDamageReceipts DealtEnemyDamage { get; } = new();
+
     /// <summary>The next play generation of this physical event in this occurrence.</summary>
     public int EventPlay(int card) => triggers.EventPlay(card);
 
@@ -181,9 +183,7 @@ public sealed record Occurrence
     /// <param name="id">Distinguishes this occurrence from another of the same shape.</param>
     /// <param name="condition">What happened.</param>
     public Occurrence(int id, string condition)
-        : this(id, [condition])
-    {
-    }
+        : this(id, [condition]) { }
 
     /// <summary>Create an occurrence with explicit attack roles.</summary>
     /// <remarks>

@@ -221,6 +221,8 @@ public abstract record AbilityEffect
         public AbilitySearchArea From { get; init; } = AbilitySearchArea.EncounterDeck;
         /// <summary>The printed set required for a deck match.</summary>
         public string? Set { get; init; }
+        /// <summary>A status card the same sentence gives the revealed match.</summary>
+        public string? RevealStatus { get; init; }
     }
     /// <summary>Move selected cards into a deck and shuffle it.</summary>
     public sealed record ShuffleInto(AbilityCardSelection Cards, AbilityShuffleDestination Deck) : AbilityEffect;
@@ -268,10 +270,6 @@ public abstract record AbilityEffect
     }
     /// <summary>Choose a counted set of cards from your hand to discard.</summary>
     public sealed record DiscardHandCards(AbilityNumber Count) : AbilityEffect;
-    /// <summary>Place named counters on a card.</summary>
-    public sealed record PlaceCounters(AbilityCardSelection Card, string Counter, AbilityNumber Count) : AbilityEffect;
-    /// <summary>Remove named counters from a card.</summary>
-    public sealed record RemoveCounters(AbilityCardSelection Card, string Counter, long Count) : AbilityEffect;
     /// <summary>Discard hand cards that generate a specified resource.</summary>
     public sealed record DiscardHandWithResource(char Resource) : AbilityEffect;
     /// <summary>Discard every hand card of a printed card kind.</summary>

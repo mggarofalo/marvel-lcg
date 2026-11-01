@@ -34,9 +34,15 @@ internal static class AbilityDamageReplacementExecution
     {
         world.Agenda.Executions.RequireContinuation(step);
         var replacement = State(step).Replacement;
-        return new Prompt(world.FirstPlayer, Question.Order, TimingPriority.ForcedInterrupt,
-            Steps.DamageWouldBeDealt, "order forced damage replacements", false,
-            [.. Pending(resolver, world, replacement).Select(ability => Describe(resolver, world, replacement, ability))]);
+        if (Pending(resolver, world, replacement) is { Count: > 0 } forced)
+            return new Prompt(world.FirstPlayer, Question.Order, TimingPriority.ForcedInterrupt,
+                Steps.DamageWouldBeDealt, "order forced damage replacements", false,
+                [.. forced.Select(ability => Describe(resolver, world, replacement, ability))]);
+        var optional = Offered(resolver, world, replacement);
+        return new Prompt(optional[0].Player, Question.Opportunity, TimingPriority.Interrupt,
+            Steps.DamageWouldBeDealt, "interrupt before damage is dealt", true,
+            [.. optional.Select(ability => Describe(resolver, world, replacement, ability))])
+        { DisplayQuestion = "Interrupt before damage is dealt?" };
     }
 
     internal static IReadOnlyList<GameEvent> Chose(AbilityResolutionExecution resolver, World world,
@@ -46,10 +52,20 @@ internal static class AbilityDamageReplacementExecution
         var assessment = DecisionAssessment.Assess(prompt, answer);
         if (!assessment.IsAccepted) throw new ArgumentException(assessment.Reason, nameof(answer));
         var replacement = State(step).Replacement;
-        var chosen = Pending(resolver, world, replacement).Single(ability =>
+        var events = new List<GameEvent>();
+        if (answer.IsDecline)
+        {
+            // Passing an opportunity spends it for this occurrence.
+            foreach (var passed in Offered(resolver, world, replacement))
+                replacement.Execution.Occurrence.Trigger(WindowKind.Interrupt, passed);
+            world.Agenda.Executions.Resume(replacement.Execution);
+            Continue(resolver, world, replacement, events);
+            return events;
+        }
+        var choices = Pending(resolver, world, replacement) is { Count: > 0 } forced ? forced : Offered(resolver, world, replacement);
+        var chosen = choices.Single(ability =>
             Describe(resolver, world, replacement, ability).Id == answer.Affordance);
         world.Agenda.Executions.Resume(replacement.Execution);
-        var events = new List<GameEvent>();
         if (Resolve(resolver, world, replacement, chosen, events)) Continue(resolver, world, replacement, events);
         else Suspend(world, replacement, AbilityContinuationStage.Resume, events);
         return events;
@@ -85,7 +101,25 @@ internal static class AbilityDamageReplacementExecution
                 return;
             }
         }
+        if (replacement.CurrentAmount > 0 && Offered(resolver, world, replacement).Count > 0)
+        {
+            Suspend(world, replacement, AbilityContinuationStage.Choose, events);
+            return;
+        }
         replacement.Execution.Finish(events);
+    }
+
+    // rr:damage step 1 also opens to optional interrupts when an attack would deal
+    // excess damage (Follow Through, 16045). Forced replacements resolve first
+    // (rr:ability.step.2); the first player with an opportunity is asked.
+    private static List<PendingAbility> Offered(AbilityResolutionExecution resolver,
+        World world, DamageReplacement replacement)
+    {
+        var occurrence = replacement.Execution.Occurrence;
+        if (!occurrence.Is(ExcessDamageTiming.AttackExcessDamageWouldBeDealt)) return [];
+        var optional = AbilityOfferHandles.Assign(resolver.Waiting(world, occurrence, WindowKind.Interrupt), world.Cards.Count)
+            .Where(ability => ability.Type == AbilityType.Interrupt && occurrence.MayTrigger(WindowKind.Interrupt, ability)).ToList();
+        return optional.Count == 0 ? optional : [.. optional.Where(ability => ability.Player == optional[0].Player)];
     }
 
     private static List<PendingAbility> Pending(AbilityResolutionExecution resolver,

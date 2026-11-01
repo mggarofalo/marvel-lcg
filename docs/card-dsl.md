@@ -361,8 +361,8 @@ Cards that print placement instructions can also carry `attachTo` or
 `uses` boolean distinguishes the **Uses (X “type”)** keyword from an ordinary
 “enters play with X counters” instruction. A Uses pool discards its card when
 the last all-purpose counter leaves; an ordinary pool does not. Rocket
-Raccoon's weapons are the latter shape, so they will use `uses: false` when
-their product enters the executable boundary.
+Raccoon's weapons are the latter shape and use `uses: false` (ruling
+`c0c1782ca297d006`); his Hand Cannon prints Uses.
 
 These are card properties, not triggered abilities. They apply before any
 response to the card entering play. A card that uses only placement metadata is
@@ -2187,3 +2187,51 @@ phase and rejects `until`.
 A printed prerequisite "Play only if your identity has the [guardian] trait"
 names the trait by its icon token; the bracketed and plain spellings name the
 same trait.
+
+## Excess damage, counter moves and deck-top placement
+
+`WhenExcessDamageDealt` is the condition an occurrence gains when a player's
+identity deals damage to an enemy beyond its remaining hit points
+(`rr:excess-damage`). Damage from that player's events, resources and upgrades
+is the identity's (`rr:you-your.12`–`.14`); damage from allies and supports is
+not. Excess is measured on damage dealt, so an enemy that takes less (Tough, a
+reduction) is still dealt it (rulings `dd353e3498f6b923`, `70423690d446327f`).
+Each enemy dealt excess damage is one trigger instance whose actor is the
+dealing identity, so `"actor": "you"` matches the resolving player's identity
+and `"target": "enemy"` the enemy; overkill damage to the villain is a second
+instance (ruling `3f57fe6e7dc99dd2`). The response window is the one after the
+attack or ability that dealt the damage. The condition name is an engine choice.
+
+`WhenAttackExcessDamageWouldBeDealt` joins the `rr:damage` step-one occurrence
+when an attack by a player's identity would deal an enemy more damage than its
+remaining hit points. It is the one step-one condition that admits optional
+interrupts: forced replacements resolve first, then the player whose ability
+waits is asked, and passing spends the opportunity. `{"increaseExcessDamage": N}`
+raises the imminent damage by N while it still exceeds the target's remaining
+hit points, so overkill and every ability counting that excess see the larger
+amount (`rr:overkill.3`). Both spellings are engine choices.
+
+`{"healEachTimeYouDamageAnEnemy": {"amount": N, "until": "EndOfTurn"}}` creates
+a lasting effect on the resolving player's identity: each time that identity
+deals any amount of damage to an enemy until the end of the turn, heal N damage
+from it. It resolves at each damage instance, including overkill (ruling
+`4648617b8449406e`). Only `EndOfTurn` is admitted.
+
+`{"moveCounters": {"from": <card>, "to": <card>, "counter": <type>, "count": N}}`
+moves up to N counters of a type from one card to another. A destination that
+is the source is not a valid target (`rr:target.3`), and a source without the
+counter leaves nothing to move.
+
+`{"placeOnTopOfDeck": <card>}` is the top-of-deck sibling of
+`placeOnBottomOfDeck`, with the same selection and completion semantics.
+
+`cardsIn` accepts `area: "playerPlayAreas"`, every player's in-play areas, for
+card selection only (Flora and Fauna's "a Rocket Raccoon upgrade").
+
+`{"defendedBy": <card>}` is true when the completed enemy attack of the current
+attack-end occurrence was defended by that card (Groot's "after Groot defends").
+
+Encounter `discardUntil` with `then: "reveal"` accepts `revealStatus` (`tough`,
+`stunned` or `confused`): the same sentence gives the revealed card that status
+once its keywords have initiated, before a quickstrike attack's steps resolve
+(Planetary Invasion; ruling `ef63f3668700ef73`).

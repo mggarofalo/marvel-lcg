@@ -31,7 +31,7 @@ public sealed class BlackWidowInventoryAdmissionTests
 
         Assert.DoesNotContain("black_widow", admitted.Setup.HeroNames);
         Assert.DoesNotContain(admitted.Playable, id => Cards.Pack(id) == "bkw");
-        Assert.Equal(16, admitted.Setup.HeroNames.Count);
+        Assert.Equal(17, admitted.Setup.HeroNames.Count);
         Assert.Contains("spider_man", admitted.Setup.HeroNames);
         Assert.Contains("captain_america", admitted.Setup.HeroNames);
         Assert.Contains("hawkeye", admitted.Setup.HeroNames);

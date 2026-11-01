@@ -26,6 +26,8 @@ public sealed class DamageReplacement
     public bool IgnoresTough { get; }
     /// <summary>The invocation owning all replacement work.</summary>
     public AbilityExecution Execution { get; }
+    /// <summary>The identity whose attack would deal this damage beyond the target's remaining hit points, if any.</summary>
+    public Timing.OccurrenceCard? ExcessDealer { get; init; }
     /// <summary>The amount available to the currently executing replacement ability.</summary>
     public long CurrentAmount { get; private set; }
     /// <summary>Whether every replacement ability and its children have completed.</summary>

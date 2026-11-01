@@ -34,7 +34,9 @@ internal static class AbilityDeckAndRevealExecution
             AbilityEffect.InitializeAuxiliaryDeck or AbilityEffect.RevealAuxiliaryTop =>
                 AbilityAuxiliaryDeckExecution.Run(effect, context),
             AbilityEffect.CardAction { Instruction: AbilityCardInstruction.PlaceOnBottomOfDeck } bottom =>
-                AbilityDeckBottomMovement.Run(bottom.Selection, context),
+                AbilityDeckBottomMovement.Run(bottom.Selection, context, top: false),
+            AbilityEffect.CardAction { Instruction: AbilityCardInstruction.PlaceOnTopOfDeck } top =>
+                AbilityDeckBottomMovement.Run(top.Selection, context, top: true),
             AbilityEffect.Shuffle shuffle => Shuffle(shuffle, context),
             AbilityEffect.ShuffleInto shuffle => AbilityShuffleIntoExecution.Run(shuffle, context),
             AbilityEffect.Search search => Search(search, context),
@@ -53,9 +55,9 @@ internal static class AbilityDeckAndRevealExecution
     }
 
     internal static AbilityDeckAndRevealResult RevealCard(
-        Card? card, AbilityDeckAndRevealContext context)
+        Card? card, AbilityDeckAndRevealContext context, string? status = null)
     {
-        var reveal = AbilityEncounterReveal.Prepare(card, context);
+        var reveal = AbilityEncounterReveal.Prepare(card, context, status);
         return new(true, reveal is not null, reveal,
             ImmutableDictionary<string, long>.Empty);
     }

@@ -3333,7 +3333,7 @@
   "counts": {
     "campaigns": 41,
     "encounter_sets": 18,
-    "heroes": 17
+    "heroes": 18
   },
   "encounter_sets": {
     "running_interference": {
@@ -4514,6 +4514,67 @@
         "16028"
       ],
       "nemesis_set_icon": "groot_nemesis"
+    },
+    "rocket_raccoon": {
+      "name": "Rocket Raccoon",
+      "hero": [
+        "16029a,16029b"
+      ],
+      "hero_deck": [
+        "16030",
+        "16030",
+        "16031",
+        "16031",
+        "16032",
+        "16033",
+        "16033",
+        "16034",
+        "16034",
+        "16035",
+        "16036",
+        "16037",
+        "16038",
+        "16038",
+        "16039"
+      ],
+      "player_deck": [
+        "16040",
+        "16041",
+        "16041",
+        "16042",
+        "16042",
+        "16042",
+        "16043",
+        "16043",
+        "16043",
+        "16044",
+        "16044",
+        "16045",
+        "16045",
+        "16045",
+        "16046",
+        "16046",
+        "16046",
+        "16047",
+        "16048",
+        "16049",
+        "16050",
+        "16051",
+        "16052",
+        "16052",
+        "16052"
+      ],
+      "obligations": [
+        "16053"
+      ],
+      "nemesis_set": [
+        "16054",
+        "16055",
+        "16056",
+        "16057",
+        "16057"
+      ],
+      "nemesis_set_icon": "rocket_nemesis"
     }
   },
   "note": "Authored scenario, hero, and encounter-set setup recipes, admitted by complete-product runtime gates: what a scenario is dealt from is printed in its rules insert rather than on any card, so there is nothing to derive it from and no upstream to copy it from. Gated by SetupDatasetTests -- see datasets/setup/UPSTREAM.md.",

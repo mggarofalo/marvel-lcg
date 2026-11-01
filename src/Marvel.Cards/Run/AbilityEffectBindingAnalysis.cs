@@ -62,7 +62,8 @@ internal static class AbilityEffectBindingAnalysis
         typeof(AbilityEffect.DelayedDiscard), typeof(AbilityEffect.DiscardAtRandom),
         typeof(AbilityEffect.PlaceAtRandom), typeof(AbilityEffect.DiscardTop),
         typeof(AbilityEffect.ShuffleInto), typeof(AbilityEffect.PutIntoPlay),
-        typeof(AbilityEffect.PlaceCounters), typeof(AbilityEffect.RemoveCounters),
+        typeof(AbilityCounterEffect.PlaceCounters), typeof(AbilityCounterEffect.RemoveCounters),
+        typeof(AbilityCounterEffect.MoveCounters),
     ];
     private static readonly ImmutableArray<Type> PowerTypes =
     [
@@ -182,8 +183,9 @@ internal static class AbilityEffectBindingAnalysis
         AbilityEffect.ShuffleInto shuffle => BindingCanChange(shuffle.Cards),
         AbilityEffect.Search => false,
         AbilityEffect.PutIntoPlay entering => BindingCanChange(entering.Card),
-        AbilityEffect.PlaceCounters counters => BindingCanChange(counters.Card) || BindingCanChange(counters.Count),
-        AbilityEffect.RemoveCounters counters => BindingCanChange(counters.Card),
+        AbilityCounterEffect.PlaceCounters counters => BindingCanChange(counters.Card) || BindingCanChange(counters.Count),
+        AbilityCounterEffect.RemoveCounters counters => BindingCanChange(counters.Card),
+        AbilityCounterEffect.MoveCounters move => BindingCanChange(move.From) || BindingCanChange(move.To),
         _ => throw new InvalidOperationException("Unknown placement binding effect"),
     };
 
@@ -219,7 +221,8 @@ internal static class AbilityEffectBindingAnalysis
             or AbilityEffect.PreventDamageFrom or AbilityEffect.DelayedStun
             or AbilityEffect.ChooseTopForHand or AbilityEffect.ChooseDiscardToShuffle
             or AbilityEffect.DiscardHandWithResource or AbilityEffect.DiscardHandOfKind
-            or AbilityEffect.RecoverDiscardedByResource or AbilityEffect.RecruitDiscarded or AbilityEffect.GrantTraitCharacters or AbilityEffect.ModifyPlayedEvent or AbilityEffect.BoostBasicUse or AbilityPricingEffect.IncreaseNextEventCost => false,
+            or AbilityEffect.RecoverDiscardedByResource or AbilityEffect.RecruitDiscarded or AbilityEffect.GrantTraitCharacters or AbilityEffect.ModifyPlayedEvent or AbilityEffect.BoostBasicUse or AbilityPricingEffect.IncreaseNextEventCost
+            or AbilityEnemyDamageEffect.HealOnEnemyDamage or AbilityEnemyDamageEffect.IncreaseExcessDamage => false,
         _ => throw new InvalidOperationException("Unknown compiled effect in player-binding analysis"),
     };
 

@@ -260,6 +260,7 @@ internal static class EncounterRevealProcedure
         bool teamwork = MinionEntryActivations.TeamworkApplies(world, facts, card);
         if (quickstrike && teamwork)
         {
+            RevealSentenceStatus.Give(world, card, revealOccurrence, events);
             world.Agenda.ThenContinuation(new PhaseStep(
                 new PostRevealOperation(Origin: revealOccurrence),
                 round,
@@ -277,6 +278,7 @@ internal static class EncounterRevealProcedure
 
         MinionEntryActivations.Quickstrike(world, facts, card, player, round);
         MinionEntryActivations.Teamwork(world, facts, card, player, round);
+        RevealSentenceStatus.Give(world, card, revealOccurrence, events);
 
         // rr:ability.step.4: forced responses finish before optional responses.
         // The engagement and reveal share the parent occurrence's response window.

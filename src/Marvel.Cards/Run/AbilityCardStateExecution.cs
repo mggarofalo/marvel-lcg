@@ -99,8 +99,9 @@ internal static class AbilityCardStateExecution
     {
         switch (effect)
         {
-            case AbilityEffect.PlaceCounters counters: PlaceCounters(counters, context); return true;
-            case AbilityEffect.RemoveCounters counters: RemoveCounters(counters, context); return true;
+            case AbilityCounterEffect.PlaceCounters counters: PlaceCounters(counters, context); return true;
+            case AbilityCounterEffect.RemoveCounters counters: RemoveCounters(counters, context); return true;
+            case AbilityCounterEffect.MoveCounters move: AbilityCounterMoveExecution.Run(move, context); return true;
             case AbilityEffect.ReplaceStatus replacement: AbilityStatusReplacement.Execute(replacement, context); return true;
             case AbilityEffect.GiveStatus status: GiveStatus(status, context); return true;
             case AbilityEffect.RemoveStatuses removal: AbilityStatusRemoval.Execute(removal, context); return true;
@@ -142,7 +143,7 @@ internal static class AbilityCardStateExecution
         }
     }
 
-    private static void PlaceCounters(AbilityEffect.PlaceCounters counters, AbilityCardStateContext context)
+    private static void PlaceCounters(AbilityCounterEffect.PlaceCounters counters, AbilityCardStateContext context)
     {
         var card = Find(counters.Card, context) ?? throw new RulesNotImplementedException(
             $"'{context.Source.FaceId}' cannot find the card receiving counters");
@@ -159,7 +160,7 @@ internal static class AbilityCardStateExecution
         { Trigger = context.Trigger, Verb = "Place_Counters" });
     }
 
-    private static void RemoveCounters(AbilityEffect.RemoveCounters removal, AbilityCardStateContext context)
+    private static void RemoveCounters(AbilityCounterEffect.RemoveCounters removal, AbilityCardStateContext context)
     {
         var card = Find(removal.Card, context) ?? throw new RulesNotImplementedException(
             $"'{context.Source.FaceId}' cannot find the card paying its counter cost");

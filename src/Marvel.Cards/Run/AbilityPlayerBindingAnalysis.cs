@@ -90,7 +90,7 @@ internal static class AbilityPlayerBindingAnalysis
 
     private static bool ContainsBasicCard(AbilityEffect effect) => effect switch
     {
-        AbilityEffect.CardAction action => action.Instruction == AbilityCardInstruction.PlaceOnBottomOfDeck
+        AbilityEffect.CardAction action => action.Instruction is AbilityCardInstruction.PlaceOnBottomOfDeck or AbilityCardInstruction.PlaceOnTopOfDeck
             || Contains(action.Selection),
         AbilityEffect.Heal heal => Contains(heal.Card) || Contains(heal.Amount),
         AbilityEffect.SetHitPoints assignment => Contains(assignment.Card),
@@ -145,9 +145,16 @@ internal static class AbilityPlayerBindingAnalysis
             Contains(shuffle.Cards) || shuffle.Deck == AbilityShuffleDestination.YourDeck,
         AbilityEffect.PutIntoPlay entering =>
             entering is { PrintedDestination: false, FirstPlayer: false } || Contains(entering.Card),
-        AbilityEffect.PlaceCounters counters => Contains(counters.Card) || Contains(counters.Count),
-        AbilityEffect.RemoveCounters counters => Contains(counters.Card),
+        AbilityCounterEffect counters => ContainsCounters(counters),
         _ => throw new InvalidOperationException("Unknown placement player-binding effect"),
+    };
+
+    private static bool ContainsCounters(AbilityCounterEffect effect) => effect switch
+    {
+        AbilityCounterEffect.PlaceCounters counters => Contains(counters.Card) || Contains(counters.Count),
+        AbilityCounterEffect.RemoveCounters counters => Contains(counters.Card),
+        AbilityCounterEffect.MoveCounters move => Contains(move.From) || Contains(move.To),
+        _ => throw new InvalidOperationException("Unknown counter player-binding effect"),
     };
 
     private static bool ContainsPower(AbilityEffect effect) => effect switch
@@ -174,6 +181,7 @@ internal static class AbilityPlayerBindingAnalysis
         AbilityEffect.ChooseCardsToHand group => Contains(group.From),
         AbilityEffect.ExhaustAnyNumber exhaust => Contains(exhaust.From),
         AbilityEffect.ReleaseBeneath or AbilityPricingEffect.IncreaseNextEventCost => false,
+        AbilityEnemyDamageEffect.HealOnEnemyDamage or AbilityEnemyDamageEffect.IncreaseExcessDamage => false,
         AbilityEffect.StoreBeneath store => Contains(store.Cards) || Contains(store.Host),
         AbilityEffect.StoreDeckTopBeneath => true,
         AbilityEffect.InitializeAuxiliaryDeck initialize => Contains(initialize.Cards),
@@ -272,6 +280,7 @@ internal static class AbilityPlayerBindingAnalysis
         AbilityCondition.IsEnemyAttacker attacker => Contains(attacker.Card),
         AbilityCondition.WasDefeatedByDamage defeated => Contains(defeated.Card),
         AbilityCondition.WasDefeated defeated => Contains(defeated.Card),
+        AbilityCondition.DefendedBy defender => Contains(defender.Card),
         AbilityCondition.IsYourIdentity => true,
         AbilityCondition.PaidWithResource or AbilityCondition.DiscardedWithResource or AbilityCondition.DiscardedWithTrait
             or AbilityCondition.CausedThreat or AbilityCondition.TitleInPlay or AbilityCondition.NamedInPlay

@@ -112,6 +112,8 @@ internal static class AbilityDamageAndThreatExecution
                 state.Outcome = ExecuteRemoveThreat(removal, context, state); return true;
             case AbilityEffect.CardAction { Instruction: AbilityCardInstruction.SoakDamage } soak:
                 Soak(soak.Selection, context, state); return true;
+            case AbilityEnemyDamageEffect.IncreaseExcessDamage increase:
+                state.Remaining = AbilityExcessDamageIncrease.Amount(increase, context); return true;
             case AbilityEffect.CardAction { Instruction: AbilityCardInstruction.ReplaceThreatWithDamage } replacement:
                 ReplaceThreatWithDamage(replacement.Selection, syntax, context, state); return true;
             case AbilityEffect.PreventThreat prevention:

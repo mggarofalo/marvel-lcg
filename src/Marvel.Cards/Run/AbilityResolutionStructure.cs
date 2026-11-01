@@ -50,8 +50,8 @@ internal static class AbilityResolutionStructure
             cast.World, cast.Source,
             execution.Seat(execution.EffectOf<AbilityEffect.DrawToHandSize>(node, cast).Player, cast));
 
-    internal static AbilityEffect.RemoveCounters CounterRemovalOf(this AbilityResolutionExecution execution, AbilityEffect node, AbilityResolutionState cast) =>
-        (AbilityEffect.RemoveCounters)node;
+    internal static AbilityCounterEffect.RemoveCounters CounterRemovalOf(this AbilityResolutionExecution execution, AbilityEffect node, AbilityResolutionState cast) =>
+        (AbilityCounterEffect.RemoveCounters)node;
 
     /// <summary>
     /// Advances because a card effect says to —
