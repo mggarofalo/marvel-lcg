@@ -67,12 +67,15 @@ internal static class SeatTile
         row.AddChild(Portrait(hero, roles.Contains(TableFact.AnsweringSeat), summary.Seat == selection.ExpandedSeat, scale));
         var facts = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill, MouseFilter = Control.MouseFilterEnum.Ignore };
         facts.AddThemeConstantOverride("separation", 0);
-        facts.AddChild(NameLine(hero, roles, scale));
+        facts.AddChild(TableBlockStyle.Line("Hero", hero.ToUpperInvariant(), scale, VisualSystem.Palette.Text));
         facts.AddChild(SeatHealth.Create(summary.Health, SeatHealth.Maximum(board, summary.Identity), scale));
         row.AddChild(facts);
         body.AddChild(row);
-        body.AddChild(Badges(board, summary, scale));
+        body.AddChild(Badges(board, summary, roles, scale));
         tile.AddChild(body);
+        // Badges wrap on a narrow rail; the tile grows to hold every row rather than clip one.
+        body.MinimumSizeChanged += () => tile.CustomMinimumSize = new Vector2(0,
+            Math.Max(Height(scale), body.GetCombinedMinimumSize().Y + 2 * spacing.ExtraSmall));
         return tile;
     }
 
@@ -106,12 +109,13 @@ internal static class SeatTile
         return portrait;
     }
 
-    // The name, then the seat's roles as icons at the line's end.
-    private static HBoxContainer NameLine(string hero, TableFact[] roles, InterfaceScale scale)
+    // The seat's roles as icons, then its form, statuses, engaged enemies and pending encounters. The
+    // name line holds only the name, so a narrow rail still shows it whole.
+    private static HFlowContainer Badges(BoardPresentation board, PlayerSummaryDescriptor summary, TableFact[] roles,
+        InterfaceScale scale)
     {
-        var line = new HBoxContainer { Name = "NameLine", MouseFilter = Control.MouseFilterEnum.Ignore };
-        line.AddThemeConstantOverride("separation", VisualSystem.Spacing(scale).ExtraSmall);
-        line.AddChild(TableBlockStyle.Line("Hero", hero.ToUpperInvariant(), scale, VisualSystem.Palette.Text));
+        var badges = new HFlowContainer { Name = "Badges", MouseFilter = Control.MouseFilterEnum.Ignore };
+        badges.AddThemeConstantOverride("h_separation", VisualSystem.Spacing(scale).ExtraSmall);
         int icon = TableBlockStyle.Icon(scale);
         foreach (TableFact role in roles)
         {
@@ -120,15 +124,8 @@ internal static class SeatTile
             mark.Name = "Role" + role;
             mark.AccessibilityName = wording.Label;
             mark.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
-            line.AddChild(mark);
+            badges.AddChild(mark);
         }
-        return line;
-    }
-
-    private static HFlowContainer Badges(BoardPresentation board, PlayerSummaryDescriptor summary, InterfaceScale scale)
-    {
-        var badges = new HFlowContainer { Name = "Badges", MouseFilter = Control.MouseFilterEnum.Ignore };
-        badges.AddThemeConstantOverride("h_separation", VisualSystem.Spacing(scale).ExtraSmall);
         if (Form(summary.Form) is { } form) badges.AddChild(Chip.Create("Form", TableWording.For(form), null, scale));
         foreach (string status in summary.Statuses)
             badges.AddChild(StatusBadge.Supports(status) ? StatusBadge.Create(status, status, compact: true)

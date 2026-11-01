@@ -25,7 +25,11 @@ internal static class GameAreaTableChrome
     {
         if (table.Tracker.Label.Length == 0) return;
         HBoxContainer tracker = Tracker.Create("KangTracker", table.Tracker, geometry.ReadingScale);
-        tracker.Position = new Vector2(geometry.MainScheme.Position.X, geometry.VillainMat.Position.Y + 4);
+        // A caption line in the margin above the main scheme, so it never covers the card.
+        int caption = VisualSystem.Type(geometry.ReadingScale).Caption;
+        tracker.GetNode<Label>("Label").AddThemeFontSizeOverride("font_size", caption);
+        tracker.Position = new Vector2(geometry.MainScheme.Position.X,
+            Math.Max(geometry.VillainMat.Position.Y + 2, geometry.MainScheme.Position.Y - caption * 1.4f - 2));
         tracker.ZIndex = 12;
         surface.AddChild(tracker);
     }
