@@ -188,6 +188,16 @@ or choices. Minion activation ordering has its own public kind, engine-authored
 cause and commitment, and an engaged-minion area anchor. The command affordance
 identity remains stable.
 
+Kang's phase-end prompts name players, not game-area numbers. The join offers
+read "Join Black Widow's game area (Kang (Iron Lad))", the departure-order offers
+name the area each group leaves and the group, and every description states why
+the group moves: its Kang (II) was defeated, or its stage 3B was completed and
+stored a Kang's Dominion under stage 4A (11002–11005, 11009b–11012b). The
+phase-end order prompt says what Kang's delayed effect will do. These are display
+labels and descriptions only; `Affordance.Label` keeps the recorded
+`game area N` spelling, so prompt records and replay are unchanged. The engine
+authors the names from `GameAreaFacts` labels, which the View contract carries too.
+
 `Affordance.CostDescription` names mandatory arrow costs beyond the resource
 amounts and symbols already in `CostOptions`, including exhaustion, discarding,
 counter spending and damage. Cards derives it from the compiled typed ability

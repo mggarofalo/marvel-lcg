@@ -36,6 +36,7 @@ public static class WorldProjection
             .Select(card => card.Id!.Value)
             .ToHashSet();
 
+        visible = GameAreaProjection.With(world, visible, addressableIds);
         Prompt? authorizedPrompt = promptVisible
             ? PromptSnapshot.For(prompt!, readableIds)
             : null;
@@ -89,11 +90,8 @@ public static class WorldProjection
             {
                 GameArea = world.GameAreaOf(PlayArea.Of(seat.Index))?.Id,
             }).ToList();
-        var gameAreas = world.GameAreas.Select(area =>
-            new GameAreaDescriptor(
-                area.Id,
-                area.PlayAreas.Select(playArea => playArea.Player).Order().ToList())).ToList();
-        return new WorldDescriptor(players, areas, gameAreas, world.Result) { LossReason = world.LossReason };
+        // GameAreaProjection adds the game areas once the scope's addressable cards are known.
+        return new WorldDescriptor(players, areas, [], world.Result) { LossReason = world.LossReason };
     }
 
     private static CardDescriptor? DescribeCard(

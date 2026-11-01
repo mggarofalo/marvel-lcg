@@ -222,6 +222,13 @@ emitted-only events backed by rule-cited state tests.
 These events name public topology and survive visibility filtering. They do not
 expose a concealed card or private seat state.
 
+View presents them by the seats involved rather than the area number, reading
+the response's `game_areas`: "Spider-Man's play area joined Black Widow's game
+area", "… formed its own game area", "… joined the central game area", and for
+the villain's play area at Kang's split, "The villain play area left the shared
+game area; the players are now in separate game areas." An id the response does
+not list is described as "a game area". The wording is our choice.
+
 ## Fields
 
 `FieldSet` names the card, field, previous value and next value. A missing value

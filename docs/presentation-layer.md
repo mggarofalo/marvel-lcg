@@ -256,6 +256,17 @@ and candidate membership remain inside the separately authorized prompt. A seat
 with off-turn Actions may have its own prompt while another seat remains the
 primary turn owner. Public waiting metadata never supplies an answer contract.
 
+Game areas come from the engine. `GameAreaFacts` names each area's villains,
+main schemes, central or retained role and label, and `Places.CanAffect` answers
+which visible in-play cards each seat cannot reach (`pack:mc11:game-areas`:
+"Cards and components in one game area cannot affect another game area"). In a
+Kang game, `KangTable` supplies the stage, pending split, pending departures and
+their engine-authored summaries, stored-Dominion count and central schemes, and
+`VillainPhaseFocus` the villain-phase step and seat resolving now (ruling
+97d62cdb9ce436a7). View drops ids the scope cannot address and adds progress and
+notes copy; it calculates none of these facts. Every one is public, so every seat
+receives the same game-area and Kang facts.
+
 View names an offered source instance and describes its current authorized HP,
 readiness and counters. Mandatory nonresource costs come from the engine's
 typed cost description. These facts let the player assess an offer; View and
@@ -336,6 +347,8 @@ visibility configuration, durable sessions and shutdown behavior.
 
 ## Wire protocol
 
+Protocol 45 adds what a split table needs to be drawn and explained. Each `game_areas` entry carries its `villains` and `main_schemes` in play, whether it is `central` (it holds the villain's play area) or `retained` (no players, but an eliminated player's Kang and stage wait there for their phase-end departure), the `former_seats` whose retained components it holds, and an engine-authored `label` that names its players and villains. Each player carries `out_of_reach`: the visible in-play cards its cards cannot affect because they are in another game area. A Kang game adds `kang`: the stage, the local Kang (II) still to resolve, the public count of Dominions stored under stage 4A, the central schemes, a pending split, each pending departure, the villain-phase step and seat resolving now, the starting player count, the shared encounter deck and discard pile, and readable progress and notes. Protocol 44 peers are rejected before gameplay because their strict decoder does not recognize these fields. The client accepts only ids the same response lists. Prompt records, replay, saves, digest and RNG are unchanged.
+
 Protocol 44 adds each seat's and each addressable card's game area id (`game_area`), null when the engine places it in no game area, such as Kang's central stage 2B. In an ordinary table every participating seat, and every card in a participating play area or the villain's, names the single game area. Player elimination removes the eliminated seat's play area from its game area (`rr:player-elimination.step.5`: "Remove the eliminated player’s play area … from the game"), so that seat reports null. Protocol 43 peers are rejected before gameplay because their strict decoder does not recognize this field. The client accepts only ids the same response lists in `game_areas`.
 
 Protocol 43 adds a conditional resource bonus with its generated types and qualifying cost-component mask. Protocol 42 peers are rejected before gameplay because their strict decoder does not recognize this field. Unconditional sources retain their prior JSON shape. Replay compatibility for the integrated rules/content revision is separately assessed under MARVEL-870.
@@ -343,7 +356,7 @@ Protocol 43 adds a conditional resource bonus with its generated types and quali
 The socket protocol uses source-generated JSON inside a 4-byte big-endian length
 frame. Frames are bounded. Unknown operations, unsupported protocol versions and
 unknown JSON members fail before they reach the engine. Both endpoints must use
-protocol 44. Setup and decisions replay under engine-replay-v32, with session
+protocol 45. Setup and decisions replay under engine-replay-v32, with session
 schema 7 retaining the exact ordered decks. Requests carry engine-authored
 commitments and explicit payment allocations; authorized responses include
 readable choices, active attack participants, attack completion events and

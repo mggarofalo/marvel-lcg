@@ -135,7 +135,7 @@ public sealed class EventPresentationCardPlayIsOneActionThatNamesCardsTests : Ev
         Assert.Equal(["Attached Swinging Web Kick to Rhino.", "Detached Swinging Web Kick from Rhino."], chronology.Entries.Select(entry => entry.Summary));
         chronology.Reset([new PlayAreaJoined(0, 4) { Trigger = "BeginGame" }], World());
         EventPresentation only = Assert.Single(chronology.Entries);
-        Assert.Equal("Peter Parker's play area joined game area 4.", only.Summary);
+        Assert.Equal("Peter Parker's play area joined a game area.", only.Summary);
         Assert.Equal("Begin Game", only.Cause);
     }
 

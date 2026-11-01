@@ -233,30 +233,28 @@ protect", which this is.
 11. Progress toward winning: Kang (I), then a Kang (II) in each area, then
     Kang (III) after the reunion.
 
-### What is missing
+### Facts the View carries for the split table (protocol 45)
 
-- **Pending departures.** No View fact says that a Kang (II) defeat or a
-  completed 3B will move a group at the end of the phase, or that a Dominion
-  has been stored. Add an engine-owned, visibility-safe descriptor of pending
-  departures: source area, group, cause (defeat or completion) and boundary.
-- **A semantic summary per area.** Clients would have to assemble the local
-  Kang, scheme and threat from zones and owners. `GameAreaDescriptor`
-  (`src/Marvel.View/GameAreaDescriptor.cs`) carries only the id and play
-  areas. Extend it with the local villain id, the local main scheme id,
-  whether the area is retained, and whether it is central.
-- **Villain-phase progress.** Item 8 needs the game area acting in the
-  current villain-phase step as a View fact.
-- **Win progress.** Item 11 needs the current Kang stage and how many local
-  Kang (II) remain, as engine facts rather than a count of cards.
-- **Stored Dominions.** The concealed pile under 4A sits in the main scheme
-  deck. Its count, the stored-Dominion total, needs an explicit public fact.
-- **Prompt and event labels.** They use numeric area ids ("game area 3").
-  They need seat names and the local Kang's name from the View contract, not
-  from the renderer.
-- **Reach explanations.** A target that is not offered because it is in
-  another area has no reason the client can show. If the UI must explain the
-  absence, the engine has to publish it.
+Each fact is derived in the engine and copied by View; the client validates that
+every id it names is one the same response lists (`ClientGameAreaValidation`).
 
-A separate UI packet (P8 View/Protocol, then P9 Godot) implements these, with
-native evidence and an owner review item for the new separated-table
-interaction.
+| Need | Engine owner | View and wire | Tests |
+|---|---|---|---|
+| Per-area summary: local Kang, local scheme, central, retained, former seats, label | `GameAreaFacts` | `GameAreaDescriptor.Villains`, `MainSchemes`, `Central`, `Retained`, `FormerSeats`, `Label` | `KangTableFactsTests`, `SplitTableProjectionTests` |
+| Pending departures: who, from where, why, where to | `KangTable` over `KangPhaseTransitions.Pending` and `KangJoinProcedure.Destinations` | `KangTableDescriptor.Departures` (`Seats`, `SourceGameArea`, `CompletedScheme`, `Destinations`, `Reunion`, `Summary`) | `KangTableFactsTests`, `SplitTableProjectionTests` |
+| A pending split after Kang (I)'s defeat | `KangFirstSplit.Pending` | `KangTableDescriptor.PendingSplit` | `KangTableFactsTests` |
+| Stored Dominions under 4A | `KangTable` (cards beneath 11013a) | `KangTableDescriptor.StoredDominions` | `KangTableFactsTests` |
+| Win progress | `KangTable` (Kang (I), (II), (III) in play) | `Stage`, `RemainingLocalKangs`, `Progress` | `KangTableFactsTests`, `KangSplitTableViewTests` |
+| Which area is acting in the villain phase | `VillainPhaseFocus` | `KangTableDescriptor.Acting` | `VillainPhaseFocusTests`, `KangTableFactsTests` |
+| Why another area's cards are not offered | `Places.CanAffect` | `PlayerDescriptor.OutOfReach` | `SplitTableProjectionTests`, `KangSplitTableViewTests` |
+| Player-named prompt and event labels | `GameAreaFacts` labels, `KangDepartureNames` | prompt `DisplayLabel`/`CommitLabel`/`Description`; `GameAreaEventPresentation` | `KangTableFactsTests`, `SplitTableProjectionTests` |
+| "Each player" scope, shared encounter deck and discard, 3B completion is not a loss, turn-order steps | `World.Players`, `World.AreaOf` | `StartingPlayers`, `EncounterDeck`, `EncounterDiscard`, `Notes` (present while separated) | `SplitTableProjectionTests` |
+
+`KangSplitTableViewTests` drives Standard, Temporal, two players, seed 1 through
+`KangRecipeFactory` behind `EngineHost` with a restricted capability per seat, to
+the split, a pending departure and the reunion. After every answer both seats'
+responses cross the strict codec; their game-area and Kang facts are equal, each
+seat reads only its own hand, and no fact names a card in another seat's hand.
+
+The Godot packet (P9) renders these, with native evidence and an owner review
+item for the new separated-table interaction.
