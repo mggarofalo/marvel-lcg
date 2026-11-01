@@ -13,7 +13,7 @@ internal sealed class GameAreaColumnFacts(BoardPresentation board, GameAreaDescr
 
     private bool Acting => board.Kang?.Acting?.GameArea == area.Id;
 
-    private bool OutOfReach => !Yours && area.Villains.Concat(area.MainSchemes).Any(reach.Contains);
+    private bool OutOfReach => area.Villains.Concat(area.MainSchemes).Any(reach.Contains);
 
     /// <summary>The column's markers, in display order.</summary>
     internal GameAreaMarker[] Markers()
