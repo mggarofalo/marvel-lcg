@@ -55,9 +55,9 @@ internal sealed class SpatialTableObjectRenderer
         RenderCards(areas, "SideSchemesArea", geometry.SideSchemes, CardDisplaySize.Board);
     }
 
-    internal void RenderGameAreas(BoardPresentation board, GameAreaTable table)
+    internal void RenderGameAreas(BoardPresentation board, GameAreaTable table, IReadOnlyList<BoardAreaPresentation> hosted)
     {
-        foreach (var card in new GameAreaTableRenderer(surface, result, faces, piles).Render(board, table, geometry))
+        foreach (var card in new GameAreaTableRenderer(surface, result, faces, piles).Render(board, table, geometry, hosted))
             if (card.TargetId is { } id) hosts[id] = (card, card.Position);
     }
 

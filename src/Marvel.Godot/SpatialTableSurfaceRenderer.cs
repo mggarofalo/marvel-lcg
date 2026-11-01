@@ -150,7 +150,7 @@ internal static class SpatialTableSurfaceRenderer
             TableCanvasReflow.AnchorBottom(surface, stage);
             result.RegisterMulliganStage(stage);
         }
-        BoardAreaPresentation[] separated = RenderScenarioTable(objects, surface, geometry, board, scenario,
+        BoardAreaPresentation[] separated = RenderScenarioTable(objects, surface, geometry, board, scenario, player,
             selection.ExpandedSeat);
         objects.RenderRevealing(board.Areas, Context(main, prompt));
         objects.RenderPlayer(player);
@@ -258,15 +258,18 @@ internal static class SpatialTableSurfaceRenderer
     }
 
     // A separated table replaces the single villain mat with game-area columns; it returns the
-    // other seats' areas whose attachments travel with their placed villains and schemes.
+    // other seats' areas whose attachments travel with their placed villains and schemes. The columns
+    // reserve room for exactly the attachments RenderHosted hangs from those areas.
     private static BoardAreaPresentation[] RenderScenarioTable(SpatialTableObjectRenderer objects, Control surface,
-        AstraTableGeometry geometry, BoardPresentation board, BoardAreaPresentation[] scenario, int seat)
+        AstraTableGeometry geometry, BoardPresentation board, BoardAreaPresentation[] scenario,
+        BoardAreaPresentation[] player, int seat)
     {
         GameAreaTable? areas = GameAreaTableProjection.From(board, seat);
         if (areas is { Separated: true })
         {
-            objects.RenderGameAreas(board, areas);
-            return GameAreaHosts(board, seat);
+            BoardAreaPresentation[] hosts = GameAreaHosts(board, seat);
+            objects.RenderGameAreas(board, areas, [.. scenario, .. player, .. hosts]);
+            return hosts;
         }
         objects.RenderScenario(scenario, board.EncounterGroups);
         if (areas is not null) GameAreaTableChrome.AddBanner(surface, geometry, areas);

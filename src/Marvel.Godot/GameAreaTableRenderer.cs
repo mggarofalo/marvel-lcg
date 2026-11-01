@@ -16,7 +16,8 @@ internal sealed class GameAreaTableRenderer(
     private const float OutOfReachAlpha = 0.45f;
     private const float AttachmentRow = 30;
 
-    internal IReadOnlyList<CardControl> Render(BoardPresentation board, GameAreaTable table, AstraTableGeometry geometry)
+    internal IReadOnlyList<CardControl> Render(BoardPresentation board, GameAreaTable table, AstraTableGeometry geometry,
+        IReadOnlyList<BoardAreaPresentation> hosted)
     {
         var visible = board.Areas.SelectMany(SpatialTableZones.Current)
             .Where(card => card.TargetId is not null).DistinctBy(card => card.TargetId)
@@ -30,7 +31,7 @@ internal sealed class GameAreaTableRenderer(
         var cards = new List<CardControl>();
         float width = (right - left) / table.Columns.Count;
         for (int index = 0; index < table.Columns.Count; index++)
-            RenderColumn(board, table, table.Columns[index], visible,
+            RenderColumn(hosted, table, table.Columns[index], visible,
                 new Rect2(left + index * width, top, width - 8, bottom - top), cards);
         return cards;
     }
@@ -47,7 +48,7 @@ internal sealed class GameAreaTableRenderer(
                 geometry.EncounterDeck.End.X - geometry.EncounterDiscard.Position.X, note);
     }
 
-    private void RenderColumn(BoardPresentation board, GameAreaTable table, GameAreaColumn column,
+    private void RenderColumn(IReadOnlyList<BoardAreaPresentation> hosted, GameAreaTable table, GameAreaColumn column,
         Dictionary<int, BoardCardPresentation> visible, Rect2 bounds, List<CardControl> controls)
     {
         string name = column.GameArea is { } id ? $"GameArea{id}" : "GameAreaCentral";
@@ -64,7 +65,7 @@ internal sealed class GameAreaTableRenderer(
         var details = GameAreaTableChrome.AddDetails(surface, name + "Details", width, column.Details);
         var layout = GameAreaColumnLayout.Arrange(bounds.Size.Y,
             new GameAreaColumnText(headingHeight, markers, details?.Measured ?? 0, details?.Line ?? 0),
-            Attachments(board, objects));
+            Attachments(hosted, objects));
         details?.Place(bounds.Position + new Vector2(6, layout.DetailsTop), layout.DetailsHeight);
         RenderCards(table, objects, encounter,
             new Rect2(bounds.Position.X + 4, bounds.Position.Y + layout.CardsTop, bounds.Size.X - 8, layout.CardsHeight), controls);
@@ -101,10 +102,10 @@ internal sealed class GameAreaTableRenderer(
 
     // RenderHosted hangs each placed card's attachments and hosted piles below it, in a strip
     // SpatialCardFootprint.PlaceSidecar starts 4 pixels under the face and makes at least 44 tall.
-    private float Attachments(BoardPresentation board, BoardCardPresentation[] objects)
+    private float Attachments(IReadOnlyList<BoardAreaPresentation> hosted, BoardCardPresentation[] objects)
     {
         int rows = objects.Where(card => card.TargetId is not null)
-            .Max(card => (int?)SpatialTableHostAttachments.Rows(board.Areas, card.TargetId!.Value)) ?? 0;
+            .Max(card => (int?)SpatialTableHostAttachments.Rows(hosted, card.TargetId!.Value)) ?? 0;
         return rows == 0 ? 0 : 4 + Math.Max(44, rows * AttachmentRow * Math.Max(1, (int)faces.ReadingScale / 100f));
     }
 
