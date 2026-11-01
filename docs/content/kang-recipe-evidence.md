@@ -54,12 +54,12 @@ points is our threshold.
 
 | Recipe | Modular | Players | Seed | Outcome | Round | Decisions | Split | Reunion and Kang (III) |
 |---|---|---:|---:|---|---:|---:|---|---|
-| Standard | Anachronauts | 1 | 1 | all players eliminated | 5 | 48 | yes | yes |
-| Standard | Master of Time | 2 | 1 | all players eliminated | 8 | 133 | yes | yes |
-| Standard | Master of Time | 3 | 15 | all players eliminated | 6 | 143 | yes | yes |
-| Standard | Temporal | 4 | 4 | all players eliminated | 5 | 152 | yes | yes, through an eliminated player's area |
-| Expert | Anachronauts | 1 | 36 | all players eliminated | 4 | 34 | yes | yes |
-| Expert | Master of Time | 2 | 11 | all players eliminated | 5 | 95 | yes | yes |
+| Standard | Anachronauts | 1 | 1 | all players eliminated | 5 | 46 | yes | yes |
+| Standard | Master of Time | 2 | 1 | all players eliminated | 8 | 124 | yes | yes |
+| Standard | Master of Time | 3 | 15 | all players eliminated | 6 | 136 | yes | yes |
+| Standard | Temporal | 4 | 4 | all players eliminated | 5 | 148 | yes | yes, through an eliminated player's area |
+| Expert | Anachronauts | 1 | 36 | all players eliminated | 4 | 32 | yes | yes |
+| Expert | Master of Time | 2 | 11 | all players eliminated | 5 | 91 | yes | yes |
 | Expert | Temporal | 3 | 1 | 1B completed | 3 | 93 | no | no |
 | Expert | Temporal | 4 | 1 | 1B completed | 4 | 121 | no | no |
 
