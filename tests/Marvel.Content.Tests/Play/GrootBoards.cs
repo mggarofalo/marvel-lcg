@@ -17,16 +17,16 @@ internal static class GrootBoards
     private static readonly CardCatalog Cards = CardCatalog.Parse(
         File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")));
 
-    /// <summary>Groot (or <paramref name="identity"/>) on <paramref name="face"/> (later seats Spider-Man), Rhino (stage I unless <paramref name="villain"/> says otherwise) and his main scheme.</summary>
+    /// <summary>Groot (or <paramref name="identity"/>) on <paramref name="face"/> (later seats <paramref name="others"/>), Rhino (stage I unless <paramref name="villain"/> says otherwise) and his main scheme.</summary>
     /// <remarks>Each deck holds twelve Energy; the encounter deck holds Hard to Keep Down, which prints no boost.</remarks>
     internal static World Board(string face = "16001a", int players = 1, string encounter = "01104", string villain = "01094",
-        string identity = Identity)
+        string identity = Identity, string others = "01001a,01001b")
     {
         var world = new World(Cards, players, 241);
         for (int player = 0; player < players; player++)
         {
             var seat = world.CreateSeat($"p{player}");
-            seat.IdentityCard = world.CreateCard(player == 0 ? identity : "01001a,01001b", seat.Hero);
+            seat.IdentityCard = world.CreateCard(player == 0 ? identity : others, seat.Hero);
             if (player == 0) seat.IdentityCard.TurnTo(face);
             for (int i = 0; i < 12; i++) world.CreateCard("01088", seat.Deck);
         }

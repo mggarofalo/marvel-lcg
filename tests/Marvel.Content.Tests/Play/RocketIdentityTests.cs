@@ -89,7 +89,7 @@ public sealed class RocketIdentityTests : CoreCardTestBase
     }
 
     [Fact]
-    [Rule("rr:you-your.12")]
+    [Rule("rr:you-your.15")]
     public void MurderedYouIgnoresExcessDamageAnAllyDeals()
     {
         // "You" is Rocket Raccoon and the cards that extend him; an ally's attack is the

@@ -208,7 +208,7 @@ internal static class AbilityWindowAdmission
         RestrictedPlayer(program, world, ability, card) is { } restricted
             ? restricted
             : AbilityPendingEntryAdmission.OwnEntry(card, occurrence) ? occurrence.Player
-            : AbilityOccurrenceControllers.Of(world, card, occurrence) is { } owner ? owner
+            : AbilityOccurrenceControllers.Of(world, card, occurrence, ability.Trigger) is { } owner ? owner
             : ability.Trigger.Player is not null
                 ? occurrence.Player
                 : ability.Trigger.Actor == AbilityRoles.You

@@ -28,6 +28,15 @@ internal static class RocketBoards
         return card;
     }
 
+    /// <summary>Deals <paramref name="face"/> to Rocket and schedules its reveal through the encounter-reveal procedure.</summary>
+    internal static Card Reveal(World world, string face)
+    {
+        var card = world.CreateCard(face, world.AreaOf(DeckType.DealtEncounterCardsDeck, PlayArea.Of(0)));
+        world.Agenda.Add(new PhaseStep(new RevealStageOperation(RevealStageKind.RevealEncounterCard),
+            Round: 1, Number: 4, Subject: card.ObjectId, Seat: 0));
+        return card;
+    }
+
     /// <summary>Begins a basic attack by Rocket against <paramref name="target"/>.</summary>
     internal static void BasicAttack(World world, Card target) =>
         BasicPowerInitiation.BasicAttack(world, world.Facts, 0, target, []);
