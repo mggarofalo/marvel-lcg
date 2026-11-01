@@ -98,7 +98,7 @@ static func _central_and_shared(smoke, kang) -> bool:
         smoke._fail("central stage lacks the note that its tokens wait for stage 4A")
         return false
     var shared = _surface(smoke).find_child("SharedEncounterNote", true, false)
-    if shared == null or "SHARED" not in shared.text or "share one encounter deck" not in shared.tooltip_text:
+    if shared == null or "SHARED BY ALL AREAS" != shared.text or "share one encounter deck" not in shared.tooltip_text:
         smoke._fail("the shared encounter deck and discard are not explained")
         return false
     return true
@@ -106,7 +106,7 @@ static func _central_and_shared(smoke, kang) -> bool:
 static func _acting(smoke, kang) -> bool:
     if not await _synchronize(smoke, func(): return kang.ActingArea() >= 0, "a villain-phase step resolving in one area"): return false
     var area := int(kang.ActingArea())
-    if "ACTING NOW" not in _text(smoke, "GameArea%dMarkers" % area) or "Villain phase step" not in _text(smoke, "KangProgress"):
+    if "ACTING NOW" not in _text(smoke, "GameArea%dMarkers" % area) or "Villain phase step" not in _text(smoke, "GameArea%dDetails" % area):
         smoke._fail("the acting area is not marked or named")
         return false
     for other in kang.LocalAreas():
@@ -119,7 +119,7 @@ static func _departure(smoke, kang) -> bool:
     if not await _synchronize(smoke, func(): return kang.DepartureSources().size() > 0, "a pending departure"): return false
     var source := int(kang.DepartureSources()[0])
     var details := _text(smoke, "GameArea%dDetails" % source)
-    if "LEAVES AT END OF PHASE" not in _text(smoke, "GameArea%dMarkers" % source) or "at the end of the phase" not in details:
+    if "LEAVES AT PHASE END" not in _text(smoke, "GameArea%dMarkers" % source) or "at the end of the phase" not in details:
         smoke._fail("the departing area lacks its marker and the engine's summary: " + details)
         return false
     return await _capture(smoke, "departure")
@@ -184,4 +184,5 @@ static func _text(smoke, name: String) -> String:
     return "" if label == null else str(label.text)
 
 static func _capture(smoke, leaf: String) -> bool:
+    if not preload("res://smoke/native_kang_layout.gd").check(smoke, _surface(smoke), leaf): return false
     return await preload("res://smoke/native_heimdall_contract.gd")._capture(smoke, smoke.contract + "-" + leaf)

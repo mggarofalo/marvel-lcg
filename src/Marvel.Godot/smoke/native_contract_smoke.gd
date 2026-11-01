@@ -82,7 +82,7 @@ func _has_no_game_area_presentation() -> bool:
     return true
 
 func _scene_ready() -> bool:
-    if contract.begins_with("kang-"): return witness.Revision() >= 0
+    if contract.begins_with("kang-"): return witness.Revision() == 0 and witness.Outcome() == "Unfinished"
     if not witness.CanResolve(): return false
     if contract == "dense-table": return true
     if contract == "heimdall-order": return witness.DecisionKind() == "Response"
