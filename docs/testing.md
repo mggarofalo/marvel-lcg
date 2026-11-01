@@ -251,6 +251,12 @@ class for the journey; the output records each request's host and delivery time.
 | `resource-declaration` | For Justice paid with The Power of Justice; prepared Core | Change individual resource declarations with native menus; the submitted `BY` allocation reduces scheme threat from five to one. |
 | `synthetic-grouped-contract` | Authored ordered groups `[12,11]` and `[11,13]`; synthetic | Replacing a group retains no earlier member; its authored order survives scaling and a single explicit submission, independently of pooled min/max. |
 
+The `kang-2`, `kang-3` and `kang-4` contracts open a prepared Kang recipe with
+the table already separated (`docs/content/kang-recipe-evidence.md`). The
+client's Synchronize presses carry `kang-2` through the acting step, a
+departure, a join answered with viewport input, and the reunion. Exactly one
+resolve is expected, the join.
+
 Scale checkpoints cover all eleven settings from 50% to 150% in ten-point
 steps, at 1920×1080 and 2560×1440, with motion enabled and disabled. The states are
 setup, mulligan, action ambiguity, selected search, nested ability window,
