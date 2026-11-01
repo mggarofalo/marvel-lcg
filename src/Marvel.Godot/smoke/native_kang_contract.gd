@@ -162,6 +162,8 @@ static func _destinations_lit(smoke, kang) -> bool:
 static func _join(smoke, kang) -> bool:
     if not await _synchronize(smoke, func(): return kang.Trigger() == "ResolveKangPhaseJoin", "the join prompt"): return false
     if not _destinations_lit(smoke, kang): return false
+    if not _sheet_states_whole(smoke): return false
+    if not _seat_roles_named(smoke): return false
     if not await _capture(smoke, "join"): return false
     if not await _answer_join(smoke, kang): return false
     var area := int(kang.LocalAreas()[0])
@@ -169,6 +171,33 @@ static func _join(smoke, kang) -> bool:
         smoke._fail("the joined area does not hold both seats")
         return false
     return await _capture(smoke, "joined")
+
+# The decision sheet shows what the decision concerns and the engine's whole instruction, wrapped.
+static func _sheet_states_whole(smoke) -> bool:
+    var head = smoke.main.find_child("DecisionHead", true, false)
+    var subject = null if head == null else head.find_child("DecisionSubject", true, false)
+    var reason = null if head == null else head.find_child("Reason", true, false)
+    if subject == null or not subject.is_visible_in_tree() or reason == null or not reason.is_visible_in_tree():
+        smoke._fail("the join sheet does not show its subject line and instruction")
+        return false
+    if reason.autowrap_mode == TextServer.AUTOWRAP_OFF or reason.text != reason.tooltip_text.strip_edges():
+        smoke._fail("the join sheet cuts its instruction short: " + reason.text)
+        return false
+    return true
+
+# Every seat role on the rail is named on hover, and the answering seat says so in words.
+static func _seat_roles_named(smoke) -> bool:
+    var answering := 0
+    for role in smoke.main.find_children("Role*", "Control", true, false):
+        if not role.is_visible_in_tree(): continue
+        if role.tooltip_text.is_empty() or role.mouse_filter == Control.MOUSE_FILTER_IGNORE:
+            smoke._fail("seat role %s has no tooltip" % role.name)
+            return false
+        if role.name == "RoleAnsweringSeat" and role.get_meta("table_fact_label", "") == "Answering": answering += 1
+    if answering != 1:
+        smoke._fail("the rail does not name exactly one answering seat in words (%d)" % answering)
+        return false
+    return true
 
 # Chooses the one named destination, then its named commitment.
 static func _answer_join(smoke, kang) -> bool:
