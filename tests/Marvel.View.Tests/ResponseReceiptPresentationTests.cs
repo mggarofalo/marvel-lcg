@@ -28,7 +28,7 @@ public sealed class ResponseReceiptPresentationTests : EventPresentationTestBase
         { DisplayQuestion = "Choose a matching card to play", ContextCardIds = [8], Description = "Team-Building Exercise was exhausted." };
         var presentation = PromptPresentation.From(child, world);
         Assert.Equal("Choose a matching card to play", presentation.Heading);
-        Assert.Contains("Team-Building Exercise was exhausted", presentation.Resolution);
+        Assert.Contains("Team-Building Exercise was exhausted", presentation.Frame.Instruction);
         Assert.Contains("Cost 0", Assert.Single(presentation.Affordances).Costs[0]);
         Assert.Contains("Play Army of Ants", DecisionReceiptContext.From(child, world, 9, [], [])!.Commitment);
     }

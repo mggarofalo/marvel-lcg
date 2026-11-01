@@ -15,7 +15,7 @@ public sealed class ContextualOfferDescriptionTests
             Description = "Search your deck for an upgrade and add it to your hand.",
             Consequence = "Choose a matching card if available, then shuffle your deck.",
         };
-        var prompt = new PromptPresentation("", "", "", "", "", [offer,
+        var prompt = new PromptPresentation("", DecisionFrame.Empty, "", [offer,
             Offer(2) with { Illegal = "Unavailable" }]);
         string description = Assert.IsType<string>(ContextualOfferDescription.SingleResponse(
             prompt, PublicDecisionKind.Response));
@@ -28,7 +28,7 @@ public sealed class ContextualOfferDescriptionTests
     [Fact]
     public void MultipleResponsesKeepTheirOwnDescriptions()
     {
-        var prompt = new PromptPresentation("", "", "", "", "", [Offer(1), Offer(2)]);
+        var prompt = new PromptPresentation("", DecisionFrame.Empty, "", [Offer(1), Offer(2)]);
         Assert.Null(ContextualOfferDescription.SingleResponse(prompt, PublicDecisionKind.Response));
         Assert.Null(ContextualOfferDescription.SingleResponse(prompt with { Affordances = [] },
             PublicDecisionKind.Response));

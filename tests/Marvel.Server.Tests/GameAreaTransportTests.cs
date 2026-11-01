@@ -37,24 +37,24 @@ public sealed class GameAreaTransportTests
     [Fact]
     public void AreaSummariesReachAndKangFactsSurviveTheStrictCodec()
     {
-        // Protocol 45: each game area's villains, main schemes, central or retained role and
-        // label; each seat's out-of-reach cards; and Kang's progress, departures and acting area.
+        // Protocol 46: each game area's villains, main schemes and central or retained role; each
+        // seat's out-of-reach cards and their reason; and Kang's progress counts, departures,
+        // acting step and rules, as facts without sentences.
         var world = new WorldDescriptor(
-            [new PlayerDescriptor(0, "p0", false) { GameArea = 7, OutOfReach = [12] }],
+            [new PlayerDescriptor(0, "p0", false) { GameArea = 7, OutOfReach = [12], OutOfReachReason = ReachReason.OtherGameArea }],
             [new AreaDescriptor(1, "VillainArea", 0, -1, [], [])],
-            [new GameAreaDescriptor(7, [0]) { Villains = [10], MainSchemes = [11], Label = "p0's game area" },
-                new GameAreaDescriptor(8, []) { Retained = true, FormerSeats = [1], Label = "p1's retained game area" }],
+            [new GameAreaDescriptor(7, [0]) { Villains = [10], MainSchemes = [11] },
+                new GameAreaDescriptor(8, []) { Retained = true, FormerSeats = [1] }],
             Outcome.Unfinished)
         {
             Kang = new KangTableDescriptor(2, 1, 1, [14], null,
-                [new KangDepartureDescriptor(12, 8, [], 13, [], true, "p1's retained components leave.")])
+                [new KangDepartureDescriptor(12, 8, [], 13, [], true)])
             {
-                Acting = new VillainPhaseFocusDescriptor(2, 0, 7, "step 2"),
+                Acting = new VillainPhaseFocusDescriptor(2, 0, 7),
                 StartingPlayers = 2,
                 EncounterDeck = 20,
                 EncounterDiscard = 21,
-                Progress = "1 Kang (II) remains.",
-                Notes = [new(KangNoteKind.CentralTokensWaitFor4A, 14, "tokens")],
+                Notes = [new(KangNoteKind.CentralTokensWaitFor4A, 14)],
             },
         };
         var response = new EngineResponse(EngineProtocol.Version, "kang", "game", null, null, [], world);
@@ -63,14 +63,14 @@ public sealed class GameAreaTransportTests
         var restored = EngineJson.ReadResponse(json).World!;
 
         string text = Encoding.UTF8.GetString(json);
-        foreach (string member in new[] { "\"out_of_reach\":[12]", "\"main_schemes\":[11]", "\"former_seats\":[1]",
+        foreach (string member in new[] { "\"out_of_reach\":[12]", "\"out_of_reach_reason\":1", "\"main_schemes\":[11]", "\"former_seats\":[1]",
             "\"stored_dominions\":1", "\"kind\":5", "\"remaining_local_kangs\":1", "\"completed_scheme\":13", "\"reunion\":true" })
             Assert.Contains(member, text, StringComparison.Ordinal);
         Assert.Equal([12], restored.Players[0].OutOfReach);
         Assert.Equal([10], restored.GameAreas[0].Villains);
         Assert.Equal([11], restored.GameAreas[0].MainSchemes);
-        Assert.Equal((true, false, "p1's retained game area"), (restored.GameAreas[1].Retained,
-            restored.GameAreas[1].Central, restored.GameAreas[1].Label));
+        Assert.Equal(ReachReason.OtherGameArea, restored.Players[0].OutOfReachReason);
+        Assert.Equal((true, false), (restored.GameAreas[1].Retained, restored.GameAreas[1].Central));
         Assert.Equal([1], restored.GameAreas[1].FormerSeats);
         var kang = restored.Kang!;
         Assert.Equal((2, 1, 1, 2, 20, 21), (kang.Stage, kang.RemainingLocalKangs, kang.StoredDominions,
@@ -92,6 +92,24 @@ public sealed class GameAreaTransportTests
         string text = Encoding.UTF8.GetString(EngineJson.Write(
             new EngineResponse(EngineProtocol.Version, "kang", "game", null, null, [], world)));
         string forged = text.Replace("\"stored_dominions\":0", "\"stored_dominions\":0,\"winner\":true", StringComparison.Ordinal);
+
+        Assert.NotEqual(text, forged);
+        Assert.Throws<System.Text.Json.JsonException>(() => EngineJson.ReadResponse(Encoding.UTF8.GetBytes(forged)));
+    }
+
+    [Theory]
+    [InlineData("\"stored_dominions\":0", "\"stored_dominions\":0,\"progress\":\"Defeat Kang (I).\"")]
+    [InlineData("\"play_areas\":[0]", "\"play_areas\":[0],\"label\":\"p0's game area\"")]
+    public void AProtocol45SentenceIsRejected(string member, string forgedMember)
+    {
+        // Protocol 46 carries facts only; a peer still sending protocol 45's sentences is not understood.
+        var world = new WorldDescriptor([], [], [new GameAreaDescriptor(7, [0])], Outcome.Unfinished)
+        {
+            Kang = new KangTableDescriptor(1, 0, 0, [], null, []),
+        };
+        string text = Encoding.UTF8.GetString(EngineJson.Write(
+            new EngineResponse(EngineProtocol.Version, "kang", "game", null, null, [], world)));
+        string forged = text.Replace(member, forgedMember, StringComparison.Ordinal);
 
         Assert.NotEqual(text, forged);
         Assert.Throws<System.Text.Json.JsonException>(() => EngineJson.ReadResponse(Encoding.UTF8.GetBytes(forged)));

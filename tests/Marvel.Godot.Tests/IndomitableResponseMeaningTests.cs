@@ -49,8 +49,8 @@ public sealed class IndomitableResponseMeaningTests
         AssertMeaning(DecisionCopy.CompactActionSummary(offer));
         draft.SelectAffordance(offer.Id);
         AssertMeaning(Assert.IsType<string>(TableDraftSummary.From(draft, presentation, visible.World, compact: true)));
-        Assert.Contains("Rhino finished attacking Black Panther", presentation.Resolution);
-        Assert.Contains("11/11 HP", presentation.Resolution);
+        Assert.Contains("Rhino finished attacking Black Panther", presentation.Resolution());
+        Assert.Contains("11/11 HP", presentation.Resolution());
         Assert.Contains("Indomitable", offer.SourceName);
         Assert.Null(offer.CostDescription);
         Assert.Equal(before, world.Digest().Fingerprint());

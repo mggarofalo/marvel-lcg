@@ -72,7 +72,7 @@ public sealed class InvocationContinuationReviewTests
             syntheticReturnOtherwise: true);
         var action = Assert.Single(game.Pending!.Affordances, item => item.AnchorId == master.ObjectId);
         game.Resolve(InvocationInteractionFixture.Pay(world, action, deck.PublicTop!));
-        string text = InvocationInteractionFixture.Project(world, game).Presentation.Resolution;
+        string text = InvocationInteractionFixture.Project(world, game).Presentation.Frame.Instruction;
         Assert.Contains("Already paid", text);
         Assert.DoesNotContain("return that exact physical Invocation", text);
     }

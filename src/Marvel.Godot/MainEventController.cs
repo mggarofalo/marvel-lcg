@@ -54,9 +54,9 @@ internal sealed class MainEventController : IDisposable
         PromptPresentation view = PromptPresentation.From(prompt, world);
         main.promptEyebrow.Text = "CURRENT DECISION";
         main.promptHeading.Text = view.Heading;
-        main.promptContext.Text = view.Context;
+        main.promptContext.Text = view.Context();
         resolutionStage.Render(view);
-        main.promptRequirement.Text = view.Requirement;
+        main.promptRequirement.Text = view.Requirement();
         main.promptDiagnostic.Text = view.Diagnostic;
         main.promptRequirement.ThemeTypeVariation = prompt.Cancellable
             ? GodotThemeVariations.Caption

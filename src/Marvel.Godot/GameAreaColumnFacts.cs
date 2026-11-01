@@ -1,4 +1,3 @@
-using Marvel.Rules.Play;
 using Marvel.View;
 
 namespace Marvel.Godot;
@@ -39,16 +38,20 @@ internal sealed class GameAreaColumnFacts(BoardPresentation board, GameAreaDescr
     {
         var details = new List<string>();
         if (OutOfReach) details.Add(OutOfReachReason());
-        if (Acting) details.Add(board.Kang!.Acting!.Summary);
-        details.AddRange(departures.Select(departure => departure.Summary));
-        details.AddRange(GameAreaTableProjection.AnchoredNotes(board.Kang?.Notes ?? [], area.MainSchemes));
+        if (Acting) details.Add(TableWording.For(TableWording.Step(board.Kang!.Acting!.Step)).Tooltip);
+        details.AddRange(departures.Select(Departure));
+        details.AddRange(GameAreaTableProjection.AnchoredNotes(board, area.MainSchemes));
         return [.. details];
     }
 
     private string OutOfReachReason()
     {
-        string name = board.Players.FirstOrDefault(item => item.Seat == seat)?.Name ?? $"Player {seat + 1}";
-        string? isolation = board.Kang?.Notes.FirstOrDefault(note => note.Kind == KangNoteKind.AreaIsolation)?.Text;
-        return isolation is null ? $"Out of reach for {name}." : $"Out of reach for {name}. {isolation}";
+        ReachReason reason = board.Players.FirstOrDefault(item => item.Seat == seat)?.OutOfReachReason
+            ?? ReachReason.OtherGameArea;
+        return TableWording.For(TableWording.Fact(reason)).Tooltip;
     }
+
+    private string Departure(KangDepartureDescriptor departure) => TableWording.Departure(
+        GameAreaTableProjection.Title(board, departure.Villain), GameAreaTableProjection.Names(board, departure.Seats),
+        departure.CompletedScheme is not null, departure.Reunion);
 }

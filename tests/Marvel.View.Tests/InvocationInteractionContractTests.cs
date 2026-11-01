@@ -23,7 +23,7 @@ public sealed class InvocationInteractionContractTests
         var pending = game.Pending;
         var (prompt, presentation) = InvocationInteractionFixture.Project(world, game);
         Assert.Equal(1, prompt.Player);
-        Assert.Contains("p1", presentation.Context);
+        Assert.Equal("p1", presentation.Frame.SeatName);
         var spell = Assert.Single(presentation.Affordances, offer => offer.AnchorId == world.Seats[1].IdentityCard.ObjectId
             && offer.Verb == Game.ActionVerb);
         var paid = Assert.Single(presentation.Affordances, offer => offer.AnchorId == master.ObjectId);
@@ -79,7 +79,7 @@ public sealed class InvocationInteractionContractTests
         Assert.Equal(1, prompt.Player);
         Assert.False(prompt.Cancellable);
         Assert.Contains("Seven Rings", Assert.Single(presentation.ContextCards).Title);
-        Assert.Contains("none selected", presentation.Resolution);
+        Assert.Contains("none selected", presentation.Frame.Instruction);
         var group = Assert.Single(presentation.Affordances).TargetRequest!;
         Assert.Equal(0, group.Min);
         Assert.Equal(3, group.Max);

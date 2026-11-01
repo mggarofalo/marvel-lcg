@@ -12,9 +12,7 @@ internal static class ClientKangValidation
     {
         if (kang.Stage is < 1 or > 3 || kang.RemainingLocalKangs < 0 || kang.StoredDominions < 0) return false;
         if (kang.StartingPlayers != world.Players.Count || !ValidReferences(world, kang, known)) return false;
-        if (!Zone(world, kang.EncounterDeck, "EncounterDeck") || !Zone(world, kang.EncounterDiscard, "EncounterDiscardPile"))
-            return false;
-        return kang.Progress is not null;
+        return Zone(world, kang.EncounterDeck, "EncounterDeck") && Zone(world, kang.EncounterDiscard, "EncounterDiscardPile");
     }
 
     private static bool ValidReferences(WorldDescriptor world, KangTableDescriptor kang, Known known)
@@ -34,7 +32,7 @@ internal static class ClientKangValidation
     // A departing Kang still in play names the area he leaves; one already removed names none.
     private static bool ValidDeparture(KangDepartureDescriptor departure, Known known)
     {
-        if (departure.Summary is null || !known.Cards.TryGetValue(departure.Villain, out int? located)) return false;
+        if (!known.Cards.TryGetValue(departure.Villain, out int? located)) return false;
         if (located is { } area && area != departure.SourceGameArea) return false;
         if (!known.Areas.Contains(departure.SourceGameArea) || !Distinct(departure.Seats, known.Seats)) return false;
         if (departure.CompletedScheme is { } scheme && !known.Cards.ContainsKey(scheme)) return false;
@@ -47,7 +45,7 @@ internal static class ClientKangValidation
 
     private static bool ValidActing(WorldDescriptor world, VillainPhaseFocusDescriptor acting, Known known)
     {
-        if (acting.Step is not (1 or 2 or 4) || acting.Summary is null || !known.Seats.Contains(acting.Seat)) return false;
+        if (acting.Step is not (1 or 2 or 4) || !known.Seats.Contains(acting.Seat)) return false;
         return world.Players.Single(player => player.Seat == acting.Seat).GameArea == acting.GameArea;
     }
 
@@ -60,7 +58,7 @@ internal static class ClientKangValidation
     // The central-token and completion notes concern one scheme each; the others concern the table.
     private static bool ValidNote(KangNoteDescriptor note, Known known)
     {
-        if (!Enum.IsDefined(note.Kind) || note.Text is null) return false;
+        if (!Enum.IsDefined(note.Kind)) return false;
         bool anchored = note.Kind is KangNoteKind.CentralTokensWaitFor4A or KangNoteKind.CompletionStoresDominion;
         return anchored ? note.Card is { } card && known.Cards.ContainsKey(card) : note.Card is null;
     }

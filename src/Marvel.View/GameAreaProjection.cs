@@ -17,15 +17,19 @@ internal static class GameAreaProjection
             Central = summary.Central,
             Retained = summary.Retained,
             FormerSeats = summary.FormerSeats.ToArray(),
-            Label = summary.Label,
         }).ToArray();
-        var players = visible.Players.Select(player => player with
-        {
-            OutOfReach = OutOfReach(world, player.Seat, addressable),
-        }).ToArray();
+        var players = visible.Players.Select(player => Reach(player, OutOfReach(world, player.Seat, addressable)))
+            .ToArray();
         var projected = visible with { GameAreas = areas, Players = players };
-        return projected with { Kang = KangTableProjection.From(world, projected, addressable) };
+        return projected with { Kang = KangTableProjection.From(world, addressable) };
     }
+
+    // Places.CanAffect answers no only across game areas, so that is the reason for every listed card.
+    private static PlayerDescriptor Reach(PlayerDescriptor player, int[] outOfReach) => player with
+    {
+        OutOfReach = outOfReach,
+        OutOfReachReason = outOfReach.Length == 0 ? null : ReachReason.OtherGameArea,
+    };
 
     // Villain and main-scheme areas never conceal a card on entry, so this filter removes
     // nothing today (an equivalent mutant); it keeps every route to an id scope-checked.

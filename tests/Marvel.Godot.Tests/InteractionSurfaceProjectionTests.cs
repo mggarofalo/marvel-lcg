@@ -292,7 +292,7 @@ public sealed class InteractionSurfaceProjectionTests
         Marvel.Rules.Prompts.Prompt source,
         IReadOnlyList<AffordancePresentation> affordances,
         TargetRequest? target = null,
-        IReadOnlyList<CostOption>? costs = null) => new("", "", "", "", "", affordances.Select(view => view with
+        IReadOnlyList<CostOption>? costs = null) => new("", DecisionFrame.Empty, "", affordances.Select(view => view with
         {
             TargetRequest = target,
             CostOptions = costs ?? [],

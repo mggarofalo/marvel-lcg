@@ -52,5 +52,5 @@ public sealed class SearchChoiceCandidatesTests
     private static AffordancePresentation Offer(int id, int card) =>
         new(id, "Opaque choice", null, "Choose", "Card", card, 0, null, "", [])
         { AnchorKind = AffordanceAnchorKind.Card };
-    private static PromptPresentation Prompt(params AffordancePresentation[] offers) => new("Choose", "", "", "", "", offers);
+    private static PromptPresentation Prompt(params AffordancePresentation[] offers) => new("Choose", DecisionFrame.Empty, "", offers);
 }

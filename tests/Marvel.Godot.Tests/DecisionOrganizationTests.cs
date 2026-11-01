@@ -36,7 +36,7 @@ public sealed class DecisionOrganizationTests
         var card = new BoardCardPresentation(7, 1, false, "Business Problems", "", "Obligation", "", []);
         var board = new BoardPresentation([new BoardAreaPresentation(10, "Obligations", "", [card], [])
             { Zone = "ObligationsArea" }]);
-        var prompt = new PromptPresentation("Choose", "Decision for Iron Man", "Resolve", "Choose", "", [])
+        var prompt = new PromptPresentation("Choose", DecisionFrame.Empty, "", [])
             { ContextCards = [card] };
         Assert.Equal(card, Assert.Single(DecisionContextCards.MissingFromTable(prompt, board)));
         Assert.Equal("ObligationsArea", board.Areas[0].Zone);

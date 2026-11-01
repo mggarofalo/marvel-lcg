@@ -96,7 +96,7 @@ internal static class SpatialTableContextRenderer
     {
         bool ordinaryTurn = prompt?.PublicKind == PublicDecisionKind.PlayerAction;
         Label resolution = Copy(ordinaryTurn ? ""
-            : presentation?.Resolution.Replace("\n", " · ") ?? PendingSituationPresentation.Context(world));
+            : presentation?.Resolution().Replace("\n", " · ") ?? PendingSituationPresentation.Context(world));
         resolution.Name = "CausalContext";
         resolution.Visible = !string.IsNullOrWhiteSpace(resolution.Text);
         resolution.AutowrapMode = TextServer.AutowrapMode.Word;
@@ -104,7 +104,7 @@ internal static class SpatialTableContextRenderer
         cause.AddChild(resolution);
         if (presentation is not null && !ordinaryTurn)
         {
-            Label answerer = Copy(presentation.Context + " · " + presentation.Requirement);
+            Label answerer = Copy(presentation.Context() + " · " + presentation.Requirement());
             answerer.AutowrapMode = TextServer.AutowrapMode.Word;
             answerer.TextOverrunBehavior = TextServer.OverrunBehavior.NoTrimming;
             cause.AddChild(answerer);

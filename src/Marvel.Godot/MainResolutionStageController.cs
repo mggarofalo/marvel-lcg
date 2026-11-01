@@ -63,7 +63,7 @@ internal sealed class MainResolutionStageController
     private static string Resolution(
         PromptPresentation view, BoardCardPresentation? subject)
     {
-        string resolution = view.Resolution;
+        string resolution = view.Resolution();
         if (string.IsNullOrWhiteSpace(resolution) && subject is not null)
         {
             resolution = view.ResolutionKind switch

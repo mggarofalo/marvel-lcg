@@ -56,8 +56,8 @@ public sealed class JessicaDrewInspectionTests
         Assert.Equal([world.Seats[0].IdentityCard!.ObjectId], entitled.Prompt.CauseCardIds);
         Assert.Equal("Done", Assert.Single(entitled.Prompt.Affordances).CommitLabel);
         var presentation = PromptPresentation.From(entitled.Prompt, entitled.World);
-        Assert.Contains("Inspecting Genius", presentation.Context, StringComparison.Ordinal);
-        Assert.Contains("Jessica Drew", presentation.Resolution, StringComparison.Ordinal);
+        Assert.Equal((DecisionSubject.Inspecting, "Genius"), (presentation.Frame.Subject, presentation.Frame.SubjectTitle));
+        Assert.Contains(presentation.Frame.Causes, cause => cause.Contains("Jessica Drew", StringComparison.Ordinal));
         var other = Project(world, inspection, 1);
         Assert.Null(other.Prompt);
         AssertConcealed(other, area.Id);

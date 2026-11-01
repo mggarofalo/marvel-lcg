@@ -45,7 +45,7 @@ public sealed class CardPaymentDraftTests
             AnchorKind = AffordanceAnchorKind.Card,
             Relationships = [new(RelationshipKind.OfferedGenerator, 19, 41)],
         };
-        var prompt = new PromptPresentation("", "", "", "", "", [visible]);
+        var prompt = new PromptPresentation("", DecisionFrame.Empty, "", [visible]);
 
         Assert.True(CardPaymentPresentation.UsesModal(composer));
         Assert.False(CardPaymentPresentation.UsesModal(composer, submitting: true));
@@ -60,7 +60,7 @@ public sealed class CardPaymentDraftTests
     {
         var composer = Composer();
         composer.SelectAffordance(3);
-        var prompt = new PromptPresentation("", "", "", "", "", []);
+        var prompt = new PromptPresentation("", DecisionFrame.Empty, "", []);
         Assert.Empty(BoardInteractionControlProjection.From(composer, prompt));
         var controls = BoardInteractionControlProjection.From(composer, prompt, inlinePayment: true);
         Assert.Equal([41, 42], controls.Select(control => control.CardId));

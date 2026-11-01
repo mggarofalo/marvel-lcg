@@ -26,7 +26,7 @@ internal static class ClientGameAreaValidation
 
     private static bool ValidArea(GameAreaDescriptor area, Known known)
     {
-        if (area.Label is null || !Located(area.Villains, area.Id, known) || !Located(area.MainSchemes, area.Id, known))
+        if (!Located(area.Villains, area.Id, known) || !Located(area.MainSchemes, area.Id, known))
             return false;
         if (!Distinct(area.FormerSeats, known.Seats)) return false;
         if (!area.PlayAreas.All(play => play == -1 || known.Seats.Contains(play))) return false;
@@ -34,10 +34,12 @@ internal static class ClientGameAreaValidation
     }
 
     // A card a seat cannot reach is in some other game area than the seat's own; a seat in
-    // no game area is limited by none.
+    // no game area is limited by none. A listed card carries a known reason, and an empty list none.
     private static bool ValidReach(PlayerDescriptor player, Known known)
     {
         if (!Distinct(player.OutOfReach, known.Cards.Keys)) return false;
+        if (player.OutOfReachReason is { } reason ? !Enum.IsDefined(reason) || player.OutOfReach.Count == 0
+            : player.OutOfReach.Count > 0) return false;
         if (player.GameArea is null) return player.OutOfReach.Count == 0;
         return player.OutOfReach.All(id => known.Cards[id] != player.GameArea);
     }

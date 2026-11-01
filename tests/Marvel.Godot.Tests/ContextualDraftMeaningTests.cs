@@ -40,7 +40,7 @@ public sealed class ContextualDraftMeaningTests
             SourceState = "READY",
             Consequence = "The recipient is chosen after activation.",
         };
-        var prompt = new PromptPresentation("", "", "", "", "", [offer]);
+        var prompt = new PromptPresentation("", DecisionFrame.Empty, "", [offer]);
 
         string text = Assert.IsType<string>(TableDraftSummary.From(composer, prompt, compact: true));
 
@@ -65,7 +65,7 @@ public sealed class ContextualDraftMeaningTests
         var shuri = new AffordancePresentation(2, "Defend", $"Exhaust Shuri. This ally takes the attack damage; no basic DEF reduction. {uncertainty}",
             "Defend", "Shuri", 20, 0, null, "", [])
         { SourceName = "Shuri", SourceState = "HP 1/3 · Ready · Tough" };
-        var prompt = new PromptPresentation("", "", "", "", "", [widow, shuri]);
+        var prompt = new PromptPresentation("", DecisionFrame.Empty, "", [widow, shuri]);
         composer.SelectAffordance(2);
 
         string text = Assert.IsType<string>(TableDraftSummary.From(composer, prompt, compact: true));
@@ -95,7 +95,7 @@ public sealed class ContextualDraftMeaningTests
         composer.SelectAffordance(1);
         var offer = new AffordancePresentation(1, "Defend", "Boosts are unresolved.",
             "Defend", "Character", 10, 0, null, "", []);
-        var prompt = new PromptPresentation("", "", "", "", "", [offer]);
+        var prompt = new PromptPresentation("", DecisionFrame.Empty, "", [offer]);
 
         Assert.Equal("Boosts are unresolved.", TableDraftSummary.From(composer, prompt, compact: true));
     }
@@ -109,7 +109,7 @@ public sealed class ContextualDraftMeaningTests
                 Costs: [new CostOption(10, "1", Rule: ["Y"],
                     Sources: [new ResourceSource(20, "YY")])])]));
         composer.SelectAffordance(1);
-        var prompt = new PromptPresentation("", "", "", "", "",
+        var prompt = new PromptPresentation("", DecisionFrame.Empty, "",
             [new AffordancePresentation(1, "spend", null, "Choose", "Android Efficiency", 10, 0, null, "", [])]);
 
         string unpaid = Assert.IsType<string>(TableDraftSummary.From(composer, prompt, compact: true));

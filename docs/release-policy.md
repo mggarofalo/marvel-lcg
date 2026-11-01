@@ -1,5 +1,7 @@
 # Release identity, signing and compatibility
 
+Protocol 46 carries the split table as typed facts: it drops each game area's label, Kang's progress sentence and the departure, acting and note sentences, and adds each seat's out-of-reach reason. Protocol 45 peers are rejected before gameplay. It changes no replay identity, save schema, digest or RNG: prompts and the session journal are unchanged.
+
 Protocol 45 adds game-area summaries, each seat's out-of-reach cards and Kang's progress and departure facts. Protocol 44 peers are rejected before gameplay. It changes no replay identity, save schema, digest or RNG: the Kang prompts name players only in display copy, which the session journal does not record.
 
 Protocol 44 adds each seat's and addressable card's game area id. Protocol 43 peers are rejected before gameplay. It changes no replay identity, save schema, digest or RNG.
@@ -80,7 +82,7 @@ independent identities do:
 
 | Identity | Current value | Changes when |
 |---|---:|---|
-| Engine protocol | `45` | A request, response, affordance, event or descriptor change is not understood by the prior endpoint. |
+| Engine protocol | `46` | A request, response, affordance, event or descriptor change is not understood by the prior endpoint. |
 | Session schema | `7` | The strict persisted JSON shape changes. |
 | Engine replay contract | `engine-replay-v34` | The same setup and decision trace may resolve differently. |
 | RNG contract | `mt19937-iso-cxx` | The seeded random stream changes. |

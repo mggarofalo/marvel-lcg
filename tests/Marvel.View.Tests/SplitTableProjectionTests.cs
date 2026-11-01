@@ -29,8 +29,8 @@ public sealed class SplitTableProjectionTests
         Assert.False(area.Retained);
         Assert.Equal([villain.ObjectId], area.Villains);
         Assert.Equal([scheme.ObjectId], area.MainSchemes);
-        Assert.Equal("the game area (Rhino)", area.Label);
         Assert.All(result.World.Players, player => Assert.Empty(player.OutOfReach));
+        Assert.All(result.World.Players, player => Assert.Null(player.OutOfReachReason));
         Assert.Null(result.World.Kang);
     }
 
@@ -52,12 +52,12 @@ public sealed class SplitTableProjectionTests
             Assert.Equal([kangs[seat].ObjectId], area.Villains);
             Assert.Equal([schemes[seat].ObjectId], area.MainSchemes);
             Assert.False(area.Central);
-            Assert.Equal($"p{seat}'s game area ({EffectiveCards.Title(kangs[seat], Facts)})", area.Label);
             var player = result.World.Players[seat];
             Assert.Equal(new[] { world.Seats[1 - seat].IdentityCard.ObjectId, kangs[1 - seat].ObjectId,
                 schemes[1 - seat].ObjectId }.Order(), player.OutOfReach);
             Assert.DoesNotContain(central.ObjectId, player.OutOfReach);
             Assert.DoesNotContain(hidden.ObjectId, player.OutOfReach);
+            Assert.Equal(ReachReason.OtherGameArea, player.OutOfReachReason);
         }
         var kang = Assert.IsType<KangTableDescriptor>(result.World.Kang);
         Assert.Equal((2, 2, 0), (kang.Stage, kang.RemainingLocalKangs, kang.StoredDominions));
@@ -73,12 +73,8 @@ public sealed class SplitTableProjectionTests
         Assert.Equal(central.ObjectId, Assert.Single(kang.Notes, note => note.Kind == KangNoteKind.CentralTokensWaitFor4A).Card);
         Assert.Equal(schemes.Select(scheme => (int?)scheme.ObjectId), kang.Notes
             .Where(note => note.Kind == KangNoteKind.CompletionStoresDominion).Select(note => note.Card));
-        Assert.Contains("counts all 2 players who started",
-            Assert.Single(kang.Notes, note => note.Kind == KangNoteKind.EachPlayerIsArea).Text, StringComparison.Ordinal);
-        Assert.All(kang.Notes, note => Assert.False(string.IsNullOrWhiteSpace(note.Text)));
         // The original, emptied game area is not listed.
         Assert.Equal(2, result.World.GameAreas.Count);
-        Assert.StartsWith("2 Kang (II) remain.", kang.Progress, StringComparison.Ordinal);
         Assert.Empty(kang.Departures);
         Assert.Null(kang.Acting);
     }
@@ -119,15 +115,12 @@ public sealed class SplitTableProjectionTests
         Assert.Equal([destination], departure.Destinations);
         Assert.False(departure.Reunion);
         Assert.Null(departure.CompletedScheme);
-        Assert.Contains("so p0 leaves p0's game area", departure.Summary, StringComparison.Ordinal);
         var acting = Assert.IsType<VillainPhaseFocusDescriptor>(kang.Acting);
         Assert.Equal((2, 1, (int?)destination), (acting.Step, acting.Seat, acting.GameArea));
-        Assert.Equal("Villain phase step 2: the villain and engaged minions activate for p1, in p1's game area "
-            + $"({EffectiveCards.Title(kangs[1], Facts)}).", acting.Summary);
     }
 
     [Fact]
-    public void BeforeTheSplitProgressNamesKangIAndThenHisPendingSplit()
+    public void BeforeTheSplitProgressCarriesKangIAndThenHisPendingSplit()
     {
         // 11001: Kang (I)'s defeat splits the table at the end of the phase.
         var world = new World(Facts, 1, 42);
@@ -140,14 +133,12 @@ public sealed class SplitTableProjectionTests
         var after = Assert.IsType<KangTableDescriptor>(WorldProjection.For(world, null, [], scope).World.Kang);
 
         Assert.Equal((1, (int?)null), (before.Stage, before.PendingSplit));
-        Assert.Equal("Defeat Kang (I) to split the table into separate game areas.", before.Progress);
         Assert.Empty(before.Notes);
         Assert.Equal((1, (int?)kang.ObjectId), (after.Stage, after.PendingSplit));
-        Assert.StartsWith("Kang (I) is defeated.", after.Progress, StringComparison.Ordinal);
     }
 
     [Fact]
-    public void ASolePlayerReadsThatPerPlayerValuesCountOnePlayer()
+    public void ASolePlayerTableCountsOneStartingPlayer()
     {
         // rr:per-player-icon: "multiplies that value by the number of players who started the scenario".
         var world = new World(Facts, 1, 42);
@@ -159,15 +150,13 @@ public sealed class SplitTableProjectionTests
 
         var kang = WorldProjection.For(world, null, [], scope).World.Kang!;
 
-        Assert.EndsWith("counts the 1 player who started the scenario.",
-            Assert.Single(kang.Notes, note => note.Kind == KangNoteKind.EachPlayerIsArea).Text, StringComparison.Ordinal);
-        Assert.StartsWith("1 Kang (II) remains.", kang.Progress, StringComparison.Ordinal);
+        Assert.Equal((1, 1), (kang.StartingPlayers, kang.RemainingLocalKangs));
+        Assert.Contains(kang.Notes, note => note.Kind == KangNoteKind.EachPlayerIsArea);
 
         world.Agenda.KangTransitions.CaptureJoin(world, local, 1, PhaseTransitionKind.EndPlayerPhase);
         var last = WorldProjection.For(world, null, [], scope).World.Kang!;
         Assert.True(Assert.Single(last.Departures).Reunion);
-        Assert.StartsWith("No Kang (II) remains. At the end of the phase the last group leaves", last.Progress,
-            StringComparison.Ordinal);
+        Assert.Equal(0, last.RemainingLocalKangs);
     }
 
     [Fact]
@@ -196,10 +185,10 @@ public sealed class SplitTableProjectionTests
     }
 
     [Theory]
-    [InlineData(0, "")]
-    [InlineData(1, " 1 Kang's Dominion is stored under stage 4A.")]
-    [InlineData(2, " 2 Kang's Dominions are stored under stage 4A.")]
-    public void ProgressCountsTheDominionsStoredUnderStageFourA(int stored, string suffix)
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(2)]
+    public void ProgressCountsTheDominionsStoredUnderStageFourA(int stored)
     {
         // 11009b–11012b: "place 1 set-aside Kang's Dominion facedown under stage 4A". The count is public.
         var (world, _, _, _) = Separated();
@@ -212,9 +201,6 @@ public sealed class SplitTableProjectionTests
         var kang = WorldProjection.For(world, null, [], new PermissiveVisibilityPolicy().Authorize(null, 2)).World.Kang!;
 
         Assert.Equal(stored, kang.StoredDominions);
-        Assert.Equal("2 Kang (II) remain. A game area's group joins another when its Kang (II) is defeated or "
-            + "completes his stage; when no game area remains, the table reunites at stage 4A against Kang (III)."
-            + suffix, kang.Progress);
     }
 
     [Fact]

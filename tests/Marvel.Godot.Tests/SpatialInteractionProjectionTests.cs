@@ -237,7 +237,7 @@ public sealed class SpatialInteractionProjectionTests
 
     private static PromptPresentation Prompt(
         IReadOnlyList<AffordancePresentation> affordances,
-        IReadOnlyList<CostOption>? costs = null) => new("", "", "", "", "",
+        IReadOnlyList<CostOption>? costs = null) => new("", DecisionFrame.Empty, "",
         affordances.Select(view => view with { CostOptions = costs ?? [] }).ToArray());
 
     private static AffordancePresentation Visible(int id, int card) => new(

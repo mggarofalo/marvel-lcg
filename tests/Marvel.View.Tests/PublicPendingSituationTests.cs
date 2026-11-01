@@ -121,9 +121,9 @@ public sealed class PublicPendingSituationTests
             Assert.Equal([assault.ObjectId], visible.Prompt!.CauseCardIds);
             Assert.All(visible.Prompt.Affordances, offer => Assert.Null(offer.SelectionSourceId));
             PromptPresentation presentation = PromptPresentation.From(visible.Prompt, visible.World);
-            Assert.Contains("Cause: Assault", presentation.Resolution);
-            Assert.Contains("Resolving Spider-Man", presentation.Context);
-            Assert.DoesNotContain("Swinging Web Kick", presentation.Resolution);
+            Assert.Contains("Assault", presentation.Frame.Causes);
+            Assert.Equal((DecisionSubject.Resolving, "Spider-Man"), (presentation.Frame.Subject, presentation.Frame.SubjectTitle));
+            Assert.DoesNotContain("Swinging Web Kick", string.Join(" ", [.. presentation.Frame.Causes, presentation.Frame.Instruction]));
         }
     }
 
@@ -134,7 +134,7 @@ public sealed class PublicPendingSituationTests
         Card minion = world.CreateCard("01107", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
         Prompt prompt = Choice([minion.ObjectId]) with { PublicKind = PublicDecisionKind.MinionActivationOrder };
         VisibleResult visible = WorldProjection.For(world, prompt, [], Scope(world, 0));
-        Assert.Contains("Choosing the next minion activation", PromptPresentation.From(visible.Prompt!, visible.World).Context);
+        Assert.Equal(DecisionSubject.MinionActivation, PromptPresentation.From(visible.Prompt!, visible.World).Frame.Subject);
         Assert.DoesNotContain("Resolving", PendingSituationPresentation.Context(visible.World));
     }
 
