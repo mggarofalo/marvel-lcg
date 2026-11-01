@@ -295,6 +295,8 @@ internal static class AbilityDamageAndThreatExecution
         var holder = Find(payment.Holder, context) ?? throw new RulesNotImplementedException(
             $"'{context.Source.FaceId}' would prevent damage with counters on a card that is not there");
         amount = Math.Min(amount, DamageWindowEligibility.RemainingDamage(context.World, context.Occurrence));
+        // Equivalent mutant: the trigger needs remaining damage and a counter, so a
+        // resolved payment is positive; the guard keeps an empty payment from registering.
         if (amount <= 0) return false;
         AbilityCardOperations.RemoveCounters(context.World, context.World.CounterPools, holder, payment.Counter,
             amount, context.Trigger, context.Events);

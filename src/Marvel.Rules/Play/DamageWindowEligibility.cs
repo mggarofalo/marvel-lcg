@@ -22,6 +22,8 @@ public static class DamageWindowEligibility
         // rr:damage orders tough status cards (step 2) before "would take" abilities
         // (step 3); rr:tough.2 prevents all of the damage. Ruling 7cf2a0ea8a6b2a1f: the
         // tough status card prevents the damage before Groot's Flora Colossus triggers.
+        // Equivalent mutant: only Lightning Strike (06006) ignores Tough, and it damages
+        // enemies, none of which prints a "would take" interrupt.
         if (!damage.IgnoresTough && Statuses.Has(world, damage.Target, Statuses.Tough)) return 0;
         long remaining = damage.CurrentAmount;
         // rr:prevent.1: "reduce the amount of damage the target takes".

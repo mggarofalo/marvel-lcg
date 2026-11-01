@@ -1,6 +1,7 @@
 using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
+using Marvel.Rules.Timing;
 using Marvel.Tests;
 using Xunit;
 
@@ -35,6 +36,32 @@ public sealed class GrootPlayerCardTests : CoreCardTestBase
         Assert.Equal(returns ? 1 : 0, offered.Count);
         Assert.Equal(returns ? DeckType.HandsArea : DeckType.AlliesArea, starhawk.Area.Type);
         Assert.Equal(returns ? 0 : 2, starhawk.Damage);
+    }
+
+    [Theory]
+    [InlineData(true, true)]
+    [InlineData(false, false)]
+    [Rule("rr:remaining-hit-points")]
+    [Rule("rr:prevent.1")]
+    public void StarhawkComparesTheDamageLeftAfterPendingPrevention(bool prevented, bool returns)
+    {
+        // rr:prevent.1: prevention "reduce[s] the amount of damage the target takes". With
+        // 2 damage on Starhawk he has 1 remaining hit point; Rhino's 2 minus 1 already
+        // prevented is exactly 1, so he returns to hand.
+        var world = GrootBoards.Board();
+        var starhawk = GrootBoards.InPlay(world, "16012", DeckType.AlliesArea);
+        starhawk.TakeDamage(2);
+        if (prevented)
+            world.Effects.Register(new ContinuousEffect(EffectSource.LastingEffect, Kind: "preventDamage", Amount: 1,
+                Card: starhawk.ObjectId, Affects: starhawk.ObjectId, Lasts: new Duration(Uses: 1)));
+        KangTemporalFixture.Attack(world, GrootBoards.Villain(world), 0);
+
+        GrootBoards.Drive(world, prompt =>
+            prompt.Affordances.FirstOrDefault(a => a.Verb == "Defense" && a.AnchorId == starhawk.ObjectId) is { } defense
+                ? Decision.Take(defense.Id)
+                : GrootBoards.Take(starhawk)(prompt));
+
+        Assert.Equal(returns ? DeckType.HandsArea : DeckType.DiscardPile, starhawk.Area.Type);
     }
 
     [Theory]
