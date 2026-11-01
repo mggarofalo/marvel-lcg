@@ -114,8 +114,10 @@ internal static class AbilitySharedTraitPlay
         ignores ? ScopedCardCostReduction.IgnoringResourceCost(world, seat, card) : new ScopedCardCostReduction(world, seat, card, 1);
 
     // rr:requirement-resources.2: "A card with the requirement keyword cannot be
-    // played 'ignoring its resource cost'". The resolving event is still being
-    // played, so it is not in hand to choose.
+    // played 'ignoring its resource cost'". The scoped play's payment check also
+    // refuses such a card, so the requirement test here is an equivalent mutant
+    // kept to state the rule. Chaos Magic is still in hand while its offer is
+    // admitted, so it excludes itself.
     private static bool CanIgnoreCost(World world, Card card, Card source) =>
         !ReferenceEquals(card, source) && Resources.HasPlayableCost(card.FaceId, world.Facts)
         && Resources.Required(world, card, world.Facts).Length == 0;

@@ -25,9 +25,9 @@ internal static class ScarletWitchBoards
         File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")));
 
     /// <summary>Scarlet Witch on <paramref name="face"/>, Rhino, his main scheme and twelve one-boost encounter cards.</summary>
-    internal static World Board(string face = Hero, int players = 1)
+    internal static World Board(string face = Hero, int players = 1, CardCatalog? cards = null)
     {
-        var world = new World(Cards, players, 241);
+        var world = new World(cards ?? Cards, players, 241);
         for (int player = 0; player < players; player++)
         {
             var seat = world.CreateSeat($"p{player}");

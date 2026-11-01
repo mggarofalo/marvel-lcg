@@ -237,4 +237,28 @@ public sealed class ScarletWitchPlayerCardTests
         Assert.True(price.DeclarationSensitive);
         Assert.Equal(required, string.Concat(price.Rule ?? []));
     }
+
+    [Fact]
+    [Rule("rr:requirement-resources.2")]
+    public void ChaosMagicDoesNotOfferACardWithAResourceRequirement()
+    {
+        // rr:requirement-resources.2: "A card with the requirement keyword cannot be
+        // played 'ignoring its resource cost' because the required resources cannot be
+        // paid for it." No admitted card prints a requirement, so this catalog gives
+        // the Quicksilver ally one.
+        var printed = System.Text.Json.Nodes.JsonNode.Parse(
+            File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")))!;
+        var quicksilver = printed["cards"]!.AsArray().Single(card => (string?)card!["card_id"] == Quicksilver)!;
+        quicksilver["attributes"]!["Requirement"] = "R";
+        var runner = AuthoredCards.Runner();
+        var world = Board(cards: CardCatalog.Parse(printed.ToJsonString()));
+        var chaos = world.CreateCard(ChaosMagic, world.Seats[0].Hand);
+        var pietro = world.CreateCard(Quicksilver, world.Seats[0].Hand);
+        var ally = world.CreateCard(Ally, world.Seats[0].Hand);
+        var action = Assert.Single(runner.Actions(world, 0), offer => offer.Card == chaos.ObjectId);
+        runner.ExecuteAction(world, new PlayerAction(action, [], []));
+        var choice = Assert.IsType<Prompt>(Sequence.Work(world, world.Facts, runner, []));
+        Assert.Contains(choice.Affordances, offer => offer.AnchorId == ally.ObjectId);
+        Assert.DoesNotContain(choice.Affordances, offer => offer.AnchorId == pietro.ObjectId);
+    }
 }
