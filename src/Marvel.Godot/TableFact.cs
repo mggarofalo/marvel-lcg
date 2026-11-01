@@ -54,4 +54,34 @@ internal enum TableFact
 
     /// <summary>The rules that apply while the table is separated.</summary>
     SeparatedRules,
+
+    /// <summary>A seat whose turn it is.</summary>
+    ActiveSeat,
+
+    /// <summary>A seat that must answer the current decision.</summary>
+    AnsweringSeat,
+
+    /// <summary>The seat this client plays.</summary>
+    YourSeat,
+
+    /// <summary>A seat the table is showing publicly.</summary>
+    PublicFocus,
+
+    /// <summary>A seat's identity is in hero form.</summary>
+    HeroForm,
+
+    /// <summary>A seat's identity is in alter-ego form.</summary>
+    AlterEgoForm,
+
+    /// <summary>Enemies engaged with a seat.</summary>
+    Engaged,
+
+    /// <summary>A decision that must be answered.</summary>
+    DecisionRequired,
+
+    /// <summary>A decision the answering seat may decline.</summary>
+    DecisionOptional,
+
+    /// <summary>A card whose effect caused a decision.</summary>
+    DecisionCause,
 }

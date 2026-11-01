@@ -46,6 +46,12 @@ public sealed partial class KangNativeWitness : RefCounted
     /// <summary>The game areas retained for eliminated players.</summary>
     public int[] RetainedAreas() => [.. World?.GameAreas.Where(area => area.Retained).Select(area => area.Id) ?? []];
 
+    /// <summary>The game areas a pending departure could join.</summary>
+    public int[] DepartureDestinations() => [.. World?.Kang?.Departures.SelectMany(item => item.Destinations).Distinct() ?? []];
+
+    /// <summary>The shared encounter deck's and discard pile's area ids, or empty without Kang facts.</summary>
+    public int[] SharedPiles() => World?.Kang is { } kang ? [kang.EncounterDeck, kang.EncounterDiscard] : [];
+
     /// <summary>The engine trigger of the displayed prompt.</summary>
     public string Trigger() => table?.CurrentGame?.Prompt?.Trigger ?? string.Empty;
 }

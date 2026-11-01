@@ -15,10 +15,9 @@ internal static class OverflowCue
     /// <summary>A cue label, hidden when nothing overflows; the tooltip says where the rest is.</summary>
     internal static Label Create(string name, int hidden, string tooltip, InterfaceScale scale)
     {
-        Label cue = TableBlockStyle.Line(name, Text(hidden), scale, VisualSystem.Palette.Accent);
+        Label cue = TableBlockStyle.Whole(name, Text(hidden), scale, VisualSystem.Palette.Accent);
         cue.TooltipText = tooltip;
-        cue.ClipText = false;
-        cue.SizeFlagsHorizontal = Control.SizeFlags.ShrinkEnd;
+        cue.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
         cue.HorizontalAlignment = HorizontalAlignment.Right;
         cue.Visible = hidden > 0;
         return cue;

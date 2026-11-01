@@ -24,6 +24,16 @@ internal static class TableBlockStyle
         };
     }
 
+    /// <summary>A one-line caption that keeps its full width; its text is also the tooltip.</summary>
+    internal static Label Whole(string name, string text, InterfaceScale scale, VisualColor color)
+    {
+        Label label = Line(name, text, scale, color);
+        label.ClipText = false;
+        label.TextOverrunBehavior = TextServer.OverrunBehavior.NoTrimming;
+        label.SizeFlagsHorizontal = Control.SizeFlags.ShrinkBegin;
+        return label;
+    }
+
     /// <summary>A one-line caption that ellipsizes rather than wrapping; its full text is the tooltip.</summary>
     internal static Label Line(string name, string text, InterfaceScale scale, VisualColor color)
     {

@@ -65,6 +65,7 @@ internal static class SpatialTableSurfaceRenderer
             HasEncounterGroups = board.EncounterGroups.Count > 0,
             HasGameAreas = GameAreaTableProjection.From(board, seat)?.Separated == true,
             HasAllies = board.Areas.Any(area => area.Zone == "AlliesArea" && area.Seat == seat && area.Cards.Count > 0),
+            ReadingScale = scale,
         };
 
     private static IReadOnlyList<BoardCardPresentation> Context(Main main, Prompt? prompt) =>
@@ -247,7 +248,7 @@ internal static class SpatialTableSurfaceRenderer
         {
             return;
         }
-        Control seats = MulliganSeatStripRenderer.CreateCompact(board, selection, switchSeat);
+        Control seats = MulliganSeatStripRenderer.CreateCompact(board, selection, switchSeat, geometry.ReadingScale);
         seats.Name = "SpatialSeatSummaries";
         seats.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
         var viewport = new ScrollContainer { Name = "SeatSummaryViewport", Position = geometry.SeatStrip.Position.Round(),
@@ -255,6 +256,12 @@ internal static class SpatialTableSurfaceRenderer
             VerticalScrollMode = ScrollContainer.ScrollMode.Auto, FollowFocus = true, ZIndex = 24 };
         viewport.AddChild(seats);
         surface.AddChild(viewport);
+        int hidden = OverflowCue.Hidden(board.PlayerSummaries.Count, SeatTile.Height(geometry.ReadingScale), viewport.Size.Y);
+        Label cue = OverflowCue.Create("SeatOverflow", hidden, "More seats: scroll the rail.", geometry.ReadingScale);
+        cue.Size = new Vector2(viewport.Size.X - 16, cue.GetCombinedMinimumSize().Y);
+        cue.Position = viewport.Position + new Vector2(0, viewport.Size.Y - cue.Size.Y);
+        cue.ZIndex = 25;
+        surface.AddChild(cue);
     }
 
     // A separated table replaces the single villain mat with game-area columns; it returns the

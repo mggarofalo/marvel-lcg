@@ -75,7 +75,7 @@ func _select_contract_heroes() -> void:
 # Every other game keeps the single villain mat: no game-area columns or Kang progress.
 func _has_no_game_area_presentation() -> bool:
     if contract.begins_with("kang-"): return true
-    for name in ["KangProgress", "GameAreaCentral", "SharedEncounterNote", "SeparatedTableRules"]:
+    for name in ["KangTracker", "GameAreaCentral", "SeparatedTableRules"]:
         if main.find_child(name, true, false) != null:
             _fail("a non-Kang table shows game-area presentation: " + name)
             return false

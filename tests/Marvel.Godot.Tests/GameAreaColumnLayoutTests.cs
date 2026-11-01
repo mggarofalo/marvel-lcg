@@ -1,57 +1,46 @@
+using Godot;
 using Xunit;
 
 namespace Marvel.Godot.Tests;
 
-// Heights in pixels: a 20-pixel heading, 20-pixel explanation lines.
 public sealed class GameAreaColumnLayoutTests
 {
     [Fact]
-    public void CardsStartBelowTheHeadingTheMarkersAndTheBadgeMargin()
+    public void CardsStartBelowTheOneLineHeaderAndTheBadgeMargin()
     {
-        var layout = GameAreaColumnLayout.Arrange(300, new GameAreaColumnText(20, 18, 0, 0), 0);
-        Assert.Equal(4 + 20 + 2 + 18 + GameAreaColumnLayout.BadgeMargin, layout.CardsTop);
-        Assert.Equal(300 - layout.CardsTop - 4, layout.CardsHeight);
-        Assert.Equal(0, layout.DetailsHeight);
+        var layout = GameAreaColumnLayout.Arrange(300, 24, 0);
+        Assert.Equal(GameAreaColumnLayout.Padding + 24 + GameAreaColumnLayout.BadgeMargin, layout.CardsTop);
+        Assert.Equal(300 - layout.CardsTop - GameAreaColumnLayout.Padding, layout.CardsHeight);
     }
 
     [Fact]
-    public void AnExplanationThatFitsIsShownWholeBelowTheCards()
+    public void TheAttachmentStripIsReservedBelowTheCards() =>
+        Assert.Equal(GameAreaColumnLayout.Arrange(300, 24, 0).CardsHeight - 50, GameAreaColumnLayout.Arrange(300, 24, 50).CardsHeight);
+
+    [Fact]
+    public void AColumnTooShortForCardsGivesThemNoRoomRatherThanNegativeRoom() =>
+        Assert.Equal(0, GameAreaColumnLayout.Arrange(30, 24, 50).CardsHeight);
+
+    [Fact]
+    public void TheSharedPilesStandSideBySideUnderTheStage()
     {
-        var layout = GameAreaColumnLayout.Arrange(300, new GameAreaColumnText(20, 0, 40, 20), 0);
-        Assert.Equal(40, layout.DetailsHeight);
-        Assert.Equal(258, layout.DetailsTop);
-        Assert.Equal(212, layout.CardsHeight);
+        (Rect2 stage, Rect2 discard, Rect2 deck) = GameAreaColumnLayout.Central(new Rect2(10, 100, 260, 300), 8);
+        Assert.Equal(discard.Size, deck.Size);
+        Assert.Equal(discard.Position.Y, deck.Position.Y);
+        Assert.Equal(discard.End.X + 8, deck.Position.X, 3);
+        Assert.Equal(400, deck.End.Y, 3);
+        Assert.Equal(300 * GameAreaColumnLayout.PileShare, deck.Size.Y, 3);
+        Assert.Equal(GameAreaColumnLayout.PileAspect, deck.Size.X / deck.Size.Y, 3);
+        Assert.Equal(140 - discard.Position.X, deck.End.X - 140, 3);
+        Assert.Equal(new Rect2(10, 100, 260, 400 - deck.Size.Y - 8 - 100), stage);
     }
 
     [Fact]
-    public void AnExplanationThatFitsKeepsItsMeasuredHeightBetweenLines()
+    public void ANarrowCentralColumnSizesItsPilesByWidth()
     {
-        var layout = GameAreaColumnLayout.Arrange(300, new GameAreaColumnText(20, 0, 50, 20), 0);
-        Assert.Equal(50, layout.DetailsHeight);
-    }
-
-    [Fact]
-    public void ALongExplanationGivesWayToTheCardsAndTheAttachmentStrip()
-    {
-        var layout = GameAreaColumnLayout.Arrange(200, new GameAreaColumnText(20, 0, 400, 20), 30);
-        Assert.Equal(40, layout.DetailsHeight);
-        Assert.Equal(82, layout.CardsHeight);
-        Assert.True(layout.CardsTop + layout.CardsHeight + 30 <= layout.DetailsTop);
-    }
-
-    [Fact]
-    public void ACrampedColumnKeepsItsCardsBeforeItsExplanation()
-    {
-        var layout = GameAreaColumnLayout.Arrange(130, new GameAreaColumnText(20, 0, 400, 20), 0);
-        Assert.Equal(0, layout.DetailsHeight);
-        Assert.Equal(82, layout.CardsHeight);
-    }
-
-    [Fact]
-    public void AnExplanationThatDoesNotFitShowsWholeLinesOnly()
-    {
-        var layout = GameAreaColumnLayout.Arrange(250, new GameAreaColumnText(20, 0, 400, 20), 0);
-        Assert.Equal(120, layout.DetailsHeight);
-        Assert.Equal(82, layout.CardsHeight);
+        (Rect2 stage, Rect2 discard, Rect2 deck) = GameAreaColumnLayout.Central(new Rect2(0, 0, 108, 400), 8);
+        Assert.Equal(50, discard.Size.X, 3);
+        Assert.Equal(108, deck.End.X - discard.Position.X, 3);
+        Assert.True(stage.End.Y <= discard.Position.Y);
     }
 }

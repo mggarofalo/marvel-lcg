@@ -3,17 +3,17 @@ using Marvel.View;
 
 namespace Marvel.Godot;
 
-/// <summary>Places the separated table: shared piles, the central column and one column per game area.</summary>
+/// <summary>Places the separated table: the tracker line, then one column per game area with the shared column between them.</summary>
 /// <remarks>
-/// Column contents and markers come from <see cref="GameAreaTableProjection"/>. Positions, sizes
-/// and the dimming of out-of-reach cards are presentation choices. Text is measured at the
-/// current reading scale and placed first; cards take the room that remains.
+/// Column contents and facts come from <see cref="GameAreaTableProjection"/>. The band is grid columns 2–9;
+/// a game area weighs a fifth more than the shared column. Positions, sizes and the dimming of
+/// out-of-reach cards are presentation choices. No sentence is placed on the table: each column says
+/// what it is with a one-line header and icons, and explains itself on hover.
 /// </remarks>
 internal sealed class GameAreaTableRenderer(
     Control surface, BoardRenderResult result, SpatialCardFactory faces, SpatialTablePileRenderer piles)
 {
-    private const float HeaderTop = 10;
-    private const float OutOfReachAlpha = 0.45f;
+    private const float AreaWeight = 1.2f;
     private const float AttachmentRow = 30;
 
     internal IReadOnlyList<CardControl> Render(BoardPresentation board, GameAreaTable table, AstraTableGeometry geometry,
@@ -22,53 +22,49 @@ internal sealed class GameAreaTableRenderer(
         var visible = board.Areas.SelectMany(SpatialTableZones.Current)
             .Where(card => card.TargetId is not null).DistinctBy(card => card.TargetId)
             .ToDictionary(card => card.TargetId!.Value);
-        RenderSharedPiles(board, table, geometry);
-        float left = geometry.MainScheme.Position.X;
-        float right = geometry.EngagedEnemies.Position.X - 12;
-        float header = GameAreaTableChrome.AddHeader(surface, new Vector2(left, HeaderTop), right - left, table);
-        float top = HeaderTop + header + 6;
-        float bottom = geometry.VillainMat.End.Y - 4;
-        var cards = new List<CardControl>();
-        float width = (right - left) / table.Columns.Count;
+        Rect2 band = geometry.GameAreaBand;
+        InterfaceScale scale = geometry.ReadingScale;
+        float line = GameAreaTableChrome.AddTrackerLine(surface, band, table, scale);
+        float top = band.Position.Y + line + VisualSystem.Spacing(scale).ExtraSmall;
+        var columns = TableGrid.Divide(band.Position.X, band.Size.X,
+            [.. table.Columns.Select(column => column.Central ? 1f : AreaWeight)], geometry.Grid.Gutter / 2);
+        var pass = new Pass(board, hosted, table, visible, scale, []);
         for (int index = 0; index < table.Columns.Count; index++)
-            RenderColumn(hosted, table, table.Columns[index], visible,
-                new Rect2(left + index * width, top, width - 8, bottom - top), cards);
-        return cards;
+            RenderColumn(pass, table.Columns[index],
+                new Rect2(columns[index].X, top, columns[index].Width, band.End.Y - top));
+        return pass.Controls;
     }
 
-    private void RenderSharedPiles(BoardPresentation board, GameAreaTable table, AstraTableGeometry geometry)
-    {
-        if (board.Kang is not { } kang) return;
-        if (board.Areas.FirstOrDefault(area => area.Id == kang.EncounterDiscard) is { } discard)
-            piles.RenderNamed(discard, geometry.EncounterDiscard, "Shared encounter discard pile");
-        if (board.Areas.FirstOrDefault(area => area.Id == kang.EncounterDeck) is { } deck)
-            piles.RenderNamed(deck, geometry.EncounterDeck, "Shared encounter deck");
-        if (table.SharedPiles is { } note)
-            GameAreaTableChrome.AddSharedCaption(surface, new Vector2(geometry.EncounterDiscard.Position.X, HeaderTop),
-                geometry.EncounterDeck.End.X - geometry.EncounterDiscard.Position.X, note);
-    }
+    // One render's inputs, shared by every column.
+    private sealed record Pass(BoardPresentation Board, IReadOnlyList<BoardAreaPresentation> Hosted, GameAreaTable Table,
+        Dictionary<int, BoardCardPresentation> Visible, InterfaceScale Scale, List<CardControl> Controls);
 
-    private void RenderColumn(IReadOnlyList<BoardAreaPresentation> hosted, GameAreaTable table, GameAreaColumn column,
-        Dictionary<int, BoardCardPresentation> visible, Rect2 bounds, List<CardControl> controls)
+    private void RenderColumn(Pass pass, GameAreaColumn column, Rect2 bounds)
     {
+        var (board, hosted, table, visible, scale, controls) = pass;
         string name = column.GameArea is { } id ? $"GameArea{id}" : "GameAreaCentral";
         GameAreaTableChrome.AddFrame(surface, name, bounds, column);
-        float width = bounds.Size.X - 12;
-        Label heading = GameAreaTableChrome.AddMeasured(surface, name + "Heading", bounds.Position + new Vector2(6, 4), width, column.Heading);
-        heading.TooltipText = string.Join("\n", [column.Heading, .. column.Details]);
-        float headingHeight = heading.Size.Y;
-        float markers = column.Markers.Count == 0 ? 0 : GameAreaTableChrome.AddMeasured(surface, name + "Markers",
-            bounds.Position + new Vector2(6, 6 + headingHeight), width, column.MarkerText).Size.Y;
+        GameAreaTableChrome.AddHeader(surface, name, bounds, column, scale);
         BoardCardPresentation[] objects = [.. column.Villains.Concat(column.Schemes)
-            .Where(visible.ContainsKey).Select(id => visible[id])];
-        BoardCardPresentation[] encounter = [.. column.Encounter.Where(visible.ContainsKey).Select(id => visible[id])];
-        var details = GameAreaTableChrome.AddDetails(surface, name + "Details", width, column.Details);
-        var layout = GameAreaColumnLayout.Arrange(bounds.Size.Y,
-            new GameAreaColumnText(headingHeight, markers, details?.Measured ?? 0, details?.Line ?? 0),
-            Attachments(hosted, objects));
-        details?.Place(bounds.Position + new Vector2(6, layout.DetailsTop), layout.DetailsHeight);
-        RenderCards(table, objects, encounter,
-            new Rect2(bounds.Position.X + 4, bounds.Position.Y + layout.CardsTop, bounds.Size.X - 8, layout.CardsHeight), controls);
+            .Where(visible.ContainsKey).Select(card => visible[card])];
+        BoardCardPresentation[] encounter = [.. column.Encounter.Where(visible.ContainsKey).Select(card => visible[card])];
+        var layout = GameAreaColumnLayout.Arrange(bounds.Size.Y, ColumnHeader.Height(scale), Attachments(hosted, objects));
+        var room = new Rect2(bounds.Position.X + GameAreaColumnLayout.Padding, bounds.Position.Y + layout.CardsTop,
+            bounds.Size.X - 2 * GameAreaColumnLayout.Padding, layout.CardsHeight);
+        if (column.Central) room = RenderSharedPiles(board, room, scale);
+        RenderCards(table, objects, encounter, room, controls);
+    }
+
+    // The shared encounter deck and discard stand in the central column, between the game areas.
+    private Rect2 RenderSharedPiles(BoardPresentation board, Rect2 room, InterfaceScale scale)
+    {
+        if (board.Kang is not { } kang) return room;
+        (Rect2 stage, Rect2 discard, Rect2 deck) = GameAreaColumnLayout.Central(room, VisualSystem.Spacing(scale).Small);
+        if (board.Areas.FirstOrDefault(area => area.Id == kang.EncounterDiscard) is { } discardPile)
+            piles.RenderNamed(discardPile, discard, "Shared encounter discard pile", stacked: true);
+        if (board.Areas.FirstOrDefault(area => area.Id == kang.EncounterDeck) is { } deckPile)
+            piles.RenderNamed(deckPile, deck, "Shared encounter deck", stacked: true);
+        return stage;
     }
 
     private void RenderCards(GameAreaTable table, BoardCardPresentation[] objects, BoardCardPresentation[] encounter,
@@ -133,6 +129,6 @@ internal sealed class GameAreaTableRenderer(
     {
         bool outOfReach = control.TargetId is { } id && table.OutOfReach.Contains(id);
         control.SetMeta("out_of_reach", outOfReach);
-        if (outOfReach) control.Modulate = new Color(1, 1, 1, OutOfReachAlpha);
+        if (outOfReach) control.Modulate = new Color(1, 1, 1, GameAreaTableChrome.DimmedAlpha);
     }
 }

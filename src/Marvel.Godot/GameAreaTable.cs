@@ -1,14 +1,12 @@
 namespace Marvel.Godot;
 
 /// <summary>What the table shows about separated game areas, built only from published facts.</summary>
-/// <param name="Progress">The engine's progress sentence, including the stored-Dominion count.</param>
-/// <param name="SharedPiles">The engine's note that every area shares the encounter deck and discard.</param>
-/// <param name="Rules">The engine's whole-table notes for the separated table.</param>
-/// <param name="Columns">The central column, then each game area in engine order; empty while the table is whole.</param>
+/// <param name="Tracker">Progress toward winning: the Kang faced now, the Kang (II) still in play and the stored Dominions.</param>
+/// <param name="Rules">The rules the engine says apply while the table is separated, worded, once each.</param>
+/// <param name="Columns">The columns in display order, the central one between the game areas; empty while the table is whole.</param>
 /// <param name="OutOfReach">Cards the inspected seat's cards cannot affect.</param>
 internal sealed record GameAreaTable(
-    string Progress,
-    string? SharedPiles,
+    TrackerState Tracker,
     IReadOnlyList<string> Rules,
     IReadOnlyList<GameAreaColumn> Columns,
     IReadOnlySet<int> OutOfReach)

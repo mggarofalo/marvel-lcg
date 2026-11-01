@@ -8,7 +8,7 @@ namespace Marvel.Godot.Tests;
 public sealed class TableWordingTests
 {
     [Fact]
-    public void EveryFactHasAnIconALabelAndATooltip()
+    public void EveryFactHasALabelATooltipAndEveryStateFactAnIcon()
     {
         foreach (TableFact fact in Enum.GetValues<TableFact>())
         {
@@ -16,7 +16,9 @@ public sealed class TableWordingTests
             Assert.False(string.IsNullOrWhiteSpace(wording.Label), fact.ToString());
             Assert.False(string.IsNullOrWhiteSpace(wording.Tooltip), fact.ToString());
             Assert.True(wording.Label.Split(' ').Length <= 3, $"{fact} label is not short: {wording.Label}");
-            Assert.False(string.IsNullOrWhiteSpace(wording.Icon), fact.ToString());
+            Assert.Equal(fact is not (TableFact.HeroForm or TableFact.AlterEgoForm or TableFact.Engaged
+                or TableFact.DecisionRequired or TableFact.DecisionOptional or TableFact.DecisionCause),
+                wording.Icon.Length > 0);
         }
     }
 

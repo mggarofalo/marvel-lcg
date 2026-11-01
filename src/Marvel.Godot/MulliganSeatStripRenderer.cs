@@ -16,29 +16,14 @@ internal static class MulliganSeatStripRenderer
         BoardPresentation board,
         DisplayedSeatSelection selection,
         Action<int> switchSeat)
-        => Create(board, selection, switchSeat, compact: false);
-
-    internal static PanelContainer CreateCompact(
-        BoardPresentation board,
-        DisplayedSeatSelection selection,
-        Action<int> switchSeat)
-        => Create(board, selection, switchSeat, compact: true);
-
-    private static PanelContainer Create(
-        BoardPresentation board,
-        DisplayedSeatSelection selection,
-        Action<int> switchSeat,
-        bool compact)
     {
         var strip = new PanelContainer
         {
             Name = "SeatStrip",
             ThemeTypeVariation = GodotThemeVariations.TabletopSeatStrip,
-            CustomMinimumSize = new Vector2(compact ? 0 : 300, 0),
+            CustomMinimumSize = new Vector2(300, 0),
         };
-        BoxContainer rail = compact ? new VBoxContainer() : new HBoxContainer();
-        rail.Name = "SeatSwitcher";
-        rail.ThemeTypeVariation = GodotThemeVariations.CompactRow;
+        var rail = new HBoxContainer { Name = "SeatSwitcher", ThemeTypeVariation = GodotThemeVariations.CompactRow };
         strip.AddChild(rail);
         foreach (PlayerSummaryDescriptor summary in board.PlayerSummaries.OrderBy(item => item.Seat))
         {
@@ -47,26 +32,46 @@ internal static class MulliganSeatStripRenderer
             var select = new Button
             {
                 Name = $"SeatSwitch{summary.Seat}",
-                Text = SeatLabel(lane, summary, compact, pendingEncounters)
+                Text = SeatLabel(lane, summary, compact: false, pendingEncounters)
                     + $"\n{RoleMarkers(summary.Seat, selection)}"
                     + (summary.Seat == selection.ExpandedSeat ? "\nInspecting this seat" : ""),
                 Disabled = summary.Seat == selection.ExpandedSeat,
                 SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-                CustomMinimumSize = compact ? new Vector2(0, 100) : Vector2.Zero,
                 ClipText = false,
                 AutowrapMode = TextServer.AutowrapMode.Word,
                 TooltipText = $"{RoleMarkers(summary.Seat, selection)}. "
                     + "Show this public player workspace without changing the pending decision. "
                     + PendingEncounterIndicator.Description(pendingEncounters, summary.Seat),
             };
-            if (compact)
-            {
-                select.AddThemeFontSizeOverride("font_size", 16);
-            }
             select.Pressed += () => switchSeat(summary.Seat);
             rail.AddChild(select);
         }
 
+        return strip;
+    }
+
+    /// <summary>The tabletop rail: one <see cref="SeatTile"/> per seat, its words in the tooltip.</summary>
+    internal static PanelContainer CreateCompact(
+        BoardPresentation board,
+        DisplayedSeatSelection selection,
+        Action<int> switchSeat,
+        InterfaceScale scale)
+    {
+        var strip = new PanelContainer { Name = "SeatStrip", ThemeTypeVariation = GodotThemeVariations.TabletopSeatStrip };
+        var rail = new VBoxContainer { Name = "SeatSwitcher", ThemeTypeVariation = GodotThemeVariations.CompactRow };
+        strip.AddChild(rail);
+        foreach (PlayerSummaryDescriptor summary in board.PlayerSummaries.OrderBy(item => item.Seat))
+        {
+            int pending = board.PendingEncounterCount(summary.Seat);
+            BoardLanePresentation? lane = board.Lanes.FirstOrDefault(item => item.Seat == summary.Seat);
+            Button tile = SeatTile.Create(board, summary, selection, scale,
+                $"{SeatLabel(lane, summary, compact: true, pending)}\n{RoleMarkers(summary.Seat, selection)}"
+                + (summary.Seat == selection.ExpandedSeat ? "\nInspecting this seat." : "")
+                + "\nShow this public player workspace without changing the pending decision. "
+                + PendingEncounterIndicator.Description(pending, summary.Seat));
+            tile.Pressed += () => switchSeat(summary.Seat);
+            rail.AddChild(tile);
+        }
         return strip;
     }
 
