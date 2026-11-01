@@ -45,7 +45,7 @@ internal static class KangPhaseEndOrderProcedure
     internal static Prompt? Apply(World world, PhaseStep step, List<GameEvent> events)
     {
         var operation = step.Require<KangPhaseEndOrderOperation>();
-        if (!operation.Deferred) return Ask(world);
+        if (!operation.Deferred) return Ask(world, operation.Owner);
         // Kang's resolution keeps adding frames before the owner (a departure's
         // join, the split's stage reveals), and each lands behind this one. Move
         // behind them until nothing but the owner remains.
@@ -89,7 +89,7 @@ internal static class KangPhaseEndOrderProcedure
             DelayedEffects.Occur(world, condition, events);
     }
 
-    private static Prompt Ask(World world) =>
+    private static Prompt Ask(World world, PhaseStep owner) =>
         new(world.FirstPlayer, Question.Option, TimingPriority.Continuous,
             KangPhaseEndOrderOperation.Order, "Choose which phase-end effect resolves first", false,
             [
@@ -97,7 +97,7 @@ internal static class KangPhaseEndOrderProcedure
                 {
                     DisplayLabel = "Resolve Kang's effect first",
                     CommitLabel = "Resolve Kang first",
-                    Description = "Resolve Kang's delayed effect completely, then the other delayed effects due now.",
+                    Description = $"{KangDepartureNames.DueAt(world, owner)} Resolve Kang's delayed effect completely, then the other delayed effects due now.",
                 },
                 new Affordance(OthersFirst, "Resolve_Delayed_First", -1, world.FirstPlayer, "delayed effects")
                 {
