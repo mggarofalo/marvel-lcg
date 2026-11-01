@@ -273,14 +273,25 @@ until owner review MARVEL-905 approves the interaction.
 | YOUR AREA | `GameAreaDescriptor.PlayAreas` contains the inspected seat |
 | ACTING NOW, a heavier border, and the acting sentence | `KangTableDescriptor.Acting.GameArea`, `Acting.Summary` |
 | RETAINED | `GameAreaDescriptor.Retained` |
-| LEAVES AT END OF PHASE and the departure sentence | `KangDepartureDescriptor.SourceGameArea`, `Summary`; `Reunion` adds that the table reunites at stage 4A |
-| OUT OF REACH, dimmed cards and the reason | `PlayerDescriptor.OutOfReach`, the `AreaIsolation` note |
+| LEAVES AT PHASE END and the departure sentence | `KangDepartureDescriptor.SourceGameArea`, `Summary` |
+| OUT OF REACH, dimmed cards (with their attachments) and the reason | `PlayerDescriptor.OutOfReach` against every card the column places, side schemes included; the `AreaIsolation` note |
 | "Completing this stage does not lose the game" under each 3B | the `CompletionStoresDominion` note anchored to that scheme |
-| Progress and the stored-Dominion count | `KangTableDescriptor.Progress`, `StoredDominions` |
-| SHARED BY EVERY GAME AREA above the encounter piles | `KangTableDescriptor.EncounterDeck`, `EncounterDiscard`, the `SharedEncounterDeck` note |
+| Progress, including how the table reunites and the stored-Dominion count | `KangTableDescriptor.Progress`, worded by View's `KangTableProjection` |
+| SHARED BY ALL AREAS above the encounter piles, with the engine's sentence as its tooltip | `KangTableDescriptor.EncounterDeck`, `EncounterDiscard`, the `SharedEncounterDeck` note |
 | The separated-table rules toggle | every note with no card anchor |
 
-The marker words, the column layout and the dimming are our choices. A Kang
+A column's explanation reads, in order: why the area is out of reach, what is
+acting, who departs, then the notes anchored to its schemes. Godot words no
+rule consequence of its own.
+
+The marker words, the column layout and the dimming are our choices.
+`GameAreaColumnLayout` measures the heading and markers first and never clips
+them; the cards start below them with room for activity badges, keep a minimum
+height above a strip reserved for attachments, and the explanation takes what
+remains in whole lines that scroll. The heading's tooltip carries the full
+explanation. On a column table the seam below the mat holds the causal
+references, the current situation and, above the source-tableau column, the
+activity line; the source tableau starts below the seam. A Kang
 table that is not separated (stage 1, or stage 3 after the reunion) keeps the
 single villain mat and adds only the progress line. A game without Kang facts
 or a split has no game-area presentation.
@@ -299,7 +310,13 @@ join prompt itself, by choosing the named destination and its commitment. The
 host then advances to the reunion against Kang (III).
 
 `kang-3` (Master of Time, seed 15) checks the three-area split. `kang-4`
-(Temporal, seed 4) checks the four-area split and a retained area. Each step
-asserts the rendered columns, labels, markers, dimming, central stage, shared
-piles, the rules toggle and the progress text. Every other native contract
-asserts that no game-area presentation appears.
+(Temporal, seed 4, at 150% reading scale) checks the four-area split and a
+retained area. Each split asserts the rendered columns, labels, markers,
+dimming, central stage, shared piles and progress text, and opens and closes
+the rules toggle; the later `kang-2` steps assert their own markers and
+sentences. Every capture
+(`native_kang_layout.gd`) asserts that headings, markers, the progress header
+and the shared caption show every line, and that no placed card, encounter
+stack or attachment strip covers a heading, a marker or a column's
+explanation. Every other native contract asserts that no game-area
+presentation appears.
