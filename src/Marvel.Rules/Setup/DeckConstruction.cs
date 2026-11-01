@@ -62,9 +62,10 @@ public static class DeckConstruction
         IReadOnlyList<Creation> dealt)
     {
         foreach (var associated in player.Where(card =>
-                     card.Source is CreationSource.Obligation or CreationSource.Nemesis))
+                     card.Source is CreationSource.Obligation or CreationSource.RemovedObligation
+                         or CreationSource.Nemesis))
         {
-            string associatedSet = associated.Source == CreationSource.Obligation
+            string associatedSet = associated.Source is CreationSource.Obligation or CreationSource.RemovedObligation
                 ? identitySet
                 : associated.AssociationSet
                     ?? throw new ArgumentException("nemesis cards require an authored set association", nameof(dealt));

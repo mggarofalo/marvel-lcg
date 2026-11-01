@@ -190,6 +190,7 @@ public static class WorldSetup
         SetupSlot.Villain => villainDeck,
         SetupSlot.Encounter => encounterDeck,
         SetupSlot.InvocationDeck => world.AreaOf(DeckType.AsideDeck, PlayArea.Of(blueprint.Seat), cardOwner: blueprint.Seat),
+        SetupSlot.RemovedFromGame => world.AreaOf(DeckType.RemovedArea),
         SetupSlot.SetAside => blueprint.Seat >= 0
             ? world.Seats[blueprint.Seat].SetAside
             : world.AreaOf(DeckType.AsideDeck),

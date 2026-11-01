@@ -103,25 +103,32 @@ public sealed class KangRecipeSetupTests
     [Theory]
     [InlineData(1)]
     [InlineData(4)]
-    public void HeroObligationsAreRemovedWhileNemesisSetsStayAside(int players)
+    public void HeroObligationsAreRemovedFromTheGameWhileNemesisSetsStayAside(int players)
     {
-        // 11007a: "remove each player's obligation cards from the game." 13B searches
-        // "the encounter deck, discard pile, and set-aside area for their nemesis minion",
-        // so each nemesis set is still set aside (rr:appendix-ii-setup.step.5).
+        // 11007a: "remove each player's obligation cards from the game." Removed cards are
+        // still cards in the removed-from-game area: 27135 Loose Ends searches it for your
+        // obligation (ruling 78ee6578c6efb661). 13B searches "the encounter deck, discard
+        // pile, and set-aside area for their nemesis minion", so each nemesis set is still
+        // set aside (rr:appendix-ii-setup.step.5).
         var heroes = Heroes.Take(players).ToArray();
         var world = Deal(false, "temporal", heroes, 3, []);
+        // The rules pseudo-card shares the removed-from-game area.
+        var removed = world.AreaOf(DeckType.RemovedArea).Cards.Select(card => card.FaceId)
+            .Where(face => face != "rule_a");
+        var expected = heroes.SelectMany(hero => Setup.Hero(hero).Obligations).Select(spec => spec.Split(',')[0]);
+        Assert.Equal(expected.Order(StringComparer.Ordinal), removed.Order(StringComparer.Ordinal));
+        Assert.DoesNotContain(world.AreaOf(DeckType.EncounterDeck).Cards, card => expected.Contains(card.FaceId));
         for (int seat = 0; seat < players; seat++)
         {
             var hero = Setup.Hero(heroes[seat]);
-            Assert.All(hero.Obligations, face => Assert.DoesNotContain(world.Cards, card => card.Faces.Contains(face)));
             Assert.Equal(hero.NemesisSet.Order(StringComparer.Ordinal), world.Seats[seat].Nemesis.Cards
                 .Select(card => card.FaceId).Order(StringComparer.Ordinal));
         }
         // A control without the flag still deals each obligation into the encounter deck.
         var rhino = Dealer.DealOrder(Setup, "rhino", heroes, facts: Cards);
         Assert.Equal(players, rhino.Count(card => card.Source == Marvel.Rules.Setup.CreationSource.Obligation));
-        Assert.Equal(0, Dealer.DealOrder(Setup, "kang", heroes, facts: Cards)
-            .Count(card => card.Source == Marvel.Rules.Setup.CreationSource.Obligation));
+        Assert.Equal(players, Dealer.DealOrder(Setup, "kang", heroes, facts: Cards)
+            .Count(card => card.Source == Marvel.Rules.Setup.CreationSource.RemovedObligation));
     }
 
     [Fact]
