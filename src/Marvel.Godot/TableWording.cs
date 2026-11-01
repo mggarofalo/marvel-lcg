@@ -25,16 +25,16 @@ internal static class TableWording
         [TableFact.OutOfReach] = new("out_of_reach", "Out of reach",
             "Out of reach: cards in one game area cannot affect another game area. Only stage 2B's text reaches every area."),
         [TableFact.Shared] = new("shared", "Shared", "All game areas share one encounter deck and one encounter discard pile."),
-        [TableFact.StepThreat] = new("acting", "Threat", "Villain phase step 1: threat is placed on the main scheme."),
-        [TableFact.StepActivation] = new("acting", "Activation",
+        [TableFact.StepThreat] = new("", "Threat", "Villain phase step 1: threat is placed on the main scheme."),
+        [TableFact.StepActivation] = new("", "Activation",
             "Villain phase step 2: the villain and engaged minions activate."),
-        [TableFact.StepEncounter] = new("acting", "Encounter", "Villain phase step 4: encounter cards are revealed."),
+        [TableFact.StepEncounter] = new("", "Encounter", "Villain phase step 4: encounter cards are revealed."),
         [TableFact.StoredDominions] = new("dominion", "Dominions", "Kang's Dominions stored facedown under stage 4A."),
         [TableFact.AreaIsolation] = new("out_of_reach", "Separate areas",
             "Cards in one game area cannot affect another game area; only stage 2B's text reaches every area."),
-        [TableFact.StepsInTurnOrder] = new("acting", "Turn order",
+        [TableFact.StepsInTurnOrder] = new("turn_order", "Turn order",
             "Each villain-phase step resolves for every game area in turn order before the next step begins."),
-        [TableFact.EachPlayerIsArea] = new("your_area", "Each player",
+        [TableFact.EachPlayerIsArea] = new("each_player", "Each player",
             "On an encounter card, \"each player\" means each player in the same game area; a per-player value still counts {0}."),
         [TableFact.CentralTokensWaitFor4A] = new("dominion", "Tokens wait",
             "Acceleration tokens on stage 2B add no threat during the split; they carry into stage 4A."),
@@ -43,10 +43,10 @@ internal static class TableWording
             + "joins another game area at the end of the phase. It is better to let Kang (II) complete his main scheme "
             + "than to let Kang (II) defeat your hero."),
         [TableFact.SeparatedRules] = new("rules", "Rules", "Show the rules that apply while the table is separated."),
-        [TableFact.ActiveSeat] = new("acting", "Active", "It is this player's turn."),
+        [TableFact.ActiveSeat] = new("active_seat", "Active", "It is this player's turn."),
         [TableFact.AnsweringSeat] = new("answering", "Answering", "This player must answer the current decision."),
-        [TableFact.YourSeat] = new("your_area", "Your seat", "The seat you play."),
-        [TableFact.PublicFocus] = new("shared", "Public focus", "The table is showing this player's public workspace."),
+        [TableFact.YourSeat] = new("your_seat", "Your seat", "The seat you play."),
+        [TableFact.PublicFocus] = new("public_focus", "Public focus", "The table is showing this player's public workspace."),
         [TableFact.HeroForm] = new("", "Hero", "This player's identity is in hero form."),
         [TableFact.AlterEgoForm] = new("", "Alter ego", "This player's identity is in alter-ego form."),
         [TableFact.Engaged] = new("", "Engaged", "Enemies engaged with this player."),
@@ -131,24 +131,66 @@ internal static class TableWording
     internal static string Departure(string kang, IReadOnlyList<string> players, bool completed, bool reunion) =>
         $"{kang} {(completed ? "completed his stage" : "was defeated")}: "
         + (players.Count == 0 ? "the retained components" : string.Join(" and ", players))
-        + (reunion ? " leave at the end of the phase, and the table reunites at stage 4A."
-            : " leave at the end of the phase and join another game area.");
+        + (players.Count == 1 ? " leaves" : " leave") + " at the end of the phase"
+        + (reunion ? ", and the table reunites at stage 4A." : players.Count == 1 ? " and joins another game area."
+            : " and join another game area.");
 
     /// <summary>A game area's title, naming its players, or its former players when it is retained.</summary>
-    internal static string AreaTitle(IReadOnlyList<string> players, bool retained) =>
-        players.Count == 0 ? "Retained area" : string.Join(" · ", players) + (retained ? " (retained)" : "");
+    /// <remarks>The retained icon states that the area is retained, so the title stays the names alone.</remarks>
+    internal static string AreaTitle(IReadOnlyList<string> players) =>
+        players.Count == 0 ? "Retained area" : string.Join(" · ", players);
 
     /// <summary>The central column's title.</summary>
     internal const string CentralTitle = "Central";
 
-    /// <summary>Who answers and what the decision concerns.</summary>
-    internal static string DecisionContext(DecisionFrame frame) => $"Decision for {frame.SeatName}" + (frame.Subject switch
+    /// <summary>The shared encounter deck's name in the central column.</summary>
+    internal const string SharedDeck = "Shared encounter deck";
+
+    /// <summary>The shared encounter discard pile's name in the central column.</summary>
+    internal const string SharedDiscard = "Shared encounter discard pile";
+
+    /// <summary>A stage title the board does not show, named by the stage the players face.</summary>
+    internal const string UnseenLocalKang = "Kang (II)";
+
+    /// <summary>A seat with no published name or identity, numbered from 1.</summary>
+    internal static string Seat(int seat) => $"Player {Count(seat + 1)}";
+
+    /// <summary>A seat's hit points beside its bar: "7/10", or "HP 7" without a maximum, or "HP —" when unknown.</summary>
+    internal static string Health(long? health, long? maximum) => (health, maximum) switch
     {
-        DecisionSubject.MinionActivation => " · Choosing the next minion activation",
-        DecisionSubject.Inspecting => $" · Inspecting {frame.SubjectTitle}",
-        DecisionSubject.Resolving => $" · Resolving {frame.SubjectTitle}",
+        ({ } current, { } most) when most > 0 => $"{current.ToString(CultureInfo.InvariantCulture)}/{most.ToString(CultureInfo.InvariantCulture)}",
+        ({ } current, _) => $"HP {current.ToString(CultureInfo.InvariantCulture)}",
+        _ => "HP —",
+    };
+
+    /// <summary>Where the seats the rail cannot show are.</summary>
+    internal const string SeatOverflow = "More seats: scroll the rail.";
+
+    /// <summary>The decision sheet's title when no prompt is open.</summary>
+    internal const string CurrentChoice = "Current choice";
+
+    /// <summary>The tooltip of a decision's source card button.</summary>
+    internal const string InspectCard = "Inspect card";
+
+    /// <summary>A tracker's accessible reading, such as "Kang (II) 2 of 3, Dominions 1".</summary>
+    internal static string TrackerReading(string label, int filled, int total, string? counter, int count) =>
+        label + (total > 0 ? $" {Count(filled)} of {Count(total)}" : "") + (counter is { } name ? $", {name} {Count(count)}" : "");
+
+    /// <summary>A cause chip's tooltip: what a cause is, then the card.</summary>
+    internal static string DecisionCause(string cause) => $"{For(TableFact.DecisionCause).Tooltip} {cause}.";
+
+    /// <summary>What the decision concerns, as one short line, or empty when it names nothing.</summary>
+    internal static string DecisionSubjectLine(DecisionFrame frame) => frame.Subject switch
+    {
+        DecisionSubject.MinionActivation => "Choosing the next minion activation",
+        DecisionSubject.Inspecting => $"Inspecting {frame.SubjectTitle}",
+        DecisionSubject.Resolving => $"Resolving {frame.SubjectTitle}",
         _ => "",
-    });
+    };
+
+    /// <summary>Who answers and what the decision concerns.</summary>
+    internal static string DecisionContext(DecisionFrame frame) => $"Decision for {frame.SeatName}"
+        + (DecisionSubjectLine(frame) is { Length: > 0 } subject ? $" · {subject}" : "");
 
     /// <summary>Whether the answering seat may decline, named by the engine's decline label.</summary>
     internal static string DecisionRequirement(DecisionFrame frame, string declineLabel) =>

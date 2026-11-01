@@ -33,7 +33,7 @@ internal static class GameAreaTableProjection
     private static TrackerState Tracker(KangTableDescriptor? kang) => kang is null
         ? new TrackerState("", 0, 0, null, 0, "")
         : new TrackerState(TableWording.Stage(kang), kang.RemainingLocalKangs,
-            kang.Stage == 2 ? kang.RemainingLocalKangs + kang.Departures.Count : 0,
+            kang.Stage == 2 ? kang.LocalKangsDealt : 0,
             kang.StoredDominions > 0 ? TableWording.For(TableFact.StoredDominions) : null,
             kang.StoredDominions, TableWording.Progress(kang));
 
@@ -59,7 +59,7 @@ internal static class GameAreaTableProjection
     {
         int[] encounter = Encounter(board, area.Id);
         var facts = new GameAreaColumnFacts(board, area, seat, [.. area.Villains, .. area.MainSchemes, .. encounter], reach);
-        string title = TableWording.AreaTitle(Names(board, area.Retained ? area.FormerSeats : area.PlayAreas), area.Retained);
+        string title = TableWording.AreaTitle(Names(board, area.Retained ? area.FormerSeats : area.PlayAreas));
         return new GameAreaColumn(area.Id, title, facts.Facts(), facts.Tooltip(title), facts.ActingStep, area.Villains,
             area.MainSchemes, encounter);
     }
@@ -72,11 +72,11 @@ internal static class GameAreaTableProjection
     /// <summary>The published names of the given seats, in seat order; the villain's play area has none.</summary>
     internal static string[] Names(BoardPresentation board, IReadOnlyList<int> seats) =>
         [.. seats.Where(seat => seat >= 0).Select(seat => board.Players.FirstOrDefault(item => item.Seat == seat)?.Name
-            ?? $"Player {seat + 1}")];
+            ?? TableWording.Seat(seat))];
 
     /// <summary>A visible card's title, or the stage's name when the card is not on the board.</summary>
     internal static string Title(BoardPresentation board, int card) => board.Areas.SelectMany(SpatialTableZones.Current)
-        .FirstOrDefault(item => item.TargetId == card)?.Title ?? "Kang (II)";
+        .FirstOrDefault(item => item.TargetId == card)?.Title ?? TableWording.UnseenLocalKang;
 
     private static int[] Encounter(BoardPresentation board, int? area) => [.. board.Areas
         .Where(SpatialTableZones.IsEncounterSupport)

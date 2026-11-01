@@ -245,7 +245,7 @@ validates that every id it names is one the same response lists
 | Pending departures: who, from where, why, where to | `KangTable` over `KangPhaseTransitions.Pending` and `KangJoinProcedure.Destinations` | `KangTableDescriptor.Departures` (`Seats`, `SourceGameArea`, `CompletedScheme`, `Destinations`, `Reunion`) | `KangTableFactsTests`, `SplitTableProjectionTests` |
 | A pending split after Kang (I)'s defeat | `KangFirstSplit.Pending` | `KangTableDescriptor.PendingSplit` | `KangTableFactsTests` |
 | Stored Dominions under 4A | `KangTable` (cards beneath 11013a) | `KangTableDescriptor.StoredDominions` | `KangTableFactsTests` |
-| Win progress | `KangTable` (Kang (I), (II), (III) in play) | `Stage`, `RemainingLocalKangs`, `StoredDominions`, `PendingSplit` | `KangTableFactsTests`, `KangSplitTableViewTests` |
+| Win progress | `KangTable` (Kang (I), (II), (III) in play); `KangFirstSplit.LocalKangsDealt` | `Stage`, `RemainingLocalKangs`, `LocalKangsDealt`, `StoredDominions`, `PendingSplit` | `KangTableFactsTests`, `KangSplitTableViewTests` |
 | Which area is acting in the villain phase | `VillainPhaseFocus` | `KangTableDescriptor.Acting` | `VillainPhaseFocusTests`, `KangTableFactsTests` |
 | Why another area's cards are not offered | `Places.CanAffect` | `PlayerDescriptor.OutOfReach`, `OutOfReachReason` | `SplitTableProjectionTests`, `KangSplitTableViewTests` |
 | Player-named prompt and event labels | `GameAreaFacts` labels, `KangDepartureNames` | prompt `DisplayLabel`/`CommitLabel`/`Description`; `GameAreaEventPresentation` | `KangTableFactsTests`, `SplitTableProjectionTests` |
@@ -275,13 +275,13 @@ the explanation; the rules live behind the rules toggle.
 
 | Shown | From |
 |---|---|
-| A tracker line: the Kang faced now, one pip per Kang (II) in play (filled while standing, hollow while leaving) and the stored Dominions; the full progress on hover | `KangTableDescriptor.Stage`, `RemainingLocalKangs`, `Departures`, `StoredDominions`, `PendingSplit` |
+| A tracker line: the Kang faced now, one pip per Kang (II) the split dealt (filled while standing, hollow once leaving or gone) and the stored Dominions; the full progress on hover | `KangTableDescriptor.Stage`, `RemainingLocalKangs`, `LocalKangsDealt`, `StoredDominions`, `PendingSplit` |
 | One column per game area, in engine order, titled by its players | `WorldDescriptor.GameAreas` (non-central), `PlayAreas` or `FormerSeats`, `PlayerDescriptor.Name` |
 | A central column between the game areas holding stage 2B and the shared encounter deck and discard, with the shared icon | `KangTableDescriptor.CentralSchemes`, `EncounterDeck`, `EncounterDiscard`; the `SharedEncounterDeck` and `CentralTokensWaitFor4A` notes on hover |
 | Each column's Kang (II), stage 3B and side schemes | `GameAreaDescriptor.Villains`, `MainSchemes`; `BoardCardPresentation.GameArea` for side schemes |
 | Your area: the person icon and the legal edge | `GameAreaDescriptor.PlayAreas` contains the inspected seat |
 | Acting: a heavy danger edge and the villain phase's three step pips | `KangTableDescriptor.Acting.GameArea`, `Acting.Step` |
-| Retained: the hourglass icon and "(retained)" in the title | `GameAreaDescriptor.Retained` |
+| Retained: the hourglass icon, titled by the former players; what retained means on hover | `GameAreaDescriptor.Retained`, `FormerSeats` |
 | Departing: the leaving arrow; each candidate destination lit with the accent edge and the joining arrow while the departure is pending, which spans the join prompt | `KangDepartureDescriptor.SourceGameArea`, `Destinations` |
 | Out of reach: the lock icon, the dimmed title and dimmed cards (with their attachments), the reason on hover | `PlayerDescriptor.OutOfReach`, `OutOfReachReason` |
 | "Completing this stage does not lose the game" | the `CompletionStoresDominion` note anchored to that area's scheme, in its tooltip and the rules toggle |
@@ -304,10 +304,18 @@ scheme. A game without Kang facts or a split
 has no game-area presentation.
 
 The tabletop seat rail shows each seat as a `SeatTile`: a portrait (the hero's
-initials), the hero's name, an HP bar against the identity's published
-maximum, and a wrapping row of role icons and badges for form, statuses and
-engaged enemies; the tile grows rather than clip a row. Its words are in the
-tooltip. An `OverflowCue` counts seats the rail cannot show.
+initials), the identity card's published title, an HP bar against the
+identity's published maximum, and a wrapping row of roles and badges for form,
+statuses (with their count) and engaged enemies; the tile grows rather than
+clip a row. The seat that must answer shows a labelled "Answering" chip on the
+accent edge, beside the portrait's accent edge; the other roles are icons, each
+named in its own tooltip. An `OverflowCue` counts the tiles the rail does not
+wholly show, from their laid-out edges, and recounts as the rail scrolls. The
+seat rail and the decision sheet's head appear in every game, not only Kang.
+
+The decision sheet's head states the question, what it concerns as one short
+line, the answering seat, whether it is required, its causes and source as
+chips, and the engine's whole instruction once, wrapped.
 
 The native contracts `kang-2`, `kang-3` and `kang-4` deal each recipe through
 `KangRecipeFactory` behind the native contract host. `KangNativeScene` opens

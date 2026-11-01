@@ -72,7 +72,7 @@ public sealed class DecisionComposerSelectingAnAffordanceAutomaticallyChoosesIts
         var world = new WorldDescriptor([new PlayerDescriptor(0, "Peter Parker", false)], [new AreaDescriptor(2, "SupportsArea", 0, -1, [source, identity], [])], [], Outcome.Unfinished);
         PromptPresentation view = PromptPresentation.From(prompt, world);
         Assert.Equal("Choose a game element", view.Heading);
-        Assert.Equal((0, "Peter Parker", DecisionSubject.None, (string?)null, false), (view.Frame.Seat, view.Frame.SeatName,
+        Assert.Equal(("Peter Parker", DecisionSubject.None, (string?)null, false), (view.Frame.SeatName,
             view.Frame.Subject, view.Frame.SubjectTitle, view.Frame.Optional));
         Assert.Contains("Element", view.Diagnostic);
         Assert.Contains("01092: choose a card", view.Diagnostic);

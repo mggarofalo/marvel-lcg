@@ -55,6 +55,9 @@ public sealed class ClientGameAreaValidationTests
     [InlineData("stage 4")]
     [InlineData("negative remaining")]
     [InlineData("negative dominions")]
+    [InlineData("negative dealt")]
+    [InlineData("more dealt than players")]
+    [InlineData("more remaining than dealt")]
     [InlineData("unknown central scheme")]
     [InlineData("unknown pending split")]
     [InlineData("unknown departing villain")]
@@ -113,6 +116,9 @@ public sealed class ClientGameAreaValidationTests
             "stage 4" => Kang(kang with { Stage = 4 }),
             "negative remaining" => Kang(kang with { RemainingLocalKangs = -1 }),
             "negative dominions" => Kang(kang with { StoredDominions = -1 }),
+            "negative dealt" => Kang(kang with { LocalKangsDealt = -1 }),
+            "more dealt than players" => Kang(kang with { LocalKangsDealt = 3 }),
+            "more remaining than dealt" => Kang(kang with { RemainingLocalKangs = 2, LocalKangsDealt = 1 }),
             "unknown central scheme" => Kang(kang with { CentralSchemes = [99] }),
             "unknown pending split" => Kang(kang with { PendingSplit = 99 }),
             "unknown departing villain" => Departure(departure with { Villain = 99 }),
@@ -170,7 +176,7 @@ public sealed class ClientGameAreaValidationTests
                 [new KangDepartureDescriptor(10, 7, [0], 11, [8], false)])
             {
                 Acting = new VillainPhaseFocusDescriptor(2, 1, 8),
-                StartingPlayers = 2,
+                StartingPlayers = 2, LocalKangsDealt = 2,
                 EncounterDeck = 20,
                 EncounterDiscard = 21,
                 Notes = [new(KangNoteKind.AreaIsolation, null),

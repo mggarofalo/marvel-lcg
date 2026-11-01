@@ -256,12 +256,7 @@ internal static class SpatialTableSurfaceRenderer
             VerticalScrollMode = ScrollContainer.ScrollMode.Auto, FollowFocus = true, ZIndex = 24 };
         viewport.AddChild(seats);
         surface.AddChild(viewport);
-        int hidden = OverflowCue.Hidden(board.PlayerSummaries.Count, SeatTile.Height(geometry.ReadingScale), viewport.Size.Y);
-        Label cue = OverflowCue.Create("SeatOverflow", hidden, "More seats: scroll the rail.", geometry.ReadingScale);
-        cue.Size = new Vector2(viewport.Size.X - 16, cue.GetCombinedMinimumSize().Y);
-        cue.Position = viewport.Position + new Vector2(0, viewport.Size.Y - cue.Size.Y);
-        cue.ZIndex = 25;
-        surface.AddChild(cue);
+        SeatRailOverflow.Add(surface, viewport, seats, geometry.ReadingScale);
     }
 
     // A separated table replaces the single villain mat with game-area columns; it returns the

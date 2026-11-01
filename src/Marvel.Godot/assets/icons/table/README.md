@@ -17,5 +17,16 @@ distinguishes one fact from another.
 | `dominion.svg` | A diamond: Kang's Dominions stored under stage 4A. |
 | `rules.svg` | An information mark: the rules that apply now. |
 | `answering.svg` | A speech mark: this seat must answer the current decision. |
+| `active_seat.svg` | A flag: it is this seat's turn. |
+| `turn_order.svg` | Chevrons before a stop: each villain-phase step resolves for every area in turn order. |
+| `public_focus.svg` | An eye: the table is showing this seat's public workspace. |
+| `each_player.svg` | Two people: "each player" counts the players in the same game area. |
+| `your_seat.svg` | A map pin: the seat you play. |
+
+Two pairs of facts share an icon because they state one concept. The lock marks both
+an out-of-reach area and the rule that areas cannot affect one another, since that rule
+is why an area is out of reach. The diamond marks stage 4A's pile: the stored Dominions,
+the acceleration tokens waiting for stage 4A, and the completion that stores a Dominion
+there. The villain-phase steps have no icon; they are drawn as the acting area's pips.
 
 They contain no external art. `TableWording` names which icon states which fact.

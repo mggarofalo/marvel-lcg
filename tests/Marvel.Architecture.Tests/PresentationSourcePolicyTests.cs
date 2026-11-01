@@ -152,6 +152,7 @@ public sealed class PresentationSourcePolicyTests
             "Marvel.Rules.Play.KangTableFacts.Acting",
             "Marvel.Rules.Play.KangTableFacts.CentralSchemes",
             "Marvel.Rules.Play.KangTableFacts.Departures",
+            "Marvel.Rules.Play.KangTableFacts.LocalKangsDealt",
             "Marvel.Rules.Play.KangTableFacts.Notes",
             "Marvel.Rules.Play.KangTableFacts.PendingSplit",
             "Marvel.Rules.Play.KangTableFacts.RemainingLocalKangs",

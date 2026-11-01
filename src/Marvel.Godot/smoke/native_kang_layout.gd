@@ -3,6 +3,7 @@ extends RefCounted
 # A separated table shows its tracker and every column header whole, on one line. No placed card,
 # encounter stack, attachment strip or shared pile covers a header or the tracker, columns do not
 # overlap, and no paragraph sits on the table: every label in a header or the tracker is one line.
+# A header title and the tracker's label also show their whole text, so an ellipsized one fails.
 const MEASURED := ["GameArea*Heading", "KangTracker"]
 const COVERED := ["GameArea*Heading", "KangTracker", "SeparatedTableRules"]
 
@@ -16,7 +17,7 @@ static func check(smoke, surface: Control, leaf: String) -> bool:
             smoke._fail("%s: %s shows %.0f of its %.0f pixels" % [leaf, label.name, label.size.y,
                 label.get_combined_minimum_size().y])
             return false
-    if not _one_line(smoke, surface, leaf): return false
+    if not _one_line(smoke, surface, leaf) or not _titles_whole(smoke, surface, leaf): return false
     var texts := _named(surface, COVERED)
     for placed in _placed(surface):
         for text in texts:
@@ -35,6 +36,35 @@ static func _one_line(smoke, surface: Control, leaf: String) -> bool:
                 smoke._fail("%s: %s/%s wraps to %d lines" % [leaf, owner.name, label.name, label.get_line_count()])
                 return false
     return true
+
+static func _titles_whole(smoke, surface: Control, leaf: String) -> bool:
+    for label in _titles(surface):
+        if not whole(label):
+            smoke._fail("%s: %s/%s is cut short: \"%s\" needs %.0f of %.0f pixels" % [leaf, label.get_parent().name,
+                label.name, label.text, text_width(label), label.size.x])
+            return false
+    return true
+
+# Each column header's title and the tracker's label.
+static func _titles(surface: Control) -> Array:
+    var labels := []
+    for header in surface.find_children("GameArea*Heading", "Control", true, false):
+        var title = header.get_node_or_null("Title")
+        if title != null and title.is_visible_in_tree(): labels.append(title)
+    var tracker = surface.find_child("KangTracker", false, false)
+    if tracker != null:
+        var label = tracker.get_node_or_null("Label")
+        if label != null and label.is_visible_in_tree(): labels.append(label)
+    return labels
+
+# The pixels a label's text needs on one line in its own font.
+static func text_width(label: Label) -> float:
+    return label.get_theme_font("font").get_string_size(label.text, HORIZONTAL_ALIGNMENT_LEFT, -1,
+        label.get_theme_font_size("font_size")).x
+
+# Whether a visible label shows all of its text: its width holds the text's.
+static func whole(label: Label) -> bool:
+    return label.is_visible_in_tree() and text_width(label) <= label.size.x + 0.5
 
 static func _columns_apart(smoke, surface: Control, leaf: String) -> bool:
     var frames := surface.find_children("GameArea*", "Panel", false, false).filter(

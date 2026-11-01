@@ -1,6 +1,6 @@
 # Release identity, signing and compatibility
 
-Protocol 46 carries the split table as typed facts: it drops each game area's label, Kang's progress sentence and the departure, acting and note sentences, and adds each seat's out-of-reach reason. Protocol 45 peers are rejected before gameplay. It changes no replay identity, save schema, digest or RNG: prompts and the session journal are unchanged.
+Protocol 46 carries the split table as typed facts: it drops each game area's label, Kang's progress sentence and the departure, acting and note sentences, and adds each seat's out-of-reach reason and the number of Kang (II) the split dealt. Protocol 45 peers are rejected before gameplay. It changes no replay identity, save schema, digest or RNG: prompts and the session journal are unchanged.
 
 Protocol 45 adds game-area summaries, each seat's out-of-reach cards and Kang's progress and departure facts. Protocol 44 peers are rejected before gameplay. It changes no replay identity, save schema, digest or RNG: the Kang prompts name players only in display copy, which the session journal does not record.
 

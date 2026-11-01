@@ -2,10 +2,12 @@ using Godot;
 
 namespace Marvel.Godot;
 
-/// <summary>Building block: a decision's title, its facts as chips and a one-line reason, above its actions.</summary>
+/// <summary>Building block: a decision's title, its facts as chips and its reason, above its actions.</summary>
 /// <remarks>
-/// The reason is one line: longer engine instructions ellipsize and stay whole in the tooltip.
-/// The caller adds the actions below, so the panel never repeats what its actions already say.
+/// A table panel's reason is one line: a longer engine instruction ellipsizes and stays whole in the
+/// tooltip. A decision sheet's reason wraps, because the player must read the whole instruction
+/// before committing. The caller adds the actions below, so the panel never repeats what its
+/// actions already say.
 /// </remarks>
 internal static class TablePanel
 {
@@ -14,8 +16,9 @@ internal static class TablePanel
         string.Join(" · ", reason.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
 
     /// <summary>The panel head: the title row, the fact chips, then the reason when there is one.</summary>
+    /// <param name="wrap">Whether the reason wraps in full rather than ellipsizing to one line.</param>
     internal static VBoxContainer Create(string name, Control title, IReadOnlyList<Control> facts, string reason,
-        InterfaceScale scale, Control? trailing = null)
+        InterfaceScale scale, Control? trailing = null, bool wrap = false)
     {
         SpacingMetrics spacing = VisualSystem.Spacing(scale);
         var head = new VBoxContainer { Name = name, MouseFilter = Control.MouseFilterEnum.Ignore };
@@ -32,9 +35,10 @@ internal static class TablePanel
             foreach (Control fact in facts) chips.AddChild(fact);
             head.AddChild(chips);
         }
-        string line = OneLine(reason);
+        string line = wrap ? reason.Trim() : OneLine(reason);
         if (line.Length == 0) return head;
-        Label text = TableBlockStyle.Line("Reason", line, scale, VisualSystem.Palette.Text);
+        Label text = wrap ? TableBlockStyle.Wrapped("Reason", line, scale, VisualSystem.Palette.Text)
+            : TableBlockStyle.Line("Reason", line, scale, VisualSystem.Palette.Text);
         text.TooltipText = reason;
         text.AddThemeFontSizeOverride("font_size", VisualSystem.Type(scale).Body);
         head.AddChild(text);

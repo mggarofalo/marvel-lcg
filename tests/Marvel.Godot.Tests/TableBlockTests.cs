@@ -79,10 +79,16 @@ public sealed class TableBlockTests
     public void AnOverflowCueCountsWhatIsHidden(int hidden, string text) => Assert.Equal(text, OverflowCue.Text(hidden));
 
     [Theory]
-    [InlineData(4, 60, 250, 0)]
-    [InlineData(4, 60, 179, 2)]
-    [InlineData(4, 0, 10, 0)]
-    [InlineData(2, 60, 0, 2)]
-    public void AnOverflowCueHidesWhatAViewportCannotShow(int count, float row, float viewport, int hidden) =>
-        Assert.Equal(hidden, OverflowCue.Hidden(count, row, viewport));
+    [InlineData(0, 300, 0)]
+    [InlineData(0, 179, 3)]
+    [InlineData(0, 180.4f, 2)]
+    [InlineData(60, 300, 1)]
+    [InlineData(59.6f, 239.6f, 2)]
+    [InlineData(60.6f, 300, 2)]
+    public void AnOverflowCueCountsTheRowsAViewportDoesNotWhollyShow(float top, float bottom, int hidden)
+    {
+        // Rows of unequal height, as tiles grow when their badges wrap.
+        (float, float)[] rows = [(0, 60), (60, 180), (180, 240), (240, 300)];
+        Assert.Equal(hidden, OverflowCue.Hidden(rows, top, bottom));
+    }
 }

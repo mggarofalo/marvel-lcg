@@ -8,7 +8,7 @@ public sealed class DecisionSheetHeadTests
     [Fact]
     public void TheHeadStatesWhoAnswersWhetherItIsRequiredAndEachCauseOnce()
     {
-        var frame = new DecisionFrame(0, "Thor", DecisionSubject.Inspecting, "False Alarm", false, ["Heimdall"],
+        var frame = new DecisionFrame("Thor", DecisionSubject.Inspecting, "False Alarm", false, ["Heimdall"],
             "Choose all remaining cards in top-to-bottom order.");
         Wording[] facts = DecisionSheetHead.Facts(frame, "Pass");
         Assert.Equal(["Thor", "Required", "Heimdall"], facts.Select(fact => fact.Label));
@@ -20,6 +20,6 @@ public sealed class DecisionSheetHeadTests
 
     [Fact]
     public void AnOptionalDecisionNamesItsDecline() => Assert.Equal(("Optional", "You may pass this opportunity."),
-        DecisionSheetHead.Facts(new DecisionFrame(0, "Thor", DecisionSubject.None, null, true, [], ""), "Pass this opportunity")[1]
+        DecisionSheetHead.Facts(new DecisionFrame("Thor", DecisionSubject.None, null, true, [], ""), "Pass this opportunity")[1]
             is var fact ? (fact.Label, fact.Tooltip) : default);
 }

@@ -71,8 +71,9 @@ internal static class GameAreaTableChrome
     /// Adds a column's frame: the acting area takes a heavy danger edge, a lit destination the accent edge,
     /// and the inspected seat's own area the legal edge. Each edge repeats a header icon; none stands alone.
     /// </summary>
-    internal static void AddFrame(Control surface, string name, Rect2 bounds, GameAreaColumn column)
+    internal static void AddFrame(Control surface, string name, Rect2 bounds, GameAreaColumn column, InterfaceScale scale)
     {
+        int radius = VisualSystem.Controls(scale).CornerRadius;
         (VisualColor edge, int width) = column.Facts.Contains(TableFact.Acting) ? (VisualSystem.Palette.Danger, 4)
             : column.Facts.Contains(TableFact.Destination) ? (VisualSystem.Palette.Accent, 3)
             : column.Facts.Contains(TableFact.YourArea) ? (VisualSystem.Palette.Legal, 2)
@@ -87,7 +88,8 @@ internal static class GameAreaTableChrome
             BgColor = new Color(ClientTheme.ToGodot(VisualSystem.Palette.Surface), column.Facts.Contains(TableFact.OutOfReach) ? 0.15f : 0.35f),
             BorderColor = ClientTheme.ToGodot(edge),
             BorderWidthLeft = width, BorderWidthRight = width, BorderWidthTop = width, BorderWidthBottom = width,
-            CornerRadiusTopLeft = 6, CornerRadiusTopRight = 6, CornerRadiusBottomLeft = 6, CornerRadiusBottomRight = 6,
+            CornerRadiusTopLeft = radius, CornerRadiusTopRight = radius,
+            CornerRadiusBottomLeft = radius, CornerRadiusBottomRight = radius,
         };
         frame.AddThemeStyleboxOverride("panel", style);
         frame.SetMeta("table_facts", ColumnHeader.Keys(column.Facts));

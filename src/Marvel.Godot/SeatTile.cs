@@ -40,16 +40,17 @@ internal static class SeatTile
         _ => null,
     };
 
-    /// <summary>The seat's hero name from its lane title, whose last part names the hero.</summary>
-    internal static string Hero(string? laneTitle, int seat) =>
-        laneTitle?.Split(" · ", StringSplitOptions.RemoveEmptyEntries) is { Length: > 0 } parts ? parts[^1] : $"Player {seat + 1}";
+    /// <summary>The seat's identity card title as published, or the seat's number when no identity is on the board.</summary>
+    internal static string Hero(BoardPresentation board, PlayerSummaryDescriptor summary) => summary.Identity is { } id
+        && board.Areas.SelectMany(SpatialTableZones.Current).FirstOrDefault(card => card.TargetId == id) is { Title.Length: > 0 } card
+            ? card.Title : TableWording.Seat(summary.Seat);
 
     /// <summary>The tile, as the seat's workspace switch.</summary>
     internal static Button Create(BoardPresentation board, PlayerSummaryDescriptor summary, DisplayedSeatSelection selection,
         InterfaceScale scale, string tooltip)
     {
         SpacingMetrics spacing = VisualSystem.Spacing(scale);
-        string hero = Hero(board.Lanes.FirstOrDefault(item => item.Seat == summary.Seat)?.Title, summary.Seat);
+        string hero = Hero(board, summary);
         TableFact[] roles = Roles(summary.Seat, selection);
         var tile = new Button
         {
@@ -109,8 +110,9 @@ internal static class SeatTile
         return portrait;
     }
 
-    // The seat's roles as icons, then its form, statuses, engaged enemies and pending encounters. The
-    // name line holds only the name, so a narrow rail still shows it whole.
+    // The seat's roles, then its form, statuses, engaged enemies and pending encounters. The name line
+    // holds only the name, so a narrow rail still shows it whole. Who must answer is a labelled chip in
+    // the accent, beside the portrait's accent edge; the other roles are icons, each named on hover.
     private static HFlowContainer Badges(BoardPresentation board, PlayerSummaryDescriptor summary, TableFact[] roles,
         InterfaceScale scale)
     {
@@ -118,23 +120,39 @@ internal static class SeatTile
         badges.AddThemeConstantOverride("h_separation", VisualSystem.Spacing(scale).ExtraSmall);
         int icon = TableBlockStyle.Icon(scale);
         foreach (TableFact role in roles)
-        {
-            Wording wording = TableWording.For(role);
-            TextureRect mark = TableIcon.Create(wording.Icon, icon, ClientTheme.ToGodot(VisualSystem.Palette.Accent));
-            mark.Name = "Role" + role;
-            mark.AccessibilityName = wording.Label;
-            mark.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
-            badges.AddChild(mark);
-        }
+            badges.AddChild(role == TableFact.AnsweringSeat ? Answering(scale) : Role(role, icon));
         if (Form(summary.Form) is { } form) badges.AddChild(Chip.Create("Form", TableWording.For(form), null, scale));
-        foreach (string status in summary.Statuses)
-            badges.AddChild(StatusBadge.Supports(status) ? StatusBadge.Create(status, status, compact: true)
-                : Chip.Create("Status" + status, new Wording("", status, status), null, scale));
+        foreach (var status in summary.Statuses.GroupBy(value => value, StringComparer.OrdinalIgnoreCase))
+            badges.AddChild(StatusBadge.Supports(status.Key)
+                ? StatusBadge.Create(status.Key, status.Key, status.Count(), compact: true, scale)
+                : Chip.Create("Status" + status.Key, new Wording("", status.Key, status.Key),
+                    status.Count() > 1 ? status.Count() : null, scale));
         if (summary.EngagedEnemies.Count > 0)
             badges.AddChild(Chip.Create("Engaged", TableWording.For(TableFact.Engaged), summary.EngagedEnemies.Count, scale));
         int pending = board.PendingEncounterCount(summary.Seat);
         if (pending > 0) badges.AddChild(TableBlockStyle.Whole("PendingEncounters", PendingEncounterIndicator.Compact(pending).TrimStart(' ', '·'),
             scale, VisualSystem.Palette.Accent));
         return badges;
+    }
+
+    // An icon that passes the pointer on, so it shows its own tooltip and the tile still takes the press.
+    private static TextureRect Role(TableFact role, int icon)
+    {
+        Wording wording = TableWording.For(role);
+        TextureRect mark = TableIcon.Create(wording.Icon, icon, ClientTheme.ToGodot(VisualSystem.Palette.Accent));
+        mark.Name = "Role" + role;
+        mark.AccessibilityName = wording.Label;
+        mark.TooltipText = wording.Tooltip;
+        mark.MouseFilter = Control.MouseFilterEnum.Pass;
+        mark.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
+        return mark;
+    }
+
+    private static PanelContainer Answering(InterfaceScale scale)
+    {
+        PanelContainer chip = Chip.Create("Role" + TableFact.AnsweringSeat, TableWording.For(TableFact.AnsweringSeat), null, scale);
+        using StyleBoxFlat style = TableBlockStyle.Surface(scale, VisualSystem.Palette.Accent, 2);
+        chip.AddThemeStyleboxOverride("panel", style);
+        return chip;
     }
 }

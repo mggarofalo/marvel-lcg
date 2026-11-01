@@ -7,7 +7,7 @@ namespace Marvel.Rules.Play;
 /// The wording is the engine's choice. Players know one another by name, not by a
 /// game-area number, so every Kang prompt names the seats and the Kang involved.
 /// </remarks>
-internal static class KangDepartureNames
+public static class KangDepartureNames
 {
     /// <summary>The players who move, or the eliminated players whose retained components move.</summary>
     internal static string Group(World world, KangDeparture departure)
@@ -27,8 +27,10 @@ internal static class KangDepartureNames
     /// the phase. 11009b–11012b: a completed stage stores a Kang's Dominion under 4A rather
     /// than losing the game, then the group moves the same way.
     /// </remarks>
-    internal static string Departure(World world, KangDeparture departure)
+    public static string Departure(World world, KangDeparture departure)
     {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(departure);
         string kang = EffectiveCards.Title(world.Cards[departure.Defeated.Card], world.Facts);
         string cause = departure.CompletedScheme is { } scheme
             ? $"{kang}'s {EffectiveCards.Title(world.Cards[scheme.Card], world.Facts)} was completed, storing a Kang's Dominion under stage 4A"

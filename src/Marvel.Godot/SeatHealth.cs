@@ -10,14 +10,6 @@ internal static class SeatHealth
     internal static float? Fraction(long? health, long? maximum) =>
         health is { } current && maximum is { } most && most > 0 ? Math.Clamp((float)current / most, 0, 1) : null;
 
-    /// <summary>The count beside the bar, such as "7/10" or "HP 7", or "HP —" when unknown.</summary>
-    internal static string Text(long? health, long? maximum) => (health, maximum) switch
-    {
-        ({ } current, { } most) when most > 0 => $"{current}/{most}",
-        ({ } current, _) => $"HP {current}",
-        _ => "HP —",
-    };
-
     /// <summary>The identity's current maximum hit points, as the engine publishes them on its card.</summary>
     internal static long? Maximum(BoardPresentation board, int? identity) => identity is { } id
         ? board.Areas.SelectMany(SpatialTableZones.Current).FirstOrDefault(card => card.TargetId == id)
@@ -48,7 +40,7 @@ internal static class SeatHealth
             bar.AddThemeStyleboxOverride("fill", front);
             row.AddChild(bar);
         }
-        Label count = TableBlockStyle.Whole("Count", Text(health, maximum), scale, VisualSystem.Palette.Text);
+        Label count = TableBlockStyle.Whole("Count", TableWording.Health(health, maximum), scale, VisualSystem.Palette.Text);
         count.SizeFlagsHorizontal = Fraction(health, maximum) is null ? Control.SizeFlags.ExpandFill : Control.SizeFlags.ShrinkEnd;
         row.AddChild(count);
         return row;

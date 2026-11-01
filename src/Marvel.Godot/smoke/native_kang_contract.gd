@@ -4,6 +4,8 @@ const Driver = preload("res://smoke/automation/ui_driver.gd")
 # The host answers every prompt up to the next checkpoint before it replies to a Synchronize, and it
 # replays the session for each answer; the run to the reunion takes it about half a minute.
 const SYNC_DEADLINE_MS := 90000
+# The retained fact's tooltip, which the column's header carries (TableWording).
+const TABLE_RETAINED := "An eliminated player's Kang and stage stay here"
 
 # A real Kang recipe through KangRecipeFactory (tests only). The host answers the prompts between
 # checkpoints; the client opens, synchronizes and answers the join prompt with viewport input.
@@ -56,6 +58,10 @@ static func _column_names_its_players(smoke, kang, area: int) -> bool:
         smoke._fail("game area %d has no visible column" % area)
         return false
     var title := _title(smoke, area)
+    var label = _header(smoke, area).get_node("Title") if _header(smoke, area) != null else null
+    if label == null or not preload("res://smoke/native_kang_layout.gd").whole(label):
+        smoke._fail("game area %d does not show its whole title %s" % [area, title])
+        return false
     for name in kang.Names(area):
         if name not in title:
             smoke._fail("game area %d title %s does not name %s" % [area, title, name])
@@ -167,7 +173,7 @@ static func _join(smoke, kang) -> bool:
 # Chooses the one named destination, then its named commitment.
 static func _answer_join(smoke, kang) -> bool:
     var before := int(smoke.witness.Revision())
-    # Each offer names the destination by its players and Kang (protocol 45 labels).
+    # The engine's join offer names the destination by its players and Kang.
     var offers = smoke.main.find_children("Affordance*", "Button", true, false).filter(
         func(button): return button.is_visible_in_tree() and button.text.begins_with("Join ") and "game area" in button.text)
     if offers.size() != 1:
@@ -198,7 +204,7 @@ static func _reunion(smoke, kang) -> bool:
 static func _retained(smoke, kang) -> bool:
     if not await _synchronize(smoke, func(): return kang.RetainedAreas().size() > 0, "a retained area"): return false
     var area := int(kang.RetainedAreas()[0])
-    if "Retained" not in _facts(smoke, area) or "(retained)" not in _title(smoke, area):
+    if "Retained" not in _facts(smoke, area) or TABLE_RETAINED not in _header(smoke, area).tooltip_text:
         smoke._fail("the retained area is not marked")
         return false
     return await _capture(smoke, "retained")
