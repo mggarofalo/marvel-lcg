@@ -14,11 +14,17 @@ namespace Marvel.Rules.Play;
 /// </remarks>
 public static class GameAreaFacts
 {
-    /// <summary>One summary per game area, in game-area id order.</summary>
+    /// <summary>One summary per game area still on the table, in game-area id order.</summary>
+    /// <remarks>
+    /// An area left with no play areas and no retained components is omitted (our choice):
+    /// Kang's joins choose only areas that remain (<see cref="KangCentral.Remains"/>), so an
+    /// emptied area is never refilled.
+    /// </remarks>
     public static IReadOnlyList<GameAreaSummary> Of(World world)
     {
         ArgumentNullException.ThrowIfNull(world);
-        return [.. world.GameAreas.OrderBy(area => area.Id).Select(area => Of(world, area))];
+        return [.. world.GameAreas.Where(area => area.PlayAreas.Count > 0 || KangCentral.Remains(world, area))
+            .OrderBy(area => area.Id).Select(area => Of(world, area))];
     }
 
     internal static GameAreaSummary Of(World world, GameArea area)
@@ -42,15 +48,16 @@ public static class GameAreaFacts
             .Select(card => card.ObjectId).Order()];
 
     // Display copy is the engine's choice. A game area is named by the seats in it,
-    // since its numeric id means nothing at the table, then by its villains.
+    // since its numeric id means nothing at the table, then by its villains. The area
+    // holding the villain is "central" only once the table has been divided.
     private static string Label(World world, GameArea area, int[] villains, bool central, int[] former)
     {
         string[] seats = [.. area.PlayAreas.Where(play => play.IsPlayers).Select(play => play.Player)
             .Order().Select(seat => SeatName(world, seat))];
-        string owner = central ? "the central game area"
+        string owner = central ? world.GameAreas.Count > 1 ? "the central game area" : "the game area"
             : seats.Length > 0 ? $"{Names(seats)}'s game area"
             : former.Length > 0 ? $"{Names([.. former.Select(seat => SeatName(world, seat))])}'s retained game area"
-            : "an empty game area";
+            : "a game area";
         return villains.Length == 0 ? owner
             : $"{owner} ({string.Join(", ", villains.Select(id => EffectiveCards.Title(world.Cards[id], world.Facts)))})";
     }
@@ -59,7 +66,14 @@ public static class GameAreaFacts
     internal static string SeatName(World world, int seat) =>
         seat < world.Seats.Count ? world.Seats[seat].Name : $"Player {seat + 1}";
 
-    internal static string Names(IReadOnlyList<string> names) => names.Count switch
+    /// <summary>Joins display names as "A", "A and B" or "A, B and C".</summary>
+    public static string Names(IReadOnlyList<string> names)
+    {
+        ArgumentNullException.ThrowIfNull(names);
+        return Joined(names);
+    }
+
+    private static string Joined(IReadOnlyList<string> names) => names.Count switch
     {
         0 => "no player",
         1 => names[0],

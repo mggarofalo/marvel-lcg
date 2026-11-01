@@ -15,4 +15,8 @@ public sealed record KangTableFacts(
     IReadOnlyList<int> CentralSchemes,
     int? PendingSplit,
     IReadOnlyList<KangPendingDeparture> Departures,
-    VillainPhaseFocus? Acting);
+    VillainPhaseFocus? Acting)
+{
+    /// <summary>The separated-table rules that apply now, each with the card it concerns.</summary>
+    public IReadOnlyList<KangNote> Notes { get; init; } = [];
+}

@@ -58,6 +58,8 @@ public sealed class PresentationAssemblyPolicyTests
             "Marvel.Rules.Play.GameAreaSummary",
             // Public area identity from the engine-owned typed auxiliary deck.
             "Marvel.Rules.Play.InvocationDeck",
+            "Marvel.Rules.Play.KangNote",
+            "Marvel.Rules.Play.KangNoteKind",
             "Marvel.Rules.Play.KangPendingDeparture",
             "Marvel.Rules.Play.KangTable",
             "Marvel.Rules.Play.KangTableFacts",
@@ -287,7 +289,10 @@ public sealed class PresentationAssemblyPolicyTests
             "Marvel.View.GameAreaDescriptor",
             // Validates that Kang facts name only listed cards, seats, game areas and piles.
             "Marvel.View.KangDepartureDescriptor",
+            "Marvel.View.KangNoteDescriptor",
             "Marvel.View.KangTableDescriptor",
+            // Validates that each note kind is defined.
+            "Marvel.Rules.Play.KangNoteKind",
             "Marvel.View.OutcomeDescription",
             "Marvel.View.PendingSituationDescriptor",
             "Marvel.View.PlayerDescriptor",

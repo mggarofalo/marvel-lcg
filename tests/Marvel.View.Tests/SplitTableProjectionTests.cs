@@ -29,7 +29,7 @@ public sealed class SplitTableProjectionTests
         Assert.False(area.Retained);
         Assert.Equal([villain.ObjectId], area.Villains);
         Assert.Equal([scheme.ObjectId], area.MainSchemes);
-        Assert.Equal("the central game area (Rhino)", area.Label);
+        Assert.Equal("the game area (Rhino)", area.Label);
         Assert.All(result.World.Players, player => Assert.Empty(player.OutOfReach));
         Assert.Null(result.World.Kang);
     }
@@ -65,8 +65,19 @@ public sealed class SplitTableProjectionTests
         Assert.Equal(2, kang.StartingPlayers);
         Assert.Equal(world.AreaOf(DeckType.EncounterDeck).Id, kang.EncounterDeck);
         Assert.Equal(world.AreaOf(DeckType.EncounterDiscardPile).Id, kang.EncounterDiscard);
-        Assert.Equal(6, kang.Notes.Count);
-        Assert.Contains(kang.Notes, note => note.Contains("counts all 2 players who started", StringComparison.Ordinal));
+        Assert.Equal(
+            [KangNoteKind.AreaIsolation, KangNoteKind.StepsInTurnOrder, KangNoteKind.EachPlayerIsArea,
+                KangNoteKind.SharedEncounterDeck, KangNoteKind.CentralTokensWaitFor4A,
+                KangNoteKind.CompletionStoresDominion, KangNoteKind.CompletionStoresDominion],
+            kang.Notes.Select(note => note.Kind));
+        Assert.Equal(central.ObjectId, Assert.Single(kang.Notes, note => note.Kind == KangNoteKind.CentralTokensWaitFor4A).Card);
+        Assert.Equal(schemes.Select(scheme => (int?)scheme.ObjectId), kang.Notes
+            .Where(note => note.Kind == KangNoteKind.CompletionStoresDominion).Select(note => note.Card));
+        Assert.Contains("counts all 2 players who started",
+            Assert.Single(kang.Notes, note => note.Kind == KangNoteKind.EachPlayerIsArea).Text, StringComparison.Ordinal);
+        Assert.All(kang.Notes, note => Assert.False(string.IsNullOrWhiteSpace(note.Text)));
+        // The original, emptied game area is not listed.
+        Assert.Equal(2, result.World.GameAreas.Count);
         Assert.StartsWith("2 Kang (II) remain.", kang.Progress, StringComparison.Ordinal);
         Assert.Empty(kang.Departures);
         Assert.Null(kang.Acting);
@@ -142,43 +153,46 @@ public sealed class SplitTableProjectionTests
         var world = new World(Facts, 1, 42);
         world.CreateSeat("p0").IdentityCard = world.CreateCard("01001a", world.Seats[0].Hero);
         world.Join(PlayArea.Of(0), world.CreateGameArea(), "prepared split", []);
-        world.CreateCard("11002", world.AreaOf(DeckType.VillainArea, PlayArea.Of(0)));
+        var local = world.CreateCard("11002", world.AreaOf(DeckType.VillainArea, PlayArea.Of(0)));
         world.Detach(PlayArea.Villains, "prepared split", []);
+        var scope = new PermissiveVisibilityPolicy().Authorize(null, 1);
 
-        var kang = WorldProjection.For(world, null, [], new PermissiveVisibilityPolicy().Authorize(null, 1)).World.Kang!;
+        var kang = WorldProjection.For(world, null, [], scope).World.Kang!;
 
-        Assert.Contains(kang.Notes, note => note.EndsWith("counts the 1 player who started the scenario.", StringComparison.Ordinal));
+        Assert.EndsWith("counts the 1 player who started the scenario.",
+            Assert.Single(kang.Notes, note => note.Kind == KangNoteKind.EachPlayerIsArea).Text, StringComparison.Ordinal);
         Assert.StartsWith("1 Kang (II) remains.", kang.Progress, StringComparison.Ordinal);
+
+        world.Agenda.KangTransitions.CaptureJoin(world, local, 1, PhaseTransitionKind.EndPlayerPhase);
+        var last = WorldProjection.For(world, null, [], scope).World.Kang!;
+        Assert.True(Assert.Single(last.Departures).Reunion);
+        Assert.StartsWith("No Kang (II) remains. At the end of the phase the last group leaves", last.Progress,
+            StringComparison.Ordinal);
     }
 
     [Fact]
-    public void TopologyEventsNameTheSeatsInsteadOfAreaNumbers()
+    public void TopologyEventsNameTheSeatsTheyHadWhenTheyHappened()
     {
-        var (world, _, _, _) = Separated();
-        var result = WorldProjection.For(world, null, [], new PermissiveVisibilityPolicy().Authorize(null, 2));
-        int own = world.GameAreaOf(PlayArea.Of(0))!.Id;
-        int other = world.GameAreaOf(PlayArea.Of(1))!.Id;
+        // Two groups joining one area in the same response: each event names the area as it
+        // stood at its own occurrence, never the final snapshot's membership.
+        var world = new World(Facts, 3, 42);
+        for (int seat = 0; seat < 3; seat++)
+            world.CreateSeat($"p{seat}").IdentityCard = world.CreateCard("01001a", world.Seats[seat].Hero);
+        var result = WorldProjection.For(world, null, [], new PermissiveVisibilityPolicy().Authorize(null, 3));
 
         string Present(GameEvent happened) => EventPresenter.Present(happened, result.World).Summary;
 
-        Assert.Equal("p0's play area formed its own game area.", Present(new PlayAreaJoined(0, own)));
-        Assert.Equal("p0's play area joined p1's game area.", Present(new PlayAreaJoined(0, other)));
+        Assert.Equal("p0's play area joined p2's game area.", Present(new PlayAreaJoined(0, 5) { Members = [0, 2] }));
+        Assert.Equal("p1's play area joined p0 and p2's game area.", Present(new PlayAreaJoined(1, 5) { Members = [0, 1, 2] }));
+        Assert.Equal("p0's play area formed its own game area.", Present(new PlayAreaJoined(0, 6) { Members = [0] }));
+        Assert.Equal("p0's play area joined the villain's game area.", Present(new PlayAreaJoined(0, 0) { Members = [-1, 0, 1] }));
+        Assert.Equal("The villain play area joined p0 and p1's game area.", Present(new PlayAreaJoined(-1, 4) { Members = [-1, 0, 1] }));
         Assert.Equal("p0's play area joined a game area.", Present(new PlayAreaJoined(0, 99)));
-        Assert.Equal("p0's play area left p1's game area.", Present(new PlayAreaDetached(0, other)));
-        Assert.Equal("p0's play area left its game area.", Present(new PlayAreaDetached(0, own)));
+        Assert.Equal("p0's play area left p1's game area.", Present(new PlayAreaDetached(0, 4) { Members = [1] }));
+        Assert.Equal("p0's play area left its game area.", Present(new PlayAreaDetached(0, 4) { Members = [] }));
+        Assert.Equal("p0's play area left its game area.", Present(new PlayAreaDetached(0, 4)));
         Assert.Equal("The villain play area left the shared game area; the players are now in separate game areas.",
-            Present(new PlayAreaDetached(-1, 0)));
-    }
-
-    [Fact]
-    public void AnEventJoiningTheCentralAreaSaysSo()
-    {
-        var world = new World(Facts, 1, 42);
-        world.CreateSeat("p0").IdentityCard = world.CreateCard("01001a", world.Seats[0].Hero);
-        var result = WorldProjection.For(world, null, [], new PermissiveVisibilityPolicy().Authorize(null, 1));
-
-        Assert.Equal("p0's play area joined the central game area.",
-            EventPresenter.Present(new PlayAreaJoined(0, Assert.Single(result.World.GameAreas).Id), result.World).Summary);
+            Present(new PlayAreaDetached(-1, 0) { Members = [0, 1, 2] }));
     }
 
     private static (World World, Card[] Kangs, Card[] Schemes, Card Central) Separated()
@@ -193,6 +207,7 @@ public sealed class SplitTableProjectionTests
             kangs[seat] = world.CreateCard(seat == 0 ? "11002" : "11003", world.AreaOf(DeckType.VillainArea, PlayArea.Of(seat)));
             schemes[seat] = world.CreateCard(seat == 0 ? "11009a,11009b" : "11010a,11010b",
                 world.AreaOf(DeckType.MainSchemesArea, PlayArea.Of(seat)));
+            schemes[seat].TurnTo(seat == 0 ? "11009b" : "11010b");
         }
         var central = world.CreateCard("11008a,11008b", world.AreaOf(DeckType.MainSchemesArea));
         world.Detach(PlayArea.Villains, "prepared split", []);

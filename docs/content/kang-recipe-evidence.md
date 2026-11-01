@@ -248,13 +248,15 @@ every id it names is one the same response lists (`ClientGameAreaValidation`).
 | Which area is acting in the villain phase | `VillainPhaseFocus` | `KangTableDescriptor.Acting` | `VillainPhaseFocusTests`, `KangTableFactsTests` |
 | Why another area's cards are not offered | `Places.CanAffect` | `PlayerDescriptor.OutOfReach` | `SplitTableProjectionTests`, `KangSplitTableViewTests` |
 | Player-named prompt and event labels | `GameAreaFacts` labels, `KangDepartureNames` | prompt `DisplayLabel`/`CommitLabel`/`Description`; `GameAreaEventPresentation` | `KangTableFactsTests`, `SplitTableProjectionTests` |
-| "Each player" scope, shared encounter deck and discard, 3B completion is not a loss, turn-order steps | `World.Players`, `World.AreaOf` | `StartingPlayers`, `EncounterDeck`, `EncounterDiscard`, `Notes` (present while separated) | `SplitTableProjectionTests` |
+| "Each player" scope, shared encounter deck and discard, 3B completion is not a loss, turn-order steps, 2B tokens wait for 4A | `KangTable` notes (`KangNoteKind`, anchored to 2B and each uncompleted 3B), `World.Players`, `World.AreaOf` | `Notes` (kind, card, text), `StartingPlayers`, `EncounterDeck`, `EncounterDiscard` | `KangTableFactsTests`, `SplitTableProjectionTests` |
+| Topology events named as they happened | `PlayAreaJoined`/`PlayAreaDetached` `Members` (journal omits) | `GameAreaEventPresentation` | `KangTableFactsTests`, `SplitTableProjectionTests`, `TopologyEventJournalTests` |
 
 `KangSplitTableViewTests` drives Standard, Temporal, two players, seed 1 through
 `KangRecipeFactory` behind `EngineHost` with a restricted capability per seat, to
 the split, a pending departure and the reunion. After every answer both seats'
-responses cross the strict codec; their game-area and Kang facts are equal, each
-seat reads only its own hand, and no fact names a card in another seat's hand.
+responses cross the strict codec and pass `ClientResponseValidation.HasCompleteBoard`;
+their game-area and Kang facts are equal, each seat reads only its own hand, and no
+fact names a card in another seat's hand.
 
 The Godot packet (P9) renders these, with native evidence and an owner review
 item for the new separated-table interaction.

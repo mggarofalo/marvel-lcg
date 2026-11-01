@@ -30,6 +30,6 @@ public sealed record KangTableDescriptor(
     /// <summary>A readable sentence stating progress toward winning.</summary>
     public string Progress { get; init; } = "";
 
-    /// <summary>Readable notes on what the separated table changes, present while it is separated.</summary>
-    public IReadOnlyList<string> Notes { get; init; } = [];
+    /// <summary>The separated-table rules the engine says apply now, each keyed by kind.</summary>
+    public IReadOnlyList<KangNoteDescriptor> Notes { get; init; } = [];
 }

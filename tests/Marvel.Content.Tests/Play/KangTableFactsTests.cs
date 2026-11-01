@@ -21,7 +21,7 @@ public sealed class KangTableFactsTests : CoreCardTestBase
         Assert.Null(KangTable.Of(world));
         var only = Assert.Single(GameAreaFacts.Of(world));
         Assert.True(only.Central);
-        Assert.Equal("the central game area (Rhino)", only.Label);
+        Assert.Equal("the game area (Rhino)", only.Label);
     }
 
     [Fact]
@@ -39,11 +39,12 @@ public sealed class KangTableFactsTests : CoreCardTestBase
         Assert.False(area.Retained);
         Assert.Equal([kang.ObjectId], area.Villains);
         Assert.Equal([scheme.ObjectId], area.MainSchemes);
-        Assert.Equal("the central game area (Kang (The Conqueror))", area.Label);
+        Assert.Equal("the game area (Kang (The Conqueror))", area.Label);
         var facts = Assert.IsType<KangTableFacts>(KangTable.Of(world));
         Assert.Equal((1, 0, 0, null), (facts.Stage, facts.RemainingLocalKangs, facts.StoredDominions, facts.PendingSplit));
         Assert.Empty(facts.CentralSchemes);
         Assert.Empty(facts.Departures);
+        Assert.Empty(facts.Notes);
 
         KangPlayerCountFixture.Defeat(world, kang, []);
 
@@ -75,10 +76,15 @@ public sealed class KangTableFactsTests : CoreCardTestBase
             Assert.Empty(area.FormerSeats);
             Assert.Equal($"{world.Seats[seat].Name}'s game area ({Title(world, kang)})", area.Label);
         }
-        var empty = Assert.Single(GameAreaFacts.Of(world), area => area.Area.PlayAreas.Count == 0);
-        Assert.Equal("an empty game area", empty.Label);
-        Assert.False(empty.Retained);
-        Assert.False(empty.Central);
+        // Kang (I)'s emptied area holds nothing that can return to it, so it is not listed.
+        Assert.Equal(2, GameAreaFacts.Of(world).Count);
+        Assert.Equal(
+            [(KangNoteKind.AreaIsolation, (int?)null), (KangNoteKind.StepsInTurnOrder, null),
+                (KangNoteKind.EachPlayerIsArea, null), (KangNoteKind.SharedEncounterDeck, null),
+                (KangNoteKind.CentralTokensWaitFor4A, central.ObjectId),
+                .. Enumerable.Range(0, 2).Select(seat => Local(world, seat, DeckType.MainSchemesArea).ObjectId).Order()
+                    .Select(id => (KangNoteKind.CompletionStoresDominion, (int?)id))],
+            facts.Notes.Select(note => (note.Kind, note.Card)));
     }
 
     [Fact]
@@ -115,8 +121,13 @@ public sealed class KangTableFactsTests : CoreCardTestBase
         Assert.Equal("Move Spider-Man into this game area after unique copies are reconciled.", offer.Description);
         Assert.StartsWith(departure.Summary, join.Description, StringComparison.Ordinal);
         Assert.Equal($"game area {departure.Destinations[0]}", offer.Label);
+        int before = events.Count;
         Sequence.Answer(world, Cards, world.Abilities, join, Decision.Take(offer.Id), events);
         Sequence.Finish(world, Cards, world.Abilities, events);
+        // The join records the destination's membership when it happens.
+        var joined = Assert.Single(events.Skip(before).OfType<PlayAreaJoined>());
+        Assert.Equal((0, departure.Destinations[0]), (joined.PlayArea, joined.GameArea));
+        Assert.Equal([0, 1], joined.Members);
 
         var last = Local(world, 1, DeckType.VillainArea);
         KangPlayerCountFixture.Defeat(world, last, events);
@@ -149,6 +160,9 @@ public sealed class KangTableFactsTests : CoreCardTestBase
         Assert.Equal(1, facts.RemainingLocalKangs);
         var departure = Assert.Single(facts.Departures);
         Assert.Equal((kang.ObjectId, scheme.ObjectId), (departure.Villain, departure.CompletedScheme));
+        // The completed stage has stored its Dominion; only the other stage still carries the note.
+        Assert.Equal([Local(world, 1, DeckType.MainSchemesArea).ObjectId], facts.Notes
+            .Where(note => note.Kind == KangNoteKind.CompletionStoresDominion).Select(note => note.Card!.Value));
         Assert.Equal($"{Title(world, kang)}'s {Title(world, scheme)} was completed, storing a Kang's Dominion under "
             + $"stage 4A, so Spider-Man leaves {Summary(world, 0).Label} at the end of the phase.", departure.Summary);
     }
@@ -184,15 +198,16 @@ public sealed class KangTableFactsTests : CoreCardTestBase
     public void TheDepartureOrderNamesEachGroupAndItsKang()
     {
         var (world, events) = Split(3, completion: false);
-        KangPlayerCountFixture.Defeat(world, Local(world, 0, DeckType.VillainArea), events);
-        KangPlayerCountFixture.Defeat(world, Local(world, 1, DeckType.VillainArea), events);
-        string[] labels = [Summary(world, 0).Label, Summary(world, 1).Label];
+        Card[] kangs = [Local(world, 0, DeckType.VillainArea), Local(world, 1, DeckType.VillainArea)];
+        KangPlayerCountFixture.Defeat(world, kangs[0], events);
+        KangPlayerCountFixture.Defeat(world, kangs[1], events);
+        string[] labels = [.. Enumerable.Range(0, 2).Select(seat => $"Resolve {Title(world, kangs[seat])}'s departure from {Summary(world, seat).Label}")];
         KangPlayerCountFixture.Boundary(world, 2, events);
 
         var prompt = Assert.IsType<Prompt>(Sequence.Work(world, Cards, world.Abilities, events));
 
         Assert.Equal(KangDepartureOrderOperation.Order, prompt.Trigger);
-        Assert.Equal(labels.Select(label => $"Resolve the departure from {label}").Order(),
+        Assert.Equal(labels.Order(),
             prompt.Affordances.Select(offer => offer.DisplayLabel).Order());
         Assert.Equal(["Resolve Black Widow next", "Resolve Spider-Man next"],
             prompt.Affordances.Select(offer => offer.CommitLabel).Order());

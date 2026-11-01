@@ -36,7 +36,23 @@ public static class KangTable
         return new(Stage(world, villains), Remaining(villains, pending), StoredDominions(world), central,
             world.Agenda.KangSplit.Pending?.Card,
             [.. pending.OrderBy(item => item.Defeated.Card).Select(item => Describe(world, item))],
-            VillainPhaseFocus.Of(world));
+            VillainPhaseFocus.Of(world)) { Notes = Notes(world, central) };
+    }
+
+    // Each note applies exactly while the table is separated. A stage already completed
+    // has stored its Dominion, so only stages still in play and uncompleted carry that note.
+    private static KangNote[] Notes(World world, int[] central)
+    {
+        if (!Places.Separated(world)) return [];
+        KangNote[] table =
+        [
+            new(KangNoteKind.AreaIsolation, null), new(KangNoteKind.StepsInTurnOrder, null),
+            new(KangNoteKind.EachPlayerIsArea, null), new(KangNoteKind.SharedEncounterDeck, null),
+        ];
+        var stages = world.Cards.Where(card => KangLocalCompletion.IsLocal(card)
+                && card.Area.Type == DeckType.MainSchemesArea && card.Tokens.GetValueOrDefault("is_completed") != 1)
+            .Select(card => new KangNote(KangNoteKind.CompletionStoresDominion, card.ObjectId));
+        return [.. table, .. central.Select(id => new KangNote(KangNoteKind.CentralTokensWaitFor4A, id)), .. stages];
     }
 
     private static int Stage(World world, Card[] villains)

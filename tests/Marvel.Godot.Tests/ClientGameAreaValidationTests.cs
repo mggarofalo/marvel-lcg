@@ -15,6 +15,30 @@ public sealed class ClientGameAreaValidationTests
         Assert.True(ClientResponseValidation.HasCompleteBoard(World()));
     }
 
+    [Fact]
+    public void ARetainedAreaAnEliminatedSeatAndAnOrdinaryTableAreAccepted()
+    {
+        var world = World();
+        var retained = world with
+        {
+            Players = [world.Players[0], world.Players[1], new PlayerDescriptor(2, "p2", true)],
+            Areas = [world.Areas[0] with { Cards = [.. world.Areas[0].Cards, Card(15, 9)] }, world.Areas[1], world.Areas[2]],
+            GameAreas = [.. world.GameAreas, new GameAreaDescriptor(9, []) { Retained = true, FormerSeats = [2],
+                Villains = [15], Label = "p2's retained game area" }],
+            Kang = world.Kang! with { StartingPlayers = 3 },
+        };
+        var ordinary = new WorldDescriptor(
+            [new PlayerDescriptor(0, "p0", false) { GameArea = 0 }],
+            [new AreaDescriptor(2, "VillainArea", -1, -1, [Card(10, 0)], [])],
+            [new GameAreaDescriptor(0, [-1, 0]) { Central = true, Villains = [10], Label = "the game area (Rhino)" }],
+            Outcome.Unfinished);
+
+        Assert.True(ClientGameAreaValidation.Valid(retained));
+        Assert.True(ClientResponseValidation.HasCompleteBoard(retained));
+        Assert.True(ClientGameAreaValidation.Valid(ordinary));
+        Assert.True(ClientResponseValidation.HasCompleteBoard(ordinary));
+    }
+
     [Theory]
     [InlineData("unknown villain")]
     [InlineData("unknown main scheme")]
@@ -47,8 +71,20 @@ public sealed class ClientGameAreaValidationTests
     [InlineData("starting players differ")]
     [InlineData("encounter deck names another pile")]
     [InlineData("encounter discard names another pile")]
-    [InlineData("null notes")]
     [InlineData("null progress")]
+    [InlineData("out-of-reach card in the seat's own area")]
+    [InlineData("seat in no game area with reach limits")]
+    [InlineData("villain located in another area")]
+    [InlineData("main scheme located in another area")]
+    [InlineData("acting area is not the seat's")]
+    [InlineData("departing villain in another area")]
+    [InlineData("undefined note kind")]
+    [InlineData("duplicate note")]
+    [InlineData("anchored note without a card")]
+    [InlineData("table note with a card")]
+    [InlineData("note names an unknown card")]
+    [InlineData("null note text")]
+    [InlineData("null notes list")]
     public void AFactNamingSomethingTheResponseDoesNotListIsRejected(string defect)
     {
         // Synthetic wire shape: the client checks references only; reach, departures and
@@ -60,6 +96,7 @@ public sealed class ClientGameAreaValidationTests
         WorldDescriptor Area(GameAreaDescriptor changed) => world with { GameAreas = [changed, world.GameAreas[1]] };
         WorldDescriptor Kang(KangTableDescriptor changed) => world with { Kang = changed };
         WorldDescriptor Departure(KangDepartureDescriptor changed) => Kang(kang with { Departures = [changed] });
+        WorldDescriptor Notes(KangNoteDescriptor added) => Kang(kang with { Notes = [.. kang.Notes, added] });
         var broken = defect switch
         {
             "unknown villain" => Area(area with { Villains = [99] }),
@@ -93,8 +130,20 @@ public sealed class ClientGameAreaValidationTests
             "starting players differ" => Kang(kang with { StartingPlayers = 3 }),
             "encounter deck names another pile" => Kang(kang with { EncounterDeck = 21 }),
             "encounter discard names another pile" => Kang(kang with { EncounterDiscard = 20 }),
-            "null notes" => Kang(kang with { Notes = null! }),
             "null progress" => Kang(kang with { Progress = null! }),
+            "out-of-reach card in the seat's own area" => world with { Players = [world.Players[0] with { OutOfReach = [10] }, world.Players[1]] },
+            "seat in no game area with reach limits" => world with { Players = [world.Players[0] with { GameArea = null }, world.Players[1]] },
+            "villain located in another area" => Area(area with { Villains = [12] }),
+            "main scheme located in another area" => Area(area with { MainSchemes = [13] }),
+            "acting area is not the seat's" => Kang(kang with { Acting = kang.Acting! with { GameArea = 7 } }),
+            "departing villain in another area" => Departure(departure with { Villain = 12 }),
+            "undefined note kind" => Notes(new KangNoteDescriptor((KangNoteKind)99, null, "x")),
+            "duplicate note" => Notes(kang.Notes[0]),
+            "anchored note without a card" => Notes(new KangNoteDescriptor(KangNoteKind.CentralTokensWaitFor4A, null, "x")),
+            "table note with a card" => Notes(new KangNoteDescriptor(KangNoteKind.AreaIsolation, 14, "x")),
+            "note names an unknown card" => Notes(new KangNoteDescriptor(KangNoteKind.CompletionStoresDominion, 99, "x")),
+            "null note text" => Kang(kang with { Notes = [kang.Notes[0] with { Text = null! }] }),
+            "null notes list" => Kang(kang with { Notes = null! }),
             _ => throw new ArgumentOutOfRangeException(nameof(defect)),
         };
 
@@ -102,12 +151,13 @@ public sealed class ClientGameAreaValidationTests
         Assert.False(ClientResponseValidation.HasCompleteBoard(broken));
     }
 
+    private static CardDescriptor Card(int id, int? area) => new(id, CardBack.Encounter, true, true, -1, null)
+    {
+        Location = new CardLocationDescriptor(2, "VillainArea", -1, -1) { GameArea = area },
+    };
+
     private static WorldDescriptor World()
     {
-        static CardDescriptor Card(int id, int? area) => new(id, CardBack.Encounter, true, true, -1, null)
-        {
-            Location = new CardLocationDescriptor(2, "VillainArea", -1, -1) { GameArea = area },
-        };
         return new WorldDescriptor(
             [new PlayerDescriptor(0, "p0", false) { GameArea = 7, OutOfReach = [12, 13] },
                 new PlayerDescriptor(1, "p1", false) { GameArea = 8, OutOfReach = [10, 11] }],
@@ -126,7 +176,9 @@ public sealed class ClientGameAreaValidationTests
                 EncounterDeck = 20,
                 EncounterDiscard = 21,
                 Progress = "1 Kang (II) remains.",
-                Notes = ["note"],
+                Notes = [new(KangNoteKind.AreaIsolation, null, "isolation"),
+                    new(KangNoteKind.CentralTokensWaitFor4A, 14, "tokens"),
+                    new(KangNoteKind.CompletionStoresDominion, 11, "completion")],
             },
         };
     }

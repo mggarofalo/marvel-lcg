@@ -33,7 +33,7 @@ internal static class KangDepartureOrderProcedure
                 new Affordance(item.Defeated.Card, "Resolve_Kang_Departure", item.Defeated.Card,
                     world.FirstPlayer, world.Cards[item.Defeated.Card].FaceId)
                 {
-                    DisplayLabel = $"Resolve the departure from {GameAreaFacts.Of(world, item.Source).Label}",
+                    DisplayLabel = $"Resolve {EffectiveCards.Title(world.Cards[item.Defeated.Card], world.Facts)}'s departure from {GameAreaFacts.Of(world, item.Source).Label}",
                     CommitLabel = $"Resolve {KangDepartureNames.Group(world, item)} next",
                     Description = $"{KangDepartureNames.Departure(world, item)} Resolve it completely, including its whole-group join, before the other departures.",
                 }).ToArray())

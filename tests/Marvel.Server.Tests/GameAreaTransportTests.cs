@@ -54,7 +54,7 @@ public sealed class GameAreaTransportTests
                 EncounterDeck = 20,
                 EncounterDiscard = 21,
                 Progress = "1 Kang (II) remains.",
-                Notes = ["note"],
+                Notes = [new(KangNoteKind.CentralTokensWaitFor4A, 14, "tokens")],
             },
         };
         var response = new EngineResponse(EngineProtocol.Version, "kang", "game", null, null, [], world);
@@ -64,7 +64,7 @@ public sealed class GameAreaTransportTests
 
         string text = Encoding.UTF8.GetString(json);
         foreach (string member in new[] { "\"out_of_reach\":[12]", "\"main_schemes\":[11]", "\"former_seats\":[1]",
-            "\"stored_dominions\":1", "\"remaining_local_kangs\":1", "\"completed_scheme\":13", "\"reunion\":true" })
+            "\"stored_dominions\":1", "\"kind\":5", "\"remaining_local_kangs\":1", "\"completed_scheme\":13", "\"reunion\":true" })
             Assert.Contains(member, text, StringComparison.Ordinal);
         Assert.Equal([12], restored.Players[0].OutOfReach);
         Assert.Equal([10], restored.GameAreas[0].Villains);
@@ -78,7 +78,7 @@ public sealed class GameAreaTransportTests
         Assert.Equal(world.Kang.Acting, kang.Acting);
         var departure = Assert.Single(kang.Departures);
         Assert.Equal((12, 8, 13, true), (departure.Villain, departure.SourceGameArea, departure.CompletedScheme, departure.Reunion));
-        Assert.Equal(["note"], kang.Notes);
+        Assert.Equal(world.Kang.Notes, kang.Notes);
         Assert.Equal(EngineJson.Write(response), EngineJson.Write(EngineJson.ReadResponse(json)));
     }
 

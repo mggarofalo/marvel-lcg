@@ -190,7 +190,7 @@ identity remains stable.
 
 Kang's phase-end prompts name players, not game-area numbers. The join offers
 read "Join Black Widow's game area (Kang (Iron Lad))", the departure-order offers
-name the area each group leaves and the group, and every description states why
+name the departing Kang, the area his group leaves and the group, and every description states why
 the group moves: its Kang (II) was defeated, or its stage 3B was completed and
 stored a Kang's Dominion under stage 4A (11002–11005, 11009b–11012b). The
 phase-end order prompt says what Kang's delayed effect will do. These are display

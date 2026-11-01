@@ -1,3 +1,4 @@
+using Marvel.Client;
 using Marvel.Protocol;
 using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
@@ -89,7 +90,11 @@ public sealed class KangSplitTableViewTests
     {
         Assert.Equal(2, kang.Stage);
         Assert.Equal(2, kang.StartingPlayers);
-        Assert.Equal(6, kang.Notes.Count);
+        Assert.Equal([KangNoteKind.AreaIsolation, KangNoteKind.StepsInTurnOrder, KangNoteKind.EachPlayerIsArea,
+                KangNoteKind.SharedEncounterDeck, KangNoteKind.CentralTokensWaitFor4A],
+            kang.Notes.Select(note => note.Kind).Where(kind => kind != KangNoteKind.CompletionStoresDominion));
+        Assert.Equal(kang.CentralSchemes.Select(id => (int?)id),
+            kang.Notes.Where(note => note.Kind == KangNoteKind.CentralTokensWaitFor4A).Select(note => note.Card));
         Assert.Equal([Assert.Single(world.AreaOf(DeckType.MainSchemesArea).Cards).ObjectId], kang.CentralSchemes);
         for (int seat = 0; seat < 2; seat++)
         {
@@ -148,6 +153,8 @@ public sealed class KangSplitTableViewTests
         byte[] bytes = EngineJson.Write(response);
         var read = EngineJson.ReadResponse(bytes);
         Assert.Equal(bytes, EngineJson.Write(read));
+        // The client accepts the board as recoverable state: every fact names only what it lists.
+        Assert.True(ClientResponseValidation.HasCompleteBoard(read.World));
         return read.World!;
     }
 

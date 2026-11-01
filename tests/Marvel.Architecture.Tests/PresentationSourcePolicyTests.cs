@@ -106,9 +106,10 @@ public sealed class PresentationSourcePolicyTests
             "Marvel.Rules.Events.GameEvent.Verb",
             "Marvel.Rules.Events.Landing.Card",
             "Marvel.Rules.Events.PhaseStarted.Phase",
-            "Marvel.Rules.Events.PlayAreaDetached.GameArea",
+            // Occurrence-time membership the engine records on topology events.
+            "Marvel.Rules.Events.PlayAreaDetached.Members",
             "Marvel.Rules.Events.PlayAreaDetached.PlayArea",
-            "Marvel.Rules.Events.PlayAreaJoined.GameArea",
+            "Marvel.Rules.Events.PlayAreaJoined.Members",
             "Marvel.Rules.Events.PlayAreaJoined.PlayArea",
             "Marvel.Rules.Events.WhenRevealedCanceled.Card",
             "Marvel.Rules.Events.WhenRevealedCanceled.Source",
@@ -126,6 +127,7 @@ public sealed class PresentationSourcePolicyTests
             "Marvel.Rules.Play.Game.ChangeForm",
             "Marvel.Rules.Play.Game.EndPhaseVerb",
             "Marvel.Rules.Play.Game.ResolveMulligans",
+            "Marvel.Rules.Play.GameAreaFacts.Names(System.Collections.Generic.IReadOnlyList<string>)",
             // Engine-owned game-area summaries, copied without recomputing them.
             "Marvel.Rules.Play.GameAreaFacts.Of(Marvel.Rules.State.World)",
             "Marvel.Rules.Play.GameAreaSummary.Area",
@@ -137,6 +139,15 @@ public sealed class PresentationSourcePolicyTests
             "Marvel.Rules.Play.GameAreaSummary.Villains",
             "Marvel.Rules.Play.InvocationDeck.Deck",
             "Marvel.Rules.Play.InvocationDeck.Discard",
+            // The engine's applicable separated-table rules; View supplies only wording.
+            "Marvel.Rules.Play.KangNote.Card",
+            "Marvel.Rules.Play.KangNote.Kind",
+            "Marvel.Rules.Play.KangNoteKind.AreaIsolation",
+            "Marvel.Rules.Play.KangNoteKind.CentralTokensWaitFor4A",
+            "Marvel.Rules.Play.KangNoteKind.CompletionStoresDominion",
+            "Marvel.Rules.Play.KangNoteKind.EachPlayerIsArea",
+            "Marvel.Rules.Play.KangNoteKind.SharedEncounterDeck",
+            "Marvel.Rules.Play.KangNoteKind.StepsInTurnOrder",
             // Engine-owned Kang progress and departure facts, copied without recomputing them.
             "Marvel.Rules.Play.KangPendingDeparture.CompletedScheme",
             "Marvel.Rules.Play.KangPendingDeparture.Destinations",
@@ -149,6 +160,7 @@ public sealed class PresentationSourcePolicyTests
             "Marvel.Rules.Play.KangTableFacts.Acting",
             "Marvel.Rules.Play.KangTableFacts.CentralSchemes",
             "Marvel.Rules.Play.KangTableFacts.Departures",
+            "Marvel.Rules.Play.KangTableFacts.Notes",
             "Marvel.Rules.Play.KangTableFacts.PendingSplit",
             "Marvel.Rules.Play.KangTableFacts.RemainingLocalKangs",
             "Marvel.Rules.Play.KangTableFacts.Stage",
@@ -400,8 +412,6 @@ public sealed class PresentationSourcePolicyTests
             "Marvel.Rules.State.Places.CanAffect(Marvel.Rules.State.World, int, Marvel.Rules.State.Card)",
             // The engine's game-area answer, including retained scenario cards.
             "Marvel.Rules.State.Places.GameAreaOf(Marvel.Rules.State.World, Marvel.Rules.State.Card)",
-            // Whether the separated-table notes apply.
-            "Marvel.Rules.State.Places.Separated(Marvel.Rules.State.World)",
             "Marvel.Rules.State.PlayArea.IsPlayers",
             // Names a seat's play area for the engine's game-area lookup below.
             "Marvel.Rules.State.PlayArea.Of(int)",
