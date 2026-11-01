@@ -3332,7 +3332,7 @@
   "contract": "docs/setup-dataset.md",
   "counts": {
     "campaigns": 41,
-    "encounter_sets": 18,
+    "encounter_sets": 20,
     "heroes": 19
   },
   "encounter_sets": {
@@ -3511,6 +3511,26 @@
         "90004",
         "90005",
         "90005"
+      ]
+    },
+    "ship_command": {
+      "name": "Ship Command",
+      "role": "modular",
+      "encounters": [
+        "16142",
+        "16143",
+        "16144",
+        "16145",
+        "16146",
+        "16147",
+        "16148"
+      ]
+    },
+    "power_stone": {
+      "name": "Power Stone",
+      "role": "modular",
+      "encounters": [
+        "16149"
       ]
     },
     "temporal": {

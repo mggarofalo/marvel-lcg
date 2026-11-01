@@ -34,6 +34,8 @@ internal static class AbilityConditionLowering
             "attackDamagedYou" => Flag(argument, child, "you", AbilityConditionFact.AttackDamagedYou),
             "attackDamaged" => Flag(argument, child, "trigger.target", AbilityConditionFact.AttackDamaged),
             "inExpertMode" => Flag(argument, child, "expert", AbilityConditionFact.InExpertMode),
+            // Engine choice: "First Player Action" is an action whose resolving player is the first player.
+            "isFirstPlayer" => Flag(argument, child, "you", AbilityConditionFact.IsFirstPlayer),
             "defeatedByYou" => Flag(argument, child, "you", AbilityConditionFact.DefeatedByYou),
             "heroDefended" => Flag(argument, child, "you", AbilityConditionFact.HeroDefended),
             "heroBasicDefended" => Flag(argument, child, "you", AbilityConditionFact.HeroBasicDefended),

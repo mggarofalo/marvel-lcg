@@ -25,6 +25,12 @@ internal static class AbilityAttachmentExecution
         if (host is null || !DeckTypes.IsInPlay(host.Area.Type)) return AbilityDeckAndRevealResult.Handled;
         foreach (var card in cards.Where(card => Eligible(card, host, context.World)))
         {
+            // An attachment already in play moves onto the named host without leaving play.
+            if (DeckTypes.IsInPlay(card.Area.Type))
+            {
+                AttachmentTransfer.Move(context.World, card, host, context.Expressions.Source.FaceId, context.Events);
+                continue;
+            }
             // rr:attach-to.3.1: an ability naming a specific host replaces the
             // attachment's printed attach-to instruction. It is not a reveal.
             Reveal.Resolve(context.World, context.World.Facts, card, context.World.FirstPlayer,

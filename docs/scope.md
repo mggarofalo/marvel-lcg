@@ -127,8 +127,8 @@ exact pack membership, modular role and the complete seven-copy recipe are requi
 together. A missing face or malformed recipe closes the entire set while preserving
 predecessor products. Standard and Expert scenario slots accept its normal modular
 selection with starter or legal custom player decks. Recommended defaults remain
-scenario-owned. Discovery has nineteen heroes, 39 scenario/mode recipes and fifteen
-encounter sets, thirteen of them modular. The separate Galaxy’s Most Wanted Ronan
+scenario-owned. Discovery has nineteen heroes, 39 scenario/mode recipes and sixteen
+encounter sets, fourteen of them modular. The separate Galaxy’s Most Wanted Ronan
 scenario remains unsupported. Focused evidence is in
 `docs/content/ronan-public-admission.md`; this gate does not establish complete-game,
 fresh-host or native acceptance.
@@ -155,11 +155,13 @@ Groot has candidate public admission for his 29 printed faces in The Galaxy's
 Most Wanted and his exact 40-card starter, obligation and nemesis composition.
 Rocket Raccoon has the same admission for his 30 printed faces. Each hero's two
 identity faces represent one physical card. The rest of that box, including its
-villains, modular sets and campaign, is outside the boundary; admission opens
-the two heroes' faces only. Missing a face or changing a required recipe closes
-that hero alone. Focused evidence is in
+villains, campaign and every modular set except Power Stone, is outside the
+boundary. Power Stone (16149) is admitted as a one-card modular set; Ship Command
+(16142–16148) is authored and withheld. Missing a face or changing a required
+recipe closes that hero, or the Power Stone set, alone. Focused evidence is in
 `docs/content/groot-public-admission.md` and
-`docs/content/rocket-raccoon-public-admission.md`.
+`docs/content/rocket-raccoon-public-admission.md`; the Power Stone and Ship
+Command record is `docs/content/ship-command-power-stone.md`.
 
 Scarlet Witch has candidate public admission for all 32 printed faces and its
 exact 40-card starter, both obligations and nemesis composition. Four extra

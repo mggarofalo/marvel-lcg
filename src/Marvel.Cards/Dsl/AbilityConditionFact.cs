@@ -32,4 +32,6 @@ public enum AbilityConditionFact
     DamageFromAttack,
     /// <summary>The triggering revelation is from the encounter deck or a dealt queue.</summary>
     RevealedFromEncounterDeck,
+    /// <summary>The resolving player is the first player.</summary>
+    IsFirstPlayer,
 }

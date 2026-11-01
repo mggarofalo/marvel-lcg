@@ -71,6 +71,8 @@ internal static class IndirectAttackResolution
             DamagePlacement.ApplyPlaced(
                 world, facts, damage, Steps.AttackInitiated, "Attack", events);
             AttackDamageAccounting.RecordPlacement(world, step.ActivationId, damage);
+            // Equivalent mutant: not recording. No admitted villain attack is indirect.
+            AttackDealtDamageTiming.Record(world, OccurrenceCard.Capture(attacker, facts), damage, occurrence);
             if (damage.Landed)
                 AttackDamageReceipts.Record(world, OccurrenceCard.Capture(attacker, facts), damage);
         }

@@ -84184,6 +84184,28 @@
       ]
     },
     {
+      "id": "setup:encounter-set:power_stone",
+      "kind": "setup",
+      "title": "Power Stone",
+      "fingerprint": "sha256:b9d73d3cc79e239bd3c104cdd771311b352ab732bee21499d85c45f539eb2868",
+      "scope": "encounter-set",
+      "disposition": "outside-core",
+      "obligations": [
+        {
+          "id": "behavior:setup:encounter-set:power_stone:power-stone-setup",
+          "summary": "The Power Stone record supplies one face and one physical encounter card.",
+          "disposition": "outside-core",
+          "reason": "This record requires The Galaxy's Most Wanted Power Stone modular set, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
       "id": "setup:encounter-set:running_interference",
       "kind": "setup",
       "title": "Running Interference",
@@ -84196,6 +84218,28 @@
           "summary": "The Running Interference record supplies four distinct faces and five physical encounter cards.",
           "disposition": "outside-core",
           "reason": "This record requires the Green Goblin scenario pack, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
+      "id": "setup:encounter-set:ship_command",
+      "kind": "setup",
+      "title": "Ship Command",
+      "fingerprint": "sha256:e1432e66efc46966676c09daa18bbc104cad49bf6cdba4af9605d2a99a9a326a",
+      "scope": "encounter-set",
+      "disposition": "outside-core",
+      "obligations": [
+        {
+          "id": "behavior:setup:encounter-set:ship_command:ship-command-setup",
+          "summary": "The Ship Command record supplies seven distinct faces and seven physical encounter cards.",
+          "disposition": "outside-core",
+          "reason": "This record requires The Galaxy's Most Wanted Ship Command modular set, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
           "target": null,
           "implementation": null,
           "work_item": null,

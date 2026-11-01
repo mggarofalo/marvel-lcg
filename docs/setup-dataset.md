@@ -371,8 +371,8 @@ exact pack membership, modular role and the complete seven-copy recipe are requi
 together. A missing face or malformed recipe closes the entire set while preserving
 predecessor products. Standard and Expert scenario slots accept its normal modular
 selection with starter or legal custom player decks. Recommended defaults remain
-scenario-owned. Discovery has nineteen heroes, 39 scenario/mode recipes and fifteen
-encounter sets, thirteen of them modular. The separate Galaxy’s Most Wanted Ronan
+scenario-owned. Discovery has nineteen heroes, 39 scenario/mode recipes and sixteen
+encounter sets, fourteen of them modular. The separate Galaxy’s Most Wanted Ronan
 scenario remains unsupported. Focused evidence is in
 `docs/content/ronan-public-admission.md`; this gate does not establish complete-game,
 fresh-host or native acceptance.

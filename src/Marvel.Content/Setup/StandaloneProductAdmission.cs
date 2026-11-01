@@ -98,6 +98,17 @@ public static class StandaloneProductAdmission
         && setup.HeroNames.Contains("scarlet_witch")
         && ScarletWitchRecipe.Complete(setup.Hero("scarlet_witch"));
 
+    /// <summary>Admits The Galaxy's Most Wanted's one-card Power Stone modular set.</summary>
+    public static bool PowerStone(SetupCatalog setup, CardCatalog cards, IReadOnlySet<string> authored) =>
+        // Ruling 408decdf6cd8c4b5 names Power Stone one of the box's modular encounter sets.
+        PowerStoneFaces.All(face => cards.Has(face) && cards.Pack(face) == "gmw" && authored.Contains(face))
+        && setup.EncounterSetNames.Contains("power_stone")
+        && setup.EncounterRole("power_stone") == EncounterSetRole.Modular
+        && setup.EncounterSet("power_stone").SequenceEqual(PowerStoneFaces);
+
+    /// <summary>Power Stone's faces within The Galaxy's Most Wanted: one copy of 16149.</summary>
+    internal static readonly ImmutableArray<string> PowerStoneFaces = ["16149"];
+
     /// <summary>Admits the complete seven-card Kree Fanatic modular set.</summary>
     public static bool KreeFanatic(SetupCatalog setup, CardCatalog cards, IReadOnlySet<string> authored) =>
         Complete("ron", ["90001", "90002", "90003", "90004", "90005"], cards, authored)

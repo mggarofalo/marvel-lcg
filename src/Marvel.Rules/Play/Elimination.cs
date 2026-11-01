@@ -58,6 +58,7 @@ public static class Elimination
         if (world.FirstPlayer == player && layout.NextPlayer is { } holder)
         {
             world.FirstPlayer = holder;
+            FirstPlayerControl.Follow(world, trigger, events);
         }
 
         // Step 2. "If there are minions engaged with the eliminated player,
@@ -210,14 +211,13 @@ public static class Elimination
             && StateFields.Modified(world, card, "permanent", facts, world.Players) > 0)
         {
             // `.1` and `.2`. A non-attachment permanent is removed from the
-            // game; an attachment resolves its "attach to" text first, and that
-            // text is not modelled.
-            if (EffectiveCards.Kind(card, facts) == CardKind.Attachment)
+            // game; an attachment resolves its "attach to" text first
+            // (rr:permanent.5; ruling 8944f7176577c908). Equivalent mutant: dropping the host
+            // test. Every attachment in play is hosted.
+            if (EffectiveCards.Kind(card, facts) == CardKind.Attachment && card.Area.Host >= 0)
             {
-                throw new RulesNotImplementedException(
-                    $"card {card.ObjectId} is a permanent attachment on an eliminated "
-                    + "player's board, and rr:player-elimination.1 resolves its "
-                    + "'attach to' text, which is not modelled");
+                PermanentAttachments.Resolve(world, world.Cards[card.Area.Host], card, trigger, events);
+                return;
             }
 
             Remove(world, card, trigger, events);

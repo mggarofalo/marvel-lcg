@@ -97,5 +97,6 @@ public static class StepConditions
                 // on its scheduled step name.
                 [ResourceSpentWindow.Condition, PreparationAbilityResolvedOperation.Condition, BasicPowerTiming.HeroAttackInitiated, BasicPowerTiming.HeroThwartInitiated, BasicPowerTiming.HeroUseInitiated, BasicPowerTiming.AllyAttackInitiated, BasicPowerTiming.AllyUseInitiated, DamageDealt, ThreatPlaced, MinionEngagement.Engaged, VillainStepOneTiming.ThreatPlaced, SchemeEnds, BasicAttackEnds, BasicPowerTiming.ThwartEnds,
                     CharacterPowerTiming.ThwartEnds, CharacterPowerTiming.HeroClearedScheme, BoostFaceupOperation.AttackFaceup, CardReadying.Readied,
-                    ExcessDamageTiming.ExcessDamageDealt, ExcessDamageTiming.AttackExcessDamageWouldBeDealt]).ToFrozenSet(StringComparer.Ordinal);
+                    ExcessDamageTiming.ExcessDamageDealt, ExcessDamageTiming.AttackExcessDamageWouldBeDealt,
+                    AttackDealtDamageTiming.AttackDealtDamage]).ToFrozenSet(StringComparer.Ordinal);
 }

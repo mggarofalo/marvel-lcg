@@ -26,7 +26,7 @@ public sealed class ModularEncounterSetTests
             [
                 "running_interference", "power_drain", "a_mess_of_things", "bomb_scare",
                 "masters_of_evil", "under_attack", "legions_of_hydra", "the_doomsday_chair",
-                "hydra_assault", "weapon_master", "hydra_patrol", "goblin_gimmicks", "kree_fanatic"],
+                "hydra_assault", "weapon_master", "hydra_patrol", "goblin_gimmicks", "kree_fanatic", "power_stone"],
             modular);
         foreach (string name in modular)
         {

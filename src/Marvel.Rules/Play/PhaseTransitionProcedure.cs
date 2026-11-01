@@ -38,6 +38,7 @@ internal static class PhaseTransitionProcedure
                 break;
             case Steps.PassFirstPlayerToken:
                 PassFirstPlayerToken(world);
+                FirstPlayerControl.Follow(world, step.What, events);
                 break;
             case Steps.EndVillainPhase:
                 PhaseEnd.EndVillainPhase(world, facts, events, resolveDelayed: !ordered);

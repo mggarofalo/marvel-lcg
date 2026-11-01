@@ -212,7 +212,8 @@ public static class Discard
 
         foreach (var attached in direct)
         {
-            Card(world, attached, trigger, events);
+            if (PermanentAttachments.Modelled(world, host, attached)) PermanentAttachments.Resolve(world, host, attached, trigger, events);
+            else Card(world, attached, trigger, events);
         }
     }
 
@@ -268,12 +269,14 @@ public static class Discard
         World world, State.Card host, IEnumerable<State.Card> descendants)
     {
         if (descendants.FirstOrDefault(attached => StateFields.Modified(
-                world, attached, "permanent", world.Facts, world.Players) > 0)
+                world, attached, "permanent", world.Facts, world.Players) > 0
+                && !PermanentAttachments.Modelled(world, host, attached))
             is { } permanent)
         {
             // `rr:permanent.5` resolves the attachment's attach-to text again
-            // and removes it only if no valid target exists. Preflight the
-            // complete tree so no ordinary sibling moves before this refusal.
+            // and removes it only if no valid target exists. Only a direct
+            // attachment with at most one valid target is modelled (PermanentAttachments).
+            // Preflight the complete tree so no ordinary sibling moves before this refusal.
             throw new RulesNotImplementedException(
                 $"permanent attachment {permanent.ObjectId} lost host "
                 + $"{host.ObjectId}, and rr:permanent.5 is not implemented");

@@ -12,7 +12,34 @@ internal static class AbilityTriggerInstances
             ? recipients.Select(recipient => candidate with { TriggeringAttack = recipient })
             : AbilityExcessDamageInstances.Applies(candidate.Ability.Trigger, occurrence)
                 ? AbilityExcessDamageInstances.For(candidate, occurrence)
-                : Instances(candidate, occurrence);
+                : AttackDealtDamageInstances(world, candidate, occurrence) is { } dealt
+                    ? dealt
+                    : Instances(candidate, occurrence);
+
+    // Each recipient of one attack's damage is its own instance
+    // (rr:triggering-condition.1), sharing the attack's response window
+    // (rr:triggering-condition.2). The occurrence's actor is the attacker.
+    private static IEnumerable<AbilityWindowAdmission.Candidate>? AttackDealtDamageInstances(
+        Marvel.Rules.State.World world, AbilityWindowAdmission.Candidate candidate, Occurrence occurrence)
+    {
+        var trigger = candidate.Ability.Trigger;
+        if (trigger.Event != AttackDealtDamageTiming.AttackDealtDamage) return null;
+        return occurrence.AttackDealtDamage.Select(recipient =>
+            candidate with { TriggeringAttack = Current(world, candidate.Card, recipient) });
+    }
+
+    // rr:villain-defeat.3.1: a villain stage the attack defeated is succeeded by a new stage
+    // that "is considered the same character" for card abilities, and rr:villain-defeat.3.2
+    // carries its attachments over, so the recipient is that stage now.
+    private static Marvel.Rules.State.Attacked Current(
+        Marvel.Rules.State.World world, Marvel.Rules.State.Card source, Marvel.Rules.State.Attacked recipient)
+    {
+        var current = new AbilityCardReference(world.Cards[recipient.Card], recipient.Area, recipient.Incarnation)
+            .Resolve(world, source, "attacked character");
+        return current is null || current.ObjectId == recipient.Card ? recipient
+            : Marvel.Rules.State.Attacked.Capture(current, world.Facts, recipient.DamageTaken)
+                with { DamageDealt = recipient.DamageDealt };
+    }
 
     private static IEnumerable<AbilityWindowAdmission.Candidate> Instances(
         AbilityWindowAdmission.Candidate candidate, Occurrence occurrence)

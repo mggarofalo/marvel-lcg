@@ -14,6 +14,10 @@ public sealed record Attacked(int Card, int Incarnation, OccurrenceCard Facts, l
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public long ExcessDamage { get; init; }
 
+    /// <summary>Damage one attack dealt this incarnation, whether or not it was taken.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public long DamageDealt { get; init; }
+
     /// <summary>The original public play area, retained across stage departure.</summary>
     public int Area { get; init; } = -1;
 

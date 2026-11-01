@@ -14,7 +14,10 @@ internal static class CardEntryState
         {
             card.TransferLinkedOwnership(card.Area.PlayArea.Player);
         }
-        if (card.Area.PlayArea.IsPlayers)
+        // A card the first player controls by its own text (the Milano, 16142) is an
+        // encounter card with an encounter back; the scenario keeps owning it
+        // (rr:ownership-and-control; rr:ownership-and-control.2.2 names player card backs).
+        if (card.Area.PlayArea.IsPlayers && world.SetupAbilities.SetupController(world, card) is null)
         {
             CardControlTransfer.TakeScenarioCardOwnership(
                 facts, card, card.Area.PlayArea.Player);

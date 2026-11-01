@@ -29,8 +29,9 @@ public sealed class GreenGoblinAdmissionTests
         Assert.All(Scenarios, key => Assert.Contains(key, result.Setup.CampaignNames));
         Assert.All(Modulars, key => Assert.Contains(key, result.Setup.EncounterSetNames));
         Assert.Contains("ms_marvel", result.Setup.HeroNames);
-        // Groot and Rocket Raccoon (16001a–16057) are the only open parts of The Galaxy's Most Wanted.
-        Assert.DoesNotContain(result.Playable, face => Cards.Pack(face) == "gmw" && string.CompareOrdinal(face, "16058") >= 0);
+        // Groot, Rocket Raccoon (16001a–16057) and the Power Stone modular set (16149) are the
+        // only open parts of The Galaxy's Most Wanted.
+        Assert.DoesNotContain(result.Playable, face => Cards.Pack(face) == "gmw" && string.CompareOrdinal(face, "16058") >= 0 && face != "16149");
     }
 
     [Theory]

@@ -42,6 +42,8 @@ public sealed class RuntimeProductAdmission
         bool groot = StandaloneProductAdmission.Groot(setup, cards, authored);
         bool rocket = StandaloneProductAdmission.RocketRaccoon(setup, cards, authored);
         bool scarletWitch = StandaloneProductAdmission.ScarletWitch(setup, cards, authored);
+        bool powerStone = StandaloneProductAdmission.PowerStone(setup, cards, authored);
+        if (!powerStone) setup = setup.WithoutEncounterSet("power_stone");
         bool kreeFanatic = StandaloneProductAdmission.KreeFanatic(setup, cards, authored);
         if (!kreeFanatic) setup = setup.WithoutEncounterSet("kree_fanatic");
         bool Accepted(string pack) => pack switch
@@ -64,10 +66,12 @@ public sealed class RuntimeProductAdmission
             _ => false,
         };
         // The Galaxy's Most Wanted is admitted in parts: Groot's and Rocket Raccoon's
-        // faces are products of their own while the rest of the box stays closed.
+        // faces and the Power Stone modular set are products of their own while the
+        // rest of the box stays closed.
         var parts = ImmutableHashSet<string>.Empty.WithComparer(StringComparer.Ordinal)
             .Union(groot ? GrootRecipe.Faces : [])
-            .Union(rocket ? RocketRaccoonRecipe.Faces : []);
+            .Union(rocket ? RocketRaccoonRecipe.Faces : [])
+            .Union(powerStone ? StandaloneProductAdmission.PowerStoneFaces : []);
         bool AcceptedFace(string face) => Accepted(cards.Pack(face)) || parts.Contains(face);
         var playable = authored.Where(face => cards.Has(face) && AcceptedFace(face))
             .ToImmutableHashSet(StringComparer.Ordinal);

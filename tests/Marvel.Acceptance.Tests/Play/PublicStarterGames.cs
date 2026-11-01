@@ -14,13 +14,16 @@ namespace Marvel.Acceptance.Tests.Play;
 internal static class PublicStarterGames
 {
     /// <summary>Plays <paramref name="hero"/>'s published starter, with <paramref name="partner"/> when multiplayer.</summary>
-    /// <remarks><paramref name="prefer"/> may answer a prompt before the policy does; the replay receives the same answer.</remarks>
+    /// <remarks>
+    /// <paramref name="prefer"/> may answer a prompt before the policy does; the replay receives the same answer.
+    /// <paramref name="modulars"/>, when given, replaces the scenario's recommended modular sets.
+    /// </remarks>
     internal static SeatParticipation Play(string hero, string scenario, bool multiplayer, uint seed, ITestOutputHelper output,
-        Func<Game, Prompt, Decision?>? prefer = null, string partner = "captain_marvel")
+        Func<Game, Prompt, Decision?>? prefer = null, string partner = "captain_marvel", IReadOnlyList<string>? modulars = null)
     {
         var factory = DatasetGameFactory.Load(RepositoryPaths.Root);
         string[] heroes = multiplayer ? [hero, partner] : [hero];
-        var specification = new GameSpecification(scenario, heroes, null, seed);
+        var specification = new GameSpecification(scenario, heroes, modulars, seed);
         var starter = factory.DiscoverDecks().Heroes.Single(item => item.Key == hero).Starter;
         Assert.Equal(40, starter.Count);
         Assert.True(factory.AssessDeck(hero, starter).IsValid);

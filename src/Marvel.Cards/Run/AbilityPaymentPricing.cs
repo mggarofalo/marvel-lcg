@@ -80,6 +80,20 @@ internal static class AbilityPaymentPricing
         World world, Card card, int player, AbilityCost.Sequence sequence,
         IResourceCardAbilities resourceAbilities)
     {
+        // rr:exhausted.1: a named card the same cost exhausts cannot also exhaust to generate
+        // a resource (Rogue Vessel exhausts the Milano, whose resource ability exhausts it).
+        var exhausted = sequence.Costs.OfType<AbilityCost.ExhaustTitled>()
+            .Select(named => NamedAbilityCost.Target(world, player, named.Title))
+            .OfType<Card>().Select(target => target.ObjectId).ToHashSet();
+        var price = CombinedSequencePrice(world, card, player, sequence, resourceAbilities);
+        return price is null || exhausted.Count == 0 ? price
+            : price with { Sources = [.. price.Generators.Where(source => !exhausted.Contains(source.Effect))] };
+    }
+
+    private static CostOption? CombinedSequencePrice(
+        World world, Card card, int player, AbilityCost.Sequence sequence,
+        IResourceCardAbilities resourceAbilities)
+    {
         var prices = sequence.Costs
             .Select(step => Price(world, card, player, step, resourceAbilities))
             .Where(price => price is not null).Cast<CostOption>().ToList();
