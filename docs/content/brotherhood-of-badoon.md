@@ -83,7 +83,11 @@ for these cards; the rulings are Hall of Heroes entries in `datasets/rulings/`.
 No engine behaviour changes. Every card is expressed with existing vocabulary.
 `RuntimeProductAdmission` gains the Band of Badoon part of the box, and the Galaxy's
 Most Wanted parts move into one helper. Existing games, saves and prompts are
-unchanged, so the replay identity stays `engine-replay-v36`.
+unchanged, so the replay identity stays `engine-replay-v36`. A differential of
+140 complete non-gmw games (Rhino, Klaw Expert, Ultron, Risky Business,
+Crossbones, Wrecking Crew Standard and Mutagen Formula; one and two players;
+seeds 1–10) hashing every prompt and state digest is identical on the
+predecessor revision and this packet.
 
 ## Evidence
 
