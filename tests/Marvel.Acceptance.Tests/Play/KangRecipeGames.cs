@@ -14,10 +14,6 @@ internal static class KangRecipeGames
 {
     internal static readonly string[] Heroes = ["spider_man", "captain_marvel", "she_hulk", "iron_man"];
 
-    /// <summary>The policy's answer, after the insert's advice while the table is separated.</summary>
-    internal static Decision Answer(CoreGamePolicy policy, Game game) =>
-        KangInsertAdvice.Prefer(game, game.Pending!) ?? policy.Answer(game);
-
     internal static KangGameRecord Play(string scenario, string modular, int players, uint seed)
     {
         var specification = new GameSpecification(scenario, Heroes.Take(players).ToArray(), [modular], seed);
@@ -30,7 +26,7 @@ internal static class KangRecipeGames
         while (game.Pending is { } prompt)
         {
             Assert.True(policy.Answered < 3000, $"{scenario}/{modular}/{players}/{seed}: {prompt.Label}");
-            var answer = Answer(policy, game);
+            var answer = KangInsertAdvice.Answer(policy, game);
             joins += prompt.Trigger == KangJoinOperation.Join ? 1 : 0;
             Resolution result;
             try { result = game.Resolve(answer); }

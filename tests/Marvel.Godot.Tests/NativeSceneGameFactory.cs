@@ -23,6 +23,7 @@ internal sealed class NativeSceneGameFactory(string contract) : IGameFactory, IS
     public SetupChoices DiscoverSetup() => discovery.DiscoverSetup();
     private Game? prepared;
     internal Game PreparedGame => prepared!;
+    internal KangRecipeFactory Kang { get; } = new();
     internal Exception? Failure { get; private set; }
 
     internal Decision PreludeAnswer() => prepared!.Pending!.Cancellable
@@ -67,6 +68,12 @@ internal sealed class NativeSceneGameFactory(string contract) : IGameFactory, IS
             return opened;
         }
         if (contract == "dense-table") return DenseTable();
+        if (KangNativeScene.Handles(contract))
+        {
+            OpenedGame opened = KangNativeScene.Create(contract, specification, Kang);
+            prepared = opened.Game;
+            return opened;
+        }
         bool wakanda = contract.StartsWith("wakanda", StringComparison.Ordinal);
         string hero = Hero();
         Assert.Equal(hero, Assert.Single(specification.Heroes));

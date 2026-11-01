@@ -7,7 +7,7 @@ namespace Marvel.Godot;
 internal static class CausalCardReferences
 {
     internal static void Add(Control surface, Rect2 bounds, IEnumerable<BoardCardPresentation> sources,
-        BoardRenderResult result, InterfaceScale scale)
+        BoardRenderResult result, InterfaceScale scale, bool seam = false)
     {
         BoardCardPresentation[] cards = [.. sources.Where(card => !card.Concealed).DistinctBy(card => card.TargetId)];
         if (cards.Length == 0) return;
@@ -26,10 +26,24 @@ internal static class CausalCardReferences
             CardControl reference = CausalReferenceTile.Create(card, 168, scale);
             reference.Name = $"CausalReference{card.TargetId}";
             reference.SetMeta("causal_reference", true);
+            if (seam) SeamStyle(reference);
             row.AddChild(reference);
             // Inspection routes through the original descriptor. It is not registered as another action target.
             result.TrackPreviewOnly(reference, card);
         }
+    }
+
+    // A column table's seam is a thin band between the mat and the tableau. A reference there
+    // reads as part of the seam's chrome rather than a sheet of card paper; the choice is ours.
+    private static void SeamStyle(CardControl reference)
+    {
+        using var style = new StyleBoxFlat { BgColor = ClientTheme.ToGodot(VisualSystem.Palette.RaisedSurface),
+            BorderColor = ClientTheme.ToGodot(VisualSystem.Palette.Outline), BorderWidthLeft = 3,
+            ContentMarginLeft = 8, ContentMarginRight = 4, ContentMarginTop = 4, ContentMarginBottom = 4 };
+        reference.AddThemeStyleboxOverride("panel", style);
+        reference.SetMeta("seam_reference", true);
+        if (reference.FindChild("ReferenceTitle", true, false) is Label title)
+            title.AddThemeColorOverride("font_color", ClientTheme.ToGodot(VisualSystem.Palette.Text));
     }
 }
 

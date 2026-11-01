@@ -2,7 +2,7 @@ using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
 
-namespace Marvel.Acceptance.Tests.Play;
+namespace Marvel.Tests;
 
 /// <summary>
 /// The insert's tactical advice, answered before <c>CoreGamePolicy</c> while the table is separated.
@@ -15,6 +15,9 @@ namespace Marvel.Acceptance.Tests.Play;
 /// </remarks>
 internal static class KangInsertAdvice
 {
+    /// <summary>The policy's answer, after the insert's advice while the table is separated.</summary>
+    internal static Decision Answer(CoreGamePolicy policy, Game game) => Prefer(game, game.Pending!) ?? policy.Answer(game);
+
     /// <summary>A turn answer that follows the advice, or null to let the research policy answer.</summary>
     internal static Decision? Prefer(Game game, Prompt prompt)
     {

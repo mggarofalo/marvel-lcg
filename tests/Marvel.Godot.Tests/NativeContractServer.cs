@@ -17,6 +17,8 @@ internal sealed class NativeContractServer : IAsyncDisposable
     private readonly string contract;
     private readonly string directory;
     private readonly Task serving;
+    private readonly KangNativeCheckpoints kang;
+    private string? capability;
     private bool faultUsed;
 
     internal NativeContractServer(string contract, string directory)
@@ -24,6 +26,7 @@ internal sealed class NativeContractServer : IAsyncDisposable
         this.contract = contract;
         this.directory = directory;
         factory = new NativeSceneGameFactory(contract);
+        kang = new KangNativeCheckpoints(contract, factory.Kang);
         host = new EngineHost(factory);
         listener.Start();
         Endpoint = $"tcp://127.0.0.1:{((IPEndPoint)listener.LocalEndpoint).Port}";
@@ -38,6 +41,7 @@ internal sealed class NativeContractServer : IAsyncDisposable
     internal Task Completion => serving;
     internal Exception? SceneFailure => factory.Failure;
     internal Marvel.Rules.Play.Game PreparedGame => factory.PreparedGame;
+    internal IReadOnlyList<string> KangCheckpoints => kang.Reached;
 
     private async Task ServeAsync()
     {
@@ -84,9 +88,17 @@ internal sealed class NativeContractServer : IAsyncDisposable
     private EngineResponse AuthoritativeResponse(EngineRequest request)
     {
         Requests.Add(request);
+        bool journey = KangNativeScene.Handles(contract);
+        if (journey && request.Operation == EngineProtocol.Sync) kang.Advance(host, Responses[^1], capability!);
         EngineResponse response = host.Exchange(request);
         if (contract == "repeated-targets" && request.Operation == EngineProtocol.Open)
             response = PrepareExplosion(response);
+        if (journey && request.Operation == EngineProtocol.Open)
+        {
+            capability = response.Capability;
+            response = kang.Advance(host, response, capability!) with
+                { RequestId = response.RequestId, Capability = response.Capability, Invitations = response.Invitations };
+        }
         Responses.Add(response);
         return response;
     }

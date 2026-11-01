@@ -202,6 +202,12 @@ public sealed class PresentationBoundaryTests
             "Marvel.View.EventActivityKind",
             // Native read-only witnesses locate cards in authorized area descriptors.
             "Marvel.View.GameAreaDescriptor",
+            // The separated Kang table arranges published game-area facts and addresses notes by engine kind.
+            "Marvel.Rules.Play.KangNoteKind",
+            "Marvel.View.KangDepartureDescriptor",
+            "Marvel.View.KangNoteDescriptor",
+            "Marvel.View.KangTableDescriptor",
+            "Marvel.View.VillainPhaseFocusDescriptor",
             // Native pile witnesses read View-owned public ownership and assert concealed locations stay absent.
             "Marvel.View.InvocationDeckDescriptor",
             "Marvel.View.CardLocationDescriptor",

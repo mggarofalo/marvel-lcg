@@ -2,8 +2,9 @@
 
 MARVEL-568 packet P6, branch `feat/kang-recipe` from `75c52fdc`. The Once and
 Future Kang has engine- and server-level evidence through its real setup path.
-Public admission is withheld until the client can show separated game areas;
-[the client specification](#p8-client-specification) below defines that packet.
+The Godot client renders the separated table
+([P9](#p9-godot-split-table)). Public admission is withheld until the owner
+approves that interaction in MARVEL-905.
 
 ## Recipes
 
@@ -168,12 +169,11 @@ set, so no Kang game reaches it.
 ## Admission decision
 
 Kang stays out of the public catalog. Its table splits into per-player game
-areas, each with its own Kang and main scheme, beside a central 2B. The Godot
-client renders one villain area and one main scheme, and has no presentation
-for game areas. Playing Kang there would hide which Kang threatens whom,
-which cards a player can target, and why. The skill reserves owner review for
-"multiple villains or alternating villains sharing a location the heroes must
-protect", which this is.
+areas, each with its own Kang and main scheme, beside a central 2B. The client
+must show which Kang threatens whom, which cards a player can target, and why.
+The skill reserves owner review for "multiple villains or alternating villains
+sharing a location the heroes must protect", which this is. The Godot
+separated table ([P9](#p9-godot-split-table)) awaits that review in MARVEL-905.
 
 ## P8 client specification
 
@@ -258,5 +258,65 @@ responses cross the strict codec and pass `ClientResponseValidation.HasCompleteB
 their game-area and Kang facts are equal, each seat reads only its own hand, and no
 fact names a card in another seat's hand.
 
-The Godot packet (P9) renders these, with native evidence and an owner review
-item for the new separated-table interaction.
+## P9 Godot split table
+
+The Godot client renders these facts. `GameAreaTableProjection` arranges them
+for the inspected seat. It reads typed fields only and never card text.
+`GameAreaTableRenderer` draws the result. Kang stays out of the public catalog
+until owner review MARVEL-905 approves the interaction.
+
+| Shown | From |
+|---|---|
+| A central column with stage 2B and its tokens note | `KangTableDescriptor.CentralSchemes`, the `CentralTokensWaitFor4A` note anchored to that card |
+| One column per game area, in engine order, headed by its label | `WorldDescriptor.GameAreas` (non-central), `GameAreaDescriptor.Label` |
+| Each column's Kang (II), stage 3B and side schemes | `GameAreaDescriptor.Villains`, `MainSchemes`; `BoardCardPresentation.GameArea` (from `CardLocationDescriptor.GameArea`) for side schemes |
+| YOUR AREA | `GameAreaDescriptor.PlayAreas` contains the inspected seat |
+| ACTING NOW, a heavier border, and the acting sentence | `KangTableDescriptor.Acting.GameArea`, `Acting.Summary` |
+| RETAINED | `GameAreaDescriptor.Retained` |
+| LEAVES AT PHASE END and the departure sentence | `KangDepartureDescriptor.SourceGameArea`, `Summary` |
+| OUT OF REACH, dimmed cards (with their attachments) and the reason | `PlayerDescriptor.OutOfReach` against every card the column places, side schemes included; the `AreaIsolation` note |
+| "Completing this stage does not lose the game" under each 3B | the `CompletionStoresDominion` note anchored to that scheme |
+| Progress, including how the table reunites and the stored-Dominion count | `KangTableDescriptor.Progress`, worded by View's `KangTableProjection` |
+| SHARED BY ALL AREAS above the encounter piles, with the engine's sentence as its tooltip | `KangTableDescriptor.EncounterDeck`, `EncounterDiscard`, the `SharedEncounterDeck` note |
+| The separated-table rules toggle | every note with no card anchor |
+
+A column's explanation reads, in order: why the area is out of reach, what is
+acting, who departs, then the notes anchored to its schemes. Godot words no
+rule consequence of its own.
+
+The marker words, the column layout and the dimming are our choices.
+`GameAreaColumnLayout` measures the heading and markers first and never clips
+them; the cards start below them with room for activity badges, keep a minimum
+height above a strip reserved for attachments, and the explanation takes what
+remains in whole lines that scroll. The heading's tooltip carries the full
+explanation. On a column table the seam below the mat holds the causal
+references, the current situation and, above the source-tableau column, the
+activity line; the source tableau starts below the seam. A Kang
+table that is not separated (stage 1, or stage 3 after the reunion) keeps the
+single villain mat and adds only the progress line. A game without Kang facts
+or a split has no game-area presentation.
+
+The native contracts `kang-2`, `kang-3` and `kang-4` deal each recipe through
+`KangRecipeFactory` behind the native contract host. `KangNativeScene` opens
+the game once every player has their own game area. It replays a policy
+prelude inside the factory, so the game is a prepared component, not a
+transcript.
+
+In `kang-2` (Standard, Temporal, seed 1), pressing Synchronize advances the
+game. Before serving each request, the host answers prompts with the
+insert-advised policy (`KangNativeCheckpoints`) until the next checkpoint: the
+acting step, a pending departure, and the join prompt. The client answers the
+join prompt itself, by choosing the named destination and its commitment. The
+host then advances to the reunion against Kang (III).
+
+`kang-3` (Master of Time, seed 15) checks the three-area split. `kang-4`
+(Temporal, seed 4, at 150% reading scale) checks the four-area split and a
+retained area. Each split asserts the rendered columns, labels, markers,
+dimming, central stage, shared piles and progress text, and opens and closes
+the rules toggle; the later `kang-2` steps assert their own markers and
+sentences. Every capture
+(`native_kang_layout.gd`) asserts that headings, markers, the progress header
+and the shared caption show every line, and that no placed card, encounter
+stack or attachment strip covers a heading, a marker or a column's
+explanation. Every other native contract asserts that no game-area
+presentation appears.

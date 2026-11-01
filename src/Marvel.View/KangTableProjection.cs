@@ -51,7 +51,14 @@ internal static class KangTableProjection
             + (area is null ? "." : $", in {area}."));
     }
 
-    private static string Progress(KangTableFacts facts) => facts.Stage switch
+    private static string Progress(KangTableFacts facts) => facts.StoredDominions switch
+    {
+        0 => Stage(facts),
+        1 => $"{Stage(facts)} 1 Kang's Dominion is stored under stage 4A.",
+        _ => $"{Stage(facts)} {facts.StoredDominions.ToString(CultureInfo.InvariantCulture)} Kang's Dominions are stored under stage 4A.",
+    };
+
+    private static string Stage(KangTableFacts facts) => facts.Stage switch
     {
         1 when facts.PendingSplit is not null =>
             "Kang (I) is defeated. At the end of the phase each player forms their own game area against a Kang (II).",

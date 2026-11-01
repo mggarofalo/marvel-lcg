@@ -27,6 +27,15 @@ public sealed record BoardPresentation(IReadOnlyList<BoardAreaPresentation> Area
     /// <summary>Explicit visibility-reviewed connections supplied by the snapshot.</summary>
     public IReadOnlyList<TableRelationshipDescriptor> Relationships { get; init; } = [];
 
+    /// <summary>The play-area groupings of a split scenario, copied from the snapshot.</summary>
+    public IReadOnlyList<GameAreaDescriptor> GameAreas { get; init; } = [];
+
+    /// <summary>The Once and Future Kang's public table facts, or null in any other game.</summary>
+    public KangTableDescriptor? Kang { get; init; }
+
+    /// <summary>Public seat facts in seat order, including each seat's game area and out-of-reach cards.</summary>
+    public IReadOnlyList<PlayerDescriptor> Players { get; init; } = [];
+
     /// <summary>The public count of encounter cards waiting in this player's dealt area.</summary>
     public int PendingEncounterCount(int seat) => Areas
         .Where(area => area.Seat == seat && area.Zone == "DealtEncounterCardsDeck")
@@ -63,6 +72,9 @@ public sealed record BoardPresentation(IReadOnlyList<BoardAreaPresentation> Area
             Table = world.Table,
             Relationships = [.. world.Relationships],
             EncounterGroups = world.EncounterGroups.Select(group => group with { Stages = group.Stages.ToArray() }).ToArray(),
+            GameAreas = [.. world.GameAreas],
+            Kang = world.Kang,
+            Players = [.. world.Players],
         };
     }
 

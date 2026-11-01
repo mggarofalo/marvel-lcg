@@ -70,4 +70,7 @@ public sealed record BoardCardPresentation(
 
     /// <summary>Visible status cards hosted by this card, rendered on its face.</summary>
     public IReadOnlyList<string> Statuses { get; init; } = [];
+
+    /// <summary>The card's game area from its location, or null for central 2B and cards in none.</summary>
+    public int? GameArea { get; init; }
 }

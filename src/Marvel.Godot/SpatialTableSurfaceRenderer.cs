@@ -63,6 +63,7 @@ internal static class SpatialTableSurfaceRenderer
             HasSourceTableau: CardSourceGroups.Controlled(board.Areas, seat).Length > 0)
         {
             HasEncounterGroups = board.EncounterGroups.Count > 0,
+            HasGameAreas = GameAreaTableProjection.From(board, seat)?.Separated == true,
             HasAllies = board.Areas.Any(area => area.Zone == "AlliesArea" && area.Seat == seat && area.Cards.Count > 0),
         };
 
@@ -149,12 +150,13 @@ internal static class SpatialTableSurfaceRenderer
             TableCanvasReflow.AnchorBottom(surface, stage);
             result.RegisterMulliganStage(stage);
         }
-        objects.RenderScenario(scenario, board.EncounterGroups);
+        BoardAreaPresentation[] separated = RenderScenarioTable(objects, surface, geometry, board, scenario, player,
+            selection.ExpandedSeat);
         objects.RenderRevealing(board.Areas, Context(main, prompt));
         objects.RenderPlayer(player);
         PendingEncounterIndicator.Add(surface, geometry.PendingEncounters,
             board.PendingEncounterCount(selection.ExpandedSeat), selection.ExpandedSeat);
-        objects.RenderHosted([.. scenario.Concat(player)]);
+        objects.RenderHosted([.. scenario.Concat(player).Concat(separated)]);
         int handSeat = prompt?.Player ?? selection.ExpandedSeat;
         objects.RenderHand(board.Areas.FirstOrDefault(area =>
             area.Zone == "HandsArea" && area.Seat == handSeat));
@@ -254,6 +256,30 @@ internal static class SpatialTableSurfaceRenderer
         viewport.AddChild(seats);
         surface.AddChild(viewport);
     }
+
+    // A separated table replaces the single villain mat with game-area columns; it returns the
+    // other seats' areas whose attachments travel with their placed villains and schemes. The columns
+    // reserve room for exactly the attachments RenderHosted hangs from those areas.
+    private static BoardAreaPresentation[] RenderScenarioTable(SpatialTableObjectRenderer objects, Control surface,
+        AstraTableGeometry geometry, BoardPresentation board, BoardAreaPresentation[] scenario,
+        BoardAreaPresentation[] player, int seat)
+    {
+        GameAreaTable? areas = GameAreaTableProjection.From(board, seat);
+        if (areas is { Separated: true })
+        {
+            BoardAreaPresentation[] hosts = GameAreaHosts(board, seat);
+            objects.RenderGameAreas(board, areas, [.. scenario, .. player, .. hosts]);
+            return hosts;
+        }
+        objects.RenderScenario(scenario, board.EncounterGroups);
+        if (areas is not null) GameAreaTableChrome.AddBanner(surface, geometry, areas);
+        return [];
+    }
+
+    // Another seat's game-area villains and schemes sit in its lane; their attachments travel with them.
+    private static BoardAreaPresentation[] GameAreaHosts(BoardPresentation board, int seat) => [.. board.Areas
+        .Where(area => area.Seat >= 0 && area.Seat != seat && area.Host < 0
+            && (area.Zone is "VillainArea" or "MainSchemesArea" || SpatialTableZones.IsEncounterSupport(area)))];
 
     private static BoardAreaPresentation[] Lane(BoardPresentation board, string key) => [.. board.Lanes
         .Where(lane => lane.Key == key)

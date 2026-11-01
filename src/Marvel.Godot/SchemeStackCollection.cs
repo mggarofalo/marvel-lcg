@@ -17,7 +17,7 @@ internal static class SchemeStackCollection
             ? cards.Any(card => card.Kind != "ENVIRONMENT") ? "SIDE SCHEMES & ENVIRONMENTS" : "ENVIRONMENTS"
             : "SIDE SCHEMES";
         panel.AddChild(new Label { Text = $"{caption} · {cards.Length}", ThemeTypeVariation = GodotThemeVariations.Caption,
-            MouseFilter = Control.MouseFilterEnum.Ignore });
+            AutowrapMode = TextServer.AutowrapMode.WordSmart, MouseFilter = Control.MouseFilterEnum.Ignore });
         var scroll = new ScrollContainer { Name = "ContinuousSideSchemesArea", FollowFocus = true,
             SizeFlagsVertical = Control.SizeFlags.ExpandFill, HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled,
             VerticalScrollMode = ScrollContainer.ScrollMode.Auto };
@@ -75,7 +75,7 @@ internal static class SchemeStackCollection
         }
         Callable.From(Arrange).CallDeferred();
         if (bottom > bounds.Size.Y - 26) panel.AddChild(new Label { Name = "ContinuousOverflow", Text = "Scroll to see all ↓",
-            ThemeTypeVariation = GodotThemeVariations.Caption, MouseFilter = Control.MouseFilterEnum.Ignore });
+            ThemeTypeVariation = GodotThemeVariations.Caption, AutowrapMode = TextServer.AutowrapMode.WordSmart, MouseFilter = Control.MouseFilterEnum.Ignore });
         return controls;
     }
 }

@@ -16,15 +16,7 @@ func _run() -> void:
     if not await _open_setup(load("res://Main.tscn") as PackedScene): return
     print("NATIVE_CONTRACT_STAGE setup " + contract)
     await _configure_seeded_game()
-    if contract.begins_with("wakanda"):
-        _select_named_option(_node("Setup/Selections/Fields/Grid/Hero"), "Black Panther")
-    elif contract == "variable-payment":
-        _select_named_option(_node("Setup/Selections/Fields/Grid/Hero"), "Captain Marvel")
-    elif contract in ["dense-table", "card-look"]:
-        _select_named_option(_node("Setup/Selections/Fields/Grid/Hero"), "Iron Man")
-    elif contract in ["heimdall-order", "lightning-payment"]:
-        # Fixture configuration only; all subsequent game decisions use viewport input.
-        _select_named_option(_node("Setup/Selections/Fields/Grid/Hero"), "Thor")
+    _select_contract_heroes()
     if not await _pointer_activate(_button_named("Start game")): return
     witness.Bind(main)
     ui = preload("res://smoke/automation/ui_driver.gd").new(main, render_viewport, _fail)
@@ -32,6 +24,7 @@ func _run() -> void:
         _fail("prepared scene did not become actionable: " + _visible_text(main))
         return
     print("NATIVE_CONTRACT_STAGE ready " + contract)
+    if not _has_no_game_area_presentation(): return
     var passed := false
     match contract:
         "beat-cop-move", "beat-cop-damage": passed = await preload("res://smoke/native_beat_cop_contract.gd").run(self)
@@ -54,6 +47,7 @@ func _run() -> void:
         "dense-table": passed = await preload("res://smoke/native_scale_checkpoint.gd").verify(self, "dense-table")
         "card-look": passed = await preload("res://smoke/native_look_contract.gd").run(self)
         "resource-declaration": passed = await preload("res://smoke/native_declaration_contract.gd").run(self)
+        "kang-2", "kang-3", "kang-4": passed = await preload("res://smoke/native_kang_contract.gd").run(self)
         _: _fail("unknown native contract: " + contract)
     if not passed:
         _fail("native contract did not satisfy its interaction assertions: " + contract)
@@ -62,7 +56,33 @@ func _run() -> void:
     print("NATIVE_CONTRACT_OK " + contract)
     quit(0)
 
+# Fixture configuration only; all subsequent game decisions use viewport input.
+func _select_contract_heroes() -> void:
+    if contract.begins_with("wakanda"):
+        _select_named_option(_node("Setup/Selections/Fields/Grid/Hero"), "Black Panther")
+    elif contract == "variable-payment":
+        _select_named_option(_node("Setup/Selections/Fields/Grid/Hero"), "Captain Marvel")
+    elif contract in ["dense-table", "card-look"]:
+        _select_named_option(_node("Setup/Selections/Fields/Grid/Hero"), "Iron Man")
+    elif contract in ["heimdall-order", "lightning-payment"]:
+        _select_named_option(_node("Setup/Selections/Fields/Grid/Hero"), "Thor")
+    elif contract.begins_with("kang-"):
+        # The test host deals Kang for these seats.
+        var seats := ["Captain Marvel", "She-Hulk", "Iron Man"]
+        var fields := ["Setup/Selections/Fields/Grid/SecondHero", "Setup/Selections/Fields/Grid/HeroSeat2", "Setup/Selections/Fields/Grid/HeroSeat3"]
+        for seat in range(int(contract.substr(5)) - 1): _select_named_option(_node(fields[seat]), seats[seat])
+
+# Every other game keeps the single villain mat: no game-area columns or Kang progress.
+func _has_no_game_area_presentation() -> bool:
+    if contract.begins_with("kang-"): return true
+    for name in ["KangProgress", "GameAreaCentral", "SharedEncounterNote", "SeparatedTableRules"]:
+        if main.find_child(name, true, false) != null:
+            _fail("a non-Kang table shows game-area presentation: " + name)
+            return false
+    return true
+
 func _scene_ready() -> bool:
+    if contract.begins_with("kang-"): return witness.Revision() == 0 and witness.Outcome() == "Unfinished"
     if not witness.CanResolve(): return false
     if contract == "dense-table": return true
     if contract == "heimdall-order": return witness.DecisionKind() == "Response"

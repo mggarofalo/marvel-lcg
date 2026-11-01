@@ -195,6 +195,50 @@ public sealed class SplitTableProjectionTests
             Present(new PlayAreaDetached(-1, 0) { Members = [0, 1, 2] }));
     }
 
+    [Theory]
+    [InlineData(0, "")]
+    [InlineData(1, " 1 Kang's Dominion is stored under stage 4A.")]
+    [InlineData(2, " 2 Kang's Dominions are stored under stage 4A.")]
+    public void ProgressCountsTheDominionsStoredUnderStageFourA(int stored, string suffix)
+    {
+        // 11009b–11012b: "place 1 set-aside Kang's Dominion facedown under stage 4A". The count is public.
+        var (world, _, _, _) = Separated();
+        // Stage 4A waits in the main scheme deck; each Dominion moves there from the set-aside area.
+        var stageFour = world.CreateCard("11013a,11013b", world.AreaOf(DeckType.MainSchemesDeck));
+        var beneath = world.AreaOf(DeckType.BeneathCardsPile, PlayArea.Villains, stageFour.ObjectId);
+        for (int copy = 0; copy < stored; copy++)
+            World.MoveToTop(world.CreateCard("11023", world.AreaOf(DeckType.AsideDeck)), beneath);
+
+        var kang = WorldProjection.For(world, null, [], new PermissiveVisibilityPolicy().Authorize(null, 2)).World.Kang!;
+
+        Assert.Equal(stored, kang.StoredDominions);
+        Assert.Equal("2 Kang (II) remain. A game area's group joins another when its Kang (II) is defeated or "
+            + "completes his stage; when no game area remains, the table reunites at stage 4A against Kang (III)."
+            + suffix, kang.Progress);
+    }
+
+    [Fact]
+    public void TheBoardPresentationCarriesTheSplitFactsAndEachCardsGameArea()
+    {
+        var (world, kangs, schemes, central) = Separated();
+        var visible = WorldProjection.For(world, null, [], new RestrictedVisibilityPolicy(0).Authorize(null, 2)).World;
+
+        var board = BoardPresentation.From(visible);
+
+        Assert.Equal(visible.GameAreas, board.GameAreas);
+        Assert.Same(visible.Kang, board.Kang);
+        Assert.Equal(visible.Players, board.Players);
+        var cards = board.Areas.SelectMany(area => area.Cards).Where(card => card.TargetId is not null)
+            .ToDictionary(card => card.TargetId!.Value);
+        for (int seat = 0; seat < 2; seat++)
+        {
+            int? area = world.GameAreaOf(PlayArea.Of(seat))!.Id;
+            Assert.Equal(area, cards[kangs[seat].ObjectId].GameArea);
+            Assert.Equal(area, cards[schemes[seat].ObjectId].GameArea);
+        }
+        Assert.Null(cards[central.ObjectId].GameArea);
+    }
+
     private static (World World, Card[] Kangs, Card[] Schemes, Card Central) Separated()
     {
         var world = new World(Facts, 2, 42);

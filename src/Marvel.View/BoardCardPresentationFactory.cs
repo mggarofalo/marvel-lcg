@@ -38,7 +38,7 @@ internal static class BoardCardPresentationFactory
             return new BoardCardPresentation(card.Id, 1, true,
                 $"Face-down {card.Back.ToString().ToLowerInvariant()} card", "Identity hidden",
                 "CONCEALED CARD", Status(card, zone, null), [])
-            { Back = card.Back.ToString().ToUpperInvariant(), StageRole = StageRole(zone) };
+            { Back = card.Back.ToString().ToUpperInvariant(), StageRole = StageRole(zone), GameArea = card.Location?.GameArea };
         }
         bool inPlay = IsInPlay(zone);
         BoardCardPresentation result = new(card.Id, 1, false, card.Face.Title, card.Face.Subtitle,
@@ -54,6 +54,7 @@ internal static class BoardCardPresentationFactory
             PrintedMarks = BoardPrintedValueMarks.From(card.Face.PrintedValues),
             Classification = card.Face.PrintedStats.GetValueOrDefault("Class", string.Empty),
             Keywords = card.Face.Keywords, RulesText = card.Face.RulesText, RulesMarkup = card.Face.RulesMarkup,
+            GameArea = card.Location?.GameArea,
         };
         return BoardCardLiveValues.Apply(result, card, inPlay);
     }

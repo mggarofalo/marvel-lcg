@@ -55,13 +55,20 @@ internal sealed class SpatialTableObjectRenderer
         RenderCards(areas, "SideSchemesArea", geometry.SideSchemes, CardDisplaySize.Board);
     }
 
+    internal void RenderGameAreas(BoardPresentation board, GameAreaTable table, IReadOnlyList<BoardAreaPresentation> hosted)
+    {
+        foreach (var card in new GameAreaTableRenderer(surface, result, faces, piles).Render(board, table, geometry, hosted))
+            if (card.TargetId is { } id) hosts[id] = (card, card.Position);
+    }
+
     internal void RenderRevealing(IReadOnlyList<BoardAreaPresentation> areas,
         IReadOnlyList<BoardCardPresentation>? context = null)
     {
         BoardAreaPresentation[] resolving = SpatialTableZones.Resolving(areas);
         if (context is { Count: > 0 })
             resolving = [new BoardAreaPresentation(-1, "Current decision", "", context, []), .. resolving];
-        CausalCardReferences.Add(surface, geometry.Revealing, resolving.SelectMany(SpatialTableZones.Current), result, scale);
+        CausalCardReferences.Add(surface, geometry.Revealing, resolving.SelectMany(SpatialTableZones.Current), result, scale,
+            geometry.HasScenarioColumns);
     }
 
     internal void RenderPlayer(IReadOnlyList<BoardAreaPresentation> areas)
