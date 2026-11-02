@@ -140,11 +140,8 @@ public static class Elimination
         // `.4`: "if all players are eliminated, the game ends and the players
         // lose." Asked after the play area is cleared, so a game that ends here
         // ends on a board nobody is still holding cards on.
-        if (world.Seats.All(each => each.Eliminated))
-        {
-            world.Finish(Outcome.PlayersLose, PlayerLossReason.AllPlayersEliminated);
-        }
-        else if (kangArea is not null) world.Agenda.KangTransitions.PlayerDeparted(world, kangArea, player);
+        if (!EndsTheGame(world) && kangArea is not null)
+            world.Agenda.KangTransitions.PlayerDeparted(world, kangArea, player);
     }
 
     /// <summary>
@@ -192,6 +189,18 @@ public static class Elimination
                 Leave(world, facts, seat, card, trigger, events);
         }
 
+    }
+
+    /// <summary>Ends the game when every player is eliminated, once.</summary>
+    /// <remarks>
+    /// A card leaving in step 4 can defeat the last other identity (an upgrade
+    /// granting it hit points), whose own elimination has already ended the game.
+    /// </remarks>
+    private static bool EndsTheGame(World world)
+    {
+        if (!world.Seats.All(each => each.Eliminated)) return false;
+        if (!world.IsOver) world.Finish(Outcome.PlayersLose, PlayerLossReason.AllPlayersEliminated);
+        return true;
     }
 
     /// <summary>One card leaving an eliminated player's play area.</summary>
