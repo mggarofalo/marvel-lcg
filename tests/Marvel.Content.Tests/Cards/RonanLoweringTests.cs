@@ -104,4 +104,16 @@ public sealed class RonanLoweringTests : CoreCardTestBase
 
         Assert.Throws<RulesNotImplementedException>(() => projection.Test(StoneOnRonan, null!));
     }
+
+    [Theory]
+    [InlineData(ShipCommandBoards.PowerStone, true)]
+    [InlineData(ShipCommandBoards.Milano, false)]
+    public void TakeWhatIsMineTestsThePresenceOfAPowerStoneEnteringPlay(string face, bool tested)
+    {
+        // A power-state projection cannot show a Power Stone entering play, so the entry raises.
+        var world = RonanBoards.Board(scheme: RonanBoards.TakeWhatIsMine);
+        var entering = world.CreateCard(face, world.AreaOf(DeckType.EncounterDiscardPile));
+
+        Assert.Equal(tested, AbilityThreatPermissions.TestsPresenceOf(world, AuthoredCards.Program, entering));
+    }
 }
