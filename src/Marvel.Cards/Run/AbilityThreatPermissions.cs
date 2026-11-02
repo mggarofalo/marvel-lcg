@@ -43,7 +43,7 @@ internal static class AbilityThreatPermissions
                 ProhibitsThreatRemoval(step, scheme, selectors, expressions, byThwarting, projection)),
             AbilityEffect.Simultaneous simultaneous => simultaneous.Effects.Any(step =>
                 ProhibitsThreatRemoval(step, scheme, selectors, expressions, byThwarting, projection)),
-            AbilityEffect.Conditional conditional => (TestCondition(conditional, expressions, projection)
+            AbilityEffect.Conditional conditional => (TestCondition(conditional, selectors, expressions, projection)
                     ? conditional.Then : conditional.Else) is { } branch
                 && ProhibitsThreatRemoval(branch, scheme, selectors, expressions, byThwarting, projection),
             AbilityEffect.CardAction
@@ -68,12 +68,7 @@ internal static class AbilityThreatPermissions
         _ => false,
     };
 
-    private static bool TestCondition(AbilityEffect.Conditional conditional,
-        AbilityExpressionEvaluation expressions, AbilityThreatPermissionProjection? projection)
-    {
-        if (projection is not null)
-            throw new Marvel.Rules.Play.RulesNotImplementedException(
-                "projected conditional threat-removal permission requires projected predicate evaluation");
-        return expressions.Test(conditional.Test);
-    }
+    private static bool TestCondition(AbilityEffect.Conditional conditional, AbilitySelectorEvaluation selectors,
+        AbilityExpressionEvaluation expressions, AbilityThreatPermissionProjection? projection) =>
+        projection?.Test(conditional.Test, selectors) ?? expressions.Test(conditional.Test);
 }
