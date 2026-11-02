@@ -133,4 +133,50 @@ public sealed class HulkSignatureEventTests
         Assert.Equal(reduction == 0 ? DeckType.DiscardPile : DeckType.HandsArea, payment.Area.Type);
         Assert.Empty(world.Agenda.Outstanding);
     }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    [Rule("rr:event.3")]
+    [Rule("rr:cost.6")]
+    public void ForceWithReadyHulkOffersOnlyThePhysicalPaymentThatDraws(bool physical)
+    {
+        // "An event card cannot be played if it requires one or more targets and does not have
+        // at least one valid target", and "an ability's cost cannot be paid" in that case. With
+        // Hulk already ready, readying him affects nothing, so only the physical-only draw gives
+        // Unstoppable Force an effect. The hand is the one Hulk held with Spider-Woman on
+        // Mutagen Formula, seed 21: Brawn (B), Sub-Orbital Leap (R), Energy (YY), To the Rescue! (R).
+        var (_, world) = HulkFirstSliceFixture.PlayingHulk(_ => { });
+        HulkFirstSliceFixture.EmptyHand(world, 0);
+        var runner = AuthoredCards.Runner();
+        world.Abilities = runner;
+        var hero = world.Seats[0].IdentityCard;
+        var source = world.CreateCard("10006", world.Seats[0].Hand);
+        world.CreateCard("10011", world.Seats[0].Hand);
+        var leap = world.CreateCard("10004", world.Seats[0].Hand);
+        var energy = world.CreateCard("10020", world.Seats[0].Hand);
+        var rescue = world.CreateCard("10019", world.Seats[0].Hand);
+        Assert.True(hero.Ready);
+        var action = Assert.Single(runner.Actions(world, 0), a => a.Card == source.ObjectId);
+        var cost = Assert.Single(runner.Describe(world, action).CostOptions);
+        Assert.Equal("2", cost.Cost);
+        Assert.Equal(["RR"], cost.Rule);
+        if (!physical)
+        {
+            string before = world.Digest().Canonical();
+            Assert.Throws<RulesNotImplementedException>(() => runner.ExecuteAction(world,
+                new PlayerAction(action, [energy.ObjectId], [], Allocations: [new(energy.ObjectId, 0, "YY")])));
+            Assert.Equal(before, world.Digest().Canonical());
+            return;
+        }
+        int deck = world.Seats[0].Deck.Cards.Count;
+        runner.ExecuteAction(world, new PlayerAction(action, [leap.ObjectId, rescue.ObjectId], [],
+            Allocations: [new(leap.ObjectId, 0, "R"), new(rescue.ObjectId, 0, "R")]));
+        Sequence.Finish(world, world.Facts, runner, []);
+        Assert.True(hero.Ready);
+        Assert.Equal(deck - 1, world.Seats[0].Deck.Cards.Count);
+        Assert.Equal(DeckType.DiscardPile, source.Area.Type);
+        Assert.Equal(DeckType.HandsArea, energy.Area.Type);
+        Assert.Empty(world.Agenda.Outstanding);
+    }
 }
