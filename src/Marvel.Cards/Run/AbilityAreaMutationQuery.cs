@@ -55,7 +55,7 @@ internal sealed class AbilityAreaMutationQuery(
         if (DeckOperationChange(effect) is { } deckChange) return deckChange;
         if (operation is "discard" or "removeFromGame" or "returnToHand"
             or "placeOnBottomOfDeck" or "placeOnTopOfDeck" or "returnOwnedToHand" or "addToHand" or "returnOwnedToDiscard"
-            or "reveal" or "putIntoPlay")
+            or "discardEach" or "reveal" or "putIntoPlay")
         {
             return CardMovementChange(effect);
         }
@@ -109,7 +109,7 @@ internal sealed class AbilityAreaMutationQuery(
     private bool CardMovementChange(AbilityEffect effect) =>
         effect.OperationName() switch
         {
-            "discard" or "returnOwnedToDiscard" => SelectedCardMovesToDiscard(
+            "discard" or "returnOwnedToDiscard" or "discardEach" => SelectedCardMovesToDiscard(
                 EffectOf<AbilityEffect.CardAction>(effect, context).Selection),
             "removeFromGame" => SelectedCardMoves(
                 EffectOf<AbilityEffect.CardAction>(effect, context).Selection,

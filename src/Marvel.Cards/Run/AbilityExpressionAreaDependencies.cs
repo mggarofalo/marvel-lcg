@@ -33,7 +33,7 @@ internal static class AbilityExpressionAreaDependencies
             case AbilityCondition.Flag or AbilityCondition.PaidWithResource or AbilityCondition.DiscardedWithResource or AbilityCondition.DiscardedWithTrait
                 or AbilityCondition.CausedThreat or AbilityCondition.Exists or AbilityCondition.LegalPractice
                 or AbilityCondition.AutomaticThwart or AbilityCondition.TitleInPlay or AbilityCondition.NamedInPlay or AbilityCondition.InForm
-                or AbilityCondition.ActivationIs or AbilityCondition.IsYourIdentity:
+                or AbilityCondition.ActivationIs or AbilityCondition.IsYourIdentity or AbilityCondition.MarkedThisRound:
                 break;
             default: throw new InvalidOperationException("Unknown compiled condition in area-dependency analysis");
         }

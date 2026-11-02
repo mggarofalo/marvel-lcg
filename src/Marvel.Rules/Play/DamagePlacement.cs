@@ -142,6 +142,10 @@ public static class DamagePlacement
         assignment = assignment.AfterPrevention(
             world.DamageAbilities.WouldTake(world, target, source, assignment.Taken, events));
         if (request.PreventAllDamage) assignment = assignment.AfterPrevention(0);
+        // rr:cannot: a maximum on the damage taken from one attack bounds what is left
+        // after every reduction and prevention.
+        if (request.FromAttack)
+            assignment = assignment.AfterPrevention(AttackDamageMaximum.Apply(world, target, assignment.Taken));
         return new PlacedDamage(target, assignment.Dealt, assignment.Taken)
         {
             RemainingHealth = Math.Max(0, Health(world, facts, target) - target.Damage),

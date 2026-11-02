@@ -217,7 +217,7 @@ internal static class AbilityEffectBindingAnalysis
         // This instruction always addresses its physical source, regardless of a prior choice.
         AbilityEffect.DiscardInvocation => false,
         AbilityEffect.Shuffle or AbilityEffect.Search => false,
-        AbilityEffect.DefineProfile or AbilityEffect.GainSurge or AbilityEffect.Fixed or AbilityEffect.Generate or AbilityEffect.AllowPlayBeneath or AbilityEffect.AllowPlayFromDiscard or AbilityPricingEffect.ReduceSelfCostPerEngagedMinion or AbilityPricingEffect.ReduceSelfCostPerControlledTrait or AbilityPricingEffect.ReduceFirstAllyCost or AbilityEffect.DoubleResourceFor
+        AbilityEffect.DefineProfile or AbilityEffect.GainSurge or AbilityRoundEffect.MarkThisRound or AbilityEffect.Fixed or AbilityEffect.Generate or AbilityEffect.AllowPlayBeneath or AbilityEffect.AllowPlayFromDiscard or AbilityPricingEffect.ReduceSelfCostPerEngagedMinion or AbilityPricingEffect.ReduceSelfCostPerControlledTrait or AbilityPricingEffect.ReduceFirstAllyCost or AbilityEffect.DoubleResourceFor
             or AbilityEffect.PreventDamageFrom or AbilityEffect.DelayedStun
             or AbilityEffect.ChooseTopForHand or AbilityEffect.ChooseDiscardToShuffle
             or AbilityEffect.DiscardHandWithResource or AbilityEffect.DiscardHandOfKind

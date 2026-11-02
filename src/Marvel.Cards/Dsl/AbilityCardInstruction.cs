@@ -20,6 +20,8 @@ public enum AbilityCardInstruction
     ReturnOwnedToHand,
     /// <summary>Place selected physical cards in their owners' discard piles.</summary>
     ReturnOwnedToDiscard,
+    /// <summary>Discard every selected card from play.</summary>
+    DiscardEach,
     /// <summary>Add the selected card to the resolver's hand.</summary>
     AddToHand,
     /// <summary>Place one selected card on the bottom of the resolving player's deck.</summary>

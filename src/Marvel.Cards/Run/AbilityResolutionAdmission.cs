@@ -105,6 +105,7 @@ internal static class AbilityResolutionAdmission
             "moveThreat" => AbilityThreatMovementAdmission.CanMove((AbilityEffect.MoveThreat)node, cast),
             "removeThreat" => CanRemoveThreat(node, cast),
             "gainSurge" => EffectOf<AbilityEffect.GainSurge>(node, cast).Instances > 0,
+            "markThisRound" => true,
             "draw" => CanDraw(node, cast),
             "drawToHandSize" => EffectOf<AbilityEffect.DrawToHandSize>(node, cast) is var handSize
                 && cast.World.Seats[Seat(handSize.Player, cast)].Hand.Cards.Count

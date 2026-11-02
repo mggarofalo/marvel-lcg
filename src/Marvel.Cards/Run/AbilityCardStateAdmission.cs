@@ -38,6 +38,9 @@ internal static class AbilityCardStateAdmission
             "exhaust" => Find(EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast)?.Ready == true,
             "returnOwnedToDiscard" => Every(EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast)
                 .Any(card => card.Owner >= 0),
+            "discardEach" => Every(EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast)
+                .Any(card => DeckTypes.IsInPlay(card.Area.Type)
+                    && CanRemoveByEffect(EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast, card)),
             "placeOnBottomOfDeck" or "placeOnTopOfDeck" or "returnOwnedToHand" or "addToHand" => AbilityCardMovementAdmission.HasHandTarget(node, cast),
             "ready" => Every(EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast).Any(card =>
                 !card.Ready && AbilityProgramQueries.CanReady(cast.World, cast.Context.Program, card)),
@@ -52,7 +55,7 @@ internal static class AbilityCardStateAdmission
             "discardAtRandom" => Amount(EffectOf<AbilityEffect.DiscardAtRandom>(node, cast).Count, cast) > 0
                 && Seats(EffectOf<AbilityEffect.DiscardAtRandom>(node, cast).Players, cast)
                     .Any(seat => cast.World.Seats[seat].Hand.Cards.Count > 0),
-            "discardTop" => Amount(EffectOf<AbilityEffect.DiscardTop>(node, cast).Count, cast) > 0
+            "discardTop" or "removeTopFromGame" => Amount(EffectOf<AbilityEffect.DiscardTop>(node, cast).Count, cast) > 0
                 && DiscardTopHasCards((AbilityEffect.DiscardTop)node, cast),
             "heal" => Find(EffectOf<AbilityEffect.Heal>(node, cast).Card, cast) is { Damage: > 0 }
                 && Amount(EffectOf<AbilityEffect.Heal>(node, cast).Amount, cast) > 0,

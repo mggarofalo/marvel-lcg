@@ -188,7 +188,7 @@ internal static class AbilityPlayerBindingAnalysis
         AbilityEffect.RevealAuxiliaryTop => false,
         AbilityEffect.Shuffle shuffle => shuffle.Area == AbilitySearchArea.YourDeck,
         AbilityEffect.Search search => search.Areas.Contains(AbilitySearchArea.YourDeck),
-        AbilityEffect.DefineProfile or AbilityEffect.GainSurge or AbilityEffect.Fixed or AbilityEffect.Generate
+        AbilityEffect.DefineProfile or AbilityEffect.GainSurge or AbilityRoundEffect.MarkThisRound or AbilityEffect.Fixed or AbilityEffect.Generate
             or AbilityEffect.AllowPlayBeneath or AbilityEffect.AllowPlayFromDiscard or AbilityPricingEffect.ReduceSelfCostPerEngagedMinion or AbilityPricingEffect.ReduceSelfCostPerControlledTrait or AbilityPricingEffect.ReduceFirstAllyCost or AbilityPricingEffect.ReduceUpgradeCostOnThis or AbilityEffect.DoubleResourceFor or AbilityEffect.PreventDamageFrom
             or AbilityEffect.DelayedStun
             or AbilityEffect.AttackAnotherEnemy or AbilityEffect.ChooseTopForHand or AbilityEffect.ChooseDiscardToShuffle
@@ -284,7 +284,7 @@ internal static class AbilityPlayerBindingAnalysis
         AbilityCondition.IsYourIdentity => true,
         AbilityCondition.PaidWithResource or AbilityCondition.DiscardedWithResource or AbilityCondition.DiscardedWithTrait
             or AbilityCondition.CausedThreat or AbilityCondition.TitleInPlay or AbilityCondition.NamedInPlay
-            or AbilityCondition.ActivationIs => false,
+            or AbilityCondition.ActivationIs or AbilityCondition.MarkedThisRound => false,
         _ => throw new InvalidOperationException(
             "Unknown compiled condition in player-binding analysis"),
     };

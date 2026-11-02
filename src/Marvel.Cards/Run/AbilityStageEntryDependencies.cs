@@ -53,7 +53,7 @@ internal static class AbilityStageEntryDependencies
         if (!visiting.Add(face) || !cast.Context.Program.KnowsWhenRevealed(face)) return false;
         return cast.Context.Program.On(face).All(ability => ability.Trigger.Timing switch
         {
-            AbilityType.WhenRevealed => ability.When is null && ability.Cost is null
+            AbilityType.WhenRevealed => ability.Cost is null
                 && RevealEffectPreserves(ability.Effect, cast, visiting),
             AbilityType.Constant => StableConstant(ability.Effect),
             _ => false,

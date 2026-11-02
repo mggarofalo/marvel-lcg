@@ -89,11 +89,16 @@ internal static class AbilityCardQueries
         AbilityCardBinding.TriggerSubject => cast.Occurrence.Subject >= 0
             ? cast.World.Cards[cast.Occurrence.Subject]
             : null,
+        _ => Remembered(name, cast),
+    };
+
+    private static Card? Remembered(AbilityCardBinding name, AbilityQueryContext cast) => name switch
+    {
         AbilityCardBinding.DiscardedEvent => DiscardedEvent(cast),
         // rr:defend-defense.6: without a defending character the attack is
         // undefended, including when a boost ability defeats its defending ally.
         AbilityCardBinding.DefendingCharacter => CurrentDefender(cast.World),
-        _ => throw new InvalidOperationException("Unknown compiled card binding"),
+        _ => AbilityResolutionMemoryCards.Named(name, cast),
     };
 
     private static Card? TriggerActor(AbilityQueryContext cast)

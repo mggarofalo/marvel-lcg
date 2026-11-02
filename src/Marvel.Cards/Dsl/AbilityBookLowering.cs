@@ -85,6 +85,11 @@ internal static class AbilityBookLowering
         AbilitySchemeChoiceLowering.Validate(ability, compiledCost, effect, location);
         AbilitySharedTraitPlayLowering.Validate(ability, compiledCost, effect, location, nodes);
         AbilityRevealMemoryLowering.Validate(ability, location, nodes);
+        // rr:when-revealed-abilities: "When a player reveals a card ... all 'When Revealed'
+        // abilities on the card resolve." Nothing gates their resolution, so a condition on
+        // one is an if inside its effect.
+        if (ability.When is not null && ability.Trigger.Timing == AbilityType.WhenRevealed)
+            throw (location with { Path = "when" }).Error("a When Revealed ability tests a condition with if");
         return new CompiledCardAbility(ability.Card, ability.Name, ability.Trigger, effect,
         compiledCost,
         ability.When is { } when ? LowerCondition(Syntax(when), location with { Path = "when" }) : null,

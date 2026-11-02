@@ -115,6 +115,7 @@ internal sealed class AbilityExpressionEvaluation(
             && selectors.Every(practice.Schemes).Any(card => card.Tokens.GetValueOrDefault("k_threat") > 0),
         AbilityCondition.AutomaticThwart thwart => selectors.Find(thwart.Scheme) is { } scheme
             && BasicThwartPowers.CanAutomaticallyThwart(context.World, context.World.Facts, context.Player, scheme),
+        AbilityCondition.MarkedThisRound mark => RoundMarks.Has(context.World, mark.Mark),
         AbilityCondition.TitleInPlay title => context.World.Areas.Where(area => DeckTypes.IsInPlay(area.Type))
             .SelectMany(area => area.Cards).Any(card => string.Equals(context.World.Facts.Title(card.FaceId), title.Title, StringComparison.Ordinal)),
         // rr:identity.4: only an identity's faceup side is in play. rr:subtitle: a
