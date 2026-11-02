@@ -74,7 +74,7 @@ for these cards; the rulings are Hall of Heroes entries in `datasets/rulings/`.
   card's option (ruling 65d0813b02e75e59).
 - **Superior Tactics** gives `cannot_be_unattached` to a stone in the villain's play
   area. No ability moves it to another host while it applies (rr:cannot), including
-  its own response to a hero dealing 3 or more damage. Its When Revealed reads
+  the stone's response to a hero dealing 3 or more damage. Its When Revealed reads
   whether Ronan holds the stone before attaching it.
 - **Single-Minded Fury** attacks the controlling player in either form
   (rr:attack-enemy-activation.1.1). It gains surge when no player controls the stone

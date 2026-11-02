@@ -2,6 +2,7 @@ using Marvel.Cards.Dsl;
 using Marvel.Cards.Run;
 using Marvel.Content.Tests.Play;
 using Marvel.Rules.Play;
+using Marvel.Rules.State;
 using Marvel.Tests;
 using Xunit;
 
@@ -38,9 +39,9 @@ public sealed class RonanLoweringTests : CoreCardTestBase
         var reads = AbilitySelectionAreaReads.For(new AbilityCardSelection.InAreas(
             [AbilitySearchArea.VillainPlayArea], null, null, "Power Stone"));
 
-        Assert.Contains(Marvel.Rules.State.DeckType.UpgradesArea, reads);
-        Assert.Contains(Marvel.Rules.State.DeckType.VillainArea, reads);
-        Assert.DoesNotContain(Marvel.Rules.State.DeckType.EncounterDeck, reads);
+        Assert.Contains(DeckType.UpgradesArea, reads);
+        Assert.Contains(DeckType.VillainArea, reads);
+        Assert.DoesNotContain(DeckType.EncounterDeck, reads);
     }
 
     [Theory]
@@ -63,5 +64,44 @@ public sealed class RonanLoweringTests : CoreCardTestBase
             Assert.Equal(world.Seats[0].IdentityCard, RonanBoards.Host(world, stone));
         }
         else Assert.Throws<RulesNotImplementedException>(() => BadoonBoards.Drive(world));
+    }
+
+    private static readonly AbilityCondition StoneOnRonan = new AbilityCondition.Exists(
+        new AbilityCardSelection.InAreas([AbilitySearchArea.VillainPlayArea], null, null, "Power Stone"));
+
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(true, true)]
+    public void AProjectedVillainPlayAreaTestReadsTheStonesProjectedHost(bool projectedOntoRonan, bool expected)
+    {
+        var world = RonanBoards.Board();
+        var stone = RonanBoards.Stone(world, world.Seats[0].IdentityCard);
+        var hosts = new Dictionary<int, int>();
+        if (projectedOntoRonan) hosts[stone.ObjectId] = GrootBoards.Villain(world).ObjectId;
+        var projection = new AbilityThreatPermissionProjection(world, new HashSet<int>(), new HashSet<int>(), hosts);
+
+        Assert.Equal(expected, projection.Test(StoneOnRonan, null!));
+    }
+
+    [Fact]
+    public void AProjectedVillainPlayAreaTestReadsAStoneLeavingPlayAsAbsent()
+    {
+        var world = RonanBoards.Board();
+        var stone = RonanBoards.Stone(world, GrootBoards.Villain(world));
+        var projection = new AbilityThreatPermissionProjection(
+            world, new HashSet<int> { stone.ObjectId }, new HashSet<int>(), new Dictionary<int, int>());
+
+        Assert.False(projection.Test(StoneOnRonan, null!));
+    }
+
+    [Fact]
+    public void AProjectedVillainPlayAreaTestRaisesForAStoneEnteringPlay()
+    {
+        var world = RonanBoards.Board();
+        var stone = world.CreateCard(ShipCommandBoards.PowerStone, world.AreaOf(DeckType.EncounterDiscardPile));
+        var projection = new AbilityThreatPermissionProjection(
+            world, new HashSet<int>(), new HashSet<int> { stone.ObjectId }, new Dictionary<int, int>());
+
+        Assert.Throws<RulesNotImplementedException>(() => projection.Test(StoneOnRonan, null!));
     }
 }

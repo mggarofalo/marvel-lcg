@@ -41,15 +41,21 @@ public sealed class RonanVillainTests : CoreCardTestBase
         Assert.Equal(1, RonanBoards.Discarded(world));
     }
 
-    [Fact]
+    [Theory]
+    [InlineData(RonanBoards.RonanOne, false)]
+    [InlineData(RonanBoards.RonanOne, true)]
+    [InlineData(RonanBoards.RonanTwo, false)]
+    [InlineData(RonanBoards.RonanTwo, true)]
+    [InlineData(RonanBoards.RonanThree, false)]
+    [InlineData(RonanBoards.RonanThree, true)]
     [Rule("rr:you-your.7")]
-    public void RonanTakesOneBoostCardAgainstAPlayerWithoutThePowerStone()
+    public void RonanTakesOneBoostCardAgainstAPlayerWithoutThePowerStone(string stage, bool scheme)
     {
-        // Player 1 controls the stone; Ronan attacks player 0.
-        var world = RonanBoards.Board(players: 2);
+        // Player 1 controls the stone; Ronan attacks player 0, or schemes against their alter-ego.
+        var world = RonanBoards.Board(players: 2, face: scheme ? "01001b" : "01001a", villain: stage);
         RonanBoards.Stone(world, world.Seats[1].IdentityCard);
 
-        KangTemporalFixture.Activate(world, GrootBoards.Villain(world), scheme: false, 0);
+        KangTemporalFixture.Activate(world, GrootBoards.Villain(world), scheme, 0);
         BadoonBoards.Drive(world);
 
         Assert.Equal(1, RonanBoards.Discarded(world));
@@ -158,5 +164,58 @@ public sealed class RonanVillainTests : CoreCardTestBase
         BadoonBoards.Drive(world);
 
         Assert.Equal(3, scheme.Tokens["k_threat"]);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    [Rule("rr:cannot")]
+    public void ClearTheAreaRemovesThreatFromASideSchemeWhereverThePowerStoneIs(bool onRonan)
+    {
+        // 16107b's prohibition names only this scheme, so 04049 "Remove 2 threat from a
+        // scheme" removes it from Cannonade (16144) whichever host holds the stone.
+        var world = RonanBoards.Board(scheme: RonanBoards.TakeWhatIsMine);
+        var scheme = GrootBoards.MainScheme(world);
+        scheme.PlaceTokens("k_threat", 5);
+        RonanBoards.Stone(world, onRonan ? GrootBoards.Villain(world) : world.Seats[0].IdentityCard);
+        var cannonade = GrootBoards.Side(world, "16144", 5);
+        var card = GrootBoards.Hand(world, "04049");
+        var energy = GrootBoards.Hand(world, ShipCommandBoards.Energy);
+
+        GrootBoards.Play(world, card, [energy]);
+        GrootBoards.Drive(world, GrootBoards.Take(cannonade));
+
+        Assert.Equal(3, cannonade.Tokens["k_threat"]);
+        Assert.Equal(5, scheme.Tokens["k_threat"]);
+    }
+
+    [Fact]
+    [Rule("rr:attachment.1.1")]
+    public void ClearTheAreaRemovesThreatFromTakeWhatIsMineWhileAHeroHoldsThePowerStone()
+    {
+        var world = RonanBoards.Board(scheme: RonanBoards.TakeWhatIsMine);
+        var scheme = GrootBoards.MainScheme(world);
+        scheme.PlaceTokens("k_threat", 5);
+        RonanBoards.Stone(world, world.Seats[0].IdentityCard);
+        var card = GrootBoards.Hand(world, "04049");
+        var energy = GrootBoards.Hand(world, ShipCommandBoards.Energy);
+
+        GrootBoards.Play(world, card, [energy]);
+        GrootBoards.Drive(world, GrootBoards.Take(scheme));
+
+        Assert.Equal(3, scheme.Tokens["k_threat"]);
+    }
+
+    [Fact]
+    [Rule("rr:cannot")]
+    public void ClearTheAreaIsNotPlayableWhenTakeWhatIsMineIsItsOnlySchemeAndRonanHoldsThePowerStone()
+    {
+        var world = RonanBoards.Board(scheme: RonanBoards.TakeWhatIsMine);
+        GrootBoards.MainScheme(world).PlaceTokens("k_threat", 5);
+        RonanBoards.Stone(world, GrootBoards.Villain(world));
+        var card = GrootBoards.Hand(world, "04049");
+        GrootBoards.Hand(world, ShipCommandBoards.Energy);
+
+        Assert.DoesNotContain(GrootBoards.Runner(world).Actions(world, 0), action => action.Card == card.ObjectId);
     }
 }

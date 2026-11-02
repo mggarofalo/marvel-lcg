@@ -15,8 +15,9 @@ public static class AttachmentTransfer
     /// <summary>The modifier that keeps an attachment on its current host.</summary>
     /// <remarks>
     /// Superior Tactics (16113): "The Power Stone cannot be unattached from Ronan the
-    /// Accuser." <c>rr:cannot</c> makes the prohibition absolute, so an ability that would
-    /// move the attachment to another host does not move it. The spelling is an engine choice.
+    /// Accuser." <c>rr:cannot</c>: "The word 'cannot' is absolute and cannot be countermanded
+    /// by other abilities or effects." An ability that would move the attachment to another
+    /// host therefore does not move it. The spelling is an engine choice.
     /// </remarks>
     public const string ProhibitedField = "cannot_be_unattached";
 

@@ -86,6 +86,7 @@ internal static class AbilityThreatPermissions
         AbilityCondition.Any any => any.Operands.SelectMany(TestedTitles),
         AbilityCondition.Negated negated => TestedTitles(negated.Operand),
         AbilityCondition.Exists { Cards: AbilityCardSelection.Titled titled } => [titled.Title],
+        AbilityCondition.Exists { Cards: AbilityCardSelection.InAreas { Title: { } title } } => [title],
         _ => [],
     };
 

@@ -52,14 +52,16 @@ public sealed class RonanSchemeTests : CoreCardTestBase
     }
 
     [Theory]
-    [InlineData(false, 2)]
-    [InlineData(true, 3)]
+    [InlineData(false, 2, 1)]
+    [InlineData(true, 3, 1)]
+    [InlineData(false, 4, 2)]
+    [InlineData(true, 6, 2)]
     [Rule("rr:attach-to.3.1")]
-    public void SuperiorTacticsTakesThePowerStoneOrAddsThreatWhenRonanHoldsIt(bool ronanHolds, long threat)
+    public void SuperiorTacticsTakesThePowerStoneOrAddsThreatWhenRonanHoldsIt(bool ronanHolds, long threat, int players)
     {
         // 16113: "When Revealed: Attach the Power Stone to Ronan the Accuser. If it is already
         // attached to him, place 1 per hero threat here." It starts with 2 per hero threat.
-        var world = RonanBoards.Board();
+        var world = RonanBoards.Board(players);
         var ronan = GrootBoards.Villain(world);
         var stone = RonanBoards.Stone(world, ronanHolds ? ronan : world.Seats[0].IdentityCard);
         var scheme = RonanBoards.Reveal(world, RonanBoards.SuperiorTactics);
@@ -212,5 +214,23 @@ public sealed class RonanSchemeTests : CoreCardTestBase
 
         Assert.Equal(2, RonanBoards.Discarded(world));
         Assert.Equal(3, world.Seats[0].IdentityCard.Damage);
+    }
+
+    [Fact]
+    [Rule("rr:villainous")]
+    public void YouStandAccusedGivesNothingWhenAVillainousMinionActivates()
+    {
+        // Ruling fba0af85176f8559: "since the villain is not activating, do not give it a boost
+        // card." Blackjack O'Hare (villainous, ATK 1) attacks with this card's one icon.
+        var world = RonanBoards.Board();
+        var next = BadoonBoards.OnTop(world, RonanBoards.KreePhysiology);
+        BadoonBoards.OnTop(world, RonanBoards.YouStandAccused);
+        var blackjack = GrootBoards.Engaged(world, "16055");
+
+        KangTemporalFixture.Attack(world, blackjack, 0);
+        BadoonBoards.Drive(world);
+
+        Assert.Equal(2, world.Seats[0].IdentityCard.Damage);
+        Assert.Equal(DeckType.EncounterDeck, next.Area.Type);
     }
 }
