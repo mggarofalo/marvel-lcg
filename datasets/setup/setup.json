@@ -3394,11 +3394,94 @@
         "16059",
         "16060"
       ]
+    },
+    "ronan_the_accuser": {
+      "campaign_log": {},
+      "challenges": [],
+      "encounter_sets": [
+        "standard",
+        "power_stone",
+        "ship_command"
+      ],
+      "encounters": [
+        "16110",
+        "16110",
+        "16111",
+        "16112",
+        "16112",
+        "16113",
+        "16114",
+        "16114",
+        "16115",
+        "16115",
+        "16116",
+        "16116",
+        "16116"
+      ],
+      "expert": false,
+      "modular_sets": [
+        "kree_militant"
+      ],
+      "name": "Ronan the Accuser",
+      "schemes": [
+        "16106a,16106b",
+        "16107a,16107b"
+      ],
+      "set_aside": [
+        "16108",
+        "16109"
+      ],
+      "villain": [
+        "16103",
+        "16104"
+      ]
+    },
+    "ronan_the_accuser_expert": {
+      "campaign_log": {},
+      "challenges": [],
+      "encounter_sets": [
+        "standard",
+        "expert",
+        "power_stone",
+        "ship_command"
+      ],
+      "encounters": [
+        "16110",
+        "16110",
+        "16111",
+        "16112",
+        "16112",
+        "16113",
+        "16114",
+        "16114",
+        "16115",
+        "16115",
+        "16116",
+        "16116",
+        "16116"
+      ],
+      "expert": true,
+      "modular_sets": [
+        "kree_militant"
+      ],
+      "name": "Ronan the Accuser",
+      "schemes": [
+        "16106a,16106b",
+        "16107a,16107b"
+      ],
+      "set_aside": [
+        "16108",
+        "16109"
+      ],
+      "villain": [
+        "16104",
+        "16105"
+      ]
     }
   },
   "contract": "docs/setup-dataset.md",
   "counts": {
-    "campaigns": 43,
+    "campaigns": 45,
     "encounter_sets": 25,
     "heroes": 19
   },

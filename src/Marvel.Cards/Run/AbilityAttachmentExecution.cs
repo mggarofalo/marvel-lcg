@@ -40,5 +40,6 @@ internal static class AbilityAttachmentExecution
     }
 
     private static bool Eligible(Card card, Card host, World world) => card != host
-        && card.Area.Host != host.ObjectId && EffectiveCards.Kind(card, world.Facts) == CardKind.Attachment;
+        && card.Area.Host != host.ObjectId && EffectiveCards.Kind(card, world.Facts) == CardKind.Attachment
+        && AttachmentTransfer.CanUnattach(world, card);
 }

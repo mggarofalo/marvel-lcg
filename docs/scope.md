@@ -159,15 +159,16 @@ villains, campaign and the Ship Command and Galactic Artifacts modular sets, is
 outside the boundary. Power Stone (16149) is admitted as a one-card modular set,
 Band of Badoon (16117–16121) as a ten-card modular set, and Kree Militants
 (16131–16134), Menagerie Medley (16135–16137) and Space Pirates (16138–16141) as
-modular sets. Ship Command (16142–16148) and the Brotherhood of Badoon scenario
-are authored and withheld; Galactic Artifacts (16122–16130) is withheld because
+modular sets. Ship Command (16142–16148) and the Brotherhood of Badoon and Ronan
+the Accuser scenarios are authored and withheld; Galactic Artifacts (16122–16130) is withheld because
 Crystal Ball (16130) is unauthored. Missing a face or changing a required recipe
 closes that hero, or that modular set, alone. Focused evidence is in
 `docs/content/groot-public-admission.md` and
 `docs/content/rocket-raccoon-public-admission.md`; the Power Stone and Ship
 Command record is `docs/content/ship-command-power-stone.md`, the Brotherhood of
-Badoon record is `docs/content/brotherhood-of-badoon.md`, and the other modular
-sets' record is `docs/content/gmw-modular-sets.md`.
+Badoon record is `docs/content/brotherhood-of-badoon.md`, the Ronan the Accuser
+record is `docs/content/ronan-the-accuser.md`, and the other modular sets' record
+is `docs/content/gmw-modular-sets.md`.
 
 Scarlet Witch has candidate public admission for all 32 printed faces and its
 exact 40-card starter, both obligations and nemesis composition. Four extra

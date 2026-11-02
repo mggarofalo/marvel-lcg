@@ -2372,3 +2372,26 @@ its attacks deal indirect damage from the moment the attack is prepared, as a
 boost ability's `makeAttackIndirect` does for one attack (rr:indirect-damage.5).
 
 The spellings in this section are engine choices.
+
+## Villain play area, additional counters and attachments that cannot leave
+
+`cardsIn` accepts `area: "villainPlayArea"`, the in-play areas of the villain's
+play area, for card selection only. An attachment on the villain is there, so
+`{"exists": {"cardsIn": {"area": "villainPlayArea", "title": "Power Stone"}}}`
+asks whether the Power Stone is attached to the villain, as `yourPlayArea`
+asks whether it is attached to the resolving player's identity.
+
+`startingCounters` accepts an optional positive integer `additional`, placed
+after the per-player multiplication and never multiplied: Fanaticism's "1 fury
+counter, plus 1 per hero additional fury counters" is `count: 1, perPlayer:
+true, additional: 1`.
+
+`grant` with `keyword: "cannot_be_unattached"` keeps an attachment on its
+current host. `attachCards` does not move such an attachment to another host
+(rr:cannot). The grant is read on the attachment while it applies, so Superior
+Tactics grants it only to a Power Stone in the villain's play area.
+
+An `inPlayerArea` selection of the `identity` area resolves to that player's
+single identity where an effect names one card, such as `attachCards`'s host.
+
+The spellings in this section are engine choices.

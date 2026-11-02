@@ -23,7 +23,7 @@ The file has 3 groups:
 
 | Group | Admitted rows | Declared rows |
 |---|---:|---:|
-| `campaigns` | 39 Core Set, Rise of Red Skull, Wrecking Crew and Green Goblin scenario/mode combinations; the two declared Kang modes and two declared Brotherhood of Badoon modes are not admitted | 43 |
+| `campaigns` | 39 Core Set, Rise of Red Skull, Wrecking Crew and Green Goblin scenario/mode combinations; the two declared Kang modes and the two declared modes each of Brotherhood of Badoon and Ronan the Accuser are not admitted | 45 |
 | `heroes` | 14 Core Set, Rise of Red Skull, Captain America, Ms. Marvel, Thor, Black Widow, Doctor Strange, Hulk and Ant-Man starter decks | 14 |
 | `encounter_sets` | 20 Core Set, Rise of Red Skull, Green Goblin, Kree Fanatic and Galaxy's Most Wanted fixed/modular sets; the three declared Kang modular sets, Ship Command and Galactic Artifacts are not admitted | 25 |
 
@@ -389,6 +389,17 @@ Badoon Ship set aside for its main scheme's setup. The scenario's faces are not
 admitted, since the scenario waits for the withheld Ship Command set, so both
 recipes name closed faces and stay outside discovery. Evidence is in
 `docs/content/brotherhood-of-badoon.md`.
+
+The Ronan the Accuser scenario declares Standard and Expert recipes: Ronan the
+Accuser (I)/(II) or (II)/(III), Interception Imminent and "Take What Is Mine",
+the Standard (and Expert), Power Stone and Ship Command sets, the thirteen
+remaining Ronan the Accuser encounter cards (two Fanaticism, Cut the Power, two
+Pincer Maneuver, Superior Tactics, two Single-Minded Fury, two Kree Physiology and
+three "You Stand Accused!", the MarvelSDB quantities) and Kree Militants as the
+modular set. The Kree Command Ship and the Universal Weapon are set aside for the
+first main scheme's setup. The scenario's faces are not admitted, since it waits
+for the withheld Ship Command set, so both recipes name closed faces and stay
+outside discovery. Evidence is in `docs/content/ronan-the-accuser.md`.
 
 The Galaxy's Most Wanted declares its Ship Command, Power Stone, Galactic
 Artifacts, Kree Militants, Menagerie Medley and Space Pirates modular sets

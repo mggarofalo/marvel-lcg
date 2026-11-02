@@ -63,6 +63,8 @@ public sealed class AbilityDataPrintedTextBoxResourceIconsTests : AbilityDataTes
             ["16037"] = new("charge", 2, Uses: false),
             ["16038"] = new("charge", 3, Uses: false),
             ["16046"] = new("charge", 3, Uses: true),
+            // Fanaticism prints "Uses (1 fury counter, plus 1 per hero additional fury counters)".
+            ["16110"] = new("fury", 1, Uses: true) { PerPlayer = true, Additional = 1 },
         };
         Assert.Equal(expected.OrderBy(pair => pair.Key, StringComparer.Ordinal), AuthoredCards.Book.CounterPools!.OrderBy(pair => pair.Key, StringComparer.Ordinal));
     }
