@@ -7,15 +7,14 @@ using Xunit;
 namespace Marvel.Content.Tests.Setup;
 
 // Galactic Artifacts, Kree Militants, Menagerie Medley and Space Pirates are modular sets of
-// The Galaxy's Most Wanted (ruling 408decdf6cd8c4b5), each admitted on its own. Crystal Ball
-// (16130) is unauthored, so Galactic Artifacts stays closed.
+// The Galaxy's Most Wanted (ruling 408decdf6cd8c4b5), each admitted on its own.
 public sealed class GalaxyModularSetAdmissionTests
 {
     private static readonly string SetupJson = File.ReadAllText(RepositoryPaths.Dataset("setup", "setup.json"));
     private static readonly string CardJson = File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json"));
     private static readonly CardCatalog Cards = CardCatalog.Parse(CardJson);
 
-    public static TheoryData<string> Admitted => new() { "kree_militant", "menagerie_medley", "space_pirates" };
+    public static TheoryData<string> Admitted => new() { "galactic_artifacts", "kree_militant", "menagerie_medley", "space_pirates" };
 
     [Theory]
     [MemberData(nameof(Admitted))]
@@ -40,19 +39,9 @@ public sealed class GalaxyModularSetAdmissionTests
             setup.EncounterSet("galactic_artifacts"));
     }
 
-    [Fact]
-    public void GalacticArtifactsStaysClosedWhileCrystalBallIsUnauthored()
-    {
-        var result = RuntimeProductAdmission.Discover(SetupCatalog.Parse(SetupJson), Cards, AuthoredCards.Book.Authored);
-
-        Assert.DoesNotContain("16130", AuthoredCards.Book.Authored);
-        Assert.DoesNotContain("galactic_artifacts", result.Setup.EncounterSetNames);
-        Assert.All(GalaxyModularSetAdmission.Faces("galactic_artifacts"), face => Assert.DoesNotContain(face, result.Playable));
-        Assert.True(GalaxyModularSetAdmission.Admits("galactic_artifacts", SetupCatalog.Parse(SetupJson), Cards,
-            AuthoredCards.Book.Authored.Append("16130").ToHashSet(StringComparer.Ordinal)));
-    }
-
     [Theory]
+    [InlineData("galactic_artifacts", "16122")]
+    [InlineData("galactic_artifacts", "16130")]
     [InlineData("kree_militant", "16131")]
     [InlineData("kree_militant", "16134")]
     [InlineData("menagerie_medley", "16135")]
@@ -66,6 +55,7 @@ public sealed class GalaxyModularSetAdmissionTests
     }
 
     [Theory]
+    [InlineData("galactic_artifacts", "16130")]
     [InlineData("kree_militant", "16133")]
     [InlineData("menagerie_medley", "16136")]
     [InlineData("space_pirates", "16140")]
@@ -91,7 +81,7 @@ public sealed class GalaxyModularSetAdmissionTests
     [InlineData("role")]
     public void AWrongOrMissingRecipeClosesTheSet(string change)
     {
-        foreach (string key in new[] { "kree_militant", "menagerie_medley", "space_pirates" })
+        foreach (string key in new[] { "galactic_artifacts", "kree_militant", "menagerie_medley", "space_pirates" })
         {
             var json = JsonNode.Parse(SetupJson)!;
             var sets = json["encounter_sets"]!.AsObject();

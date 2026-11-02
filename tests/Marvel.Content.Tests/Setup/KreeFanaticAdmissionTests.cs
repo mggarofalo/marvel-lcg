@@ -29,11 +29,11 @@ public sealed class KreeFanaticAdmissionTests
         Assert.Contains("kree_fanatic", result.Setup.EncounterSetNames);
         Assert.DoesNotContain("ronan", result.Setup.CampaignNames);
         // Groot, Rocket Raccoon (16001a–16057) and the Power Stone (16149), Band of Badoon
-        // (16117–16121), Kree Militants, Menagerie Medley and Space Pirates (16131–16141)
-        // modular sets are the only open parts of The Galaxy's Most Wanted.
+        // (16117–16121), Galactic Artifacts, Kree Militants, Menagerie Medley and Space Pirates
+        // (16122–16141) modular sets are the only open parts of The Galaxy's Most Wanted.
         Assert.DoesNotContain(result.Playable, face => Cards.Pack(face) == "gmw" && string.CompareOrdinal(face, "16058") >= 0 && face != "16149"
             && (string.CompareOrdinal(face, "16117") < 0 || string.CompareOrdinal(face, "16121") > 0)
-            && (string.CompareOrdinal(face, "16131") < 0 || string.CompareOrdinal(face, "16141") > 0));
+            && (string.CompareOrdinal(face, "16122") < 0 || string.CompareOrdinal(face, "16141") > 0));
     }
 
     [Theory]
