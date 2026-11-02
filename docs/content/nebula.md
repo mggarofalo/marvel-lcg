@@ -120,17 +120,18 @@ digest, is identical on 09a59418 and this packet.
   vocabulary alone: `NebulaLoweringTests`.
 - Research-only complete Standard and Expert games, dealt directly rather than
   through discovery, with exact replay, and the setup: `NebulaResearchGameTests`.
-- Every new decision has a mutant: 65 in all, over the engine words, the attack
-  maximum and its preview, the When Revealed guard, the revealed-card validator,
-  the top-card removal's target, and each row's conditions and amounts (including "you" on the
-  Techniques' Specials and Ruthless, "per hero" on the setup, and the first
-  player on Shoot the Thrusters!). 58 are killed; 7 are equivalent and documented
-  where they live: the maximum's modifier role, the round mark's admission, the
-  last revealed card, `discardEach`'s two guards, Nebula (I)'s Technique
-  condition and the setup's Technique test.
+- Every new decision has a mutant: 69 in all, over the engine words, the attack
+  maximum and its preview, the When Revealed guard, the revealed and attached-card
+  validators, the top-card removal's target, `discardEach`'s option admission, and
+  each row's conditions and amounts (including "you" on the Techniques' Specials
+  and Ruthless, "per hero" on the setup, the first player on Shoot the Thrusters!,
+  the reveal interrupt's round mark and surge, and the boost's attach-then-Special
+  order). 63 are killed; 6 are equivalent and documented where they live: the last
+  revealed card, `discardEach`'s two guards, Nebula (I)'s Technique condition, and
+  the Technique tests of the setup and of the reveal interrupt.
 - A scan of 3,040 complete research games (every admitted hero alone and in 19
-  pairs, Standard and Expert, seeds 1–40) raises nothing: 2,415 end with every
-  player eliminated, 625 with the villain completing the final main scheme, none
+  pairs, Standard and Expert, seeds 1–40) raises nothing: 2,380 end with every
+  player eliminated, 660 with the villain completing the final main scheme, none
   with Nebula defeated and none unfinished.
 
 ## New interactions
