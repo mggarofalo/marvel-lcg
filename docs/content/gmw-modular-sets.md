@@ -91,9 +91,11 @@ has no FAQ entry for these cards; the rulings are Hall of Heroes entries in
 
 ## Engine changes and existing content
 
-The words are documented in [card-dsl.md](../card-dsl.md). No admitted card
-outside Galactic Artifacts changes behaviour, so the replay identity stays
-`engine-replay-v36` ([session-ledger.md](../session-ledger.md)).
+The words are documented in [card-dsl.md](../card-dsl.md). The shared scoped
+play changes Chaos Magic (15003) in admitted Scarlet Witch games: an event it
+offers is priced through its Action, its arrow cost is paid, and an event it
+cannot play is not offered. The replay identity is therefore
+`engine-replay-v37` ([session-ledger.md](../session-ledger.md)).
 
 - `playFromHand` (MARVEL-911) plays a card from the resolving player's hand at a
   stated reduction, optionally declinable. It shares the scoped play of

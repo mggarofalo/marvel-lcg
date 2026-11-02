@@ -69,7 +69,7 @@ public sealed class CrystalBallTests : CoreCardTestBase
 
         var prompt = Assert.Single(asked);
         Assert.True(prompt.Cancellable);
-        Assert.Equal("Do not play a card", prompt.DeclineLabel);
+        Assert.Equal("Play no card", prompt.DeclineLabel);
         Assert.Equal(DeckType.HandsArea, kick.Area.Type);
         Assert.Equal(0, GrootBoards.Villain(world).Damage);
         Assert.Equal(DeckType.VictoryDisplay, ball.Area.Type);

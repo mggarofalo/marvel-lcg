@@ -101,7 +101,7 @@ internal static class AbilityScopedPlay
             Description = Description(world, source, scope),
             ContextCardIds = [source.ObjectId],
         };
-        return scope.Optional ? prompt with { DeclineLabel = "Do not play a card" } : prompt;
+        return scope.Optional ? prompt with { DeclineLabel = "Play no card" } : prompt;
     }
 
     private static string DisplayQuestion(Scope scope) =>
