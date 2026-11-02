@@ -1809,7 +1809,16 @@ ruling `cef917d276a31694`). A defeat-triggered encounter deal is the same: Hamme
 Throw defeating Hydra Soldier deals its engaged player a facedown card that is not
 revealed until the villain phase (`rr:deal-deal-an-encounter-card`, ruling
 `2c98d8b065c9e8b0`), then returns Mjolnir. A step-6 recovery window keeps its own
-read proof, and any instruction after the return still raises.
+read proof, and any instruction after the return still raises. That proof accepts
+Absorbing Man's `gainEnvironmentTraits` constant: the recovery's encounter discard
+moves only out-of-play cards (`rr:in-play-and-out-of-play.9`), and copied traits set
+no hit points.
+A conditional `putIntoPlay` of a bound card whose test requires that same card to be
+in play also resolves on the live board after any of this work, such as Get Over Here!
+engaging its chosen minion. The test reads the board the window, recovery or deal
+left; a card already in play only moves between play areas
+(`rr:in-play-and-out-of-play.3`), and a card the work moved out of play fails the
+test. An `else` branch, an unguarded `putIntoPlay`, or any later read still raises.
 
 This prerequisite is synthetic coverage for Thor E3 (MARVEL-745), motivated by
 printed `06006` and its vendored non-attack erratum. It does not admit Lightning

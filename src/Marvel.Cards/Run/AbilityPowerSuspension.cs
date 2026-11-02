@@ -50,8 +50,7 @@ internal static class AbilityPowerSuspension
         // unsupported is a missing calculation, never an absent legal option.
         var paths = PowerPaths(state).ToArray();
         if (AbilityPowerContinuationDependencies.IsIndependent(node)) return false;
-        if (AbilityLiveUpgradeReturn.CanFinish(node, cast, terminal, paths)) return false;
-        foreach (var path in paths) AbilityProjectedDefeatWindows.ValidateContinuation(node, path, cast);
+        if (FinishesLive(node, cast, terminal, paths)) return false;
         // This closed tail reads only the retained discard receipt and chosen
         // reference. Its fixed damage/status instructions resolve on the live
         // board after stage reveal; no later admission decision consumes a
@@ -69,6 +68,18 @@ internal static class AbilityPowerSuspension
                 SuspendsPowerEffect(
                     child.Node, cast, child.StateMayChange, child.BindingMayChange,
                     child.Reachability, IsTerminalChild(node, child.Node, terminal)));
+    }
+
+    // A live finish resolves on the board the opaque defeat work left. The live
+    // instructions (a fixed threat removal, a villain status grant, a guarded
+    // put-into-play of an in-play card) ask nothing inside the power, so none
+    // suspends it; any other read after that work raises here.
+    private static bool FinishesLive(AbilityEffect node, AbilityAdmissionScope cast,
+        bool terminal, AbilityPowerState[] paths)
+    {
+        if (AbilityLiveUpgradeReturn.CanFinish(node, cast, terminal, paths)) return true;
+        foreach (var path in paths) AbilityProjectedDefeatWindows.ValidateContinuation(node, path, cast);
+        return paths.Any(path => AbilityProjectedDefeatWindows.LeavesToLiveBoard(node, path, cast));
     }
 
     private static bool HasRetainedBody(AbilityEffect node) =>

@@ -94,7 +94,8 @@ internal static class AbilityProjectedDefeatWindows
     // A later read still raises in ValidateContinuation while the window stays deferred;
     // leaving the board unprojected also keeps a stale villain's status out of the end state.
     private static bool ResolvesLive(AbilityEffect node) =>
-        AbilityLiveThreatRemoval.Resolves(node) || AbilityLiveStatusGrant.Resolves(node);
+        AbilityLiveThreatRemoval.Resolves(node) || AbilityLiveStatusGrant.Resolves(node)
+        || AbilityLiveGuardedPutIntoPlay.Resolves(node);
 
     private static bool DeferredWindowHidesReads(AbilityEffect node, AbilityPowerState state, AbilityAdmissionScope cast) =>
         state.DefeatWindowDeferred && !AbilityDefeatReceiptProjection.PreservesReads(node, state, cast)
