@@ -22,7 +22,6 @@ public sealed class HammerThrowGoblinSoldierDefeatTests
     [Rule("rr:overkill.1")]
     [Rule("rr:when-defeated-abilities.2.1")]
     [Rule("rr:player-elimination.5.1")]
-    [Rule("ruling:cef917d276a31694")]
     public void TheSoldiersDefeatResolvesBeforeMjolnirReturnsOnTheLiveBoard(int engaged, int thorHealthLeft, bool eliminated)
     {
         // rr:overkill.1: "If this attack defeats a minion, deal the damage beyond its hit
