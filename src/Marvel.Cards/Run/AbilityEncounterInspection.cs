@@ -15,9 +15,9 @@ internal static class AbilityEncounterInspection
     internal static Prompt Describe(AbilityStructuralContext context, AbilityEffect.InspectEncounterTop effect)
     {
         var cards = Cards(context.Expressions.World, effect);
-        return new Prompt(context.Player, Question.Element, TimingPriority.Untimed,
+        return new Prompt(context.PromptOwner, Question.Element, TimingPriority.Untimed,
             context.Trigger, "Inspect encounter cards", false,
-            [new Affordance(0, "Acknowledge", context.Expressions.Source.ObjectId, context.Player, "Finish looking")
+            [new Affordance(0, "Acknowledge", context.Expressions.Source.ObjectId, context.PromptOwner, "Finish looking")
             { DisplayLabel = "Finish looking", CommitLabel = "Done" }])
         {
             PublicKind = PublicDecisionKind.CardLook,

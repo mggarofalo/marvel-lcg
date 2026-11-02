@@ -36,9 +36,17 @@ internal sealed record AbilityStructuralContext(
     // rr:first-player.2: "If an encounter card requires a card ability to be
     // resolved, a game function to be performed, or a choice to be made but does
     // not specify which player should act, the first player does so." A
-    // resolution bound to no player is that unspecified case.
+    // resolution bound to no player is that unspecified case. The clause covers
+    // encounter cards only; a player card always resolves for a player.
+    internal bool BoundToNoPlayer => Player < 0 && (!AbilityCardQueries.IsPlayerCard(
+        Expressions.World.Facts, Expressions.Source) ? true : throw new RulesNotImplementedException(
+            $"'{SourceFace}' is a player card resolving for no player"));
+
+    /// <summary>The seat that answers a prompt this resolution raises.</summary>
+    internal int PromptOwner => BoundToNoPlayer ? Expressions.World.FirstPlayer : Player;
+
     internal bool FirstPlayerChooses(AbilityEffect choice) =>
-        choice is AbilityEffect.ChooseCard { FirstPlayerChooses: true } || Player < 0;
+        choice is AbilityEffect.ChooseCard { FirstPlayerChooses: true } || BoundToNoPlayer;
 
     /// <summary>Whether a card choice offers its legal cards without filtering by later text.</summary>
     internal bool ChoosesWithoutContinuation(AbilityEffect.ChooseCard choice) =>

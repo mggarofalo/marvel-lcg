@@ -30,14 +30,14 @@ internal static class AbilityThreatDistribution
         var cards = Eligible(group, context.Expressions.Bindings);
         int count = checked((int)Math.Min(Total(group, context.Expressions.World, context.Expressions.Source),
             cards.Sum(card => card.Tokens.GetValueOrDefault("k_threat"))));
-        var actor = context.AbilityActor ?? context.Expressions.World.Seats[context.Player].IdentityCard;
+        var actor = context.AbilityActor ?? context.Expressions.World.Seats[context.PromptOwner].IdentityCard;
         bool confused = Statuses.Afflicted(context.Expressions.World, context.Expressions.World.Facts, actor, Statuses.Confused);
         string explanation = confused ? "Confused cancels this thwart; no threat will be removed."
             : $"Allocate {count} threat among the schemes. Each point removes one threat; later effects can change the result.";
-        return new Prompt(context.Player, Question.Element, TimingPriority.Untimed, Steps.TurnAction,
+        return new Prompt(context.PromptOwner, Question.Element, TimingPriority.Untimed, Steps.TurnAction,
             $"{context.SourceFace}: allocate threat removal", false,
             [new Affordance(context.Expressions.Source.ObjectId, AbilityStructuralExecution.ChooseVerb,
-                context.Expressions.Source.ObjectId, context.Player, "distributeThreat",
+                context.Expressions.Source.ObjectId, context.PromptOwner, "distributeThreat",
                 new TargetRequest([.. cards.Select(card => card.ObjectId)], count, count,
                     AllowRepeated: true, MaximumOccurrences: cards.ToDictionary(card => card.ObjectId,
                         card => checked((int)Math.Min(count, card.Tokens.GetValueOrDefault("k_threat"))))),

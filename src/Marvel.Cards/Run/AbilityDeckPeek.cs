@@ -29,9 +29,9 @@ internal static class AbilityDeckPeek
                 || card.Incarnation != context.Expressions.Results[IncarnationKey]
                 || card.Area.Cards[^1] != card)
                 throw new RulesNotImplementedException("the inspected deck top changed during acknowledgement");
-            return new Prompt(context.Player, Question.Element, TimingPriority.Untimed,
+            return new Prompt(context.PromptOwner, Question.Element, TimingPriority.Untimed,
                 context.Trigger, "Inspect the top card", false,
-                [new Affordance(0, "Acknowledge", card.ObjectId, context.Player, "Finish looking")
+                [new Affordance(0, "Acknowledge", card.ObjectId, context.PromptOwner, "Finish looking")
                 { DisplayLabel = "Finish looking", CommitLabel = "Done" }])
             {
                 PublicKind = PublicDecisionKind.CardLook,
@@ -42,10 +42,10 @@ internal static class AbilityDeckPeek
                 ExposesConcealedCandidates = !card.FaceUp,
             };
         }
-        return new Prompt(context.Player, Question.Element, TimingPriority.Untimed,
+        return new Prompt(context.PromptOwner, Question.Element, TimingPriority.Untimed,
             context.Trigger, "Choose a deck to inspect", false,
             [.. Decks(world).Select(area => new Affordance(area.Id, "Peek", area.Id,
-                context.Player, Name(world, area))
+                context.PromptOwner, Name(world, area))
             {
                 AnchorKind = AffordanceAnchorKind.Area,
                 DisplayLabel = Name(world, area), CommitLabel = "Look at top card",

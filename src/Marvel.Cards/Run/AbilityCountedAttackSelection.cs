@@ -58,7 +58,7 @@ internal static class AbilityCountedAttackSelection
         string explanation = power.Distributed
             ? "Assign each point of damage to an enemy. Each enemy dealt damage is attacked; damage is dealt simultaneously."
             : "All chosen enemies are attacked together.";
-        return new Prompt(context.Player, Question.Element, TimingPriority.Untimed, Steps.TurnAction,
+        return new Prompt(context.PromptOwner, Question.Element, TimingPriority.Untimed, Steps.TurnAction,
             $"{context.SourceFace}: choose attack targets", false,
             [new Affordance(context.Expressions.Source.ObjectId, AbilityStructuralExecution.ChooseVerb,
                 context.Expressions.Source.ObjectId, context.Player, "attack",

@@ -29,7 +29,7 @@ internal static class AbilityAnyNumberExhaustion
     internal static Prompt Describe(AbilityStructuralContext context, AbilityEffect.ExhaustAnyNumber exhaust)
     {
         const string description = "Choose any number of these ready characters to exhaust. Confirm with none selected to exhaust none.";
-        return new(context.Player, Question.Element, TimingPriority.Untimed, Steps.TurnAction,
+        return new(context.PromptOwner, Question.Element, TimingPriority.Untimed, Steps.TurnAction,
             $"{context.SourceFace}: choose characters to exhaust", false,
             [new Affordance(context.Expressions.Source.ObjectId, AbilityStructuralExecution.ChooseVerb,
                 context.Expressions.Source.ObjectId, context.Player, exhaust.OperationName(), Request(context, exhaust),

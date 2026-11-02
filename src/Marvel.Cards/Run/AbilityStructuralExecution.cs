@@ -161,7 +161,7 @@ internal static class AbilityStructuralExecution
         long amount = IndirectAmount(context, damage);
         long share = Math.Min(amount, eligible.Sum(card =>
             AbilityDamageAndThreatExecution.Room(card, domain)));
-        return new Prompt(context.Player, Question.Element, TimingPriority.Untimed,
+        return new Prompt(context.PromptOwner, Question.Element, TimingPriority.Untimed,
             Steps.CardRevealed, $"{context.SourceFace}: assign {share} damage", false,
             [new Affordance(context.Expressions.Source.ObjectId, ChooseVerb,
                 context.Expressions.Source.ObjectId, World.Scenario, "indirectDamage",
@@ -208,13 +208,13 @@ internal static class AbilityStructuralExecution
         {
             var hand = context.Expressions.World.Seats[context.Player].Hand.Cards
                 .Where(card => card.ObjectId != context.Expressions.Source.ObjectId).ToList();
-            return new Prompt(context.Player, Question.Element, TimingPriority.Untimed, Steps.TurnAction,
+            return new Prompt(context.PromptOwner, Question.Element, TimingPriority.Untimed, Steps.TurnAction,
                 $"{context.SourceFace}: choose cards and a scheme", false,
                 schemes.Where(card => card.Tokens.GetValueOrDefault("k_threat") > 0).Select(scheme =>
                     new Affordance(scheme.ObjectId, ChooseVerb, scheme.ObjectId, World.Scenario,
                         scheme.FaceId, new TargetRequest([.. hand.Select(card => card.ObjectId)], 1, Math.Min(5, hand.Count)))).ToList());
         }
-        return new Prompt(context.Player, Question.Element, TimingPriority.Untimed, Steps.TurnAction,
+        return new Prompt(context.PromptOwner, Question.Element, TimingPriority.Untimed, Steps.TurnAction,
             $"{context.SourceFace}: choose scheme{(count == 1 ? "" : "s")}", false,
             [new Affordance(context.Expressions.Source.ObjectId, ChooseVerb,
                 context.Expressions.Source.ObjectId, context.Player, group.OperationName(),
@@ -269,7 +269,7 @@ internal static class AbilityStructuralExecution
             .Select(candidate => new Affordance(candidate.Ally.ObjectId, ChooseVerb,
                 candidate.Ally.ObjectId, candidate.Ally.Owner, candidate.Ally.FaceId,
                 Costs: [MakeTheCallOffers.Price(world, candidate.Ally, candidate.Sources)])).ToList();
-        return new Prompt(context.Player, Question.Element, TimingPriority.Untimed, Steps.TurnAction,
+        return new Prompt(context.PromptOwner, Question.Element, TimingPriority.Untimed, Steps.TurnAction,
             $"{context.SourceFace}: choose an ally", false, offers);
     }
 

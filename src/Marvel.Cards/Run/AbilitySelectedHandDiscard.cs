@@ -16,7 +16,7 @@ internal static class AbilitySelectedHandDiscard
     {
         int count = Count(context, discard);
         string description = $"Choose {count} card(s) from your hand to discard.";
-        return new(context.Player, Question.Element, TimingPriority.Untimed, Steps.TurnAction,
+        return new(context.PromptOwner, Question.Element, TimingPriority.Untimed, Steps.TurnAction,
             $"{context.SourceFace}: discard hand cards", false,
             [new Affordance(context.Expressions.Source.ObjectId, AbilityStructuralExecution.ChooseVerb,
                 context.Expressions.Source.ObjectId, context.Player, discard.OperationName(), Request(context, discard),

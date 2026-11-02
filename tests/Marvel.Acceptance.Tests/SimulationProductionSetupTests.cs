@@ -25,6 +25,7 @@ public sealed class SimulationProductionSetupTests
             var created = factory.Create(new GameSpecification(choice.Key, heroes, null, 8123)).Game;
             Assert.Equal(created.State.Digest().Canonical(), simulated.State.Digest().Canonical());
             Assert.Equal(created.State.Random.Generator.WordsConsumed, simulated.State.Random.Generator.WordsConsumed);
+            Assert.Equal(created.State.Expert, simulated.State.Expert);
             Assert.Equal((created.Pending?.Player, created.Pending?.Label), (simulated.Pending?.Player, simulated.Pending?.Label));
             opened.Add(choice.Key);
         }

@@ -25,7 +25,7 @@ internal static class AbilityResourceIconDiscard
             }));
         string description = $"Discard a minimal group of hand cards providing {Required(context, discard)} printed resource icon(s) {types}. "
             + "If your hand has fewer eligible icons, discard all cards with eligible icons. Other cards stay in hand.";
-        return new(context.Player, Question.Element, TimingPriority.Untimed, Steps.TurnAction,
+        return new(context.PromptOwner, Question.Element, TimingPriority.Untimed, Steps.TurnAction,
             $"{context.SourceFace}: discard printed resources", false,
             [new Affordance(context.Expressions.Source.ObjectId, AbilityStructuralExecution.ChooseVerb,
                 context.Expressions.Source.ObjectId, context.Player, discard.OperationName(), request,

@@ -17,7 +17,7 @@ internal static class AbilityDiscardShuffleDescription
         printed += discard.Set is { } set ? $" from the {SetName(context, set)} set" : string.Empty;
         string description = $"Choose {request.Min}–{request.Max} cards{distinct}{printed} from your discard pile. "
             + "Shuffle the selected cards into your deck when you confirm.";
-        return new Prompt(context.Player, Question.Element, TimingPriority.Untimed, Steps.TurnAction,
+        return new Prompt(context.PromptOwner, Question.Element, TimingPriority.Untimed, Steps.TurnAction,
             $"{context.SourceFace}: choose cards to shuffle", false,
             [new Affordance(context.Expressions.Source.ObjectId, AbilityStructuralExecution.ChooseVerb,
                 context.Expressions.Source.ObjectId, context.Player, discard.OperationName(), request,

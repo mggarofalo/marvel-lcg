@@ -211,7 +211,7 @@ internal static class AbilityStructuralPowerExecution
         string consequence = top.RestToBottom
             ? $"Add 1 of these {cards.Count} cards to your hand and place the others on the bottom of your deck in an order you choose."
             : $"Add 1 of these {cards.Count} cards to your hand and discard the others.";
-        return new Prompt(context.Player, Question.Element, TimingPriority.Untimed, Steps.TurnAction,
+        return new Prompt(context.PromptOwner, Question.Element, TimingPriority.Untimed, Steps.TurnAction,
             $"{context.SourceFace}: choose a top card", false,
             cards.Select(card => new Affordance(card.ObjectId, ChooseVerb,
                 card.ObjectId, context.Player, card.FaceId, Description: consequence)

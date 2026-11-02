@@ -39,7 +39,7 @@ internal static class AbilityPaymentChoiceDescription
         {
             offers.Add(Alternative(context, payment, "exhaust"));
         }
-        return new Prompt(context.Player, Question.Option, TimingPriority.Untimed,
+        return new Prompt(context.PromptOwner, Question.Option, TimingPriority.Untimed,
             Steps.CardRevealed, $"{context.SourceFace}: spend or "
             + (payment.ExhaustOnly ? "exhaust" : "resolve"), false, offers)
         {

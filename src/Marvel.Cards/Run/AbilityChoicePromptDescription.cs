@@ -32,7 +32,7 @@ internal static class AbilityChoicePromptDescription
         }
         var prompt = new Prompt(
             context.FirstPlayerChooses(choice)
-                ? context.Expressions.World.FirstPlayer : context.Player,
+                ? context.Expressions.World.FirstPlayer : context.PromptOwner,
             cards ? Question.Element : Question.Option,
             TimingPriority.Untimed, Steps.CardRevealed,
             $"{context.SourceFace}: choose {(cards ? "a card" : "an option")}",
