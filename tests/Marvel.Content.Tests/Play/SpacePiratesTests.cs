@@ -51,16 +51,19 @@ public sealed class SpacePiratesTests : CoreCardTestBase
         Assert.DoesNotContain(world.AreaOf(DeckType.RemovedArea).Cards, card => card.Owner == 0);
     }
 
-    [Fact]
+    [Theory]
+    [InlineData(1)]
+    [InlineData(0)]
     [Rule("rr:you-your")]
-    public void PirateCommanderRemovesFromTheHandOfThePlayerItDamaged()
+    public void PirateCommanderRemovesFromTheHandOfThePlayerItDamaged(int engaged)
     {
         // "After this minion attacks and damages you": "you" is the attacked player, seat 1
-        // here, so seat 1's card is removed and the first player's hand is untouched.
+        // here, whether or not the Commander is engaged with that player, so seat 1's card
+        // is removed and the first player's hand is untouched.
         var world = Board(players: 2);
         var mine = GrootBoards.Hand(world, "01003", player: 0);
         var theirs = GrootBoards.Hand(world, "01004", player: 1);
-        var commander = GrootBoards.Engaged(world, PirateCommander, player: 1);
+        var commander = GrootBoards.Engaged(world, PirateCommander, player: engaged);
 
         KangTemporalFixture.Attack(world, commander, 1);
         Drive(world);
