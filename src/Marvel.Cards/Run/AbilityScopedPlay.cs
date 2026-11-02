@@ -10,7 +10,7 @@ namespace Marvel.Cards.Run;
 // The choice routes each supported card kind through its ordinary play lifecycle.
 // Two scopes share it: a shared-trait card at a cost reduced by 1, and any card
 // played ignoring its resource cost.
-internal static class AbilitySharedTraitPlay
+internal static class AbilityScopedPlay
 {
     /// <summary>The resolution result naming the played card's printed resource cost.</summary>
     internal const string PrintedCostPlayed = "printedCostPlayed";
@@ -32,7 +32,7 @@ internal static class AbilitySharedTraitPlay
         var occurrence = cast.World.Agenda.Occurrence;
         if (EffectiveCards.Kind(request.Card, cast.World.Facts) == CardKind.Event)
         {
-            var pending = AbilitySharedTraitEvent.Action(context.Program, cast.World, request.Card, cast.Player, Ignores(choice));
+            var pending = AbilityScopedEvent.Action(context.Program, cast.World, request.Card, cast.Player, Ignores(choice));
             var occurrenceForEvent = new Occurrence(0, [Steps.TurnAction],
                 Subject: request.Card.ObjectId, Player: cast.Player);
             var result = cast.World.Agenda.Executions.Run(occurrenceForEvent, pending,
@@ -71,7 +71,7 @@ internal static class AbilitySharedTraitPlay
                 if (!Eligible(quote, card, heroTraits)) continue;
                 var reduction = Reduction(world, seat, card, ignores);
                 var offer = EffectiveCards.Kind(card, world.Facts) == CardKind.Event
-                    ? AbilitySharedTraitEvent.Offer(world, card, source, quote.Program, quote.Resources, quote.ExcludeSource, reduction)
+                    ? AbilityScopedEvent.Offer(world, card, source, quote.Program, quote.Resources, quote.ExcludeSource, reduction)
                     : PermanentOffer(quote, card, reduction);
                 if (offer is not null) offers.Add(offer);
             }
@@ -149,7 +149,7 @@ internal static class AbilitySharedTraitPlay
         var request = new ScopedCardPlayRequest(world.Facts, world.CardPlayAbilities, seat, card, input,
             Reduction(world, seat, card, Ignores(choice)));
         if (EffectiveCards.Kind(card, world.Facts) == CardKind.Event)
-            AbilitySharedTraitEvent.Validate(context, card, input, request.Reduction!, Ignores(choice));
+            AbilityScopedEvent.Validate(context, card, input, request.Reduction!, Ignores(choice));
         else ScopedPermanentPlay.Validate(world, request);
         return request;
     }

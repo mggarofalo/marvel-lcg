@@ -10,7 +10,7 @@ namespace Marvel.Cards.Run;
 // shapes need action-address and combined-cost admission before they can play.
 // A play ignoring the resource cost pays nothing, so a paid-resource query reads
 // that empty payment (rr:ignore.1); a reduced play's paid queries are not modelled.
-internal static class AbilitySharedTraitEvent
+internal static class AbilityScopedEvent
 {
     internal static PendingAbility Action(AbilityProgram program, World world, Card card, int player, bool ignoresCost)
     {
@@ -39,7 +39,7 @@ internal static class AbilitySharedTraitEvent
         // An unsupported shape is offered when the play may be legal and raises when chosen.
         if (ignores && Unsupported(program, world, card, ignores) is not null)
             return new Affordance(card.ObjectId, AbilityStructuralExecution.ChooseVerb, card.ObjectId, player,
-                card.FaceId, Description: AbilitySharedTraitPlay.PlayDescription(world, program, card, source, ignores))
+                card.FaceId, Description: AbilityScopedPlay.PlayDescription(world, program, card, source, ignores))
             { PlaysCard = true, SelectionSourceId = source.ObjectId };
         _ = Action(program, world, card, player, ignores);
         var ability = written.Single(candidate => candidate.Trigger.Timing == AbilityType.Action);
@@ -51,7 +51,7 @@ internal static class AbilitySharedTraitEvent
         var generators = price.Generators.Where(item => !excludeSource || item.Effect != source.ObjectId).ToArray();
         if (ResourcePayment.Allocate(price, generators.Select(item => item.Effect).ToArray()) is null) return null;
         return new Affordance(card.ObjectId, AbilityStructuralExecution.ChooseVerb, card.ObjectId, player,
-            ability.Name, Costs: [price], Description: AbilitySharedTraitPlay.PlayDescription(world, program, card, source, ignores)
+            ability.Name, Costs: [price], Description: AbilityScopedPlay.PlayDescription(world, program, card, source, ignores)
                 + (AbilityEffectDescription.Summary(ability.Effect) is { } effect ? $" {effect}" : string.Empty))
             { PlaysCard = true, SelectionSourceId = source.ObjectId,
                 DeferredTargetSelection = ability.Effect is AbilityEffect.ChooseCard };

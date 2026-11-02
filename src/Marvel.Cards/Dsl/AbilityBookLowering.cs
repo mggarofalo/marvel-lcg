@@ -83,7 +83,7 @@ internal static class AbilityBookLowering
             ? LowerCost(Syntax(syntaxCost), location with { Path = "cost" }) : null;
         AbilityDiscardChoiceLowering.Validate(ability, compiledCost, effect, location);
         AbilitySchemeChoiceLowering.Validate(ability, compiledCost, effect, location);
-        AbilitySharedTraitPlayLowering.Validate(ability, compiledCost, effect, location, nodes);
+        AbilityScopedPlayLowering.Validate(ability, compiledCost, effect, location, nodes);
         AbilityRevealMemoryLowering.Validate(ability, location, nodes);
         // rr:when-revealed-abilities: "When a player reveals a card ... all 'When Revealed'
         // abilities on the card resolve." Nothing gates their resolution, so a condition on

@@ -120,7 +120,7 @@ internal static class AbilityResolutionAdmission
     private static bool OtherPartialResolution(
         AbilityEffect node, AbilityAdmissionScope cast) => node.OperationName() switch
         {
-            "playSharedHeroTraitCard" or "playIgnoringResourceCost" => AbilitySharedTraitPlay.CanInitiate(cast.Context, node),
+            _ when AbilityScopedPlay.IsScopedPlay(node) => AbilityScopedPlay.CanInitiate(cast.Context, node),
             "inspectDiscardOrderEncounterTop" => EncounterRouting.Deck(cast.World).Cards.Count > 0,
             "cancelOccurrence" or "replaceReady" => TriggerChangeResolves(node, cast),
             "cancelBoostAbility" => cast.Occurrence.BoostAbility is { } boost && boost.CanCancel(cast.World),
@@ -184,7 +184,7 @@ internal static class AbilityResolutionAdmission
         if (node.OperationName() is "choose" or "chooseCard" or "indirectDamage"
             or "resolveSpecials" or "payOrExhaust" or "chooseTopForHand" or "peekTop" or "inspectEncounterTop" or "inspectDiscardOrderEncounterTop"
             or "discardHandCards" or "discardResourceIcons" or "chooseStatusRecipients" or "chooseHealRecipients" or "chooseCardsToHand" or "chooseDiscardToShuffle" or "exhaustAnyNumber" or "distributeThreat" or "thwartDifferentSchemes" or "makeTheCall"
-            or "playSharedHeroTraitCard" or "playIgnoringResourceCost" or "legalPractice" or "payOrEffect")
+            or "legalPractice" or "payOrEffect" || AbilityScopedPlay.IsScopedPlay(node))
         {
             throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' uses '{node.OperationName()}' before dependent text and it "

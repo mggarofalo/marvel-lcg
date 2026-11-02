@@ -3,7 +3,7 @@ using Marvel.Rules.Timing;
 namespace Marvel.Cards.Dsl;
 
 // These synthetic capabilities model a hand-card play that begins its Action.
-internal static class AbilitySharedTraitPlayLowering
+internal static class AbilityScopedPlayLowering
 {
     internal static void Validate(CardAbility ability, AbilityCost? cost, AbilityEffect effect,
         AbilityLocation location, IEnumerable<AbilityEffect> nodes)
