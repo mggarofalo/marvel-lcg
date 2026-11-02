@@ -16,15 +16,29 @@ internal static class TableCanvasBounds
     {
         float bottom = main.GetViewportRect().Size.Y + main.pageScroll.OffsetBottom
             - main.GetNode<PanelContainer>("Margin/Shell").GetThemeStylebox("panel").GetMargin(Side.Bottom);
-        return Math.Max(820, MathF.Floor(bottom - main.boardAreas.GetGlobalRect().Position.Y - 4));
+        return Fit(bottom - main.boardAreas.GetGlobalRect().Position.Y - 4);
     }
 
     /// <summary>
-    /// Whether a table rendered at one height can be stretched to another in place. A table taller than the
-    /// reference scales its far side and cards with its height, so a change there is drawn again instead.
+    /// The table's height in the room below the chrome: the reference height, or less down to 820, until the
+    /// room is a whole card-growth step taller; from there the table takes it all. Below that step a few
+    /// pixels of chrome moving never redraws the table.
     /// </summary>
-    internal static bool Reflowable(float rendered, float height) => rendered == height
-        || rendered <= AstraTableGeometry.ReferenceHeight && height <= AstraTableGeometry.ReferenceHeight;
+    internal static float Fit(float room)
+    {
+        float available = Math.Max(820, MathF.Floor(room));
+        return available >= AstraTableGeometry.ReferenceHeight * 1.1f
+            ? available : Math.Min(AstraTableGeometry.ReferenceHeight, available);
+    }
+
+    /// <summary>
+    /// Whether a table rendered at one height can be stretched to another in place: its cards and far side
+    /// grow in steps with its height, so it can while both heights give the same step, and is drawn again
+    /// when the step changes.
+    /// </summary>
+    internal static bool Reflowable(float rendered, float height) =>
+        SpatialCardMetrics.TableScale(InterfaceScale.Percent100, Math.Max(rendered, AstraTableGeometry.ReferenceHeight))
+        == SpatialCardMetrics.TableScale(InterfaceScale.Percent100, Math.Max(height, AstraTableGeometry.ReferenceHeight));
 
     internal static void Observe(Main main, TableCanvasSurface surface)
     {

@@ -101,8 +101,28 @@ public sealed class TableRoughEdgesTests
         var reference = new AstraTableGeometry(1864, AstraTableGeometry.ReferenceHeight, false) { HasGameAreas = true };
         var tall = reference with { Height = 1350 };
         Assert.Equal(344, reference.VillainMat.Size.Y);
-        Assert.Equal(344 * 1350 / AstraTableGeometry.ReferenceHeight, tall.VillainMat.Size.Y, 3);
+        Assert.Equal(344 * 1.4f, tall.VillainMat.Size.Y, 3);
+        Assert.Equal(344, (reference with { Height = 1000 }).VillainMat.Size.Y);
     }
+
+    [Theory]
+    [InlineData(700.0f, 820.0f)]
+    [InlineData(900.6f, 900.0f)]
+    [InlineData(1000.0f, 962.0f)]
+    [InlineData(1057.0f, 962.0f)]
+    [InlineData(1059.0f, 1059.0f)]
+    [InlineData(1330.0f, 1330.0f)]
+    public void TheTableTakesTheWholeRoomOnlyFromOneGrowthStep(float room, float height) =>
+        Assert.Equal(height, TableCanvasBounds.Fit(room));
+
+    [Theory]
+    [InlineData(900, 962, true)]
+    [InlineData(962, 1000, true)]
+    [InlineData(1000, 1040, true)]
+    [InlineData(1000, 1100, false)]
+    [InlineData(1350, 1360, true)]
+    public void ATableStretchesInPlaceOnlyWithinOneGrowthStep(float rendered, float height, bool reflowable) =>
+        Assert.Equal(reflowable, TableCanvasBounds.Reflowable(rendered, height));
 
     [Fact]
     public void AnOrdinaryTableHasNoProgressDescription()

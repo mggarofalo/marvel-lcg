@@ -23,7 +23,10 @@ internal sealed record AstraTableGeometry(
     internal bool HasScenarioColumns => HasEncounterGroups || HasGameAreas;
     internal const float ReferenceWidth = 1320;
     internal const float ReferenceHeight = 962;
-    internal Rect2 VillainMat => new(8, 8, Width - 16, HasScenarioColumns ? Math.Max(344, ScaleY(344)) : ScaleY(294));
+    internal Rect2 VillainMat => new(8, 8, Width - 16, HasScenarioColumns ? 344 * FarSideGrowth : ScaleY(294));
+
+    // A table taller than the reference grows its scenario columns in the same steps as its cards.
+    private float FarSideGrowth => Math.Max(100, (int)SpatialCardMetrics.TableScale(InterfaceScale.Percent100, Height)) / 100f;
     internal Rect2 PlayerMat => new(8, ScaleY(404), Width - 16, Height - ScaleY(404) - 8);
     internal Rect2 EncounterDiscard => Scale(new Rect2(22, 60, 70, 112));
     internal Rect2 EncounterDeck => Scale(new Rect2(104, 60, 70, 112));
