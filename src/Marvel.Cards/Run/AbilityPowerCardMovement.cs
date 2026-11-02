@@ -32,6 +32,7 @@ internal static class AbilityPowerCardMovement
                 + "a labelled-power continuation reads its constant abilities, "
                 + "which is not implemented");
         }
+        RejectUntrackedTestedEntry(card, cast, state);
         var discarded = new HashSet<int>(state.Discarded);
         if (!discarded.Remove(card.ObjectId)) return state;
         var engagement = new Dictionary<int, int>(state.Engagement);
@@ -43,6 +44,18 @@ internal static class AbilityPowerCardMovement
                 cast.World.Players) <= 0) return state;
         var first = cast.World.Seats[cast.World.FirstPlayer].IdentityCard;
         return SetPowerTough(state, card, true, first, cast);
+    }
+
+    // The power state records an entry only by restoring an unavailable minion.
+    private static void RejectUntrackedTestedEntry(Card card, AbilityAdmissionScope cast, AbilityPowerState state)
+    {
+        if (!DeckTypes.IsInPlay(card.Area.Type) && !state.Discarded.Contains(card.ObjectId)
+            && AbilityThreatPermissions.TestsPresenceOf(cast.World, cast.Context.Program, card))
+        {
+            throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' puts '{card.FaceId}' into play before a projected "
+                + "threat-removal permission tests its presence, which is not implemented");
+        }
     }
 
     internal static AbilityPowerState Draw(
