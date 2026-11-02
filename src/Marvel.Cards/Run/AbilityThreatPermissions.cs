@@ -43,7 +43,7 @@ internal static class AbilityThreatPermissions
                 ProhibitsThreatRemoval(step, scheme, selectors, expressions, byThwarting, projection)),
             AbilityEffect.Simultaneous simultaneous => simultaneous.Effects.Any(step =>
                 ProhibitsThreatRemoval(step, scheme, selectors, expressions, byThwarting, projection)),
-            AbilityEffect.Conditional conditional => (TestCondition(conditional, expressions, projection)
+            AbilityEffect.Conditional conditional => (TestCondition(conditional, selectors, expressions, projection)
                     ? conditional.Then : conditional.Else) is { } branch
                 && ProhibitsThreatRemoval(branch, scheme, selectors, expressions, byThwarting, projection),
             AbilityEffect.CardAction
@@ -57,6 +57,38 @@ internal static class AbilityThreatPermissions
             _ => false,
         };
 
+    /// <summary>Whether an in-play threat-removal prohibition tests the presence of <paramref name="entering"/>'s title.</summary>
+    /// <remarks>
+    /// A power-state projection shows an entry from outside play only for a minion it
+    /// started as unavailable. It cannot show any other entering card as present, so
+    /// that entry raises instead.
+    /// </remarks>
+    internal static bool TestsPresenceOf(World world, AbilityProgram program, Card entering) =>
+        world.Cards.Where(card => DeckTypes.IsInPlay(card.Area.Type))
+            .SelectMany(card => AbilityProgramQueries.ActiveOn(world, program, card))
+            .Where(ability => ability.Trigger.Timing == AbilityType.Constant && HasProhibition(ability.Effect))
+            .SelectMany(ability => TestedTitles(ability.Effect))
+            .Any(title => entering.Faces.Any(face =>
+                string.Equals(world.Facts.Title(face), title, StringComparison.Ordinal)));
+
+    private static IEnumerable<string> TestedTitles(AbilityEffect? effect) => effect switch
+    {
+        AbilityEffect.Sequence sequence => sequence.Effects.SelectMany(TestedTitles),
+        AbilityEffect.Simultaneous simultaneous => simultaneous.Effects.SelectMany(TestedTitles),
+        AbilityEffect.Conditional conditional => TestedTitles(conditional.Test)
+            .Concat(TestedTitles(conditional.Then)).Concat(TestedTitles(conditional.Else)),
+        _ => [],
+    };
+
+    private static IEnumerable<string> TestedTitles(AbilityCondition condition) => condition switch
+    {
+        AbilityCondition.All all => all.Operands.SelectMany(TestedTitles),
+        AbilityCondition.Any any => any.Operands.SelectMany(TestedTitles),
+        AbilityCondition.Negated negated => TestedTitles(negated.Operand),
+        AbilityCondition.Exists { Cards: AbilityCardSelection.Titled titled } => [titled.Title],
+        _ => [],
+    };
+
     private static bool HasProhibition(AbilityEffect? effect) => effect switch
     {
         AbilityEffect.CardAction { Instruction: AbilityCardInstruction.PreventThwarting
@@ -68,12 +100,7 @@ internal static class AbilityThreatPermissions
         _ => false,
     };
 
-    private static bool TestCondition(AbilityEffect.Conditional conditional,
-        AbilityExpressionEvaluation expressions, AbilityThreatPermissionProjection? projection)
-    {
-        if (projection is not null)
-            throw new Marvel.Rules.Play.RulesNotImplementedException(
-                "projected conditional threat-removal permission requires projected predicate evaluation");
-        return expressions.Test(conditional.Test);
-    }
+    private static bool TestCondition(AbilityEffect.Conditional conditional, AbilitySelectorEvaluation selectors,
+        AbilityExpressionEvaluation expressions, AbilityThreatPermissionProjection? projection) =>
+        projection?.Test(conditional.Test, selectors) ?? expressions.Test(conditional.Test);
 }
