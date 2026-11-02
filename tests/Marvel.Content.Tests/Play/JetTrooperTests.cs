@@ -68,6 +68,37 @@ public sealed class JetTrooperTests
         Assert.Throws<AbilityException>(() => new AbilityRunner(AbilityCatalog.Parse(Book.Replace(from, to))));
 
     [Fact]
+    [Rule("rr:player-elimination.step.5")]
+    [Rule("rr:player-elimination.5")]
+    public void FollowupAgainstAPlayerTheBoostedAttackEliminatedMakesNoAttack()
+    {
+        // 04146: "If you are in hero form, the villain attacks you after this activation."
+        // The boosted attack defeats that hero first. rr:player-elimination.5: "If a player
+        // is eliminated partway through the resolution of an ability, resolve the entire
+        // ability." rr:player-elimination.step.5: "Eliminated players no longer participate
+        // in the game", so the follow-up has no player to attack and makes no attack.
+        var runner = new AbilityRunner(AbilityCatalog.Parse(Book));
+        var (_, world) = Playing(_ => { }, hero: true, heroes: ["spider_man", "captain_marvel"], abilities: runner);
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        var deck = world.AreaOf(DeckType.EncounterDeck);
+        World.MoveToTop(world.CreateCard("04146", deck), deck);
+        var spider = world.Seats[0].IdentityCard;
+        spider.TakeDamage(DamagePlacement.Health(world, world.Facts, spider) - 1);
+        int before = deck.Cards.Count;
+        world.Agenda.Add(new PhaseStep(new EnemyAttackOperation(), 1, 2, Subject: villain.ObjectId, Seat: 0));
+
+        var events = Agendas.Finish(world, world.Facts, runner);
+
+        Assert.True(world.Seats[0].Eliminated);
+        Assert.False(world.Seats[1].Eliminated);
+        Assert.Equal(0, world.Seats[1].IdentityCard.Damage);
+        Assert.Single(events.OfType<AttackBoundary>(), boundary => boundary.Started);
+        Assert.Equal(before - 1, deck.Cards.Count);
+        Assert.Null(world.Activation);
+        Assert.Equal(Outcome.Unfinished, world.Result);
+    }
+
+    [Fact]
     [Rule("rr:boost-boost-icon.6")]
     public void ExistingFacedownBoostStillResolvesOnAnAttackThatDealsNoNewBoosts()
     {

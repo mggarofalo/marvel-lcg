@@ -125,15 +125,25 @@ internal static class AbilityStructuralPowerExecution
     }
 
     // The attacked player decides the activation before any enemy is chosen.
-    private static Unsupported? SettledBeforeEnemies(AbilityStructuralContext context,
+    private static AbilityStructuralTransition? SettledBeforeEnemies(AbilityStructuralContext context,
         AbilityEffect.ActivateEnemies activation, Card? against, int seat)
     {
         if (seat < 0)
             return new Unsupported(
                 $"'{context.SourceFace}' initiates an enemy attack against a character with no attacked player");
+        if (AgainstEliminatedPlayer(context, activation, seat))
+            return new ScheduleActivationsCommand(activation, [], -1, activation.First, activation.Dynamic);
         return HasCurrentActivationTarget(activation, against) ? null
             : new Unsupported($"'{context.SourceFace}' cannot resolve its explicit attacked character");
     }
+
+    // rr:player-elimination.5: "If a player is eliminated partway through the resolution
+    // of an ability, resolve the entire ability." rr:player-elimination.step.5: "Eliminated
+    // players no longer participate in the game", so no enemy activates against an
+    // eliminated player. An engaged-hero activation takes each enemy's engaged player instead.
+    private static bool AgainstEliminatedPlayer(
+        AbilityStructuralContext context, AbilityEffect.ActivateEnemies activation, int seat) =>
+        !activation.EngagedHero && context.Expressions.World.Seats[seat].Eliminated;
 
     // An omitted target uses the attacked identity. A retained explicit target
     // must still be that in-play incarnation; it never authorizes a substitute.
