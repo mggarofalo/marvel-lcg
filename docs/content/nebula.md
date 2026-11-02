@@ -109,11 +109,11 @@ digest, is identical on 09a59418 and this packet.
   vocabulary alone: `NebulaLoweringTests`.
 - Research-only complete Standard and Expert games, dealt directly rather than
   through discovery, with exact replay, and the setup: `NebulaResearchGameTests`.
-- Every new decision has a mutant: 64 in all, over the engine words, the attack
-  maximum and its preview, the When Revealed guard, the top-card removal's
-  target, and each row's conditions and amounts (including "you" on the
+- Every new decision has a mutant: 65 in all, over the engine words, the attack
+  maximum and its preview, the When Revealed guard, the revealed-card validator,
+  the top-card removal's target, and each row's conditions and amounts (including "you" on the
   Techniques' Specials and Ruthless, "per hero" on the setup, and the first
-  player on Shoot the Thrusters!). 57 are killed; 7 are equivalent and documented
+  player on Shoot the Thrusters!). 58 are killed; 7 are equivalent and documented
   where they live: the maximum's modifier role, the round mark's admission, the
   last revealed card, `discardEach`'s two guards, Nebula (I)'s Technique
   condition and the setup's Technique test.
