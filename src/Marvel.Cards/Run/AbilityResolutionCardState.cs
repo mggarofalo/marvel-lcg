@@ -18,7 +18,7 @@ internal static class AbilityResolutionCardState
         {
             var deck = cast.World.Seats[cast.Player].InvocationDeck
                 ?? throw new RulesNotImplementedException("no resolving player Invocation deck");
-            deck.DiscardTop(cast.Source, cast.Trigger, cast.Events);
+            deck.DiscardResolved(cast.Source, cast.Trigger, cast.Events);
             cast.ResolveEffect();
             return true;
         }
