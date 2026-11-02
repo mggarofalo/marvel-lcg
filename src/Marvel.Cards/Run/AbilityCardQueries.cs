@@ -89,10 +89,20 @@ internal static class AbilityCardQueries
         AbilityCardBinding.TriggerSubject => cast.Occurrence.Subject >= 0
             ? cast.World.Cards[cast.Occurrence.Subject]
             : null,
+        _ => Remembered(name, cast),
+    };
+
+    private static Card? Remembered(AbilityCardBinding name, AbilityQueryContext cast) => name switch
+    {
         AbilityCardBinding.DiscardedEvent => DiscardedEvent(cast),
         // rr:defend-defense.6: without a defending character the attack is
         // undefended, including when a boost ability defeats its defending ally.
         AbilityCardBinding.DefendingCharacter => CurrentDefender(cast.World),
+        // Printed 16101 Combat Ready: "Reveal that card, then resolve its 'Special'
+        // ability." The card the invocation revealed last, once its reveal resolved.
+        AbilityCardBinding.Revealed => (cast.RevealedThisResolution ?? throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' names the revealed card outside an ability invocation")) is { Count: > 0 } revealed
+            ? cast.World.Cards[revealed[^1]] : null,
         _ => throw new InvalidOperationException("Unknown compiled card binding"),
     };
 

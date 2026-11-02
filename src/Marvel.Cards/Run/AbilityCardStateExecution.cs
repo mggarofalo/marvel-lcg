@@ -87,6 +87,8 @@ internal static class AbilityCardStateExecution
     internal static bool TryRun(AbilityEffect effect, AbilityCardStateContext context)
     {
         if (TryRunStateEffect(effect, context)) return true;
+        if (effect is AbilityEffect.CardAction { Instruction: AbilityCardInstruction.DiscardEach } each)
+            return AbilityDiscardEachExecution.Run(each.Selection, context);
         if (effect is AbilityEffect.CardAction action)
         {
             return RunCardAction(action, context);
@@ -267,7 +269,7 @@ internal static class AbilityCardStateExecution
     { var evaluation = new AbilitySelectorEvaluation(context.Expressions.Bindings); return Publish(evaluation.Result(evaluation.Find(selection)), context.World); }
     internal static IReadOnlyList<Card> Every(AbilityCardSelection selection, AbilityCardStateContext context)
     { var evaluation = new AbilitySelectorEvaluation(context.Expressions.Bindings); return Publish(evaluation.Result(evaluation.Every(selection)), context.World); }
-    private static bool CanRemove(AbilityCardSelection selection, Card card, AbilityCardStateContext context) =>
+    internal static bool CanRemove(AbilityCardSelection selection, Card card, AbilityCardStateContext context) =>
         new AbilitySelectorEvaluation(context.Expressions.Bindings).CanRemove(selection, card);
     internal static Area Area(AbilitySearchArea area, AbilityCardStateContext context) => area switch
     {

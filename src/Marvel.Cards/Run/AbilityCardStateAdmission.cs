@@ -38,6 +38,9 @@ internal static class AbilityCardStateAdmission
             "exhaust" => Find(EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast)?.Ready == true,
             "returnOwnedToDiscard" => Every(EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast)
                 .Any(card => card.Owner >= 0),
+            "discardEach" => Every(EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast)
+                .Any(card => DeckTypes.IsInPlay(card.Area.Type)
+                    && CanRemoveByEffect(EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast, card)),
             "placeOnBottomOfDeck" or "placeOnTopOfDeck" or "returnOwnedToHand" or "addToHand" => AbilityCardMovementAdmission.HasHandTarget(node, cast),
             "ready" => Every(EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast).Any(card =>
                 !card.Ready && AbilityProgramQueries.CanReady(cast.World, cast.Context.Program, card)),

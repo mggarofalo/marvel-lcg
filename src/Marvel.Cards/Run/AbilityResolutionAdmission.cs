@@ -105,6 +105,13 @@ internal static class AbilityResolutionAdmission
             "moveThreat" => AbilityThreatMovementAdmission.CanMove((AbilityEffect.MoveThreat)node, cast),
             "removeThreat" => CanRemoveThreat(node, cast),
             "gainSurge" => EffectOf<AbilityEffect.GainSurge>(node, cast).Instances > 0,
+            "markThisRound" => !RoundMarks.Has(cast.World, EffectOf<AbilityRoundEffect.MarkThisRound>(node, cast).Mark),
+            // A deck that empties resets at once (rr:player-deck.1), so removing its top
+            // card resolves fully whenever the named player's deck holds a card.
+            "removeTopFromGame" when node is AbilityEffect.DiscardTop
+                { Players: AbilityPlayerSelection.OnePlayer one } removal =>
+                cast.World.Seats[Seat(one.Player, cast)].Deck.Cards.Count > 0
+                && Amount(removal.Count, cast) > 0,
             "draw" => CanDraw(node, cast),
             "drawToHandSize" => EffectOf<AbilityEffect.DrawToHandSize>(node, cast) is var handSize
                 && cast.World.Seats[Seat(handSize.Player, cast)].Hand.Cards.Count

@@ -3477,11 +3477,98 @@
         "16104",
         "16105"
       ]
+    },
+    "nebula": {
+      "campaign_log": {},
+      "challenges": [],
+      "encounter_sets": [
+        "standard",
+        "power_stone",
+        "ship_command"
+      ],
+      "encounters": [
+        "16094",
+        "16094",
+        "16095",
+        "16096",
+        "16097",
+        "16097",
+        "16098",
+        "16098",
+        "16099",
+        "16099",
+        "16100",
+        "16100",
+        "16101",
+        "16101",
+        "16102",
+        "16102"
+      ],
+      "expert": false,
+      "modular_sets": [
+        "space_pirates"
+      ],
+      "name": "Nebula",
+      "schemes": [
+        "16091a,16091b",
+        "16092a,16092b"
+      ],
+      "set_aside": [
+        "16093"
+      ],
+      "villain": [
+        "16088",
+        "16089"
+      ]
+    },
+    "nebula_expert": {
+      "campaign_log": {},
+      "challenges": [],
+      "encounter_sets": [
+        "standard",
+        "expert",
+        "power_stone",
+        "ship_command"
+      ],
+      "encounters": [
+        "16094",
+        "16094",
+        "16095",
+        "16096",
+        "16097",
+        "16097",
+        "16098",
+        "16098",
+        "16099",
+        "16099",
+        "16100",
+        "16100",
+        "16101",
+        "16101",
+        "16102",
+        "16102"
+      ],
+      "expert": true,
+      "modular_sets": [
+        "space_pirates"
+      ],
+      "name": "Nebula",
+      "schemes": [
+        "16091a,16091b",
+        "16092a,16092b"
+      ],
+      "set_aside": [
+        "16093"
+      ],
+      "villain": [
+        "16089",
+        "16090"
+      ]
     }
   },
   "contract": "docs/setup-dataset.md",
   "counts": {
-    "campaigns": 45,
+    "campaigns": 47,
     "encounter_sets": 25,
     "heroes": 19
   },

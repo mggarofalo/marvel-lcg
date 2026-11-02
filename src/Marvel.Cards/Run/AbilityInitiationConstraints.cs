@@ -114,10 +114,6 @@ internal static class AbilityInitiationConstraints
     {
         "playSharedHeroTraitCard" or "playIgnoringResourceCost" => AbilitySharedTraitPlay.CanInitiate(cast.Context, node),
         "resolveInvocation" => AbilityInvocationPayment.Top(cast.World, cast.Player) is not null,
-        "resolveSpecials" when cast.HasContinuation =>
-            throw new RulesNotImplementedException(
-                $"'{cast.Source.FaceId}' continues after ordered Special abilities, "
-                + "which is not implemented"),
         "chooseCard" => CanInitiateChooseCard(node, cast),
         "choose" => CanInitiateChoice(node, cast),
         "draw" => CanInitiateDraw(node, cast),

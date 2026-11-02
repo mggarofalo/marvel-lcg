@@ -168,7 +168,16 @@ internal sealed class DamageConsequencePreview(World world, ICardFacts facts, Ca
             if (isAttack) taken = ProjectAttackReduction(taken.Value, notes);
         }
 
-        return ProjectActivePrevention(taken, notes);
+        taken = ProjectActivePrevention(taken, notes);
+        return isAttack ? ProjectAttackMaximum(taken, notes) : taken;
+    }
+
+    private long? ProjectAttackMaximum(long? taken, List<string> notes)
+    {
+        if (taken is not { } damage || AttackDamageMaximum.Remaining(world, target) is not { } remaining
+            || damage <= remaining) return taken;
+        notes.Add($"Takes at most {remaining} damage from this attack");
+        return remaining;
     }
 
     private long ProjectAttackReduction(long taken, List<string> notes)
