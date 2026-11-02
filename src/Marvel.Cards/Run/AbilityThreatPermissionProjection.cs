@@ -29,9 +29,11 @@ internal sealed record AbilityThreatPermissionProjection(
     /// rr:in-play-and-out-of-play.4: "Card abilities only interact with, and can only
     /// target, cards that are in play". A titled presence test such as Total Destruction's
     /// "while Abomination is in play" therefore reads projected membership: a card the
-    /// power defeats is absent and a card it puts into play is present. Engine choice:
-    /// titled presence tests and their combinations are the projected predicates; any
-    /// other condition raises.
+    /// power defeats is absent and a card it puts into play is present. A titled card
+    /// in the villain's play area, such as "Take What Is Mine"'s "while the Power Stone is
+    /// attached to Ronan", reads projected membership and the projected host. Engine
+    /// choice: these tests and their combinations are the projected predicates; any other
+    /// condition raises.
     /// </remarks>
     internal bool Test(AbilityCondition condition, AbilitySelectorEvaluation selectors) => condition switch
     {
@@ -39,6 +41,11 @@ internal sealed record AbilityThreatPermissionProjection(
         AbilityCondition.Any any => any.Operands.Any(operand => Test(operand, selectors)),
         AbilityCondition.Negated negated => !Test(negated.Operand, selectors),
         AbilityCondition.Exists { Cards: AbilityCardSelection.Titled titled } => Titled(titled, selectors).Any(),
+        AbilityCondition.Exists { Cards: AbilityCardSelection.InAreas
+        {
+            Areas: [AbilitySearchArea.VillainPlayArea], Kind: null, Trait: null, Title: { } title,
+            Top: null, AspectOnly: false,
+        } } => InVillainPlayArea(title),
         _ => throw new RulesNotImplementedException(
             "projected conditional threat-removal permission requires projected predicate evaluation"),
     };
@@ -59,6 +66,20 @@ internal sealed record AbilityThreatPermissionProjection(
                 "a projected threat-removal presence test reads a card entering play facedown");
         return string.Equals(World.Facts.Title(card.FaceId), title, StringComparison.Ordinal);
     }
+
+    // An entering card's destination is not part of the projection, so a titled entry raises.
+    private bool InVillainPlayArea(string title)
+    {
+        if (Entered.Any(id => !Departed.Contains(id) && EnteredShows(World.Cards[id], title)))
+            throw new RulesNotImplementedException(
+                "a projected villain play area test reads a card entering play");
+        return World.Cards.Any(card => InPlay(card)
+            && string.Equals(World.Facts.Title(card.FaceId), title, StringComparison.Ordinal)
+            && ProjectedPlayArea(card).IsVillains);
+    }
+
+    private PlayArea ProjectedPlayArea(Card card) =>
+        Hosts.TryGetValue(card.ObjectId, out int host) ? World.Cards[host].Area.PlayArea : card.Area.PlayArea;
 
     private Card? AttachedTo()
     {

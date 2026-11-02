@@ -197,8 +197,8 @@ internal static class AbilityWindowAdmission
             return [occurrence.Player];
         }
         // pack:mc11:game-areas: players cannot affect a card in another game area.
-        // No authored ability sets anyPlayer, so a mutant returning
-        // world.PlayerOrder here survives every current card.
+        // Equivalent mutant: returning world.PlayerOrder. The one windowed anyPlayer
+        // ability, the Kree Command Ship's (16108), is in a single-game-area scenario.
         return EachPlayerEffects.Players(world, card);
     }
 

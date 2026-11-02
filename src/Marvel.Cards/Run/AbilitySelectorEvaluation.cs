@@ -35,6 +35,14 @@ internal sealed class AbilitySelectorEvaluation(
             return LastCard(Every(last.Cards));
         }
         if (selector is AbilityCardSelection.InAreas areas) return FindInAreas(areas);
+        return FindNamedPlace(selector);
+    }
+
+    private Card? FindNamedPlace(AbilityCardSelection selector)
+    {
+        // A player's identity area holds exactly one card, their identity.
+        if (selector is AbilityCardSelection.InPlayerArea { Area: DeckType.HeroArea } identity)
+            return Every(identity).SingleOrDefault();
         if (selector is AbilityCardSelection.DefeatedAllyInYourDiscardPile)
             return AbilityDefeatedAllySelection.Find(context);
         throw new RulesNotImplementedException(
@@ -204,19 +212,11 @@ internal sealed class AbilitySelectorEvaluation(
     {
         if (area == AbilitySearchArea.YourDeck) return context.World.Seats[context.Player].Deck.Cards;
         if (area == AbilitySearchArea.YourHand) return context.World.Seats[context.Player].Hand.Cards;
-        if (area == AbilitySearchArea.YourPlayArea)
-            return InPlay(playArea => playArea == PlayArea.Of(context.Player));
-        // Equivalent mutant: no villain-area card is a Rocket Raccoon upgrade, so admitting
-        // every play area survives.
-        if (area == AbilitySearchArea.PlayerPlayAreas) return InPlay(playArea => playArea.IsPlayers);
+        if (AbilityPlayAreaCards.For(context.World, area, context.Player) is { } inPlay) return inPlay;
         var playArea = area == AbilitySearchArea.YourDiscardPile ? PlayArea.Of(context.Player) : PlayArea.Villains;
         return context.World.Areas.FirstOrDefault(candidate => candidate.Type == AreaType(area)
             && candidate.PlayArea == playArea && candidate.Host == -1)?.Cards ?? [];
     }
-
-    private Card[] InPlay(Func<PlayArea, bool> playArea) =>
-        [.. context.World.Areas.Where(candidate => DeckTypes.IsInPlay(candidate.Type)
-            && playArea(candidate.PlayArea)).SelectMany(candidate => candidate.Cards)];
 
     internal static DeckType AreaType(AbilitySearchArea area) => area switch
     {

@@ -26132,6 +26132,149 @@
       ]
     },
     {
+      "card": "16103",
+      "name": "Ronan the Accuser",
+      "note": "Forced Interrupt: when Ronan the Accuser activates against you, give him 1 additional boost card if you control the Power Stone. An activation is an attack or a scheme (rr:activation), so the printed ability is split by the activation's kind, as for Hysteria (02020); 'you' is the player it is against (rr:you-your.7). Engine choice: the player who controls the Power Stone is the player in whose play area it is, attached to their identity. An encounter card is under the scenario's control (rr:ownership-and-control.2), but the card names a player who controls it, and the card wins (rr:the-golden-rules); an attachment's 'you' already follows the controller of the card it is attached to (rr:attachment.2). Toughness is a printed keyword the engine reads (rr:toughness).",
+      "abilities": [
+        {"trigger": {"event": "WhenAttackInitiated", "timing": "ForcedInterrupt", "actor": "this", "player": "trigger.player"}, "when": {"exists": {"cardsIn": {"area": "yourPlayArea", "title": "Power Stone"}}}, "effect": {"giveAdditionalBoost": {"enemy": "this"}}},
+        {"trigger": {"event": "WhenEnemySchemes", "timing": "ForcedInterrupt", "subject": "this", "player": "trigger.player"}, "when": {"exists": {"cardsIn": {"area": "yourPlayArea", "title": "Power Stone"}}}, "effect": {"giveAdditionalBoost": {"enemy": "this"}}}
+      ]
+    },
+    {
+      "card": "16104",
+      "name": "Ronan the Accuser",
+      "note": "Ronan the Accuser (II). When Revealed: search the encounter deck and discard pile for the Cut the Power side scheme (16111), reveal it and shuffle the encounter deck, as for Klaw (01114); when it is already in play the search finds nothing (rr:search). Forced Interrupt: when Ronan the Accuser activates against you, give him 1 additional boost card if you control the Power Stone. An activation is an attack or a scheme (rr:activation), so the printed ability is split by the activation's kind, as for Hysteria (02020); 'you' is the player it is against (rr:you-your.7). Engine choice: the player who controls the Power Stone is the player in whose play area it is, attached to their identity. An encounter card is under the scenario's control (rr:ownership-and-control.2), but the card names a player who controls it, and the card wins (rr:the-golden-rules); an attachment's 'you' already follows the controller of the card it is attached to (rr:attachment.2). Toughness is a printed keyword the engine reads (rr:toughness).",
+      "abilities": [
+        {"trigger": {"event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this"}, "effect": {"search": {"in": [{"encounterDeck": 1}, {"encounterDiscardPile": 1}], "for": "16111"}}},
+        {"trigger": {"event": "WhenAttackInitiated", "timing": "ForcedInterrupt", "actor": "this", "player": "trigger.player"}, "when": {"exists": {"cardsIn": {"area": "yourPlayArea", "title": "Power Stone"}}}, "effect": {"giveAdditionalBoost": {"enemy": "this"}}},
+        {"trigger": {"event": "WhenEnemySchemes", "timing": "ForcedInterrupt", "subject": "this", "player": "trigger.player"}, "when": {"exists": {"cardsIn": {"area": "yourPlayArea", "title": "Power Stone"}}}, "effect": {"giveAdditionalBoost": {"enemy": "this"}}}
+      ]
+    },
+    {
+      "card": "16105",
+      "name": "Ronan the Accuser",
+      "note": "Ronan the Accuser (III). Retaliate 1 is a printed keyword the engine reads (rr:retaliate-x). When Revealed: search the encounter deck and discard pile for the Superior Tactics side scheme (16113), reveal it and shuffle the encounter deck, as for Klaw (01114). Forced Interrupt: when Ronan the Accuser activates against you, give him 1 additional boost card if you control the Power Stone. An activation is an attack or a scheme (rr:activation), so the printed ability is split by the activation's kind, as for Hysteria (02020); 'you' is the player it is against (rr:you-your.7). Engine choice: the player who controls the Power Stone is the player in whose play area it is, attached to their identity. An encounter card is under the scenario's control (rr:ownership-and-control.2), but the card names a player who controls it, and the card wins (rr:the-golden-rules); an attachment's 'you' already follows the controller of the card it is attached to (rr:attachment.2). Toughness is a printed keyword the engine reads (rr:toughness).",
+      "abilities": [
+        {"trigger": {"event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this"}, "effect": {"search": {"in": [{"encounterDeck": 1}, {"encounterDiscardPile": 1}], "for": "16113"}}},
+        {"trigger": {"event": "WhenAttackInitiated", "timing": "ForcedInterrupt", "actor": "this", "player": "trigger.player"}, "when": {"exists": {"cardsIn": {"area": "yourPlayArea", "title": "Power Stone"}}}, "effect": {"giveAdditionalBoost": {"enemy": "this"}}},
+        {"trigger": {"event": "WhenEnemySchemes", "timing": "ForcedInterrupt", "subject": "this", "player": "trigger.player"}, "when": {"exists": {"cardsIn": {"area": "yourPlayArea", "title": "Power Stone"}}}, "effect": {"giveAdditionalBoost": {"enemy": "this"}}}
+      ]
+    },
+    {
+      "card": "16106a",
+      "name": "Interception Imminent",
+      "note": "Setup: put the Kree Command Ship environment and the Milano support into play, attach the Universal Weapon to Ronan the Accuser and attach the Power Stone to the first player. The scenario recipe sets the Kree Command Ship and the Universal Weapon aside, and this setup puts each into its printed destination; the Universal Weapon's is Ronan. The Milano's own Setup keyword already puts it into play under the first player's control (rr:setup-keyword.1). The Power Stone's Setup keyword attaches it to the villain in setup step 11, and this ability, resolved in step 12a (rr:appendix-ii-setup.step.12.a), moves it onto the first player's identity without it leaving play (rr:attach-to.3.1). The contents list is scenario setup data, and rr:appendix-ii-setup.step.12.b performs the printed advance to 1B.",
+      "abilities": [
+        {"trigger": {"timing": "Setup", "subject": "this"}, "effect": {"seq": [{"putIntoPlay": {"card": {"cardsIn": {"area": "scenarioSetAside", "title": "Kree Command Ship"}}, "where": "printedDestination"}}, {"putIntoPlay": {"card": {"cardsIn": {"area": "scenarioSetAside", "title": "Universal Weapon"}}, "where": "printedDestination"}}, {"attachCards": {"cards": {"titled": "Power Stone"}, "host": {"inPlayerArea": {"area": "identity", "player": "firstPlayer"}}}}]}}
+      ]
+    },
+    {
+      "card": "16106b",
+      "name": "Interception Imminent",
+      "note": "First Player Action: exhaust the Milano -> remove 3 threat from this scheme. Only the first player can trigger it (isFirstPlayer), as for Cannonade (16144); removing the threat is the encounter card's ability, not the identity's (ruling 965ad06e4059d294, which names Spatial Positioning).",
+      "abilities": [
+        {"name": "First Player Action", "trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this"}, "when": {"isFirstPlayer": "you"}, "cost": {"exhaustTitled": "Milano"}, "effect": {"removeThreat": {"scheme": "this", "amount": 3}}}
+      ]
+    },
+    {
+      "card": "16107a",
+      "name": "\"Take What Is Mine\"",
+      "note": "When Revealed: attach the Power Stone to Ronan the Accuser. If it is already attached to him, give him 1 facedown boost card. The condition is read before the attachment moves, so only a stone already on Ronan gives the boost card. A facedown boost card dealt outside an activation waits for his next activation (rr:boost-boost-icon.6), as for Drang (16059). The stone attached to Ronan is the stone in the villain's play area; it moves onto him without leaving play (rr:attach-to.3.1).",
+      "abilities": [
+        {"trigger": {"event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this"}, "effect": {"if": {"test": {"exists": {"cardsIn": {"area": "villainPlayArea", "title": "Power Stone"}}}, "then": {"giveAdditionalBoost": {"enemy": {"titled": "Ronan the Accuser"}}}, "else": {"attachCards": {"cards": {"titled": "Power Stone"}, "host": {"titled": "Ronan the Accuser"}}}}}}
+      ]
+    },
+    {
+      "card": "16107b",
+      "name": "\"Take What Is Mine\"",
+      "note": "While the Power Stone is attached to Ronan the Accuser, threat cannot be removed from this scheme. rr:cannot makes the prohibition absolute while it applies, as for Total Destruction (10027); the stone attached to Ronan is the stone in the villain's play area. Completing this final stage loses the game (rr:main-scheme-main-scheme-deck.2.1).",
+      "abilities": [
+        {"trigger": {"timing": "Constant", "subject": "this"}, "effect": {"if": {"test": {"exists": {"cardsIn": {"area": "villainPlayArea", "title": "Power Stone"}}}, "then": {"preventThreatRemoval": "this"}}}}
+      ]
+    },
+    {
+      "card": "16108",
+      "name": "Kree Command Ship",
+      "note": "First Player Interrupt: when a treachery card is revealed from the encounter deck, exhaust the Milano and spend 1 resource of any type -> cancel that card's When Revealed effects. Any player may trigger an optional ability on an encounter card (rr:ability.8), so it is offered to each player (anyPlayer) and only the first player can trigger it (isFirstPlayer), for a treachery any player reveals; the cost exhausts the Milano, so the Milano cannot also generate the resource (rr:exhausted.1). Canceling the When Revealed effects leaves the treachery revealed and discarded (rr:cancel.4) and also cancels its surge, which is a When Revealed ability (ruling 4e44bf466c0d8971). While another player resolves a peril treachery, the first player cannot trigger it (rr:peril.1). The hazard icon is a printed value the engine reads.",
+      "abilities": [
+        {"name": "First Player Interrupt", "trigger": {"event": "WhenCardRevealed", "timing": "Interrupt", "subject": "game"}, "anyPlayer": true, "when": {"and": [{"isFirstPlayer": "you"}, {"isKind": {"card": "trigger.subject", "kind": "treachery"}}, {"revealedFromEncounterDeck": "trigger"}]}, "cost": {"seq": [{"exhaustTitled": "Milano"}, {"spendAny": 1}]}, "effect": {"cancelWhenRevealed": "trigger.subject"}}
+      ]
+    },
+    {
+      "card": "16109",
+      "name": "Universal Weapon",
+      "attachTo": {"titled": "Ronan the Accuser"},
+      "note": "Attach to Ronan the Accuser. The printed ATK and SCH modifiers are read from the attachment (rr:attachment.1). Ronan gains stalwart: he cannot be stunned or confused (rr:stalwart). Hero Action: take 2 damage and deal yourself 1 facedown encounter card -> shuffle Universal Weapon into the encounter deck, as for Ball and Chain (04084). Both are costs before the arrow, so a player who cannot take the damage cannot initiate it, as for Focused Rage (01027). Boost: attach Universal Weapon to Ronan the Accuser, as for Red Skull's Luger (04132); it stays in play rather than being discarded with the other boost cards. Attached to Ronan, it follows his next stage (rr:villain-defeat.3.1).",
+      "abilities": [
+        {"trigger": {"timing": "Constant", "subject": "this"}, "effect": {"grant": {"card": "attachedTo", "keyword": "stalwart", "amount": 1}}},
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero"}, "cost": {"seq": [{"takeDamage": {"cards": "you", "amount": 2}}, {"dealEncounterCard": "you"}]}, "effect": {"shuffleInto": {"cards": "this", "deck": "encounterDeck"}}},
+        {"trigger": {"event": "WhenCardRevealed", "timing": "Boost", "subject": "this"}, "effect": {"attachTo": {"titled": "Ronan the Accuser"}}}
+      ]
+    },
+    {
+      "card": "16110",
+      "name": "Fanaticism",
+      "attachTo": {"titled": "Ronan the Accuser"},
+      "startingCounters": {"type": "fury", "count": 1, "uses": true, "perPlayer": true, "additional": 1},
+      "note": "Surge. Attach to Ronan the Accuser. Uses (1 fury counter, plus 1 per hero additional fury counters): the pool is 1 plus 1 per player who started the scenario, and the card is discarded when the last counter leaves it (rr:uses-x-type.1). The printed ATK modifier is read from the attachment (rr:attachment.1). Forced Interrupt: when Ronan the Accuser attacks you, that attack gains overkill and piercing; at the end of that attack, remove 1 fury counter from here. Engine choice: the removal is a forced response to the end of each attack Ronan makes against a player; the interrupt answers every such attack, so each attack that gained overkill and piercing loses exactly one counter. Two copies each answer the same attack. The boost icons are printed values.",
+      "abilities": [
+        {"trigger": {"event": "WhenAttackInitiated", "timing": "ForcedInterrupt", "actor": "attachedTo", "player": "trigger.player"}, "effect": {"seq": [{"grantUntil": {"card": "trigger.actor", "keyword": "overkill", "amount": 1, "until": "EndOfAttack"}}, {"grantUntil": {"card": "trigger.actor", "keyword": "piercing", "amount": 1, "until": "EndOfAttack"}}]}},
+        {"trigger": {"event": "WhenAttackEnds", "timing": "ForcedResponse", "actor": "attachedTo", "player": "trigger.player"}, "effect": {"removeCounters": {"card": "this", "counter": "fury", "count": 1}}}
+      ]
+    },
+    {
+      "card": "16111",
+      "name": "Cut the Power",
+      "note": "Side scheme. Its starting threat per hero and crisis icon are printed values the engine reads. Boost: choose to either exhaust the Milano or place 2 threat on the main scheme. The player the activation is against chooses, as for Android Efficiency (01144a). An option needs a valid target (rr:choose-option.1), so an exhausted Milano leaves only the threat; any player may exhaust the Milano for an encounter card's option (ruling 65d0813b02e75e59).",
+      "abilities": [
+        {"trigger": {"event": "WhenCardRevealed", "timing": "Boost", "subject": "this"}, "effect": {"choose": {"descriptions": ["Exhaust the Milano", "Place 2 threat on the main scheme"], "options": [{"exhaust": {"titled": "Milano"}}, {"placeThreat": {"scheme": {"query": "mainScheme"}, "amount": 2}}]}}}
+      ]
+    },
+    {
+      "card": "16112",
+      "name": "Pincer Maneuver",
+      "note": "Side scheme. Hinder 2 per hero, its starting threat, acceleration icons and boost icons are printed values the engine reads (rr:hinder-x). First Player Action: exhaust the Milano -> remove 3 threat from this scheme. Only the first player can trigger it (isFirstPlayer), as for Cannonade (16144); removing the threat is the encounter card's ability, not the identity's (ruling 965ad06e4059d294, which names Spatial Positioning).",
+      "abilities": [
+        {"name": "First Player Action", "trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this"}, "when": {"isFirstPlayer": "you"}, "cost": {"exhaustTitled": "Milano"}, "effect": {"removeThreat": {"scheme": "this", "amount": 3}}}
+      ]
+    },
+    {
+      "card": "16113",
+      "name": "Superior Tactics",
+      "note": "Side scheme. The Power Stone cannot be unattached from Ronan the Accuser: while the stone is in the villain's play area, attached to Ronan, it gains cannot_be_unattached, and rr:cannot keeps any ability from moving it to another host; its own forced response to a hero dealing 3 or more damage does not move it. A stone attached to a hero is not covered and still moves to Ronan. When Revealed: attach the Power Stone to Ronan the Accuser. If it is already attached to him, place 1 threat per player here. The condition is read before the stone moves (rr:attach-to.3.1).",
+      "abilities": [
+        {"trigger": {"timing": "Constant", "subject": "this"}, "effect": {"if": {"test": {"exists": {"cardsIn": {"area": "villainPlayArea", "title": "Power Stone"}}}, "then": {"grant": {"card": {"cardsIn": {"area": "villainPlayArea", "title": "Power Stone"}}, "keyword": "cannot_be_unattached", "amount": 1}}}}},
+        {"trigger": {"event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this"}, "effect": {"if": {"test": {"exists": {"cardsIn": {"area": "villainPlayArea", "title": "Power Stone"}}}, "then": {"placeThreat": {"scheme": "this", "amount": {"perPlayer": 1}}}, "else": {"attachCards": {"cards": {"titled": "Power Stone"}, "host": {"titled": "Ronan the Accuser"}}}}}}
+      ]
+    },
+    {
+      "card": "16114",
+      "name": "Single-Minded Fury",
+      "note": "When Revealed: Ronan the Accuser attacks the player who controls the Power Stone (even if that player is in alter-ego form). If no attack was made this way, this card gains surge. The player who controls the stone is the one in whose play area it is (see Ronan the Accuser, 16103). An ability may attack a player's alter-ego (rr:attack-enemy-activation.1.1). When the stone is attached to Ronan no player controls it, so no attack is made; a canceled attack, such as one a stunned Ronan replaces, is not made either (rr:activation.7), as for Mad Genius (02013). Boost: attach the Power Stone to Ronan the Accuser; a stone already on him stays.",
+      "abilities": [
+        {"trigger": {"event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this"}, "effect": {"if": {"test": {"exists": {"cardsIn": {"area": "playerPlayAreas", "title": "Power Stone"}}}, "then": {"eachPlayer": {"order": "playerOrder", "effect": {"if": {"test": {"exists": {"cardsIn": {"area": "yourPlayArea", "title": "Power Stone"}}}, "then": {"seq": [{"enemyAttacks": {"enemies": {"titled": "Ronan the Accuser"}, "against": "you"}}, {"if": {"test": {"not": {"atLeast": {"value": {"result": "activationMade"}, "count": 1}}}, "then": {"gainSurge": 1}}}]}}}}}, "else": {"gainSurge": 1}}}},
+        {"trigger": {"event": "WhenCardRevealed", "timing": "Boost", "subject": "this"}, "effect": {"attachCards": {"cards": {"titled": "Power Stone"}, "host": {"titled": "Ronan the Accuser"}}}}
+      ]
+    },
+    {
+      "card": "16115",
+      "name": "Kree Physiology",
+      "note": "Surge. When Revealed: give Ronan the Accuser a tough status card. If he already has a tough status card, take 1 damage. A character cannot have two tough status cards (rr:status-cards.1), so the condition is read before the status is given, as for Psionic Ghost (16135). 'You' is the revealing player's identity in either form (rr:you-your.2). The boost icon is a printed value.",
+      "abilities": [
+        {"trigger": {"event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this"}, "effect": {"if": {"test": {"hasStatus": {"card": {"titled": "Ronan the Accuser"}, "status": "tough"}}, "then": {"dealDamage": {"cards": "you", "amount": 1}}, "else": {"giveStatus": {"card": {"titled": "Ronan the Accuser"}, "status": "tough"}}}}}
+      ]
+    },
+    {
+      "card": "16116",
+      "name": "\"You Stand Accused!\"",
+      "note": "When Revealed (Alter-Ego): Ronan the Accuser schemes with +1 SCH. When Revealed (Hero): Ronan the Accuser attacks you with +1 ATK. Only the revealing player's current form resolves, as for Special Delivery (16148). Boost: give the villain 1 additional boost card for this activation, only while the villain is the activating enemy (ruling fba0af85176f8559), as for Pirate Commander (16138).",
+      "abilities": [
+        {"trigger": {"event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this", "form": "alter-ego"}, "effect": {"enemySchemes": {"enemies": {"titled": "Ronan the Accuser"}, "against": "you", "modifier": 1}}},
+        {"trigger": {"event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this", "form": "hero"}, "effect": {"enemyAttacks": {"enemies": {"titled": "Ronan the Accuser"}, "against": "you", "modifier": 1}}},
+        {"trigger": {"event": "WhenCardRevealed", "timing": "Boost", "subject": "this"}, "effect": {"if": {"test": {"isKind": {"card": "activatingEnemy", "kind": "villain"}}, "then": {"giveAdditionalBoost": {"enemy": "activatingEnemy"}}}}}
+      ]
+    },
+    {
       "card": "16117",
       "name": "Badoon Assassin",
       "note": "Forced Response: after Badoon Assassin engages your hero, it attacks you with +2 ATK. 'Your hero' is quickstrike's wording (rr:quickstrike), so it triggers only while the player it engaged is in hero form. The +2 belongs to that attack alone. Boost: if this activation is an attack, this attack gains overkill, piercing and ranged, until the attack ends, as for Crossfire (04027).",
