@@ -114,8 +114,7 @@ internal static class AbilityPaymentRules
     /// </remarks>
     internal static bool MandatoryCostIsAutomatic(AbilityCost cost) => cost switch
     {
-        AbilityCost.DiscardUntilMinionEngaged or AbilityCost.DiscardTop or AbilityCost.DealEncounterToYou
-            or AbilityCost.PlaceMainSchemeThreat => true,
+        AbilityCost.DiscardUntilMinionEngaged or AbilityCost.DiscardTop or AbilityCost.DealEncounterToYou => true,
         AbilityCost.Sequence sequence => sequence.Costs.All(MandatoryCostIsAutomatic),
         AbilityCost.ReturnSourceToHand or AbilityCost.ReturnTitledToHand or AbilityCost.ConsumeCampaignCard
             or AbilityCost.Discard or AbilityCost.Exhaust or AbilityCost.ExhaustTitled or AbilityCost.RemoveCounters => true,
