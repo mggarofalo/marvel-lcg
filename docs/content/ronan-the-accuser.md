@@ -123,8 +123,8 @@ players; seeds 1–10), hashing every prompt and state digest, is identical on
   treachery and peril limits.
 - A scan of 3,040 complete research games (every hero alone and in 19 pairs,
   Standard and Expert, seeds 1–40) raises nothing from this scenario: 2,981 end
-  with the players losing, 58 with the villain winning, none with the players
-  winning and none unfinished. One game raises MARVEL-914, a Doctor Strange
+  with every player eliminated, 58 with the villain completing the final main
+  scheme, none with Ronan defeated and none unfinished. One game raises MARVEL-914, a Doctor Strange
   Invocation discard after Images of Ikonn defeats Open the Dark Dimension.
 
 ## New interactions

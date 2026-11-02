@@ -116,4 +116,31 @@ public sealed class RonanLoweringTests : CoreCardTestBase
 
         Assert.Equal(tested, AbilityThreatPermissions.TestsPresenceOf(world, AuthoredCards.Program, entering));
     }
+
+    [Theory]
+    [InlineData("yourPlayArea")]
+    [InlineData("kind")]
+    [InlineData("trait")]
+    [InlineData("top")]
+    [InlineData("aspectOnly")]
+    public void AProjectedPlayAreaTestOfAnyOtherShapeRaises(string shape)
+    {
+        var stone = new AbilityCardSelection.InAreas([AbilitySearchArea.VillainPlayArea], null, null, "Power Stone");
+        var selection = shape switch
+        {
+            "yourPlayArea" => stone with { Areas = [AbilitySearchArea.YourPlayArea] },
+            "kind" => stone with { Kind = CardKind.Attachment },
+            "trait" => stone with { Trait = "Infinity Stone" },
+            "top" => stone with { Top = 1 },
+            _ => stone with { AspectOnly = true },
+        };
+        var world = RonanBoards.Board();
+        RonanBoards.Stone(world, GrootBoards.Villain(world));
+        var projection = new AbilityThreatPermissionProjection(
+            world, new HashSet<int>(), new HashSet<int>(), new Dictionary<int, int>());
+
+        var failure = Assert.Throws<RulesNotImplementedException>(
+            () => projection.Test(new AbilityCondition.Exists(selection), null!));
+        Assert.Contains("projected predicate evaluation", failure.Message, StringComparison.Ordinal);
+    }
 }
