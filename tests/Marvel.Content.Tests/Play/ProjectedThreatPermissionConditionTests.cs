@@ -64,19 +64,21 @@ public sealed class ProjectedThreatPermissionConditionTests : CoreCardTestBase
     }
 
     [Theory]
-    [InlineData("Hydra Patrol", true)]
-    [InlineData("Abomination", false)]
-    public void APowerEnteringAnUntrackedTestedCardRaisesBeforeAnyChange(string tested, bool raises)
+    [InlineData("Hydra Patrol", "Hydra Patrol", true)]
+    [InlineData("Hydra Patrol", "Abomination", false)]
+    [InlineData("Abomination", "Abomination", false)]
+    public void APowerEnteringAnUntrackedTestedCardRaisesBeforeAnyChange(string entering, string tested, bool raises)
     {
         // A power state shows no entry of a non-minion, so a presence test of the
-        // side scheme it puts into play raises instead of reading it as absent.
+        // side scheme it puts into play raises instead of reading it as absent. It
+        // shows a minion's entry, so Abomination entering is read as present.
         var local = AbilityCatalog.Parse("""
             { "cards": [
               { "card": "AUNT", "abilities": [ {
                 "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "game" },
                 "cost": { "exhaust": "this" }, "labels": ["thwart"],
                 "effect": {"thwart":{"target":{"titled":"Total Destruction"},"effect":{"seq":[
-                  {"putIntoPlay":{"card":{"cardsIn":{"areas":["encounterDiscardPile"],"title":"Hydra Patrol"}},"where":"printedDestination"}},
+                  {"putIntoPlay":{"card":{"cardsIn":{"areas":["encounterDiscardPile"],"title":"ENTERING"}},"where":"WHERE"}},
                   {"removeThreat":{"scheme":{"titled":"Total Destruction"},"amount":2}}
                 ]}}} } ] },
               { "card": "10027", "abilities": [ {
@@ -84,7 +86,9 @@ public sealed class ProjectedThreatPermissionConditionTests : CoreCardTestBase
                 "effect": { "if": { "test": {"exists":{"titled":"TESTED"}}, "then": { "preventThreatRemoval": "this" } } } } ] }
             ] }
             """.Replace("AUNT", AuthoredCards.AuntMay, StringComparison.Ordinal)
-            .Replace("TESTED", tested, StringComparison.Ordinal));
+            .Replace("TESTED", tested, StringComparison.Ordinal)
+            .Replace("ENTERING", entering, StringComparison.Ordinal)
+            .Replace("WHERE", entering == "Abomination" ? "engagedWithYou" : "printedDestination", StringComparison.Ordinal));
         var runner = new AbilityRunner(new AbilityBook(
             [.. AuthoredCards.Book.Abilities.Where(row => row.Card is not "10027" and not AuthoredCards.AuntMay), .. local.Abilities],
             AuthoredCards.Book.Authored.Concat(local.Authored).ToHashSet(StringComparer.Ordinal), AuthoredCards.Book.AttachTo));

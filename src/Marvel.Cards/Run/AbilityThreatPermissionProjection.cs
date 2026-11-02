@@ -51,14 +51,13 @@ internal sealed record AbilityThreatPermissionProjection(
 
     // rr:reveal.step.1: "Turn the encounter card faceup." An entry still facedown in
     // the projection has no settled face to compare, so the test raises rather than
-    // treat it as absent. A profiled card shows no printed title, as on the live board.
+    // treat it as absent. An entering copy is outside play, so it carries no profile.
     private bool EnteredShows(Card card, string title)
     {
         if (!card.FaceUp)
             throw new RulesNotImplementedException(
                 "a projected threat-removal presence test reads a card entering play facedown");
-        return !EffectiveCards.HasProfile(card)
-            && string.Equals(World.Facts.Title(card.FaceId), title, StringComparison.Ordinal);
+        return string.Equals(World.Facts.Title(card.FaceId), title, StringComparison.Ordinal);
     }
 
     private Card? AttachedTo()
@@ -72,10 +71,10 @@ internal sealed record AbilityThreatPermissionProjection(
 
     // A power-state projection starts every unengaged minion as unavailable and a
     // projected entry removes it from that set; such a minion outside play has entered.
+    // A minion still unavailable stays absent because Departed is that same set.
     internal static AbilityThreatPermissionProjection From(World world, AbilityPowerState state) =>
         new(world, state.Discarded, world.Cards
             .Where(card => !DeckTypes.IsInPlay(card.Area.Type) && card.Area.Type != DeckType.EngagedEnemiesArea
-                && EffectiveCards.Kind(card, world.Facts) == CardKind.Minion
-                && !state.Discarded.Contains(card.ObjectId))
+                && EffectiveCards.Kind(card, world.Facts) == CardKind.Minion)
             .Select(card => card.ObjectId).ToHashSet(), new Dictionary<int, int>());
 }

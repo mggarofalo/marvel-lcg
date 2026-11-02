@@ -91,6 +91,8 @@ internal static class AbilityProjectedDefeatWindows
         !AbilityPowerContinuationDependencies.IsIndependent(node) && ResolvesLive(node)
         && (DeferredWindowHidesReads(node, state, cast) || EncounterDealHidesReads(node, state));
 
+    // A later read still raises in ValidateContinuation while the window stays deferred;
+    // leaving the board unprojected also keeps a stale villain's status out of the end state.
     private static bool ResolvesLive(AbilityEffect node) =>
         AbilityLiveThreatRemoval.Resolves(node) || AbilityLiveStatusGrant.Resolves(node);
 
