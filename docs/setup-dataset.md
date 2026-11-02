@@ -23,7 +23,7 @@ The file has 3 groups:
 
 | Group | Admitted rows | Declared rows |
 |---|---:|---:|
-| `campaigns` | 39 Core Set, Rise of Red Skull, Wrecking Crew and Green Goblin scenario/mode combinations; the two declared Kang modes and the two declared modes each of Brotherhood of Badoon and Ronan the Accuser are not admitted | 45 |
+| `campaigns` | 39 Core Set, Rise of Red Skull, Wrecking Crew and Green Goblin scenario/mode combinations; the two declared Kang modes and the two declared modes each of Brotherhood of Badoon, Nebula and Ronan the Accuser are not admitted | 47 |
 | `heroes` | 14 Core Set, Rise of Red Skull, Captain America, Ms. Marvel, Thor, Black Widow, Doctor Strange, Hulk and Ant-Man starter decks | 14 |
 | `encounter_sets` | 20 Core Set, Rise of Red Skull, Green Goblin, Kree Fanatic and Galaxy's Most Wanted fixed/modular sets; the three declared Kang modular sets, Ship Command and Galactic Artifacts are not admitted | 25 |
 
@@ -400,6 +400,17 @@ modular set. The Kree Command Ship and the Universal Weapon are set aside for th
 first main scheme's setup. The scenario's faces are not admitted, since it waits
 for the withheld Ship Command set, so both recipes name closed faces and stay
 outside discovery. Evidence is in `docs/content/ronan-the-accuser.md`.
+
+The Nebula scenario declares Standard and Expert recipes: Nebula (I)/(II) or
+(II)/(III), The Art of Evasion and Warp Drive Initiated, the Standard (and
+Expert), Power Stone and Ship Command sets, the sixteen remaining Nebula
+encounter cards (two Cutthroat Ambition, Evasive Maneuvering, Unyielding
+Persistence, two Weapon Mastery, two Wide Stance, two Lethal Intent, two Barrel
+Roll, two Combat Ready and two Ruthless, the MarvelSDB quantities) and Space Pirates as the modular
+set. Nebula's Ship is set aside for the first main scheme's setup. The scenario's
+faces are not admitted, since it waits for the withheld Ship Command set, so both
+recipes name closed faces and stay outside discovery. Evidence is in
+`docs/content/nebula.md`.
 
 The Galaxy's Most Wanted declares its Ship Command, Power Stone, Galactic
 Artifacts, Kree Militants, Menagerie Medley and Space Pirates modular sets

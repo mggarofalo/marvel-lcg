@@ -1,0 +1,113 @@
+# Nebula
+
+Packet 7 of The Galaxy's Most Wanted (`gmw`, rules insert `mc16`) authors scenario
+4, Nebula (16088–16102): Nebula (I)–(III), The Art of Evasion (1A/1B) and Warp
+Drive Initiated (2A/2B), Nebula's Ship, the five Technique attachments (Cutthroat
+Ambition, Evasive Maneuvering, Unyielding Persistence, Weapon Mastery and Wide
+Stance), Lethal Intent, Barrel Roll, Combat Ready and Ruthless. The plan is
+[gmw-wave-plan.md](gmw-wave-plan.md) (MARVEL-904). The scenario's insert is
+`pack:mc16:nebula`.
+
+## Boundary
+
+- **The scenario is authored and withheld.** Every face has a row, and the
+  Standard and Expert recipes are declared (`nebula`, `nebula_expert`): Nebula
+  (I)/(II), or (II)/(III) for Expert; both main schemes; the Standard (and
+  Expert), Power Stone and Ship Command sets; Space Pirates as the modular set; the
+  scenario's encounter cards with the vendored MarvelSDB quantities; and Nebula's
+  Ship set aside for the first main scheme's setup. The scenario's faces are not
+  an admitted part of the box, so discovery removes both recipes
+  (`SetupCatalog.WithoutFaces`). The scenario waits, as Ronan the Accuser does,
+  for the table to present one seat paying with another seat's Milano
+  (MARVEL-905; [ship-command-power-stone.md](ship-command-power-stone.md)).
+- **No face is unauthored.**
+
+## Interpretations
+
+Each choice is recorded in the row note that owns it. The rulings are Hall of
+Heroes entries in `datasets/rulings/`.
+
+- **Nebula's Forced Interrupts** resolve the "Special" ability of every Technique
+  attached to her when she attacks or schemes against a player, one at a time in
+  an order the player chooses (rr:special), and then discard Techniques: every one
+  for stage I, one the player chooses for stage II, and for stage III one the
+  player chooses only after removing the top card of their own deck from the game.
+  The removal pays for the discard, so the option is offered only while the
+  player's deck holds a card (ruling 304a4798e0b453b4, rr:choose-option.1).
+  "You" is the player the activation is against (rr:you-your.7); the printed
+  ability is split by the activation's kind. Engine choice: stage I discards its
+  Techniques in attachment order, which no rule orders and no state reads. The
+  hero Nebula's Technique ruling (ce1123737f82aa7e) does not apply to the villain,
+  and the hero Nebula cannot be played in this scenario (ruling 5bdb22a5edc6a0b6).
+- **The first Technique revealed each round gains surge.** The grant is authored
+  on each Technique as a When Revealed ability, since surge is one (rr:surge.1):
+  while Nebula is in play, the first Technique revealed in a round records a
+  round mark and gains surge. A Technique resolved as a boost card is not revealed
+  (rr:boost-boost-icon) and does not use the round's surge. Engine choice: a
+  Technique boost card resolves its Special before it attaches to Nebula, since a
+  card entering play is a new object that "this" no longer names, and no Special
+  reads where its own card is.
+- **Setup.** The Art of Evasion's Setup, resolved in step 12a
+  (rr:appendix-ii-setup.step.12.a), puts the set-aside Nebula's Ship into play and
+  discards the top 2 encounter cards per player, attaching each Technique among
+  them to Nebula. A Technique attached this way is not revealed, so its surge and
+  When Revealed do not resolve. The Power Stone and the Milano are already in play
+  from their Setup keywords (rr:setup-keyword.1).
+- **Escalation.** Both main schemes' X is the number of evasion counters on
+  Nebula's Ship, not multiplied per player, and 0 without the ship in play
+  (rr:main-scheme-main-scheme-deck).
+- **Warp Drive Initiated** reads the counters after placing its 2, and discards 2
+  cards per counter from each player deck and the encounter deck (rr:discard.4).
+- **Shoot the Thrusters!** is authored twice, for 1 resource and for 2, each
+  offered only while the ship has as many evasion counters as it spends; spending
+  2 to remove 1 does no more than the 1-resource action. Only the first player may
+  take it (rr:action.1); the Milano is exhausted as part of the cost
+  (rr:exhausted.1).
+- **Cutthroat Ambition** limits the damage Nebula takes from each attack to 5 in
+  total across that attack's damage instances (rr:cannot); the smallest maximum
+  applies, and Wide Stance's reduction of 1 comes first. The consequence preview
+  shows the damage she can still take.
+- **Evasive Maneuvering and Unyielding Persistence** give stalwart; gaining it
+  removes a stunned or confused status card Nebula already has (ruling
+  c03bdba88590962d).
+- **Lethal Intent** and **Combat Ready** discard until a Technique and reveal it,
+  so its surge and When Revealed resolve; Combat Ready then resolves the revealed
+  card's Special for the revealing player.
+- **Ruthless** places an evasion counter when its activation deals damage or
+  places threat; damage dealt to a tough hero counts (ruling ea69fd70a070ee2c).
+
+## Engine changes and existing content
+
+REPLAY
+
+The words are documented in [card-dsl.md](../card-dsl.md).
+
+- `markThisRound` and `markedThisRound` record and read a named fact that lasts
+  until the end of the round (`RoundMarks`).
+- `revealed` names the card the resolving effect revealed; the lowering requires
+  a revealing effect and refuses a read before it.
+- `discardEach` discards every card a plural selection finds.
+- `attack_damage_maximum` is a modifiable field; damage placement applies the
+  smallest maximum to an attack's damage after its reductions
+  (`AttackDamageMaximum`).
+- A sequence continues after resolving ordered Special abilities, and
+  `removeTopFromGame` has a valid target only while the named deck holds a card.
+- Lowering refuses a `when` on a When Revealed ability, which nothing reads
+  (rr:when-revealed-abilities); the condition is an `if` inside the effect.
+
+## Evidence
+
+- Synthetic boards over the production book: `NebulaVillainTests`,
+  `NebulaTechniqueTests`, `NebulaSchemeTests`, `NebulaEncounterTests`; the
+  vocabulary alone: `NebulaLoweringTests`.
+- Research-only complete Standard and Expert games, dealt directly rather than
+  through discovery, with exact replay, and the setup: `NebulaResearchGameTests`.
+- MUTANTS
+- SCAN
+
+## New interactions
+
+None beyond the existing Ship Command need. Every choice uses an existing prompt:
+the order of Special abilities, a card choice, an option, an action on an
+environment. Evasion counters on Nebula's Ship appear as card counters; the
+first player's Shoot the Thrusters! spends the Milano across seats (MARVEL-905).

@@ -162,3 +162,11 @@ scenario is withheld, as Brotherhood of Badoon is: its encounter deck includes t
 withheld Ship Command set, so its closed faces keep both recipes out of discovery.
 The evidence is in [ronan-the-accuser.md](ronan-the-accuser.md).
 
+
+## Packet 7 status
+
+Packet 7 is authored. All seventeen faces of the Nebula scenario (16088–16102)
+have rows, and its Standard and Expert recipes are declared. The scenario is
+withheld, as Ronan the Accuser is: its encounter deck includes the withheld Ship
+Command set, so its closed faces keep both recipes out of discovery. The evidence
+is in [nebula.md](nebula.md).

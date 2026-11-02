@@ -590,7 +590,7 @@ automaticTarget canAutomaticThwart canLegalPractice
 canMakeTheCall cancelOccurrence cancelWhenRevealed cardsIn changeForm characters countDiscardedInstead decreaseBoostCount
 charactersYouControl choose chooseCard chooseDiscardToShuffle chooseTopForHand
 countersOn damageOn damagedHero dealAttackDamage dealDamage dealEncounterCards
-deck defeatedByYou delayUntil discardAtRandom discardAnyFromHand discardClassFromHand discardFromHand
+deck defeatedByYou delayUntil discardAtRandom discardAnyFromHand discardClassFromHand discardEach discardFromHand
 discardHandOfKind discardHandWithResource discardResourceFromHand discardTop discardUntil discardable discardedWithResource
 doubleResourceFor drawToPrintedHandSize dynamic
 eachPlayer else encounterDeck encounterDiscardPile enemies incomingDamage
@@ -599,14 +599,14 @@ finalStep generate generateTopDiscard giveAdditionalBoost
 chooseHealRecipients grantCharactersControlledBy grantEach grantUntil hasStatus hasTrait heroBasicDefended heroDefended
 heroes heroesAndAllies heroAndAllyTargets identities
 identitiesWithinPerPlayerLimit inForm increaseBoostCount indirectDamage initiated isEnemyAttacker isFirstPlayer isKind isTitle
-isYourIdentity keyword kind legalPractice mainScheme makeTheCall maxBy minions
+isYourIdentity keyword kind legalPractice mainScheme makeTheCall markThisRound markedThisRound maxBy minions
 minionsEngagedWithYou minionsInThisGameArea modified moveAttackDamage mul namedInPlay obligationsInThisGameArea onto options overkill
 inspectEncounterTop paidWithResource payOrEffect payOrExhaust peekTop perPlayer placeAccelerationToken
 placeAtRandom placeCounters placeThreat playIgnoringResourceCost power powerAmount powerTargets cardsDiscarded
 preventDamage preventDamageFrom preventDamageWhile preventDamageWithCounters preventPlayerAttackDamage preventThreat
 preventThreatRemoval printedResourceCountDiscarded putIntoPlay
 recoverDiscardedByResource reduceNextCardCost remainingHealth removeCounters stunUndamagedDefendersAttacker
-removeFromGame removeThreat replaceReady replaceStatus replaceThreatWithDamage requireAllyDefender
+removeFromGame removeThreat replaceReady replaceStatus replaceThreatWithDamage requireAllyDefender revealed
 resolveSpecials returnOwnedToHand returnToHand revealTop scheme schemes search
 seqEachTargeted shuffle shuffleInto sideSchemes soakDamage sourceKind sourceTrait spend starIconsDiscarded
 spendEnergyX spendX startingCounters startingHealth statusCards storeDeckTopBeneath takeDamage then threatCause thwartDifferentSchemes thwartSchemes
@@ -2409,5 +2409,46 @@ Tactics grants it only to a Power Stone in the villain's play area.
 
 An `inPlayerArea` selection of the `identity` area resolves to that player's
 single identity where an effect names one card, such as `attachCards`'s host.
+
+The spellings in this section are engine choices.
+
+## Round marks, the revealed card, plural discards and attack damage maxima
+
+`{"markThisRound": "<name>"}` records a named fact until the end of the round, and
+`{"markedThisRound": "<name>"}` is true while it is recorded. The record has no
+source card, so it outlives the card that made it, including a villain stage
+change. Nebula's "the first Technique attachment revealed each round gains surge"
+is a When Revealed ability on each Technique attachment that, if no mark is
+recorded, marks the round and gains surge (surge is a When Revealed ability,
+`rr:surge.1`). Each name is its own fact.
+
+A When Revealed ability takes no `when`: every When Revealed ability on a revealed
+card resolves (`rr:when-revealed-abilities`), so lowering refuses one and its
+condition is an `if` inside its effect.
+
+The `revealed` card binding names the card the current ability invocation
+revealed last, once its reveal has resolved, so Combat Ready "reveal[s] that card,
+then resolve[s] its Special ability" as a `discardUntil` with `then: "reveal"`
+followed by `{"resolveSpecials": {"cards": "revealed"}}`. As for
+`differentTitleFromRevealed`, an ability may name it only in an effect that
+reveals a card, and never in a cost or a `when`.
+
+`{"discardEach": <selector>}` discards every selected card in play, in the
+selection's order (`rr:discard.3`); `discard` names one card.
+
+`resolveSpecials` may be followed by later sentences. They are admitted against
+the live board, as after any sentence that may change it, and resolve once the
+whole ordered Special sequence has finished.
+
+`removeTopFromGame` has a valid target only while a named player's deck holds a
+card, as `discardAtRandom` needs a card in hand: an encounter option that removes
+the top card is offered only while it can (ruling 304a4798e0b453b4,
+`rr:choose-option.1`). Listed in a `seqEachTargeted` option, it gates the
+sentences after it.
+
+`grant` with `keyword: "attack_damage_maximum"` bounds the total damage a
+character takes from one attack, after every reduction and prevention and across
+every damage instance of that attack (`rr:cannot`). Several maxima on one
+character apply the smallest. Damage from outside an attack is not bounded.
 
 The spellings in this section are engine choices.
