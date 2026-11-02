@@ -44,6 +44,45 @@ public sealed class PlayerlessResolutionOwnerTests
     }
 
     [Fact]
+    [Rule("rr:first-player.2")]
+    [Rule("rr:each-player.1")]
+    public void AChoiceNamingNoPlayerAfterAnEachPlayerBlockIsAskedOfTheFirstPlayer()
+    {
+        // rr:first-player.2: "If an encounter card requires ... a choice to be made but
+        // does not specify which player should act, the first player does so."
+        // A 04112a variant that looks at the top two encounter cards after its
+        // each-player Ultimate Bio-Servant block, in a two-player game. Each
+        // rr:each-player.1 ordering lists the first player first, so the block's last
+        // seat is the other player.
+        const string shuffle = "\"shuffle\": \"encounterDeck\"";
+        int scheme = AuthoredCards.Text.IndexOf("\"card\": \"04112a\"", StringComparison.Ordinal);
+        int after = AuthoredCards.Text.IndexOf('}', AuthoredCards.Text.IndexOf(shuffle, scheme, StringComparison.Ordinal)) + 1;
+        string variant = AuthoredCards.Text[..after]
+            + ",{\"inspectEncounterTop\":{\"count\":2,\"result\":\"treacheriesLookedAt\"}}"
+            + AuthoredCards.Text[after..];
+        var runner = new AbilityRunner(AbilityLowering.Book(AbilityCatalog.Parse(variant)));
+        string[] heroes = ["spider_man", "iron_man"];
+        var world = WorldSetup.Deal(CardCatalogData,
+            Blueprints.From(Dealer.DealOrder(SetupCatalogData, "zola", heroes), CardCatalogData),
+            [.. heroes.Select(hero => SetupCatalogData.Hero(hero).Name)], 42, runner);
+        var game = Game.Begin(world, CardCatalogData, runner);
+        var asked = new List<int>();
+
+        while (game.Pending!.Label != "Inspect encounter cards")
+        {
+            asked.Add(game.Pending.Player);
+            var offer = game.Pending.Affordances[0];
+            game.Resolve(Decision.Take(offer.Id, [.. offer.Targets?.Legal.Take(offer.Targets.Min) ?? []], []));
+        }
+
+        Assert.NotEqual(world.FirstPlayer, asked[^1]);
+        var look = game.Pending;
+        Assert.Equal(world.FirstPlayer, look.Player);
+        Assert.Equal(world.FirstPlayer, Assert.Single(look.Affordances).AnchorPlayer);
+        Assert.Same(look, game.PromptFor(world.FirstPlayer));
+    }
+
+    [Fact]
     public void APlayerCardResolvingForNoPlayerRaisesInsteadOfAskingNobody()
     {
         // rr:first-player.2 assigns only an encounter card's unspecified choice.
