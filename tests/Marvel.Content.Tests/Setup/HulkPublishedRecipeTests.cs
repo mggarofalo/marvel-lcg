@@ -26,7 +26,7 @@ public sealed class HulkPublishedRecipeTests
         Assert.Equal(33, admitted.Playable.Count(face => cards.Pack(face) == "hlk"));
         Assert.Equal(19, admitted.Setup.HeroNames.Count);
         Assert.Equal(39, admitted.Setup.CampaignNames.Count);
-        Assert.Equal(16, admitted.Setup.EncounterSetNames.Count);
+        Assert.Equal(17, admitted.Setup.EncounterSetNames.Count);
         Assert.Equal(40, PlayerDeckAdmission.Admit(new([.. hero.HeroDeck, .. hero.PlayerDeck]),
             hero.HeroDeck, 0, cards, hero.Hero[0]).Count);
         Assert.DoesNotContain(hero.PlayerDeck, face => face is "10029" or "10030" or "10031" or "10032");

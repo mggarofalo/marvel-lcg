@@ -134,3 +134,14 @@ Packet 3 is authored. Power Stone (16149) is admitted as a modular set; Ship
 Command (16142–16148) is authored and withheld because the Milano pays for any
 player and the table cannot yet present one seat spending another seat's card.
 The evidence is in [ship-command-power-stone.md](ship-command-power-stone.md).
+
+## Packet 4 status
+
+Packet 4 is authored. Band of Badoon (16117–16121) is admitted as a modular set.
+The Brotherhood of Badoon scenario (16058–16069) is authored and withheld, not
+admitted because its encounter deck includes the withheld Ship Command set; its
+closed faces keep both recipes out of discovery. Drang (III) (16060) stays
+unauthored because ruling 82bcc63411002a00 defers the quickstrike, teamwork and
+responses of the minions his When Revealed puts into play until all of them have
+engaged, which the engine's per-entry windows cannot do. The evidence is in
+[brotherhood-of-badoon.md](brotherhood-of-badoon.md).

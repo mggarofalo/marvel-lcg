@@ -11,6 +11,7 @@ public sealed class ExpansionSetupAuthorityTests
         var expected = new[]
         {
             "setup:campaign:absorbing_man", "setup:campaign:absorbing_man_expert",
+            "setup:campaign:brotherhood_of_badoon", "setup:campaign:brotherhood_of_badoon_expert",
             "setup:campaign:crossbones", "setup:campaign:crossbones_expert",
             "setup:campaign:kang", "setup:campaign:kang_expert",
             "setup:campaign:mutagen_formula", "setup:campaign:mutagen_formula_expert",
@@ -38,7 +39,7 @@ public sealed class ExpansionSetupAuthorityTests
             "setup:campaign:wrecking_crew_standard",
             "setup:campaign:zola", "setup:campaign:zola_expert",
             "setup:encounter-set:a_mess_of_things",
-            "setup:encounter-set:anachronauts",
+            "setup:encounter-set:anachronauts", "setup:encounter-set:band_of_badoon",
             "setup:encounter-set:goblin_gimmicks",
             "setup:encounter-set:hydra_assault", "setup:encounter-set:hydra_patrol",
             "setup:encounter-set:kree_fanatic", "setup:encounter-set:mot",
@@ -72,7 +73,8 @@ public sealed class ExpansionSetupAuthorityTests
         "setup:hero:wasp" => "Wasp hero pack",
         "setup:hero:quicksilver" => "Quicksilver hero pack",
         "setup:hero:groot" or "setup:hero:rocket_raccoon" or "setup:encounter-set:power_stone"
-            or "setup:encounter-set:ship_command" => "The Galaxy's Most Wanted",
+            or "setup:encounter-set:ship_command" or "setup:encounter-set:band_of_badoon"
+            or "setup:campaign:brotherhood_of_badoon" or "setup:campaign:brotherhood_of_badoon_expert" => "The Galaxy's Most Wanted",
         "setup:hero:scarlet_witch" => "Scarlet Witch hero pack",
         "setup:encounter-set:kree_fanatic" => "Ronan Kree Fanatic modular set",
         "setup:encounter-set:anachronauts" or "setup:encounter-set:mot" or "setup:encounter-set:temporal"

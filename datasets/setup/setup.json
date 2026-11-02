@@ -3327,12 +3327,79 @@
       "villain": [
         "11034"
       ]
+    },
+    "brotherhood_of_badoon": {
+      "campaign_log": {},
+      "challenges": [],
+      "encounter_sets": [
+        "standard",
+        "ship_command"
+      ],
+      "encounters": [
+        "16064",
+        "16065",
+        "16065",
+        "16066",
+        "16067",
+        "16068",
+        "16069"
+      ],
+      "expert": false,
+      "modular_sets": [
+        "band_of_badoon"
+      ],
+      "name": "Brotherhood of Badoon",
+      "schemes": [
+        "16061a,16061b",
+        "16062a,16062b"
+      ],
+      "set_aside": [
+        "16063"
+      ],
+      "villain": [
+        "16058",
+        "16059"
+      ]
+    },
+    "brotherhood_of_badoon_expert": {
+      "campaign_log": {},
+      "challenges": [],
+      "encounter_sets": [
+        "standard",
+        "expert",
+        "ship_command"
+      ],
+      "encounters": [
+        "16064",
+        "16065",
+        "16065",
+        "16066",
+        "16067",
+        "16068",
+        "16069"
+      ],
+      "expert": true,
+      "modular_sets": [
+        "band_of_badoon"
+      ],
+      "name": "Brotherhood of Badoon",
+      "schemes": [
+        "16061a,16061b",
+        "16062a,16062b"
+      ],
+      "set_aside": [
+        "16063"
+      ],
+      "villain": [
+        "16059",
+        "16060"
+      ]
     }
   },
   "contract": "docs/setup-dataset.md",
   "counts": {
-    "campaigns": 41,
-    "encounter_sets": 20,
+    "campaigns": 43,
+    "encounter_sets": 21,
     "heroes": 19
   },
   "encounter_sets": {
@@ -3531,6 +3598,22 @@
       "role": "modular",
       "encounters": [
         "16149"
+      ]
+    },
+    "band_of_badoon": {
+      "name": "Band of Badoon",
+      "role": "modular",
+      "encounters": [
+        "16117",
+        "16117",
+        "16118",
+        "16118",
+        "16118",
+        "16119",
+        "16120",
+        "16120",
+        "16121",
+        "16121"
       ]
     },
     "temporal": {

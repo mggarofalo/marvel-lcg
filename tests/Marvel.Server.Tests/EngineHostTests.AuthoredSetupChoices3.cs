@@ -43,7 +43,7 @@ public sealed class EngineHostAuthoredSetupChoicesTests : EngineHostTestBase
         Assert.Equal([
             "running_interference", "power_drain", "a_mess_of_things", "bomb_scare",
             "masters_of_evil", "under_attack", "legions_of_hydra", "the_doomsday_chair",
-            "hydra_assault", "weapon_master", "hydra_patrol", "goblin_gimmicks", "kree_fanatic", "power_stone"], choices.ModularSets.Select(choice => choice.Key));
+            "hydra_assault", "weapon_master", "hydra_patrol", "goblin_gimmicks", "kree_fanatic", "power_stone", "band_of_badoon"], choices.ModularSets.Select(choice => choice.Key));
         Assert.Equal("The Doomsday Chair", choices.ModularSets.Single(choice => choice.Key == "the_doomsday_chair").Name);
         Assert.Equal(EngineBuildIdentity.ProductVersion, choices.Runtime.ProductVersion);
         Assert.Equal(EngineBuildIdentity.Commit, choices.Runtime.Commit);

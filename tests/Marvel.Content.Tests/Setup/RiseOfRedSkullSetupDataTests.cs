@@ -13,13 +13,13 @@ public sealed class RiseOfRedSkullSetupDataTests
     [Fact]
     public void AuthoredProductsHaveCompleteScenarioAndIdentityRecipes()
     {
-        Assert.Equal(41, Setup.CampaignNames.Count);
+        Assert.Equal(43, Setup.CampaignNames.Count);
         var cards = CardCatalog.Parse(File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")));
         var admitted = RuntimeProductAdmission.Discover(Setup, cards, cards.Faces.ToHashSet(StringComparer.Ordinal));
         Assert.Equal(39, admitted.Setup.CampaignNames.Count);
         Assert.Equal(19, admitted.Setup.HeroNames.Count);
-        Assert.Equal(20, Setup.EncounterSetNames.Count);
-        Assert.Equal(16, admitted.Setup.EncounterSetNames.Count);
+        Assert.Equal(21, Setup.EncounterSetNames.Count);
+        Assert.Equal(17, admitted.Setup.EncounterSetNames.Count);
         foreach (string scenario in new[] { "crossbones", "absorbing_man", "taskmaster", "zola", "red_skull" })
         {
             var standard = Setup.Campaign(scenario);

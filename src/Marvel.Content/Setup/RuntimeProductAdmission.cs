@@ -39,11 +39,8 @@ public sealed class RuntimeProductAdmission
         bool antMan = StandaloneProductAdmission.AntMan(setup, cards, authored);
         bool wasp = StandaloneProductAdmission.Wasp(setup, cards, authored);
         bool quicksilver = StandaloneProductAdmission.Quicksilver(setup, cards, authored);
-        bool groot = StandaloneProductAdmission.Groot(setup, cards, authored);
-        bool rocket = StandaloneProductAdmission.RocketRaccoon(setup, cards, authored);
         bool scarletWitch = StandaloneProductAdmission.ScarletWitch(setup, cards, authored);
-        bool powerStone = StandaloneProductAdmission.PowerStone(setup, cards, authored);
-        if (!powerStone) setup = setup.WithoutEncounterSet("power_stone");
+        var parts = GalaxysMostWantedParts(ref setup, cards, authored);
         bool kreeFanatic = StandaloneProductAdmission.KreeFanatic(setup, cards, authored);
         if (!kreeFanatic) setup = setup.WithoutEncounterSet("kree_fanatic");
         bool Accepted(string pack) => pack switch
@@ -65,13 +62,6 @@ public sealed class RuntimeProductAdmission
             "ron" => kreeFanatic,
             _ => false,
         };
-        // The Galaxy's Most Wanted is admitted in parts: Groot's and Rocket Raccoon's
-        // faces and the Power Stone modular set are products of their own while the
-        // rest of the box stays closed.
-        var parts = ImmutableHashSet<string>.Empty.WithComparer(StringComparer.Ordinal)
-            .Union(groot ? GrootRecipe.Faces : [])
-            .Union(rocket ? RocketRaccoonRecipe.Faces : [])
-            .Union(powerStone ? StandaloneProductAdmission.PowerStoneFaces : []);
         bool AcceptedFace(string face) => Accepted(cards.Pack(face)) || parts.Contains(face);
         var playable = authored.Where(face => cards.Has(face) && AcceptedFace(face))
             .ToImmutableHashSet(StringComparer.Ordinal);
@@ -81,5 +71,23 @@ public sealed class RuntimeProductAdmission
         // A retained Core recipe referencing unavailable content remains an error.
         SetupCatalogAdmission.Validate(setup, cards, playable);
         return new(setup, playable, campaign);
+    }
+
+    // The Galaxy's Most Wanted is admitted in parts: Groot's and Rocket Raccoon's faces and
+    // the Power Stone and Band of Badoon modular sets are products of their own while the
+    // rest of the box stays closed.
+    private static ImmutableHashSet<string> GalaxysMostWantedParts(ref SetupCatalog setup, CardCatalog cards,
+        IReadOnlySet<string> authored)
+    {
+        var parts = ImmutableHashSet.CreateBuilder<string>(StringComparer.Ordinal);
+        if (StandaloneProductAdmission.Groot(setup, cards, authored)) parts.UnionWith(GrootRecipe.Faces);
+        if (StandaloneProductAdmission.RocketRaccoon(setup, cards, authored)) parts.UnionWith(RocketRaccoonRecipe.Faces);
+        if (StandaloneProductAdmission.PowerStone(setup, cards, authored))
+            parts.UnionWith(StandaloneProductAdmission.PowerStoneFaces);
+        else setup = setup.WithoutEncounterSet("power_stone");
+        // A closed Band of Badoon set leaves discovery with the box's other closed faces.
+        if (StandaloneProductAdmission.BandOfBadoon(setup, cards, authored))
+            parts.UnionWith(StandaloneProductAdmission.BandOfBadoonFaces);
+        return parts.ToImmutable();
     }
 }

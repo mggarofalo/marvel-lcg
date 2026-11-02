@@ -155,13 +155,15 @@ Groot has candidate public admission for his 29 printed faces in The Galaxy's
 Most Wanted and his exact 40-card starter, obligation and nemesis composition.
 Rocket Raccoon has the same admission for his 30 printed faces. Each hero's two
 identity faces represent one physical card. The rest of that box, including its
-villains, campaign and every modular set except Power Stone, is outside the
-boundary. Power Stone (16149) is admitted as a one-card modular set; Ship Command
-(16142–16148) is authored and withheld. Missing a face or changing a required
-recipe closes that hero, or the Power Stone set, alone. Focused evidence is in
-`docs/content/groot-public-admission.md` and
+villains, campaign and every modular set except Power Stone and Band of Badoon,
+is outside the boundary. Power Stone (16149) is admitted as a one-card modular
+set and Band of Badoon (16117–16121) as a ten-card modular set; Ship Command
+(16142–16148) and the Brotherhood of Badoon scenario are authored and withheld.
+Missing a face or changing a required recipe closes that hero, or that modular
+set, alone. Focused evidence is in `docs/content/groot-public-admission.md` and
 `docs/content/rocket-raccoon-public-admission.md`; the Power Stone and Ship
-Command record is `docs/content/ship-command-power-stone.md`.
+Command record is `docs/content/ship-command-power-stone.md`, and the Brotherhood
+of Badoon record is `docs/content/brotherhood-of-badoon.md`.
 
 Scarlet Witch has candidate public admission for all 32 printed faces and its
 exact 40-card starter, both obligations and nemesis composition. Four extra

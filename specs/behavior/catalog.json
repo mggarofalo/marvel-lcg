@@ -82234,6 +82234,50 @@
       ]
     },
     {
+      "id": "setup:campaign:brotherhood_of_badoon",
+      "kind": "setup",
+      "title": "Brotherhood of Badoon",
+      "fingerprint": "sha256:c809d52393356daa8c26f60e5ebf3780545e7c5f795b33351107f8fef1f06d15",
+      "scope": "campaign",
+      "disposition": "outside-core",
+      "obligations": [
+        {
+          "id": "behavior:setup:campaign:brotherhood_of_badoon:brotherhood-of-badoon-setup",
+          "summary": "The brotherhood_of_badoon record supplies the Brotherhood of Badoon scenario composition and setup.",
+          "disposition": "outside-core",
+          "reason": "This record requires The Galaxy's Most Wanted Brotherhood of Badoon scenario, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
+      "id": "setup:campaign:brotherhood_of_badoon_expert",
+      "kind": "setup",
+      "title": "Brotherhood of Badoon",
+      "fingerprint": "sha256:512759c68ebe7afef79c7a6041750caddbe9ded4935bcdb6fdef7596f55ea708",
+      "scope": "campaign",
+      "disposition": "outside-core",
+      "obligations": [
+        {
+          "id": "behavior:setup:campaign:brotherhood_of_badoon_expert:brotherhood-of-badoon-expert-setup",
+          "summary": "The brotherhood_of_badoon_expert record supplies the Brotherhood of Badoon scenario composition and setup.",
+          "disposition": "outside-core",
+          "reason": "This record requires The Galaxy's Most Wanted Brotherhood of Badoon scenario, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
       "id": "setup:campaign:crossbones",
       "kind": "setup",
       "title": "Crossbones",
@@ -83850,6 +83894,28 @@
           "summary": "The Anachronauts record supplies seven distinct faces and nine physical encounter cards.",
           "disposition": "outside-core",
           "reason": "This record requires The Once and Future Kang scenario pack, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
+      "id": "setup:encounter-set:band_of_badoon",
+      "kind": "setup",
+      "title": "Band of Badoon",
+      "fingerprint": "sha256:9baa0bc657deff0f4a0c12936844b6e4701199ef2a8919769ab5b1b7390cfac9",
+      "scope": "encounter-set",
+      "disposition": "outside-core",
+      "obligations": [
+        {
+          "id": "behavior:setup:encounter-set:band_of_badoon:band-of-badoon-setup",
+          "summary": "The Band of Badoon record supplies five faces and ten physical encounter cards.",
+          "disposition": "outside-core",
+          "reason": "This record requires The Galaxy's Most Wanted Band of Badoon modular set, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
           "target": null,
           "implementation": null,
           "work_item": null,
