@@ -73,6 +73,24 @@ public sealed class InvocationDeck
         global::Marvel.Rules.Play.Discard.Card(world, card, trigger, events);
     }
 
+    /// <summary>Places a resolving Invocation in the separate discard from wherever it is in its draw pile.</summary>
+    public void DiscardResolved(Card card, string trigger, List<GameEvent> events)
+    {
+        ArgumentNullException.ThrowIfNull(card);
+        ArgumentNullException.ThrowIfNull(events);
+        if (!duringGame || !cards.Contains(card))
+            throw new ArgumentException("only this player's resolving Invocation can be discarded", nameof(card));
+        // pack:mc08:the-invocation-deck: "After that card is resolved, it is placed in
+        // a special discard pile". An interrupt inside the Special can shuffle the draw
+        // pile it tops (09029 "Shuffle the Invocation card under here into the Invocation
+        // deck" via rr:when-defeated-abilities.1 and rr:interrupt.3), and "this card"
+        // still names the same physical card (rr:referential-ability.step.1).
+        if (card.Area != Deck)
+            throw new RulesNotImplementedException(
+                $"resolving Invocation '{card.FaceId}' left its draw pile for {card.Area.Type} before placing itself");
+        global::Marvel.Rules.Play.Discard.Card(world, card, trigger, events);
+    }
+
     internal static InvocationDeck? ForCard(World world, Card card)
     {
         var invocation = world.Seats.Select(seat => seat.InvocationDeck)

@@ -1,5 +1,6 @@
 using Marvel.Rules.Events;
 using Marvel.Rules.Play;
+using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
 using Marvel.Tests;
 using Xunit;
@@ -63,6 +64,52 @@ public sealed class InvocationDeckBoundaryTests
         Assert.Single(invocation.Discard.Cards);
         Assert.DoesNotContain(world.Areas, area =>
             area.Type == DeckType.DiscardPile && area.Cards.Contains(card));
+    }
+
+    [Theory]
+    [InlineData("below")]
+    [InlineData("discarded")]
+    [InlineData("unbound")]
+    [InlineData("setup")]
+    [Rule("rr:referential-ability.step.1")]
+    public void AResolvingInvocationPlacesItselfFromAnywhereInItsDrawPileAndNowhereElse(string where)
+    {
+        // "The card on which the referential ability is printed": an Invocation's
+        // "Place this card in the Invocation deck discard pile" follows that physical
+        // card after an interrupt shuffles it below the public top.
+        var (world, cards) = Board();
+        var invocation = InvocationDeck.Initialize(world, 0, cards, "setup", []);
+        var game = Game.Begin(world, world.Facts, new NoCardAbilities());
+        if (where != "setup")
+            while (game.Phase == GamePhase.Mulligan)
+                game.Resolve(Decision.Take(Assert.Single(game.Pending!.Affordances).Id));
+        var top = invocation.Deck.Cards[^1];
+        var card = where switch
+        {
+            "unbound" => world.Seats[0].IdentityCard!,
+            "discarded" => top,
+            _ => invocation.Deck.Cards[0],
+        };
+        if (where == "discarded") invocation.DiscardTop(top, "prepare", []);
+        string before = world.Digest().Canonical();
+        var events = new List<GameEvent>();
+
+        if (where == "below")
+        {
+            invocation.DiscardResolved(card, "resolve", events);
+            Assert.Equal([card], invocation.Discard.Cards);
+            Assert.True(card.FaceUp);
+            Assert.Same(top, invocation.PublicTop);
+            Assert.Equal([top], invocation.Deck.Cards.Where(item => item.FaceUp));
+            Assert.Single(events.OfType<CardsMoved>(), move => move.Cards.Single().Card == card.ObjectId);
+            return;
+        }
+        if (where == "discarded")
+            Assert.Throws<RulesNotImplementedException>(() => invocation.DiscardResolved(card, "resolve", events));
+        else
+            Assert.Throws<ArgumentException>(() => invocation.DiscardResolved(card, "resolve", events));
+        Assert.Equal(before, world.Digest().Canonical());
+        Assert.Empty(events);
     }
 
     private static (World World, Card[] Cards) Board()
