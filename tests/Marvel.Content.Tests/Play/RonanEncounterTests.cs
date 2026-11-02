@@ -55,6 +55,24 @@ public sealed class RonanEncounterTests : CoreCardTestBase
         Assert.Equal(3, world.Seats[1].IdentityCard.Damage);
     }
 
+    [Fact]
+    [Rule("rr:first-player.4")]
+    public void TheMilanosControllerIsNotOfferedTheKreeCommandShipOnceTheFirstPlayerPasses()
+    {
+        // The Milano stays under player 0's control after player 1 becomes the first player.
+        var world = RonanBoards.Board(players: 2);
+        RonanBoards.Ship(world);
+        ShipCommandBoards.PutMilano(world);
+        GrootBoards.Hand(world, ShipCommandBoards.Energy);
+        world.FirstPlayer = 1;
+        RonanBoards.Reveal(world, RonanBoards.YouStandAccused, 0);
+
+        var asked = RonanBoards.Take(world, Interrupt);
+
+        Assert.False(Offered(asked, 0));
+        Assert.Equal(3, world.Seats[0].IdentityCard.Damage);
+    }
+
     [Theory]
     [InlineData(1, false)]
     [InlineData(0, true)]
