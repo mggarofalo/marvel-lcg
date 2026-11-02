@@ -238,6 +238,7 @@ internal sealed class AbilitySelectorEvaluation(
             AbilityCardRank.Threat => card.Tokens.GetValueOrDefault("k_threat"),
             AbilityCardRank.Cost => context.World.Facts.PrintedValue(card.FaceId, "Cost", context.World.Players),
             AbilityCardRank.Attack => StateFields.Modified(context.World, card, "attack", context.World.Facts, context.World.Players),
+            AbilityCardRank.Scheme => StateFields.Modified(context.World, card, "scheme", context.World.Facts, context.World.Players),
             AbilityCardRank.PrintedHealth => EffectiveCards.BaseValue(card, context.World.Facts, "HP", context.World.Players),
             AbilityCardRank.RemainingHealth => Math.Max(0, DamagePlacement.Health(context.World, context.World.Facts, card) - context.Quantities(card).Damage),
             _ => throw new InvalidOperationException("Unknown compiled card rank"),

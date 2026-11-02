@@ -30,6 +30,7 @@ internal static class AbilityAreaRankedSelection
             AbilityCardRank.Cost => context.World.Facts.PrintedValue(
                 card.FaceId, "Cost", context.World.Players),
             AbilityCardRank.Attack => state.ModifiedOf(context, card, "attack"),
+            AbilityCardRank.Scheme => state.ModifiedOf(context, card, "scheme"),
             AbilityCardRank.PrintedHealth => EffectiveCards.BaseValue(
                 card, context.World.Facts, "HP", context.World.Players),
             AbilityCardRank.RemainingHealth => Math.Max(0, state.HealthOf(context, card) - state.DamageOf(card)),

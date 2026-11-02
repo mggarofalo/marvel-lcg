@@ -26233,6 +26233,172 @@
         {"trigger": {"event": "WhenAttackDealtDamage", "timing": "ForcedResponse", "target": "attachedTo", "actor": "hero"}, "when": {"atLeast": {"value": {"attackDamageDealt": "trigger.target"}, "count": 3}}, "effect": {"attachCards": {"cards": "this", "host": "trigger.actor"}}},
         {"trigger": {"event": "WhenAttackDealtDamage", "timing": "ForcedResponse", "target": "attachedTo", "actor": "villain"}, "when": {"atLeast": {"value": {"attackDamageDealt": "trigger.target"}, "count": 3}}, "effect": {"attachCards": {"cards": "this", "host": "trigger.actor"}}}
       ]
+    },
+    {
+      "card": "16122",
+      "name": "Cloak of Hercules",
+      "attachTo": {"minBy": {"of": {"query": "enemies"}, "by": "attack"}},
+      "note": "Attach to the enemy with the lowest ATK. The printed ATK+3 is read from the attachment (rr:attachment.1), so the ranking reads each enemy's current ATK before the cloak attaches (rr:attach-to.3). Enemies tied for the lowest ATK are the first player's choice (rr:first-player.1). Hero Action: spend three physical resources to discard this card; a wild resource may be declared physical (rr:wild-resource.1). Unique is a printed keyword the engine reads. MarvelCDB has no FAQ entry for this card.",
+      "abilities": [
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero"}, "cost": {"spend": "RRR"}, "effect": {"discard": "this"}}
+      ]
+    },
+    {
+      "card": "16123",
+      "name": "Obedience Potion",
+      "attachTo": "you",
+      "note": "Attach to the revealing player's identity. Attached character gets -1 THW, -1 ATK and -1 DEF; an alter-ego has none of those values, so the modifiers are ignored there (rr:attachment.1.2). Hero Action: take 1 damage and spend two mental resources to discard this card. 'Any player can do this' is rules text and overrides rr:attachment.2.1 (rulings fc47a4c917f820fc and 01adfa3a8a285689), so any player in hero form may use it. Our reading: the player who uses the action pays its costs, so that player's identity takes the 1 damage, as costs are paid by the player initiating the ability (rr:cost). Unique is a printed keyword the engine reads.",
+      "abilities": [
+        {"trigger": {"timing": "Constant", "subject": "this"}, "effect": {"seq": [{"grant": {"card": "attachedTo", "keyword": "thwart", "amount": -1}}, {"grant": {"card": "attachedTo", "keyword": "attack", "amount": -1}}, {"grant": {"card": "attachedTo", "keyword": "defense", "amount": -1}}]}},
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero"}, "anyPlayer": true, "cost": {"seq": [{"takeDamage": {"cards": "you", "amount": 1}}, {"spend": "BB"}]}, "effect": {"discard": "this"}}
+      ]
+    },
+    {
+      "card": "16124",
+      "name": "The Beyonder's Blazer",
+      "attachTo": {"maxBy": {"of": {"query": "enemies"}, "by": "scheme"}},
+      "note": "Attach to the enemy with the highest SCH, read when the blazer would attach (rr:attach-to.3); enemies tied for the highest SCH are the first player's choice (rr:first-player.1). Amplify is a printed icon the engine reads (rr:amplify-icon). Hero Action: place 2 threat on the main scheme and spend 2 resources of any type to discard this card. Placing the threat is part of the cost, paid before the effect (rr:cost); a cost is not prevented by an effect that prevents threat (ruling 00217fa2dcbc0f88 treats the analogous Hero Action damage as an unpreventable cost). Unique is a printed keyword the engine reads.",
+      "abilities": [
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero"}, "cost": {"seq": [{"placeThreatOnMainScheme": 2}, {"spendAny": 2}]}, "effect": {"discard": "this"}}
+      ]
+    },
+    {
+      "card": "16125",
+      "name": "The Poison",
+      "attachTo": "you",
+      "note": "Attach to the revealing player's identity. Forced Interrupt: when that player's turn begins, place 1 poison counter here, then that player takes 1 damage for each poison counter here. 'Your' is the attached identity's controller (rr:attachment.2). Hero Action: spend 3 resources of different types to discard this card. 'Any player can do this' is rules text and overrides rr:attachment.2.1 (ruling fc47a4c917f820fc). Unique is a printed keyword the engine reads.",
+      "abilities": [
+        {"trigger": {"event": "WhenPlayerTurnBegins", "timing": "ForcedInterrupt", "subject": "you"}, "effect": {"seq": [{"placeCounters": {"card": "this", "counter": "poison", "count": 1}}, {"dealDamage": {"cards": "attachedTo", "amount": {"countersOn": {"card": "this", "counter": "poison"}}}}]}},
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero"}, "anyPlayer": true, "cost": {"spendDistinct": 3}, "effect": {"discard": "this"}}
+      ]
+    },
+    {
+      "card": "16126",
+      "name": "Vandarian Power Stone",
+      "attachTo": {"minBy": {"of": {"query": "enemies"}, "by": "scheme"}},
+      "note": "Attach to the enemy with the lowest SCH, read when the stone would attach (rr:attach-to.3); enemies tied for the lowest SCH are the first player's choice (rr:first-player.1). Hazard is a printed icon the engine reads (rr:hazard-icon). Hero Action: spend three energy resources to discard this card; a wild resource may be declared energy (rr:wild-resource.1). Unique is a printed keyword the engine reads.",
+      "abilities": [
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero"}, "cost": {"spend": "YYY"}, "effect": {"discard": "this"}}
+      ]
+    },
+    {
+      "card": "16127",
+      "name": "Hujahdarian Monarch Egg",
+      "note": "Starting threat, hinder 2 per player (rr:hinder-x), acceleration, unique and victory 0 are printed values the engine reads; victory places the defeated scheme in the victory display instead of the discard pile (rr:victory-x.2). When Defeated: the player who defeated this scheme may ready their identity. The choice is that player's alone.",
+      "abilities": [
+        {"trigger": {"event": "WhenCardDefeated", "timing": "WhenDefeated", "subject": "this"}, "effect": {"eachPlayer": {"player": "defeater", "effect": {"choose": {"descriptions": ["Ready your identity", "Do not ready your identity"], "options": [{"ready": "you"}, {"seq": []}]}}}}}
+      ]
+    },
+    {
+      "card": "16128",
+      "name": "Magical Teapot",
+      "note": "Starting threat, hinder 2 per player (rr:hinder-x), hazard, unique and victory 0 are printed values the engine reads (rr:victory-x.2). When Defeated: the player who defeated this scheme may heal 4 damage from their identity.",
+      "abilities": [
+        {"trigger": {"event": "WhenCardDefeated", "timing": "WhenDefeated", "subject": "this"}, "effect": {"eachPlayer": {"player": "defeater", "effect": {"choose": {"descriptions": ["Heal 4 damage from your identity", "Do not heal"], "options": [{"heal": {"card": "you", "amount": 4}}, {"seq": []}]}}}}}
+      ]
+    },
+    {
+      "card": "16129",
+      "name": "Philosopher's Stone",
+      "note": "Starting threat, hinder 2 per player (rr:hinder-x), amplify, unique and victory 0 are printed values the engine reads (rr:victory-x.2). When Defeated: the player who defeated this scheme may draw 2 cards.",
+      "abilities": [
+        {"trigger": {"event": "WhenCardDefeated", "timing": "WhenDefeated", "subject": "this"}, "effect": {"eachPlayer": {"player": "defeater", "effect": {"choose": {"descriptions": ["Draw 2 cards", "Do not draw"], "options": [{"draw": {"player": "you", "count": 2}}, {"seq": []}]}}}}}
+      ]
+    },
+    {
+      "card": "16131",
+      "name": "Kree Combat Armor",
+      "attachTo": {"maxBy": {"of": {"query": "enemies"}, "by": "attack"}},
+      "note": "Attach to the enemy with the highest ATK, read when the armor would attach (rr:attach-to.3); enemies tied for the highest ATK are the first player's choice (rr:first-player.1). The attached enemy takes 1 less damage from each attack, applied once per attack after tough (ruling d7dcff2da6228c89) as for Vibration Resistance (14027); the damage dealt is unchanged (ruling 05670207b5acc4d9). Hero Action: spend 3 resources of the same type to discard this card. Our encoding: one action per type, physical, mental or energy. A wild resource may be declared any type (rr:wild-resource.1), so three resources declared wild can always be declared one of those types instead and no payment is lost.",
+      "abilities": [
+        {"trigger": {"timing": "Constant", "subject": "this"}, "effect": {"grant": {"card": "attachedTo", "keyword": "attack_damage_reduction", "amount": 1}}},
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero"}, "cost": {"spend": "RRR"}, "effect": {"discard": "this"}},
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero"}, "cost": {"spend": "BBB"}, "effect": {"discard": "this"}},
+        {"trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero"}, "cost": {"spend": "YYY"}, "effect": {"discard": "this"}}
+      ]
+    },
+    {
+      "card": "16132",
+      "name": "Kree Commando",
+      "note": "Patrol is a printed keyword the engine reads (rr:patrol). Boost: if this activation is an attack, the attack gains piercing until it ends, as for Crossfire (04027).",
+      "abilities": [
+        {"trigger": {"event": "WhenCardRevealed", "timing": "Boost", "subject": "this"}, "effect": {"if": {"test": {"activationIs": "attack"}, "then": {"grantUntil": {"card": "activatingEnemy", "keyword": "piercing", "amount": 1, "until": "EndOfAttack"}}}}}
+      ]
+    },
+    {
+      "card": "16133",
+      "name": "Kree Lieutenant",
+      "note": "Guard and stalwart are printed keywords the engine reads (rr:guard, rr:stalwart). Boost: if this activation is an attack, this card gets +3 boost icons for this activation. A Boost ability resolves before the card's icons are counted (rr:attack-enemy-activation.step.3.b, step.3.c), so the +3 is counted, and an interrupt that cancels printed icons does not cancel it (ruling 1ea208998735ef4b).",
+      "abilities": [
+        {"trigger": {"event": "WhenCardRevealed", "timing": "Boost", "subject": "this"}, "effect": {"if": {"test": {"activationIs": "attack"}, "then": {"grantUntil": {"card": "this", "keyword": "boost_const", "amount": 3, "until": "EndOfActivation"}}}}}
+      ]
+    },
+    {
+      "card": "16134",
+      "name": "Kree Private",
+      "note": "Quickstrike is a printed keyword the engine reads (rr:quickstrike). Boost: if this activation is an attack, the attack gains overkill until it ends, as for You Dare Oppose Me? (90005).",
+      "abilities": [
+        {"trigger": {"event": "WhenCardRevealed", "timing": "Boost", "subject": "this"}, "effect": {"if": {"test": {"activationIs": "attack"}, "then": {"grantUntil": {"card": "activatingEnemy", "keyword": "overkill", "amount": 1, "until": "EndOfAttack"}}}}}
+      ]
+    },
+    {
+      "card": "16135",
+      "name": "Psionic Ghost",
+      "note": "When Revealed: you are confused; if you are already confused, take 1 damage. A character cannot have two confused status cards (rr:status-cards.1), so the condition is read before the status is given, as for False Alarm (01112). 'You' is the revealing player's identity in either form (rr:you-your.5). Boost: put Psionic Ghost into play engaged with the player the activation is against, as for Weapons Runner (01121).",
+      "abilities": [
+        {"trigger": {"event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this"}, "effect": {"if": {"test": {"hasStatus": {"card": "you", "status": "confused"}}, "then": {"dealDamage": {"cards": "you", "amount": 1}}, "else": {"giveStatus": {"card": "you", "status": "confused"}}}}},
+        {"trigger": {"event": "WhenCardRevealed", "timing": "Boost", "subject": "this"}, "effect": {"putIntoPlay": {"card": "this", "where": "engagedWithYou"}}}
+      ]
+    },
+    {
+      "card": "16136",
+      "name": "Servant Bot",
+      "note": "Guard and patrol are printed keywords the engine reads (rr:guard, rr:patrol). No other text.",
+      "abilities": []
+    },
+    {
+      "card": "16137",
+      "name": "Starshark",
+      "note": "Quickstrike is a printed keyword the engine reads (rr:quickstrike). Starshark's attacks deal indirect damage, dealt in step 4 after the defense (rr:indirect-damage.5). Only the defender, or the identity of an undefended attack, is attacked (rr:indirect-damage.5.1; ruling 2206f35b71f2b1f6). Boost: deal 1 damage to each character the player the activation is against controls, as for Concussive Blast (01154).",
+      "abilities": [
+        {"trigger": {"timing": "Constant", "subject": "this"}, "effect": {"grant": {"card": "this", "keyword": "attacks_deal_indirect_damage", "amount": 1}}},
+        {"trigger": {"event": "WhenCardRevealed", "timing": "Boost", "subject": "this"}, "effect": {"dealDamage": {"cards": {"query": "charactersYouControl"}, "amount": 1}}}
+      ]
+    },
+    {
+      "card": "16138",
+      "name": "Pirate Commander",
+      "note": "Quickstrike is a printed keyword the engine reads (rr:quickstrike). Forced Response: after this minion's completed attack damages your identity, remove 1 random card in your hand from the game, as Tombstone (02047) reads its damage. A removed card is out of the game and may be looked at (ruling 57fc672ad0921420). Boost: give the villain 1 additional boost card for this activation, only while the villain is the activating enemy; a villainous minion's activation gives the villain nothing (ruling fba0af85176f8559).",
+      "abilities": [
+        {"trigger": {"event": "WhenAttackEnds", "timing": "ForcedResponse", "actor": "this", "player": "trigger.player"}, "when": {"attackDamagedYou": "you"}, "effect": {"removeFromGameAtRandom": {"player": "you", "count": 1}}},
+        {"trigger": {"event": "WhenCardRevealed", "timing": "Boost", "subject": "this"}, "effect": {"if": {"test": {"isKind": {"card": "activatingEnemy", "kind": "villain"}}, "then": {"giveAdditionalBoost": {"enemy": "activatingEnemy"}}}}}
+      ]
+    },
+    {
+      "card": "16139",
+      "name": "Pirate Lackey",
+      "note": "Quickstrike is a printed keyword the engine reads (rr:quickstrike). Forced Response: after this minion's completed attack damages your identity, remove the top card of your deck from the game. A deck that empties this way resets at once (rr:player-deck.1). The removed card may be looked at (ruling 57fc672ad0921420). Boost: give the villain 1 additional boost card for this activation, only while the villain is the activating enemy (ruling fba0af85176f8559).",
+      "abilities": [
+        {"trigger": {"event": "WhenAttackEnds", "timing": "ForcedResponse", "actor": "this", "player": "trigger.player"}, "when": {"attackDamagedYou": "you"}, "effect": {"removeTopFromGame": {"player": "you", "count": 1}}},
+        {"trigger": {"event": "WhenCardRevealed", "timing": "Boost", "subject": "this"}, "effect": {"if": {"test": {"isKind": {"card": "activatingEnemy", "kind": "villain"}}, "then": {"giveAdditionalBoost": {"enemy": "activatingEnemy"}}}}}
+      ]
+    },
+    {
+      "card": "16140",
+      "name": "Sound the Alarms",
+      "note": "Starting threat 2 per player is a printed value the engine reads. Each enemy gets +1 ATK while this scheme is in play. Boost: reveal this card, as for Ball and Chain (04084).",
+      "abilities": [
+        {"trigger": {"timing": "Constant", "subject": "this"}, "effect": {"grantEach": {"cards": {"query": "enemies"}, "keyword": "attack", "amount": 1}}},
+        {"trigger": {"event": "WhenCardRevealed", "timing": "Boost", "subject": "this"}, "effect": {"reveal": "this"}}
+      ]
+    },
+    {
+      "card": "16141",
+      "name": "Honor Among Thieves",
+      "note": "When Revealed: discard cards from the top of the encounter deck until a Criminal minion is discarded; reveal that minion, then give it a tough status card and give the villain 1 facedown boost card. The minion is revealed first, including its quickstrike, then it is given the tough status card (ruling 37020901515c3f59); a sentence resolves fully before the quickstrike attack's steps, so the tough card is in place for that attack (ruling ef63f3668700ef73), as for Planetary Invasion (16057). Outside the villain's activation the facedown boost card stays with the villain until it next activates (rr:boost-boost-icon.6). rr:encounter-deck.2 ends the discard, fulfilled, when the encounter deck empties first; the villain is still given the boost card.",
+      "abilities": [
+        {"trigger": {"event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this"}, "effect": {"seq": [{"discardUntil": {"from": "encounterDeck", "kind": "minion", "trait": "CRIMINAL", "then": "reveal", "revealStatus": "tough"}}, {"giveAdditionalBoost": {"enemy": {"query": "villain"}}}]}}
+      ]
     }
   ]
 }

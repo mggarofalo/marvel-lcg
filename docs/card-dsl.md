@@ -2346,3 +2346,27 @@ While a player resolves a peril card from their revealing area, every
 occurrence nested in its resolution is closed to other players' optional
 abilities, and a resource ability on another player's card cannot pay that
 player's costs (rr:peril.1; ruling `1a4413236d2a28d8`).
+
+## Encounter costs, removal from the game and ranked SCH
+
+`maxBy` and `minBy` accept `by: "scheme"`, ranking each candidate by its
+modified SCH, as The Beyonder's Blazer and Vandarian Power Stone attach to the
+enemy with the highest or lowest SCH. Candidates tied at the extreme of a
+revealed attachment's ranking are the first player's choice (rr:first-player.1).
+
+`{"placeThreatOnMainScheme": N}` is a cost that places N threat on the main
+scheme in the source's game area. It is placed without the interrupt window an
+effect's threat opens, since a cost cannot be prevented (ruling
+`00217fa2dcbc0f88`); a scheme it completes resolves as for any placement.
+
+`removeFromGameAtRandom` and `removeTopFromGame` take a `player` and a `count`.
+The first removes random cards from each named player's hand from the game; the
+second removes cards from the top of each named player's deck, bounded by the
+deck's starting size, and a deck it empties resets at once (rr:player-deck.1).
+The removed cards may be looked at (ruling `57fc672ad0921420`).
+
+`grant` with `keyword: "attacks_deal_indirect_damage"` on an enemy makes each of
+its attacks deal indirect damage from the moment the attack is prepared, as a
+boost ability's `makeAttackIndirect` does for one attack (rr:indirect-damage.5).
+
+The spellings in this section are engine choices.

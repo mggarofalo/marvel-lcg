@@ -207,11 +207,13 @@ public abstract record AbilityEffect
     /// <summary>Deal one selected encounter card to a named player.</summary>
     public sealed record DealEncounterCard(AbilityCardSelection Card, AbilityPlayer Player) : AbilityEffect;
     /// <summary>Discard random cards from the selected players' hands.</summary>
-    public sealed record DiscardAtRandom(AbilityPlayerSelection Players, AbilityNumber Count) : AbilityEffect;
+    /// <remarks><paramref name="RemovesFromGame"/> removes the random cards from the game instead.</remarks>
+    public sealed record DiscardAtRandom(AbilityPlayerSelection Players, AbilityNumber Count, bool RemovesFromGame = false) : AbilityEffect;
     /// <summary>Place random cards from selected hands facedown on a host.</summary>
     public sealed record PlaceAtRandom(AbilityPlayerSelection Players, AbilityNumber Count, AbilityCardSelection Host) : AbilityEffect;
     /// <summary>Discard cards from a supported deck or the named players' decks.</summary>
-    public sealed record DiscardTop(AbilitySearchArea From, AbilityPlayerSelection? Players, AbilityNumber Count) : AbilityEffect;
+    /// <remarks><paramref name="RemovesFromGame"/> removes the players' top cards from the game instead.</remarks>
+    public sealed record DiscardTop(AbilitySearchArea From, AbilityPlayerSelection? Players, AbilityNumber Count, bool RemovesFromGame = false) : AbilityEffect;
     /// <summary>Discard from a bounded deck until a printed match is found.</summary>
     public sealed record DiscardUntil(CardKind? Kind, string? Trait, AbilityDiscardUntilResult Result) : AbilityEffect
     {

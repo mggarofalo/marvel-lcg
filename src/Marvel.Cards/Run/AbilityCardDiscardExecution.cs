@@ -10,7 +10,14 @@ internal static class AbilityCardDiscardExecution
 {
     internal static void DiscardAtRandom(AbilityEffect.DiscardAtRandom discard, AbilityCardStateContext context)
     {
-        long count = Amount(discard.Count, context); long discarded = 0; var types = new SortedSet<char>();
+        long count = Amount(discard.Count, context);
+        if (discard.RemovesFromGame)
+        {
+            foreach (int player in Players(discard.Players, context))
+                PlayerCardRemoval.RandomFromHand(context.World, player, count, context.Trigger, context.Events);
+            return;
+        }
+        long discarded = 0; var types = new SortedSet<char>();
         foreach (int player in Players(discard.Players, context))
         {
             int start = context.Events.Count;
@@ -32,6 +39,12 @@ internal static class AbilityCardDiscardExecution
     {
         // One instruction fixes its quantity before any deck changes or reset work.
         long count = Amount(discard.Count, context);
+        if (discard.RemovesFromGame)
+        {
+            foreach (int player in Players(discard.Players!, context))
+                PlayerCardRemoval.TopOfDeck(context.World, player, count, context.Trigger, context.Events);
+            return;
+        }
         if (discard.Players is null && discard.From == AbilitySearchArea.EncounterDeck)
         {
             context.Result.Discarded.AddRange(EncounterDeck.DiscardTop(

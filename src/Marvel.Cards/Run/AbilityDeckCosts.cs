@@ -5,7 +5,7 @@ using Marvel.Rules.State;
 
 namespace Marvel.Cards.Run;
 
-/// <summary>Prices and commits exact deck movement before the post-arrow effect.</summary>
+/// <summary>Prices and commits exact deck movement, and other costs that ask nothing, before the post-arrow effect.</summary>
 internal static class AbilityDeckCosts
 {
     internal static bool CanPayTogether(World world, int player, IReadOnlyList<AbilityCost> costs)
@@ -39,9 +39,14 @@ internal static class AbilityDeckCosts
             _ => throw new InvalidOperationException("Unknown deck discard cost area"),
         };
 
-    internal static IReadOnlyList<Card> Pay(World world, int player, AbilityCost cost,
+    internal static IReadOnlyList<Card> Pay(World world, Card source, int player, AbilityCost cost,
         string trigger, List<GameEvent> events)
     {
+        if (cost is AbilityCost.PlaceMainSchemeThreat threat)
+        {
+            AbilityThreatCost.Pay(world, source, threat, trigger, events);
+            return [];
+        }
         if (cost is AbilityCost.DiscardTop discard)
         {
             // rr:cost-arrow-icon: text before the arrow "must be paid and/or resolved in full".

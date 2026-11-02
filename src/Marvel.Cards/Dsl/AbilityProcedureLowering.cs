@@ -29,8 +29,10 @@ internal static class AbilityProcedureLowering
         return new(Selected(fields, "card", location), LowerPlayer(Required(fields, "player", location), location.Child("player")));
     }
 
-    internal static AbilityEffect RandomCardsEffect(AbilityValue value, AbilityLocation location, bool place)
+    internal static AbilityEffect RandomCardsEffect(AbilityValue value, AbilityLocation location, string kind)
     {
+        if (kind == "removeFromGameAtRandom") return RemovalEffect(value, location, random: true);
+        bool place = kind == "placeAtRandom";
         var fields = place ? Fields(value, location, "player", "count", "on") : Fields(value, location, "player", "count");
         var players = Players(Required(fields, "player", location), location.Child("player"));
         var count = Numeric(fields, "count", location);
@@ -38,7 +40,21 @@ internal static class AbilityProcedureLowering
             : new AbilityEffect.DiscardAtRandom(players, count);
     }
 
-    internal static AbilityEffect.DiscardTop DiscardTopEffect(AbilityValue value, AbilityLocation location)
+    // Engine spellings for removing player cards from a hand at random or from the
+    // top of a deck. They share the discard records' player and count analysis.
+    private static AbilityEffect RemovalEffect(AbilityValue value, AbilityLocation location, bool random)
+    {
+        var fields = Fields(value, location, "player", "count");
+        var players = Players(Required(fields, "player", location), location.Child("player"));
+        var count = Numeric(fields, "count", location);
+        return random ? new AbilityEffect.DiscardAtRandom(players, count, RemovesFromGame: true)
+            : new AbilityEffect.DiscardTop(AbilitySearchArea.YourDeck, players, count, RemovesFromGame: true);
+    }
+
+    internal static AbilityEffect DeckTopEffect(AbilityValue value, AbilityLocation location, string kind) =>
+        kind == "removeTopFromGame" ? RemovalEffect(value, location, random: false) : DiscardTopEffect(value, location);
+
+    private static AbilityEffect.DiscardTop DiscardTopEffect(AbilityValue value, AbilityLocation location)
     {
         var fields = Fields(value, location, "from", "count", "player");
         var from = SearchArea(Required(fields, "from", location), location.Child("from"));

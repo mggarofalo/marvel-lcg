@@ -69,6 +69,7 @@ internal static class AbilityChoicePromptDescription
     {
         AbilityCardRank.Cost => "cost",
         AbilityCardRank.Attack => "ATK",
+        AbilityCardRank.Scheme => "SCH",
         AbilityCardRank.PrintedHealth => "printed hit points",
         AbilityCardRank.RemainingHealth => "remaining hit points",
         _ => "threat",

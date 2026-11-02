@@ -210,7 +210,8 @@ internal sealed class AbilityCostPreparation
         if (PrepareHandDiscard(component)) return;
         switch (component)
         {
-            case AbilityCost.DiscardUntilMinionEngaged or AbilityCost.DiscardTop or AbilityCost.DealEncounterToYou:
+            case AbilityCost.DiscardUntilMinionEngaged or AbilityCost.DiscardTop or AbilityCost.DealEncounterToYou
+                or AbilityCost.PlaceMainSchemeThreat:
                 ordered.Add(new DeckCost(component));
                 break;
             case AbilityCost.ExhaustChosen exhaustChosen:
