@@ -43,8 +43,7 @@ internal static class DecisionSheetHead
         // What the decision concerns stands beside the title, so the head stays short enough for the sheet's body.
         if (TableWording.DecisionSubjectLine(prompt.Frame) is { Length: > 0 } subject)
         {
-            Label line = TableBlockStyle.Line("DecisionSubject", subject, scale, VisualSystem.Palette.MutedText);
-            line.SizeFlagsHorizontal = Control.SizeFlags.ShrinkEnd;
+            Label line = TableBlockStyle.Whole("DecisionSubject", subject, scale, VisualSystem.Palette.MutedText);
             Node row = head.GetNode("TitleRow");
             row.AddChild(line);
             row.MoveChild(line, 1);
