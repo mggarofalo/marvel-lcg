@@ -33,7 +33,7 @@ internal static class AbilityGroupRetrieval
     internal static Prompt Describe(AbilityStructuralContext context, AbilityEffect.ChooseCardsToHand group)
     {
         string description = $"Choose up to {group.Maximum} cards to add to your hand. Confirm with none selected to take no cards.";
-        return new(context.Player, Question.Element, TimingPriority.Untimed, Steps.TurnAction,
+        return new(context.PromptOwner, Question.Element, TimingPriority.Untimed, Steps.TurnAction,
             $"{context.SourceFace}: choose cards to add to hand", false,
             [new Affordance(context.Expressions.Source.ObjectId, AbilityStructuralExecution.ChooseVerb,
                 context.Expressions.Source.ObjectId, context.Player, group.OperationName(), Request(context, group),

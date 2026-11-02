@@ -45,7 +45,7 @@ internal static class AbilityStatusRecipients
         string description = group.Count is null
             ? $"Choose up to {group.Maximum} different characters. Give each a {group.Status} status card. Confirm with none selected to give no status cards; later instructions still resolve."
             : $"Choose {Bound(context, group)} different characters, or as many as can receive one. Give each a {group.Status} status card.";
-        return new(context.Player, Question.Element, TimingPriority.Untimed, Steps.TurnAction,
+        return new(context.PromptOwner, Question.Element, TimingPriority.Untimed, Steps.TurnAction,
             $"{context.SourceFace}: choose status recipients", false,
             [new Affordance(context.Expressions.Source.ObjectId, AbilityStructuralExecution.ChooseVerb,
                 context.Expressions.Source.ObjectId, context.Player, group.OperationName(), Request(context, group),

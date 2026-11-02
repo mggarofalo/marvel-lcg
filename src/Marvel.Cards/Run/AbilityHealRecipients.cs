@@ -38,7 +38,7 @@ internal static class AbilityHealRecipients
     internal static Prompt Describe(AbilityStructuralContext context, AbilityRecipientEffect.ChooseHealRecipients group)
     {
         string description = $"Choose up to {group.Maximum} different damaged characters. Heal {group.Amount} damage from each. Confirm with none selected to heal nothing.";
-        return new(context.Player, Question.Element, TimingPriority.Untimed, Steps.TurnAction,
+        return new(context.PromptOwner, Question.Element, TimingPriority.Untimed, Steps.TurnAction,
             $"{context.SourceFace}: choose characters to heal", false,
             [new Affordance(context.Expressions.Source.ObjectId, AbilityStructuralExecution.ChooseVerb,
                 context.Expressions.Source.ObjectId, context.Player, group.OperationName(), Request(context, group),

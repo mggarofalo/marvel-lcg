@@ -1,4 +1,6 @@
 using Marvel.Rules.Setup;
+using Marvel.Cards.Dsl;
+using Marvel.Cards.Run;
 using Marvel.Content;
 using Marvel.Content.Setup;
 using Marvel.Content.Tests.Cards;
@@ -42,6 +44,34 @@ public sealed class RiseOfRedSkullSetupContinuationTests
         Assert.Equal(captive, ally.FaceId);
         Assert.False(ally.FaceUp);
         Assert.Equal(1 + CardCatalogData.PrintedValue(captive, "Cost", 1), prison.Tokens.GetValueOrDefault("k_threat"));
+    }
+
+    [Fact]
+    [Rule("rr:first-player.2")]
+    public void ASetupSearchNamingNoPlayerAsksTheFirstPlayerAmongSeveralCopies()
+    {
+        // rr:first-player.2: "If an encounter card requires a card ability to be
+        // resolved, a game function to be performed, or a choice to be made but does
+        // not specify which player should act, the first player does so."
+        // A 04112a variant whose scenario-wide search names Ultimate Bio-Servant, of
+        // which the encounter deck holds four, so the search needs an answer.
+        int scheme = AuthoredCards.Text.IndexOf("\"card\": \"04112a\"", StringComparison.Ordinal);
+        int end = AuthoredCards.Text.IndexOf("\"eachPlayer\"", scheme, StringComparison.Ordinal);
+        string variant = AuthoredCards.Text[..scheme] + AuthoredCards.Text[scheme..end]
+            .Replace("\"Hydra Prison\"", "\"Ultimate Bio-Servant\"", StringComparison.Ordinal)
+            + AuthoredCards.Text[end..];
+        var runner = new AbilityRunner(AbilityLowering.Book(AbilityCatalog.Parse(variant)));
+        string[] heroes = ["spider_man", "iron_man"];
+        var world = WorldSetup.Deal(CardCatalogData,
+            Blueprints.From(Dealer.DealOrder(SetupCatalogData, "zola", heroes), CardCatalogData),
+            [.. heroes.Select(hero => SetupCatalogData.Hero(hero).Name)], 42, runner);
+        var game = Game.Begin(world, CardCatalogData, runner);
+
+        var search = game.Pending!;
+        Assert.Equal("04112a: choose a card", search.Label);
+        Assert.Equal(world.FirstPlayer, search.Player);
+        Assert.Equal(4, search.Affordances.Count(option => option.Label == "04114"));
+        Assert.Same(search, game.PromptFor(world.FirstPlayer));
     }
 
     [Theory]

@@ -36,10 +36,10 @@ internal static class AbilitySpecialSequence
     {
         World world = context.Expressions.World;
         List<Card> remaining = Remaining(context, effect);
-        return new Prompt(context.Player, Question.Order, TimingPriority.Untimed,
+        return new Prompt(context.PromptOwner, Question.Order, TimingPriority.Untimed,
             Steps.ResolveSpecial, $"{context.SourceFace}: choose next Special ability", false,
             remaining.Select(card => new Affordance(card.ObjectId, AbilityStructuralExecution.ChooseVerb,
-                card.ObjectId, context.Player, card.FaceId)
+                card.ObjectId, context.PromptOwner, card.FaceId)
             {
                 DisplayLabel = $"Resolve {world.Facts.Title(card.FaceId)} next",
                 CommitLabel = $"Resolve {world.Facts.Title(card.FaceId)} next",

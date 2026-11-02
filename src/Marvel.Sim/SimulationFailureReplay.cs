@@ -29,7 +29,7 @@ internal sealed class SimulationFailureReplay(
         ValidateSetupRecord();
         try
         {
-            _ = Open(session.Data, session.Simulation, failure.Seed);
+            _ = OpenedGame.Open(session.Data, session.Simulation, failure.Seed);
         }
         catch (Exception error)
         {

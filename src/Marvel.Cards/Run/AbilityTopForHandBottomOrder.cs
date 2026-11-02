@@ -72,7 +72,7 @@ internal static class AbilityTopForHandBottomOrder
         var cards = Retained(world, context.Expressions.Results);
         const string description =
             "Choose all of these cards in top-to-bottom order. They go to the bottom of your deck in that order; the last selected card becomes the bottom card.";
-        return new(context.Player, Question.Order, TimingPriority.Untimed, context.Trigger,
+        return new(context.PromptOwner, Question.Order, TimingPriority.Untimed, context.Trigger,
             "Order cards for the bottom of your deck", false,
             [new Affordance(source.ObjectId, "Order", source.ObjectId, context.Player,
                 "Place on the bottom of your deck",

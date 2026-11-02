@@ -22,7 +22,7 @@ internal static class AbilityOrderedEncounterInspection
         var memory = context.Expressions.Results;
         var source = context.Expressions.Source;
         if (!memory.ContainsKey(Count))
-            return new(context.Player, Question.Element, TimingPriority.Untimed, context.Trigger,
+            return new(context.PromptOwner, Question.Element, TimingPriority.Untimed, context.Trigger,
                 "Look at encounter cards", false,
                 [new Affordance(0, "Look", source.ObjectId, context.Player, "Look at encounter cards")
                 { DisplayLabel = "Look at encounter cards", CommitLabel = "Look" }])

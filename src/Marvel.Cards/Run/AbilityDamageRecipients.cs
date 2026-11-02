@@ -37,7 +37,7 @@ internal static class AbilityDamageRecipients
     {
         string description = $"Choose up to {damage.Maximum} different characters to receive damage together. "
             + "Confirm with none selected to deal no damage; later instructions still resolve.";
-        return new(context.Player, Question.Element, TimingPriority.Untimed, Steps.TurnAction,
+        return new(context.PromptOwner, Question.Element, TimingPriority.Untimed, Steps.TurnAction,
             $"{context.SourceFace}: choose damage recipients", false,
             [new Affordance(context.Expressions.Source.ObjectId, AbilityStructuralExecution.ChooseVerb,
                 context.Expressions.Source.ObjectId, context.Player, damage.OperationName(), Request(context, damage),

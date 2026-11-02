@@ -258,7 +258,7 @@ public sealed class SchemeDefeatGameRegressionTests : SimulationHarnessTestBase
             header.ModularSets, 1, [start.Seed], null, null, header.PolicySeed,
             header.DecisionLimit, null, RepositoryRoot());
         var data = SimulationData.Load(RepositoryRoot());
-        var opened = SimulationHarnessSupport.Open(content is null ? data : content(data), config, start.Seed);
+        var opened = Marvel.Sim.OpenedGame.Open(content is null ? data : content(data), config, start.Seed);
         Assert.Equal(start.InitialDigest, opened.Game.State.Digest().Canonical());
         JournalReplay.RequireEvents(start.SetupEvents, opened.SetupEvents, "setup");
         return (lines, opened.Game);

@@ -31,8 +31,8 @@ internal static class AbilityChoicePromptDescription
                 $"'{context.SourceFace}' requires a choice and has no legal option");
         }
         var prompt = new Prompt(
-            choice is AbilityEffect.ChooseCard { FirstPlayerChooses: true }
-                ? context.Expressions.World.FirstPlayer : context.Player,
+            context.FirstPlayerChooses(choice)
+                ? context.Expressions.World.FirstPlayer : context.PromptOwner,
             cards ? Question.Element : Question.Option,
             TimingPriority.Untimed, Steps.CardRevealed,
             $"{context.SourceFace}: choose {(cards ? "a card" : "an option")}",

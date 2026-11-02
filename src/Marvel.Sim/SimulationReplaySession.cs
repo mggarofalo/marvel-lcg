@@ -91,7 +91,7 @@ internal sealed class SimulationReplaySession
                 $"game {start.Game} started before game {currentGame} ended");
         RequireEqual(games, start.Game, "start game index");
         ValidateStartSeed(start);
-        var opened = Open(data, simulation, start.Seed);
+        var opened = OpenedGame.Open(data, simulation, start.Seed);
         game = opened.Game;
         policy = Policies(data.Cards, start.SeatPolicySeeds);
         currentGame = start.Game;

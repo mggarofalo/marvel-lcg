@@ -43,7 +43,7 @@ internal static class AbilityStructuralFlowExecution
         if (candidates.Count == 0) return new Complete(context.Frames);
         // rr:first-player.1 assigns an encounter selection only when there are
         // "multiple eligible targets". A sole target does not require an answer.
-        if (choice.FirstPlayerChooses && context.IsMandatoryEncounter && candidates.Count == 1)
+        if (context.FirstPlayerChooses(choice) && context.IsMandatoryEncounter && candidates.Count == 1)
             return AnswerGenericChoice(context, choice, AbilityContinuationFacts.Empty,
                 Decision.Take(candidates[0].ObjectId));
         return AskFor(context, choice);

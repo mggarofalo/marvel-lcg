@@ -45,7 +45,7 @@ internal sealed class SimulationGameRun(
     private void Play()
     {
         var policySeeds = SeatPolicySeeds(policySeed, config.Heroes.Count);
-        var opened = Open(data, config, seed);
+        var opened = OpenedGame.Open(data, config, seed);
         game = opened.Game;
         lastGood = game.State.Digest().Canonical();
         RecordJson.Write(records, new StartRecord(
