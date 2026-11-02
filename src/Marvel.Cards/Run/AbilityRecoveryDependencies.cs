@@ -66,6 +66,9 @@ internal sealed class AbilityRecoveryDependencies(
             health.Amount is AbilityNumber.Constant && StableRecipient(health.Cards),
         AbilityEffect.GrantField { Until: null } => true,
         AbilityEffect.GrantTrait { Until: null } => true,
+        // Copied environment traits set no hit points, and a recovery's encounter discard moves only
+        // out-of-play cards (rr:in-play-and-out-of-play.9), so no environment enters or leaves play.
+        AbilityEffect.Fixed { Instruction: AbilityFixedInstruction.GainEnvironmentTraits } => true,
         AbilityEffect.Sequence sequence => sequence.Effects.All(Supported),
         AbilityEffect.Conditional conditional => (conditional.Then is null || Supported(conditional.Then))
             && (conditional.Else is null || Supported(conditional.Else)),
