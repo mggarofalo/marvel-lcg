@@ -31,7 +31,7 @@ public sealed class KreeFanaticAdmissionTests
         // Groot, Rocket Raccoon (16001a–16057) and the Power Stone (16149) and Band of Badoon
         // (16117–16121) modular sets are the only open parts of The Galaxy's Most Wanted.
         Assert.DoesNotContain(result.Playable, face => Cards.Pack(face) == "gmw" && string.CompareOrdinal(face, "16058") >= 0 && face != "16149"
-            && string.CompareOrdinal(face, "16117") < 0 | string.CompareOrdinal(face, "16121") > 0);
+            && (string.CompareOrdinal(face, "16117") < 0 || string.CompareOrdinal(face, "16121") > 0));
     }
 
     [Theory]

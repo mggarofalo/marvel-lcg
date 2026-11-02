@@ -79,23 +79,22 @@ public sealed class BadoonSchemeTests : CoreCardTestBase
     [Rule("rr:cost")]
     public void DrangsSpearNeedsBothPhysicalResources()
     {
-        // A second [mental] resource cannot stand in for a [physical] one.
+        // A second [mental] resource cannot stand in for a [physical] one, so with only
+        // [mental] resources in hand the action is not offered.
         var world = BadoonBoards.Board();
         var spear = ShipCommandBoards.Attach(world, GrootBoards.Villain(world), BadoonBoards.Spear);
-        var genius = GrootBoards.Hand(world, ShipCommandBoards.Genius);
-        var mental = GrootBoards.Hand(world, "01005");
+        GrootBoards.Hand(world, ShipCommandBoards.Genius);
+        GrootBoards.Hand(world, "01005");
 
-        Assert.ThrowsAny<Exception>(() => ShipCommandBoards.Act(world, spear, 0, genius, mental));
-
-        Assert.Equal(DeckType.UpgradesArea, spear.Area.Type);
+        Assert.Empty(ShipCommandBoards.ActionsOn(world, spear, 0));
     }
 
     [Fact]
     [Rule("rr:first-player")]
-    public void OnlyTheFirstPlayerIsOfferedTheFirstPlayerActionEvenWithTheMilanoInHand()
+    public void OnlyTheFirstPlayerIsOfferedTheFirstPlayerActionEvenWhenAnotherSeatControlsTheMilano()
     {
-        // "First Player Action" belongs to the first player alone: a later seat holding a
-        // ready Milano is still not offered it.
+        // "First Player Action" belongs to the first player alone: a later seat with a
+        // ready Milano among its supports is still not offered it.
         var world = BadoonBoards.Board(players: 2);
         var milano = world.CreateCard("16142", world.AreaOf(DeckType.EncounterDiscardPile));
         World.MoveToTop(milano, world.AreaOf(DeckType.SupportsArea, PlayArea.Of(1), cardOwner: 1));

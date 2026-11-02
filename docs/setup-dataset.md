@@ -385,6 +385,7 @@ role and the complete ten-copy recipe are required together. The Brotherhood of
 Badoon scenario declares Standard and Expert recipes: Drang (I)/(II) or
 (II)/(III), Terrestrial Invasion and Protect the Planet, the Standard (and Expert)
 and Ship Command sets, the seven Brotherhood of Badoon encounter cards and the
-Badoon Ship set aside for its main scheme's setup. Both recipes stay outside
-discovery with the withheld Ship Command set. Evidence is in
+Badoon Ship set aside for its main scheme's setup. The scenario's faces are not
+admitted, since the scenario waits for the withheld Ship Command set, so both
+recipes name closed faces and stay outside discovery. Evidence is in
 `docs/content/brotherhood-of-badoon.md`.

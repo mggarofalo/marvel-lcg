@@ -7,8 +7,9 @@ using Xunit;
 namespace Marvel.Content.Tests.Setup;
 
 // Band of Badoon (16117–16121) is a modular set within The Galaxy's Most Wanted (ruling
-// 408decdf6cd8c4b5). The Brotherhood of Badoon scenario stays closed: its encounter deck
-// includes the withheld Ship Command set, and Drang (III) is unauthored.
+// 408decdf6cd8c4b5). The Brotherhood of Badoon scenario's faces stay closed, so its recipes,
+// which name them, leave discovery. It waits for the withheld Ship Command set, and Drang (III)
+// is unauthored.
 public sealed class BandOfBadoonAdmissionTests
 {
     private static readonly string[] Faces = ["16117", "16118", "16119", "16120", "16121"];

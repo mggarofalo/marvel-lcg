@@ -18,10 +18,12 @@ modular encounter sets. The plan is [gmw-wave-plan.md](gmw-wave-plan.md)
   accepts it.
 - **The Brotherhood of Badoon scenario is authored and withheld.** Its Standard
   and Expert recipes are declared (`brotherhood_of_badoon`,
-  `brotherhood_of_badoon_expert`). Both include the Ship Command set, which is
-  withheld until the table can present one seat paying with another seat's Milano
-  ([ship-command-power-stone.md](ship-command-power-stone.md)), so discovery
-  removes both recipes.
+  `brotherhood_of_badoon_expert`). The scenario's own faces, Drang among them, are
+  not an admitted part of the box, so discovery removes every recipe that names
+  them (`SetupCatalog.WithoutFaces`). The scenario is not admitted because its
+  encounter deck includes the Ship Command set, which is withheld until the table
+  can present one seat paying with another seat's Milano
+  ([ship-command-power-stone.md](ship-command-power-stone.md)).
 - **Drang (III) (16060) is unauthored.** Its When Revealed discards the top 4 per
   player cards of the encounter deck and puts each discarded minion into play
   engaged with the player engaged with the fewest minions. Ruling

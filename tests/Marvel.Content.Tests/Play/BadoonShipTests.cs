@@ -41,6 +41,28 @@ public sealed class BadoonShipTests : CoreCardTestBase
     }
 
     [Fact]
+    [Rule("rr:villain-defeat")]
+    public void DrangThreeIsUnauthoredSoReachingHimRaises()
+    {
+        // Drang (III)'s When Revealed defers his minions' quickstrike, teamwork and responses
+        // until all have engaged (ruling 82bcc63411002a00), which the engine cannot express.
+        // Defeating Drang (II) reveals him; the engine raises rather than guess. Retaliate 1
+        // deals Drang (II)'s last hit point.
+        var world = BadoonBoards.Board(villain: BadoonBoards.DrangTwo);
+        var hero = world.Seats[0].IdentityCard;
+        var drang = GrootBoards.Villain(world);
+        drang.TakeDamage(13);
+        world.CreateCard(BadoonBoards.DrangThree, world.AreaOf(DeckType.VillainDeck));
+        world.Effects.Register(new ContinuousEffect(EffectSource.LastingEffect, Kind: "retaliate", Amount: 1,
+            Card: hero.ObjectId, Affects: hero.ObjectId));
+
+        KangTemporalFixture.Activate(world, drang, scheme: false, 0);
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => BadoonBoards.Drive(world));
+
+        Assert.Contains(BadoonBoards.DrangThree, thrown.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     [Rule("rr:indirect-damage")]
     public void TheFourthBarrageCounterDealsTwoIndirectDamageToEachPlayerAndClearsTheShip()
     {

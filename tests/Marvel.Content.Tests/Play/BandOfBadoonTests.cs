@@ -2,6 +2,7 @@ using Marvel.Rules.Events;
 using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
+using Marvel.Rules.Timing;
 using Marvel.Tests;
 using Xunit;
 
@@ -61,6 +62,67 @@ public sealed class BandOfBadoonTests : CoreCardTestBase
         Assert.Equal(0, StateFields.Modified(world, villain, "piercing", world.Facts, world.Players));
         Assert.Equal(0, StateFields.Modified(world, villain, "overkill", world.Facts, world.Players));
         Assert.Equal(0, StateFields.Modified(world, villain, "ranged", world.Facts, world.Players));
+    }
+
+    [Fact]
+    [Rule("rr:overkill")]
+    public void BadoonAssassinsBoostGivesTheAttackOverkill()
+    {
+        // Drang with his Spear attacks for 3; Black Cat (2 hit points) defends. Overkill deals
+        // the excess 1 damage to her controller's identity.
+        var world = BadoonBoards.Board();
+        var hero = world.Seats[0].IdentityCard;
+        var villain = GrootBoards.Villain(world);
+        ShipCommandBoards.Attach(world, villain, BadoonBoards.Spear);
+        var cat = GrootBoards.InPlay(world, "01002", DeckType.AlliesArea);
+        BadoonBoards.OnTop(world, BadoonBoards.Assassin);
+
+        KangTemporalFixture.Activate(world, villain, scheme: false, 0);
+        BadoonBoards.Drive(world, prompt => prompt.Asking == Question.Defender ? Decision.Take(cat.ObjectId) : null);
+
+        Assert.Equal(DeckType.DiscardPile, cat.Area.Type);
+        Assert.Equal(1, hero.Damage);
+    }
+
+    [Fact]
+    [Rule("rr:overkill")]
+    public void WithoutTheBoostTheDefendingAllyAbsorbsTheExcess()
+    {
+        // The control for the overkill test: an ordinary attack's excess does not carry over
+        // (rr:attack-enemy-activation.3).
+        var world = BadoonBoards.Board();
+        var hero = world.Seats[0].IdentityCard;
+        var villain = GrootBoards.Villain(world);
+        ShipCommandBoards.Attach(world, villain, BadoonBoards.Spear);
+        var cat = GrootBoards.InPlay(world, "01002", DeckType.AlliesArea);
+
+        KangTemporalFixture.Activate(world, villain, scheme: false, 0);
+        BadoonBoards.Drive(world, prompt => prompt.Asking == Question.Defender ? Decision.Take(cat.ObjectId) : null);
+
+        Assert.Equal(DeckType.DiscardPile, cat.Area.Type);
+        Assert.Equal(0, hero.Damage);
+    }
+
+    [Theory]
+    [InlineData(true, 0)]
+    [InlineData(false, 1)]
+    [Rule("rr:ranged")]
+    public void BadoonAssassinsBoostGivesTheAttackRanged(bool boosted, long retaliated)
+    {
+        // A ranged attack ignores retaliate; without the boost the hero's retaliate 1 deals
+        // its damage to Drang.
+        var world = BadoonBoards.Board();
+        var hero = world.Seats[0].IdentityCard;
+        var villain = GrootBoards.Villain(world);
+        world.Effects.Register(new ContinuousEffect(EffectSource.LastingEffect, Kind: "retaliate", Amount: 1,
+            Card: hero.ObjectId, Affects: hero.ObjectId));
+        if (boosted) BadoonBoards.OnTop(world, BadoonBoards.Assassin);
+
+        KangTemporalFixture.Activate(world, villain, scheme: false, 0);
+        BadoonBoards.Drive(world);
+
+        Assert.Equal(2, hero.Damage);
+        Assert.Equal(retaliated, villain.Damage);
     }
 
     [Fact]
