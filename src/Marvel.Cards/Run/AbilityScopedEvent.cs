@@ -79,7 +79,8 @@ internal static class AbilityScopedEvent
             .Where(candidate => candidate.Trigger.Timing == AbilityType.Action).ElementAt(pending.Ordinal);
         _ = AbilityCostPayment.Prepare(world, card, context.Player, ability.Cost, context.Program, context.ResourceAbilities,
             AbilityPaymentSelection.Capture(input.Spent, input.Targets, input.Values,
-                resourcesPaidByEvent: AbilityPaymentRules.EventPaysResources(world, card, ability.Cost), allocations: input.Allocations));
+                resourcesPaidByEvent: AbilityPaymentRules.EventPaysResources(world, card, ability.Cost), allocations: input.Allocations)
+                with { Reduction = reduction });
         _ = AbilityEventPayment.Prepare(world, card, context.Player, ability, context.ResourceAbilities,
             AbilityPaymentSelection.Capture(input.Spent, [], input.Values, allocations: input.Allocations), reduction);
     }

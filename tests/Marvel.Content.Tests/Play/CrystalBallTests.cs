@@ -19,6 +19,12 @@ public sealed class CrystalBallTests : CoreCardTestBase
     private const string Hawkeye = "04001a,04001b";
     private const string HawkeyesBow = "04002";
     private const string SonicArrow = "04005";
+    private const string DoctorStrange = "09001a,09001b";
+    private const string AstralProjection = "09003";
+    private const string Wasp = "13001a,13001b,13001c";
+    private const string GiantHelp = "13003";
+    private const string Quicksilver = "14001a,14001b";
+    private const string SpeedCyclone = "14006";
 
     [Theory]
     [InlineData(0)]
@@ -99,6 +105,7 @@ public sealed class CrystalBallTests : CoreCardTestBase
         var world = Board(face: "01001b");
         var fury = GrootBoards.Hand(world, NickFury);
         var webbed = GrootBoards.Hand(world, WebbedUp);
+        var kick = GrootBoards.Hand(world, SwingingWebKick);
         var payer = GrootBoards.Hand(world, Backflip);
         var ball = GrootBoards.Side(world, CrystalBall, 1);
         var asked = new List<Prompt>();
@@ -107,7 +114,10 @@ public sealed class CrystalBallTests : CoreCardTestBase
         BasicPowers.AllyPower(world, Cards, Ally(world), ball, BasicPowers.ThwartVerb, []);
         Drive(world, prompt => IsBallPlay(prompt) ? Record(asked, prompt, Pay(Offer(prompt, fury), payer)) : null);
 
-        Assert.DoesNotContain(Assert.Single(asked).Affordances, offer => offer.AnchorId == webbed.ObjectId);
+        // rr:player-turn.5.1: a "Hero Action" needs hero form, so Swinging Web Kick is not offered either.
+        var offered = Assert.Single(asked).Affordances.Select(offer => offer.AnchorId).ToArray();
+        Assert.DoesNotContain(webbed.ObjectId, offered);
+        Assert.DoesNotContain(kick.ObjectId, offered);
         Assert.Equal(DeckType.AlliesArea, fury.Area.Type);
     }
 
@@ -193,6 +203,74 @@ public sealed class CrystalBallTests : CoreCardTestBase
         var offered = Assert.Single(asked).Affordances.Select(offer => offer.AnchorId);
         Assert.Contains(kick.ObjectId, offered);
         Assert.DoesNotContain(arrow.ObjectId, offered);
+    }
+
+    [Fact]
+    [Rule("rr:event.1")]
+    public void AnEventPlaysThroughTheActionItsConditionAllows()
+    {
+        // Giant Help prints one Hero Action whose amount depends on Giant form; its tiny-form
+        // branch is the second Action of the row, and the play triggers that one.
+        var world = GrootBoards.Board("13001a", identity: Wasp);
+        var help = GrootBoards.Hand(world, GiantHelp);
+        var main = GrootBoards.MainScheme(world);
+        main.PlaceTokens("k_threat", 5);
+        var ball = GrootBoards.Side(world, CrystalBall, 1);
+
+        BasicPowers.BasicThwart(world, Cards, 0, ball, []);
+        Drive(world, prompt => IsBallPlay(prompt) ? Decision.Take(Offer(prompt, help).Id)
+            : prompt.Affordances.FirstOrDefault(a => a.AnchorId == main.ObjectId) is { } target ? Decision.Take(target.Id) : null);
+
+        Assert.Equal(2, main.Tokens["k_threat"]);
+        Assert.Equal(DeckType.DiscardPile, help.Area.Type);
+    }
+
+    [Fact]
+    [Rule("rr:target.2")]
+    public void AnEventsChosenCostTargetIsOfferedAtTheReducedPrice()
+    {
+        // Astral Projection: "Choose a scheme -> remove 3 threat from that scheme". With nothing
+        // else in hand only the reduced price (2 - 3 = 0) can be paid, and the scheme is chosen
+        // on the play itself.
+        var world = GrootBoards.Board("09001a", identity: DoctorStrange);
+        var projection = GrootBoards.Hand(world, AstralProjection);
+        var main = GrootBoards.MainScheme(world);
+        main.PlaceTokens("k_threat", 5);
+        var ball = GrootBoards.Side(world, CrystalBall, 1);
+        Affordance? offered = null;
+
+        BasicPowers.BasicThwart(world, Cards, 0, ball, []);
+        Drive(world, prompt =>
+        {
+            if (!IsBallPlay(prompt)) return null;
+            offered = Offer(prompt, projection);
+            return Decision.Take(offered.Id, [main.ObjectId], []);
+        });
+
+        Assert.Contains(main.ObjectId, offered!.Targets!.Legal);
+        Assert.Equal(2, main.Tokens["k_threat"]);
+    }
+
+    [Fact]
+    [Rule("rr:x-value")]
+    public void AnXCostEventChoosesXWithTheReductionAppliedToIt()
+    {
+        // Speed Cyclone costs X; 3 less lets X be 2 with nothing paid, stunning both enemies.
+        var world = GrootBoards.Board("14001a", identity: Quicksilver);
+        var cyclone = GrootBoards.Hand(world, SpeedCyclone);
+        var villain = GrootBoards.Villain(world);
+        var minion = GrootBoards.Engaged(world, "01102");
+        var ball = GrootBoards.Side(world, CrystalBall, 1);
+
+        BasicPowers.BasicThwart(world, Cards, 0, ball, []);
+        Drive(world, prompt =>
+            IsBallPlay(prompt) ? Decision.Take(Offer(prompt, cyclone).Id, [], [], new Dictionary<string, long> { ["X"] = 2 })
+            : prompt.Affordances.FirstOrDefault(a => a.Targets is { } t && t.Legal.Contains(villain.ObjectId)) is { } group
+                ? new Decision(group.Id, [villain.ObjectId, minion.ObjectId]) : null);
+
+        Assert.True(Statuses.Has(world, villain, Statuses.Stunned));
+        Assert.True(Statuses.Has(world, minion, Statuses.Stunned));
+        Assert.Equal(DeckType.DiscardPile, cyclone.Area.Type);
     }
 
     [Fact]
