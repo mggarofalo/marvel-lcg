@@ -46,7 +46,7 @@ internal static class CardLiveStateSample
         face.Name = "StateCard";
         table.AddChild(face);
         face.Size = face.CustomMinimumSize;
-        if (SpatialTableZones.IsExhausted(card)) { face.PivotOffset = face.Size / 2; face.Rotation = Mathf.Pi / 2; }
+        if (SpatialTableZones.IsExhausted(card)) ExhaustedBadge.Add(face, ClientTheme.ConfiguredScale());
         SpatialCardSidecar.State(face, card);
         CardTargetControlSample.Add(fixture, face, card);
         Control detail = CardStateDetails.Wrap(CardControl.Create(card, CardDisplaySize.Full,

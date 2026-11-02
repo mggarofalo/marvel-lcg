@@ -6,10 +6,19 @@ namespace Marvel.Godot;
 /// <summary>Owns physical face sizes and their rotation-safe table envelope.</summary>
 internal static class SpatialCardMetrics
 {
+    /// <summary>
+    /// The table's card scale: the reading scale, at most 100%, on a table of the reference height. A shorter
+    /// table shrinks cards to no less than 80%; a taller one grows them in proportion, to at most 150%, so a
+    /// large window is filled by larger cards rather than empty space. These bounds are our choices.
+    /// </summary>
     internal static InterfaceScale TableScale(InterfaceScale scale, float tableHeight = AstraTableGeometry.ReferenceHeight)
     {
+        int reading = Math.Clamp((int)scale, 80, 100);
+        if (tableHeight > AstraTableGeometry.ReferenceHeight)
+            return (InterfaceScale)Math.Clamp(
+                (int)MathF.Floor(reading * tableHeight / AstraTableGeometry.ReferenceHeight / 10) * 10, 80, 150);
         int maximum = Math.Clamp((int)MathF.Ceiling(100 * tableHeight / AstraTableGeometry.ReferenceHeight / 10) * 10, 80, 100);
-        return (InterfaceScale)Math.Min(Math.Max((int)scale, 80), maximum);
+        return (InterfaceScale)Math.Min(reading, maximum);
     }
 
     internal static Vector2 FaceSize(

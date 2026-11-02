@@ -178,7 +178,10 @@ for that seat.
 `Prompt.Description` carries readable engine-authored context that applies to
 the whole decision, such as the attacker, calculated damage, target health and
 relevant attack modifiers during a damage interrupt. Clients display it and do
-not recalculate combat state.
+not recalculate combat state. While an enemy attack is still resolving,
+`Prompt.Attack` states its attacker, target, current ATK (or calculated damage)
+and whether boost icons are unresolved as typed facts, so a client can show them
+without reading `Description`.
 
 `Prompt.PublicKind` supplies a typed, passive purpose for public waiting context.
 The table projection keeps the primary pending owner independent of a seat's

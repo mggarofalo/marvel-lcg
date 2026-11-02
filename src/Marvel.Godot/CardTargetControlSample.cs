@@ -22,7 +22,7 @@ internal static class CardTargetControlSample
         {
             AnchorKind = AffordanceAnchorKind.Card, TargetRequest = offer.Targets,
         };
-        var prompt = new PromptPresentation("", "", "", "", "", [presentation]);
+        var prompt = new PromptPresentation("", DecisionFrame.Empty, "", [presentation]);
         var visible = new Dictionary<int, List<CardControl>> { [target] = [face] };
         var controls = new BoardCardInteractionControls(() => GodotObject.IsInstanceValid(face));
         controls.Track(face, card, isHand: false);

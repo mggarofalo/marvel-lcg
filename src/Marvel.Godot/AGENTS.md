@@ -179,8 +179,9 @@ and the active decision readable without requiring a pinned inspector.
 
 Retain a stable physical-table grammar through mulligan and play: encounter
 objects on the far side, confrontation through characters, persistent upgrades
-and supports, distinct piles and a fanned hand near the player. Ready characters
-are upright; exhaustion is a quarter-turn with an upright readable caption.
+and supports, distinct piles and a fanned hand near the player. Every card stays
+upright and readable; an exhausted card carries the exhausted badge at its top
+edge, named on hover.
 Attachments, statuses, counters and selections stay local to their hosts.
 Temporary source/target/payment cues must be distinct and must not imply
 relationships through unrelated cards. Do not draw ambient ownership lines.

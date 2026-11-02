@@ -19,8 +19,11 @@ public sealed partial class KangNativeWitness : RefCounted
     /// <summary>The ids of the game areas that hold no villain play area, in engine order.</summary>
     public int[] LocalAreas() => [.. World?.GameAreas.Where(area => !area.Central).Select(area => area.Id) ?? []];
 
-    /// <summary>The engine-authored label of one game area.</summary>
-    public string Label(int area) => World?.GameAreas.FirstOrDefault(item => item.Id == area)?.Label ?? string.Empty;
+    /// <summary>The names of the players in one game area, or of its former players when it is retained.</summary>
+    public string[] Names(int area) => World?.GameAreas.FirstOrDefault(item => item.Id == area) is { } found
+        ? [.. (found.Retained ? found.FormerSeats : found.PlayAreas).Where(seat => seat >= 0)
+            .Select(seat => World.Players.First(item => item.Seat == seat).Name)]
+        : [];
 
     /// <summary>The villains in one game area.</summary>
     public int[] Villains(int area) => [.. World?.GameAreas.FirstOrDefault(item => item.Id == area)?.Villains ?? []];
@@ -42,6 +45,12 @@ public sealed partial class KangNativeWitness : RefCounted
 
     /// <summary>The game areas retained for eliminated players.</summary>
     public int[] RetainedAreas() => [.. World?.GameAreas.Where(area => area.Retained).Select(area => area.Id) ?? []];
+
+    /// <summary>The game areas a pending departure could join.</summary>
+    public int[] DepartureDestinations() => [.. World?.Kang?.Departures.SelectMany(item => item.Destinations).Distinct() ?? []];
+
+    /// <summary>The shared encounter deck's and discard pile's area ids, or empty without Kang facts.</summary>
+    public int[] SharedPiles() => World?.Kang is { } kang ? [kang.EncounterDeck, kang.EncounterDiscard] : [];
 
     /// <summary>The engine trigger of the displayed prompt.</summary>
     public string Trigger() => table?.CurrentGame?.Prompt?.Trigger ?? string.Empty;

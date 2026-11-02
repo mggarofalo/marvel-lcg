@@ -35,12 +35,14 @@ internal sealed class SpatialTablePileRenderer(
         return true;
     }
 
-    internal void RenderNamed(BoardAreaPresentation area, Rect2 rect, string title)
+    /// <summary>A named pile; a stacked one puts its count above its kind, for a narrow upright pile.</summary>
+    internal void RenderNamed(BoardAreaPresentation area, Rect2 rect, string title, bool stacked = false)
     {
         var pile = TabletopAreaObject.From(area);
         var panel = PilePanel($"Pile{area.Id}", rect, title);
         var inspect = InspectButton(pile);
-        inspect.Text = $"{(area.Zone.Contains("Discard", StringComparison.Ordinal) ? "Discard" : "Deck")} · {pile.Count}";
+        string kind = area.Zone.Contains("Discard", StringComparison.Ordinal) ? "Discard" : "Deck";
+        inspect.Text = stacked ? $"{pile.Count}\n{kind}" : $"{kind} · {pile.Count}";
         inspect.AccessibilityName = $"{title} · {pile.Count} cards";
         inspect.TooltipText = inspect.AccessibilityName;
         inspect.Pressed += () => TabletopPileInspector.Show(inspect, pile, result, scale, art);

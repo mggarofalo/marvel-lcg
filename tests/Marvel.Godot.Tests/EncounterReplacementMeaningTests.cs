@@ -55,7 +55,7 @@ public sealed class EncounterReplacementMeaningTests
 
         Assert.True(composer.Progress().IsReady);
         AssertMeaning(Assert.IsType<string>(TableDraftSummary.From(composer, presentation, visible.World, compact: true)));
-        Assert.Contains(cards.Title(current.FaceId), presentation.Resolution);
+        Assert.Contains(cards.Title(current.FaceId), presentation.Resolution());
         Assert.DoesNotContain(cards.Title(replacementFace), DecisionCopy.ActionSummary(offer));
         Assert.DoesNotContain(visible.World.Areas.SelectMany(area => area.Cards),
             card => card.Id == replacement.ObjectId && card.Face is not null);

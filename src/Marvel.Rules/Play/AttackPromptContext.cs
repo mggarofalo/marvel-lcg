@@ -38,7 +38,20 @@ internal static class AttackPromptContext
             Description = defenseContext ? $"Enemy attack · {situation}"
                 : $"Enemy attack · {stage} · {window}\n{situation}",
             CauseCardIds = causes,
+            Attack = Facts(world, facts, attack, enemy, step),
         };
+    }
+
+    // A finished attack has no value left to show; its result is in the description and the events.
+    private static PromptAttack? Facts(World world, ICardFacts facts, EnemyAttack attack, Card enemy, PhaseStep step)
+    {
+        if (world.Attack is null) return null;
+        return attack.CalculatedDamage is { } damage
+            ? new PromptAttack(attack.Enemy, attack.Target, damage, Calculated: true, BoostUnresolved: false,
+                attack.PreventAllDamage)
+            : new PromptAttack(attack.Enemy, attack.Target,
+                StateFields.Modified(world, enemy, "attack", facts, world.Players), Calculated: false,
+                AttackBoostDescription.IsUnresolved(world, facts, enemy, step.What), attack.PreventAllDamage);
     }
 
     private static EnemyAttack? AttackForPrompt(World world, PhaseStep step) =>

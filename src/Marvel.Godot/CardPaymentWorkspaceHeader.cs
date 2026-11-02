@@ -13,7 +13,7 @@ internal static class CardPaymentWorkspaceHeader
     {
         var selected = draft.Selected!;
         AffordancePresentation offer = prompt.Affordances.Single(value => value.Id == selected.Id);
-        content.AddChild(DecisionPanel.Text(prompt.Context, GodotThemeVariations.Caption, wrap: true));
+        content.AddChild(DecisionPanel.Text(prompt.Context(), GodotThemeVariations.Caption, wrap: true));
         var identity = new HBoxContainer { Name = "PaymentIdentity" };
         content.AddChild(identity);
         BoardCardPresentation? card = CardPaymentPreview.Card(main.boardPresentation, selected.AnchorId);
@@ -50,8 +50,8 @@ internal static class CardPaymentWorkspaceHeader
         if (selected.CostOptions.Count == 1)
             copy.AddChild(DecisionCostLabel.Create(selected.CostOptions[0], panel.world!, showTarget: false));
         if (ShowsResolution(draft.Prompt.PublicKind, draft.Prompt.CauseCardIds.Count > 0)
-            && !string.IsNullOrWhiteSpace(prompt.Resolution))
-            content.AddChild(DecisionPanel.Text(prompt.Resolution, GodotThemeVariations.Body, wrap: true));
+            && !string.IsNullOrWhiteSpace(prompt.Resolution()))
+            content.AddChild(DecisionPanel.Text(prompt.Resolution(), GodotThemeVariations.Body, wrap: true));
         if (selected.DeferredTargetSelection)
             content.AddChild(DecisionPanel.Text(
                 "Payment commits now. Choose a target as the effect resolves; cancelling a later draft does not refund payment.",

@@ -10,6 +10,8 @@ internal static class PromptSnapshot
         Affordances = prompt.Affordances.Select(option => Copy(option, readable)).ToArray(),
         ContextCardIds = [.. prompt.ContextCardIds.Where(readable.Contains)],
         CauseCardIds = [.. prompt.CauseCardIds.Where(readable.Contains)],
+        Attack = prompt.Attack is { } attack && readable.Contains(attack.Attacker) && readable.Contains(attack.Target)
+            ? attack : null,
     };
 
     private static Affordance Copy(Affordance option, IReadOnlySet<int> readable) => option with

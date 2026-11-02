@@ -48,7 +48,7 @@ public sealed class DefeatContextTransportTests : TransportTestBase
         EngineResponse received = socket
             ? await ExchangeOverSocket(new SocketEngineServer(endpoint, IPAddress.Loopback, 0), request)
             : await new InProcessTransport(endpoint).ExchangeAsync(request, TestContext.Current.CancellationToken);
-        Assert.Equal(45, received.Version);
+        Assert.Equal(46, received.Version);
         Assert.Equal(EngineJson.Write(expected), EngineJson.Write(received));
         Assert.Equal(new[] { first.ObjectId, second.ObjectId }, received.Prompt!.Affordances
             .Select(offer => Assert.Single(offer.ContextCardIds)));

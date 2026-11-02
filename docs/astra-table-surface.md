@@ -59,7 +59,7 @@ two players at 100% and 150%. Its checkpoints cover setup, opening table,
 inspection, player phase, villain/defense progression, player switching, and
 terminal presentation. The smoke additionally asserts fan overlap, hover and
 drag z-order, an intermediate pointer-following drag frame, valid and invalid
-drops, quarter-turn exhaustion, local host layering, preview timing, pinned
+drops, upright exhaustion with its badge, local host layering, preview timing, pinned
 focus, relationship routing, overflow reachability, repeated input, stale
 render fencing, and the absence of the retired desktop choice sheet. Payment
 checks include reversible cancellation, focus containment, and playing Black

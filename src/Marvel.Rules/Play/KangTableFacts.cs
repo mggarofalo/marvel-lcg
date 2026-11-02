@@ -19,4 +19,7 @@ public sealed record KangTableFacts(
 {
     /// <summary>The separated-table rules that apply now, each with the card it concerns.</summary>
     public IReadOnlyList<KangNote> Notes { get; init; } = [];
+
+    /// <summary>How many Kang (II) the split dealt, one per participating player; 0 before the split.</summary>
+    public int LocalKangsDealt { get; init; }
 }

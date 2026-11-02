@@ -71,6 +71,8 @@ public sealed class PresentationAssemblyPolicyTests
             "Marvel.Rules.Prompts.ConditionalResourceBonus",
             "Marvel.Rules.Prompts.CostOption",
             "Marvel.Rules.Prompts.Prompt",
+            // An attack's facts, filtered to readable cards and named for the viewer.
+            "Marvel.Rules.Prompts.PromptAttack",
             // Passive public purpose without answer choices.
             "Marvel.Rules.Prompts.PublicDecisionKind",
             "Marvel.Rules.Prompts.Question",
@@ -235,6 +237,8 @@ public sealed class PresentationAssemblyPolicyTests
             "Marvel.Rules.Prompts.ConditionalResourceBonus",
             "Marvel.Rules.Prompts.CostOption",
             "Marvel.Rules.Prompts.Prompt",
+            // An attack's facts are validated as complete; they grant no decision authority.
+            "Marvel.Rules.Prompts.PromptAttack",
             // Passive public situation validation grants no decision authority.
             "Marvel.Rules.Prompts.PublicDecisionKind",
             "Marvel.Rules.Prompts.ResourceCost",
@@ -296,6 +300,7 @@ public sealed class PresentationAssemblyPolicyTests
             "Marvel.View.OutcomeDescription",
             "Marvel.View.PendingSituationDescriptor",
             "Marvel.View.PlayerDescriptor",
+            "Marvel.View.ReachReason",
             "Marvel.View.ViewerClaim",
             "Marvel.View.TableContextDescriptor",
             "Marvel.View.VillainPhaseFocusDescriptor",

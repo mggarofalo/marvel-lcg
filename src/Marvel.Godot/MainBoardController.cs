@@ -40,6 +40,7 @@ internal sealed class MainBoardController : IDisposable
         main.eventController.ClearTimeline();
         HandPresentationOrder.Clear();
         SourcePresentationOrder.Clear();
+        TableLegend.Clear();
         cardInspector.Reset();
         renderLifetime.Advance();
         main.SkipEventPresentation();
@@ -79,6 +80,7 @@ internal sealed class MainBoardController : IDisposable
         {
             HandPresentationOrder.Clear();
             SourcePresentationOrder.Clear();
+            TableLegend.Clear();
             cardInspector.Reset();
             tabletop.ResetForGame();
         }
@@ -102,8 +104,6 @@ internal sealed class MainBoardController : IDisposable
         main.setupPanel.Visible = false;
         main.board.Visible = true;
         RenderBoard(world, response.Prompt, renderGeneration);
-        main.syncStatus.Visible = true;
-        main.syncStatus.Text = "Synced";
         main.syncStatus.SetMeta("response_revision", response.Revision);
         main.synchronize.Visible = true;
         main.RenderPromptSummary(response.Prompt, world);

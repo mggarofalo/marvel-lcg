@@ -64,7 +64,10 @@ internal static class SpatialTableSurfaceRenderer
         {
             HasEncounterGroups = board.EncounterGroups.Count > 0,
             HasGameAreas = GameAreaTableProjection.From(board, seat)?.Separated == true,
+            HasEngagedEnemies = board.Areas.Any(area => area.Zone == "EngagedEnemiesArea" && area.Seat == seat
+                && SpatialTableZones.Current(area).Length > 0),
             HasAllies = board.Areas.Any(area => area.Zone == "AlliesArea" && area.Seat == seat && area.Cards.Count > 0),
+            ReadingScale = scale,
         };
 
     private static IReadOnlyList<BoardCardPresentation> Context(Main main, Prompt? prompt) =>
@@ -247,7 +250,7 @@ internal static class SpatialTableSurfaceRenderer
         {
             return;
         }
-        Control seats = MulliganSeatStripRenderer.CreateCompact(board, selection, switchSeat);
+        Control seats = MulliganSeatStripRenderer.CreateCompact(board, selection, switchSeat, geometry.ReadingScale);
         seats.Name = "SpatialSeatSummaries";
         seats.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
         var viewport = new ScrollContainer { Name = "SeatSummaryViewport", Position = geometry.SeatStrip.Position.Round(),
@@ -255,6 +258,7 @@ internal static class SpatialTableSurfaceRenderer
             VerticalScrollMode = ScrollContainer.ScrollMode.Auto, FollowFocus = true, ZIndex = 24 };
         viewport.AddChild(seats);
         surface.AddChild(viewport);
+        SeatRailOverflow.Add(surface, viewport, seats, geometry.ReadingScale);
     }
 
     // A separated table replaces the single villain mat with game-area columns; it returns the

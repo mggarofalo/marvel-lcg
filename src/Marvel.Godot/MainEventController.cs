@@ -54,9 +54,9 @@ internal sealed class MainEventController : IDisposable
         PromptPresentation view = PromptPresentation.From(prompt, world);
         main.promptEyebrow.Text = "CURRENT DECISION";
         main.promptHeading.Text = view.Heading;
-        main.promptContext.Text = view.Context;
+        main.promptContext.Text = view.Context();
         resolutionStage.Render(view);
-        main.promptRequirement.Text = view.Requirement;
+        main.promptRequirement.Text = view.Requirement();
         main.promptDiagnostic.Text = view.Diagnostic;
         main.promptRequirement.ThemeTypeVariation = prompt.Cancellable
             ? GodotThemeVariations.Caption
@@ -202,6 +202,7 @@ internal sealed class MainEventController : IDisposable
         main.decisions.PresentOperationalNotice(progress);
         main.title.Text = progress.Title;
         main.description.Text = progress.Description;
+        SyncIndicator.Apply(main.syncStatus, progress);
         main.status.Text = main.boardController.ResponseStaged ? "RESOLVING" : progress.Status;
         bool danger = progress.Kind is GameProgressKind.VillainWins
             or GameProgressKind.PlayersLose

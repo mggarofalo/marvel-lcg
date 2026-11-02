@@ -33,27 +33,19 @@ internal static class SpatialCardCollection
             {
                 int visible = Math.Min(3, cards.Length);
                 float slotWidth = (bounds.Size.X - (visible - 1) * 12) / visible;
-                float widestFace = cards.Any(SpatialTableZones.IsExhausted) ? layout.MinimumHeight : layout.Width;
-                factor = Math.Min(factor, slotWidth / widestFace);
+                factor = Math.Min(factor, slotWidth / layout.Width);
             }
             CardControl control = faces.CreateFitted(card, factor);
             control.Name = $"ProceduralCard{card.TargetId}";
             SpatialCardSidecar.State(control, card);
             controls.Add(control);
-            bool exhausted = SpatialTableZones.IsExhausted(card);
-            Vector2 face = control.CustomMinimumSize;
-            Vector2 occupied = exhausted ? new Vector2(face.Y, face.X) : face;
+            Vector2 occupied = control.CustomMinimumSize;
             var slot = new Control { CustomMinimumSize = occupied + new Vector2(0, 32 * factor + 48),
                 MouseFilter = Control.MouseFilterEnum.Ignore };
             row.AddChild(slot);
             slot.AddChild(control);
             control.Position = new Vector2(0, 32 * factor);
-            if (exhausted)
-            {
-                control.Rotation = Mathf.Pi / 2;
-                control.Position = new Vector2(face.Y, 32 * factor);
-                control.SetMeta("spatial_exhausted", true);
-            }
+            if (SpatialTableZones.IsExhausted(card)) ExhaustedBadge.Add(control, faces.ReadingScale);
             if (card.TargetId is { } id) result.Register(id, control);
             result.TrackCard(control, card);
             row.SortChildren += () => Callable.From(() =>

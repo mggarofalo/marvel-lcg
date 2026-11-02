@@ -18,6 +18,9 @@ public sealed record KangTableDescriptor(
     /// <summary>The villain-phase step and seat resolving now, if any.</summary>
     public VillainPhaseFocusDescriptor? Acting { get; init; }
 
+    /// <summary>How many Kang (II) the split dealt, one per participating player; 0 before the split.</summary>
+    public int LocalKangsDealt { get; init; }
+
     /// <summary>The number of players who started the scenario, which every per-player value counts.</summary>
     public int StartingPlayers { get; init; }
 
@@ -26,9 +29,6 @@ public sealed record KangTableDescriptor(
 
     /// <summary>The one encounter discard pile every game area shares, by area id.</summary>
     public int EncounterDiscard { get; init; }
-
-    /// <summary>A readable sentence stating progress toward winning.</summary>
-    public string Progress { get; init; } = "";
 
     /// <summary>The separated-table rules the engine says apply now, each keyed by kind.</summary>
     public IReadOnlyList<KangNoteDescriptor> Notes { get; init; } = [];

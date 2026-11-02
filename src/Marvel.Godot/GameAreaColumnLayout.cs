@@ -1,27 +1,45 @@
+using Godot;
+
 namespace Marvel.Godot;
 
-/// <summary>Divides one game-area column between its text and its cards; every size is a presentation choice.</summary>
+/// <summary>Divides one game-area column between its header and its cards; every size is a presentation choice.</summary>
 /// <remarks>
-/// The heading and markers always get their measured height, so they are never clipped. Below them
-/// a margin keeps activity badges drawn at a card's corner off the markers. The cards then keep
-/// <see cref="MinimumCards"/> above a strip reserved for the attachments hung below them; the
-/// explanation takes what remains up to its full height, and the cards take anything left over.
-/// An explanation that does not fit whole shows whole lines only and scrolls, so its viewport never
-/// cuts a line in half; one with no room for a line is hidden and stays in the column's tooltip.
+/// The header is one line tall at the reading scale. Below it a margin keeps activity badges drawn at a
+/// card's corner off the header. The cards take the rest above a strip reserved for the attachments hung
+/// below them. The central column also stands the shared encounter piles side by side under its stage.
 /// </remarks>
-internal sealed record GameAreaColumnLayout(float CardsTop, float CardsHeight, float DetailsTop, float DetailsHeight)
+/// <param name="CardsTop">The cards' top, from the column's top.</param>
+/// <param name="CardsHeight">The height the cards may take.</param>
+internal sealed record GameAreaColumnLayout(float CardsTop, float CardsHeight)
 {
     internal const float BadgeMargin = 18;
-    internal const float MinimumCards = 72;
+    internal const float Padding = 4;
 
-    /// <summary>Arranges a column of the given height from the measured heights of its parts.</summary>
-    internal static GameAreaColumnLayout Arrange(float height, GameAreaColumnText text, float attachments)
+    /// <summary>The most of the central column's height the shared piles take.</summary>
+    internal const float PileShare = 0.55f;
+
+    /// <summary>A pile's width-to-height ratio, the shape of a card.</summary>
+    internal const float PileAspect = 70f / 112f;
+
+    /// <summary>Arranges a column of the given height under a header, above an attachment strip.</summary>
+    internal static GameAreaColumnLayout Arrange(float height, float header, float attachments)
     {
-        float cardsTop = 4 + text.Heading + 2 + text.Markers + BadgeMargin;
-        float available = Math.Max(0, height - cardsTop - 4);
-        float details = Math.Clamp(available - attachments - MinimumCards, 0, Math.Max(0, text.Details));
-        if (details < text.Details && text.Line > 0) details = MathF.Floor(details / text.Line) * text.Line;
-        float cards = Math.Max(0, available - attachments - details);
-        return new GameAreaColumnLayout(cardsTop, cards, height - details - 2, details);
+        float top = Padding + header + BadgeMargin;
+        return new GameAreaColumnLayout(top, Math.Max(0, height - top - attachments - Padding));
+    }
+
+    /// <summary>
+    /// Splits the central column's card room: the shared piles stand side by side along its bottom, as large as
+    /// fits in <see cref="PileShare"/> of the room, and the stage takes what is above them.
+    /// </summary>
+    internal static (Rect2 Stage, Rect2 Discard, Rect2 Deck) Central(Rect2 cards, float gap)
+    {
+        float width = Math.Max(0, (cards.Size.X - gap) / 2);
+        float height = Math.Min(cards.Size.Y * PileShare, width / PileAspect);
+        Vector2 pile = new(height * PileAspect, height);
+        float left = cards.Position.X + (cards.Size.X - 2 * pile.X - gap) / 2;
+        float top = cards.End.Y - pile.Y;
+        return (new Rect2(cards.Position, cards.Size.X, Math.Max(0, top - gap - cards.Position.Y)),
+            new Rect2(new Vector2(left, top), pile), new Rect2(new Vector2(left + pile.X + gap, top), pile));
     }
 }

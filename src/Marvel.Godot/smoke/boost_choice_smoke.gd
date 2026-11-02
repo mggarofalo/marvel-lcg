@@ -86,12 +86,18 @@ func _cause_and_draft_fit() -> bool:
 func _dialog_cause_fits(dialog: Node) -> bool:
 	var content := dialog.find_child("CompleteChoicesContent", true, false)
 	var copy := ""
-	for child in content.get_children():
+	# The sheet's head states who answers and whether the choice is required as chips, explained on hover.
+	var head := content.find_child("DecisionHead", false, false)
+	var nodes: Array = content.get_children()
+	if head != null: nodes.append_array(head.find_children("*", "Control", true, false))
+	for child in nodes:
 		if child is Label and child.is_visible_in_tree() and not child.text.is_empty():
 			copy += child.text + "\n"
 			if not _control_is_fully_visible(child):
 				_fail("the modal decision explanation is clipped: " + child.text)
 				return false
+		elif str(child.name).begins_with("DecisionFact") and child.is_visible_in_tree():
+			copy += child.tooltip_text + "\n"
 	if "Decision for Black Panther" not in copy or "Choose to continue." not in copy \
 			or "Android Efficiency: choose an option" not in copy:
 		_fail("the modal lost answering player, requirement or resolution context: " + copy)

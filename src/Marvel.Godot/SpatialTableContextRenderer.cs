@@ -35,7 +35,7 @@ internal static class SpatialTableContextRenderer
             FocusMode = Control.FocusModeEnum.All, FollowFocus = true };
         summaryViewport.AddChild(copy);
         panel.AddChild(summaryViewport);
-        Label resolution = AddSituation(surface, geometry, world, prompt);
+        Control resolution = AddSituation(surface, geometry, world, prompt);
         Label summary = Copy("");
         summary.Name = "DraftProgress";
         summary.AutowrapMode = TextServer.AutowrapMode.Word;
@@ -59,7 +59,7 @@ internal static class SpatialTableContextRenderer
         TableCompactButtonStyle.Apply(complete);
     }
 
-    private static Label AddSituation(Control surface, AstraTableGeometry geometry,
+    private static Control AddSituation(Control surface, AstraTableGeometry geometry,
         WorldDescriptor world, Prompt? prompt)
     {
         PromptPresentation? presentation = prompt is null ? null : PromptPresentation.From(prompt, world);
@@ -74,14 +74,7 @@ internal static class SpatialTableContextRenderer
             MouseFilter = Control.MouseFilterEnum.Ignore };
         prose.Ready += () => AbilitySituationOwnership.Apply(ClientSceneHost.MainFor(prose), prose);
         cause.AddChild(prose);
-        Label heading = Copy(prompt?.PublicKind == PublicDecisionKind.PlayerAction ? ""
-            : presentation?.Heading ?? PendingSituationPresentation.Heading(world));
-        heading.AutowrapMode = TextServer.AutowrapMode.Word;
-        heading.TextOverrunBehavior = TextServer.OverrunBehavior.NoTrimming;
-        heading.Name = "ContextualHeading";
-        prose.AddChild(heading);
-        heading.AddThemeFontSizeOverride("font_size", 18);
-        Label resolution = AddResolution(prose, presentation, world, prompt);
+        Control resolution = AddQuestion(prose, presentation, world, prompt, geometry.ReadingScale);
         Label operation = Copy("");
         operation.Name = "SpatialOperationalNotice";
         operation.AutowrapMode = TextServer.AutowrapMode.Word;
@@ -91,25 +84,76 @@ internal static class SpatialTableContextRenderer
         return resolution;
     }
 
-    private static Label AddResolution(VBoxContainer cause, PromptPresentation? presentation,
-        WorldDescriptor world, Prompt? prompt)
+    // The question stays one line; who answers, whether it is required, its causes and the attack are chips,
+    // and the engine's whole instruction is the question's tooltip and the complete-choices sheet.
+    private static Control AddQuestion(VBoxContainer prose, PromptPresentation? presentation, WorldDescriptor world,
+        Prompt? prompt, InterfaceScale scale)
     {
         bool ordinaryTurn = prompt?.PublicKind == PublicDecisionKind.PlayerAction;
-        Label resolution = Copy(ordinaryTurn ? ""
-            : presentation?.Resolution.Replace("\n", " · ") ?? PendingSituationPresentation.Context(world));
+        Label heading = AddHeading(prose, ordinaryTurn ? ""
+            : presentation?.Heading ?? PendingSituationPresentation.Heading(world), scale);
+        if (presentation is null || ordinaryTurn)
+            return AddPendingContext(prose, ordinaryTurn ? "" : PendingSituationPresentation.Context(world));
+        heading.MouseFilter = Control.MouseFilterEnum.Stop;
+        heading.TooltipText = TableWording.DecisionDetail(presentation.Frame, presentation.DeclineLabel);
+        HFlowContainer facts = AddFacts(prose, presentation, scale);
+        if (TableWording.UnstructuredConsequence(presentation.Frame) is { Length: > 0 } consequence)
+            AddConsequence(prose, consequence);
+        return facts;
+    }
+
+    // A decision whose consequence the engine states only in words keeps that statement on one trimmed line,
+    // whole on hover, so its known effect stays in view.
+    private static void AddConsequence(VBoxContainer cause, string text)
+    {
+        Label line = Copy(text);
+        line.Name = "CausalConsequence";
+        line.TooltipText = text;
+        line.MouseFilter = Control.MouseFilterEnum.Stop;
+        cause.AddChild(line);
+    }
+
+    // The question reads a step larger than its chips.
+    private static Label AddHeading(VBoxContainer cause, string text, InterfaceScale scale)
+    {
+        Label heading = Copy(text);
+        heading.AutowrapMode = TextServer.AutowrapMode.Word;
+        heading.TextOverrunBehavior = TextServer.OverrunBehavior.NoTrimming;
+        heading.Name = "ContextualHeading";
+        cause.AddChild(heading);
+        heading.AddThemeFontSizeOverride("font_size", Math.Max(18, VisualSystem.Type(scale).Heading + 2));
+        return heading;
+    }
+
+    private static Label AddPendingContext(VBoxContainer cause, string text)
+    {
+        Label resolution = Copy(text);
         resolution.Name = "CausalContext";
         resolution.Visible = !string.IsNullOrWhiteSpace(resolution.Text);
         resolution.AutowrapMode = TextServer.AutowrapMode.Word;
         resolution.TextOverrunBehavior = TextServer.OverrunBehavior.NoTrimming;
         cause.AddChild(resolution);
-        if (presentation is not null && !ordinaryTurn)
-        {
-            Label answerer = Copy(presentation.Context + " · " + presentation.Requirement);
-            answerer.AutowrapMode = TextServer.AutowrapMode.Word;
-            answerer.TextOverrunBehavior = TextServer.OverrunBehavior.NoTrimming;
-            cause.AddChild(answerer);
-        }
         return resolution;
+    }
+
+    /// <summary>The decision's facts as one wrapping row of chips, read at the situation's text size.</summary>
+    private static HFlowContainer AddFacts(VBoxContainer cause, PromptPresentation presentation, InterfaceScale scale)
+    {
+        var facts = new HFlowContainer { Name = "CausalContext", MouseFilter = Control.MouseFilterEnum.Ignore,
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+        int gap = VisualSystem.Spacing(scale).ExtraSmall;
+        facts.AddThemeConstantOverride("h_separation", gap);
+        facts.AddThemeConstantOverride("v_separation", gap);
+        Wording[] wordings = DecisionSheetHead.Facts(presentation.Frame, presentation.DeclineLabel);
+        int size = Math.Max(15, VisualSystem.Type(scale).Heading);
+        for (int index = 0; index < wordings.Length; index++)
+        {
+            PanelContainer chip = Chip.Create($"CausalFact{index}", wordings[index], null, scale);
+            if (chip.FindChild("Text", true, false) is Label label) label.AddThemeFontSizeOverride("font_size", size);
+            facts.AddChild(chip);
+        }
+        cause.AddChild(facts);
+        return facts;
     }
 
     private static Label Copy(string text)

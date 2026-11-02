@@ -242,9 +242,13 @@ internal static class ClientResponseValidation
         // response and must remain synchronizable after the last action.
         && CompleteContext(prompt.ContextCardIds)
         && CompleteContext(prompt.CauseCardIds)
+        && CompleteAttack(prompt.Attack)
         && prompt.Affordances is not null
         && (prompt.Cancellable || prompt.Affordances.Count > 0)
         && prompt.Affordances.All(CompleteAffordance);
+
+    private static bool CompleteAttack(PromptAttack? attack) =>
+        attack is null || attack.Attacker >= 0 && attack.Target >= 0;
 
     private static bool CompleteContext(IReadOnlyList<int>? ids) =>
         ids is not null && ids.All(id => id >= 0);

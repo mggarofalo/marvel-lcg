@@ -23,7 +23,7 @@ public sealed class InvocationDeckTransportTests : TransportTestBase
         var received = socket
             ? await ExchangeOverSocket(new SocketEngineServer(endpoint, IPAddress.Loopback, 0), request)
             : await new InProcessTransport(endpoint).ExchangeAsync(request, TestContext.Current.CancellationToken);
-        Assert.Equal(45, received.Version);
+        Assert.Equal(46, received.Version);
         Assert.Equal(EngineJson.Write(expected), EngineJson.Write(received));
         var piles = Assert.Single(received.World!.InvocationDecks);
         Assert.Equal(new InvocationDeckDescriptor(1, 4, 5), piles);

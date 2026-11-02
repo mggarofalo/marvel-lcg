@@ -62,7 +62,6 @@ internal sealed class MainTabletopChromeController
             main.GetNode<Control>(path).Visible = !compact;
         }
         main.buildIdentity.Visible = false;
-        main.syncStatus.TooltipText = string.Empty;
         main.eyebrow.Visible = false;
         main.promptEyebrow.Visible = false;
         main.title.Visible = !compact;

@@ -233,22 +233,23 @@ separated table ([P9](#p9-godot-split-table)) awaits that review in MARVEL-905.
 11. Progress toward winning: Kang (I), then a Kang (II) in each area, then
     Kang (III) after the reunion.
 
-### Facts the View carries for the split table (protocol 45)
+### Facts the View carries for the split table (protocol 46)
 
-Each fact is derived in the engine and copied by View; the client validates that
-every id it names is one the same response lists (`ClientGameAreaValidation`).
+Each fact is derived in the engine and copied by View without sentences; the client
+validates that every id it names is one the same response lists
+(`ClientGameAreaValidation`) and words each fact through `TableWording`.
 
 | Need | Engine owner | View and wire | Tests |
 |---|---|---|---|
-| Per-area summary: local Kang, local scheme, central, retained, former seats, label | `GameAreaFacts` | `GameAreaDescriptor.Villains`, `MainSchemes`, `Central`, `Retained`, `FormerSeats`, `Label` | `KangTableFactsTests`, `SplitTableProjectionTests` |
-| Pending departures: who, from where, why, where to | `KangTable` over `KangPhaseTransitions.Pending` and `KangJoinProcedure.Destinations` | `KangTableDescriptor.Departures` (`Seats`, `SourceGameArea`, `CompletedScheme`, `Destinations`, `Reunion`, `Summary`) | `KangTableFactsTests`, `SplitTableProjectionTests` |
+| Per-area summary: local Kang, local scheme, central, retained, former seats | `GameAreaFacts` | `GameAreaDescriptor.Villains`, `MainSchemes`, `Central`, `Retained`, `FormerSeats` | `KangTableFactsTests`, `SplitTableProjectionTests` |
+| Pending departures: who, from where, why, where to | `KangTable` over `KangPhaseTransitions.Pending` and `KangJoinProcedure.Destinations` | `KangTableDescriptor.Departures` (`Seats`, `SourceGameArea`, `CompletedScheme`, `Destinations`, `Reunion`) | `KangTableFactsTests`, `SplitTableProjectionTests` |
 | A pending split after Kang (I)'s defeat | `KangFirstSplit.Pending` | `KangTableDescriptor.PendingSplit` | `KangTableFactsTests` |
 | Stored Dominions under 4A | `KangTable` (cards beneath 11013a) | `KangTableDescriptor.StoredDominions` | `KangTableFactsTests` |
-| Win progress | `KangTable` (Kang (I), (II), (III) in play) | `Stage`, `RemainingLocalKangs`, `Progress` | `KangTableFactsTests`, `KangSplitTableViewTests` |
+| Win progress | `KangTable` (Kang (I), (II), (III) in play); `KangFirstSplit.LocalKangsDealt` | `Stage`, `RemainingLocalKangs`, `LocalKangsDealt`, `StoredDominions`, `PendingSplit` | `KangTableFactsTests`, `KangSplitTableViewTests` |
 | Which area is acting in the villain phase | `VillainPhaseFocus` | `KangTableDescriptor.Acting` | `VillainPhaseFocusTests`, `KangTableFactsTests` |
-| Why another area's cards are not offered | `Places.CanAffect` | `PlayerDescriptor.OutOfReach` | `SplitTableProjectionTests`, `KangSplitTableViewTests` |
+| Why another area's cards are not offered | `Places.CanAffect` | `PlayerDescriptor.OutOfReach`, `OutOfReachReason` | `SplitTableProjectionTests`, `KangSplitTableViewTests` |
 | Player-named prompt and event labels | `GameAreaFacts` labels, `KangDepartureNames` | prompt `DisplayLabel`/`CommitLabel`/`Description`; `GameAreaEventPresentation` | `KangTableFactsTests`, `SplitTableProjectionTests` |
-| "Each player" scope, shared encounter deck and discard, 3B completion is not a loss, turn-order steps, 2B tokens wait for 4A | `KangTable` notes (`KangNoteKind`, anchored to 2B and each uncompleted 3B), `World.Players`, `World.AreaOf` | `Notes` (kind, card, text), `StartingPlayers`, `EncounterDeck`, `EncounterDiscard` | `KangTableFactsTests`, `SplitTableProjectionTests` |
+| "Each player" scope, shared encounter deck and discard, 3B completion is not a loss, turn-order steps, 2B tokens wait for 4A | `KangTable` notes (`KangNoteKind`, anchored to 2B and each uncompleted 3B), `World.Players`, `World.AreaOf` | `Notes` (kind, card), `StartingPlayers`, `EncounterDeck`, `EncounterDiscard` | `KangTableFactsTests`, `SplitTableProjectionTests` |
 | Topology events named as they happened | `PlayAreaJoined`/`PlayAreaDetached` `Members` (journal omits) | `GameAreaEventPresentation` | `KangTableFactsTests`, `SplitTableProjectionTests`, `TopologyEventJournalTests` |
 
 `KangSplitTableViewTests` drives Standard, Temporal, two players, seed 1 through
@@ -260,41 +261,61 @@ fact names a card in another seat's hand.
 
 ## P9 Godot split table
 
-The Godot client renders these facts. `GameAreaTableProjection` arranges them
-for the inspected seat. It reads typed fields only and never card text.
-`GameAreaTableRenderer` draws the result. Kang stays out of the public catalog
-until owner review MARVEL-905 approves the interaction.
+The Godot client renders these facts with the table's building blocks
+(`Tracker`, `ColumnHeader`, `Chip`, `StatusBadge`, `TablePanel`, `OverflowCue`)
+on `TableGrid`, the twelve-column grid over the table's actual width.
+`GameAreaTableProjection` arranges the facts for the inspected seat. It reads
+typed fields only and never card text, and every word comes from
+`TableWording`. `GameAreaTableRenderer` draws the result. Kang stays out of the
+public catalog until owner review MARVEL-905 approves the interaction.
+
+The board states, the hover explains: no rule sentence sits on the table. A
+column says what it is with a one-line header and icons; its tooltip carries
+the explanation; the rules live behind the rules toggle.
 
 | Shown | From |
 |---|---|
-| A central column with stage 2B and its tokens note | `KangTableDescriptor.CentralSchemes`, the `CentralTokensWaitFor4A` note anchored to that card |
-| One column per game area, in engine order, headed by its label | `WorldDescriptor.GameAreas` (non-central), `GameAreaDescriptor.Label` |
-| Each column's Kang (II), stage 3B and side schemes | `GameAreaDescriptor.Villains`, `MainSchemes`; `BoardCardPresentation.GameArea` (from `CardLocationDescriptor.GameArea`) for side schemes |
-| YOUR AREA | `GameAreaDescriptor.PlayAreas` contains the inspected seat |
-| ACTING NOW, a heavier border, and the acting sentence | `KangTableDescriptor.Acting.GameArea`, `Acting.Summary` |
-| RETAINED | `GameAreaDescriptor.Retained` |
-| LEAVES AT PHASE END and the departure sentence | `KangDepartureDescriptor.SourceGameArea`, `Summary` |
-| OUT OF REACH, dimmed cards (with their attachments) and the reason | `PlayerDescriptor.OutOfReach` against every card the column places, side schemes included; the `AreaIsolation` note |
-| "Completing this stage does not lose the game" under each 3B | the `CompletionStoresDominion` note anchored to that scheme |
-| Progress, including how the table reunites and the stored-Dominion count | `KangTableDescriptor.Progress`, worded by View's `KangTableProjection` |
-| SHARED BY ALL AREAS above the encounter piles, with the engine's sentence as its tooltip | `KangTableDescriptor.EncounterDeck`, `EncounterDiscard`, the `SharedEncounterDeck` note |
-| The separated-table rules toggle | every note with no card anchor |
+| A tracker line: the Kang faced now, one pip per Kang (II) the split dealt (filled while standing, hollow once leaving or gone) and the stored Dominions; the full progress on hover | `KangTableDescriptor.Stage`, `RemainingLocalKangs`, `LocalKangsDealt`, `StoredDominions`, `PendingSplit` |
+| One column per game area, in engine order, titled by its players | `WorldDescriptor.GameAreas` (non-central), `PlayAreas` or `FormerSeats`, `PlayerDescriptor.Name` |
+| A central column between the game areas holding stage 2B and the shared encounter deck and discard, with the shared icon | `KangTableDescriptor.CentralSchemes`, `EncounterDeck`, `EncounterDiscard`; the `SharedEncounterDeck` and `CentralTokensWaitFor4A` notes on hover |
+| Each column's Kang (II), stage 3B and side schemes | `GameAreaDescriptor.Villains`, `MainSchemes`; `BoardCardPresentation.GameArea` for side schemes |
+| Your area: the person icon and the legal edge | `GameAreaDescriptor.PlayAreas` contains the inspected seat |
+| Acting: a heavy danger edge and the villain phase's three step pips | `KangTableDescriptor.Acting.GameArea`, `Acting.Step` |
+| Retained: the hourglass icon, titled by the former players; what retained means on hover | `GameAreaDescriptor.Retained`, `FormerSeats` |
+| Departing: the leaving arrow; each candidate destination lit with the accent edge and the joining arrow while the departure is pending, which spans the join prompt | `KangDepartureDescriptor.SourceGameArea`, `Destinations` |
+| Out of reach: the lock icon, the dimmed title and dimmed cards (with their attachments), the reason on hover | `PlayerDescriptor.OutOfReach`, `OutOfReachReason` |
+| "Completing this stage does not lose the game" | the `CompletionStoresDominion` note anchored to that area's scheme, in its tooltip and the rules toggle |
+| The rules toggle: each rule the engine says applies, once | every note, table-wide rules first |
 
-A column's explanation reads, in order: why the area is out of reach, what is
-acting, who departs, then the notes anchored to its schemes. Godot words no
-rule consequence of its own.
+A column's tooltip reads, in order: its title, why the area is out of reach,
+which step is acting and for whom, who departs and why, that it can be
+joined, then the rules anchored to its schemes. Godot words no rule
+consequence beyond `TableWording`, which words the clause each fact cites.
 
-The marker words, the column layout and the dimming are our choices.
-`GameAreaColumnLayout` measures the heading and markers first and never clips
-them; the cards start below them with room for activity badges, keep a minimum
-height above a strip reserved for attachments, and the explanation takes what
-remains in whole lines that scroll. The heading's tooltip carries the full
-explanation. On a column table the seam below the mat holds the causal
-references, the current situation and, above the source-tableau column, the
-activity line; the source tableau starts below the seam. A Kang
-table that is not separated (stage 1, or stage 3 after the reunion) keeps the
-single villain mat and adds only the progress line. A game without Kang facts
-or a split has no game-area presentation.
+The grid regions, icons, edges, weights and dimming are our choices. The far
+side of a separated table takes grid columns 0–1 for the seat rail, 2–9 for
+the tracker line and the columns, and 10–11 for engaged enemies; a game area
+weighs a fifth more than the central column. `GameAreaColumnLayout` places the
+one-line header, a badge margin, the cards and a strip reserved for
+attachments, and stands the shared piles side by side under 2B. A Kang table
+that is not separated (stage 1, or stage 3 after the reunion) keeps the single
+villain mat and adds only the tracker, as a caption line above the main
+scheme. A game without Kang facts or a split
+has no game-area presentation.
+
+The tabletop seat rail shows each seat as a `SeatTile`: a portrait (the hero's
+initials), the identity card's published title, an HP bar against the
+identity's published maximum, and a wrapping row of roles and badges for form,
+statuses (with their count) and engaged enemies; the tile grows rather than
+clip a row. The seat that must answer shows a labelled "Answering" chip on the
+accent edge, beside the portrait's accent edge; the other roles are icons, each
+named in its own tooltip. An `OverflowCue` counts the tiles the rail does not
+wholly show, from their laid-out edges, and recounts as the rail scrolls. The
+seat rail and the decision sheet's head appear in every game, not only Kang.
+
+The decision sheet's head states the question, what it concerns as one short
+line, the answering seat, whether it is required, its causes and source as
+chips, and the engine's whole instruction once, wrapped.
 
 The native contracts `kang-2`, `kang-3` and `kang-4` deal each recipe through
 `KangRecipeFactory` behind the native contract host. `KangNativeScene` opens
@@ -314,9 +335,9 @@ host then advances to the reunion against Kang (III).
 retained area. Each split asserts the rendered columns, labels, markers,
 dimming, central stage, shared piles and progress text, and opens and closes
 the rules toggle; the later `kang-2` steps assert their own markers and
-sentences. Every capture
-(`native_kang_layout.gd`) asserts that headings, markers, the progress header
-and the shared caption show every line, and that no placed card, encounter
-stack or attachment strip covers a heading, a marker or a column's
-explanation. Every other native contract asserts that no game-area
+facts. Every capture (`native_kang_layout.gd`) asserts that the tracker and
+every header show whole and on one line, that no column carries an
+explanation paragraph, that no placed card, encounter stack, attachment strip
+or pile covers a header, the tracker or the rules toggle, and that no two
+columns overlap. Every other native contract asserts that no game-area
 presentation appears.

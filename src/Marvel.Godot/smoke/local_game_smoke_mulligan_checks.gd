@@ -37,7 +37,8 @@ func _cooperative_seat_switch_is_safe() -> bool:
 	var switch_two := main.find_child("SeatSwitch1", true, false) as Button
 	var switch_one := main.find_child("SeatSwitch0", true, false) as Button
 	if strip == null or switch_two == null or switch_one == null \
-			or "CAPTAIN MARVEL" not in _visible_text(strip).to_upper():
+			or not ("CAPTAIN MARVEL" in _visible_text(strip).to_upper() \
+				or "CAROL DANVERS" in _visible_text(strip).to_upper()):
 		_fail("the cooperative opening table has no public second-seat summary")
 		return false
 	if not await _pointer_activate(switch_two):

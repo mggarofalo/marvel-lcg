@@ -16,6 +16,7 @@ internal static class EventActivityCardRendering
         RefreshSourceHeader(card, presentation);
         EncounterStackHeader.Refresh(card, presentation);
         RefreshLiveState(card, presentation);
+        ExhaustedBadge.Refresh(card, SpatialTableZones.IsExhausted(presentation));
         card.SetMeta("activity_health", presentation.Fields.FirstOrDefault(field => field.Name == "HEALTH")?.Value ?? "");
         card.SetMeta("activity_readiness", presentation.Status);
     }

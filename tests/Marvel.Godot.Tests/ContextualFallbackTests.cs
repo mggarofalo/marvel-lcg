@@ -11,7 +11,7 @@ public sealed class ContextualFallbackTests
     [Fact]
     public void RequiredAlternativesRemainVisibleEvenWhenTheirSourceHasAnActionControl()
     {
-        var prompt = new PromptPresentation("", "", "", "", "", [Offer(3, 55), Offer(4, 55),
+        var prompt = new PromptPresentation("", DecisionFrame.Empty, "", [Offer(3, 55), Offer(4, 55),
             Offer(5, 55) with { Illegal = "Unavailable" }]);
 
         Assert.Equal([3, 4], BoardContextualInteractionControls.FallbackActions(prompt,
@@ -23,7 +23,7 @@ public sealed class ContextualFallbackTests
     [Fact]
     public void OptionalResponsesRemainBesidePassEvenWithAnInstalledSourceControl()
     {
-        var prompt = new PromptPresentation("", "", "", "", "", [Offer(3, 55)]);
+        var prompt = new PromptPresentation("", DecisionFrame.Empty, "", [Offer(3, 55)]);
         Assert.Equal(3, Assert.Single(BoardContextualInteractionControls.FallbackActions(prompt,
             new HashSet<int> { 55 }, PublicDecisionKind.Response)).Id);
     }
@@ -35,7 +35,7 @@ public sealed class ContextualFallbackTests
         AffordancePresentation damage = Offer(3, 55);
         AffordancePresentation threat = Offer(4, 55);
         AffordancePresentation unavailable = Offer(5, 60) with { Illegal = "Unavailable" };
-        var prompt = new PromptPresentation("", "", "", "", "", [damage, threat, unavailable]);
+        var prompt = new PromptPresentation("", DecisionFrame.Empty, "", [damage, threat, unavailable]);
         Assert.Equal([3, 4], BoardContextualInteractionControls.FallbackActions(prompt,
             new HashSet<int>()).Select(offer => offer.Id));
         Assert.Empty(BoardContextualInteractionControls.FallbackActions(prompt, new HashSet<int> { 55 }));
@@ -44,7 +44,7 @@ public sealed class ContextualFallbackTests
     [Fact]
     public void InstallingOneCardControlDoesNotHideOffersForAnotherMissingAnchor()
     {
-        var prompt = new PromptPresentation("", "", "", "", "", [Offer(3, 55), Offer(4, 60)]);
+        var prompt = new PromptPresentation("", DecisionFrame.Empty, "", [Offer(3, 55), Offer(4, 60)]);
         Assert.Equal(4, Assert.Single(BoardContextualInteractionControls.FallbackActions(prompt,
             new HashSet<int> { 55 })).Id);
     }

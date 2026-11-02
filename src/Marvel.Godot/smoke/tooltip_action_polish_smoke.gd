@@ -27,8 +27,9 @@ func _disclosure_and_status() -> bool:
 		_fail("ordinary turn disclosure is not named All actions")
 		return false
 	var sync := _node("Toolbar/SyncStatus") as Label
-	if sync.text != "Synced" or not sync.tooltip_text.is_empty() or int(sync.get_meta("response_revision", -1)) < 1:
-		_fail("sync chrome exposes diagnostics or lacks internal revision evidence")
+	if sync.visible or not sync.text.is_empty() or not sync.tooltip_text.is_empty() \
+			or int(sync.get_meta("response_revision", -1)) < 1:
+		_fail("a current table shows sync chrome or lacks internal revision evidence")
 		return false
 	return true
 
