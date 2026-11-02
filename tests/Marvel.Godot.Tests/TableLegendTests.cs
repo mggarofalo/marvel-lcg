@@ -2,19 +2,18 @@ using Xunit;
 
 namespace Marvel.Godot.Tests;
 
-// The legend opens by itself once per game and then follows its toggle; no other test touches its state.
+// The legend strip shows once per game until closed; no other test touches its state.
 public sealed class TableLegendTests
 {
     [Fact]
-    public void TheLegendOpensOnceAndThenFollowsItsToggle()
+    public void TheLegendStripShowsOnceAndStaysClosedForTheGame()
     {
         TableLegend.Clear();
         Assert.True(TableLegend.OpensNow());
         Assert.True(TableLegend.OpensNow());
-        TableLegend.Toggled(false);
+        TableLegend.Closed();
         Assert.False(TableLegend.OpensNow());
-        TableLegend.Toggled(true);
-        Assert.True(TableLegend.OpensNow());
+        Assert.False(TableLegend.OpensNow());
         TableLegend.Clear();
         Assert.True(TableLegend.OpensNow());
         TableLegend.Clear();

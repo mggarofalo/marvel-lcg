@@ -3,12 +3,14 @@ using Godot;
 namespace Marvel.Godot;
 
 /// <summary>
-/// The separated table's legend: each column icon beside its short label, explained on hover. It opens by itself
-/// the first time a game's table separates, and afterwards only from the rules toggle that holds it.
+/// The separated table's legend: each column icon beside its short label, explained on hover. The first time a
+/// game's table separates it shows as a strip in the tracker line until the player closes it; the rules toggle
+/// always holds it too.
 /// </summary>
 /// <remarks>
-/// Which facts the legend lists and when it opens are presentation choices. Its open state lasts across
-/// re-renders of one game, so a table update does not close it before the player does.
+/// Which facts the legend lists and when it shows are presentation choices. Its strip lasts across re-renders of
+/// one game, so a table update does not close it before the player does, and it stands in the tracker line so it
+/// never covers a game area.
 /// </remarks>
 internal static class TableLegend
 {
@@ -22,7 +24,7 @@ internal static class TableLegend
         TableFact.Departing, TableFact.Destination, TableFact.Retained, TableFact.StoredDominions,
     ];
 
-    /// <summary>Whether the legend shows on this render: on the game's first separated render, then while left open.</summary>
+    /// <summary>Whether the strip shows on this render: on the game's first separated render, then until closed.</summary>
     internal static bool OpensNow()
     {
         if (!seen) open = true;
@@ -30,8 +32,8 @@ internal static class TableLegend
         return open;
     }
 
-    /// <summary>Records the player opening or closing the legend.</summary>
-    internal static void Toggled(bool pressed) => open = pressed;
+    /// <summary>Records the player closing the strip.</summary>
+    internal static void Closed() => open = false;
 
     /// <summary>Forgets the legend for a new game.</summary>
     internal static void Clear()
@@ -40,11 +42,12 @@ internal static class TableLegend
         open = false;
     }
 
-    /// <summary>The legend's rows: one icon and short label per fact, each explained on hover.</summary>
-    internal static VBoxContainer Create(InterfaceScale scale)
+    /// <summary>The legend: one icon and short label per fact, each explained on hover, in rows or along one line.</summary>
+    internal static BoxContainer Create(InterfaceScale scale, bool strip = false)
     {
-        var rows = new VBoxContainer { Name = "TableLegend", MouseFilter = Control.MouseFilterEnum.Ignore };
-        rows.AddThemeConstantOverride("separation", VisualSystem.Spacing(scale).ExtraSmall);
+        BoxContainer rows = strip ? new HBoxContainer { Name = "TableLegendStrip" } : new VBoxContainer { Name = "TableLegend" };
+        rows.MouseFilter = Control.MouseFilterEnum.Ignore;
+        rows.AddThemeConstantOverride("separation", strip ? VisualSystem.Spacing(scale).Medium : VisualSystem.Spacing(scale).ExtraSmall);
         foreach (TableFact fact in Facts)
         {
             Wording wording = TableWording.For(fact);
@@ -59,5 +62,13 @@ internal static class TableLegend
             rows.AddChild(row);
         }
         return rows;
+    }
+
+    /// <summary>Shows only the strip's icons, each still named on hover, when its labels do not fit <paramref name="width"/>.</summary>
+    internal static void FitStrip(BoxContainer strip, float width)
+    {
+        if (strip.GetCombinedMinimumSize().X <= width) return;
+        foreach (Node row in strip.GetChildren())
+            if (row.GetNodeOrNull<Label>("Label") is { } label) label.Visible = false;
     }
 }

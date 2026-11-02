@@ -37,19 +37,29 @@ static func _split(smoke, kang, players: int) -> bool:
     if "Kang (II)" not in str(_tracker(smoke).get_meta("tracker_reading", "")) or "Kang (II)" not in _tracker(smoke).tooltip_text:
         smoke._fail("the tracker does not show the remaining Kang (II)")
         return false
-    if not await _legend_shows_once(smoke): return false
+    if not await _legend_shows_once(smoke, kang): return false
     return await _rules_open_and_close(smoke)
 
-# The first separated table opens its legend by itself; the player closes it with the toggle that holds it.
-static func _legend_shows_once(smoke) -> bool:
+# The first separated table shows its legend in the tracker line, clear of every game area, until the player
+# closes it; the rules panel stays closed until asked for.
+static func _legend_shows_once(smoke, kang) -> bool:
     if not await smoke.ui.expect(func():
-        var panel = _surface(smoke).find_child("SeparatedTableRulesPanel", false, false)
-        return panel != null and panel.is_visible_in_tree() and panel.find_child("LegendOutOfReach", true, false) != null,
-        "the first separated table opens its legend"): return false
+        var line = _surface(smoke).find_child("SeparatedTableLegendLine", false, false)
+        return line != null and line.is_visible_in_tree() and line.find_child("LegendOutOfReach", true, false) != null,
+        "the first separated table shows its legend strip"): return false
+    if _surface(smoke).find_child("SeparatedTableRulesPanel", false, false).visible:
+        smoke._fail("the rules panel opened by itself over the game areas")
+        return false
+    var strip: Rect2 = _surface(smoke).find_child("SeparatedTableLegendLine", false, false).get_global_rect()
+    for area in kang.LocalAreas():
+        var frame = _surface(smoke).find_child("GameArea%d" % area, false, false)
+        if frame != null and strip.intersects(frame.get_global_rect()):
+            smoke._fail("the legend strip covers game area %d" % area)
+            return false
     if not await _capture(smoke, "split"): return false
-    if not await smoke.ui.click(smoke.ui.named("SeparatedTableRules")): return false
-    if not await smoke.ui.expect(func(): return not _surface(smoke).find_child("SeparatedTableRulesPanel", false, false).visible,
-        "the legend closes from its toggle"): return false
+    if not await smoke.ui.click(smoke.ui.named("SeparatedTableLegendClose")): return false
+    if not await smoke.ui.expect(func(): return _surface(smoke).find_child("SeparatedTableLegendLine", false, false) == null,
+        "the legend strip closes"): return false
     return await _capture(smoke, "table")
 
 static func _rules_open_and_close(smoke) -> bool:
