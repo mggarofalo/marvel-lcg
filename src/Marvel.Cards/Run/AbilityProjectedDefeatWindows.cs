@@ -78,7 +78,7 @@ internal static class AbilityProjectedDefeatWindows
         if (state.UnprojectedStageEntry is { } reason
             && !AbilityStageEntryDependencies.PreservesReads(node, state, cast))
             throw new RulesNotImplementedException(reason);
-        bool live = AbilityLiveThreatRemoval.Resolves(node);
+        bool live = AbilityLiveThreatRemoval.Resolves(node) || AbilityLiveStatusGrant.Resolves(node);
         if (!live && DeferredWindowHidesReads(node, state, cast))
             throw new RulesNotImplementedException($"A labelled-power continuation reads the board after an {DeferredWindowDescription(state)}.");
         if (!live && EncounterDealHidesReads(node, state))
