@@ -138,12 +138,17 @@ internal static class AbilityStructuralPowerExecution
     }
 
     // rr:player-elimination.5: "If a player is eliminated partway through the resolution
-    // of an ability, resolve the entire ability." rr:player-elimination.step.5: "Eliminated
-    // players no longer participate in the game", so no enemy activates against an
-    // eliminated player. An engaged-hero activation takes each enemy's engaged player instead.
+    // of an ability, resolve the entire ability." rr:player-elimination.6: "Effects that
+    // refer to the players in the game ignore eliminated players", and
+    // rr:player-elimination.step.5: "Eliminated players no longer participate in the game",
+    // so no enemy attacks an eliminated player. An engaged-hero attack takes each enemy's
+    // engaged player instead. A scheme is not skipped: rr:scheme-enemy-activation.step.3
+    // places threat on the main scheme without a player, and ruling 79c57a49f6e38fe0 has an
+    // eliminated player finish Metal Shards "by placing the magnet counter on the main
+    // scheme" while skipping the main scheme's "you" response.
     private static bool AgainstEliminatedPlayer(
         AbilityStructuralContext context, AbilityEffect.ActivateEnemies activation, int seat) =>
-        !activation.EngagedHero && context.Expressions.World.Seats[seat].Eliminated;
+        activation.Attack && !activation.EngagedHero && context.Expressions.World.Seats[seat].Eliminated;
 
     // An omitted target uses the attacked identity. A retained explicit target
     // must still be that in-play incarnation; it never authorizes a substitute.

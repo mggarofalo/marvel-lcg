@@ -503,12 +503,16 @@ expires with its activation identity, including cancellation and nested activati
 attack. This suppresses normal and additional deals for that activation only;
 boost cards assigned before the activation still resolve. The field defaults to
 `"true"` and is rejected on `enemySchemes`.
-An `enemyAttacks` or `enemySchemes` against a player already eliminated activates
-no enemy and completes: `rr:player-elimination.5` resolves the rest of the
-ability, and `rr:player-elimination.step.5` says eliminated players no longer
-participate. Hydra Jet-Trooper's delayed attack on a player its boosted attack
-eliminated is the case. An `engagedHero` collection still activates each enemy
-against its remaining engaged hero.
+An `enemyAttacks` against a player already eliminated activates no enemy and
+completes: `rr:player-elimination.5` resolves the rest of the ability, and
+`rr:player-elimination.step.5` says eliminated players no longer participate.
+Hydra Jet-Trooper's delayed attack on a player its boosted attack eliminated is
+the case. An `engagedHero` collection still activates each enemy against its
+remaining engaged hero. An `enemySchemes` with no `against` still schemes for an
+eliminated resolving player: `rr:scheme-enemy-activation.step.3` places threat
+without a player, as ruling `79c57a49f6e38fe0` has an eliminated player finish
+Metal Shards on the main scheme. A scheme whose explicit `against` character has
+left play raises.
 `activationAttacksAgainstYou: "game"` counts completed attacks against the current
 player in the most recent scheduled activation collection. Canceled attacks do
 not count; a different defending player receives the attack receipt. Each-player

@@ -7,11 +7,14 @@ namespace Marvel.Cards.Run;
 
 /// <summary>Recognizes a power's final upgrade return that resolves on the live board after opaque work.</summary>
 /// <remarks>
-/// rr:ability.4: "resolve the ability one sentence at a time", and
+/// rr:when-defeated-abilities.1: "The 'When Defeated' timing trigger is equivalent to the
+/// following trigger: 'Forced Interrupt: When this card is defeated...'", and
 /// rr:when-defeated-abilities.2.1: "A defeated card leaves play after its 'When Defeated'
 /// ability is resolved", so a defeat window the damage opens finishes before the return
-/// begins (ruling:cef917d276a31694: "first the enemy is dealt 4 damage, then the enemy's
-/// 'When Defeated' resolves and deals 1 damage, then the hero gets a tough status card").
+/// begins. Ruling 95d1178a901eedde orders the next instruction "AFTER overkill damage is
+/// applied &amp; Black Order Infantry triggers its 'When Defeated' effect", and ruling
+/// cef917d276a31694 gives Goblin Soldier the same order: "first the enemy is dealt 4
+/// damage, then the enemy's 'When Defeated' resolves and deals 1 damage".
 /// The return chooses nothing: it finds its card by title when it resolves, so its
 /// result is the live board's, whatever the opaque work did.
 /// </remarks>
