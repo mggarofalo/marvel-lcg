@@ -419,5 +419,4 @@ Galactic Artifacts one copy each of 16122–16130; Kree Militants one 16131, thr
 16132, two 16133 and three 16134; Menagerie Medley four 16135, three 16136 and two
 16137; Space Pirates one 16138, four 16139, one 16140 and two 16141. Each set is
 admitted alone when every face is authored and its recipe is exact, in order, with
-the modular role (`GalaxyModularSetAdmission`). Galactic Artifacts stays closed
-while Crystal Ball (16130) is unauthored.
+the modular role (`GalaxyModularSetAdmission`).

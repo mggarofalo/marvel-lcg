@@ -148,10 +148,9 @@ engaged, which the engine's per-entry windows cannot do. The evidence is in
 
 ## Packet 5 status
 
-Packet 5 is authored except Crystal Ball (16130). Kree Militants, Menagerie
-Medley and Space Pirates are admitted as modular sets; Galactic Artifacts is
-withheld until the engine can play a card from hand during an encounter card's
-When Defeated resolution. The evidence is in
+Packet 5 is authored. Galactic Artifacts, Kree Militants, Menagerie Medley and
+Space Pirates are admitted as modular sets. Crystal Ball (16130) opens a card play
+from hand inside its When Defeated resolution (MARVEL-911). The evidence is in
 [gmw-modular-sets.md](gmw-modular-sets.md).
 
 ## Packet 6 status
