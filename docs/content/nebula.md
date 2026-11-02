@@ -78,9 +78,9 @@ Heroes entries in `datasets/rulings/`.
 
 ## Engine changes and existing content
 
-REPLAY
-
-The words are documented in [card-dsl.md](../card-dsl.md).
+No admitted card changes behaviour, so the replay identity stays
+`engine-replay-v36` ([session-ledger.md](../session-ledger.md)). The words are
+documented in [card-dsl.md](../card-dsl.md).
 
 - `markThisRound` and `markedThisRound` record and read a named fact that lasts
   until the end of the round (`RoundMarks`).
@@ -95,6 +95,13 @@ The words are documented in [card-dsl.md](../card-dsl.md).
 - Lowering refuses a `when` on a When Revealed ability, which nothing reads
   (rr:when-revealed-abilities); the condition is an `if` inside the effect.
 
+A differential of 280 complete non-gmw games (Rhino, Klaw Expert, Ultron, Risky
+Business, Crossbones, Wrecking Crew Standard, Mutagen Formula, Red Skull Expert and
+Zola; Rhino and Ultron with the admitted Power Stone modular set; Rhino, Klaw and
+Ultron with the admitted Space Pirates modular set, whose Pirate Lackey removes a
+deck's top card; one and two players; seeds 1–10), hashing every prompt and state
+digest, is identical on 09a59418 and this packet.
+
 ## Evidence
 
 - Synthetic boards over the production book: `NebulaVillainTests`,
@@ -102,8 +109,18 @@ The words are documented in [card-dsl.md](../card-dsl.md).
   vocabulary alone: `NebulaLoweringTests`.
 - Research-only complete Standard and Expert games, dealt directly rather than
   through discovery, with exact replay, and the setup: `NebulaResearchGameTests`.
-- MUTANTS
-- SCAN
+- Every new decision has a mutant: 64 in all, over the engine words, the attack
+  maximum and its preview, the When Revealed guard, the top-card removal's
+  target, and each row's conditions and amounts (including "you" on the
+  Techniques' Specials and Ruthless, "per hero" on the setup, and the first
+  player on Shoot the Thrusters!). 57 are killed; 7 are equivalent and documented
+  where they live: the maximum's modifier role, the round mark's admission, the
+  last revealed card, `discardEach`'s two guards, Nebula (I)'s Technique
+  condition and the setup's Technique test.
+- A scan of 3,040 complete research games (every admitted hero alone and in 19
+  pairs, Standard and Expert, seeds 1–40) raises nothing: 2,415 end with every
+  player eliminated, 625 with the villain completing the final main scheme, none
+  with Nebula defeated and none unfinished.
 
 ## New interactions
 
