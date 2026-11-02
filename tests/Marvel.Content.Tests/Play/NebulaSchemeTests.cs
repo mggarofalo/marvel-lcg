@@ -118,6 +118,20 @@ public sealed class NebulaSchemeTests : CoreCardTestBase
     }
 
     [Fact]
+    [Rule("rr:first-player.4")]
+    public void TheMilanosControllerCannotShootTheThrustersOnceTheFirstPlayerPasses()
+    {
+        // The Milano stays under player 0's control after player 1 becomes the first player.
+        var world = NebulaBoards.Board(players: 2);
+        var ship = NebulaBoards.PutShip(world, 2);
+        ShipCommandBoards.PutMilano(world);
+        GrootBoards.Hand(world, "01003");
+        world.FirstPlayer = 1;
+
+        Assert.Empty(ShipCommandBoards.ActionsOn(world, ship, 0));
+    }
+
+    [Fact]
     [Rule("rr:action.1")]
     public void SpendingTwoResourcesNeedsTwoEvasionCounters()
     {
