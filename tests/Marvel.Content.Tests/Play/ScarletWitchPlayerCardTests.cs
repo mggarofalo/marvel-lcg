@@ -94,6 +94,7 @@ public sealed class ScarletWitchPlayerCardTests
         var choice = Assert.IsType<Prompt>(Sequence.Work(world, world.Facts, runner, []));
         var play = Assert.Single(choice.Affordances, offer => offer.AnchorId == pietro.ObjectId);
         Assert.Equal("0", Assert.Single(play.Costs!).Cost);
+        Assert.StartsWith("Played ignoring its resource cost; then discard 4 encounter cards", play.Description);
         Sequence.Answer(world, world.Facts, runner, choice, Decision.Take(play.Id), []);
         Drive(world, runner, _ => null);
         Assert.Equal(DeckType.AlliesArea, pietro.Area.Type);

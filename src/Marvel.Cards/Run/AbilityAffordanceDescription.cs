@@ -73,6 +73,8 @@ internal static class AbilityAffordanceDescription
         if (ability.Cost is not AbilityCost.ChooseScheme || targets is null) return targets;
         // rr:target.2: initiation requires a valid target. Reuse the same
         // chosen-scheme admission as execution, including status cancellation.
+        // Equivalent mutant: dropping the scoped reduction here changes nothing today,
+        // since this admission reads the chosen target rather than the price.
         return targets with { Legal = [.. targets.Legal.Where(id =>
             queries.ActionAdmission(world, card, ability, player,
                 world.Windows.Current?.Occurrence, [id], reduction) is not null)] };

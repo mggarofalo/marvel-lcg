@@ -47,6 +47,7 @@ public sealed class CrystalBallTests : CoreCardTestBase
         var prompt = Assert.Single(asked);
         Assert.Equal(defeater, prompt.Player);
         Assert.Equal("1", Assert.Single(Offer(prompt, furies[defeater]).Costs!).Cost);
+        Assert.StartsWith("This price already includes Crystal Ball's reduction of 3", Offer(prompt, furies[defeater]).Description);
         Assert.DoesNotContain(prompt.Affordances, offer => offer.AnchorId == furies[1 - defeater].ObjectId);
         Assert.Equal(DeckType.AlliesArea, furies[defeater].Area.Type);
         Assert.Equal(DeckType.HandsArea, furies[1 - defeater].Area.Type);
