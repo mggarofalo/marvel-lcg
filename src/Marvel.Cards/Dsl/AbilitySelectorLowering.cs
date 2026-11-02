@@ -197,6 +197,7 @@ internal static class AbilitySelectorLowering
         {
             "cost" => AbilityCardRank.Cost,
             "attack" => AbilityCardRank.Attack,
+            "scheme" => AbilityCardRank.Scheme,
             "printedHealth" => AbilityCardRank.PrintedHealth,
             "remainingHealth" => AbilityCardRank.RemainingHealth,
             "threat" => AbilityCardRank.Threat,

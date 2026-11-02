@@ -46,6 +46,7 @@ internal static class AbilityPaymentRules
             AbilityCost.ReturnTitledToHand named => NamedAbilityCost.Target(world, player, named.Title) is { } returning
                 && AbilityPhysicalPayment.CanReturnToHand(world, returning),
             AbilityCost.DiscardTop discard => AbilityDeckCosts.CanDiscard(world, player, discard),
+            AbilityCost.PlaceMainSchemeThreat => AbilityThreatCost.Scheme(world, card) is not null,
             // Hidden deck identities cannot establish whether this uncertain cost succeeds.
             AbilityCost.DiscardUntilMinionEngaged or AbilityCost.DealEncounterToYou => player >= 0 && AbilityDeckCosts.EncounterAvailable(world) > 0,
             AbilityCost.Sequence sequence => AbilitySequenceCostAvailability.CanPay(

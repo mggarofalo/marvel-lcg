@@ -33,13 +33,15 @@ public sealed class GrootAdmissionTests
     public void GrootAndRocketRaccoonOpenOnlyTheirOwnFacesOfTheBox()
     {
         // Drang (III) (16060) is outside the boundary even when a row exists for it. Beside the
-        // two heroes, the Power Stone (16149) and Band of Badoon (16117–16121) modular sets are
-        // the box's other open parts.
+        // two heroes, the Power Stone (16149), Band of Badoon (16117–16121), Kree Militants,
+        // Menagerie Medley and Space Pirates (16131–16141) modular sets are the box's other
+        // open parts.
         var authored = AuthoredCards.Book.Authored.Append("16060").ToHashSet(StringComparer.Ordinal);
         var result = RuntimeProductAdmission.Discover(SetupCatalog.Parse(SetupJson), Cards, authored);
         string[] rocket = ["16029a", "16029b", .. Enumerable.Range(30, 28).Select(number => $"16{number:000}")];
-        Assert.Equal(Faces.Concat(rocket).Append("16149").Concat(["16117", "16118", "16119", "16120", "16121"])
-                .Order(StringComparer.Ordinal),
+        string[] modular = [.. Enumerable.Range(16117, 5).Select(number => $"{number}"),
+            .. Enumerable.Range(16131, 11).Select(number => $"{number}"), "16149"];
+        Assert.Equal(Faces.Concat(rocket).Concat(modular).Order(StringComparer.Ordinal),
             result.Playable.Where(face => Cards.Pack(face) == "gmw").Order(StringComparer.Ordinal));
     }
 

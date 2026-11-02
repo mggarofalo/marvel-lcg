@@ -35,6 +35,7 @@ internal static class AbilityCostDescription
             + (discard.From == AbilitySearchArea.YourDeck ? "your deck" : "the encounter deck"),
         AbilityCost.DiscardUntilMinionEngaged => "Discard encounter cards until a minion is discarded; put it into play engaged with you",
         AbilityCost.DealEncounterToYou => "Deal yourself a facedown encounter card",
+        AbilityCost.PlaceMainSchemeThreat threat => $"Place {Number(threat.Amount)} threat on the main scheme",
         AbilityCost.Exhaust exhaust => $"Exhaust {Name(world, source, player, exhaust.Card)}",
         AbilityCost.ConsumeCampaignCard consume => $"Discard {Name(world, source, player, consume.Card)} and remove it from the campaign",
         AbilityCost.Discard discard => $"Discard {Name(world, source, player, discard.Card)}",

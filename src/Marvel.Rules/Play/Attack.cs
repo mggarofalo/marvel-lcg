@@ -72,7 +72,8 @@ public static class Attack
         var target = step.Require<EnemyAttackOperation>().Character >= 0
             ? world.Cards[step.Require<EnemyAttackOperation>().Character]
             : world.Seats[step.Seat].IdentityCard;
-        world.Attack = new EnemyAttack(step.Subject, step.Seat, target.ObjectId);
+        world.Attack = new EnemyAttack(step.Subject, step.Seat, target.ObjectId,
+            Indirect: IndirectEnemyAttacks.Deal(world, world.Cards[step.Subject]));
         world.Activation = new EnemyActivation(
             step.Subject, step.Seat, Attacking: true, Id: step.ActivationId)
         { DealBoostCards = step.Require<EnemyAttackOperation>().DealBoostCards };

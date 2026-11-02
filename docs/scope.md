@@ -127,8 +127,8 @@ exact pack membership, modular role and the complete seven-copy recipe are requi
 together. A missing face or malformed recipe closes the entire set while preserving
 predecessor products. Standard and Expert scenario slots accept its normal modular
 selection with starter or legal custom player decks. Recommended defaults remain
-scenario-owned. Discovery has nineteen heroes, 39 scenario/mode recipes and sixteen
-encounter sets, fourteen of them modular. The separate Galaxy’s Most Wanted Ronan
+scenario-owned. Discovery has nineteen heroes, 39 scenario/mode recipes and nineteen
+encounter sets, seventeen of them modular. The separate Galaxy’s Most Wanted Ronan
 scenario remains unsupported. Focused evidence is in
 `docs/content/ronan-public-admission.md`; this gate does not establish complete-game,
 fresh-host or native acceptance.
@@ -155,15 +155,19 @@ Groot has candidate public admission for his 29 printed faces in The Galaxy's
 Most Wanted and his exact 40-card starter, obligation and nemesis composition.
 Rocket Raccoon has the same admission for his 30 printed faces. Each hero's two
 identity faces represent one physical card. The rest of that box, including its
-villains, campaign and every modular set except Power Stone and Band of Badoon,
-is outside the boundary. Power Stone (16149) is admitted as a one-card modular
-set and Band of Badoon (16117–16121) as a ten-card modular set; Ship Command
-(16142–16148) and the Brotherhood of Badoon scenario are authored and withheld.
-Missing a face or changing a required recipe closes that hero, or that modular
-set, alone. Focused evidence is in `docs/content/groot-public-admission.md` and
+villains, campaign and the Ship Command and Galactic Artifacts modular sets, is
+outside the boundary. Power Stone (16149) is admitted as a one-card modular set,
+Band of Badoon (16117–16121) as a ten-card modular set, and Kree Militants
+(16131–16134), Menagerie Medley (16135–16137) and Space Pirates (16138–16141) as
+modular sets. Ship Command (16142–16148) and the Brotherhood of Badoon scenario
+are authored and withheld; Galactic Artifacts (16122–16130) is withheld because
+Crystal Ball (16130) is unauthored. Missing a face or changing a required recipe
+closes that hero, or that modular set, alone. Focused evidence is in
+`docs/content/groot-public-admission.md` and
 `docs/content/rocket-raccoon-public-admission.md`; the Power Stone and Ship
-Command record is `docs/content/ship-command-power-stone.md`, and the Brotherhood
-of Badoon record is `docs/content/brotherhood-of-badoon.md`.
+Command record is `docs/content/ship-command-power-stone.md`, the Brotherhood of
+Badoon record is `docs/content/brotherhood-of-badoon.md`, and the other modular
+sets' record is `docs/content/gmw-modular-sets.md`.
 
 Scarlet Witch has candidate public admission for all 32 printed faces and its
 exact 40-card starter, both obligations and nemesis composition. Four extra

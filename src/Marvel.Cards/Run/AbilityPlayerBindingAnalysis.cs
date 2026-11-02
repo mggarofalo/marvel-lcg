@@ -21,7 +21,7 @@ internal static class AbilityPlayerBindingAnalysis
     internal static bool Contains(AbilityCost? cost) => cost switch
     {
         null => false,
-        AbilityCost.ReturnSourceToHand or AbilityCost.ChooseScheme => false,
+        AbilityCost.ReturnSourceToHand or AbilityCost.ChooseScheme or AbilityCost.PlaceMainSchemeThreat => false,
         AbilityCost.ChooseFromDiscard or AbilityCost.InvocationTop => true,
         AbilityCost.DiscardTop discard => discard.From == AbilitySearchArea.YourDeck,
         AbilityCost.DiscardUntilMinionEngaged or AbilityCost.DealEncounterToYou or AbilityCost.RandomDiscardFromHand => true,

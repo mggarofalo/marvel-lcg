@@ -108,7 +108,7 @@ internal sealed class AbilityCostPayment
                 outcome.Suspended = true;
                 return true;
             case DeckCost deck:
-                outcome.Discarded.AddRange(AbilityDeckCosts.Pay(world, player, deck.Cost, trigger, events));
+                outcome.Discarded.AddRange(AbilityDeckCosts.Pay(world, source, player, deck.Cost, trigger, events));
                 return true;
             case Spend spend:
                 resourcePayment = AbilityResourcePayment.Spend(world, resourceAbilities,

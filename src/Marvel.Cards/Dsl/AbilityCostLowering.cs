@@ -38,6 +38,7 @@ internal static class AbilityCostLowering
             "removeCounters" => RemoveCounterCost(argument, child),
             "spend" => new AbilityCost.Spend(ResourceString(argument, child), PrintedOnly: false),
             "spendDistinct" => DistinctCost(argument, child),
+            "placeThreatOnMainScheme" => new AbilityCost.PlaceMainSchemeThreat(PositiveCount(argument, child)),
             "spendAny" => new AbilityCost.Spend("", PrintedOnly: false) { Generic = PositiveCount(argument, child) },
             "spendPrinted" => new AbilityCost.Spend(ResourceString(argument, child), PrintedOnly: true),
             "spendEnergyX" => EnergyCost(argument, child),

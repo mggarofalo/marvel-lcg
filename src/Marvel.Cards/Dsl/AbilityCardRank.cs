@@ -10,6 +10,8 @@ public enum AbilityCardRank
     Cost,
     /// <summary>Modified attack value.</summary>
     Attack,
+    /// <summary>Modified scheme value.</summary>
+    Scheme,
     /// <summary>Printed health, including a facedown card's rules-defined base.</summary>
     PrintedHealth,
     /// <summary>Current maximum health minus damage, including active modifiers.</summary>

@@ -103,6 +103,7 @@ internal static class AbilityPublicInstructionDescription
             Status(context, status),
         AbilityEffect.DiscardAtRandom
         {
+            RemovesFromGame: false,
             Players: AbilityPlayerSelection.OnePlayer { Player: AbilityPlayer.You },
             Count: AbilityNumber.Constant count,
         } => $"Discard {count.Value} random card{(count.Value == 1 ? "" : "s")} from your hand",
