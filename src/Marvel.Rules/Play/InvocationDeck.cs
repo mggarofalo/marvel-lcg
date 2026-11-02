@@ -85,6 +85,12 @@ public sealed class InvocationDeck
         // pile it tops (09029 "Shuffle the Invocation card under here into the Invocation
         // deck" via rr:when-defeated-abilities.1 and rr:interrupt.3), and "this card"
         // still names the same physical card (rr:referential-ability.step.1).
+        // Eliminating Doctor Strange mid-Special removes this card, with the Invocation
+        // deck and its discard pile, from the game (rr:player-elimination.step.5), and
+        // the rest of the Special still resolves (rr:player-elimination.5). "A card that
+        // has been removed from the game cannot reenter the game through any means"
+        // (rr:removed-from-the-game.2), so the placement moves nothing.
+        if (card.Area.Type == DeckType.RemovedArea) return;
         if (card.Area != Deck)
             throw new RulesNotImplementedException(
                 $"resolving Invocation '{card.FaceId}' left its draw pile for {card.Area.Type} before placing itself");
