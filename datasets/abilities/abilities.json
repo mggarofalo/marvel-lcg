@@ -8042,40 +8042,49 @@
             "subject": "this"
           },
           "effect": {
-            "seq": [
-              {
-                "grant": {
-                  "card": {
-                    "titled": "Absorbing Man"
-                  },
-                  "trait": "ICE"
+            "if": {
+              "test": {
+                "exists": {
+                  "titled": "Absorbing Man"
                 }
               },
-              {
-                "grant": {
-                  "card": {
-                    "titled": "Absorbing Man"
+              "then": {
+                "seq": [
+                  {
+                    "grant": {
+                      "card": {
+                        "titled": "Absorbing Man"
+                      },
+                      "trait": "ICE"
+                    }
                   },
-                  "trait": "METAL"
-                }
-              },
-              {
-                "grant": {
-                  "card": {
-                    "titled": "Absorbing Man"
+                  {
+                    "grant": {
+                      "card": {
+                        "titled": "Absorbing Man"
+                      },
+                      "trait": "METAL"
+                    }
                   },
-                  "trait": "STONE"
-                }
-              },
-              {
-                "grant": {
-                  "card": {
-                    "titled": "Absorbing Man"
+                  {
+                    "grant": {
+                      "card": {
+                        "titled": "Absorbing Man"
+                      },
+                      "trait": "STONE"
+                    }
                   },
-                  "trait": "WOOD"
-                }
+                  {
+                    "grant": {
+                      "card": {
+                        "titled": "Absorbing Man"
+                      },
+                      "trait": "WOOD"
+                    }
+                  }
+                ]
               }
-            ]
+            }
           }
         },
         {
