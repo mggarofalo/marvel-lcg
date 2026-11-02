@@ -66,6 +66,8 @@ internal sealed class AbilityModalFrame : IDisposable
         overlay.Resized += QueueFit;
         main.interfaceScaleSlider.ValueChanged += ScaleChanged;
         Content.MinimumSizeChanged += QueueFit;
+        // A table stretched in place moves the hand the window stands above.
+        main.boardAreas.MinimumSizeChanged += QueueFit;
         QueueFit();
     }
 
@@ -151,6 +153,7 @@ internal sealed class AbilityModalFrame : IDisposable
         main.interfaceScaleSlider.ValueChanged -= ScaleChanged;
         Content.MinimumSizeChanged -= QueueFit;
         footer.MinimumSizeChanged -= QueueFit;
+        main.boardAreas.MinimumSizeChanged -= QueueFit;
         layer.QueueFree();
     }
 }

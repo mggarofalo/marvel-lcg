@@ -13,6 +13,10 @@ internal static class SeatRailOverflow
         cue.Size = new Vector2(viewport.Size.X - 16, cue.GetCombinedMinimumSize().Y);
         cue.Position = viewport.Position + new Vector2(0, viewport.Size.Y - cue.Size.Y);
         cue.ZIndex = 25;
+        // The cue lies over the last tile's foot, so the pointer passes through it to the seat below; the
+        // tooltip stays its accessible description.
+        cue.MouseFilter = Control.MouseFilterEnum.Ignore;
+        cue.AccessibilityDescription = cue.TooltipText;
         surface.AddChild(cue);
         void Recount()
         {

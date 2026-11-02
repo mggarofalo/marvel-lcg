@@ -4,7 +4,7 @@ using Marvel.View;
 namespace Marvel.Godot;
 
 /// <summary>
-/// The complete-choices sheet's head: the question as its title, what it concerns as one short line, who
+/// The complete-choices sheet's head: the question as its title, what it concerns beside the title, who
 /// answers, whether it is required, its causes and its source as chips, and the engine's whole instruction
 /// once, wrapped.
 /// </summary>
@@ -40,11 +40,14 @@ internal static class DecisionSheetHead
         if (prompt.ContextCards.Count == 1) facts.Add(Source(prompt.ContextCards[0], main));
         VBoxContainer head = TablePanel.Create("DecisionHead", Title(title), facts, prompt.Frame.Instruction, scale, close,
             wrap: true);
+        // What the decision concerns stands beside the title, so the head stays short enough for the sheet's body.
         if (TableWording.DecisionSubjectLine(prompt.Frame) is { Length: > 0 } subject)
         {
             Label line = TableBlockStyle.Line("DecisionSubject", subject, scale, VisualSystem.Palette.MutedText);
-            head.AddChild(line);
-            head.MoveChild(line, 1);
+            line.SizeFlagsHorizontal = Control.SizeFlags.ShrinkEnd;
+            Node row = head.GetNode("TitleRow");
+            row.AddChild(line);
+            row.MoveChild(line, 1);
         }
         return head;
     }
