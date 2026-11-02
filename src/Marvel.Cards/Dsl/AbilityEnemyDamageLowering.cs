@@ -6,9 +6,14 @@ using Marvel.Rules.Timing;
 
 namespace Marvel.Cards.Dsl;
 
-/// <summary>Lowers the lasting heal that counts damage an identity deals to enemies.</summary>
+/// <summary>Lowers the effects that count damage an identity deals to enemies.</summary>
 internal static class AbilityEnemyDamageLowering
 {
+    internal static AbilityEnemyDamageEffect Lower(string kind, AbilityValue value, AbilityLocation location) =>
+        kind == "increaseExcessDamage"
+            ? new AbilityEnemyDamageEffect.IncreaseExcessDamage(PositiveInteger(value, location))
+            : Healing(value, location);
+
     // Engine spelling: {"healEachTimeYouDamageAnEnemy": {"amount": N, "until": "EndOfTurn"}}.
     internal static AbilityEnemyDamageEffect.HealOnEnemyDamage Healing(AbilityValue value, AbilityLocation location)
     {

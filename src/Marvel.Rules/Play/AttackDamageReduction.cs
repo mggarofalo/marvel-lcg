@@ -58,7 +58,7 @@ public static class AttackDamageReduction
         $"{Spent}:{scope}:{target.ObjectId.ToString(CultureInfo.InvariantCulture)}:"
         + target.Incarnation.ToString(CultureInfo.InvariantCulture);
 
-    private static string? CurrentScope(World world) => world.Agenda.PlayerAttackScope() is { } frame
+    internal static string? CurrentScope(World world) => world.Agenda.PlayerAttackScope() is { } frame
         ? "player:" + frame.ToString(CultureInfo.InvariantCulture)
         : world.Activation is { Attacking: true } activation
             ? "enemy:" + activation.Id.ToString(CultureInfo.InvariantCulture)

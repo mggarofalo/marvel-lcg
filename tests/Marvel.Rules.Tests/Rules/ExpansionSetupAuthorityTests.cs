@@ -15,6 +15,7 @@ public sealed class ExpansionSetupAuthorityTests
             "setup:campaign:crossbones", "setup:campaign:crossbones_expert",
             "setup:campaign:kang", "setup:campaign:kang_expert",
             "setup:campaign:mutagen_formula", "setup:campaign:mutagen_formula_expert",
+            "setup:campaign:nebula", "setup:campaign:nebula_expert",
             "setup:campaign:red_skull", "setup:campaign:red_skull_expert",
             "setup:campaign:risky_business", "setup:campaign:risky_business_expert",
             "setup:campaign:ronan_the_accuser", "setup:campaign:ronan_the_accuser_expert",
@@ -78,6 +79,7 @@ public sealed class ExpansionSetupAuthorityTests
             or "setup:encounter-set:ship_command" or "setup:encounter-set:band_of_badoon"
             or "setup:campaign:brotherhood_of_badoon" or "setup:campaign:brotherhood_of_badoon_expert"
             or "setup:campaign:ronan_the_accuser" or "setup:campaign:ronan_the_accuser_expert"
+            or "setup:campaign:nebula" or "setup:campaign:nebula_expert"
             or "setup:encounter-set:galactic_artifacts"
             or "setup:encounter-set:kree_militant" or "setup:encounter-set:menagerie_medley"
             or "setup:encounter-set:space_pirates" => "The Galaxy's Most Wanted",

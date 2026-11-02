@@ -26132,6 +26132,167 @@
       ]
     },
     {
+      "card": "16088",
+      "name": "Nebula",
+      "note": "Nebula (I). The first Technique attachment revealed each round gains surge: a forced interrupt to each card revealed records that a Technique attachment has been revealed this round (markThisRound) and, for the first, gives that card surge until the end of the phase. Canceling the card's effects cancels the surge, a When Revealed ability (rr:surge.1; ruling 4e44bf466c0d8971), but the card was still revealed, so the round stays marked. Every attachment the recipe's encounter deck holds is a Technique, so the Technique test excludes nothing today; it follows the printed text. A boost card is turned faceup, not revealed (rr:boost-boost-icon), and an attachment put into play or attached by an ability is not revealed (rr:attach-to.3.1), so neither counts. Forced Interrupt: when Nebula initiates an activation against you, resolve the Special ability on each Technique attachment in play. An activation is an attack or a scheme (rr:activation), split by its kind as for Ronan the Accuser (16103); 'you' is the player it is against (rr:you-your.7), who resolves each Special (rr:special) and chooses their order. Every Technique attachment attaches to Nebula, so those in play are the ones in the villain's play area. With none in play the interrupt has nothing to resolve. A facedown boost card a Special gives Nebula joins this activation. Then discard each of those attachments, in any order (rr:discard.3).",
+      "abilities": [
+        {"trigger": {"event": "WhenCardRevealed", "timing": "ForcedInterrupt", "subject": "game"}, "when": {"and": [{"isKind": {"card": "trigger.subject", "kind": "attachment"}}, {"hasTrait": {"card": "trigger.subject", "trait": "TECHNIQUE"}}, {"not": {"markedThisRound": "Technique"}}]}, "effect": {"seq": [{"markThisRound": "Technique"}, {"grantUntil": {"card": "trigger.subject", "keyword": "surge", "amount": 1, "until": "EndOfPhase"}}]}},
+        {"trigger": {"event": "WhenAttackInitiated", "timing": "ForcedInterrupt", "actor": "this"}, "when": {"exists": {"cardsIn": {"area": "villainPlayArea", "kind": "Attachment", "trait": "TECHNIQUE"}}}, "effect": {"seq": [{"resolveSpecials": {"cards": {"cardsIn": {"area": "villainPlayArea", "kind": "Attachment", "trait": "TECHNIQUE"}}}}, {"discardEach": {"cardsIn": {"area": "villainPlayArea", "kind": "Attachment", "trait": "TECHNIQUE"}}}]}},
+        {"trigger": {"event": "WhenEnemySchemes", "timing": "ForcedInterrupt", "subject": "this"}, "when": {"exists": {"cardsIn": {"area": "villainPlayArea", "kind": "Attachment", "trait": "TECHNIQUE"}}}, "effect": {"seq": [{"resolveSpecials": {"cards": {"cardsIn": {"area": "villainPlayArea", "kind": "Attachment", "trait": "TECHNIQUE"}}}}, {"discardEach": {"cardsIn": {"area": "villainPlayArea", "kind": "Attachment", "trait": "TECHNIQUE"}}}]}}
+      ]
+    },
+    {
+      "card": "16089",
+      "name": "Nebula",
+      "note": "Nebula (II). The first Technique attachment revealed each round gains surge: a forced interrupt to each card revealed records that a Technique attachment has been revealed this round (markThisRound) and, for the first, gives that card surge until the end of the phase. Canceling the card's effects cancels the surge, a When Revealed ability (rr:surge.1; ruling 4e44bf466c0d8971), but the card was still revealed, so the round stays marked. Every attachment the recipe's encounter deck holds is a Technique, so the Technique test excludes nothing today; it follows the printed text. A boost card is turned faceup, not revealed (rr:boost-boost-icon), and an attachment put into play or attached by an ability is not revealed (rr:attach-to.3.1), so neither counts. Forced Interrupt: when Nebula initiates an activation against you, resolve the Special ability on each Technique attachment in play. An activation is an attack or a scheme (rr:activation), split by its kind as for Ronan the Accuser (16103); 'you' is the player it is against (rr:you-your.7), who resolves each Special (rr:special) and chooses their order. Every Technique attachment attaches to Nebula, so those in play are the ones in the villain's play area. With none in play the interrupt has nothing to resolve. A facedown boost card a Special gives Nebula joins this activation. Then the player it is against chooses and discards 1 of those attachments.",
+      "abilities": [
+        {"trigger": {"event": "WhenCardRevealed", "timing": "ForcedInterrupt", "subject": "game"}, "when": {"and": [{"isKind": {"card": "trigger.subject", "kind": "attachment"}}, {"hasTrait": {"card": "trigger.subject", "trait": "TECHNIQUE"}}, {"not": {"markedThisRound": "Technique"}}]}, "effect": {"seq": [{"markThisRound": "Technique"}, {"grantUntil": {"card": "trigger.subject", "keyword": "surge", "amount": 1, "until": "EndOfPhase"}}]}},
+        {"trigger": {"event": "WhenAttackInitiated", "timing": "ForcedInterrupt", "actor": "this"}, "when": {"exists": {"cardsIn": {"area": "villainPlayArea", "kind": "Attachment", "trait": "TECHNIQUE"}}}, "effect": {"seq": [{"resolveSpecials": {"cards": {"cardsIn": {"area": "villainPlayArea", "kind": "Attachment", "trait": "TECHNIQUE"}}}}, {"chooseCard": {"from": {"cardsIn": {"area": "villainPlayArea", "kind": "Attachment", "trait": "TECHNIQUE"}}, "effect": {"discard": "chosen"}}}]}},
+        {"trigger": {"event": "WhenEnemySchemes", "timing": "ForcedInterrupt", "subject": "this"}, "when": {"exists": {"cardsIn": {"area": "villainPlayArea", "kind": "Attachment", "trait": "TECHNIQUE"}}}, "effect": {"seq": [{"resolveSpecials": {"cards": {"cardsIn": {"area": "villainPlayArea", "kind": "Attachment", "trait": "TECHNIQUE"}}}}, {"chooseCard": {"from": {"cardsIn": {"area": "villainPlayArea", "kind": "Attachment", "trait": "TECHNIQUE"}}, "effect": {"discard": "chosen"}}}]}}
+      ]
+    },
+    {
+      "card": "16090",
+      "name": "Nebula",
+      "note": "Nebula (III). The first Technique attachment revealed each round gains surge: a forced interrupt to each card revealed records that a Technique attachment has been revealed this round (markThisRound) and, for the first, gives that card surge until the end of the phase. Canceling the card's effects cancels the surge, a When Revealed ability (rr:surge.1; ruling 4e44bf466c0d8971), but the card was still revealed, so the round stays marked. Every attachment the recipe's encounter deck holds is a Technique, so the Technique test excludes nothing today; it follows the printed text. A boost card is turned faceup, not revealed (rr:boost-boost-icon), and an attachment put into play or attached by an ability is not revealed (rr:attach-to.3.1), so neither counts. Forced Interrupt: when Nebula initiates an activation against you, resolve the Special ability on each Technique attachment in play. An activation is an attack or a scheme (rr:activation), split by its kind as for Ronan the Accuser (16103); 'you' is the player it is against (rr:you-your.7), who resolves each Special (rr:special) and chooses their order. Every Technique attachment attaches to Nebula, so those in play are the ones in the villain's play area. With none in play the interrupt has nothing to resolve. A facedown boost card a Special gives Nebula joins this activation. Then that player may remove the top card of their deck from the game to choose and discard 1 of those attachments. The removal pays for the discard, so the option is offered only while each of its sentences has a target: a card in that player's deck and a Technique still attached (seqEachTargeted). A deck the removal empties resets at once (rr:player-deck.1).",
+      "abilities": [
+        {"trigger": {"event": "WhenCardRevealed", "timing": "ForcedInterrupt", "subject": "game"}, "when": {"and": [{"isKind": {"card": "trigger.subject", "kind": "attachment"}}, {"hasTrait": {"card": "trigger.subject", "trait": "TECHNIQUE"}}, {"not": {"markedThisRound": "Technique"}}]}, "effect": {"seq": [{"markThisRound": "Technique"}, {"grantUntil": {"card": "trigger.subject", "keyword": "surge", "amount": 1, "until": "EndOfPhase"}}]}},
+        {"trigger": {"event": "WhenAttackInitiated", "timing": "ForcedInterrupt", "actor": "this"}, "when": {"exists": {"cardsIn": {"area": "villainPlayArea", "kind": "Attachment", "trait": "TECHNIQUE"}}}, "effect": {"seq": [{"resolveSpecials": {"cards": {"cardsIn": {"area": "villainPlayArea", "kind": "Attachment", "trait": "TECHNIQUE"}}}}, {"choose": {"descriptions": ["Remove the top card of your deck from the game to discard a Technique", "Do not remove a card"], "options": [{"seqEachTargeted": [{"removeTopFromGame": {"player": "you", "count": 1}}, {"chooseCard": {"from": {"cardsIn": {"area": "villainPlayArea", "kind": "Attachment", "trait": "TECHNIQUE"}}, "effect": {"discard": "chosen"}}}]}, {"seq": []}]}}]}},
+        {"trigger": {"event": "WhenEnemySchemes", "timing": "ForcedInterrupt", "subject": "this"}, "when": {"exists": {"cardsIn": {"area": "villainPlayArea", "kind": "Attachment", "trait": "TECHNIQUE"}}}, "effect": {"seq": [{"resolveSpecials": {"cards": {"cardsIn": {"area": "villainPlayArea", "kind": "Attachment", "trait": "TECHNIQUE"}}}}, {"choose": {"descriptions": ["Remove the top card of your deck from the game to discard a Technique", "Do not remove a card"], "options": [{"seqEachTargeted": [{"removeTopFromGame": {"player": "you", "count": 1}}, {"chooseCard": {"from": {"cardsIn": {"area": "villainPlayArea", "kind": "Attachment", "trait": "TECHNIQUE"}}, "effect": {"discard": "chosen"}}}]}, {"seq": []}]}}]}}
+      ]
+    },
+    {
+      "card": "16091a",
+      "name": "The Art of Evasion",
+      "note": "Setup: put the Nebula's Ship environment and the Milano support into play, attach the Power Stone to Nebula, then discard the top 2 per hero cards of the encounter deck and attach each Technique attachment discarded this way to Nebula. The scenario recipe sets Nebula's Ship aside and this setup puts it into its printed destination. The Milano's own Setup keyword already puts it into play under the first player's control, and the Power Stone's own Setup keyword already attaches it to the villain in setup step 11 (rr:setup-keyword.1), so this ability, resolved in step 12a (rr:appendix-ii-setup.step.12.a), moves neither a second time. 'Per hero' is per player. The discarded attachments enter play attached to Nebula without being revealed (rr:attach-to.3.1). Every attachment the recipe's encounter deck holds is a Technique, so the Technique test excludes nothing today; it follows the printed text. The contents list is scenario setup data, and rr:appendix-ii-setup.step.12.b performs the printed advance to 1B.",
+      "abilities": [
+        {"trigger": {"timing": "Setup", "subject": "this"}, "effect": {"seq": [{"putIntoPlay": {"card": {"cardsIn": {"area": "scenarioSetAside", "title": "Nebula's Ship"}}, "where": "printedDestination"}}, {"forEachDiscarded": {"effect": {"discardTop": {"from": "encounterDeck", "count": {"perPlayer": 2}}}, "when": {"and": [{"isKind": {"card": "that", "kind": "attachment"}}, {"hasTrait": {"card": "that", "trait": "TECHNIQUE"}}]}, "then": {"attachCards": {"cards": "that", "host": {"titled": "Nebula"}}}}}]}}
+      ]
+    },
+    {
+      "card": "16091b",
+      "name": "The Art of Evasion",
+      "note": "X is equal to the number of evasion counters on Nebula's Ship. The card defines X, so it is not multiplied per player; engine choice: an additive escalation_threat on the generated zero placeholder represents X, as for Mutagen Cloud (02018b), and it is 0 while Nebula's Ship is not in play.",
+      "abilities": [
+        {"trigger": {"timing": "Constant"}, "effect": {"grant": {"card": "this", "keyword": "escalation_threat", "amount": {"countersOn": {"card": {"titled": "Nebula's Ship"}, "counter": "evasion"}}}}}
+      ]
+    },
+    {
+      "card": "16092a",
+      "name": "Warp Drive Initiated",
+      "note": "When Revealed: place 2 evasion counters on Nebula's Ship, then, for each evasion counter on Nebula's Ship, discard the top 2 cards of each player deck and of the encounter deck. The count is read after the 2 counters are placed, and each deck discards twice that many cards as one instruction. A player deck that empties resets at once and deals that player an encounter card (rr:player-deck.1); an encounter deck that empties resets (rr:encounter-deck).",
+      "abilities": [
+        {"trigger": {"event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this"}, "effect": {"seq": [{"placeCounters": {"card": {"titled": "Nebula's Ship"}, "counter": "evasion", "count": 2}}, {"eachPlayer": {"effect": {"discardTop": {"from": "yourDeck", "count": {"mul": [2, {"countersOn": {"card": {"titled": "Nebula's Ship"}, "counter": "evasion"}}]}}}}}, {"discardTop": {"from": "encounterDeck", "count": {"mul": [2, {"countersOn": {"card": {"titled": "Nebula's Ship"}, "counter": "evasion"}}]}}}]}}
+      ]
+    },
+    {
+      "card": "16092b",
+      "name": "Warp Drive Initiated",
+      "note": "X is equal to the number of evasion counters on Nebula's Ship. The card defines X, so it is not multiplied per player; engine choice: an additive escalation_threat on the generated zero placeholder represents X, as for Mutagen Cloud (02018b), and it is 0 while Nebula's Ship is not in play. Completing this final stage loses the game (rr:main-scheme-main-scheme-deck.2.1).",
+      "abilities": [
+        {"trigger": {"timing": "Constant"}, "effect": {"grant": {"card": "this", "keyword": "escalation_threat", "amount": {"countersOn": {"card": {"titled": "Nebula's Ship"}, "counter": "evasion"}}}}}
+      ]
+    },
+    {
+      "card": "16093",
+      "name": "Nebula's Ship",
+      "note": "Unique is a printed keyword. Forced Interrupt: when the villain phase begins, place 1 evasion counter here. Shoot the Thrusters! -- First Player Action: exhaust the Milano and spend up to 2 resources of any type -> remove 1 evasion counter from here for each resource spent this way. Only the first player can trigger it (isFirstPlayer), and the exhausted Milano cannot also generate a resource (rr:exhausted.1). Engine choice: the action is authored once for each number of resources, 1 and 2, as Kree Combat Armor (16131) is authored once per resource type; spending none would only exhaust the Milano. Each is offered only while there are as many evasion counters here as resources it spends: the effect then removes every counter it names, and spending 2 to remove 1 does no more than the 1-resource action does.",
+      "abilities": [
+        {"trigger": {"event": "WhenVillainPhaseBegins", "timing": "ForcedInterrupt", "subject": "game"}, "effect": {"placeCounters": {"card": "this", "counter": "evasion", "count": 1}}},
+        {"name": "Shoot the Thrusters!", "trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this"}, "when": {"and": [{"isFirstPlayer": "you"}, {"atLeast": {"value": {"countersOn": {"card": "this", "counter": "evasion"}}, "count": 1}}]}, "cost": {"seq": [{"exhaustTitled": "Milano"}, {"spendAny": 1}]}, "effect": {"removeCounters": {"card": "this", "counter": "evasion", "count": 1}}},
+        {"name": "Shoot the Thrusters!", "trigger": {"event": "WhenActionTriggered", "timing": "Action", "subject": "this"}, "when": {"and": [{"isFirstPlayer": "you"}, {"atLeast": {"value": {"countersOn": {"card": "this", "counter": "evasion"}}, "count": 2}}]}, "cost": {"seq": [{"exhaustTitled": "Milano"}, {"spendAny": 2}]}, "effect": {"removeCounters": {"card": "this", "counter": "evasion", "count": 2}}}
+      ]
+    },
+    {
+      "card": "16094",
+      "name": "Cutthroat Ambition",
+      "attachTo": {"titled": "Nebula"},
+      "note": "Attach to Nebula. Surge from Nebula: the first Technique attachment revealed each round gains surge (see Nebula, 16088). Special: resolved only when another ability instructs it (rr:special), by the player resolving that ability. Boost: after this activation ends, attach this card to Nebula and resolve its Special ability, as Monster (02025) acts after its activation; the boost card is in the encounter discard pile by then (rr:boost-boost-icon.5), and attaching it is not a reveal (rr:attach-to.3.1). The player the activation was against resolves the Special. Attaching makes the card a new object, so its Special is named as the same physical card now attached (attachedThis). Nebula cannot take more than 5 damage from a single attack: the damage she takes from one attack, after every reduction and prevention, totals at most 5 (rr:cannot); two copies set the same maximum, so the smallest maximum applies. Special: place 1 threat on the main scheme.",
+      "abilities": [
+        {"trigger": {"timing": "Constant", "subject": "this"}, "effect": {"grant": {"card": "attachedTo", "keyword": "attack_damage_maximum", "amount": 5}}},
+        {"trigger": {"event": "ResolveSpecial", "timing": "Special", "subject": "this"}, "effect": {"placeThreat": {"scheme": {"query": "mainScheme"}, "amount": 1}}},
+        {"trigger": {"event": "WhenCardRevealed", "timing": "Boost", "subject": "this"}, "effect": {"afterActivation": {"effect": {"seq": [{"attachCards": {"cards": "this", "host": {"titled": "Nebula"}}}, {"resolveSpecials": {"cards": "attachedThis"}}]}}}}
+      ]
+    },
+    {
+      "card": "16095",
+      "name": "Evasive Maneuvering",
+      "attachTo": {"titled": "Nebula"},
+      "note": "Attach to Nebula. Surge from Nebula: the first Technique attachment revealed each round gains surge (see Nebula, 16088). Special: resolved only when another ability instructs it (rr:special), by the player resolving that ability. Boost: after this activation ends, attach this card to Nebula and resolve its Special ability, as Monster (02025) acts after its activation; the boost card is in the encounter discard pile by then (rr:boost-boost-icon.5), and attaching it is not a reveal (rr:attach-to.3.1). The player the activation was against resolves the Special. Attaching makes the card a new object, so its Special is named as the same physical card now attached (attachedThis). Nebula gains stalwart: she cannot be stunned or confused, and gaining it discards those status cards (rr:stalwart; ruling c03bdba88590962d). Special: you are stunned; if you are already stunned, give Nebula 1 facedown boost card. 'You' is the resolving player's identity (rr:you-your.5). A boost card given outside her activation waits for her next one (rr:boost-boost-icon.6).",
+      "abilities": [
+        {"trigger": {"timing": "Constant", "subject": "this"}, "effect": {"grant": {"card": "attachedTo", "keyword": "stalwart", "amount": 1}}},
+        {"trigger": {"event": "ResolveSpecial", "timing": "Special", "subject": "this"}, "effect": {"if": {"test": {"hasStatus": {"card": "you", "status": "stunned"}}, "then": {"giveAdditionalBoost": {"enemy": {"titled": "Nebula"}}}, "else": {"giveStatus": {"card": "you", "status": "stunned"}}}}},
+        {"trigger": {"event": "WhenCardRevealed", "timing": "Boost", "subject": "this"}, "effect": {"afterActivation": {"effect": {"seq": [{"attachCards": {"cards": "this", "host": {"titled": "Nebula"}}}, {"resolveSpecials": {"cards": "attachedThis"}}]}}}}
+      ]
+    },
+    {
+      "card": "16096",
+      "name": "Unyielding Persistence",
+      "attachTo": {"titled": "Nebula"},
+      "note": "Attach to Nebula. Surge from Nebula: the first Technique attachment revealed each round gains surge (see Nebula, 16088). Special: resolved only when another ability instructs it (rr:special), by the player resolving that ability. Boost: after this activation ends, attach this card to Nebula and resolve its Special ability, as Monster (02025) acts after its activation; the boost card is in the encounter discard pile by then (rr:boost-boost-icon.5), and attaching it is not a reveal (rr:attach-to.3.1). The player the activation was against resolves the Special. Attaching makes the card a new object, so its Special is named as the same physical card now attached (attachedThis). Nebula gains stalwart: she cannot be stunned or confused, and gaining it discards those status cards (rr:stalwart; ruling c03bdba88590962d). Special: give Nebula a tough status card; if she already has one, give her 1 facedown boost card. Her tough status is read before one is given (rr:status-cards.1), as for Kree Physiology (16115). A boost card given outside her activation waits for her next one (rr:boost-boost-icon.6).",
+      "abilities": [
+        {"trigger": {"timing": "Constant", "subject": "this"}, "effect": {"grant": {"card": "attachedTo", "keyword": "stalwart", "amount": 1}}},
+        {"trigger": {"event": "ResolveSpecial", "timing": "Special", "subject": "this"}, "effect": {"if": {"test": {"hasStatus": {"card": {"titled": "Nebula"}, "status": "tough"}}, "then": {"giveAdditionalBoost": {"enemy": {"titled": "Nebula"}}}, "else": {"giveStatus": {"card": {"titled": "Nebula"}, "status": "tough"}}}}},
+        {"trigger": {"event": "WhenCardRevealed", "timing": "Boost", "subject": "this"}, "effect": {"afterActivation": {"effect": {"seq": [{"attachCards": {"cards": "this", "host": {"titled": "Nebula"}}}, {"resolveSpecials": {"cards": "attachedThis"}}]}}}}
+      ]
+    },
+    {
+      "card": "16097",
+      "name": "Weapon Mastery",
+      "attachTo": {"titled": "Nebula"},
+      "note": "Attach to Nebula. Surge from Nebula: the first Technique attachment revealed each round gains surge (see Nebula, 16088). Special: resolved only when another ability instructs it (rr:special), by the player resolving that ability. Boost: after this activation ends, attach this card to Nebula and resolve its Special ability, as Monster (02025) acts after its activation; the boost card is in the encounter discard pile by then (rr:boost-boost-icon.5), and attaching it is not a reveal (rr:attach-to.3.1). The player the activation was against resolves the Special. Attaching makes the card a new object, so its Special is named as the same physical card now attached (attachedThis). Nebula gains retaliate 1 (rr:retaliate-x); two copies are two retaliate abilities, 1 damage each (rr:retaliate-x.1). Special: take 1 damage, on the resolving player's identity (rr:you-your.2).",
+      "abilities": [
+        {"trigger": {"timing": "Constant", "subject": "this"}, "effect": {"grant": {"card": "attachedTo", "keyword": "retaliate", "amount": 1}}},
+        {"trigger": {"event": "ResolveSpecial", "timing": "Special", "subject": "this"}, "effect": {"dealDamage": {"cards": "you", "amount": 1}}},
+        {"trigger": {"event": "WhenCardRevealed", "timing": "Boost", "subject": "this"}, "effect": {"afterActivation": {"effect": {"seq": [{"attachCards": {"cards": "this", "host": {"titled": "Nebula"}}}, {"resolveSpecials": {"cards": "attachedThis"}}]}}}}
+      ]
+    },
+    {
+      "card": "16098",
+      "name": "Wide Stance",
+      "attachTo": {"titled": "Nebula"},
+      "note": "Attach to Nebula. Surge from Nebula: the first Technique attachment revealed each round gains surge (see Nebula, 16088). Special: resolved only when another ability instructs it (rr:special), by the player resolving that ability. Boost: after this activation ends, attach this card to Nebula and resolve its Special ability, as Monster (02025) acts after its activation; the boost card is in the encounter discard pile by then (rr:boost-boost-icon.5), and attaching it is not a reveal (rr:attach-to.3.1). The player the activation was against resolves the Special. Attaching makes the card a new object, so its Special is named as the same physical card now attached (attachedThis). Reduce the amount of damage Nebula takes from each attack by 1, once per attack after tough, as for Kree Combat Armor (16131); the damage dealt is unchanged (rr:damage.3.2), and an attack against her remains legal (ruling 6250a5a17c97aebf). Special: discard 1 card at random from your hand, the resolving player's (rr:you-your.8).",
+      "abilities": [
+        {"trigger": {"timing": "Constant", "subject": "this"}, "effect": {"grant": {"card": "attachedTo", "keyword": "attack_damage_reduction", "amount": 1}}},
+        {"trigger": {"event": "ResolveSpecial", "timing": "Special", "subject": "this"}, "effect": {"discardAtRandom": {"player": "you", "count": 1}}},
+        {"trigger": {"event": "WhenCardRevealed", "timing": "Boost", "subject": "this"}, "effect": {"afterActivation": {"effect": {"seq": [{"attachCards": {"cards": "this", "host": {"titled": "Nebula"}}}, {"resolveSpecials": {"cards": "attachedThis"}}]}}}}
+      ]
+    },
+    {
+      "card": "16099",
+      "name": "Lethal Intent",
+      "note": "Side scheme. Its starting threat per hero, hazard icon and boost icons are printed values the engine reads. When Revealed: discard cards from the top of the encounter deck until a Technique attachment is discarded, then reveal that card, as Raid the Armory (04069) reveals a Weapon attachment. The revealed attachment counts toward Nebula's first Technique revealed this round.",
+      "abilities": [
+        {"trigger": {"event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this"}, "effect": {"discardUntil": {"from": "encounterDeck", "kind": "attachment", "trait": "TECHNIQUE", "then": "reveal"}}}
+      ]
+    },
+    {
+      "card": "16100",
+      "name": "Barrel Roll",
+      "note": "Incite 1 and surge are printed keywords the engine reads (rr:incite-x, rr:surge). When Revealed: place 1 evasion counter on Nebula's Ship. Boost: place 1 evasion counter on Nebula's Ship. Without Nebula's Ship in play there is nowhere to place it.",
+      "abilities": [
+        {"trigger": {"event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this"}, "effect": {"placeCounters": {"card": {"titled": "Nebula's Ship"}, "counter": "evasion", "count": 1}}},
+        {"trigger": {"event": "WhenCardRevealed", "timing": "Boost", "subject": "this"}, "effect": {"placeCounters": {"card": {"titled": "Nebula's Ship"}, "counter": "evasion", "count": 1}}}
+      ]
+    },
+    {
+      "card": "16101",
+      "name": "Combat Ready",
+      "note": "When Revealed: discard cards from the top of the encounter deck until a Technique attachment is discarded, reveal that card, then resolve its Special ability. 'Revealed' names the card this ability revealed, after its reveal has resolved and it is attached to Nebula; the resolving player resolves the Special (rr:special). The revealed attachment counts toward Nebula's first Technique revealed this round.",
+      "abilities": [
+        {"trigger": {"event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this"}, "effect": {"seq": [{"discardUntil": {"from": "encounterDeck", "kind": "attachment", "trait": "TECHNIQUE", "then": "reveal"}}, {"resolveSpecials": {"cards": "revealed"}}]}}
+      ]
+    },
+    {
+      "card": "16102",
+      "name": "Ruthless",
+      "note": "When Revealed (Alter-Ego): Nebula schemes; if threat is placed by this activation, place 1 evasion counter on Nebula's Ship. When Revealed (Hero): Nebula attacks you; if damage is dealt by this activation, place 1 evasion counter on Nebula's Ship. Only the revealing player's current form resolves. Damage dealt counts whether or not it is taken (ruling ea69fd70a070ee2c), as the activation's damage receipt reads it for Bull Rush (07055); threat placed is the activation's threat receipt.",
+      "abilities": [
+        {"trigger": {"event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this", "form": "alter-ego"}, "effect": {"seq": [{"enemySchemes": {"enemies": {"titled": "Nebula"}, "against": "you"}}, {"if": {"test": {"atLeast": {"value": {"result": "activationThreat"}, "count": 1}}, "then": {"placeCounters": {"card": {"titled": "Nebula's Ship"}, "counter": "evasion", "count": 1}}}}]}},
+        {"trigger": {"event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this", "form": "hero"}, "effect": {"seq": [{"enemyAttacks": {"enemies": {"titled": "Nebula"}, "against": "you"}}, {"if": {"test": {"atLeast": {"value": {"result": "activationDamage"}, "count": 1}}, "then": {"placeCounters": {"card": {"titled": "Nebula's Ship"}, "counter": "evasion", "count": 1}}}}]}}
+      ]
+    },
+    {
       "card": "16103",
       "name": "Ronan the Accuser",
       "note": "Forced Interrupt: when Ronan the Accuser activates against you, give him 1 additional boost card if you control the Power Stone. An activation is an attack or a scheme (rr:activation), so the printed ability is split by the activation's kind, as for Hysteria (02020); 'you' is the player it is against (rr:you-your.7). Engine choice: the player who controls the Power Stone is the player in whose play area it is, attached to their identity. An encounter card is under the scenario's control (rr:ownership-and-control.2), but the card names a player who controls it, and the card wins (rr:the-golden-rules); an attachment's 'you' already follows the controller of the card it is attached to (rr:attachment.2). Toughness is a printed keyword the engine reads (rr:toughness).",

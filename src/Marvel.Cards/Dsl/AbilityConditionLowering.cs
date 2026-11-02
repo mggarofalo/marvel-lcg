@@ -56,6 +56,7 @@ internal static class AbilityConditionLowering
             "canLegalPractice" => new AbilityCondition.LegalPractice(SelectCards(argument, child)),
             "canAutomaticThwart" => new AbilityCondition.AutomaticThwart(SelectCards(argument, child)),
             "titleInPlay" => new AbilityCondition.TitleInPlay(Text(argument, child)),
+            "markedThisRound" => new AbilityCondition.MarkedThisRound(Text(argument, child)),
             "namedInPlay" => new AbilityCondition.NamedInPlay(Text(argument, child)),
             "atLeast" => AtLeast(argument, child),
             "inForm" => InForm(argument, child),

@@ -37,6 +37,8 @@ internal static class AbilitySelectorLowering
                 "trigger.subject" => AbilityCardBinding.TriggerSubject,
                 "trigger.discardedEvent" => AbilityCardBinding.DiscardedEvent,
                 "defendingCharacter" => AbilityCardBinding.DefendingCharacter,
+                "revealed" => AbilityCardBinding.Revealed,
+                "attachedThis" => AbilityCardBinding.AttachedThis,
                 _ => throw location.Error($"'{word.Value}' is not a card binding"),
             });
         }

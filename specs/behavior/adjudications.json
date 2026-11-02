@@ -72233,6 +72233,42 @@
       ]
     },
     {
+      "id": "setup:campaign:nebula",
+      "fingerprint": "sha256:dd2fcf455c23faa72d5b51185214560b8668855cdfafcd8911723e78d2000ba4",
+      "obligations": [
+        {
+          "key": "nebula-setup",
+          "summary": "The nebula record supplies the Nebula scenario composition and setup.",
+          "disposition": "outside-core",
+          "reason": "This record requires The Galaxy's Most Wanted Nebula scenario, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
+      "id": "setup:campaign:nebula_expert",
+      "fingerprint": "sha256:bc32df9e1772e8d95fd387a45a007e28682f3177dae574e2e19b5fee1d2b573d",
+      "obligations": [
+        {
+          "key": "nebula-expert-setup",
+          "summary": "The nebula_expert record supplies the Nebula scenario composition and setup.",
+          "disposition": "outside-core",
+          "reason": "This record requires The Galaxy's Most Wanted Nebula scenario, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
       "id": "setup:campaign:red_skull",
       "fingerprint": "sha256:3780aa4f86373e4bff91cc3a6c0b5c2f140438063e70fcb06d40258bcdccea67",
       "obligations": [

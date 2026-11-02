@@ -251,7 +251,7 @@ internal static class AbilityAdmissionAreaDependencies
         effect switch
         {
             AbilityEffect.ReplaceStatus or AbilityEffect.AttackAnotherEnemy or AbilityEffect.GiveStatus or AbilityEffect.RemoveStatuses or AbilityEffect.ChangeForm or AbilityEffect.Draw
-                or AbilityEffect.DrawToHandSize or AbilityEffect.GainSurge
+                or AbilityEffect.DrawToHandSize or AbilityEffect.GainSurge or AbilityRoundEffect.MarkThisRound
                 or AbilityEffect.Fixed or AbilityEffect.Generate
                 or AbilityEffect.InitializeAuxiliaryDeck or AbilityEffect.RevealAuxiliaryTop
                 or AbilityEffect.ChooseCardsToHand or AbilityEffect.ReleaseBeneath or AbilityEffect.AllowPlayBeneath or AbilityEffect.AllowPlayFromDiscard or AbilityPricingEffect.ReduceSelfCostPerEngagedMinion or AbilityPricingEffect.ReduceSelfCostPerControlledTrait or AbilityPricingEffect.ReduceFirstAllyCost or AbilityEffect.DoubleResourceFor or AbilityEffect.Shuffle

@@ -36,4 +36,8 @@ public enum AbilityCardBinding
     DefendingCharacter,
     /// <summary>The played physical event, while in its playing owner's discard pile.</summary>
     DiscardedEvent,
+    /// <summary>The card this ability invocation most recently revealed.</summary>
+    Revealed,
+    /// <summary>This physical card after this ability has attached it.</summary>
+    AttachedThis,
 }
