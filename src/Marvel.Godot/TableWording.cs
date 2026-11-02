@@ -187,6 +187,20 @@ internal static class TableWording
     /// <summary>Where the seats the rail cannot show are.</summary>
     internal const string SeatOverflow = "More seats: scroll the rail.";
 
+    /// <summary>
+    /// The sidebar's seat context as chips: the seat you play (or a shared view), whose turn it is, and the seat
+    /// the table shows; a missing seat has no chip.
+    /// </summary>
+    internal static Wording[] SeatContext(string? yours, string? active, string? inspecting) =>
+    [
+        yours is null ? new("public_focus", "Shared view", "You are viewing the shared table and play no seat.")
+            : For(TableFact.YourSeat) with { Label = yours, Tooltip = $"You play {yours}." },
+        .. active is null ? Array.Empty<Wording>()
+            : [For(TableFact.ActiveSeat) with { Label = active, Tooltip = $"It is {active}'s turn." }],
+        .. inspecting is null ? Array.Empty<Wording>()
+            : [For(TableFact.PublicFocus) with { Label = inspecting, Tooltip = $"The table shows {inspecting}'s public workspace." }],
+    ];
+
     /// <summary>The legend strip's close control.</summary>
     internal const string CloseLegend = "Close the legend; the Rules toggle keeps it.";
 

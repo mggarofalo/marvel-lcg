@@ -108,6 +108,17 @@ public sealed class DesignSystemMigrationTests
         Assert.Empty(DecisionWording.Pending([], []));
     }
 
+    [Fact]
+    public void TheSidebarNamesYourSeatTheActiveSeatAndTheShownSeatAsChips()
+    {
+        Wording[] facts = TableWording.SeatContext("Spider-Man", "Thor", "Thor");
+        Assert.Equal(["your_seat", "active_seat", "public_focus"], facts.Select(fact => fact.Icon));
+        Assert.Equal(["Spider-Man", "Thor", "Thor"], facts.Select(fact => fact.Label));
+        Assert.Equal("It is Thor's turn.", facts[1].Tooltip);
+        Wording shared = Assert.Single(TableWording.SeatContext(null, null, null));
+        Assert.Equal("Shared view", shared.Label);
+    }
+
     private static DecisionComposer Composer(params Affordance[] offers) => new(new Prompt(
         0, Question.TurnOption, TimingPriority.Untimed, "test", "Choose", false, offers));
 
