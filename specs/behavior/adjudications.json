@@ -72581,6 +72581,42 @@
       ]
     },
     {
+      "id": "setup:campaign:ronan_the_accuser",
+      "fingerprint": "sha256:3fece7923d5d08057745c6af3bf4556aef7960312dbd38913a7134504ed38f75",
+      "obligations": [
+        {
+          "key": "ronan-the-accuser-setup",
+          "summary": "The ronan_the_accuser record supplies the Ronan the Accuser scenario composition and setup.",
+          "disposition": "outside-core",
+          "reason": "This record requires The Galaxy's Most Wanted Ronan the Accuser scenario, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
+      "id": "setup:campaign:ronan_the_accuser_expert",
+      "fingerprint": "sha256:98c78bde53e4fdccb78e828e0cae8d5928a45dc2ad3a9f83b2b572e005ada793",
+      "obligations": [
+        {
+          "key": "ronan-the-accuser-expert-setup",
+          "summary": "The ronan_the_accuser_expert record supplies the Ronan the Accuser scenario composition and setup.",
+          "disposition": "outside-core",
+          "reason": "This record requires The Galaxy's Most Wanted Ronan the Accuser scenario, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
       "id": "setup:campaign:taskmaster",
       "fingerprint": "sha256:3556e178ebd931d5cb1b8c47eb63446d8efef239a46084c9a2ebaad3e6da2701",
       "obligations": [

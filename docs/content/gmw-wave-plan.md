@@ -153,3 +153,12 @@ Medley and Space Pirates are admitted as modular sets; Galactic Artifacts is
 withheld until the engine can play a card from hand during an encounter card's
 When Defeated resolution. The evidence is in
 [gmw-modular-sets.md](gmw-modular-sets.md).
+
+## Packet 6 status
+
+Packet 6 is authored. All sixteen faces of the Ronan the Accuser scenario
+(16103–16116) have rows, and its Standard and Expert recipes are declared. The
+scenario is withheld, as Brotherhood of Badoon is: its encounter deck includes the
+withheld Ship Command set, so its closed faces keep both recipes out of discovery.
+The evidence is in [ronan-the-accuser.md](ronan-the-accuser.md).
+

@@ -57,7 +57,7 @@ internal static class CardEntryState
             return;
         }
         string key = "c_" + pool.Type;
-        long starting = checked((long)pool.Starting * (pool.PerPlayer ? world.Players : 1));
+        long starting = pool.StartingFor(world.Players);
         card.PlaceTokens(key, starting);
         events.Add(new FieldSet(card.ObjectId, key, 0, starting)
         {

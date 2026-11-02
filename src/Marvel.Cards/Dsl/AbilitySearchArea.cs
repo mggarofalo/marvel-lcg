@@ -22,4 +22,6 @@ public enum AbilitySearchArea
     YourPlayArea,
     /// <summary>In-play areas of every player, for card selection only.</summary>
     PlayerPlayAreas,
+    /// <summary>In-play areas of the villain's play area, for card selection only.</summary>
+    VillainPlayArea,
 }

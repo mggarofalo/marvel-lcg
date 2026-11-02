@@ -12,6 +12,23 @@ namespace Marvel.Rules.Play;
 /// </remarks>
 public static class AttachmentTransfer
 {
+    /// <summary>The modifier that keeps an attachment on its current host.</summary>
+    /// <remarks>
+    /// Superior Tactics (16113): "The Power Stone cannot be unattached from Ronan the
+    /// Accuser." <c>rr:cannot</c>: "The word 'cannot' is absolute and cannot be countermanded
+    /// by other abilities or effects." An ability that would move the attachment to another
+    /// host therefore does not move it. The spelling is an engine choice.
+    /// </remarks>
+    public const string ProhibitedField = "cannot_be_unattached";
+
+    /// <summary>Whether <paramref name="card"/>, attached in play, may leave its current host.</summary>
+    public static bool CanUnattach(World world, Card card)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(card);
+        return StateFields.Modified(world, card, ProhibitedField, world.Facts, world.Players) <= 0;
+    }
+
     /// <summary>Attaches <paramref name="card"/>, in play, to <paramref name="host"/>.</summary>
     public static void Move(World world, Card card, Card host, string trigger, List<GameEvent> events)
     {

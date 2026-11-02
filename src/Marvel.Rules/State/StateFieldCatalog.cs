@@ -220,7 +220,7 @@ public static class StateFieldCatalog
         or Play.BasicAttackCosts.DiscardField or Play.BasicAttackCosts.ResourceField or Play.ThwartPermissions.ProhibitedField
         or Play.ReadinessPermissions.ProhibitedField or Play.FormChangePermissions.ProhibitedField
         or Play.HeroSpecificPlayPermissions.ProhibitedField or Play.ObligationActionPermissions.ProhibitedField
-        or Play.AttackPermissions.KangProhibitedField
+        or Play.AttackPermissions.KangProhibitedField or Play.AttachmentTransfer.ProhibitedField
         or Play.BasicPowerDivision.AttackField or Play.BasicPowerDivision.ThwartField
         or Play.AttackDamageReduction.Field or Play.IndirectEnemyAttacks.Field
         or Play.BoostIconCounting.EncounterIncreaseField or Play.CardPayment.CostIncreaseField;

@@ -17,6 +17,7 @@ public sealed class ExpansionSetupAuthorityTests
             "setup:campaign:mutagen_formula", "setup:campaign:mutagen_formula_expert",
             "setup:campaign:red_skull", "setup:campaign:red_skull_expert",
             "setup:campaign:risky_business", "setup:campaign:risky_business_expert",
+            "setup:campaign:ronan_the_accuser", "setup:campaign:ronan_the_accuser_expert",
             "setup:campaign:taskmaster", "setup:campaign:taskmaster_expert",
             "setup:campaign:wrecking_crew_custom_aaaa",
             "setup:campaign:wrecking_crew_custom_aaab",
@@ -76,6 +77,7 @@ public sealed class ExpansionSetupAuthorityTests
         "setup:hero:groot" or "setup:hero:rocket_raccoon" or "setup:encounter-set:power_stone"
             or "setup:encounter-set:ship_command" or "setup:encounter-set:band_of_badoon"
             or "setup:campaign:brotherhood_of_badoon" or "setup:campaign:brotherhood_of_badoon_expert"
+            or "setup:campaign:ronan_the_accuser" or "setup:campaign:ronan_the_accuser_expert"
             or "setup:encounter-set:galactic_artifacts"
             or "setup:encounter-set:kree_militant" or "setup:encounter-set:menagerie_medley"
             or "setup:encounter-set:space_pirates" => "The Galaxy's Most Wanted",
