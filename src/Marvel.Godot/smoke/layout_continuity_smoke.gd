@@ -24,18 +24,32 @@ func _draft_summary_remains_reachable() -> bool:
 	if viewport == null or summary == null:
 		_fail("draft summary lacks a bounded viewport")
 		return false
+	# A drawn draft is its row of trackers and chips; otherwise its words. Synthetic stress checks geometry
+	# without inventing an engine decision.
+	var facts := main.find_child("DraftFacts", true, false) as Control
+	var drawn := facts != null and facts.visible
 	var original := summary.text
-	# Synthetic copy stress checks geometry without inventing an engine decision.
-	summary.text = "Synthetic draft summary\nKnown cost\nChosen target\nKnown consequence\nFinal consequence remains reachable"
+	var stress: Array[Control] = []
+	if drawn:
+		for text in ["Synthetic draft summary", "Known cost", "Chosen target", "Known consequence", "Final consequence remains reachable"]:
+			var line := Label.new()
+			line.text = text
+			line.custom_minimum_size = Vector2(facts.size.x, 0)
+			facts.add_child(line)
+			stress.append(line)
+	else:
+		summary.text = "Synthetic draft summary\nKnown cost\nChosen target\nKnown consequence\nFinal consequence remains reachable"
+	var last: Control = stress[-1] if drawn else summary
 	for frame in range(5): await process_frame
 	if viewport.get_global_rect().end.y > _viewport_size().y + 1:
 		_fail("draft consequences extend below the screen: " + str(viewport.get_global_rect()) + " root " + str(_viewport_size()))
 		return false
 	viewport.scroll_vertical = int(viewport.get_v_scroll_bar().max_value)
 	for frame in range(3): await process_frame
-	if summary.get_global_rect().end.y > viewport.get_global_rect().end.y + 1:
+	if last.get_global_rect().end.y > viewport.get_global_rect().end.y + 1:
 		_fail("last draft consequence cannot be reached by scrolling")
 		return false
+	for line in stress: line.queue_free()
 	summary.text = original
 	viewport.scroll_vertical = 0
 	return true

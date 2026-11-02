@@ -111,7 +111,7 @@ func _named_response_layout_is_clear(window: Control, choice: Button) -> bool:
 	if "Esc" not in pass_button.text:
 		_fail("the optional decline does not disclose its Escape shortcut")
 		return false
-	for control in [heading, cause, choice, pass_button]:
+	for control in [heading, answerer, choice, pass_button]:
 		if not _control_is_fully_visible(control):
 			_fail("named response control is clipped: " + str(control.name))
 			return false

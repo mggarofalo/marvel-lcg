@@ -46,12 +46,17 @@ func _open_hank_payment() -> bool:
     if not await _capture_checkpoint("hank-composition"): return false
     return true
 
+# Payment progress is pips; its words are the tracker's hover.
+func _paid() -> String:
+    var paid := main.find_child("PaymentProgress", true, false) as Control
+    return paid.tooltip_text if paid != null else ""
+
 func _stage_hank_payment() -> bool:
     army = Array(payment_witness.Cards("12007", "HandsArea", 0))
     if not await ui.expect(func(): return army.size() == 1 and witness.Revision() == 1, "one physical Army and no commitment"): return false
     if not await ui.click(ui.named("Resource%d" % army[0])): return false
     if not await ui.expect(func(): return witness.Revision() == 1 and \
-        Array(payment_witness.DraftResources()) == [army[0]] and "1 resource" in _visible_text(main), \
+        Array(payment_witness.DraftResources()) == [army[0]] and "1 resource" in _paid(), \
         "the exact Army is staged as one resource without commitment"): return false
     var selected_copy := _visible_text(main).to_lower()
     if not await ui.expect(func(): return "excess" in selected_copy and "lost" not in selected_copy, \
@@ -76,7 +81,7 @@ func _accept_hank_interrupt() -> bool:
     var window := main.find_child("LocalDecisionWorkspace", true, false) as Control
     if not await ui.expect(func(): return window != null and window.is_visible_in_tree(), "entry choice stays visible"): return false
     var copy := _visible_text(window).to_lower()
-    if not await ui.expect(func(): return "player 1" in copy and "pass this opportunity" in copy and \
+    if not await ui.expect(func(): return "optional" in copy and "pass this opportunity" in copy and \
         "counter" in copy and ("hit point" in copy or "health" in copy) and "12011" not in copy, \
         "entry choice explains the optional counter and health consequence without an internal id"): return false
     var group := window.find_child("ChoiceGroup0", true, false)
