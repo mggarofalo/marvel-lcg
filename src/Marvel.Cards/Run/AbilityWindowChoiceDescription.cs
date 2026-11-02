@@ -69,10 +69,11 @@ internal static class AbilityWindowChoiceDescription
             { Players: AbilityPlayerSelection.OnePlayer { Player: AbilityPlayer.ChosenPlayer } } draw)
             return DrawChoice(draw, world.Cards[option.Id], world, option.Id);
         return new WindowChoice(option.Id, option.CommitLabel ?? option.DisplayLabel ?? option.Label,
-            option.Description) { RecipientIds = [option.Id] };
+            option.Description) { RecipientIds = [option.Id], Effect = AbilityEffectFacts.Printed(choice.Effect) };
     }
 
+    // The label names the drawing player and the count, the whole effect, so no description repeats it.
     private static WindowChoice DrawChoice(AbilityEffect.Draw draw, Card recipient, World world, int? target) =>
         new(target, $"{EffectiveCards.Title(recipient, world.Facts)} draws {draw.Count} card{(draw.Count == 1 ? "" : "s")}",
-            AbilityEffectDescription.Summary(draw)) { RecipientIds = [recipient.ObjectId] };
+            null) { RecipientIds = [recipient.ObjectId], Effect = AbilityEffectFacts.Printed(draw) };
 }

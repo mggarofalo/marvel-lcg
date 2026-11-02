@@ -42,6 +42,7 @@ internal static class AbilityChoicePromptDescription
                 context.Expressions.World, context.SourceFace, cardChoice)
                 : $"{context.Expressions.World.Facts.Title(context.SourceFace)}: choose an option",
             Description = DescribePrompt(context, choice),
+            Effect = choice is AbilityEffect.ChooseCard chosen ? AbilityEffectFacts.Printed(chosen.Effect) : null,
             ExposesConcealedCandidates = concealedCards,
             PublicKind = concealedCards ? PublicDecisionKind.CardSearch : PublicDecisionKind.Choice,
         };

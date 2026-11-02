@@ -73,6 +73,8 @@ public sealed class PresentationAssemblyPolicyTests
             "Marvel.Rules.Prompts.Prompt",
             // An attack's facts, filtered to readable cards and named for the viewer.
             "Marvel.Rules.Prompts.PromptAttack",
+            // A printed effect, public instruction text passed to the decision frame unchanged.
+            "Marvel.Rules.Prompts.PromptEffect",
             // Passive public purpose without answer choices.
             "Marvel.Rules.Prompts.PublicDecisionKind",
             "Marvel.Rules.Prompts.Question",
@@ -239,12 +241,17 @@ public sealed class PresentationAssemblyPolicyTests
             "Marvel.Rules.Prompts.Prompt",
             // An attack's facts are validated as complete; they grant no decision authority.
             "Marvel.Rules.Prompts.PromptAttack",
+            // A printed effect is validated as complete; it grants no decision authority.
+            "Marvel.Rules.Prompts.PromptEffect",
+            "Marvel.Rules.Prompts.PromptEffectKind",
             // Passive public situation validation grants no decision authority.
             "Marvel.Rules.Prompts.PublicDecisionKind",
             "Marvel.Rules.Prompts.ResourceCost",
             "Marvel.Rules.Prompts.ResourceSource",
             "Marvel.Rules.Prompts.TargetRequest",
             "Marvel.Rules.Prompts.VariableRequest",
+            // A window choice's printed effect is validated as complete; the choice grants no authority here.
+            "Marvel.Rules.Prompts.WindowChoice",
             "Marvel.Rules.Play.Decision",
             // Wire referential integrity, not game legality.
             "Marvel.Protocol.EncounterGroupContract",

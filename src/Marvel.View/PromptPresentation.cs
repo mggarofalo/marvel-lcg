@@ -125,6 +125,7 @@ public sealed record PromptPresentation(
             Causes(prompt, world), prompt.Description?.Trim() ?? string.Empty)
         {
             Attack = Attack(prompt.Attack, world),
+            Effect = prompt.Effect,
         };
     }
 

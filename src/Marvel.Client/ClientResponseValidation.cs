@@ -240,9 +240,7 @@ internal static class ClientResponseValidation
         // A cancellable turn prompt may have no legal actions left. Passing is
         // still a complete decision, so the empty option list is not a broken
         // response and must remain synchronizable after the last action.
-        && CompleteContext(prompt.ContextCardIds)
-        && CompleteContext(prompt.CauseCardIds)
-        && CompleteAttack(prompt.Attack)
+        && CompleteFacts(prompt)
         && prompt.Affordances is not null
         && (prompt.Cancellable || prompt.Affordances.Count > 0)
         && prompt.Affordances.All(CompleteAffordance);
@@ -250,12 +248,24 @@ internal static class ClientResponseValidation
     private static bool CompleteAttack(PromptAttack? attack) =>
         attack is null || attack.Attacker >= 0 && attack.Target >= 0;
 
+    // The prompt's context, causes, attack and effect: passive facts a client shows, never authority.
+    private static bool CompleteFacts(Prompt prompt) =>
+        CompleteContext(prompt.ContextCardIds) && CompleteContext(prompt.CauseCardIds)
+        && CompleteAttack(prompt.Attack) && CompleteEffect(prompt.Effect);
+
+    private static bool CompleteEffect(PromptEffect? effect) =>
+        effect is null || Enum.IsDefined(effect.Kind) && effect.Amount >= 0;
+
+    private static bool CompleteChoices(IReadOnlyList<WindowChoice>? choices) =>
+        choices is not null && choices.All(choice => choice is not null && CompleteEffect(choice.Effect));
+
     private static bool CompleteContext(IReadOnlyList<int>? ids) =>
         ids is not null && ids.All(id => id >= 0);
 
     private static bool CompleteAffordance(Affordance option) =>
         option is not null && option.Verb is not null && option.Label is not null
         && CompleteContext(option.ContextCardIds)
+        && CompleteChoices(option.WindowChoices)
         && CompleteTargets(option.Targets) && CompleteCosts(option.Costs);
 
     private static bool CompleteTargets(TargetRequest? targets) => targets is null

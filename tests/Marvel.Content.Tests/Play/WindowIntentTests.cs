@@ -29,6 +29,7 @@ public sealed class WindowIntentTests : ChoosingCardsTestBase
             : world.TheCardIn(DeckType.VillainArea)!;
         var intention = Assert.Single(offer.WindowChoices, item => item.TargetId == enemy.ObjectId);
         Assert.Equal($"Stun {Cards.Title(enemy.FaceId)}", intention.Label);
+        Assert.All(offer.WindowChoices, item => Assert.Equal(new PromptEffect(PromptEffectKind.Stun, 0), item.Effect));
         var events = new List<GameEvent>();
         Sequence.Answer(world, Cards, runner, prompt, Decision.Take(source.ObjectId, [enemy.ObjectId], []), events);
         Assert.True(Statuses.Has(world, enemy, Statuses.Stunned));
@@ -88,6 +89,9 @@ public sealed class WindowIntentTests : ChoosingCardsTestBase
         if (costly) { Assert.Empty(offer.WindowChoices); Assert.NotEmpty(offer.CostOptions); return; }
         var intention = Assert.Single(offer.WindowChoices);
         Assert.Equal("Peter Parker draws 1 card", intention.Label);
+        // The label names the drawing player and count, so no description repeats it; the count is a typed fact.
+        Assert.Null(intention.Description);
+        Assert.Equal(new PromptEffect(PromptEffectKind.Draw, 1), intention.Effect);
         int before = world.Seats[0].Hand.Cards.Count;
         runner.ResolveWindow(world, occurrence, new PendingAbility(source.ObjectId, AbilityType.Response, 0), new Decision(source.ObjectId, [intention.TargetId!.Value], []));
         Assert.Equal(before + 1, world.Seats[0].Hand.Cards.Count);

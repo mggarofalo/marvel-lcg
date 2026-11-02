@@ -222,6 +222,8 @@ public sealed class PresentationSourcePolicyTests
             "Marvel.Rules.Prompts.Prompt.DeclineLabel",
             "Marvel.Rules.Prompts.Prompt.Description",
             "Marvel.Rules.Prompts.Prompt.DisplayQuestion",
+            // A printed effect: the instruction's public constant, never a concealed count.
+            "Marvel.Rules.Prompts.Prompt.Effect",
             "Marvel.Rules.Prompts.Prompt.ExposesConcealedCandidates",
             "Marvel.Rules.Prompts.Prompt.Label",
             "Marvel.Rules.Prompts.Prompt.Player",

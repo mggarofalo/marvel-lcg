@@ -18,6 +18,9 @@ public sealed record DecisionFrame(
     /// <summary>The enemy attack the decision is taken within, or null when there is none or it is unreadable.</summary>
     public DecisionAttack? Attack { get; init; }
 
+    /// <summary>What choosing any offered card does, as the engine's printed effect, or null when it states none.</summary>
+    public Marvel.Rules.Prompts.PromptEffect? Effect { get; init; }
+
     /// <summary>A frame with no seat, subject or instruction, for samples and synthetic prompts.</summary>
     public static DecisionFrame Empty { get; } = new("", DecisionSubject.None, null, false, [], "");
 }
