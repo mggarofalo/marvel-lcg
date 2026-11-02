@@ -27,7 +27,6 @@ public sealed class InvocationEliminationTests
     [Rule("rr:player-elimination.step.5")]
     [Rule("rr:player-elimination.5")]
     [Rule("rr:removed-from-the-game.2")]
-    [Rule("ruling:79c57a49f6e38fe0")]
     public void AnInvocationWhoseResolverIsEliminatedFinishesTheSpecialAndStaysRemoved(bool master)
     {
         // rr:player-elimination.step.5: "Remove the eliminated player's play area and
