@@ -28,8 +28,6 @@ public static class AttackDamageMaximum
         long? maximum = null;
         foreach (var effect in world.Effects.Active())
         {
-            // Equivalent mutant: every maximum is a granted modifier, so the role test excludes
-            // nothing today; it keeps a printed base value from reading as a maximum.
             if (effect.ValueRole != ContinuousValueRole.Modifier
                 || !string.Equals(effect.Kind, Field, StringComparison.Ordinal)
                 || !effect.AppliesTo(world, target)) continue;

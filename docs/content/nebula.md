@@ -39,14 +39,18 @@ Heroes entries in `datasets/rulings/`.
   Techniques in attachment order, which no rule orders and no state reads. The
   hero Nebula's Technique ruling (ce1123737f82aa7e) does not apply to the villain,
   and the hero Nebula cannot be played in this scenario (ruling 5bdb22a5edc6a0b6).
-- **The first Technique revealed each round gains surge.** The grant is authored
-  on each Technique as a When Revealed ability, since surge is one (rr:surge.1):
-  while Nebula is in play, the first Technique revealed in a round records a
-  round mark and gains surge. A Technique resolved as a boost card is not revealed
-  (rr:boost-boost-icon) and does not use the round's surge. Engine choice: a
-  Technique boost card resolves its Special before it attaches to Nebula, since a
-  card entering play is a new object that "this" no longer names, and no Special
-  reads where its own card is.
+- **The first Technique revealed each round gains surge.** Each Nebula stage has
+  a forced interrupt to a card being revealed: for the first Technique attachment
+  revealed in a round it records a round mark and gives that card surge until the
+  end of the phase. Canceling the card's effects, as Black Widow (01075) does,
+  cancels the surge, a When Revealed ability (rr:surge.1; ruling 4e44bf466c0d8971),
+  but the card was still revealed, so the next Technique does not gain surge. A
+  Technique resolved as a boost card is not revealed (rr:boost-boost-icon) and does
+  not use the round's surge.
+- **A Technique boost card** attaches to Nebula after the activation and then
+  resolves its Special, in the printed order. Attaching makes the card a new
+  object, so the Special names it as the same physical card now attached
+  (`attachedThis`).
 - **Setup.** The Art of Evasion's Setup, resolved in step 12a
   (rr:appendix-ii-setup.step.12.a), puts the set-aside Nebula's Ship into play and
   discards the top 2 encounter cards per player, attaching each Technique among
@@ -78,14 +82,21 @@ Heroes entries in `datasets/rulings/`.
 
 ## Engine changes and existing content
 
-No admitted card changes behaviour, so the replay identity stays
-`engine-replay-v36` ([session-ledger.md](../session-ledger.md)). The words are
-documented in [card-dsl.md](../card-dsl.md).
+The replay identity stays `engine-replay-v36`
+([session-ledger.md](../session-ledger.md)): no admitted card changes behaviour in
+a reachable state. One admitted card reads a changed rule: Pirate Lackey's (16139)
+removal of the top card of a player's deck now has no target while that deck is
+empty. A player deck that empties resets at once (rr:player-deck.1), so the state
+cannot arise in play; were it reached, the game state would be the same and only
+the event trace could differ. The words are documented in
+[card-dsl.md](../card-dsl.md).
 
 - `markThisRound` and `markedThisRound` record and read a named fact that lasts
   until the end of the round (`RoundMarks`).
 - `revealed` names the card the resolving effect revealed; the lowering requires
   a revealing effect and refuses a read before it.
+- `attachedThis` names this physical card once the ability has attached it; the
+  lowering requires an `attachCards` of `this` in the same effect.
 - `discardEach` discards every card a plural selection finds.
 - `attack_damage_maximum` is a modifiable field; damage placement applies the
   smallest maximum to an attack's damage after its reductions

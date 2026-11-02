@@ -38,4 +38,6 @@ public enum AbilityCardBinding
     DiscardedEvent,
     /// <summary>The card this ability invocation most recently revealed.</summary>
     Revealed,
+    /// <summary>This physical card once this ability has attached it.</summary>
+    AttachedThis,
 }

@@ -34,6 +34,24 @@ public sealed class NebulaLoweringTests : CoreCardTestBase
         Assert.Contains("revealed is read only by an effect", failure.Message, StringComparison.Ordinal);
     }
 
+    [Theory]
+    [InlineData("""{"resolveSpecials":{"cards":"attachedThis"}}""", "attachedThis requires an effect that attaches this card")]
+    [InlineData("""{"seq":[{"attachCards":{"cards":{"titled":"Wide Stance"},"host":{"titled":"Nebula"}}},{"resolveSpecials":{"cards":"attachedThis"}}]}""",
+        "attachedThis requires an effect that attaches this card")]
+    public void TheAttachedCardNeedsAnEffectThatAttachesThisCard(string effect, string message)
+    {
+        var failure = Assert.Throws<AbilityException>(() => Lower(
+            """{"trigger":{"event":"WhenCardRevealed","timing":"Boost","subject":"this"},"effect":""" + effect + "}"));
+        Assert.Contains(message, failure.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void TheAttachedCardFollowsAnAttachmentOfThisCard()
+    {
+        Assert.Null(Record.Exception(() => Lower(
+            """{"trigger":{"event":"WhenCardRevealed","timing":"Boost","subject":"this"},"effect":{"seq":[{"attachCards":{"cards":"this","host":{"titled":"Nebula"}}},{"resolveSpecials":{"cards":"attachedThis"}}]}}""")));
+    }
+
     [Fact]
     public void ACounterNamedRevealedIsNotTheRevealedCard()
     {
@@ -97,8 +115,34 @@ public sealed class NebulaLoweringTests : CoreCardTestBase
             Affects: nebula.ObjectId));
 
         Assert.Equal(3, AttackDamageMaximum.Amount(world, nebula));
+        // A base definition of the field is not a maximum.
+        world.Effects.Register(new ContinuousEffect(EffectSource.LastingEffect, AttackDamageMaximum.Field, 1,
+            Affects: nebula.ObjectId) { ValueRole = ContinuousValueRole.BaseDefinition });
+        Assert.Equal(3, AttackDamageMaximum.Amount(world, nebula));
         Assert.Null(AttackDamageMaximum.Amount(world, world.Seats[0].IdentityCard));
         Assert.True(StateFields.IsModifiable(AttackDamageMaximum.Field));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    [Rule("rr:choose-option.1")]
+    public void AnOptionThatDiscardsEachSelectedCardNeedsOneInPlay(bool attached)
+    {
+        // A synthetic Milano action choosing between discarding each attachment in the
+        // villain's play area and drawing a card.
+        var world = NebulaBoards.Board();
+        world.Abilities = new AbilityRunner(AbilityCatalog.Parse(
+            """{"cards":[{"card":"16142","abilities":[{"trigger":{"event":"WhenActionTriggered","timing":"Action","subject":"this"},"effect":{"choose":{"descriptions":["Discard each attachment","Draw a card"],"options":[{"discardEach":{"cardsIn":{"area":"villainPlayArea","kind":"Attachment"}}},{"draw":{"player":"you","count":1}}]}}}]}]}"""));
+        var milano = ShipCommandBoards.PutMilano(world);
+        if (attached) NebulaBoards.Technique(world, NebulaBoards.WideStance);
+        var action = Assert.Single(ShipCommandBoards.ActionsOn(world, milano, 0));
+        world.Agenda.AddPlayerAction(0, new PlayerAction(action, [], []));
+
+        var asked = NebulaBoards.Choose(world, "Draw a card");
+
+        Assert.Equal(attached, asked.Any(prompt => prompt.Affordances.Any(a =>
+            (a.Description ?? a.Label).Contains("Discard each attachment", StringComparison.Ordinal))));
     }
 
     [Fact]

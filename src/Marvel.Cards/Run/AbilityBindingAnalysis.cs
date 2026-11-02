@@ -59,7 +59,7 @@ internal static class AbilityBindingAnalysis
         AbilityCardSelection.StatusCardsOn statuses => statuses.Host is AbilityCardBinding.Chosen or AbilityCardBinding.That,
         AbilityCardSelection.InPlayerArea area => area.Player == AbilityPlayer.ChosenPlayer,
         AbilityCardSelection.Bound bound => bound.Binding is AbilityCardBinding.Chosen or AbilityCardBinding.That
-            or AbilityCardBinding.Revealed,
+            or AbilityCardBinding.Revealed or AbilityCardBinding.AttachedThis,
         AbilityCardSelection.Query query => query.Kind is AbilityCardQuery.PowerTargets
             or AbilityCardQuery.EnemiesEngagedWithChosenPlayer,
         AbilityCardSelection.WithTrait trait => BindingCanChange(trait.Cards),

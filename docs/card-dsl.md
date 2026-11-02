@@ -585,7 +585,7 @@ language without documentation.
 ```text
 addToHand afterActivation allies alliesAndSupportsYouControl alliesYouControl
 alsoAttackEachOtherHero among
-atLeast attachedToThis attackDamageDealt attackDamaged attackableEnemies attackableMinions
+atLeast attachedThis attachedToThis attackDamageDealt attackDamaged attackableEnemies attackableMinions
 automaticTarget canAutomaticThwart canLegalPractice
 canMakeTheCall cancelOccurrence cancelWhenRevealed cardsIn changeForm characters countDiscardedInstead decreaseBoostCount
 charactersYouControl choose chooseCard chooseDiscardToShuffle chooseTopForHand
@@ -2418,9 +2418,11 @@ The spellings in this section are engine choices.
 `{"markedThisRound": "<name>"}` is true while it is recorded. The record has no
 source card, so it outlives the card that made it, including a villain stage
 change. Nebula's "the first Technique attachment revealed each round gains surge"
-is a When Revealed ability on each Technique attachment that, if no mark is
-recorded, marks the round and gains surge (surge is a When Revealed ability,
-`rr:surge.1`). Each name is its own fact.
+is a forced interrupt to a card being revealed that, for a Technique attachment
+while no mark is recorded, marks the round and grants the card `surge` until the
+end of the phase. Canceling the card's effects cancels that surge, a When Revealed
+ability (`rr:surge.1`), and leaves the round marked. `markThisRound` is always
+admitted; only its readers decide anything. Each name is its own fact.
 
 A When Revealed ability takes no `when`: every When Revealed ability on a revealed
 card resolves (`rr:when-revealed-abilities`), so lowering refuses one and its
@@ -2432,6 +2434,14 @@ then resolve[s] its Special ability" as a `discardUntil` with `then: "reveal"`
 followed by `{"resolveSpecials": {"cards": "revealed"}}`. As for
 `differentTitleFromRevealed`, an ability may name it only in an effect that
 reveals a card, and never in a cost or a `when`.
+
+The `attachedThis` card binding names this physical card once the same effect has
+attached it with `attachCards` of `this`: attaching makes the card a new object
+that `this` no longer names. Cutthroat Ambition's boost "attach[es] this card to
+Nebula and resolve[s] its Special ability" as `attachCards` of `this` followed by
+`{"resolveSpecials": {"cards": "attachedThis"}}`. While the card is not attached
+the binding names nothing. Lowering admits it only in an effect that attaches
+`this`, never in a cost or a `when`.
 
 `{"discardEach": <selector>}` discards every selected card in play, in the
 selection's order (`rr:discard.3`); `discard` names one card.

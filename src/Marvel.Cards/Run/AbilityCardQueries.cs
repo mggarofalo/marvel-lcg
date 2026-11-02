@@ -98,13 +98,7 @@ internal static class AbilityCardQueries
         // rr:defend-defense.6: without a defending character the attack is
         // undefended, including when a boost ability defeats its defending ally.
         AbilityCardBinding.DefendingCharacter => CurrentDefender(cast.World),
-        // Printed 16101 Combat Ready: "Reveal that card, then resolve its 'Special'
-        // ability." The card the invocation revealed last, once its reveal resolved.
-        // Equivalent mutant: every ability that names it reveals one card, so first and last agree.
-        AbilityCardBinding.Revealed => (cast.RevealedThisResolution ?? throw new RulesNotImplementedException(
-                $"'{cast.Source.FaceId}' names the revealed card outside an ability invocation")) is { Count: > 0 } revealed
-            ? cast.World.Cards[revealed[^1]] : null,
-        _ => throw new InvalidOperationException("Unknown compiled card binding"),
+        _ => AbilityResolutionMemoryCards.Named(name, cast),
     };
 
     private static Card? TriggerActor(AbilityQueryContext cast)

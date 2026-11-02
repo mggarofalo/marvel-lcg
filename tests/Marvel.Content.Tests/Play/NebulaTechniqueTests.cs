@@ -1,3 +1,4 @@
+using Marvel.Rules.Prompts;
 using Marvel.Rules.Play;
 using Marvel.Rules.State;
 using Marvel.Rules.Timing;
@@ -70,6 +71,53 @@ public sealed class NebulaTechniqueTests : CoreCardTestBase
         RonanBoards.Reveal(world, NebulaBoards.WideStance);
         BadoonBoards.Drive(world);
         Assert.Equal(1, NebulaBoards.Dealt(world));
+    }
+
+    [Fact]
+    [Rule("rr:cancel.4")]
+    public void ACanceledTechniqueLosesItsSurgeButIsStillTheFirstRevealedThisRound()
+    {
+        // Black Widow (01075) cancels the revealed Weapon Mastery and reveals the next card,
+        // Wide Stance. Canceling cancels the surge (ruling 4e44bf466c0d8971), but Weapon Mastery
+        // was revealed, so Wide Stance is not the first Technique revealed this round.
+        var world = NebulaBoards.Board();
+        var nebula = GrootBoards.Villain(world);
+        var widow = world.CreateCard("01075", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0)));
+        var payment = GrootBoards.Hand(world, "01089");
+        var stance = BadoonBoards.OnTop(world, NebulaBoards.WideStance);
+        var mastery = RonanBoards.Reveal(world, NebulaBoards.WeaponMastery);
+
+        BadoonBoards.Drive(world, prompt => prompt.Affordances.FirstOrDefault(a => a.AnchorId == widow.ObjectId)
+            is { } cancel ? Decision.Take(cancel.Id, [], [payment.ObjectId]) : null);
+
+        Assert.Equal(DeckType.EncounterDiscardPile, mastery.Area.Type);
+        Assert.Equal(nebula.ObjectId, stance.Area.Host);
+        Assert.False(widow.Ready);
+        Assert.Equal(0, NebulaBoards.Dealt(world));
+    }
+
+    [Fact]
+    [Rule("rr:boost-boost-icon")]
+    public void ATechniqueBoostCardIsAttachedBeforeItsSpecialCanShuffleTheDiscardPile()
+    {
+        // Cutthroat Ambition's Special completes The Art of Evasion (6 threat); Warp Drive
+        // Initiated then discards from an encounter deck of one card, which resets it from the
+        // discard pile. Cutthroat Ambition is already attached, so it stays attached.
+        var world = NebulaBoards.Board();
+        var nebula = GrootBoards.Villain(world);
+        nebula.TakeDamage(10);
+        NebulaBoards.PutShip(world);
+        world.CreateCard(NebulaBoards.WarpDrive, world.AreaOf(DeckType.MainSchemesDeck));
+        GrootBoards.MainScheme(world).PlaceTokens("k_threat", 5);
+        foreach (var card in world.AreaOf(DeckType.EncounterDeck).Cards.Skip(1).ToArray())
+            World.MoveToTop(card, world.AreaOf(DeckType.RemovedArea));
+        var boost = BadoonBoards.OnTop(world, NebulaBoards.Cutthroat);
+
+        KangTemporalFixture.Activate(world, nebula, scheme: false, 0);
+        BadoonBoards.Drive(world);
+
+        Assert.Equal("16092b", GrootBoards.MainScheme(world).FaceId);
+        Assert.Equal(nebula.ObjectId, boost.Area.Host);
     }
 
     [Theory]
