@@ -81,7 +81,7 @@ New vocabulary only; no admitted card changes behaviour, so the replay identity
 stays `engine-replay-v36` ([session-ledger.md](../session-ledger.md)). The words
 are documented in [card-dsl.md](../card-dsl.md).
 
-- `scheme` is a ranked selector (`AbilityCardRank.Scheme`, prompt noun "SCH").
+- `scheme` is a ranked selector (`AbilityCardRank.Scheme`), read on the live board.
 - `attacks_deal_indirect_damage` is a modifiable field read when an enemy attack
   is prepared (`IndirectEnemyAttacks`).
 - `removeFromGameAtRandom` and `removeTopFromGame` remove player cards from the
@@ -103,3 +103,5 @@ are documented in [card-dsl.md](../card-dsl.md).
   `GalaxyModularPublicRestartTests`.
 - A zero-raise scan of every admitted scenario mode × seeds 1–40 × one and two
   players, with each admitted set as the modular set, is reported on MARVEL-904.
+- Complete non-gmw games played on main and on this branch produce the same
+  prompts and state digests, so the replay identity is unchanged.
