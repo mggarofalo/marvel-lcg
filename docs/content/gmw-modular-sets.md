@@ -91,7 +91,9 @@ has no FAQ entry for these cards; the rulings are Hall of Heroes entries in
 
 ## Engine changes and existing content
 
-The words are documented in [card-dsl.md](../card-dsl.md).
+The words are documented in [card-dsl.md](../card-dsl.md). No admitted card
+outside Galactic Artifacts changes behaviour, so the replay identity stays
+`engine-replay-v36` ([session-ledger.md](../session-ledger.md)).
 
 - `playFromHand` (MARVEL-911) plays a card from the resolving player's hand at a
   stated reduction, optionally declinable. It shares the scoped play of
@@ -119,8 +121,19 @@ The words are documented in [card-dsl.md](../card-dsl.md).
 - Admission: `GalaxyModularSetAdmissionTests`.
 - Complete public games with exact same-seed replay, two per admitted set:
   `GalaxyModularPublicGameTests`; a fresh-host round trip per admitted set:
-  `GalaxyModularPublicRestartTests`.
+  `GalaxyModularPublicRestartTests`. Galactic Artifacts' are `CrystalBallPublicTests`:
+  three public starter games (one with two players) in which Crystal Ball's
+  defeater plays a card, and a fresh-host round trip at that prompt. The deal is
+  unarranged; a player thwarts Crystal Ball whenever a turn offers it.
 - A zero-raise scan of every admitted scenario mode × seeds 1–40 × one and two
   players, with each admitted set as the modular set, is reported on MARVEL-904.
 - Complete non-gmw games played on main and on this branch produce the same
-  prompts and state digests, so the replay identity is unchanged.
+  prompts and state digests, so the replay identity is unchanged. For
+  MARVEL-911, 890 completed games (every hero in twelve scenarios, Scarlet Witch
+  and Ant-Man for the existing scoped plays, pairs, and six modular sets) match
+  919ceb77 exactly.
+- Crystal Ball's own scan (MARVEL-911): 1,600 games with Galactic Artifacts as the
+  modular set, played plainly, again thwarting Crystal Ball when offered, and again
+  with Crystal Ball placed at setup so most games reach its play. The last made
+  1,572 Crystal Ball plays of 147 distinct cards (564 events, 418 upgrades, 321
+  allies, 269 supports). All three had zero raises and zero failures.
