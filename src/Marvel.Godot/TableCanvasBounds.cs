@@ -16,7 +16,11 @@ internal static class TableCanvasBounds
     {
         float bottom = main.GetViewportRect().Size.Y + main.pageScroll.OffsetBottom
             - main.GetNode<PanelContainer>("Margin/Shell").GetThemeStylebox("panel").GetMargin(Side.Bottom);
-        return Fit(bottom - main.boardAreas.GetGlobalRect().Position.Y - 4);
+        // Until the page has laid out, the board can sit above the page's own top; its room is unknown then,
+        // and the table keeps the reference height.
+        float top = main.boardAreas.GetGlobalRect().Position.Y;
+        return top < main.pageScroll.GetGlobalRect().Position.Y
+            ? Math.Min(AstraTableGeometry.ReferenceHeight, Fit(bottom - top - 4)) : Fit(bottom - top - 4);
     }
 
     /// <summary>
