@@ -23,14 +23,17 @@ internal static class AbilityStructuralExecution
             or "forEach" or "eachTime" or "choose" or "chooseCard"
             or "resolveSpecials" or "payOrExhaust" or "payOrEffect"
             or "chooseTopForHand" or "peekTop" or "inspectEncounterTop" or "inspectDiscardOrderEncounterTop" or "discardHandCards" or "discardResourceIcons" or "chooseStatusRecipients" or "chooseHealRecipients" or "chooseCardsToHand" or "chooseDiscardToShuffle" or "exhaustAnyNumber"
-            or "distributeThreat" or "thwartDifferentSchemes" or "makeTheCall" or "playSharedHeroTraitCard" or "playIgnoringResourceCost" or "legalPractice"
+            or "distributeThreat" or "thwartDifferentSchemes" or "makeTheCall" or "legalPractice"
             or "attack" or "defense" or "thwart" or "thwartSchemes"
-            or "placeThreat" or "enemyAttacks" or "enemySchemes");
+            or "placeThreat" or "enemyAttacks" or "enemySchemes") && !AbilityScopedPlay.IsScopedPlay(effect);
 
     internal static AbilityStructuralTransition Decide(AbilityStructuralContext context, AbilityEffect effect)
     {
-        if (effect.OperationName() is "makeTheCall" or "playSharedHeroTraitCard" or "playIgnoringResourceCost" or "playIgnoringResourceCost" or "legalPractice" or "peekTop" or "inspectEncounterTop" or "inspectDiscardOrderEncounterTop")
+        if (effect.OperationName() is "makeTheCall" or "legalPractice" or "peekTop" or "inspectEncounterTop" or "inspectDiscardOrderEncounterTop")
             return AskFor(context, effect);
+        // A scoped play with no card that can be played now resolves nothing.
+        if (AbilityScopedPlay.IsScopedPlay(effect))
+            return AbilityScopedPlay.Describe(context, effect).Affordances.Count == 0 ? new Complete(context.Frames) : AskFor(context, effect);
         return effect switch
         {
             AbilityEffect.ResolveInvocation => AbilityInvocationPayment.Resolve(context),

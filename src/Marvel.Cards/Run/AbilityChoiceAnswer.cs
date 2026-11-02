@@ -40,7 +40,9 @@ internal sealed class AbilityChoiceAnswer(
     private List<Marvel.Rules.Events.GameEvent> ApplyRemaining(AbilityEffect choice, string operation)
     {
         if (operation == "makeTheCall") return ApplyMakeTheCall(choice);
-        if (operation is "playSharedHeroTraitCard" or "playIgnoringResourceCost") return AbilitySharedTraitPlay.Commit(execution, cast, choice, input);
+        // Equivalent mutant: a declined play is the last thing its frame does (lowering
+        // admits nothing after playFromHand), so continuing and stopping end alike today.
+        if (AbilityScopedPlay.IsScopedPlay(choice)) return AbilityScopedPlay.Commit(execution, cast, choice, input) ? cast.Events : Continue();
         if (operation == "indirectDamage") return ApplyIndirectDamage(choice);
         if (operation == "attack") return ApplyCountedAttack((AbilityEffect.Power)choice);
         return ApplyResumableEffectChoice(choice);

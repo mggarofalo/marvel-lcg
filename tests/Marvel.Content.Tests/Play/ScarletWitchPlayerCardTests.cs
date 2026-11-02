@@ -21,6 +21,8 @@ public sealed class ScarletWitchPlayerCardTests
     private const string CrisisAverted = "15012";
     private const string SideScheme = "01125";
     private const string Ally = "01058";
+    private const string StrengthInNumbers = "03017";
+    private const string SpeedCyclone = "14006";
 
     [Fact]
     [Rule("rr:encounter-deck.1")]
@@ -94,6 +96,7 @@ public sealed class ScarletWitchPlayerCardTests
         var choice = Assert.IsType<Prompt>(Sequence.Work(world, world.Facts, runner, []));
         var play = Assert.Single(choice.Affordances, offer => offer.AnchorId == pietro.ObjectId);
         Assert.Equal("0", Assert.Single(play.Costs!).Cost);
+        Assert.StartsWith("Played ignoring its resource cost; then discard 4 encounter cards", play.Description);
         Sequence.Answer(world, world.Facts, runner, choice, Decision.Take(play.Id), []);
         Drive(world, runner, _ => null);
         Assert.Equal(DeckType.AlliesArea, pietro.Area.Type);
@@ -123,6 +126,59 @@ public sealed class ScarletWitchPlayerCardTests
         Assert.Equal(2, main.Tokens["k_threat"]);
         Assert.Equal(encounter - 3, world.AreaOf(DeckType.EncounterDeck).Cards.Count);
         Assert.Equal(DeckType.DiscardPile, crisis.Area.Type);
+    }
+
+    [Fact]
+    [Rule("rr:ignore.1")]
+    [Rule("rr:cost.5")]
+    public void ChaosMagicPaysAnEventsArrowCostAndNoResources()
+    {
+        // rr:ignore.1: "no resources are paid for that card"; the arrow cost of
+        // Strength In Numbers (03017), "Exhaust any number of allies you control",
+        // is not a resource cost and is still paid (rr:cost.5). Its printed cost is 0,
+        // so Chaos Magic discards no encounter cards.
+        var runner = AuthoredCards.Runner();
+        var world = Board();
+        var daredevil = InPlay(world, Ally, DeckType.AlliesArea);
+        var chaos = world.CreateCard(ChaosMagic, world.Seats[0].Hand);
+        var strength = world.CreateCard(StrengthInNumbers, world.Seats[0].Hand);
+        var energy = world.CreateCard(Energy, world.Seats[0].Hand);
+        int encounter = world.AreaOf(DeckType.EncounterDeck).Cards.Count;
+        var action = Assert.Single(runner.Actions(world, 0), offer => offer.Card == chaos.ObjectId);
+        runner.ExecuteAction(world, new PlayerAction(action, [], []));
+        var choice = Assert.IsType<Prompt>(Sequence.Work(world, world.Facts, runner, []));
+        var play = Assert.Single(choice.Affordances, offer => offer.AnchorId == strength.ObjectId);
+        Assert.Equal("0", Assert.Single(play.Costs!).Cost);
+        Assert.Contains(daredevil.ObjectId, play.Targets!.Legal);
+        Sequence.Answer(world, world.Facts, runner, choice,
+            Decision.Take(play.Id) with { Targets = [daredevil.ObjectId] }, []);
+        Drive(world, runner, _ => null);
+        Assert.False(daredevil.Ready);
+        Assert.Equal(DeckType.DiscardPile, strength.Area.Type);
+        Assert.Equal(DeckType.HandsArea, energy.Area.Type);
+        Assert.Equal(2, world.Seats[0].Hand.Cards.Count);
+        Assert.Equal(encounter, world.AreaOf(DeckType.EncounterDeck).Cards.Count);
+    }
+
+    [Fact]
+    [Rule("rr:ignore.1")]
+    [Rule("rr:non-numerical-variable.1")]
+    public void ChaosMagicRaisesForAnEventWhoseCostDefinesX()
+    {
+        // rr:non-numerical-variable.1: "the value of X is defined by card ability or
+        // player choice"; rr:ignore.1: "no resources are paid". Which defines Speed
+        // Cyclone's X when its cost is ignored is not decided, so the offer raises.
+        var runner = AuthoredCards.Runner();
+        var world = Board();
+        var chaos = world.CreateCard(ChaosMagic, world.Seats[0].Hand);
+        world.CreateCard(SpeedCyclone, world.Seats[0].Hand);
+        var error = Assert.Throws<RulesNotImplementedException>(() =>
+        {
+            var action = Assert.Single(runner.Actions(world, 0), offer => offer.Card == chaos.ObjectId);
+            runner.ExecuteAction(world, new PlayerAction(action, [], []));
+            Sequence.Work(world, world.Facts, runner, []);
+        });
+        Assert.Contains("14006", error.Message, StringComparison.Ordinal);
     }
 
     [Theory]

@@ -737,8 +737,17 @@ packet. Public wire support is protocol 38 and rejects protocol 37 peers.
 
 ### Replay identity
 
-The current replay identity is `engine-replay-v36`. Every earlier replay
-identity is refused. Under v36 damage that an enemy attack or a player's attack deals
+The current replay identity is `engine-replay-v37`. Every earlier replay
+identity is refused. Under v37 an event played by a scoped play, such as Chaos
+Magic (15003) playing a card ignoring its resource cost, plays through its
+ordinary Action: the offer carries the Action's price and arrow-cost targets,
+the arrow cost is paid, and an event whose Action cannot be initiated or paid
+is not offered (rr:ignore.1, rr:cost.5). A v36 trace in which Chaos Magic offers
+an arrow-cost event, such as Strength In Numbers (03017) or Earth's Mightiest
+Heroes (04022), records a prompt v37 no longer produces, and a Chaos Magic
+whose only offers were events it cannot play is no longer offered. An event whose cost defines X
+played ignoring its resource cost raises. A scoped play that may be declined
+names its decline "Play no card". Under v36 damage that an enemy attack or a player's attack deals
 adds the engine's `WhenAttackDealtDamage` condition to that attack's occurrence
 (Power Stone, 16149), and a response window names its occurrence's conditions, so a
 v35 trace with a response prompt after a damaging attack records a prompt label v36 no

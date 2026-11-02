@@ -9,24 +9,17 @@ encounter sets of the box. The plan is [gmw-wave-plan.md](gmw-wave-plan.md)
 
 ## Boundary
 
-- **Kree Militants, Menagerie Medley and Space Pirates are admitted** as modular
-  sets (`GalaxyModularSetAdmission`). Each needs its faces authored and in `gmw`,
-  and its exact recipe, in declared order, with the modular role. Copy counts are
-  pinned to the vendored MarvelSDB snapshot. A missing face or a changed recipe
-  closes that set alone (`GalaxyModularSetAdmissionTests`). Any scenario slot that
-  accepts a modular set accepts them.
-- **Galactic Artifacts is withheld.** Eight of its nine faces have rows. Crystal
-  Ball (16130) is unauthored: its When Defeated lets the defeating player play a
-  card from hand for 3 less. Card play inside an encounter card's resolution is
-  admitted only for an Action-context play, and the engine has no rule for playing
-  an event or other card outside an action window during a When Defeated
-  resolution. Authoring it needs that play procedure: a scoped card play opened
-  from an encounter effect, with the cost reduction applied and the play's own
-  timing restrictions checked. `galactic_artifacts` is removed from discovery.
+- **All four sets are admitted** as modular sets (`GalaxyModularSetAdmission`).
+  Each needs its faces authored and in `gmw`, and its exact recipe, in declared
+  order, with the modular role. Copy counts are pinned to the vendored MarvelSDB
+  snapshot. A missing face or a changed recipe closes that set alone
+  (`GalaxyModularSetAdmissionTests`). Any scenario slot that accepts a modular set
+  accepts them. Galactic Artifacts opened with Crystal Ball (16130), MARVEL-911.
 
-None of the admitted sets needs a new interaction. Every choice uses an existing
+None of the sets needs a new interaction. Every choice uses an existing
 prompt: a ranked tie for an attachment target, a "may" option, a cost payment,
-an attack's defense.
+an attack's defense, and for Crystal Ball the scoped card-play prompt that
+Chaos Magic and Team-Building Exercise already use, here declinable.
 
 ## Interpretations
 
@@ -50,6 +43,27 @@ has no FAQ entry for these cards; the rulings are Hall of Heroes entries in
   and those modes refuse modular sets.
 - **The Poison** counts its counters after placing one, so its first trigger
   deals 1 damage and each later one deals one more.
+- **Crystal Ball** lets the player credited with defeating it play one card from
+  their hand for 3 less, never below 0. "The player who defeated this scheme" is
+  the credited defeater, as for Mystique's Manipulations (ruling
+  7130a7550f1a2d8b): the thwarting identity's player, or an ally's controller.
+  The text is a permission to play outside the game's timing
+  (rr:play-restrictions-and-permissions.2), so it works in any phase and in either
+  form. Only the resource cost changes; every other cost and restriction stays in
+  effect, as for Fetch Quest's play ignoring its resource cost (ruling
+  4eedaeb17e53584f): "[type] form only" (rr:play-put-into-play.1), uniqueness,
+  limits, and an event's arrow cost, paid together with the reduced cost
+  (rr:cost.5). An event is played by triggering one of its Actions
+  (rr:player-turn.5.d); an Interrupt or Response event cannot be played, because
+  its own triggering condition is not occurring (rr:initiating-abilities step 2).
+  Resources beyond the reduced cost are not paid for the card (rr:cost.4.1), so a
+  paid-resource condition reads only what the reduced cost took; every
+  paid-resource event in the admitted pool costs 3 or less, so it reads an empty
+  payment. With no card that can be played nothing is asked; the player may also
+  decline (rr:may). Ship Command and the Milano are withheld, so they never meet
+  Galactic Artifacts in an admitted game. In research games the Milano's "wild
+  resource for any player" pays a Crystal Ball play as it pays any other card play,
+  through the cross-seat payment that MARVEL-905 still needs a table for.
 - **The three artifact side schemes** offer only their defeater the optional
   benefit (`eachPlayer player: defeater` with a decline option). Victory 0 puts
   them in the victory display (rr:victory-x.2).
@@ -77,9 +91,18 @@ has no FAQ entry for these cards; the rulings are Hall of Heroes entries in
 
 ## Engine changes and existing content
 
-New vocabulary only; no admitted card changes behaviour, so the replay identity
-stays `engine-replay-v36` ([session-ledger.md](../session-ledger.md)). The words
-are documented in [card-dsl.md](../card-dsl.md).
+The words are documented in [card-dsl.md](../card-dsl.md). The shared scoped
+play changes Chaos Magic (15003) in admitted Scarlet Witch games: an event it
+offers is priced through its Action, its arrow cost is paid, and an event it
+cannot play is not offered. The replay identity is therefore
+`engine-replay-v37` ([session-ledger.md](../session-ledger.md)).
+
+- `playFromHand` (MARVEL-911) plays a card from the resolving player's hand at a
+  stated reduction, optionally declinable. It shares the scoped play of
+  `playSharedHeroTraitCard` and `playIgnoringResourceCost`. In all three an event
+  now plays through the ordinary Action procedure at the scoped price, including
+  an arrow cost and its targets, and a scoped play with no playable card resolves
+  nothing without asking.
 
 - `scheme` is a ranked selector (`AbilityCardRank.Scheme`), read on the live board.
 - `attacks_deal_indirect_damage` is a modifiable field read when an enemy attack
@@ -94,14 +117,25 @@ are documented in [card-dsl.md](../card-dsl.md).
 
 ## Evidence
 
-- Synthetic boards over the production book: `GalacticArtifactsTests`,
+- Synthetic boards over the production book: `CrystalBallTests`, `GalacticArtifactsTests`,
   `GalacticArtifactSchemeTests`, `KreeMilitantsTests`, `MenagerieMedleyTests`,
   `SpacePiratesTests`.
 - Admission: `GalaxyModularSetAdmissionTests`.
 - Complete public games with exact same-seed replay, two per admitted set:
   `GalaxyModularPublicGameTests`; a fresh-host round trip per admitted set:
-  `GalaxyModularPublicRestartTests`.
+  `GalaxyModularPublicRestartTests`. Galactic Artifacts' are `CrystalBallPublicTests`:
+  three public starter games (one with two players) in which Crystal Ball's
+  defeater plays a card, and a fresh-host round trip at that prompt. The deal is
+  unarranged; a player thwarts Crystal Ball whenever a turn offers it.
 - A zero-raise scan of every admitted scenario mode × seeds 1–40 × one and two
   players, with each admitted set as the modular set, is reported on MARVEL-904.
 - Complete non-gmw games played on main and on this branch produce the same
-  prompts and state digests, so the replay identity is unchanged.
+  prompts and state digests, so the replay identity is unchanged. For
+  MARVEL-911, 890 completed games (every hero in twelve scenarios, Scarlet Witch
+  and Ant-Man for the existing scoped plays, pairs, and six modular sets) match
+  919ceb77 exactly.
+- Crystal Ball's own scan (MARVEL-911): 1,600 games with Galactic Artifacts as the
+  modular set, played plainly, again thwarting Crystal Ball when offered, and again
+  with Crystal Ball placed at setup so most games reach its play. The last made
+  1,572 Crystal Ball plays of 147 distinct cards (564 events, 418 upgrades, 321
+  allies, 269 supports). All three had zero raises and zero failures.

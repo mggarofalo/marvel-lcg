@@ -8,6 +8,9 @@ internal sealed record AbilityPaymentSelection(
     ImmutableArray<int> Paying, ImmutableArray<int> Chosen,
     ImmutableDictionary<string, long>? Values, bool ResourcesPaidByEvent, ImmutableArray<ResourceAllocation> Allocations)
 {
+    /// <summary>The reduction a scoped play supplies to the paid card, which also lowers what its X pays.</summary>
+    internal ScopedCardCostReduction? Reduction { get; init; }
+
     internal static AbilityPaymentSelection Capture(IReadOnlyList<int> paying,
         IReadOnlyList<int> chosen, IReadOnlyDictionary<string, long>? values = null,
         bool resourcesPaidByEvent = false, IReadOnlyList<ResourceAllocation>? allocations = null) =>

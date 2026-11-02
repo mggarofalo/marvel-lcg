@@ -21,7 +21,7 @@ internal static class AbilityAffordanceDescription
         // offered as `Foresight`, so a client has something to render without
         // knowing what the ability does. One string does for both fields
         // because the engine carries one -- see the remarks on `Affordance.Id`.
-        var price = DeclaredPrice(execution, world, card, found, ability.Player,
+        var price = DeclaredPrice(execution.offerQueries, world, card, found, ability.Player,
             AbilityPaymentPricing.CombinedPrice(world, card, ability.Player, found, execution.resourceAbilities));
         TargetRequest? recipients = AbilityRecipientCommitment.Targets(execution, world, card, found, ability.Player, ability);
         string? contextual = AbilityReplacementDescription.Caption(execution, world, card, found, ability.Player);
@@ -34,7 +34,7 @@ internal static class AbilityAffordanceDescription
             AnchorId: ability.Card,
             AnchorPlayer: ability.Player,
             Label: found.Name,
-            Targets: recipients ?? AdmittedCostTargets(execution, world, card, found, ability.Player),
+            Targets: recipients ?? AdmittedCostTargets(execution.offerQueries, world, card, found, ability.Player),
             Costs: price is null ? null : [price], Description: Description(execution, world, card, ability, found, contextual, entry))
         {
             Timing = found.Trigger.Timing,
@@ -49,12 +49,12 @@ internal static class AbilityAffordanceDescription
         };
     }
 
-    private static CostOption? DeclaredPrice(AbilityResolutionExecution execution, World world, Card card,
+    internal static CostOption? DeclaredPrice(AbilityOfferQueries queries, World world, Card card,
         CompiledCardAbility found, int player, CostOption? price)
     {
         if (price is not { DeclarationSensitive: true, Components: null } || price.VariableRequests.Count > 0
             || found.Trigger.Timing is not AbilityType.Action) return price;
-        string required = execution.offerQueries.ActionReceiptRequirement(world, card, found, player);
+        string required = queries.ActionReceiptRequirement(world, card, found, player);
         return required.Length == 0 ? price : price with { Rule = [string.Concat(price.Rule ?? []) + required] };
     }
 
@@ -66,16 +66,18 @@ internal static class AbilityAffordanceDescription
         return ability.TriggeringDefeat is { } defeat ? [defeat.Card] : [];
     }
 
-    private static TargetRequest? AdmittedCostTargets(AbilityResolutionExecution execution,
-        World world, Card card, CompiledCardAbility ability, int player)
+    internal static TargetRequest? AdmittedCostTargets(AbilityOfferQueries queries,
+        World world, Card card, CompiledCardAbility ability, int player, ScopedCardCostReduction? reduction = null)
     {
         var targets = AbilityCostSelection.Ask(world, card, player, ability.Cost);
         if (ability.Cost is not AbilityCost.ChooseScheme || targets is null) return targets;
         // rr:target.2: initiation requires a valid target. Reuse the same
         // chosen-scheme admission as execution, including status cancellation.
+        // Equivalent mutant: dropping the scoped reduction here changes nothing today,
+        // since this admission reads the chosen target rather than the price.
         return targets with { Legal = [.. targets.Legal.Where(id =>
-            execution.offerQueries.ActionAdmission(world, card, ability, player,
-                world.Windows.Current?.Occurrence, [id]) is not null)] };
+            queries.ActionAdmission(world, card, ability, player,
+                world.Windows.Current?.Occurrence, [id], reduction) is not null)] };
     }
 
     private static string? Caption(World world, CompiledCardAbility found,

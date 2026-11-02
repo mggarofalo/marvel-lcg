@@ -26619,6 +26619,14 @@
       ]
     },
     {
+      "card": "16130",
+      "name": "Crystal Ball",
+      "note": "Starting threat 3, hinder 2 per player (rr:hinder-x), acceleration, unique and victory 0 are printed values the engine reads; victory places the defeated scheme in the victory display instead of the discard pile (rr:victory-x.2). When Defeated: the player credited with defeating this scheme, as for Mystique's Manipulations (ruling 7130a7550f1a2d8b), may play one card from their hand with its resource cost reduced by 3, never below 0. The text is a permission to play outside the timing the game rules provide (rr:play-restrictions-and-permissions.2), so it may be any player's turn or phase and the defeater may be in either form. Only the resource cost changes: the card's other costs and restrictions stay in effect (ruling 4eedaeb17e53584f, on Fetch Quest's play ignoring its resource cost), including its form requirement (rr:play-put-into-play.1), uniqueness and limits, and an event's arrow cost, paid together with the reduced cost (rr:cost.5). An event is played by triggering one of its Actions (rr:player-turn.5.d); an Interrupt or Response event cannot be played, because its own triggering condition is not occurring (rr:initiating-abilities step 2). Resources beyond the reduced cost are not paid for the card (rr:cost.4.1), so a paid-resource condition reads only what the reduced cost took. With no card that can be played nothing is asked, and a declined play resolves nothing (rr:may). The Milano's resource for any player pays this play as it pays any other.",
+      "abilities": [
+        {"trigger": {"event": "WhenCardDefeated", "timing": "WhenDefeated", "subject": "this"}, "effect": {"eachPlayer": {"player": "defeater", "effect": {"playFromHand": {"reduction": 3, "optional": "true"}}}}}
+      ]
+    },
+    {
       "card": "16131",
       "name": "Kree Combat Armor",
       "attachTo": {"maxBy": {"of": {"query": "enemies"}, "by": "attack"}},

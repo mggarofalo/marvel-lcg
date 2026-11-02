@@ -32,6 +32,8 @@ internal static class AbilityEffectDescription
             "Play a card from your hand that shares a trait with your hero, reducing its cost by 1",
         AbilityEffect.Fixed { Instruction: AbilityFixedInstruction.PlayIgnoringResourceCost } =>
             "Play a card from your hand, ignoring its resource cost",
+        AbilityCardPlayEffect.PlayFromHand play =>
+            $"{(play.Optional ? "You may play" : "Play")} a card from your hand, reducing its resource cost by {play.Reduction}",
         AbilityEffect.Damage { Maximum: { } maximum } damage =>
             AbilityBoundedDamageDescription.Instruction(damage.Amount, maximum),
         AbilityEffect.ChooseCard choice => ChoiceSummary(choice),

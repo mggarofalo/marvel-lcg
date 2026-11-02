@@ -11,7 +11,8 @@ namespace Marvel.Cards.Run;
 
 /// <summary>Validates the complete selected cost before any component is paid.</summary>
 internal sealed class AbilityPaymentValidation(
-    World world, Card source, int player, AbilityProgram program, IResourceCardAbilities resourceAbilities)
+    World world, Card source, int player, AbilityProgram program, IResourceCardAbilities resourceAbilities,
+    ScopedCardCostReduction? scoped = null)
 {
     internal void Validate(
         AbilityCost? cost, IReadOnlyList<int> paying, IReadOnlyList<int> chosen,
@@ -140,7 +141,7 @@ internal sealed class AbilityPaymentValidation(
         var request = Price(world, source, player, step, resourceAbilities)!
             .VariableRequests.Single(variable => variable.Name == "X");
         // rr:non-numerical-variable.1: a reduction lowers the amount paid, not X.
-        long reduction = CardPayment.CostOf(world, world.Facts, world.Seats[player], source).VariableReduction;
+        long reduction = CardPayment.CostOf(world, world.Facts, world.Seats[player], source, null, scoped).VariableReduction;
         long paid = Math.Max(0, x - reduction);
         if (x < request.Min || x > request.Max + reduction)
             throw new RulesNotImplementedException(

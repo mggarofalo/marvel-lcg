@@ -112,7 +112,7 @@ internal static class AbilityInitiationConstraints
 
     internal static bool CanInitiateLeaf(AbilityEffect node, AbilityAdmissionScope cast) => node.OperationName() switch
     {
-        "playSharedHeroTraitCard" or "playIgnoringResourceCost" => AbilitySharedTraitPlay.CanInitiate(cast.Context, node),
+        _ when AbilityScopedPlay.IsScopedPlay(node) => AbilityScopedPlay.CanInitiate(cast.Context, node),
         "resolveInvocation" => AbilityInvocationPayment.Top(cast.World, cast.Player) is not null,
         "chooseCard" => CanInitiateChooseCard(node, cast),
         "choose" => CanInitiateChoice(node, cast),

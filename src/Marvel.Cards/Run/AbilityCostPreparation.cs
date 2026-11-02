@@ -101,7 +101,7 @@ internal sealed class AbilityCostPreparation
     private void PrepareSteps(AbilityCost? component)
     {
         var validationAllocations = ValidationAllocations();
-        new AbilityPaymentValidation(world, source, player, program, resourceAbilities)
+        new AbilityPaymentValidation(world, source, player, program, resourceAbilities, selection.Reduction)
             .Validate(component, paying, selected, variables, completeCost, validationAllocations);
         if (component is null or AbilityCost.ChooseFromDiscard or AbilityCost.ChooseScheme) return;
         if (component is AbilityCost.Sequence sequence)

@@ -93,7 +93,7 @@ internal static class AbilityResolutionActions
         var arrowPayment = AbilityCostPayment.Prepare(
             world, card, cast.Player, found.Cost, execution.program, execution.resourceAbilities,
             AbilityPaymentSelection.Capture(paying, recipientChoice is null ? chosen : [], values,
-                resourcesPaidByEvent: EventPaysResources(world, card, found.Cost), allocations: allocations));
+                resourcesPaidByEvent: EventPaysResources(world, card, found.Cost), allocations: allocations) with { Reduction = reduction });
         var eventPayment = AbilityEventPayment.Prepare(
             world, card, cast.Player, found, execution.resourceAbilities,
             AbilityPaymentSelection.Capture(paying, [], values, allocations: allocations), reduction);
