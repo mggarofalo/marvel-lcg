@@ -68,6 +68,36 @@ public sealed class AttackPromptFactsTests
         Assert.True(sawAttack);
     }
 
+    // "If all damage from an attack is prevented, the attacking character ... is not considered to have
+    // 'attacked and damaged' the attacked character": the attack still resolves, so its later decisions carry
+    // it, marked prevented rather than implying its ATK or damage will be taken.
+    [Rule("rr:prevent.1.3")]
+    [Fact]
+    public void APreventedAttackIsMarkedPreventedInItsFacts()
+    {
+        (World world, _, var runner, var events) = Begin(out Prompt? prompt);
+        while (prompt is not null && prompt.Asking != Question.Defender)
+        {
+            Sequence.Answer(world, Cards, runner, prompt, Decision.Decline, events);
+            prompt = Sequence.Work(world, Cards, runner, events);
+        }
+        Assert.False(Assert.IsType<PromptAttack>(Assert.IsType<Prompt>(prompt).Attack).Prevented);
+        world.Attack = world.Attack! with { PreventAllDamage = true };
+        bool sawPrevented = false;
+        for (int answered = 0; prompt is not null && world.Attack is not null; answered++)
+        {
+            Assert.True(answered < 12, "the attack did not finish after twelve answers");
+            Sequence.Answer(world, Cards, runner, prompt, Decision.Decline, events);
+            prompt = Sequence.Work(world, Cards, runner, events);
+            if (prompt?.Attack is { } attack && world.Attack is not null)
+            {
+                Assert.True(attack.Prevented);
+                sawPrevented = true;
+            }
+        }
+        Assert.True(sawPrevented);
+    }
+
     private static (World World, Card Assault, Marvel.Cards.Run.AbilityRunner Runner,
         List<Marvel.Rules.Events.GameEvent> Events) Begin(out Prompt? prompt)
     {

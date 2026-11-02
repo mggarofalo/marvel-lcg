@@ -80,7 +80,7 @@ internal sealed class MainBoardController : IDisposable
         {
             HandPresentationOrder.Clear();
             SourcePresentationOrder.Clear();
-        TableLegend.Clear();
+            TableLegend.Clear();
             cardInspector.Reset();
             tabletop.ResetForGame();
         }

@@ -19,7 +19,7 @@ public sealed class TableWordingTests
             Assert.Equal(fact is not (TableFact.HeroForm or TableFact.AlterEgoForm or TableFact.Engaged
                 or TableFact.DecisionRequired or TableFact.DecisionOptional or TableFact.DecisionCause
                 or TableFact.StepThreat or TableFact.StepActivation or TableFact.StepEncounter
-                or TableFact.AttackValue or TableFact.AttackDamage),
+                or TableFact.AttackValue or TableFact.AttackDamage or TableFact.AttackPrevented),
                 wording.Icon.Length > 0);
         }
     }

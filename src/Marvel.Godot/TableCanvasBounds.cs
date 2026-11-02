@@ -36,13 +36,14 @@ internal static class TableCanvasBounds
     }
 
     /// <summary>
-    /// Whether a table rendered at one height can be stretched to another in place: its cards and far side
-    /// grow in steps with its height, so it can while both heights give the same step, and is drawn again
-    /// when the step changes.
+    /// Whether a table rendered at one height can be stretched to another in place. Its cards are drawn at the
+    /// table scale of the reader's scale and its height, and its far side and hand row grow with the 100% step
+    /// of its height; it can while both heights give the same of each, and is drawn again when either changes.
     /// </summary>
-    internal static bool Reflowable(float rendered, float height) =>
-        SpatialCardMetrics.TableScale(InterfaceScale.Percent100, Math.Max(rendered, AstraTableGeometry.ReferenceHeight))
-        == SpatialCardMetrics.TableScale(InterfaceScale.Percent100, Math.Max(height, AstraTableGeometry.ReferenceHeight));
+    internal static bool Reflowable(InterfaceScale reading, float rendered, float height) =>
+        SpatialCardMetrics.TableScale(reading, rendered) == SpatialCardMetrics.TableScale(reading, height)
+        && SpatialCardMetrics.TableScale(InterfaceScale.Percent100, rendered)
+        == SpatialCardMetrics.TableScale(InterfaceScale.Percent100, height);
 
     internal static void Observe(Main main, TableCanvasSurface surface)
     {
@@ -51,7 +52,7 @@ internal static class TableCanvasBounds
             if (!InteractionControl.IsUsable(main) || !InteractionControl.IsUsable(surface)
                 || main.CurrentGame?.World is null) return true;
             float height = Height(main);
-            if (!Reflowable(surface.CustomMinimumSize.Y, height))
+            if (!Reflowable(main.interfaceScale, surface.CustomMinimumSize.Y, height))
             {
                 Callable.From(() =>
                 {

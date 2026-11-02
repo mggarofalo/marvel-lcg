@@ -55,6 +55,7 @@ internal static class TableWording
         [TableFact.DecisionCause] = new("", "Cause", "This card's effect caused the decision."),
         [TableFact.Attack] = new("attack", "Attack", "An enemy attack is resolving."),
         [TableFact.AttackValue] = new("", "ATK", "The attacking enemy's ATK now, before boost and defense."),
+        [TableFact.AttackPrevented] = new("", "Prevented", "All damage from this attack is prevented; boost effects still resolve."),
         [TableFact.AttackDamage] = new("", "Damage", "The attack's calculated damage; later effects can still change it."),
         [TableFact.BoostUnresolved] = new("boost", "Boost", "Boost icons are not counted yet and can add to the attack."),
     };
@@ -204,19 +205,27 @@ internal static class TableWording
     internal static string DecisionResolution(DecisionFrame frame) =>
         (frame.Causes.Count == 0 ? "" : $"Cause: {string.Join(", ", frame.Causes)}. ") + frame.Instruction;
 
-    /// <summary>An attack's facts as chips: who attacks whom, its value, and an unresolved boost.</summary>
-    internal static Wording[] AttackFacts(DecisionAttack attack)
+    /// <summary>
+    /// An attack's facts as chips: who attacks whom, its value or that its damage is prevented, and an unresolved
+    /// boost.
+    /// </summary>
+    internal static Wording[] AttackFacts(DecisionAttack attack) =>
+    [
+        For(TableFact.Attack) with
+        {
+            Label = $"{attack.Attacker} → {attack.Target}", Tooltip = $"{attack.Attacker} is attacking {attack.Target}.",
+        },
+        attack.Prevented ? For(TableFact.AttackPrevented) : AttackValue(attack),
+        .. attack.BoostUnresolved ? [For(TableFact.BoostUnresolved)] : Array.Empty<Wording>(),
+    ];
+
+    // ATK is worded by what can still change it, as the engine's own attack sentence words it.
+    private static Wording AttackValue(DecisionAttack attack)
     {
         Wording value = For(attack.Calculated ? TableFact.AttackDamage : TableFact.AttackValue);
-        return
-        [
-            For(TableFact.Attack) with
-            {
-                Label = $"{attack.Attacker} → {attack.Target}", Tooltip = $"{attack.Attacker} is attacking {attack.Target}.",
-            },
-            value with { Label = $"{value.Label} {attack.Value.ToString(CultureInfo.InvariantCulture)}" },
-            .. attack.BoostUnresolved ? [For(TableFact.BoostUnresolved)] : Array.Empty<Wording>(),
-        ];
+        if (!attack.Calculated && !attack.BoostUnresolved)
+            value = value with { Tooltip = "The attacking enemy's ATK now, before defense and later effects." };
+        return value with { Label = $"{value.Label} {attack.Value.ToString(CultureInfo.InvariantCulture)}" };
     }
 
     /// <summary>

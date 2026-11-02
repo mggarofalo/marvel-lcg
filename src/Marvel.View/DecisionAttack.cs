@@ -6,4 +6,6 @@ namespace Marvel.View;
 /// <param name="Value">The enemy's current ATK, or the calculated damage when <paramref name="Calculated"/>.</param>
 /// <param name="Calculated">Whether <paramref name="Value"/> is the attack's calculated damage.</param>
 /// <param name="BoostUnresolved">Whether boost icons may still add to the attack.</param>
-public sealed record DecisionAttack(string Attacker, string Target, long Value, bool Calculated, bool BoostUnresolved);
+/// <param name="Prevented">Whether all damage from the attack is prevented.</param>
+public sealed record DecisionAttack(
+    string Attacker, string Target, long Value, bool Calculated, bool BoostUnresolved, bool Prevented);

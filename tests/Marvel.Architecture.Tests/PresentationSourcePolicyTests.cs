@@ -233,6 +233,7 @@ public sealed class PresentationSourcePolicyTests
             "Marvel.Rules.Prompts.PromptAttack.Attacker",
             "Marvel.Rules.Prompts.PromptAttack.BoostUnresolved",
             "Marvel.Rules.Prompts.PromptAttack.Calculated",
+            "Marvel.Rules.Prompts.PromptAttack.Prevented",
             "Marvel.Rules.Prompts.PromptAttack.Target",
             "Marvel.Rules.Prompts.PromptAttack.Value",
             "Marvel.Rules.Prompts.PublicDecisionKind.Ability",

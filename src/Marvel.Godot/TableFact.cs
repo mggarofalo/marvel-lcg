@@ -96,4 +96,7 @@ internal enum TableFact
 
     /// <summary>Boost icons may still add to the attack.</summary>
     BoostUnresolved,
+
+    /// <summary>All damage from the attack is prevented.</summary>
+    AttackPrevented,
 }

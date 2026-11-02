@@ -44,13 +44,30 @@ public sealed class TableRoughEdgesTests
     [Fact]
     public void AnAttackIsChipsOfWhoWhomItsValueAndAnUnresolvedBoost()
     {
-        Wording[] facts = TableWording.AttackFacts(new DecisionAttack("Rhino", "Spider-Man", 2, false, true));
+        Wording[] facts = TableWording.AttackFacts(new DecisionAttack("Rhino", "Spider-Man", 2, false, true, false));
         Assert.Equal(["Rhino → Spider-Man", "ATK 2", "Boost"], facts.Select(fact => fact.Label));
         Assert.Equal("Rhino is attacking Spider-Man.", facts[0].Tooltip);
         Assert.Equal(["attack", "", "boost"], facts.Select(fact => fact.Icon));
         Assert.Equal(["Rhino → Spider-Man", "Damage 3"],
-            TableWording.AttackFacts(new DecisionAttack("Rhino", "Spider-Man", 3, true, false)).Select(fact => fact.Label));
+            TableWording.AttackFacts(new DecisionAttack("Rhino", "Spider-Man", 3, true, false, false)).Select(fact => fact.Label));
     }
+
+    [Fact]
+    public void APreventedAttackShowsPreventedInsteadOfItsValue()
+    {
+        Wording[] facts = TableWording.AttackFacts(new DecisionAttack("Rhino", "Spider-Man", 3, false, true, true));
+        Assert.Equal(["Rhino → Spider-Man", "Prevented", "Boost"], facts.Select(fact => fact.Label));
+        Assert.Equal("All damage from this attack is prevented; boost effects still resolve.", facts[1].Tooltip);
+        Assert.Equal(["Rhino → Spider-Man", "Prevented"],
+            TableWording.AttackFacts(new DecisionAttack("Rhino", "Spider-Man", 3, true, false, true)).Select(fact => fact.Label));
+    }
+
+    [Theory]
+    [InlineData(true, "The attacking enemy's ATK now, before boost and defense.")]
+    [InlineData(false, "The attacking enemy's ATK now, before defense and later effects.")]
+    public void TheATKTooltipNamesBoostOnlyWhileItIsUnresolved(bool boostUnresolved, string tooltip) =>
+        Assert.Equal(tooltip,
+            TableWording.AttackFacts(new DecisionAttack("Rhino", "Spider-Man", 2, false, boostUnresolved, false))[1].Tooltip);
 
     [Fact]
     public void TheSheetAndThePromptLineCarryTheAttackAfterTheCauses()
@@ -58,7 +75,7 @@ public sealed class TableRoughEdgesTests
         var frame = new DecisionFrame("Spider-Man", DecisionSubject.Resolving, "Rhino", true, ["Assault"],
             "Rhino is attacking Spider-Man. ATK 2 before boost icons and defense.")
         {
-            Attack = new DecisionAttack("Rhino", "Spider-Man", 2, false, true),
+            Attack = new DecisionAttack("Rhino", "Spider-Man", 2, false, true, false),
         };
         Assert.Equal(["Spider-Man", "Optional", "Assault", "Rhino → Spider-Man", "ATK 2", "Boost"],
             DecisionSheetHead.Facts(frame, "Leave attack undefended").Select(fact => fact.Label));
@@ -116,13 +133,29 @@ public sealed class TableRoughEdgesTests
         Assert.Equal(height, TableCanvasBounds.Fit(room));
 
     [Theory]
-    [InlineData(900, 962, true)]
-    [InlineData(962, 1000, true)]
-    [InlineData(1000, 1040, true)]
-    [InlineData(1000, 1100, false)]
-    [InlineData(1350, 1360, true)]
-    public void ATableStretchesInPlaceOnlyWithinOneGrowthStep(float rendered, float height, bool reflowable) =>
-        Assert.Equal(reflowable, TableCanvasBounds.Reflowable(rendered, height));
+    [InlineData(100, 900, 962, true)]
+    [InlineData(100, 962, 1000, true)]
+    [InlineData(100, 1000, 1040, true)]
+    [InlineData(100, 1000, 1100, false)]
+    [InlineData(100, 1350, 1360, true)]
+    [InlineData(100, 820, 962, false)]
+    [InlineData(90, 1160, 1170, true)]
+    [InlineData(90, 1160, 1200, false)]
+    [InlineData(150, 1000, 1100, false)]
+    public void ATableStretchesInPlaceOnlyWithinOneGrowthStep(int reading, float rendered, float height, bool reflowable) =>
+        Assert.Equal(reflowable, TableCanvasBounds.Reflowable((InterfaceScale)reading, rendered, height));
+
+    [Fact]
+    public void AStretchAtNinetyPercentKeepsTheCardsItWasDrawnWith()
+    {
+        Assert.NotEqual(
+            SpatialCardMetrics.TableScale(InterfaceScale.Percent90, 1160),
+            SpatialCardMetrics.TableScale(InterfaceScale.Percent90, 1200));
+        Assert.Equal(
+            SpatialCardMetrics.TableScale(InterfaceScale.Percent100, 1160),
+            SpatialCardMetrics.TableScale(InterfaceScale.Percent100, 1200));
+        Assert.False(TableCanvasBounds.Reflowable(InterfaceScale.Percent90, 1160, 1200));
+    }
 
     [Fact]
     public void AnOrdinaryTableHasNoProgressDescription()
@@ -144,7 +177,7 @@ public sealed class TableRoughEdgesTests
             TableWording.UnstructuredConsequence(frame));
         Assert.Equal("", TableWording.UnstructuredConsequence(frame with
         {
-            Attack = new DecisionAttack("Rhino", "Spider-Man", 2, false, true),
+            Attack = new DecisionAttack("Rhino", "Spider-Man", 2, false, true, false),
         }));
     }
 }
