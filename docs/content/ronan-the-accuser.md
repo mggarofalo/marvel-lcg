@@ -110,7 +110,11 @@ identical on b6c88238 and this packet.
 - Research-only complete Standard games, dealt directly rather than through
   discovery, with exact replay, and the Standard and Expert setup:
   `RonanTheAccuserResearchGameTests`.
-- The zero-raise scan is reported on MARVEL-904.
+- Every new decision has a mutant, and all 41 are killed: the engine words, each
+  row's conditions and amounts, and the Kree Command Ship's first-player, treachery
+  and peril limits.
+- A scan of 160 complete research games (Standard and Expert, one and two players,
+  seeds 1–40) raises nothing: 5 wins, 155 losses, none unfinished.
 
 ## New interactions
 
