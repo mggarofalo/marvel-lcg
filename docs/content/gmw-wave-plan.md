@@ -145,3 +145,11 @@ unauthored because ruling 82bcc63411002a00 defers the quickstrike, teamwork and
 responses of the minions his When Revealed puts into play until all of them have
 engaged, which the engine's per-entry windows cannot do. The evidence is in
 [brotherhood-of-badoon.md](brotherhood-of-badoon.md).
+
+## Packet 5 status
+
+Packet 5 is authored except Crystal Ball (16130). Kree Militants, Menagerie
+Medley and Space Pirates are admitted as modular sets; Galactic Artifacts is
+withheld until the engine can play a card from hand during an encounter card's
+When Defeated resolution. The evidence is in
+[gmw-modular-sets.md](gmw-modular-sets.md).
