@@ -91,9 +91,10 @@ func _terminal_decision_is_safe() -> bool:
 
 
 func _terminal_table_outcome_is_visible() -> bool:
+	# The heading names the result and one chip names why, its whole reason on hover.
 	var context := main.find_child("CausalSituation", true, false) as Control
 	var outcome := _visible_text(context).to_lower() if context != null else ""
-	if "defeat" in outcome and _has_authoritative_loss_reason(outcome):
+	if "defeat" in outcome and _has_authoritative_loss_reason(_fact_tooltips(context)):
 		return true
 	_fail("the terminal task surface does not identify defeat and its authoritative outcome")
 	return false
@@ -165,7 +166,7 @@ func _terminal_result_is_safe() -> bool:
 	var latest := main.find_child("LatestResult", true, false) as Label
 	if latest != null:
 		var context := main.find_child("CausalSituation", true, false) as Control
-		var outcome := _visible_text(context).to_lower() if context != null else ""
+		var outcome := _fact_tooltips(context) if context != null else ""
 		if not latest.text.is_empty() and _has_authoritative_loss_reason(outcome):
 			return true
 		_fail("the terminal task lost its outcome or durable result receipt")
@@ -233,6 +234,14 @@ func _dismiss_terminal_result() -> bool:
 		_fail("the latest result cannot be dismissed")
 		return false
 	return true
+
+
+# A decision's facts are chips whose explanations are their tooltips; an attack chip names who attacks whom.
+func _fact_tooltips(root: Node) -> String:
+	var tips := PackedStringArray()
+	for chip in root.find_children("*", "PanelContainer", true, false):
+		if chip.has_meta("table_fact_label") and chip.is_visible_in_tree(): tips.append(chip.tooltip_text)
+	return "\n".join(tips)
 
 
 func _has_authoritative_loss_reason(text: String) -> bool:

@@ -10,15 +10,17 @@ internal sealed class BoardContextualCopy
 {
     private WorldDescriptor? world;
     private Label? summary;
+    private HFlowContainer? facts;
     private Control? resolution;
     private Label? receipt;
     private string fallback = string.Empty;
 
     internal void RegisterWorld(WorldDescriptor value) => world = value;
     internal void RegisterResult(Label label) => receipt = label;
-    internal void RegisterSummary(Label label, string text, Control resolutionLabel)
+    internal void RegisterSummary(Label label, HFlowContainer draftFacts, string text, Control resolutionLabel)
     {
         summary = label;
+        facts = draftFacts;
         resolution = resolutionLabel;
         fallback = text;
     }
@@ -33,11 +35,21 @@ internal sealed class BoardContextualCopy
         if (!InteractionControl.IsUsable(summary)) return;
         if (InteractionControl.IsUsable(resolution))
             resolution!.Visible = HasContent(resolution) && ShowsResolution(composer);
-        string text = CardPaymentPresentation.UsesModal(composer) ? "" : TableDraftSummary.From(composer, prompt, world, compact: true)
-            ?? ContextualOfferDescription.SingleResponse(prompt, composer?.Prompt.PublicKind) ?? fallback;
+        (IReadOnlyList<DraftPart>? parts, string text) = Draft(composer, prompt);
         summary!.Text = text;
-        summary.Visible = text.Length > 0;
         summary.AccessibilityDescription = text;
+        bool drawn = parts is { Count: > 0 } && InteractionControl.IsUsable(facts);
+        if (InteractionControl.IsUsable(facts)) DraftFactsRow.Fill(facts!, drawn ? parts! : []);
+        summary.Visible = text.Length > 0 && !drawn;
+    }
+
+    // A card play's draft is in its payment surface; any other draft is its parts, or a single response's words.
+    private (IReadOnlyList<DraftPart>? Parts, string Text) Draft(DecisionComposer? composer, PromptPresentation? prompt)
+    {
+        if (CardPaymentPresentation.UsesModal(composer)) return (null, "");
+        IReadOnlyList<DraftPart>? parts = TableDraftSummary.Parts(composer, prompt, world, compact: true);
+        return parts is not null ? (parts, string.Join("  ·  ", parts.Select(part => part.Text)))
+            : (null, ContextualOfferDescription.SingleResponse(prompt, composer?.Prompt.PublicKind) ?? fallback);
     }
 
     private static bool HasContent(Control resolution) =>
@@ -49,6 +61,7 @@ internal sealed class BoardContextualCopy
     internal void PresentFeedback(string text)
     {
         if (!InteractionControl.IsUsable(summary)) return;
+        if (InteractionControl.IsUsable(facts)) DraftFactsRow.Fill(facts!, []);
         summary!.Text = text;
         summary.Visible = text.Length > 0;
         summary.AccessibilityDescription = text;

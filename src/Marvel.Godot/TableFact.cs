@@ -99,4 +99,40 @@ internal enum TableFact
 
     /// <summary>All damage from the attack is prevented.</summary>
     AttackPrevented,
+
+    /// <summary>The choice deals its printed damage.</summary>
+    EffectDamage,
+
+    /// <summary>The choice removes its printed threat.</summary>
+    EffectRemoveThreat,
+
+    /// <summary>The choice draws its printed number of cards.</summary>
+    EffectDraw,
+
+    /// <summary>The choice stuns.</summary>
+    EffectStun,
+
+    /// <summary>The choice confuses.</summary>
+    EffectConfuse,
+
+    /// <summary>The choice gives tough.</summary>
+    EffectTough,
+
+    /// <summary>The game ended because the final villain stage was defeated.</summary>
+    OutcomeVillainDefeated,
+
+    /// <summary>The game ended because the final main scheme was completed.</summary>
+    OutcomeSchemeCompleted,
+
+    /// <summary>The game ended because every player was eliminated.</summary>
+    OutcomeEliminated,
+
+    /// <summary>The game ended because the encounter deck and its discard pile were both empty.</summary>
+    OutcomeEncounterExhausted,
+
+    /// <summary>The game ended with no more specific cause.</summary>
+    OutcomeEnded,
+
+    /// <summary>A card the pending decision of another seat resolves.</summary>
+    PendingSource,
 }

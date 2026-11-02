@@ -72,6 +72,13 @@ internal static class DecisionCopy
         return detail.Length == 0 ? label : $"{label}\n{detail}";
     }
 
+    /// <summary>
+    /// A complete window choice: its label, which states its effect, then its costs, its own description and the
+    /// consequence. The offer's general description stays on hover, so the choice never repeats its effect.
+    /// </summary>
+    internal static string WindowChoiceLabel(AffordancePresentation view, Marvel.Rules.Prompts.WindowChoice choice) =>
+        AbilityLabel(view with { Description = null }, choice.Label, choice.Description);
+
     internal static string AbilityDetail(AffordancePresentation view, string label, string? choice)
     {
         string?[] parts = [view.ContextDescription, choice, view.CostDescription, view.Description, view.Consequence];

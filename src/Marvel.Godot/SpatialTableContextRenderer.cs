@@ -36,14 +36,20 @@ internal static class SpatialTableContextRenderer
         summaryViewport.AddChild(copy);
         panel.AddChild(summaryViewport);
         Control resolution = AddSituation(surface, geometry, world, prompt);
+        // The draft shows as trackers and chips; its words stay the summary's accessible text and show only when
+        // no part can be drawn, such as a single response's description or a rejected gesture's feedback.
+        HFlowContainer facts = DraftFactsRow.Create(geometry.ReadingScale);
+        copy.AddChild(facts);
         Label summary = Copy("");
         summary.Name = "DraftProgress";
         summary.AutowrapMode = TextServer.AutowrapMode.Word;
         summary.TextOverrunBehavior = TextServer.OverrunBehavior.NoTrimming;
         copy.AddChild(summary);
-        summary.VisibilityChanged += () => summaryViewport.Visible = summary.Visible;
-        summaryViewport.Visible = summary.Visible;
-        result.RegisterContextualSummary(summary, "", resolution);
+        void Fit() => summaryViewport.Visible = summary.Visible || facts.Visible;
+        summary.VisibilityChanged += Fit;
+        facts.VisibilityChanged += Fit;
+        Fit();
+        result.RegisterContextualSummary(summary, facts, "", resolution);
         var scroll = new ScrollContainer { Name = "ContextualActionScroll", CustomMinimumSize = new Vector2(330, 0),
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
             HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled, VerticalScrollMode = ScrollContainer.ScrollMode.Auto,
@@ -92,12 +98,17 @@ internal static class SpatialTableContextRenderer
         bool ordinaryTurn = prompt?.PublicKind == PublicDecisionKind.PlayerAction;
         Label heading = AddHeading(prose, ordinaryTurn ? ""
             : presentation?.Heading ?? PendingSituationPresentation.Heading(world), scale);
-        if (presentation is null || ordinaryTurn)
-            return AddPendingContext(prose, ordinaryTurn ? "" : PendingSituationPresentation.Context(world));
+        if (ordinaryTurn) return AddPendingContext(prose, "");
+        if (presentation is null)
+        {
+            heading.MouseFilter = Control.MouseFilterEnum.Stop;
+            heading.TooltipText = PendingSituationPresentation.Context(world);
+            return AddChips(prose, PendingFacts(world), scale);
+        }
         heading.MouseFilter = Control.MouseFilterEnum.Stop;
-        heading.TooltipText = TableWording.DecisionDetail(presentation.Frame, presentation.DeclineLabel);
+        heading.TooltipText = DecisionWording.DecisionDetail(presentation.Frame, presentation.DeclineLabel);
         HFlowContainer facts = AddFacts(prose, presentation, scale);
-        if (TableWording.UnstructuredConsequence(presentation.Frame) is { Length: > 0 } consequence)
+        if (DecisionWording.UnstructuredConsequence(presentation.Frame, prompt!.PublicKind) is { Length: > 0 } consequence)
             AddConsequence(prose, consequence);
         return facts;
     }
@@ -136,15 +147,22 @@ internal static class SpatialTableContextRenderer
         return resolution;
     }
 
+    // A finished game names why it ended; another seat's decision names what caused it and what it resolves.
+    private static Wording[] PendingFacts(WorldDescriptor world) => world.Outcome == Marvel.Rules.Play.Outcome.Unfinished
+        ? DecisionWording.Pending(PendingSituationPresentation.Causes(world), PendingSituationPresentation.Sources(world))
+        : [TableWording.For(DecisionWording.OutcomeFact(world.Outcome, world.LossReason))];
+
     /// <summary>The decision's facts as one wrapping row of chips, read at the situation's text size.</summary>
-    private static HFlowContainer AddFacts(VBoxContainer cause, PromptPresentation presentation, InterfaceScale scale)
+    private static HFlowContainer AddFacts(VBoxContainer cause, PromptPresentation presentation, InterfaceScale scale) =>
+        AddChips(cause, DecisionSheetHead.Facts(presentation.Frame, presentation.DeclineLabel), scale);
+
+    private static HFlowContainer AddChips(VBoxContainer cause, Wording[] wordings, InterfaceScale scale)
     {
         var facts = new HFlowContainer { Name = "CausalContext", MouseFilter = Control.MouseFilterEnum.Ignore,
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
         int gap = VisualSystem.Spacing(scale).ExtraSmall;
         facts.AddThemeConstantOverride("h_separation", gap);
         facts.AddThemeConstantOverride("v_separation", gap);
-        Wording[] wordings = DecisionSheetHead.Facts(presentation.Frame, presentation.DeclineLabel);
         int size = Math.Max(15, VisualSystem.Type(scale).Heading);
         for (int index = 0; index < wordings.Length; index++)
         {

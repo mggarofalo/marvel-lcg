@@ -193,10 +193,7 @@ internal sealed class DecisionPaymentRenderer
         if (progress.AssignedIcons != progress.GeneratedIcons)
             summary += $" · {progress.AssignedIcons} assigned to payment";
         if (progress.ExcessIcons > 0) summary += $" · {progress.ExcessIcons} excess";
-        Label label = DecisionPanel.Text(summary,
-            progress.ExcessIcons > 0 ? GodotThemeVariations.DangerText : GodotThemeVariations.Body,
-            wrap: true);
-        label.Name = "PaymentProgress";
+        Control label = PaymentProgressTracker.Create(progress, summary, panel.ReadingScale);
         foreach (Control component in CardPaymentPresentation.Components(progress))
         {
             if (panel.PaymentModalOpen || panel.LocalDecision.IsOpen) panel.AddCommit(component);

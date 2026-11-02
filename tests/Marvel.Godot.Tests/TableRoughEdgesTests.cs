@@ -44,22 +44,22 @@ public sealed class TableRoughEdgesTests
     [Fact]
     public void AnAttackIsChipsOfWhoWhomItsValueAndAnUnresolvedBoost()
     {
-        Wording[] facts = TableWording.AttackFacts(new DecisionAttack("Rhino", "Spider-Man", 2, false, true, false));
+        Wording[] facts = DecisionWording.AttackFacts(new DecisionAttack("Rhino", "Spider-Man", 2, false, true, false));
         Assert.Equal(["Rhino → Spider-Man", "ATK 2", "Boost"], facts.Select(fact => fact.Label));
         Assert.Equal("Rhino is attacking Spider-Man.", facts[0].Tooltip);
         Assert.Equal(["attack", "", "boost"], facts.Select(fact => fact.Icon));
         Assert.Equal(["Rhino → Spider-Man", "Damage 3"],
-            TableWording.AttackFacts(new DecisionAttack("Rhino", "Spider-Man", 3, true, false, false)).Select(fact => fact.Label));
+            DecisionWording.AttackFacts(new DecisionAttack("Rhino", "Spider-Man", 3, true, false, false)).Select(fact => fact.Label));
     }
 
     [Fact]
     public void APreventedAttackShowsPreventedInsteadOfItsValue()
     {
-        Wording[] facts = TableWording.AttackFacts(new DecisionAttack("Rhino", "Spider-Man", 3, false, true, true));
+        Wording[] facts = DecisionWording.AttackFacts(new DecisionAttack("Rhino", "Spider-Man", 3, false, true, true));
         Assert.Equal(["Rhino → Spider-Man", "Prevented", "Boost"], facts.Select(fact => fact.Label));
         Assert.Equal("All damage from this attack is prevented; boost effects still resolve.", facts[1].Tooltip);
         Assert.Equal(["Rhino → Spider-Man", "Prevented"],
-            TableWording.AttackFacts(new DecisionAttack("Rhino", "Spider-Man", 3, true, false, true)).Select(fact => fact.Label));
+            DecisionWording.AttackFacts(new DecisionAttack("Rhino", "Spider-Man", 3, true, false, true)).Select(fact => fact.Label));
     }
 
     [Theory]
@@ -67,7 +67,7 @@ public sealed class TableRoughEdgesTests
     [InlineData(false, "The attacking enemy's ATK now, before defense and later effects.")]
     public void TheATKTooltipNamesBoostOnlyWhileItIsUnresolved(bool boostUnresolved, string tooltip) =>
         Assert.Equal(tooltip,
-            TableWording.AttackFacts(new DecisionAttack("Rhino", "Spider-Man", 2, false, boostUnresolved, false))[1].Tooltip);
+            DecisionWording.AttackFacts(new DecisionAttack("Rhino", "Spider-Man", 2, false, boostUnresolved, false))[1].Tooltip);
 
     [Fact]
     public void TheSheetAndThePromptLineCarryTheAttackAfterTheCauses()
@@ -88,7 +88,7 @@ public sealed class TableRoughEdgesTests
             "Enemy attack · Kang (Iron Lad) is attacking She-Hulk.");
         Assert.Equal("Decision for She-Hulk · Resolving Kang (Iron Lad)\nYou may leave attack undefended.\n"
             + "Enemy attack · Kang (Iron Lad) is attacking She-Hulk.",
-            TableWording.DecisionDetail(frame, "Leave attack undefended"));
+            DecisionWording.DecisionDetail(frame, "Leave attack undefended"));
     }
 
     [Theory]
@@ -174,10 +174,40 @@ public sealed class TableRoughEdgesTests
         var frame = new DecisionFrame("Spider-Man", DecisionSubject.Resolving, "Beat Cop", false, [],
             "Choose an enemy.\nCurrent damage: 3 before prevention/replacement.");
         Assert.Equal("Choose an enemy. · Current damage: 3 before prevention/replacement.",
-            TableWording.UnstructuredConsequence(frame));
-        Assert.Equal("", TableWording.UnstructuredConsequence(frame with
+            DecisionWording.UnstructuredConsequence(frame, PublicDecisionKind.Choice));
+        Assert.Equal("", DecisionWording.UnstructuredConsequence(frame with
         {
             Attack = new DecisionAttack("Rhino", "Spider-Man", 2, false, true, false),
-        }));
+        }, PublicDecisionKind.Choice));
+    }
+
+    [Theory]
+    [InlineData(PublicDecisionKind.Choice, false)]
+    [InlineData(PublicDecisionKind.OpeningHand, true)]
+    [InlineData(PublicDecisionKind.EndPhaseDiscards, true)]
+    public void ATypedEffectOrAStagingKindReplacesTheConsequenceLine(PublicDecisionKind kind, bool staging)
+    {
+        var frame = new DecisionFrame("Spider-Man", DecisionSubject.Resolving, "Swinging Web Kick", false, [],
+            "Choose an enemy to attack. Printed damage: 8; modifiers, prevention and later effects can change the result.");
+        Assert.Equal(staging, DecisionWording.UnstructuredConsequence(frame, kind).Length == 0);
+        Assert.Equal("", DecisionWording.UnstructuredConsequence(frame with
+        {
+            Effect = new PromptEffect(PromptEffectKind.Damage, 8),
+        }, kind));
+    }
+
+    [Theory]
+    [InlineData(PromptEffectKind.Damage, 8, "Damage 8", "Icon_damage")]
+    [InlineData(PromptEffectKind.RemoveThreat, 3, "Threat − 3", "Icon_remove_threat")]
+    [InlineData(PromptEffectKind.Draw, 1, "Draw 1", "Icon_draw")]
+    [InlineData(PromptEffectKind.Stun, 0, "Stun", "Icon_stun")]
+    [InlineData(PromptEffectKind.Confuse, 0, "Confuse", "Icon_confuse")]
+    [InlineData(PromptEffectKind.Tough, 0, "Tough", "Icon_tough")]
+    public void APrintedEffectIsOneChipWithItsAmount(PromptEffectKind kind, long amount, string label, string icon)
+    {
+        Wording wording = DecisionWording.Effect(new PromptEffect(kind, amount));
+        Assert.Equal(label, wording.Label);
+        Assert.Equal(icon, "Icon_" + wording.Icon);
+        Assert.NotEmpty(wording.Tooltip);
     }
 }

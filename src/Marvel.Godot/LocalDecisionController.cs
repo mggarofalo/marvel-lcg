@@ -86,23 +86,16 @@ internal sealed class LocalDecisionController(DecisionPanel panel) : IDisposable
         panel.CurrentBoard?.SetCompleteChoicesOpen(true);
     }
 
-    private string Requirement(PromptPresentation prompt) =>
-        $"Player {panel.composer!.Prompt.Player + 1} · " +
-        (panel.composer.Selected is not null && panel.composer.Prompt.PublicKind == Marvel.Rules.Prompts.PublicDecisionKind.PlayerAction
-            ? "Draft — not committed" : prompt.Requirement());
-
     private void AddHeader(PromptPresentation prompt)
     {
         AddSource();
-        Content!.AddChild(DecisionPanel.Text(Requirement(prompt),
-            GodotThemeVariations.Caption, wrap: true));
+        HFlowContainer facts = CardPaymentWorkspaceHeader.DecisionFactsRow(prompt, panel.ReadingScale);
+        if (panel.composer?.Selected is not null && panel.composer.Prompt.PublicKind == Marvel.Rules.Prompts.PublicDecisionKind.PlayerAction)
+            facts.AddChild(Chip.Create("DecisionDraft", DecisionWording.Draft, null, panel.ReadingScale));
+        Content!.AddChild(facts);
         if (Continuity.Committed)
             Content.AddChild(DecisionPanel.Text("Previous choice committed · no refund on close.",
                 GodotThemeVariations.Caption, wrap: true));
-        if (panel.composer is { } current
-            && CardPaymentWorkspaceHeader.ShowsResolution(current.Prompt.PublicKind, current.Prompt.CauseCardIds.Count > 0)
-            && !string.IsNullOrWhiteSpace(prompt.Resolution()))
-            Content.AddChild(DecisionPanel.Text(prompt.Resolution(), GodotThemeVariations.Body, wrap: true));
         var recovery = DecisionPanel.Text(notice, GodotThemeVariations.Body, wrap: true);
         recovery.Name = "LocalRecovery";
         recovery.Visible = notice.Length > 0;

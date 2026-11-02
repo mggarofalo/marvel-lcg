@@ -25,6 +25,12 @@ distinguishes one fact from another.
 | `attack.svg` | A blade: an enemy attack is resolving. |
 | `boost.svg` | A warning triangle: boost icons are not counted yet. |
 | `sync_stale.svg` | A broken refresh loop: the displayed table may not match the authority. |
+| `damage.svg` | A burst: the choice deals damage. |
+| `remove_threat.svg` | A ring with a bar: the choice removes threat. |
+| `draw.svg` | A card with a plus: the choice draws cards. |
+| `stun.svg` | A jagged star, the stunned badge's shape: the choice stuns. |
+| `confuse.svg` | Two rings, the confused badge's ring: the choice confuses. |
+| `tough.svg` | An octagon, the tough badge's shape: the choice gives tough. |
 
 Two pairs of facts share an icon because they state one concept. The lock marks both
 an out-of-reach area and the rule that areas cannot affect one another, since that rule

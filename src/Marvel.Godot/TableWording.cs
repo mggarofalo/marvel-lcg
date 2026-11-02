@@ -1,5 +1,6 @@
 using System.Globalization;
 using Marvel.Rules.Play;
+using Marvel.Rules.Prompts;
 using Marvel.View;
 
 namespace Marvel.Godot;
@@ -58,6 +59,21 @@ internal static class TableWording
         [TableFact.AttackPrevented] = new("", "Prevented", "All damage from this attack is prevented; boost effects still resolve."),
         [TableFact.AttackDamage] = new("", "Damage", "The attack's calculated damage; later effects can still change it."),
         [TableFact.BoostUnresolved] = new("boost", "Boost", "Boost icons are not counted yet and can add to the attack."),
+        [TableFact.EffectDamage] = new("damage", "Damage",
+            "Printed damage; modifiers, prevention and later effects can change the result."),
+        [TableFact.EffectRemoveThreat] = new("remove_threat", "Threat −",
+            "Printed threat removal; modifiers and later effects can change the result."),
+        [TableFact.EffectDraw] = new("draw", "Draw", "Cards drawn."),
+        [TableFact.EffectStun] = new("stun", "Stun", "Gives a stunned status card."),
+        [TableFact.EffectConfuse] = new("confuse", "Confuse", "Gives a confused status card."),
+        [TableFact.EffectTough] = new("tough", "Tough", "Gives a tough status card."),
+        [TableFact.OutcomeVillainDefeated] = new("", "Villain defeated", "The final villain stage was defeated."),
+        [TableFact.OutcomeSchemeCompleted] = new("", "Scheme completed", "The final main scheme was completed."),
+        [TableFact.OutcomeEliminated] = new("", "All eliminated", "All players were eliminated."),
+        [TableFact.OutcomeEncounterExhausted] = new("", "Encounter cards out",
+            "The encounter deck and discard pile are both empty."),
+        [TableFact.OutcomeEnded] = new("", "Game over", "The game ended."),
+        [TableFact.PendingSource] = new("", "Resolving", "The card the other player's decision resolves."),
     };
 
     /// <summary>The wording of one fact.</summary>
@@ -171,6 +187,9 @@ internal static class TableWording
     /// <summary>Where the seats the rail cannot show are.</summary>
     internal const string SeatOverflow = "More seats: scroll the rail.";
 
+    /// <summary>The legend strip's close control.</summary>
+    internal const string CloseLegend = "Close the legend; the Rules toggle keeps it.";
+
     /// <summary>The decision sheet's title when no prompt is open.</summary>
     internal const string CurrentChoice = "Current choice";
 
@@ -180,75 +199,6 @@ internal static class TableWording
     /// <summary>A tracker's accessible reading, such as "Kang (II) 2 of 3, Dominions 1".</summary>
     internal static string TrackerReading(string label, int filled, int total, string? counter, int count) =>
         label + (total > 0 ? $" {Count(filled)} of {Count(total)}" : "") + (counter is { } name ? $", {name} {Count(count)}" : "");
-
-    /// <summary>A cause chip's tooltip: what a cause is, then the card.</summary>
-    internal static string DecisionCause(string cause) => $"{For(TableFact.DecisionCause).Tooltip} {cause}.";
-
-    /// <summary>What the decision concerns, as one short line, or empty when it names nothing.</summary>
-    internal static string DecisionSubjectLine(DecisionFrame frame) => frame.Subject switch
-    {
-        DecisionSubject.MinionActivation => "Choosing the next minion activation",
-        DecisionSubject.Inspecting => $"Inspecting {frame.SubjectTitle}",
-        DecisionSubject.Resolving => $"Resolving {frame.SubjectTitle}",
-        _ => "",
-    };
-
-    /// <summary>Who answers and what the decision concerns.</summary>
-    internal static string DecisionContext(DecisionFrame frame) => $"Decision for {frame.SeatName}"
-        + (DecisionSubjectLine(frame) is { Length: > 0 } subject ? $" · {subject}" : "");
-
-    /// <summary>Whether the answering seat may decline, named by the engine's decline label.</summary>
-    internal static string DecisionRequirement(DecisionFrame frame, string declineLabel) =>
-        frame.Optional ? $"You may {declineLabel.ToLowerInvariant()}." : "Choose to continue.";
-
-    /// <summary>The causes, then the engine's instruction.</summary>
-    internal static string DecisionResolution(DecisionFrame frame) =>
-        (frame.Causes.Count == 0 ? "" : $"Cause: {string.Join(", ", frame.Causes)}. ") + frame.Instruction;
-
-    /// <summary>
-    /// An attack's facts as chips: who attacks whom, its value or that its damage is prevented, and an unresolved
-    /// boost.
-    /// </summary>
-    internal static Wording[] AttackFacts(DecisionAttack attack) =>
-    [
-        For(TableFact.Attack) with
-        {
-            Label = $"{attack.Attacker} → {attack.Target}", Tooltip = $"{attack.Attacker} is attacking {attack.Target}.",
-        },
-        attack.Prevented ? For(TableFact.AttackPrevented) : AttackValue(attack),
-        .. attack.BoostUnresolved ? [For(TableFact.BoostUnresolved)] : Array.Empty<Wording>(),
-    ];
-
-    // ATK is worded by what can still change it, as the engine's own attack sentence words it.
-    private static Wording AttackValue(DecisionAttack attack)
-    {
-        Wording value = For(attack.Calculated ? TableFact.AttackDamage : TableFact.AttackValue);
-        if (!attack.Calculated && !attack.BoostUnresolved)
-            value = value with { Tooltip = "The attacking enemy's ATK now, before defense and later effects." };
-        return value with { Label = $"{value.Label} {attack.Value.ToString(CultureInfo.InvariantCulture)}" };
-    }
-
-    /// <summary>
-    /// The engine's instruction as one line when no typed fact states the decision's consequence, or empty when
-    /// the attack's chips already state it.
-    /// </summary>
-    internal static string UnstructuredConsequence(DecisionFrame frame) =>
-        frame.Attack is not null ? "" : frame.Instruction.Replace("\n", " · ", StringComparison.Ordinal).Trim();
-
-    /// <summary>The whole decision in words, for the question's tooltip: who answers, then the engine's instruction.</summary>
-    internal static string DecisionDetail(DecisionFrame frame, string declineLabel) => string.Join("\n",
-        new[] { DecisionContext(frame), DecisionRequirement(frame, declineLabel), DecisionResolution(frame) }
-            .Where(line => line.Length > 0));
-
-    /// <summary>A prompt's answering seat and subject, worded.</summary>
-    internal static string Context(this PromptPresentation prompt) => DecisionContext(prompt.Frame);
-
-    /// <summary>A prompt's required-or-optional line, worded.</summary>
-    internal static string Requirement(this PromptPresentation prompt) =>
-        DecisionRequirement(prompt.Frame, prompt.DeclineLabel);
-
-    /// <summary>A prompt's causes and instruction, worded.</summary>
-    internal static string Resolution(this PromptPresentation prompt) => DecisionResolution(prompt.Frame);
 
     private static string Count(int value) => value.ToString(CultureInfo.InvariantCulture);
 }

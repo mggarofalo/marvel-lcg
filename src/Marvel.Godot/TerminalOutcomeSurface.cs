@@ -32,9 +32,13 @@ internal static class TerminalOutcomeSurface
             SizeFlagsVertical = Control.SizeFlags.ShrinkBegin,
         };
         frame.AddChild(stack);
+        // The heading names the result; one chip names why, explained on hover.
         stack.AddChild(Copy("OutcomeHeading", outcome.Heading, 28));
-        stack.AddChild(Copy("OutcomeResult", outcome.Result, 18));
-        if (outcome.Detail.Length > 0) stack.AddChild(Copy("OutcomeCause", outcome.Detail, 15));
+        Marvel.View.WorldDescriptor world = main.CurrentGame.World;
+        PanelContainer reason = Chip.Create("OutcomeResult",
+            TableWording.For(DecisionWording.OutcomeFact(world.Outcome, world.LossReason)), null, main.decisions.ReadingScale);
+        reason.SizeFlagsHorizontal = Control.SizeFlags.ShrinkBegin;
+        stack.AddChild(reason);
         var actions = new HBoxContainer { ThemeTypeVariation = GodotThemeVariations.WideRow };
         stack.AddChild(actions);
         var review = new Button

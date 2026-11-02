@@ -24,8 +24,8 @@ func _active_resolution_is_safe(state: Dictionary) -> bool:
 
 func _hidden_resolution_is_safe(state: Dictionary) -> bool:
 	var contextual := preload("res://smoke/decision_surface_controls.gd").resolution(main)
-	var text := _visible_text(contextual).to_lower() if contextual != null else ""
-	if "enemy attack" not in text and "defend" not in text and "defense" not in text:
+	var text := (_visible_text(contextual) + "\n" + _fact_tooltips(contextual)).to_lower() if contextual != null else ""
+	if "is attacking" not in text and "defend" not in text and "defense" not in text:
 		return true
 	state.saw_attack_resolution = true
 	if not await _capture_checkpoint("attack-interrupt"): return false

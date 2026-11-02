@@ -50,6 +50,8 @@ static func _pay(smoke) -> bool:
 
 static func _explanation(smoke) -> bool:
     var copy: String = smoke._visible_text(smoke._payment_modal())
+    var paid = smoke._payment_modal().find_child("PaymentProgress", true, false)
+    if paid != null: copy += " " + paid.tooltip_text
     if "Play Lockjaw" not in copy or "Pay 4" not in copy or "4 resources selected" not in copy \
         or "Pay and play Lockjaw" not in copy:
         smoke._fail("ordinary payment lacks Lockjaw source and four-resource cost: " + copy)
