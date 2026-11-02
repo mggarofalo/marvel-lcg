@@ -169,21 +169,32 @@ public sealed class SharedTraitEventReviewTests
         Assert.Equal(InformationKind.Search, Assert.Single(new Resolution(world, prompt, []).Information).Kind);
     }
     [Fact]
-    public void MatchingUnsupportedActionRaisesRatherThanDisappearing()
+    [Marvel.Tests.Rule("rr:cost.5")]
+    public void MatchingActionWithAnArrowCostPaysItWithTheReducedCardCost()
     {
+        // rr:cost.5: "If multiple costs for a single card or ability require payment,
+        // those costs must be paid simultaneously." The event costs 3 - 1 + 1 resources.
         var runner = new AbilityRunner(AbilityCatalog.Parse("""
             {"cards":[{"card":"01006","abilities":[{"trigger":{"event":"WhenActionTriggered","timing":"Action","subject":"game"},
               "cost":{"exhaust":"this"},"effect":{"playSharedHeroTraitCard":"game"}}]},
               {"card":"01005","abilities":[{"trigger":{"event":"WhenActionTriggered","timing":"Action","subject":"game"},
               "cost":{"spendAny":1},"effect":{"draw":{"player":"you","count":1}}}]}]}
             """));
-        var (_, world) = Playing(board => {
-            Hand(board, "01003", 0); InPlay(board, "01006");
+        Card? source = null;
+        var (game, world) = Playing(board => {
+            source = InPlay(board, "01006");
         }, hero: true, abilities: runner);
         var card = world.CreateCard("01005", world.Seats[0].Hand);
+        int[] payment = [.. Enumerable.Range(0, 3).Select(_ => world.CreateCard("01003", world.Seats[0].Hand).ObjectId)];
         world.Effects.Register(new ContinuousEffect(EffectSource.LastingEffect, Traits.Granted + "AVENGER", Affects: card.ObjectId));
-        var error = Assert.Throws<RulesNotImplementedException>(() => runner.Actions(world, 0));
-        Assert.Contains("without an arrow cost", error.Message, StringComparison.Ordinal);
+        int hand = world.Seats[0].Hand.Cards.Count;
+        game.Resolve(Decision.Take(Assert.Single(game.Pending!.Affordances, a => a.AnchorId == source!.ObjectId).Id));
+        var offer = Assert.Single(game.Pending!.Affordances, a => a.AnchorId == card.ObjectId);
+        var price = Assert.Single(offer.CostOptions);
+        Assert.Equal("3", price.Cost);
+        game.Resolve(new Decision(offer.Id, [], payment, Allocations: ResourcePayment.Allocate(price, payment)));
+        Assert.Equal(DeckType.DiscardPile, card.Area.Type);
+        Assert.Equal(hand - 4 + 1, world.Seats[0].Hand.Cards.Count);
     }
 
 }

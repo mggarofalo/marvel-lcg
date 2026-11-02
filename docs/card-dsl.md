@@ -9,9 +9,8 @@ forced and optional attack-end responses and is zero without a completed attack.
 that shares a live trait with their hero, played at a cost reduced by one. The
 spelling is an engine choice. It is admitted once in an Action whose sole cost
 is exhausting its source, either as the entire effect or as the first instruction
-of a sequence. The normal play and payment procedures apply. An eligible event must
-have exactly one ordinary Action, with no arrow cost or paid-resource-dependent
-effect; unsupported matching Action shapes raise rather than guessing. Event
+of a sequence. The normal play and payment procedures apply. An event plays
+through its Action as described under "Hand plays and looked-at cards". Event
 conditions, form and targets remain subject to ordinary Action admission.
 
 
@@ -602,7 +601,7 @@ identitiesWithinPerPlayerLimit inForm increaseBoostCount indirectDamage initiate
 isYourIdentity keyword kind legalPractice mainScheme makeTheCall markThisRound markedThisRound maxBy minions
 minionsEngagedWithYou minionsInThisGameArea modified moveAttackDamage mul namedInPlay obligationsInThisGameArea onto options overkill
 inspectEncounterTop paidWithResource payOrEffect payOrExhaust peekTop perPlayer placeAccelerationToken
-placeAtRandom placeCounters placeThreat playIgnoringResourceCost power powerAmount powerTargets cardsDiscarded
+placeAtRandom placeCounters placeThreat playFromHand playIgnoringResourceCost power powerAmount powerTargets cardsDiscarded
 preventDamage preventDamageFrom preventDamageWhile preventDamageWithCounters preventPlayerAttackDamage preventThreat
 preventThreatRemoval printedResourceCountDiscarded putIntoPlay
 recoverDiscardedByResource reduceNextCardCost remainingHealth removeCounters stunUndamagedDefendersAttacker
@@ -674,9 +673,27 @@ play ignoring its resource cost, through the same scoped play as
 rr:ignore.1: no resources are paid, so no cost increase or reduction is applied
 or consumed, and a paid-resource condition reads the empty payment (ruling
 77085e3b31a219a4). rr:requirement-resources.2 excludes a card with a resource
-requirement. An event plays through its one Action; an event with an arrow cost
-is offered and raises when chosen. `result: "printedCostPlayed"` then reads the
+requirement. `result: "printedCostPlayed"` then reads the
 played card's printed resource cost, per player where printed.
+
+`playFromHand: {"reduction": N, "optional": "true"}` offers the resolving player
+any card in their hand to play with its resource cost reduced by N, never below
+zero. The spelling is an engine choice. `optional` makes the prompt declinable
+(rr:may); without it a card must be chosen when one can be played. It is a
+permission to play outside the game's timing (rr:play-restrictions-and-permissions.2),
+so it works in either form and in any phase; the card's own form requirement,
+uniqueness, limits and other restrictions still apply. It lowers only as the whole
+effect or as the whole body of a `player: "defeater"` `eachPlayer`, because nothing
+resumes after the play but the frame's end. Crystal Ball (16130) uses it.
+
+In every scoped play an event is played by triggering one of its Actions
+(rr:player-turn.5.d), priced and admitted by the ordinary Action procedure at the
+scoped price: its arrow cost is paid together with the reduced resource cost
+(rr:cost.5), and cost targets are offered on the play. An Interrupt or Response
+event is never offered, because its own triggering condition is not occurring
+(rr:initiating-abilities step 2). An event with more than one Action that can be
+triggered at once raises, since rr:event.1's choice between them has no prompt.
+When no card can be played, the scoped play resolves nothing without asking.
 
 `chooseTopForHand` accepts `rest: "bottomOfDeck"`: the cards not added to hand
 go to the bottom of the deck. With two or more of them the player answers one

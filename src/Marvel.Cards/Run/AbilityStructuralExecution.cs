@@ -29,9 +29,11 @@ internal static class AbilityStructuralExecution
 
     internal static AbilityStructuralTransition Decide(AbilityStructuralContext context, AbilityEffect effect)
     {
-        if (effect.OperationName() is "makeTheCall" or "legalPractice" or "peekTop" or "inspectEncounterTop" or "inspectDiscardOrderEncounterTop"
-            || AbilityScopedPlay.IsScopedPlay(effect))
+        if (effect.OperationName() is "makeTheCall" or "legalPractice" or "peekTop" or "inspectEncounterTop" or "inspectDiscardOrderEncounterTop")
             return AskFor(context, effect);
+        // A scoped play with no card that can be played now resolves nothing.
+        if (AbilityScopedPlay.IsScopedPlay(effect))
+            return AbilityScopedPlay.Describe(context, effect).Affordances.Count == 0 ? new Complete(context.Frames) : AskFor(context, effect);
         return effect switch
         {
             AbilityEffect.ResolveInvocation => AbilityInvocationPayment.Resolve(context),

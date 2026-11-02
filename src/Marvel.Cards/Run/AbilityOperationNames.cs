@@ -68,6 +68,7 @@ internal static class AbilityOperationNames
         AbilityEffect.PreventThreat => "preventThreat",
         AbilityEffect.PreventDamage => "preventDamage",
         AbilityEffect.GainSurge => "gainSurge",
+        AbilityCardPlayEffect.PlayFromHand => "playFromHand",
         AbilityRoundEffect.MarkThisRound => "markThisRound",
         AbilityEffect.Generate => "generate",
         AbilityEffect.DoubleResourceFor => "doubleResourceFor",
