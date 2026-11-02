@@ -33,6 +33,13 @@ internal sealed record AbilityStructuralContext(
         !AbilityCardQueries.IsPlayerCard(Expressions.World.Facts, Expressions.Source)
         && Tier is { } tier && AbilityTypes.IsMandatory(tier);
 
+    // rr:first-player.2: "If an encounter card requires a card ability to be
+    // resolved, a game function to be performed, or a choice to be made but does
+    // not specify which player should act, the first player does so." A
+    // resolution bound to no player is that unspecified case.
+    internal bool FirstPlayerChooses(AbilityEffect choice) =>
+        choice is AbilityEffect.ChooseCard { FirstPlayerChooses: true } || Player < 0;
+
     /// <summary>Whether a card choice offers its legal cards without filtering by later text.</summary>
     internal bool ChoosesWithoutContinuation(AbilityEffect.ChooseCard choice) =>
         IsMandatoryEncounter || AbilityAdmission.IsDiscardReceiptChoice(choice.From);
