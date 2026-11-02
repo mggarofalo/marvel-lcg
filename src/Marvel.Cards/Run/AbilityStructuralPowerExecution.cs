@@ -112,11 +112,7 @@ internal static class AbilityStructuralPowerExecution
     {
         Card? against = activation.Against is { } named ? Find(named, context) : null;
         int seat = ActivationSeat(context, activation, against);
-        if (seat < 0)
-            return new Unsupported(
-                $"'{context.SourceFace}' initiates an enemy attack against a character with no attacked player");
-        if (!HasCurrentActivationTarget(activation, against))
-            return new Unsupported($"'{context.SourceFace}' cannot resolve its explicit attacked character");
+        if (SettledBeforeEnemies(context, activation, against, seat) is { } settled) return settled;
 
         var enemies = ordered ?? ActivationCandidates(context, activation);
         if (enemies.Count > 1 && ordered is null)
@@ -126,6 +122,17 @@ internal static class AbilityStructuralPowerExecution
         return new ScheduleActivationsCommand(
             activation, targets, against?.ObjectId ?? -1,
             activation.First, activation.Dynamic);
+    }
+
+    // The attacked player decides the activation before any enemy is chosen.
+    private static Unsupported? SettledBeforeEnemies(AbilityStructuralContext context,
+        AbilityEffect.ActivateEnemies activation, Card? against, int seat)
+    {
+        if (seat < 0)
+            return new Unsupported(
+                $"'{context.SourceFace}' initiates an enemy attack against a character with no attacked player");
+        return HasCurrentActivationTarget(activation, against) ? null
+            : new Unsupported($"'{context.SourceFace}' cannot resolve its explicit attacked character");
     }
 
     // An omitted target uses the attacked identity. A retained explicit target
