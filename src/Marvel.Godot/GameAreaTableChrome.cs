@@ -113,7 +113,7 @@ internal static class GameAreaTableChrome
     {
         Control? step = column.ActingStep is { } acting
             ? Tracker.Create("ActingStep", new TrackerState("", StepIndex(acting), 3, null, 0,
-                TableWording.For(TableWording.Step(acting)).Tooltip), scale)
+                TableWording.For(TableWording.Step(acting)).Tooltip) { Numbered = false }, scale)
             : null;
         // The step pips and the heavy border state that the area is acting, so its icon is not repeated.
         TableFact[] icons = [.. column.Facts.Where(fact => step is null || fact != TableFact.Acting)];

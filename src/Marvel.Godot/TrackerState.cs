@@ -7,4 +7,8 @@ namespace Marvel.Godot;
 /// <param name="Counter">The counted fact beside the pips, or null for none.</param>
 /// <param name="Count">The counted fact's number.</param>
 /// <param name="Tooltip">The full explanation of the tracked progress.</param>
-internal sealed record TrackerState(string Label, int Filled, int Total, Wording? Counter, int Count, string Tooltip);
+internal sealed record TrackerState(string Label, int Filled, int Total, Wording? Counter, int Count, string Tooltip)
+{
+    /// <summary>Whether a small number stands beside the pips; a column header's step pips leave its title the room.</summary>
+    internal bool Numbered { get; init; } = true;
+}

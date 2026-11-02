@@ -37,8 +37,9 @@ internal static class TableCanvasBounds
             {
                 Callable.From(() =>
                 {
-                    if (InteractionControl.IsUsable(main))
-                        main.boardController.RerenderForViewport(main.GetViewportRect().Size);
+                    if (!InteractionControl.IsUsable(main)) return;
+                    main.boardController.RerenderForViewport(main.GetViewportRect().Size);
+                    Callable.From(main.eventController.FitTimeline).CallDeferred();
                 }).CallDeferred();
                 return true;
             }

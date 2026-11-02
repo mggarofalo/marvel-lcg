@@ -44,7 +44,7 @@ internal static class Tracker
         Label number = TableBlockStyle.Whole("Number", Number(state.Filled, state.Total), scale, VisualSystem.Palette.MutedText);
         number.AddThemeFontSizeOverride("font_size", VisualSystem.Type(scale).Caption);
         number.MouseFilter = Control.MouseFilterEnum.Ignore;
-        number.Visible = number.Text.Length > 0;
+        number.Visible = state.Numbered && number.Text.Length > 0;
         row.AddChild(number);
         if (state.Counter is { } counter) row.AddChild(Chip.Create("Counter", counter, state.Count, scale));
         return row;

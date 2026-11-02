@@ -91,7 +91,7 @@ internal static class SpatialTableContextRenderer
     {
         bool ordinaryTurn = prompt?.PublicKind == PublicDecisionKind.PlayerAction;
         Label heading = AddHeading(prose, ordinaryTurn ? ""
-            : presentation?.Heading ?? PendingSituationPresentation.Heading(world));
+            : presentation?.Heading ?? PendingSituationPresentation.Heading(world), scale);
         if (presentation is null || ordinaryTurn)
             return AddPendingContext(prose, ordinaryTurn ? "" : PendingSituationPresentation.Context(world));
         heading.MouseFilter = Control.MouseFilterEnum.Stop;
@@ -99,14 +99,15 @@ internal static class SpatialTableContextRenderer
         return AddFacts(prose, presentation, scale);
     }
 
-    private static Label AddHeading(VBoxContainer cause, string text)
+    // The question reads a step larger than its chips.
+    private static Label AddHeading(VBoxContainer cause, string text, InterfaceScale scale)
     {
         Label heading = Copy(text);
         heading.AutowrapMode = TextServer.AutowrapMode.Word;
         heading.TextOverrunBehavior = TextServer.OverrunBehavior.NoTrimming;
         heading.Name = "ContextualHeading";
         cause.AddChild(heading);
-        heading.AddThemeFontSizeOverride("font_size", 18);
+        heading.AddThemeFontSizeOverride("font_size", Math.Max(18, VisualSystem.Type(scale).Heading + 2));
         return heading;
     }
 
