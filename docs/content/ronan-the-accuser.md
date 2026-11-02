@@ -116,8 +116,8 @@ players; seeds 1–10), hashing every prompt and state digest, is identical on
 - Research-only complete Standard games, dealt directly rather than through
   discovery, with exact replay, and the Standard and Expert setup:
   `RonanTheAccuserResearchGameTests`.
-- Every new decision has a mutant, and all 55 are killed: the engine words and the
-  projected villain play area test, each row's conditions and amounts (including
+- Every new decision has a mutant, and all 60 are killed: the engine words and the
+  projected villain play area test and its shape, each row's conditions and amounts (including
   "you" on Ronan's interrupts, "per hero" on Superior Tactics and the villain-only
   boost of "You Stand Accused!"), and the Kree Command Ship's first-player,
   treachery and peril limits.
