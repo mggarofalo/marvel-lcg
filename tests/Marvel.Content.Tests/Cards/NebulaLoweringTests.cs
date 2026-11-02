@@ -35,6 +35,13 @@ public sealed class NebulaLoweringTests : CoreCardTestBase
     }
 
     [Fact]
+    public void ACounterNamedRevealedIsNotTheRevealedCard()
+    {
+        Assert.Null(Record.Exception(() => Lower(
+            """{"trigger":""" + Trigger + ""","effect":{"placeCounters":{"card":"you","counter":"revealed","count":1}}}""")));
+    }
+
+    [Fact]
     public void TheRevealedCardFollowsADiscardUntilReveal()
     {
         Assert.Null(Record.Exception(() => Lower(

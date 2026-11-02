@@ -8,6 +8,10 @@ internal static class AbilityRevealMemoryLowering
     private const string Field = "differentTitleFromRevealed";
     private const string Binding = "revealed";
 
+    // Fields whose word is a name rather than a card, such as a counter type.
+    private static bool IsNameField(string key) => key is "counter" or "mark" or "markThisRound"
+        or "markedThisRound" or "trait" or "title" or "keyword" or "status" or "kind" or "type";
+
     internal static void Validate(CardAbility ability, AbilityLocation location, IEnumerable<AbilityEffect> nodes)
     {
         if (ability.Cost is { } cost && Mentions(AbilityBookLowering.Syntax(cost), out string costName))
@@ -36,7 +40,8 @@ internal static class AbilityRevealMemoryLowering
                         name = Field;
                         return true;
                     }
-                    if (Mentions(entry.Value, out name)) return true;
+                    if (!(IsNameField(entry.Key) && entry.Value is AbilityValue.Word)
+                        && Mentions(entry.Value, out name)) return true;
                 }
                 break;
             case AbilityValue.List list:
