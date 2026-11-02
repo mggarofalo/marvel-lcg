@@ -188,7 +188,8 @@ internal static class AbilityEffectTargetAdmission
             // A random hand discard affects a card only while one is in hand. Ruling
             // 304a4798e0b453b4: an encounter choice must be an option the player can
             // fully resolve (rr:choose-option.1).
-            "discardAtRandom" => AbilityCardStateAdmission.CardStatePartialResolution(node, cast) == true
+            // Removing a deck's top card from the game affects a card only while the deck holds one.
+            "discardAtRandom" or "removeTopFromGame" => AbilityCardStateAdmission.CardStatePartialResolution(node, cast) == true
                 ? TargetLegality.Valid : TargetLegality.Invalid,
             "discardUntil" => DiscardUntilTargetLegality(node, cast),
             "search" => HasSearchableArea(node, cast)

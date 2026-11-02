@@ -55,7 +55,7 @@ internal static class AbilityCardStateAdmission
             "discardAtRandom" => Amount(EffectOf<AbilityEffect.DiscardAtRandom>(node, cast).Count, cast) > 0
                 && Seats(EffectOf<AbilityEffect.DiscardAtRandom>(node, cast).Players, cast)
                     .Any(seat => cast.World.Seats[seat].Hand.Cards.Count > 0),
-            "discardTop" => Amount(EffectOf<AbilityEffect.DiscardTop>(node, cast).Count, cast) > 0
+            "discardTop" or "removeTopFromGame" => Amount(EffectOf<AbilityEffect.DiscardTop>(node, cast).Count, cast) > 0
                 && DiscardTopHasCards((AbilityEffect.DiscardTop)node, cast),
             "heal" => Find(EffectOf<AbilityEffect.Heal>(node, cast).Card, cast) is { Damage: > 0 }
                 && Amount(EffectOf<AbilityEffect.Heal>(node, cast).Amount, cast) > 0,
