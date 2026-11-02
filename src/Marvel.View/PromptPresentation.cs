@@ -122,8 +122,20 @@ public sealed record PromptPresentation(
             : DecisionSubject.Resolving;
         return new DecisionFrame(player, subject,
             contextCards.Count > 0 ? contextCards[0].Title : null, prompt.Cancellable,
-            Causes(prompt, world), prompt.Description?.Trim() ?? string.Empty);
+            Causes(prompt, world), prompt.Description?.Trim() ?? string.Empty)
+        {
+            Attack = Attack(prompt.Attack, world),
+        };
     }
+
+    private static DecisionAttack? Attack(PromptAttack? attack, WorldDescriptor world) =>
+        attack is not null && Title(attack.Attacker, world) is { } attacker && Title(attack.Target, world) is { } target
+            ? new DecisionAttack(attacker, target, attack.Value, attack.Calculated, attack.BoostUnresolved)
+            : null;
+
+    private static string? Title(int id, WorldDescriptor world) => world.Areas
+        .SelectMany(area => area.Cards.Concat(area.Removed))
+        .FirstOrDefault(card => card.Id == id)?.Face?.Title;
 
     /// <summary>Names an authorized board object, or leaves an opaque fallback.</summary>
     public static string Describe(int id, WorldDescriptor world)

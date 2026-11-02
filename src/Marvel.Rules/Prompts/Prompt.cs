@@ -78,6 +78,10 @@ public sealed record Prompt(
     /// <summary>Readable engine-authored context for the pending decision.</summary>
     public string? Description { get; init; }
 
+    /// <summary>The enemy attack this decision is taken within, while it is still resolving; null otherwise.</summary>
+    /// <remarks>The same facts <see cref="Description"/> words; the view removes them when either card is unreadable.</remarks>
+    public PromptAttack? Attack { get; init; }
+
     /// <summary>Engine-authored, display-ready name of the question being asked.</summary>
     /// <remarks>
     /// This structured field is distinct from <see cref="Label"/>, whose
