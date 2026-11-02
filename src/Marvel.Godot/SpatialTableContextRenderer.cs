@@ -96,7 +96,21 @@ internal static class SpatialTableContextRenderer
             return AddPendingContext(prose, ordinaryTurn ? "" : PendingSituationPresentation.Context(world));
         heading.MouseFilter = Control.MouseFilterEnum.Stop;
         heading.TooltipText = TableWording.DecisionDetail(presentation.Frame, presentation.DeclineLabel);
-        return AddFacts(prose, presentation, scale);
+        HFlowContainer facts = AddFacts(prose, presentation, scale);
+        if (TableWording.UnstructuredConsequence(presentation.Frame) is { Length: > 0 } consequence)
+            AddConsequence(prose, consequence);
+        return facts;
+    }
+
+    // A decision whose consequence the engine states only in words keeps that statement on one trimmed line,
+    // whole on hover, so its known effect stays in view.
+    private static void AddConsequence(VBoxContainer cause, string text)
+    {
+        Label line = Copy(text);
+        line.Name = "CausalConsequence";
+        line.TooltipText = text;
+        line.MouseFilter = Control.MouseFilterEnum.Stop;
+        cause.AddChild(line);
     }
 
     // The question reads a step larger than its chips.

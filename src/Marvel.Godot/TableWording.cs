@@ -219,6 +219,13 @@ internal static class TableWording
         ];
     }
 
+    /// <summary>
+    /// The engine's instruction as one line when no typed fact states the decision's consequence, or empty when
+    /// the attack's chips already state it.
+    /// </summary>
+    internal static string UnstructuredConsequence(DecisionFrame frame) =>
+        frame.Attack is not null ? "" : frame.Instruction.Replace("\n", " · ", StringComparison.Ordinal).Trim();
+
     /// <summary>The whole decision in words, for the question's tooltip: who answers, then the engine's instruction.</summary>
     internal static string DecisionDetail(DecisionFrame frame, string declineLabel) => string.Join("\n",
         new[] { DecisionContext(frame), DecisionRequirement(frame, declineLabel), DecisionResolution(frame) }

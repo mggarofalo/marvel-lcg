@@ -114,4 +114,17 @@ public sealed class TableRoughEdgesTests
         Assert.Equal("", GameProgressPresentation.FromResponse(response).Description);
         Assert.Equal("", GameProgressPresentation.FromResponse(response with { Prompt = null }).Description);
     }
+
+    [Fact]
+    public void AConsequenceWithoutTypedFactsStaysOneLineAndTheAttackReplacesIt()
+    {
+        var frame = new DecisionFrame("Spider-Man", DecisionSubject.Resolving, "Beat Cop", false, [],
+            "Choose an enemy.\nCurrent damage: 3 before prevention/replacement.");
+        Assert.Equal("Choose an enemy. · Current damage: 3 before prevention/replacement.",
+            TableWording.UnstructuredConsequence(frame));
+        Assert.Equal("", TableWording.UnstructuredConsequence(frame with
+        {
+            Attack = new DecisionAttack("Rhino", "Spider-Man", 2, false, true),
+        }));
+    }
 }
