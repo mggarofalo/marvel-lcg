@@ -20,8 +20,8 @@ public sealed class AttackFactsProjectionTests
 
         Assert.Equal(prompt.Attack, visible.Prompt!.Attack);
         DecisionAttack attack = Assert.IsType<DecisionAttack>(PromptPresentation.From(visible.Prompt, visible.World).Frame.Attack);
-        Assert.Equal((Title(visible.World, villain.ObjectId), Title(visible.World, hero.ObjectId), 3L, false, true, true),
-            (attack.Attacker, attack.Target, attack.Value, attack.Calculated, attack.BoostUnresolved, attack.Prevented));
+        Assert.Equal((Title(visible.World, villain.ObjectId), Title(visible.World, hero.ObjectId), 3L, false, true, true, (long?)1),
+            (attack.Attacker, attack.Target, attack.Value, attack.Calculated, attack.BoostUnresolved, attack.Prevented, attack.BoostIcons));
     }
 
     [Fact]
@@ -44,6 +44,6 @@ public sealed class AttackFactsProjectionTests
         new(0, Question.Defender, TimingPriority.Untimed, "attack_initiated", "Defend", true,
             [new Affordance(1, "Defend", target, 0, "Defend")])
         {
-            Attack = new PromptAttack(attacker, target, 3, Calculated: false, BoostUnresolved: true, Prevented: true),
+            Attack = new PromptAttack(attacker, target, 3, Calculated: false, BoostUnresolved: true, Prevented: true) { BoostIcons = 1 },
         };
 }

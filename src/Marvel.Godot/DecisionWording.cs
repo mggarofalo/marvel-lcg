@@ -72,8 +72,17 @@ internal static class DecisionWording
             Label = $"{attack.Attacker} → {attack.Target}", Tooltip = $"{attack.Attacker} is attacking {attack.Target}.",
         },
         attack.Prevented ? TableWording.For(TableFact.AttackPrevented) : AttackValue(attack),
-        .. attack.BoostUnresolved ? [TableWording.For(TableFact.BoostUnresolved)] : Array.Empty<Wording>(),
+        .. attack.BoostIcons is { } icons ? [BoostRevealed(icons)]
+            : attack.BoostUnresolved ? [TableWording.For(TableFact.BoostUnresolved)] : Array.Empty<Wording>(),
     ];
+
+    // A revealed boost card's icons are counted now; its abilities and later effects can still change them.
+    private static Wording BoostRevealed(long icons) => TableWording.For(TableFact.BoostUnresolved) with
+    {
+        Label = $"Boost +{icons.ToString(CultureInfo.InvariantCulture)}",
+        Tooltip = $"The revealed boost card has {icons.ToString(CultureInfo.InvariantCulture)} uncancelled boost "
+            + $"icon{(icons == 1 ? "" : "s")}. Boost abilities and later effects can change the result.",
+    };
 
     // ATK is worded by what can still change it, as the engine's own attack sentence words it.
     private static Wording AttackValue(DecisionAttack attack)

@@ -23,12 +23,15 @@ internal static class AttackBoostDescription
         area.Type == DeckType.BoostCardsDeck && area.Host == enemy.ObjectId && area.Cards.Count > 0
         || area.Type == DeckType.BoostingArea && area.Cards.Count > 0);
 
+    /// <summary>The uncancelled icons on the boost card turned faceup, while its interrupt window is open; null otherwise.</summary>
+    internal static long? FaceupIcons(World world, PhaseStep step) =>
+        world.Agenda.Stage == Stage.Interrupts
+        && step.Operation is BoostFaceupOperation { Attacking: true } faceup && faceup.Icons.IsCurrent(world)
+            ? faceup.Icons.Remaining : null;
+
     internal static string Faceup(World world, ICardFacts facts, PhaseStep step)
     {
-        if (world.Agenda.Stage != Stage.Interrupts
-            || step.Operation is not BoostFaceupOperation { Attacking: true } faceup
-            || !faceup.Icons.IsCurrent(world)) return string.Empty;
-        long icons = faceup.Icons.Remaining;
+        if (FaceupIcons(world, step) is not { } icons) return string.Empty;
         string noun = icons == 1 ? "icon" : "icons";
         return $" {EffectiveCards.Title(world.Cards[step.Subject], facts)} currently has {icons} uncancelled boost {noun}. "
             + "Boost abilities and later effects can change the result.";

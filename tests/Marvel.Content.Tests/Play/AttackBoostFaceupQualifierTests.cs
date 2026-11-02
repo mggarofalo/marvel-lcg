@@ -69,6 +69,7 @@ public sealed class AttackBoostFaceupQualifierTests : CoreCardTestBase
         Assert.Equal(nested, world.Attack is not null);
         Assert.False(world.Agenda.Current!.Value.Require<BoostFaceupOperation>().Attacking);
         Assert.DoesNotContain("uncancelled boost", prompt.Description ?? "");
+        Assert.Null(prompt.Attack?.BoostIcons);
         Assert.Equal(2, world.Agenda.Occurrence!.BoostIcons!.Remaining);
         Assert.True(world.Agenda.Occurrence.Is(BoostFaceupOperation.Faceup));
         Assert.False(world.Agenda.Occurrence.Is(BoostFaceupOperation.AttackFaceup));
@@ -89,6 +90,7 @@ public sealed class AttackBoostFaceupQualifierTests : CoreCardTestBase
         var prompt = Faceup(world, runner, events);
         var occurrence = world.Agenda.Occurrence!;
         Assert.Contains("2 uncancelled boost icons", prompt.Description);
+        Assert.Equal(2, prompt.Attack!.BoostIcons);
         Sequence.Answer(world, Cards, runner, prompt,
             new Decision(Assert.Single(prompt.Affordances, a => a.AnchorId == source.ObjectId).Id,
                 [], [payment.ObjectId]), events);
@@ -97,6 +99,7 @@ public sealed class AttackBoostFaceupQualifierTests : CoreCardTestBase
         Assert.Same(occurrence, world.Agenda.Occurrence);
         Assert.Equal(0, occurrence.BoostIcons!.Remaining);
         Assert.Contains("0 uncancelled boost icons", prompt.Description);
+        Assert.Equal(0, prompt.Attack!.BoostIcons);
         Assert.Contains(prompt.Affordances, a => a.AnchorId == observer.ObjectId);
         Sequence.Answer(world, Cards, runner, prompt, Decision.Decline, events);
         Sequence.Finish(world, Cards, runner, events);

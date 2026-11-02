@@ -23,7 +23,8 @@ public sealed class AttackFactsTransportTests : TransportTestBase
         var actual = socket
             ? await ExchangeOverSocket(new SocketEngineServer(endpoint, IPAddress.Loopback, 0), request)
             : await new InProcessTransport(endpoint).ExchangeAsync(request, TestContext.Current.CancellationToken);
-        Assert.Equal(new PromptAttack(12, 3, 2, Calculated: false, BoostUnresolved: true, Prevented: true), actual.Prompt!.Attack);
+        Assert.Equal(new PromptAttack(12, 3, 2, Calculated: false, BoostUnresolved: true, Prevented: true) { BoostIcons = 2 },
+            actual.Prompt!.Attack);
     }
 
     [Fact]
@@ -31,7 +32,7 @@ public sealed class AttackFactsTransportTests : TransportTestBase
     {
         var response = new EngineResponse(EngineProtocol.Version, "attack", "game", null, Defense(), []);
         string text = Encoding.UTF8.GetString(EngineJson.Write(response));
-        const string written = "\"attack\":{\"attacker\":12,\"target\":3,\"value\":2,\"calculated\":false,\"boost_unresolved\":true,\"prevented\":true}";
+        const string written = "\"attack\":{\"attacker\":12,\"target\":3,\"value\":2,\"calculated\":false,\"boost_unresolved\":true,\"prevented\":true,\"boost_icons\":2}";
         Assert.Contains(written, text, StringComparison.Ordinal);
         Assert.Equal(EngineJson.Write(response), EngineJson.Write(EngineJson.ReadResponse(Encoding.UTF8.GetBytes(text))));
         string forged = text.Replace("\"prevented\":true", "\"prevented\":true,\"sentence\":\"ATK 2\"",
@@ -82,6 +83,6 @@ public sealed class AttackFactsTransportTests : TransportTestBase
         new(0, Question.Defender, TimingPriority.Untimed, "attack_initiated", "Defend", true,
             [new Affordance(4, "Defend", 3, 0, "Defend")])
         {
-            Attack = new PromptAttack(12, 3, 2, Calculated: false, BoostUnresolved: true, Prevented: true),
+            Attack = new PromptAttack(12, 3, 2, Calculated: false, BoostUnresolved: true, Prevented: true) { BoostIcons = 2 },
         };
 }

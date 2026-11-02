@@ -119,6 +119,19 @@ public sealed class DesignSystemMigrationTests
         Assert.Equal("Shared view", shared.Label);
     }
 
+    [Theory]
+    [InlineData(2, "Boost +2", "2 uncancelled boost icons")]
+    [InlineData(1, "Boost +1", "1 uncancelled boost icon.")]
+    [InlineData(0, "Boost +0", "0 uncancelled boost icons")]
+    public void ARevealedBoostCardCountsItsIconsInPlaceOfTheUnresolvedBoost(long icons, string label, string tooltip)
+    {
+        var attack = new DecisionAttack("Rhino", "Spider-Man", 2, false, true, false) { BoostIcons = icons };
+        Wording boost = DecisionWording.AttackFacts(attack)[^1];
+        Assert.Equal(label, boost.Label);
+        Assert.Contains(tooltip, boost.Tooltip);
+        Assert.Single(DecisionWording.AttackFacts(attack), fact => fact.Icon == "boost");
+    }
+
     private static DecisionComposer Composer(params Affordance[] offers) => new(new Prompt(
         0, Question.TurnOption, TimingPriority.Untimed, "test", "Choose", false, offers));
 

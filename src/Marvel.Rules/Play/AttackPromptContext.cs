@@ -46,12 +46,13 @@ internal static class AttackPromptContext
     private static PromptAttack? Facts(World world, ICardFacts facts, EnemyAttack attack, Card enemy, PhaseStep step)
     {
         if (world.Attack is null) return null;
-        return attack.CalculatedDamage is { } damage
+        PromptAttack value = attack.CalculatedDamage is { } damage
             ? new PromptAttack(attack.Enemy, attack.Target, damage, Calculated: true, BoostUnresolved: false,
                 attack.PreventAllDamage)
             : new PromptAttack(attack.Enemy, attack.Target,
                 StateFields.Modified(world, enemy, "attack", facts, world.Players), Calculated: false,
                 AttackBoostDescription.IsUnresolved(world, facts, enemy, step.What), attack.PreventAllDamage);
+        return value with { BoostIcons = AttackBoostDescription.FaceupIcons(world, step) };
     }
 
     private static EnemyAttack? AttackForPrompt(World world, PhaseStep step) =>

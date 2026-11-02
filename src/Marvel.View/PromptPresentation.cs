@@ -132,6 +132,9 @@ public sealed record PromptPresentation(
     private static DecisionAttack? Attack(PromptAttack? attack, WorldDescriptor world) =>
         attack is not null && Title(attack.Attacker, world) is { } attacker && Title(attack.Target, world) is { } target
             ? new DecisionAttack(attacker, target, attack.Value, attack.Calculated, attack.BoostUnresolved, attack.Prevented)
+            {
+                BoostIcons = attack.BoostIcons,
+            }
             : null;
 
     private static string? Title(int id, WorldDescriptor world) => world.Areas
