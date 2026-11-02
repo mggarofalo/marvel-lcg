@@ -22,6 +22,9 @@ distinguishes one fact from another.
 | `public_focus.svg` | An eye: the table is showing this seat's public workspace. |
 | `each_player.svg` | Two people: "each player" counts the players in the same game area. |
 | `your_seat.svg` | A map pin: the seat you play. |
+| `attack.svg` | A blade: an enemy attack is resolving. |
+| `boost.svg` | A warning triangle: boost icons are not counted yet. |
+| `sync_stale.svg` | A broken refresh loop: the displayed table may not match the authority. |
 
 Two pairs of facts share an icon because they state one concept. The lock marks both
 an out-of-reach area and the rule that areas cannot affect one another, since that rule

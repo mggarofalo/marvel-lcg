@@ -92,9 +92,8 @@ internal sealed class MainSessionController
     internal void ShowRecoveryControls()
     {
         main.synchronize.Visible = true;
-        main.syncStatus.Visible = true;
-        main.syncStatus.Text = "⚠ Sync needed";
         main.synchronize.TooltipText = "Read the current authoritative table.";
+        SyncIndicator.Show(main.syncStatus, "Table not synchronized.", main.synchronize.TooltipText);
         main.RefreshSynchronizeAvailability();
     }
 
@@ -158,9 +157,6 @@ internal sealed class MainSessionController
             main.promptProgress.ThemeTypeVariation = update.Progress.LocksDecisions
                 ? GodotThemeVariations.DangerText : GodotThemeVariations.StatusText;
         }
-        if (update.Response is null && update.Error is not null)
-            main.syncStatus.Text = update.Progress.Kind == GameProgressKind.DecisionNotSent
-                ? "Not sent · retry safe" : "⚠ Sync needed";
         main.synchronize.TooltipText = "Read the current authoritative table.";
     }
 

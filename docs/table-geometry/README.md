@@ -88,7 +88,7 @@ The two play areas and their contents are rules facts. The precise pixel positio
 | Hand / play | Fanned private cards at the near edge | A hand card can be played or spent; its resource face stays visible. |
 | Attachment / host | A small connected tab immediately beside its host | An attachment is part of a host relationship, not an unrelated enemy. The lateral tab is the wide-screen adaptation of tucking beneath a card. |
 | Health / status / counters | Dials and named markers local to the affected card | State is read where it matters. The current prototype demonstrates health, threat, web counters, and exhaustion; status-card density is unproven. |
-| Ready / exhausted | Character face rotates a quarter turn, with a readable upright name/state caption | Exhaustion remains visible without relying on hue. |
+| Ready / exhausted | Card stays upright; an exhausted card carries the exhausted badge at its top edge | Exhaustion remains visible by shape without relying on hue, and the face stays readable. |
 | Source / target | A temporary directional connection plus candidate diamonds | The draft is an action between objects. Selection does not itself submit. |
 
 The design uses the horizontal capacity of the screen for piles, schemes, and allied characters, while keeping the villain–minion–identity relationship vertical. It does not reproduce every inch of the printed portrait diagram. The vertical order of upgrades and supports is compressed into a staggered band; that is an explicit compromise to review, not a new game rule.

@@ -186,8 +186,7 @@ internal sealed class SpatialTableObjectRenderer
             CardControl control = AddCard(cards[index], region.Position + new Vector2(index * 24, 0), size, 8 + index);
             if (SpatialTableZones.IsExhausted(cards[index]))
             {
-                Exhaust(control, cards[index], control.Position);
-                result.UpdateRestingPose(control);
+                ExhaustedBadge.Add(control, faces.ReadingScale);
             }
         }
     }
@@ -227,15 +226,6 @@ internal sealed class SpatialTableObjectRenderer
         }
         result.TrackCard(control, card, isHand);
         return control;
-    }
-
-    private static void Exhaust(CardControl control, BoardCardPresentation card, Vector2 position)
-    {
-        control.PivotOffset = Vector2.Zero;
-        control.Rotation = Mathf.Pi / 2;
-        control.Position = position + new Vector2(control.Size.Y, 0);
-        control.SetMeta("spatial_exhausted", true);
-        SpatialCardSidecar.Place(control);
     }
 
 }

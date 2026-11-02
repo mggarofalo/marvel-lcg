@@ -10,7 +10,7 @@ namespace Marvel.Godot;
 /// </summary>
 internal static class DecisionSheetHead
 {
-    /// <summary>The head's chips, in order: the answering seat, required or optional, then each cause.</summary>
+    /// <summary>The head's chips, in order: the answering seat, required or optional, each cause, then the attack.</summary>
     internal static Wording[] Facts(DecisionFrame frame, string declineLabel) =>
     [
         new(TableWording.For(TableFact.AnsweringSeat).Icon, frame.SeatName, TableWording.DecisionContext(frame)),
@@ -22,6 +22,7 @@ internal static class DecisionSheetHead
         {
             Label = cause, Tooltip = TableWording.DecisionCause(cause),
         }),
+        .. frame.Attack is { } attack ? TableWording.AttackFacts(attack) : [],
     ];
 
     /// <summary>The head for the panel's current prompt, with the sheet's close control at the title's end.</summary>

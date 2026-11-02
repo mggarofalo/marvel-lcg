@@ -10,18 +10,20 @@ internal sealed record AstraTableGeometry(
     internal bool HasAllies { get; init; }
     internal bool HasEncounterGroups { get; init; }
     internal bool HasGameAreas { get; init; }
+    internal bool HasEngagedEnemies { get; init; } = true;
     internal InterfaceScale ReadingScale { get; init; } = InterfaceScale.Percent100;
 
     /// <summary>The twelve-column grid over this table's actual width.</summary>
     internal TableGrid Grid => TableGrid.For(Width, ReadingScale);
 
     // A separated table lays its far side on the grid: the seat rail takes columns 0–1, the game
-    // areas and the shared column between them take 2–9, and engaged enemies take 10–11.
-    internal Rect2 GameAreaBand => Band(2, 8);
+    // areas and the shared column between them take 2–9, and engaged enemies take 10–11. With no
+    // engaged enemy to show, the game areas take 10–11 as well, so their cards are larger.
+    internal Rect2 GameAreaBand => HasEngagedEnemies ? Band(2, 8) : Band(2, 10);
     internal bool HasScenarioColumns => HasEncounterGroups || HasGameAreas;
     internal const float ReferenceWidth = 1320;
     internal const float ReferenceHeight = 962;
-    internal Rect2 VillainMat => new(8, 8, Width - 16, HasScenarioColumns ? 344 : ScaleY(294));
+    internal Rect2 VillainMat => new(8, 8, Width - 16, HasScenarioColumns ? Math.Max(344, ScaleY(344)) : ScaleY(294));
     internal Rect2 PlayerMat => new(8, ScaleY(404), Width - 16, Height - ScaleY(404) - 8);
     internal Rect2 EncounterDiscard => Scale(new Rect2(22, 60, 70, 112));
     internal Rect2 EncounterDeck => Scale(new Rect2(104, 60, 70, 112));

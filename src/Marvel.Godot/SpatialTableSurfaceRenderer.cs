@@ -64,6 +64,8 @@ internal static class SpatialTableSurfaceRenderer
         {
             HasEncounterGroups = board.EncounterGroups.Count > 0,
             HasGameAreas = GameAreaTableProjection.From(board, seat)?.Separated == true,
+            HasEngagedEnemies = board.Areas.Any(area => area.Zone == "EngagedEnemiesArea" && area.Seat == seat
+                && SpatialTableZones.Current(area).Length > 0),
             HasAllies = board.Areas.Any(area => area.Zone == "AlliesArea" && area.Seat == seat && area.Cards.Count > 0),
             ReadingScale = scale,
         };

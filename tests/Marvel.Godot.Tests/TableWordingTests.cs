@@ -18,7 +18,8 @@ public sealed class TableWordingTests
             Assert.True(wording.Label.Split(' ').Length <= 3, $"{fact} label is not short: {wording.Label}");
             Assert.Equal(fact is not (TableFact.HeroForm or TableFact.AlterEgoForm or TableFact.Engaged
                 or TableFact.DecisionRequired or TableFact.DecisionOptional or TableFact.DecisionCause
-                or TableFact.StepThreat or TableFact.StepActivation or TableFact.StepEncounter),
+                or TableFact.StepThreat or TableFact.StepActivation or TableFact.StepEncounter
+                or TableFact.AttackValue or TableFact.AttackDamage),
                 wording.Icon.Length > 0);
         }
     }

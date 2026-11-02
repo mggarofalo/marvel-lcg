@@ -59,7 +59,7 @@ internal static class CardSourceSample
         face.Position = new Vector2(100, 100);
         fixture.AddChild(face);
         face.Size = face.CustomMinimumSize;
-        if (SpatialTableZones.IsExhausted(host)) { face.PivotOffset = face.Size / 2; face.Rotation = Mathf.Pi / 2; }
+        if (SpatialTableZones.IsExhausted(host)) ExhaustedBadge.Add(face, ClientTheme.ConfiguredScale());
         SpatialTableHostAttachments.Add(face, sources, result, ClientTheme.ConfiguredScale());
         VBoxContainer ledger = CardSourceCollection.Create(sources,
             CardSourceStrip.LedgerWidth, result, ClientTheme.ConfiguredScale(), "Source ledger");

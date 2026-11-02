@@ -5,7 +5,7 @@ namespace Marvel.Godot;
 /// <summary>The separated table's tracker line, rules toggle and column frames, built from the building blocks.</summary>
 internal static class GameAreaTableChrome
 {
-    private const float OutOfReachAlpha = 0.55f;
+    private const float OutOfReachAlpha = 0.7f;
 
     /// <summary>Adds the tracker line across a band, with the rules toggle at its end; returns the line's height.</summary>
     internal static float AddTrackerLine(Control surface, Rect2 band, GameAreaTable table, InterfaceScale scale)
@@ -34,7 +34,8 @@ internal static class GameAreaTableChrome
         surface.AddChild(tracker);
     }
 
-    // The rules live behind one toggle: an icon and a short label, never ambient text on the table.
+    // The legend and the rules live behind one toggle: an icon and a short label, never ambient text on the
+    // table. The legend opens by itself once, the first time the game's table separates.
     private static void AddRules(Control surface, Rect2 band, GameAreaTable table, InterfaceScale scale, float height)
     {
         Wording rules = TableWording.For(TableFact.SeparatedRules);
@@ -48,7 +49,11 @@ internal static class GameAreaTableChrome
         using StyleBoxFlat style = TableBlockStyle.Surface(scale, VisualSystem.Palette.Outline);
         style.ContentMarginTop = style.ContentMarginBottom = style.ContentMarginLeft;
         panel.AddThemeStyleboxOverride("panel", style);
-        panel.AddChild(new Label
+        var content = new VBoxContainer { Name = "SeparatedTableRulesContent", MouseFilter = Control.MouseFilterEnum.Ignore };
+        content.AddThemeConstantOverride("separation", VisualSystem.Spacing(scale).Medium);
+        panel.AddChild(content);
+        content.AddChild(TableLegend.Create(scale));
+        content.AddChild(new Label
         {
             Name = "SeparatedTableRulesText", Text = string.Join("\n\n", table.Rules),
             AutowrapMode = TextServer.AutowrapMode.WordSmart, CustomMinimumSize = new Vector2(width - 24, 0),
@@ -59,7 +64,13 @@ internal static class GameAreaTableChrome
             Name = "SeparatedTableRules", Text = rules.Label, ToggleMode = true, ZIndex = 20, TooltipText = rules.Tooltip,
             Icon = CardGlyphRendering.Rasterize($"Marvel.Godot.Assets.TableIcons.{rules.Icon}.svg", TableBlockStyle.Icon(scale)),
         };
-        toggle.Toggled += pressed => panel.Visible = pressed;
+        toggle.ButtonPressed = table.Separated && TableLegend.OpensNow();
+        panel.Visible = toggle.ButtonPressed;
+        toggle.Toggled += pressed =>
+        {
+            panel.Visible = pressed;
+            TableLegend.Toggled(pressed);
+        };
         surface.AddChild(toggle);
         surface.AddChild(panel);
         TableCompactButtonStyle.Apply(toggle);

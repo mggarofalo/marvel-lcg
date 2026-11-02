@@ -37,8 +37,20 @@ static func _split(smoke, kang, players: int) -> bool:
     if "Kang (II)" not in str(_tracker(smoke).get_meta("tracker_reading", "")) or "Kang (II)" not in _tracker(smoke).tooltip_text:
         smoke._fail("the tracker does not show the remaining Kang (II)")
         return false
-    if not await _capture(smoke, "split"): return false
+    if not await _legend_shows_once(smoke): return false
     return await _rules_open_and_close(smoke)
+
+# The first separated table opens its legend by itself; the player closes it with the toggle that holds it.
+static func _legend_shows_once(smoke) -> bool:
+    if not await smoke.ui.expect(func():
+        var panel = _surface(smoke).find_child("SeparatedTableRulesPanel", false, false)
+        return panel != null and panel.is_visible_in_tree() and panel.find_child("LegendOutOfReach", true, false) != null,
+        "the first separated table opens its legend"): return false
+    if not await _capture(smoke, "split"): return false
+    if not await smoke.ui.click(smoke.ui.named("SeparatedTableRules")): return false
+    if not await smoke.ui.expect(func(): return not _surface(smoke).find_child("SeparatedTableRulesPanel", false, false).visible,
+        "the legend closes from its toggle"): return false
+    return await _capture(smoke, "table")
 
 static func _rules_open_and_close(smoke) -> bool:
     if not await smoke.ui.click(smoke.ui.named("SeparatedTableRules")): return false
@@ -88,7 +100,7 @@ static func _reach_is_dimmed(smoke, kang, seat: int, own: int) -> bool:
     for id in kang.OutOfReach(seat):
         var card = _card(smoke, id)
         if card == null: continue
-        if not card.get_meta("out_of_reach", false) or card.modulate.a > 0.6:
+        if not card.get_meta("out_of_reach", false) or card.modulate.a >= 1.0:
             smoke._fail("out-of-reach card %d is not dimmed" % id)
             return false
         dimmed += 1

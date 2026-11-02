@@ -46,24 +46,8 @@ internal sealed class EventActivityCardMotion(Main main)
         originals.TryAdd(card, (card.Position, card.Rotation, card.Modulate));
         bool depart = subject.Role == ActivitySubjectRole.Subject
             && (activity.Operation == "Discard" || fact.Motion == EventMotionKind.Move);
-        var pose = ReadinessPose(card, activity);
         starts.TryAdd(card, (card.Position, card.Rotation));
-        targets[card] = (pose.Position, pose.Rotation, depart || (targets.TryGetValue(card, out var prior) && prior.Depart));
-    }
-
-    private static (Vector2 Position, float Rotation) ReadinessPose(CardControl card, EventActivityDescriptor activity)
-    {
-        ActivityQuantity? ready = activity.Quantities.FirstOrDefault(q => q.Field == "is_exhaust");
-        if (ready?.After is null && activity.Operation != "Ready") return (card.Position, card.Rotation);
-        return Pose(card, ready?.After == 1 ? "EXHAUSTED" : "READY");
-    }
-
-    private static (Vector2 Position, float Rotation) Pose(CardControl card, string status)
-    {
-        if (card.HasMeta("source_tableau_tile") || status == card.DisplayedPresentation?.Status)
-            return (card.Position, card.Rotation);
-        bool exhausted = status == "EXHAUSTED";
-        return (card.Position + new Vector2(exhausted ? card.Size.Y : -card.Size.Y, 0), exhausted ? Mathf.Pi / 2 : 0);
+        targets[card] = (card.Position, card.Rotation, depart || (targets.TryGetValue(card, out var prior) && prior.Depart));
     }
 
     internal void Advance(double elapsed, double onset)
@@ -186,9 +170,6 @@ internal sealed class EventActivityCardMotion(Main main)
         if (card.TargetId is not { } id) return;
         if (displayed.TryGetValue(id, out BoardCardPresentation? shown))
         {
-            var pose = Pose(card, shown.Status);
-            card.Position = pose.Position;
-            card.Rotation = pose.Rotation;
             EventActivityCardRendering.Apply(card, shown);
         }
         if (departed.Contains(id))

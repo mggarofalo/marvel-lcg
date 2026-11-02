@@ -2,7 +2,7 @@ using Godot;
 
 namespace Marvel.Godot;
 
-/// <summary>Building block: progress as a label, a row of pips and a count, explained on hover.</summary>
+/// <summary>Building block: progress as a label, a row of pips with a small number, and a count, explained on hover.</summary>
 internal static class Tracker
 {
     /// <summary>Which pips are filled, in order: filled pips first. Counts below zero draw nothing.</summary>
@@ -12,6 +12,10 @@ internal static class Tracker
         int full = Math.Clamp(filled, 0, all);
         return [.. Enumerable.Range(0, all).Select(index => index < full)];
     }
+
+    /// <summary>The small number beside the pips, such as "2/3"; empty when there are no pips.</summary>
+    internal static string Number(int filled, int total) => total <= 0 ? ""
+        : $"{Math.Clamp(filled, 0, total).ToString(System.Globalization.CultureInfo.InvariantCulture)}/{total.ToString(System.Globalization.CultureInfo.InvariantCulture)}";
 
     /// <summary>The tracker's accessible reading, such as "Kang (II) 2 of 3, Dominions 1".</summary>
     internal static string Reading(TrackerState state) => TableWording.TrackerReading(state.Label,
@@ -37,6 +41,11 @@ internal static class Tracker
         pips.AddThemeConstantOverride("separation", spacing.ExtraSmall);
         foreach (bool filled in Pips(state.Filled, state.Total)) pips.AddChild(Pip(filled, scale));
         row.AddChild(pips);
+        Label number = TableBlockStyle.Whole("Number", Number(state.Filled, state.Total), scale, VisualSystem.Palette.MutedText);
+        number.AddThemeFontSizeOverride("font_size", VisualSystem.Type(scale).Caption);
+        number.MouseFilter = Control.MouseFilterEnum.Ignore;
+        number.Visible = number.Text.Length > 0;
+        row.AddChild(number);
         if (state.Counter is { } counter) row.AddChild(Chip.Create("Counter", counter, state.Count, scale));
         return row;
     }

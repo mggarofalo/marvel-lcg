@@ -76,7 +76,8 @@ internal sealed class MainTabletopController
         main.CurrentGame?.World is not null && main.board.Visible
         && renderedViewport is { } installed && installed.IsEqualApprox(viewport)
         && renderedDesktopTabletop == true && renderedHistoryExpanded == HasReviewSpace()
-        && renderedPayment == CardPaymentWorkspaceLayout.Active(main);
+        && renderedPayment == CardPaymentWorkspaceLayout.Active(main)
+        && TableCanvasBounds.Reflowable(renderedTableHeight, TableCanvasBounds.Height(main));
 
     internal void RecordHeight(float height) => renderedTableHeight = height;
 

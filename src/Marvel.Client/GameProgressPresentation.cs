@@ -23,13 +23,13 @@ public sealed record GameProgressPresentation(
             Outcome.Unfinished when response.Prompt is null => new(
                 GameProgressKind.WaitingForOtherPlayer,
                 "Waiting for another player.",
-                $"Showing the last received table · {response.Events.Count} new events",
+                string.Empty,
                 "GAME IN PROGRESS  ·  WAITING FOR ANOTHER PLAYER",
                 LocksDecisions: true),
             Outcome.Unfinished => new(
                 GameProgressKind.AwaitingDecision,
                 "Your move.",
-                $"Showing the last received table · {response.Events.Count} new events",
+                string.Empty,
                 "READY FOR YOUR CHOICE",
                 LocksDecisions: false),
             Outcome.PlayersWin => new(
@@ -71,7 +71,7 @@ public sealed record GameProgressPresentation(
             ? "Uncommitted choices were cleared. Compose again from the current offers. Accepted actions remain in play."
             : "Showing the latest received table.";
         if (response.World!.Outcome != Outcome.Unfinished)
-            return current with { Description = current.Description + " " + explanation };
+            return current with { Description = Sentences(current.Description, explanation) };
         return current with
         {
             Kind = GameProgressKind.Recovered,
@@ -201,13 +201,11 @@ public sealed record GameProgressPresentation(
                 LocksDecisions: false),
             GameProgressKind.WaitingForOtherPlayer => current with
             {
-                Description = current.Description + " The table was recovered after: "
-                    + error.Message,
+                Description = Sentences(current.Description, "The table was recovered after: " + error.Message),
             },
             _ => current with
             {
-                Description = current.Description + " The final table was recovered after: "
-                    + error.Message,
+                Description = Sentences(current.Description, "The final table was recovered after: " + error.Message),
             },
         };
     }
@@ -271,6 +269,10 @@ public sealed record GameProgressPresentation(
                 LocksDecisions: true),
         };
     }
+
+    // A current table needs no words, so an ordinary state's description is empty.
+    private static string Sentences(string first, string second) =>
+        first.Length == 0 ? second : first + " " + second;
 
     private static bool IsStorageFailure(string code) => code is
         "save_failed" or "persistence_failed" or "restore_failed";

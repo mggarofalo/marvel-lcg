@@ -202,6 +202,7 @@ internal sealed class MainEventController : IDisposable
         main.decisions.PresentOperationalNotice(progress);
         main.title.Text = progress.Title;
         main.description.Text = progress.Description;
+        SyncIndicator.Apply(main.syncStatus, progress);
         main.status.Text = main.boardController.ResponseStaged ? "RESOLVING" : progress.Status;
         bool danger = progress.Kind is GameProgressKind.VillainWins
             or GameProgressKind.PlayersLose

@@ -84,4 +84,16 @@ internal enum TableFact
 
     /// <summary>A card whose effect caused a decision.</summary>
     DecisionCause,
+
+    /// <summary>The enemy attack a decision is taken within: who attacks whom.</summary>
+    Attack,
+
+    /// <summary>The attacking enemy's current ATK.</summary>
+    AttackValue,
+
+    /// <summary>The attack's calculated damage.</summary>
+    AttackDamage,
+
+    /// <summary>Boost icons may still add to the attack.</summary>
+    BoostUnresolved,
 }

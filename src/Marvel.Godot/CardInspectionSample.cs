@@ -38,7 +38,7 @@ internal static class CardInspectionSample
         face.Position = position;
         fixture.AddChild(face);
         face.Size = face.CustomMinimumSize;
-        if (SpatialTableZones.IsExhausted(card)) { face.PivotOffset = face.Size / 2; face.Rotation = Mathf.Pi / 2; }
+        if (SpatialTableZones.IsExhausted(card)) ExhaustedBadge.Add(face, ClientTheme.ConfiguredScale());
         AddNeighbor(fixture, face);
         var snapshot = new BoardPresentation([new(1, "Authorized cards", "", all, [])]);
         var result = new BoardRenderResult(snapshot) { IsCurrent = () => true };

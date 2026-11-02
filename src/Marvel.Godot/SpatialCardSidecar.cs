@@ -44,11 +44,6 @@ internal static class SpatialCardSidecar
         var state = CardLiveStateRendering.Create(presentation, Math.Min(card.Size.X, card.Size.Y) - 12, compact: true, scale: scale);
         if (state.GetChildCount() == 0) { state.QueueFree(); return; }
         For(card);
-        if (SpatialTableZones.IsExhausted(presentation))
-        {
-            Label title = CardLiveStateRendering.AddLabel(state, presentation.Title, "UprightIdentity", 11);
-            state.MoveChild(title, 0);
-        }
         var panel = new PanelContainer { Name = "LiveStatePanel", MouseFilter = Control.MouseFilterEnum.Ignore };
         using var style = new StyleBoxFlat { BgColor = CardFaceStyle.Ink,
             ContentMarginLeft = 6, ContentMarginRight = 6, ContentMarginTop = 3, ContentMarginBottom = 3 };

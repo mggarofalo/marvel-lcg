@@ -217,33 +217,31 @@ func _exhausted_card_is_spatial(anchor: int) -> bool:
 	await process_frame
 	var found := await _wait_for(func() -> bool:
 		var card := _card_for_anchor(anchor)
-		var caption := _visible_exhausted_caption(anchor)
+		var badge := _visible_exhausted_badge(anchor)
 		return card != null and card.has_meta("spatial_exhausted") \
-				and abs(abs(card.rotation) - PI / 2.0) < 0.01 \
-				and caption != null and caption.is_visible_in_tree() \
-				and abs(caption.get_global_transform().get_rotation()) < 0.01)
+				and abs(card.get_global_transform().get_rotation()) < 0.01 \
+				and badge != null and badge.tooltip_text == "Exhausted")
 	if found:
 		return true
 	var card := _card_for_anchor(anchor)
-	var caption := _visible_exhausted_caption(anchor)
-	_fail(("anchor %d did not retain its quarter-turn exhaustion pose " \
-			+ "(card=%s meta=%s rotation=%s caption=%s caption_rotation=%s)") % [
+	var badge := _visible_exhausted_badge(anchor)
+	_fail(("anchor %d did not stay upright with its exhausted badge " \
+			+ "(card=%s meta=%s rotation=%s badge=%s)") % [
 		anchor,
 		str(card != null),
 		str(card != null and card.has_meta("spatial_exhausted")),
-		str(card.rotation if card != null else -99.0),
-		str(caption != null),
-		str(caption.get_global_transform().get_rotation() if caption != null else -99.0),
+		str(card.get_global_transform().get_rotation() if card != null else -99.0),
+		str(badge != null),
 	])
 	return false
 
 
-func _visible_exhausted_caption(anchor: int) -> Label:
+func _visible_exhausted_badge(anchor: int) -> Control:
 	var card := _card_for_anchor(anchor)
 	if card == null:
 		return null
-	var caption := card.get_node_or_null("SpatialOverlay/LiveStatePanel/LiveState/UprightIdentity") as Label
-	return caption if caption != null and caption.is_visible_in_tree() else null
+	var badge := card.get_node_or_null("ExhaustedBadge") as Control
+	return badge if badge != null and badge.is_visible_in_tree() else null
 
 
 func _select_attached_action(anchor: int, verb: String) -> bool:
