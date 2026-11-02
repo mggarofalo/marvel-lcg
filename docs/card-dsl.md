@@ -2353,6 +2353,8 @@ player's costs (rr:peril.1; ruling `1a4413236d2a28d8`).
 modified SCH, as The Beyonder's Blazer and Vandarian Power Stone attach to the
 enemy with the highest or lowest SCH. Candidates tied at the extreme of a
 revealed attachment's ranking are the first player's choice (rr:first-player.1).
+SCH ranking is read on the live board only: a projected selector or an
+in-ability tie-break prompt ranked by SCH is not implemented.
 
 `{"placeThreatOnMainScheme": N}` is a cost that places N threat on the main
 scheme in the source's game area. It is placed without the interrupt window an
@@ -2362,7 +2364,7 @@ effect's threat opens, since a cost cannot be prevented (ruling
 `removeFromGameAtRandom` and `removeTopFromGame` take a `player` and a `count`.
 The first removes random cards from each named player's hand from the game; the
 second removes cards from the top of each named player's deck, bounded by the
-deck's starting size, and a deck it empties resets at once (rr:player-deck.1).
+cards left in it, and a deck it empties resets at once (rr:player-deck.1).
 The removed cards may be looked at (ruling `57fc672ad0921420`).
 
 `grant` with `keyword: "attacks_deal_indirect_damage"` on an enemy makes each of

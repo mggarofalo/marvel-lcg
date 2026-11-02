@@ -89,11 +89,11 @@ public sealed class RuntimeProductAdmission
         // A closed Band of Badoon set leaves discovery with the box's other closed faces.
         if (StandaloneProductAdmission.BandOfBadoon(setup, cards, authored))
             parts.UnionWith(StandaloneProductAdmission.BandOfBadoonFaces);
+        // A closed modular set leaves discovery with the box's other closed faces.
         foreach (string key in GalaxyModularSetAdmission.Keys)
         {
             if (GalaxyModularSetAdmission.Admits(key, setup, cards, authored))
                 parts.UnionWith(GalaxyModularSetAdmission.Faces(key));
-            else setup = setup.WithoutEncounterSet(key);
         }
         return parts.ToImmutable();
     }

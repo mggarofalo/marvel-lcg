@@ -36,6 +36,26 @@ public sealed class SpacePiratesTests : CoreCardTestBase
     }
 
     [Fact]
+    public void PirateCommandersRemovalDrawsItsCardFromTheSeededStream()
+    {
+        // "Remove 1 card at random in your hand": the card is the seeded stream's choice
+        // among the hand, not a fixed position in it.
+        var world = Board();
+        foreach (string face in new[] { "01003", "01004", "01006", "01011", "01088", "01089" })
+            GrootBoards.Hand(world, face);
+        var hand = world.Seats[0].Hand.Cards.ToList();
+        var before = world.Random.Generator.GetState();
+        var expected = world.Random.Choice(hand);
+        world.Random.Generator.SetState(before);
+
+        var removed = PlayerCardRemoval.RandomFromHand(world, 0, 1, "test", []);
+
+        Assert.Equal(expected, Assert.Single(removed));
+        Assert.NotEqual(hand[^1], expected);
+        Assert.Equal(DeckType.RemovedArea, expected.Area.Type);
+    }
+
+    [Fact]
     [Rule("rr:player-deck.1")]
     public void PirateLackeyRemovesTheTopCardOfYourDeck()
     {
@@ -76,6 +96,7 @@ public sealed class SpacePiratesTests : CoreCardTestBase
     }
 
     [Theory]
+    [InlineData(PirateCommander, 4)]
     [InlineData(PirateLackey, 4)]
     [InlineData(HydraMercenary, 3)]
     [Rule("rr:boost-boost-icon.4")]
@@ -90,7 +111,7 @@ public sealed class SpacePiratesTests : CoreCardTestBase
         VillainAttacks(world);
 
         Assert.Equal(damage, world.Seats[0].IdentityCard.Damage);
-        Assert.Equal(boost == PirateLackey, mercenary.Area.Type == DeckType.EncounterDiscardPile);
+        Assert.Equal(boost != HydraMercenary, mercenary.Area.Type == DeckType.EncounterDiscardPile);
     }
 
     [Fact]

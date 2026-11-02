@@ -69,10 +69,10 @@ internal static class AbilityChoicePromptDescription
     {
         AbilityCardRank.Cost => "cost",
         AbilityCardRank.Attack => "ATK",
-        AbilityCardRank.Scheme => "SCH",
         AbilityCardRank.PrintedHealth => "printed hit points",
         AbilityCardRank.RemainingHealth => "remaining hit points",
-        _ => "threat",
+        AbilityCardRank.Threat => "threat",
+        _ => throw new RulesNotImplementedException($"a tie-break prompt has no noun for {rank}"),
     };
 
     private static IEnumerable<Affordance> CardChoices(AbilityStructuralContext context,

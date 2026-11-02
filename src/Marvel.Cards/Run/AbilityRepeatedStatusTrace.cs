@@ -134,8 +134,6 @@ internal static class AbilityRepeatedStatusTrace
                 card.FaceId, "Cost", cast.World.Players),
             AbilityCardRank.Attack => TraceModified(
                 card, "attack", cast, discarded, modifiers),
-            AbilityCardRank.Scheme => TraceModified(
-                card, "scheme", cast, discarded, modifiers),
             AbilityCardRank.PrintedHealth => EffectiveCards.BaseValue(
                 card, cast.World.Facts, "HP", cast.World.Players),
             AbilityCardRank.RemainingHealth => Math.Max(0, EffectiveCards.BaseValue(

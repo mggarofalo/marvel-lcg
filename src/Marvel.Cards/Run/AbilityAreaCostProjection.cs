@@ -49,7 +49,7 @@ internal static class AbilityAreaCostProjection
 
     private static bool IsAreaPreservingCost(AbilityCost payment) =>
         payment is AbilityCost.Exhaust or AbilityCost.ExhaustChosen or AbilityCost.ExhaustTitled
-            or AbilityCost.ChooseFromDiscard or AbilityCost.ChooseScheme or AbilityCost.PlaceMainSchemeThreat;
+            or AbilityCost.ChooseFromDiscard or AbilityCost.ChooseScheme;
 
     private static void TraceDepartureCost(this AbilityAreaProjection projection, AbilityCost cost, AreaProjectionState state)
     {

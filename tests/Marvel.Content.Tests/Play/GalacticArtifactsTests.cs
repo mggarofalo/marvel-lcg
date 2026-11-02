@@ -109,6 +109,23 @@ public sealed class GalacticArtifactsTests : CoreCardTestBase
     }
 
     [Fact]
+    [Rule("rr:initiating-abilities.step.5")]
+    public void TheBeyondersBlazersActionNeedsAMainSchemeToPlaceItsThreat()
+    {
+        // "Pay the cost(s). If this step is reached and the cost(s) cannot be paid, abort this
+        // process without paying any costs." With no main scheme the threat cannot be placed,
+        // so the action is not offered.
+        var world = Board();
+        var blazer = ShipCommandBoards.Attach(world, GrootBoards.Villain(world), BeyondersBlazer);
+        GrootBoards.Hand(world, ShipCommandBoards.Energy);
+        Assert.Single(ShipCommandBoards.ActionsOn(world, blazer, 0));
+
+        World.MoveToTop(GrootBoards.MainScheme(world), world.AreaOf(DeckType.RemovedArea));
+
+        Assert.Empty(ShipCommandBoards.ActionsOn(world, blazer, 0));
+    }
+
+    [Fact]
     [Rule("rr:attach-to")]
     public void VandarianPowerStoneAttachesToTheEnemyWithTheLowestSchemeAndLeavesForThreeEnergy()
     {
