@@ -21,26 +21,6 @@ internal static class SimulationHarnessSupport
 {
     internal const int RecentEventLimit = 20;
 
-    internal static OpenedGame Open(
-        SimulationData data, SimulationConfig config, uint seed)
-    {
-        var abilities = new AbilityRunner(data.Abilities);
-        var setupEvents = new List<GameEvent>();
-        var world = WorldSetup.Deal(
-            data.Cards,
-            Blueprints.From(
-                Dealer.DealOrder(
-                    data.Setup, CampaignKey(config), config.Heroes, config.ModularSets,
-                    data.Cards),
-                data.Cards),
-            [.. config.Heroes.Select(hero => data.Setup.Hero(hero).Name)],
-            seed,
-            abilities,
-            setupEvents,
-            expert: data.Setup.Campaign(CampaignKey(config)).Expert);
-        return new OpenedGame(Game.Begin(world, data.Cards, abilities), setupEvents);
-    }
-
     internal static IReadOnlyList<uint> PlanSeeds(SimulationConfig config)
     {
         if (config.ExplicitSeeds.Count > 0)

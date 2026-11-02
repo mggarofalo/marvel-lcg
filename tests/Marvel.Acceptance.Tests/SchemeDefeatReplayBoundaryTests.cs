@@ -176,7 +176,7 @@ public sealed class SchemeDefeatReplayBoundaryTests : SimulationHarnessTestBase
         var config = new SimulationConfig(header.Scenario, header.Difficulty, header.Heroes,
             header.ModularSets, 1, [start.Seed], null, null, header.PolicySeed,
             header.DecisionLimit, null, RepositoryRoot());
-        var opened = SimulationHarnessSupport.Open(SimulationData.Load(RepositoryRoot()), config, start.Seed);
+        var opened = Marvel.Sim.OpenedGame.Open(SimulationData.Load(RepositoryRoot()), config, start.Seed);
         Assert.Equal(start.InitialDigest, opened.Game.State.Digest().Canonical());
         JournalReplay.RequireEvents(start.SetupEvents, opened.SetupEvents, "setup");
         return (lines, opened.Game);
