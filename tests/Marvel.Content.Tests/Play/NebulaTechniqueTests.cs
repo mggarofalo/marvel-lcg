@@ -190,6 +190,7 @@ public sealed class NebulaTechniqueTests : CoreCardTestBase
 
     [Theory]
     [InlineData(8, true, "10/14 → 5/14 HP", true)]
+    [InlineData(5, true, "10/14 → 5/14 HP", false)]
     [InlineData(4, true, "10/14 → 6/14 HP", false)]
     [InlineData(8, false, "10/14 → 2/14 HP", false)]
     [Rule("rr:cannot")]

@@ -100,6 +100,7 @@ internal static class AbilityCardQueries
         AbilityCardBinding.DefendingCharacter => CurrentDefender(cast.World),
         // Printed 16101 Combat Ready: "Reveal that card, then resolve its 'Special'
         // ability." The card the invocation revealed last, once its reveal resolved.
+        // Equivalent mutant: every ability that names it reveals one card, so first and last agree.
         AbilityCardBinding.Revealed => (cast.RevealedThisResolution ?? throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' names the revealed card outside an ability invocation")) is { Count: > 0 } revealed
             ? cast.World.Cards[revealed[^1]] : null,

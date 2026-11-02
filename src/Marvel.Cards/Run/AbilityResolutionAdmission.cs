@@ -105,6 +105,8 @@ internal static class AbilityResolutionAdmission
             "moveThreat" => AbilityThreatMovementAdmission.CanMove((AbilityEffect.MoveThreat)node, cast),
             "removeThreat" => CanRemoveThreat(node, cast),
             "gainSurge" => EffectOf<AbilityEffect.GainSurge>(node, cast).Instances > 0,
+            // Equivalent mutant: every mark is followed by gainSurge in the same sequence, which
+            // admits that sequence whatever the mark's admission says.
             "markThisRound" => !RoundMarks.Has(cast.World, EffectOf<AbilityRoundEffect.MarkThisRound>(node, cast).Mark),
             "draw" => CanDraw(node, cast),
             "drawToHandSize" => EffectOf<AbilityEffect.DrawToHandSize>(node, cast) is var handSize

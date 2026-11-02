@@ -86,7 +86,10 @@ public sealed class NebulaSchemeTests : CoreCardTestBase
         var backflip = GrootBoards.Hand(world, "01003");
         var kick = GrootBoards.Hand(world, "01005");
         var paying = spent == 1 ? new[] { backflip } : [backflip, kick];
+        GrootBoards.Hand(world, "01003", 1);
+        GrootBoards.Hand(world, "01005", 1);
 
+        // Player 1 holds the same resources and is not the first player.
         Assert.Empty(ShipCommandBoards.ActionsOn(world, ship, 1));
         // Shoot the Thrusters! is authored once for 1 resource (action ordinal 0) and once for 2.
         var action = Assert.Single(ShipCommandBoards.ActionsOn(world, ship, 0), a => a.Ordinal == spent - 1);

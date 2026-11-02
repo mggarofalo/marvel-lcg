@@ -138,6 +138,43 @@ public sealed class NebulaEncounterTests : CoreCardTestBase
     }
 
     [Fact]
+    [Rule("rr:confuse-confused.1")]
+    public void RuthlessPlacesNoEvasionCounterWhenNebulasSchemePlacesNoThreat()
+    {
+        // "When this character would scheme or thwart, remove each confused status card from it
+        // instead." Nebula places no threat, so Ruthless places no evasion counter.
+        var world = NebulaBoards.Board(face: "01001b");
+        var ship = NebulaBoards.PutShip(world);
+        var nebula = GrootBoards.Villain(world);
+        Statuses.Give(world, nebula, Statuses.Confused);
+        long threat = NebulaBoards.Threat(world);
+
+        RonanBoards.Reveal(world, NebulaBoards.Ruthless);
+        BadoonBoards.Drive(world);
+
+        Assert.False(Statuses.Has(world, nebula, Statuses.Confused));
+        Assert.Equal(threat, NebulaBoards.Threat(world));
+        Assert.Equal(0, NebulaBoards.Evasion(ship));
+    }
+
+    [Fact]
+    [Rule("rr:special")]
+    public void CombatReadyResolvesNoSpecialWhenNoTechniqueIsRevealed()
+    {
+        // The encounter deck and discard pile hold no Technique, so nothing is revealed.
+        var world = NebulaBoards.Board();
+        var nebula = GrootBoards.Villain(world);
+        long threat = NebulaBoards.Threat(world);
+
+        RonanBoards.Reveal(world, NebulaBoards.CombatReady);
+        BadoonBoards.Drive(world);
+
+        Assert.DoesNotContain(world.Cards, card => card.Area.Host == nebula.ObjectId);
+        Assert.Equal(threat, NebulaBoards.Threat(world));
+        Assert.Equal(0, world.Seats[0].IdentityCard.Damage);
+    }
+
+    [Fact]
     [Rule("rr:tough.3")]
     public void RuthlessCountsDamageDealtToAToughHero()
     {
