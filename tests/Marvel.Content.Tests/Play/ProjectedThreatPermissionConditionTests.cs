@@ -16,17 +16,20 @@ public sealed class ProjectedThreatPermissionConditionTests : CoreCardTestBase
     // Total Destruction: "Threat cannot be removed from this scheme while Abomination is in play."
     [Rule("rr:in-play-and-out-of-play.4")]
     [Theory]
-    [InlineData(true, false, false, false)]
-    [InlineData(true, true, false, true)]
-    [InlineData(false, false, true, false)]
-    [InlineData(false, false, false, true)]
+    [InlineData(true, false, false, true, false)]
+    [InlineData(true, true, false, true, true)]
+    [InlineData(false, false, true, true, false)]
+    [InlineData(false, true, true, true, true)]
+    [InlineData(false, false, true, false, true)]
+    [InlineData(false, false, false, true, true)]
     public void TotalDestructionReadsProjectedAbominationMembership(
-        bool inPlay, bool departed, bool entered, bool removable)
+        bool inPlay, bool departed, bool entered, bool faceUp, bool removable)
     {
         // rr:in-play-and-out-of-play.4: "Card abilities only interact with, and can only
         // target, cards that are in play". A projected defeat removes Abomination; a
-        // projected entry adds it.
+        // projected entry adds it, and a facedown card shows no title.
         var (world, scheme, abomination) = Board(inPlay);
+        if (!faceUp) abomination.TurnFaceDown();
         var projection = Projection(world, departed ? abomination : null, entered ? abomination : null);
         Assert.Equal(removable, AbilityThreatPermissions.CanRemoveThreat(
             world, AuthoredCards.Program, scheme, projection: projection));
