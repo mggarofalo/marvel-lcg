@@ -26370,7 +26370,7 @@
       "name": "Pirate Commander",
       "note": "Quickstrike is a printed keyword the engine reads (rr:quickstrike). Forced Response: after this minion's completed attack damages your identity, remove 1 random card in your hand from the game, as Tombstone (02047) reads its damage. A removed card is out of the game and may be looked at (ruling 57fc672ad0921420). Boost: give the villain 1 additional boost card for this activation, only while the villain is the activating enemy; a villainous minion's activation gives the villain nothing (ruling fba0af85176f8559).",
       "abilities": [
-        {"trigger": {"event": "WhenAttackEnds", "timing": "ForcedResponse", "actor": "this", "player": "trigger.player"}, "when": {"attackDamagedYou": "you"}, "effect": {"removeFromGameAtRandom": {"player": "you", "count": 1}}},
+        {"trigger": {"event": "WhenAttackEnds", "timing": "ForcedResponse", "actor": "this"}, "when": {"attackDamagedYou": "you"}, "effect": {"removeFromGameAtRandom": {"player": "you", "count": 1}}},
         {"trigger": {"event": "WhenCardRevealed", "timing": "Boost", "subject": "this"}, "effect": {"if": {"test": {"isKind": {"card": "activatingEnemy", "kind": "villain"}}, "then": {"giveAdditionalBoost": {"enemy": "activatingEnemy"}}}}}
       ]
     },
@@ -26379,7 +26379,7 @@
       "name": "Pirate Lackey",
       "note": "Quickstrike is a printed keyword the engine reads (rr:quickstrike). Forced Response: after this minion's completed attack damages your identity, remove the top card of your deck from the game. A deck that empties this way resets at once (rr:player-deck.1). The removed card may be looked at (ruling 57fc672ad0921420). Boost: give the villain 1 additional boost card for this activation, only while the villain is the activating enemy (ruling fba0af85176f8559).",
       "abilities": [
-        {"trigger": {"event": "WhenAttackEnds", "timing": "ForcedResponse", "actor": "this", "player": "trigger.player"}, "when": {"attackDamagedYou": "you"}, "effect": {"removeTopFromGame": {"player": "you", "count": 1}}},
+        {"trigger": {"event": "WhenAttackEnds", "timing": "ForcedResponse", "actor": "this"}, "when": {"attackDamagedYou": "you"}, "effect": {"removeTopFromGame": {"player": "you", "count": 1}}},
         {"trigger": {"event": "WhenCardRevealed", "timing": "Boost", "subject": "this"}, "effect": {"if": {"test": {"isKind": {"card": "activatingEnemy", "kind": "villain"}}, "then": {"giveAdditionalBoost": {"enemy": "activatingEnemy"}}}}}
       ]
     },
