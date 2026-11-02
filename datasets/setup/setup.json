@@ -3399,7 +3399,7 @@
   "contract": "docs/setup-dataset.md",
   "counts": {
     "campaigns": 43,
-    "encounter_sets": 21,
+    "encounter_sets": 25,
     "heroes": 19
   },
   "encounter_sets": {
@@ -3614,6 +3614,65 @@
         "16120",
         "16121",
         "16121"
+      ]
+    },
+    "galactic_artifacts": {
+      "name": "Galactic Artifacts",
+      "role": "modular",
+      "encounters": [
+        "16122",
+        "16123",
+        "16124",
+        "16125",
+        "16126",
+        "16127",
+        "16128",
+        "16129",
+        "16130"
+      ]
+    },
+    "kree_militant": {
+      "name": "Kree Militants",
+      "role": "modular",
+      "encounters": [
+        "16131",
+        "16132",
+        "16132",
+        "16132",
+        "16133",
+        "16133",
+        "16134",
+        "16134",
+        "16134"
+      ]
+    },
+    "menagerie_medley": {
+      "name": "Menagerie Medley",
+      "role": "modular",
+      "encounters": [
+        "16135",
+        "16135",
+        "16135",
+        "16135",
+        "16136",
+        "16136",
+        "16136",
+        "16137",
+        "16137"
+      ]
+    },
+    "space_pirates": {
+      "name": "Space Pirates",
+      "role": "modular",
+      "encounters": [
+        "16138",
+        "16139",
+        "16139",
+        "16139",
+        "16139",
+        "16140",
+        "16141",
+        "16141"
       ]
     },
     "temporal": {

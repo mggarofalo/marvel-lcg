@@ -84022,6 +84022,28 @@
       ]
     },
     {
+      "id": "setup:encounter-set:galactic_artifacts",
+      "kind": "setup",
+      "title": "Galactic Artifacts",
+      "fingerprint": "sha256:7fc6087398211c483c9852db437792001af81a950d4c4badba1a06bb5ce46279",
+      "scope": "encounter-set",
+      "disposition": "outside-core",
+      "obligations": [
+        {
+          "id": "behavior:setup:encounter-set:galactic_artifacts:galactic-artifacts-setup",
+          "summary": "The Galactic Artifacts record supplies nine distinct faces and nine physical encounter cards.",
+          "disposition": "outside-core",
+          "reason": "This record requires The Galaxy's Most Wanted Galactic Artifacts modular set, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
       "id": "setup:encounter-set:goblin_gimmicks",
       "kind": "setup",
       "title": "Goblin Gimmicks",
@@ -84100,6 +84122,28 @@
           "summary": "The Kree Fanatic record supplies five distinct faces and seven physical encounter cards.",
           "disposition": "outside-core",
           "reason": "This record requires the Ronan Kree Fanatic modular set, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
+      "id": "setup:encounter-set:kree_militant",
+      "kind": "setup",
+      "title": "Kree Militants",
+      "fingerprint": "sha256:b984688fe4b77161fa4d4aded2f75729691783207fe1242ab27616852a0660bd",
+      "scope": "encounter-set",
+      "disposition": "outside-core",
+      "obligations": [
+        {
+          "id": "behavior:setup:encounter-set:kree_militant:kree-militant-setup",
+          "summary": "The Kree Militants record supplies four distinct faces and nine physical encounter cards.",
+          "disposition": "outside-core",
+          "reason": "This record requires The Galaxy's Most Wanted Kree Militants modular set, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
           "target": null,
           "implementation": null,
           "work_item": null,
@@ -84196,6 +84240,28 @@
           "summary": "name: \"Masters of Evil\"",
           "disposition": "no-independent-behavior",
           "reason": "The display label creates no game-state component independent of the setup record it names.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
+      "id": "setup:encounter-set:menagerie_medley",
+      "kind": "setup",
+      "title": "Menagerie Medley",
+      "fingerprint": "sha256:166bbb2ad5c2464f27074b7fedc103b31f0d5ca1f4e6073da2fbf6609e5e6121",
+      "scope": "encounter-set",
+      "disposition": "outside-core",
+      "obligations": [
+        {
+          "id": "behavior:setup:encounter-set:menagerie_medley:menagerie-medley-setup",
+          "summary": "The Menagerie Medley record supplies three distinct faces and nine physical encounter cards.",
+          "disposition": "outside-core",
+          "reason": "This record requires The Galaxy's Most Wanted Menagerie Medley modular set, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
           "target": null,
           "implementation": null,
           "work_item": null,
@@ -84306,6 +84372,28 @@
           "summary": "The Ship Command record supplies seven distinct faces and seven physical encounter cards.",
           "disposition": "outside-core",
           "reason": "This record requires The Galaxy's Most Wanted Ship Command modular set, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
+      "id": "setup:encounter-set:space_pirates",
+      "kind": "setup",
+      "title": "Space Pirates",
+      "fingerprint": "sha256:89a290192dffb5c4171eaf8c755e3db9e35937bbfdf6fe52028157cf8da345ff",
+      "scope": "encounter-set",
+      "disposition": "outside-core",
+      "obligations": [
+        {
+          "id": "behavior:setup:encounter-set:space_pirates:space-pirates-setup",
+          "summary": "The Space Pirates record supplies four distinct faces and eight physical encounter cards.",
+          "disposition": "outside-core",
+          "reason": "This record requires The Galaxy's Most Wanted Space Pirates modular set, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
           "target": null,
           "implementation": null,
           "work_item": null,

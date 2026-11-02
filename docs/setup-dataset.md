@@ -25,7 +25,7 @@ The file has 3 groups:
 |---|---:|---:|
 | `campaigns` | 39 Core Set, Rise of Red Skull, Wrecking Crew and Green Goblin scenario/mode combinations; the two declared Kang modes and two declared Brotherhood of Badoon modes are not admitted | 43 |
 | `heroes` | 14 Core Set, Rise of Red Skull, Captain America, Ms. Marvel, Thor, Black Widow, Doctor Strange, Hulk and Ant-Man starter decks | 14 |
-| `encounter_sets` | 17 Core Set, Rise of Red Skull, Green Goblin, Kree Fanatic, Power Stone and Band of Badoon fixed/modular sets; the three declared Kang modular sets and Ship Command are not admitted | 21 |
+| `encounter_sets` | 20 Core Set, Rise of Red Skull, Green Goblin, Kree Fanatic and Galaxy's Most Wanted fixed/modular sets; the three declared Kang modular sets, Ship Command and Galactic Artifacts are not admitted | 25 |
 
 Ms. Marvel is admitted as a complete integration candidate. Her 40-card starter,
 obligation and nemesis set follow the pinned FFG divider in
@@ -371,8 +371,8 @@ exact pack membership, modular role and the complete seven-copy recipe are requi
 together. A missing face or malformed recipe closes the entire set while preserving
 predecessor products. Standard and Expert scenario slots accept its normal modular
 selection with starter or legal custom player decks. Recommended defaults remain
-scenario-owned. Discovery has nineteen heroes, 39 scenario/mode recipes and seventeen
-encounter sets, fifteen of them modular. The separate Galaxy’s Most Wanted Ronan
+scenario-owned. Discovery has nineteen heroes, 39 scenario/mode recipes and twenty
+encounter sets, eighteen of them modular. The separate Galaxy’s Most Wanted Ronan
 scenario remains unsupported. Focused evidence is in
 `docs/content/ronan-public-admission.md`; this gate does not establish complete-game,
 fresh-host or native acceptance.
@@ -389,3 +389,13 @@ Badoon Ship set aside for its main scheme's setup. The scenario's faces are not
 admitted, since the scenario waits for the withheld Ship Command set, so both
 recipes name closed faces and stay outside discovery. Evidence is in
 `docs/content/brotherhood-of-badoon.md`.
+
+The Galaxy's Most Wanted declares its Ship Command, Power Stone, Galactic
+Artifacts, Kree Militants, Menagerie Medley and Space Pirates modular sets
+(ruling 408decdf6cd8c4b5) with the MarvelSDB snapshot's physical quantities:
+Galactic Artifacts one copy each of 16122–16130; Kree Militants one 16131, three
+16132, two 16133 and three 16134; Menagerie Medley four 16135, three 16136 and two
+16137; Space Pirates one 16138, four 16139, one 16140 and two 16141. Each set is
+admitted alone when every face is authored and its recipe is exact, in order, with
+the modular role (`GalaxyModularSetAdmission`). Galactic Artifacts stays closed
+while Crystal Ball (16130) is unauthored.
