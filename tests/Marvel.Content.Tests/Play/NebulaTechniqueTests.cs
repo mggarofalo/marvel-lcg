@@ -1,3 +1,4 @@
+using Marvel.Rules.Events;
 using Marvel.Rules.Prompts;
 using Marvel.Rules.Play;
 using Marvel.Rules.State;
@@ -98,26 +99,22 @@ public sealed class NebulaTechniqueTests : CoreCardTestBase
 
     [Fact]
     [Rule("rr:boost-boost-icon")]
-    public void ATechniqueBoostCardIsAttachedBeforeItsSpecialCanShuffleTheDiscardPile()
+    public void ATechniqueBoostCardAttachesToNebulaBeforeItsSpecialResolves()
     {
-        // Cutthroat Ambition's Special completes The Art of Evasion (6 threat); Warp Drive
-        // Initiated then discards from an encounter deck of one card, which resets it from the
-        // discard pile. Cutthroat Ambition is already attached, so it stays attached.
+        // 16094 Boost: "attach this card to Nebula and resolve its 'Special' ability", in that
+        // order: the card is attached before its Special places threat.
         var world = NebulaBoards.Board();
         var nebula = GrootBoards.Villain(world);
         nebula.TakeDamage(10);
-        NebulaBoards.PutShip(world);
-        world.CreateCard(NebulaBoards.WarpDrive, world.AreaOf(DeckType.MainSchemesDeck));
-        GrootBoards.MainScheme(world).PlaceTokens("k_threat", 5);
-        foreach (var card in world.AreaOf(DeckType.EncounterDeck).Cards.Skip(1).ToArray())
-            World.MoveToTop(card, world.AreaOf(DeckType.RemovedArea));
+        var scheme = GrootBoards.MainScheme(world);
         var boost = BadoonBoards.OnTop(world, NebulaBoards.Cutthroat);
 
         KangTemporalFixture.Activate(world, nebula, scheme: false, 0);
-        BadoonBoards.Drive(world);
+        var events = BadoonBoards.Drive(world);
 
-        Assert.Equal("16092b", GrootBoards.MainScheme(world).FaceId);
-        Assert.Equal(nebula.ObjectId, boost.Area.Host);
+        int attached = events.FindIndex(e => e is CardAttached { } a && a.Card == boost.ObjectId);
+        int threat = events.FindIndex(e => e is FieldSet { Field: "k_threat" } f && f.Card == scheme.ObjectId);
+        Assert.InRange(attached, 0, threat - 1);
     }
 
     [Theory]

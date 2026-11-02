@@ -17,9 +17,8 @@ internal static class AbilityResolutionMemoryCards
             ? cast.World.Cards[revealed[^1]] : null,
         // Printed 16094 Cutthroat Ambition: "attach this card to Nebula and resolve its
         // 'Special' ability." Attaching makes the card a new object that `this` no longer
-        // names; the same physical card, while it is attached, is still "this card".
-        AbilityCardBinding.AttachedThis => cast.World.Cards[cast.Source.ObjectId] is { Area.Host: >= 0 } attached
-            ? attached : null,
+        // names; the same physical card is still "this card".
+        AbilityCardBinding.AttachedThis => cast.World.Cards[cast.Source.ObjectId],
         _ => throw new InvalidOperationException("Unknown compiled card binding"),
     };
 }

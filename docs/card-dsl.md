@@ -2439,9 +2439,8 @@ The `attachedThis` card binding names this physical card once the same effect ha
 attached it with `attachCards` of `this`: attaching makes the card a new object
 that `this` no longer names. Cutthroat Ambition's boost "attach[es] this card to
 Nebula and resolve[s] its Special ability" as `attachCards` of `this` followed by
-`{"resolveSpecials": {"cards": "attachedThis"}}`. While the card is not attached
-the binding names nothing. Lowering admits it only in an effect that attaches
-`this`, never in a cost or a `when`.
+`{"resolveSpecials": {"cards": "attachedThis"}}`. Lowering admits it only in an
+effect that attaches `this`, never in a cost or a `when`.
 
 `{"discardEach": <selector>}` discards every selected card in play, in the
 selection's order (`rr:discard.3`); `discard` names one card.
