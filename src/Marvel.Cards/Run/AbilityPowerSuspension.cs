@@ -50,7 +50,7 @@ internal static class AbilityPowerSuspension
         // unsupported is a missing calculation, never an absent legal option.
         var paths = PowerPaths(state).ToArray();
         if (AbilityPowerContinuationDependencies.IsIndependent(node)) return false;
-        if (AbilityStageEntryDependencies.CanFinishLive(node, cast, terminal, paths)) return false;
+        if (AbilityLiveUpgradeReturn.CanFinish(node, cast, terminal, paths)) return false;
         foreach (var path in paths) AbilityProjectedDefeatWindows.ValidateContinuation(node, path, cast);
         // This closed tail reads only the retained discard receipt and chosen
         // reference. Its fixed damage/status instructions resolve on the live
