@@ -78,18 +78,21 @@ internal static class AbilityProjectedDefeatWindows
         if (state.UnprojectedStageEntry is { } reason
             && !AbilityStageEntryDependencies.PreservesReads(node, state, cast))
             throw new RulesNotImplementedException(reason);
-        bool live = AbilityLiveThreatRemoval.Resolves(node) || AbilityLiveStatusGrant.Resolves(node);
+        bool live = ResolvesLive(node);
         if (!live && DeferredWindowHidesReads(node, state, cast))
             throw new RulesNotImplementedException($"A labelled-power continuation reads the board after an {DeferredWindowDescription(state)}.");
         if (!live && EncounterDealHidesReads(node, state))
             throw new RulesNotImplementedException("A labelled-power continuation has an unprojected read after a defeat-triggered encounter deal.");
     }
 
-    /// <summary>Whether <paramref name="node"/> is a removal the projection leaves to the live board.</summary>
-    /// <remarks>The board after such a removal is not projected; a later read of it is unsupported.</remarks>
+    /// <summary>Whether <paramref name="node"/> is an instruction the projection leaves to the live board.</summary>
+    /// <remarks>The board after such an instruction is not projected; a later read of it is unsupported.</remarks>
     internal static bool LeavesToLiveBoard(AbilityEffect node, AbilityPowerState state, AbilityAdmissionScope cast) =>
-        !AbilityPowerContinuationDependencies.IsIndependent(node) && AbilityLiveThreatRemoval.Resolves(node)
+        !AbilityPowerContinuationDependencies.IsIndependent(node) && ResolvesLive(node)
         && (DeferredWindowHidesReads(node, state, cast) || EncounterDealHidesReads(node, state));
+
+    private static bool ResolvesLive(AbilityEffect node) =>
+        AbilityLiveThreatRemoval.Resolves(node) || AbilityLiveStatusGrant.Resolves(node);
 
     private static bool DeferredWindowHidesReads(AbilityEffect node, AbilityPowerState state, AbilityAdmissionScope cast) =>
         state.DefeatWindowDeferred && !AbilityDefeatReceiptProjection.PreservesReads(node, state, cast)

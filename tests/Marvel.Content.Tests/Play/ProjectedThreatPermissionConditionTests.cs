@@ -16,23 +16,90 @@ public sealed class ProjectedThreatPermissionConditionTests : CoreCardTestBase
     // Total Destruction: "Threat cannot be removed from this scheme while Abomination is in play."
     [Rule("rr:in-play-and-out-of-play.4")]
     [Theory]
-    [InlineData(true, false, false, true, false)]
-    [InlineData(true, true, false, true, true)]
-    [InlineData(false, false, true, true, false)]
-    [InlineData(false, true, true, true, true)]
-    [InlineData(false, false, true, false, true)]
-    [InlineData(false, false, false, true, true)]
+    [InlineData(true, false, false, false)]
+    [InlineData(true, true, false, true)]
+    [InlineData(false, false, true, false)]
+    [InlineData(false, true, true, true)]
+    [InlineData(false, false, false, true)]
+    [InlineData(false, false, true, true, "01182")]
     public void TotalDestructionReadsProjectedAbominationMembership(
-        bool inPlay, bool departed, bool entered, bool faceUp, bool removable)
+        bool inPlay, bool departed, bool entered, bool removable, string? enteringFace = null)
     {
         // rr:in-play-and-out-of-play.4: "Card abilities only interact with, and can only
         // target, cards that are in play". A projected defeat removes Abomination; a
-        // projected entry adds it, and a facedown card shows no title.
+        // projected entry adds it, and a differently titled entry does not.
         var (world, scheme, abomination) = Board(inPlay);
-        if (!faceUp) abomination.TurnFaceDown();
-        var projection = Projection(world, departed ? abomination : null, entered ? abomination : null);
+        var entering = enteringFace is null ? abomination
+            : world.CreateCard(enteringFace, world.AreaOf(DeckType.EncounterDiscardPile));
+        var projection = Projection(world, departed ? abomination : null, entered ? entering : null);
         Assert.Equal(removable, AbilityThreatPermissions.CanRemoveThreat(
             world, AuthoredCards.Program, scheme, projection: projection));
+    }
+
+    [Rule("rr:reveal.step.1")]
+    [Fact]
+    public void AFacedownEntryRaisesRatherThanCountAsAbsent()
+    {
+        // rr:reveal.step.1: "Turn the encounter card faceup." The projected entry has
+        // not settled its face, so its title is not compared.
+        var (world, scheme, abomination) = Board(inPlay: false);
+        abomination.TurnFaceDown();
+        var error = Assert.Throws<RulesNotImplementedException>(() => AbilityThreatPermissions.CanRemoveThreat(
+            world, AuthoredCards.Program, scheme, projection: Projection(world, null, abomination)));
+        Assert.Contains("entering play facedown", error.Message);
+    }
+
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(true, true)]
+    public void APowerStateShowsAnEnteredMinionAsPresent(bool entered, bool prohibited)
+    {
+        // The power state starts every unengaged minion as unavailable; an entry
+        // restores it, so Abomination outside play and no longer unavailable has entered.
+        var (world, scheme, abomination) = Board(inPlay: false);
+        var state = new AbilityPowerState(0, 0, 0, false, [], [], [], [], [],
+            entered ? [] : [abomination.ObjectId], [], [], [], [], [], -1, 0, false);
+        Assert.Equal(!prohibited, AbilityThreatPermissions.CanRemoveThreat(world, AuthoredCards.Program, scheme,
+            projection: AbilityThreatPermissionProjection.From(world, state)));
+    }
+
+    [Theory]
+    [InlineData("Hydra Patrol", true)]
+    [InlineData("Abomination", false)]
+    public void APowerEnteringAnUntrackedTestedCardRaisesBeforeAnyChange(string tested, bool raises)
+    {
+        // A power state shows no entry of a non-minion, so a presence test of the
+        // side scheme it puts into play raises instead of reading it as absent.
+        var local = AbilityCatalog.Parse("""
+            { "cards": [
+              { "card": "AUNT", "abilities": [ {
+                "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "game" },
+                "cost": { "exhaust": "this" }, "labels": ["thwart"],
+                "effect": {"thwart":{"target":{"titled":"Total Destruction"},"effect":{"seq":[
+                  {"putIntoPlay":{"card":{"cardsIn":{"areas":["encounterDiscardPile"],"title":"Hydra Patrol"}},"where":"printedDestination"}},
+                  {"removeThreat":{"scheme":{"titled":"Total Destruction"},"amount":2}}
+                ]}}} } ] },
+              { "card": "10027", "abilities": [ {
+                "trigger": { "timing": "Constant", "subject": "this" },
+                "effect": { "if": { "test": {"exists":{"titled":"TESTED"}}, "then": { "preventThreatRemoval": "this" } } } } ] }
+            ] }
+            """.Replace("AUNT", AuthoredCards.AuntMay, StringComparison.Ordinal)
+            .Replace("TESTED", tested, StringComparison.Ordinal));
+        var runner = new AbilityRunner(new AbilityBook(
+            [.. AuthoredCards.Book.Abilities.Where(row => row.Card is not "10027" and not AuthoredCards.AuntMay), .. local.Abilities],
+            AuthoredCards.Book.Authored.Concat(local.Authored).ToHashSet(StringComparer.Ordinal), AuthoredCards.Book.AttachTo));
+        var (world, scheme, _) = Board(inPlay: false);
+        world.Abilities = runner;
+        world.CreateCard("04154", world.AreaOf(DeckType.EncounterDiscardPile));
+        var source = InPlay(world, AuthoredCards.AuntMay);
+        string before = world.Digest().Canonical();
+        if (raises)
+            Assert.Contains("tests its presence", Assert.Throws<RulesNotImplementedException>(
+                () => runner.Actions(world, 0).ToArray()).Message);
+        else
+            Assert.Contains(runner.Actions(world, 0), offer => offer.Card == source.ObjectId);
+        Assert.Equal(before, world.Digest().Canonical());
+        Assert.Equal(4, scheme.Tokens["k_threat"]);
     }
 
     [Theory]

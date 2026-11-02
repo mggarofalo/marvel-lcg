@@ -10,8 +10,8 @@ namespace Marvel.Cards.Run;
 /// that window finishes before the grant begins. rr:confuse-confused.2: "If an ability
 /// 'confuses' a character, give that character a confused status card." The grant
 /// chooses nothing and asks nothing: it reads the villain when it resolves, and
-/// status execution skips a recipient that is no longer in play. The window stays
-/// unsettled in the projection, so a later read of the board still raises.
+/// status execution skips a recipient that is no longer in play. The board after
+/// the grant is not projected, so a later read of it still raises.
 /// </remarks>
 internal static class AbilityLiveStatusGrant
 {
