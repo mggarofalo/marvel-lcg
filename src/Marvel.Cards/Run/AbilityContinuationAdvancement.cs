@@ -99,11 +99,15 @@ internal static class AbilityContinuationAdvancement
         new(ability, leaf.Effect, state with
         { Cursor = state.Cursor with { Frames = leaf.Frames, Position = leaf.Position, HasContinuation = leaf.HasContinuation } });
 
+    // After an each-player block the ability resolves for its own player again.
+    // An ability with no player (AbilityPlayer -1) returns to no player, so a later
+    // choice that names no player goes to the first player (rr:first-player.2)
+    // rather than the last seat the block visited.
     private static AbilityContinuationState AfterCompletedFrame(
         AbilityContinuationState state, AbilityStructuralFrame frame,
         ImmutableArray<AbilityStructuralFrame> prefix) =>
         state with
-        { Cursor = state.Cursor with { Frames = prefix, HasContinuation = HasRemaining(prefix), Player = frame is EachPlayerFrame && state.Invocation.AbilityPlayer >= 0
+        { Cursor = state.Cursor with { Frames = prefix, HasContinuation = HasRemaining(prefix), Player = frame is EachPlayerFrame
                 ? state.Invocation.AbilityPlayer
                 : state.Cursor.Player } };
 }

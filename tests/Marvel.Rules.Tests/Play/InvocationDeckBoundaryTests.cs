@@ -112,6 +112,38 @@ public sealed class InvocationDeckBoundaryTests
         Assert.Empty(events);
     }
 
+    [Rule("rr:player-elimination.step.5")]
+    [Rule("rr:player-elimination.5")]
+    [Rule("rr:removed-from-the-game.2")]
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void AResolvingInvocationRemovedFromTheGameStaysRemoved(bool returning)
+    {
+        // Elimination removes "each other game element within" the play area, the
+        // Special still resolves "the entire ability", and "a card that has been
+        // removed from the game cannot reenter the game through any means". Neither
+        // the Invocation's self-discard nor 09005's return places it.
+        var (world, cards) = Board();
+        var invocation = InvocationDeck.Initialize(world, 0, cards, "setup", []);
+        var game = Game.Begin(world, world.Facts, new NoCardAbilities());
+        while (game.Phase == GamePhase.Mulligan)
+            game.Resolve(Decision.Take(Assert.Single(game.Pending!.Affordances).Id));
+        var card = invocation.PublicTop!;
+        var removed = world.AreaOf(DeckType.RemovedArea);
+        World.MoveToTop(card, removed);
+        string before = world.Digest().Canonical();
+        var events = new List<GameEvent>();
+
+        if (returning) invocation.ReturnToTop(card, "return", events);
+        else invocation.DiscardResolved(card, "resolve", events);
+
+        Assert.Same(removed, card.Area);
+        Assert.Empty(invocation.Discard.Cards);
+        Assert.Equal(before, world.Digest().Canonical());
+        Assert.Empty(events);
+    }
+
     private static (World World, Card[] Cards) Board()
     {
         var world = new World(new Printed(), 1, 5489);

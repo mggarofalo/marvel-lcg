@@ -85,6 +85,12 @@ public sealed class InvocationDeck
         // pile it tops (09029 "Shuffle the Invocation card under here into the Invocation
         // deck" via rr:when-defeated-abilities.1 and rr:interrupt.3), and "this card"
         // still names the same physical card (rr:referential-ability.step.1).
+        // Eliminating Doctor Strange mid-Special removes this card, with the Invocation
+        // deck and its discard pile, from the game (rr:player-elimination.step.5), and
+        // the rest of the Special still resolves (rr:player-elimination.5). "A card that
+        // has been removed from the game cannot reenter the game through any means"
+        // (rr:removed-from-the-game.2), so the placement moves nothing.
+        if (card.Area.Type == DeckType.RemovedArea) return;
         if (card.Area != Deck)
             throw new RulesNotImplementedException(
                 $"resolving Invocation '{card.FaceId}' left its draw pile for {card.Area.Type} before placing itself");
@@ -106,8 +112,14 @@ public sealed class InvocationDeck
         ArgumentNullException.ThrowIfNull(card);
         ArgumentNullException.ThrowIfNull(events);
         if (!duringGame || !cards.Contains(card) || card.Owner != Player
-            || card.Area != Discard && card.Area != Deck)
+            || card.Area != Discard && card.Area != Deck && card.Area.Type != DeckType.RemovedArea)
             throw new ArgumentException("only this player's resolved Invocation can return", nameof(card));
+        // 09005's "Then, place it back on top of the Invocation deck" still resolves
+        // after Doctor Strange is eliminated mid-Special (rr:player-elimination.5), but
+        // elimination removed this card and its deck from the game
+        // (rr:player-elimination.step.5), and a removed card "cannot reenter the game
+        // through any means" (rr:removed-from-the-game.2), so nothing moves.
+        if (card.Area.Type == DeckType.RemovedArea) return;
         // ruling:b07d53e12625ab23: expose/recycle before returning this same copy.
         // A recycled copy can occupy any position, so move it within its deck too.
         if (PublicTop is { } previous)
