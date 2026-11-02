@@ -45,7 +45,7 @@ internal static class AbilityJsonReader
     private static int Additional(JsonElement element, string card)
     {
         if (!element.TryGetProperty("additional", out var additional)) return 0;
-        return additional.TryGetInt32(out int count) && count > 0
+        return additional.ValueKind == JsonValueKind.Number && additional.TryGetInt32(out int count) && count > 0
             ? count
             : throw new AbilityException(
                 $"starting counters on '{card}' need a positive integer 'additional'");

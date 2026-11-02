@@ -25,8 +25,7 @@ public static class AttachmentTransfer
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(card);
-        return card.Area.Host < 0 || !DeckTypes.IsInPlay(card.Area.Type)
-            || StateFields.Modified(world, card, ProhibitedField, world.Facts, world.Players) <= 0;
+        return StateFields.Modified(world, card, ProhibitedField, world.Facts, world.Players) <= 0;
     }
 
     /// <summary>Attaches <paramref name="card"/>, in play, to <paramref name="host"/>.</summary>
