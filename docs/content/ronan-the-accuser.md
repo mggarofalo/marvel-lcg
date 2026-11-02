@@ -96,11 +96,17 @@ documented in [card-dsl.md](../card-dsl.md).
 - `cannot_be_unattached` is a modifiable field; `attachCards` does not move an
   attachment that has it (`AttachmentTransfer.CanUnattach`).
 - An `inPlayerArea` selection of the identity area resolves to one card.
+- A projected threat-removal permission reads a titled card in the villain's play
+  area from the projection's membership and attachment hosts
+  (`AbilityThreatPermissionProjection`), so a removal power decides "Take What Is
+  Mine" 2B before it resolves. A titled card entering play under the projection
+  raises.
 
-A differential of 180 complete non-gmw games (Rhino, Klaw Expert, Ultron, Risky
+A differential of 220 complete non-gmw games (Rhino, Klaw Expert, Ultron, Risky
 Business, Crossbones, Wrecking Crew Standard, Mutagen Formula, Red Skull Expert and
-Zola; one and two players; seeds 1–10), hashing every prompt and state digest, is
-identical on b6c88238 and this packet.
+Zola, and Rhino and Ultron with the admitted Power Stone modular set; one and two
+players; seeds 1–10), hashing every prompt and state digest, is identical on
+4639bef7 and this packet.
 
 ## Evidence
 
@@ -110,11 +116,16 @@ identical on b6c88238 and this packet.
 - Research-only complete Standard games, dealt directly rather than through
   discovery, with exact replay, and the Standard and Expert setup:
   `RonanTheAccuserResearchGameTests`.
-- Every new decision has a mutant, and all 41 are killed: the engine words, each
-  row's conditions and amounts, and the Kree Command Ship's first-player, treachery
-  and peril limits.
-- A scan of 160 complete research games (Standard and Expert, one and two players,
-  seeds 1–40) raises nothing: 5 wins, 155 losses, none unfinished.
+- Every new decision has a mutant, and all 55 are killed: the engine words and the
+  projected villain play area test, each row's conditions and amounts (including
+  "you" on Ronan's interrupts, "per hero" on Superior Tactics and the villain-only
+  boost of "You Stand Accused!"), and the Kree Command Ship's first-player,
+  treachery and peril limits.
+- A scan of 3,040 complete research games (every hero alone and in 19 pairs,
+  Standard and Expert, seeds 1–40) raises nothing from this scenario: 2,981 end
+  with the players losing, 58 with the villain winning, none with the players
+  winning and none unfinished. One game raises MARVEL-914, a Doctor Strange
+  Invocation discard after Images of Ikonn defeats Open the Dark Dimension.
 
 ## New interactions
 
