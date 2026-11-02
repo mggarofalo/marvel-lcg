@@ -186,6 +186,7 @@ public sealed class PresentationBoundaryTests
             "Marvel.View.CardPersistentCostDescriptor",
             "Marvel.View.CardPersistentEffectDescriptor",
             "Marvel.View.CardPersistentThresholdDescriptor",
+            "Marvel.View.DecisionAttack",
             "Marvel.View.DecisionFrame",
             "Marvel.View.DecisionReceiptContext",
             "Marvel.View.DecisionSubject",
