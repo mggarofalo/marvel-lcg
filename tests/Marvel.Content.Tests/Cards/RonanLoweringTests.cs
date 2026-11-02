@@ -32,6 +32,17 @@ public sealed class RonanLoweringTests : CoreCardTestBase
         Assert.Equal(11, pool.StartingFor(4));
     }
 
+    [Fact]
+    public void TheVillainPlayAreaIsReadAsEveryInPlayArea()
+    {
+        var reads = AbilitySelectionAreaReads.For(new AbilityCardSelection.InAreas(
+            [AbilitySearchArea.VillainPlayArea], null, null, "Power Stone"));
+
+        Assert.Contains(Marvel.Rules.State.DeckType.UpgradesArea, reads);
+        Assert.Contains(Marvel.Rules.State.DeckType.VillainArea, reads);
+        Assert.DoesNotContain(Marvel.Rules.State.DeckType.EncounterDeck, reads);
+    }
+
     [Theory]
     [InlineData("identity", true)]
     [InlineData("allies", false)]

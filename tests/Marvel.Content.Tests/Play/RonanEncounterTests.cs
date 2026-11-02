@@ -37,6 +37,44 @@ public sealed class RonanEncounterTests : CoreCardTestBase
     }
 
     [Fact]
+    [Rule("rr:first-player.4")]
+    public void OnlyTheFirstPlayerIsOfferedTheKreeCommandShip()
+    {
+        // Both players could pay; the first player declines and player 1 is never asked.
+        var world = RonanBoards.Board(players: 2);
+        RonanBoards.Ship(world);
+        ShipCommandBoards.PutMilano(world);
+        GrootBoards.Hand(world, ShipCommandBoards.Energy);
+        GrootBoards.Hand(world, ShipCommandBoards.Energy, 1);
+        RonanBoards.Reveal(world, RonanBoards.YouStandAccused, 1);
+
+        var asked = RonanBoards.Take(world, null);
+
+        Assert.True(Offered(asked, 0));
+        Assert.False(Offered(asked, 1));
+        Assert.Equal(3, world.Seats[1].IdentityCard.Damage);
+    }
+
+    [Theory]
+    [InlineData(1, false)]
+    [InlineData(0, true)]
+    [Rule("rr:peril.1")]
+    public void TheFirstPlayerCannotCancelAnotherPlayersPerilTreachery(int revealer, bool offered)
+    {
+        // 16146 Hull Breach is a peril treachery: while its revealer resolves it, other players
+        // cannot trigger abilities. The first player may still cancel their own.
+        var world = RonanBoards.Board(players: 2);
+        RonanBoards.Ship(world);
+        ShipCommandBoards.PutMilano(world);
+        GrootBoards.Hand(world, ShipCommandBoards.Energy);
+        RonanBoards.Reveal(world, "16146", revealer);
+
+        var asked = RonanBoards.Take(world, null);
+
+        Assert.Equal(offered, Offered(asked, 0));
+    }
+
+    [Fact]
     [Rule("rr:exhausted.1")]
     public void TheKreeCommandShipIsNotOfferedWithoutAReadyMilano()
     {
@@ -61,12 +99,15 @@ public sealed class RonanEncounterTests : CoreCardTestBase
         RonanBoards.Ship(world);
         ShipCommandBoards.PutMilano(world);
         GrootBoards.Hand(world, ShipCommandBoards.Energy);
-        var scheme = RonanBoards.Reveal(world, RonanBoards.PincerManeuver);
+        // Superior Tactics is a side scheme with a When Revealed ability.
+        var stone = RonanBoards.Stone(world, world.Seats[0].IdentityCard);
+        var scheme = RonanBoards.Reveal(world, RonanBoards.SuperiorTactics);
 
         var asked = RonanBoards.Take(world, Interrupt);
 
         Assert.False(Offered(asked, 0));
         Assert.Equal(DeckType.SideSchemesArea, scheme.Area.Type);
+        Assert.Equal(GrootBoards.Villain(world), RonanBoards.Host(world, stone));
     }
 
     [Theory]
