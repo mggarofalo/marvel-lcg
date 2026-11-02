@@ -503,6 +503,12 @@ expires with its activation identity, including cancellation and nested activati
 attack. This suppresses normal and additional deals for that activation only;
 boost cards assigned before the activation still resolve. The field defaults to
 `"true"` and is rejected on `enemySchemes`.
+An `enemyAttacks` or `enemySchemes` against a player already eliminated activates
+no enemy and completes: `rr:player-elimination.5` resolves the rest of the
+ability, and `rr:player-elimination.step.5` says eliminated players no longer
+participate. Hydra Jet-Trooper's delayed attack on a player its boosted attack
+eliminated is the case. An `engagedHero` collection still activates each enemy
+against its remaining engaged hero.
 `activationAttacksAgainstYou: "game"` counts completed attacks against the current
 player in the most recent scheduled activation collection. Canceled attacks do
 not count; a different defending player receives the attack receipt. Each-player
@@ -1774,6 +1780,12 @@ finishes all replacements and prevention before placing every share, then settle
 defeat windows. The property is retained in area, labelled-power and repeated-effect projections. Unsupported
 follow-on projections still raise before costs; in particular, a changing
 singular area query and unprojected defeat windows remain unsupported.
+One continuation after an unprojected defeat window is not a read: a labelled
+power's final `returnToHand` of your one in-play upgrade by title, such as Hammer
+Throw returning Mjolnir after Goblin Soldier's When Defeated damage, finds its
+card on the live board once the window resolves (`rr:when-defeated-abilities.2.1`,
+ruling `cef917d276a31694`). A step-6 recovery window keeps its own read proof, and
+any instruction after the return still raises.
 
 This prerequisite is synthetic coverage for Thor E3 (MARVEL-745), motivated by
 printed `06006` and its vendored non-attack erratum. It does not admit Lightning
