@@ -34,9 +34,11 @@ public static class PlayerCardRemoval
     /// <remarks>
     /// <c>rr:player-deck.1</c>: "If a player deck empties, the player shuffles
     /// their discard pile to make a new deck. That player immediately deals
-    /// themself one facedown encounter card." As for a discard from the deck
-    /// (<c>rr:player-deck.3</c>), the starting deck bounds the instruction, so
-    /// the deck can only empty with its last removal.
+    /// themself one facedown encounter card." <c>rr:player-deck.3</c> speaks only
+    /// of discarding: "If the player's deck empties while the player was discarding
+    /// cards from their deck, no further cards are discarded from the newly shuffled
+    /// deck." Stopping a removal the same way, so the deck can only empty with its
+    /// last removal, is our choice.
     /// </remarks>
     /// <returns>The cards removed.</returns>
     public static IReadOnlyList<Card> TopOfDeck(

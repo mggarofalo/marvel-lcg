@@ -194,12 +194,15 @@ public static class Elimination
     /// <summary>Ends the game when every player is eliminated, once.</summary>
     /// <remarks>
     /// A card leaving in step 4 can defeat the last other identity (an upgrade
-    /// granting it hit points), whose own elimination has already ended the game.
+    /// granting it hit points), whose own elimination has already ended the game
+    /// for this same reason. Any other earlier result is a second ending, which
+    /// <see cref="World.Finish"/> refuses.
     /// </remarks>
     private static bool EndsTheGame(World world)
     {
         if (!world.Seats.All(each => each.Eliminated)) return false;
-        if (!world.IsOver) world.Finish(Outcome.PlayersLose, PlayerLossReason.AllPlayersEliminated);
+        if (world.Result != Outcome.PlayersLose || world.LossReason != PlayerLossReason.AllPlayersEliminated)
+            world.Finish(Outcome.PlayersLose, PlayerLossReason.AllPlayersEliminated);
         return true;
     }
 

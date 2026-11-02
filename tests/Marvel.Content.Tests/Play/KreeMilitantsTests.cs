@@ -63,20 +63,24 @@ public sealed class KreeMilitantsTests : CoreCardTestBase
         Assert.Equal(1, villain.Damage);
     }
 
-    [Fact]
+    [Theory]
+    [InlineData(ShipCommandBoards.Strength, "01003", "01004")]
+    [InlineData(ShipCommandBoards.Genius, "01004", "01003")]
+    [InlineData(ShipCommandBoards.Energy, "01006", "01003")]
     [Rule("rr:cost")]
-    public void KreeCombatArmorIsDiscardedForThreeResourcesOfOneType()
+    public void KreeCombatArmorIsDiscardedForThreeResourcesOfOneType(string pair, string third, string other)
     {
-        // "Hero Action: Spend 3 resources of the same type → discard this card." Genius and
-        // Enhanced Spider-Sense make three mental resources: only the mental action is offered.
+        // "Hero Action: Spend 3 resources of the same type → discard this card." Strength, Genius
+        // or Energy makes two of one type and the single card a third; the other card's one
+        // resource of a different type completes nothing, so one action is offered.
         var world = Board();
         var armor = ShipCommandBoards.Attach(world, GrootBoards.Villain(world), KreeCombatArmor);
-        var genius = GrootBoards.Hand(world, ShipCommandBoards.Genius);
-        var sense = GrootBoards.Hand(world, "01004");
-        GrootBoards.Hand(world, "01003");
+        var two = GrootBoards.Hand(world, pair);
+        var completing = GrootBoards.Hand(world, third);
+        GrootBoards.Hand(world, other);
 
         var offered = ShipCommandBoards.ActionsOn(world, armor, 0);
-        ShipCommandBoards.Act(world, armor, 0, genius, sense);
+        ShipCommandBoards.Act(world, armor, 0, two, completing);
 
         Assert.Single(offered);
         Assert.Equal(DeckType.EncounterDiscardPile, armor.Area.Type);

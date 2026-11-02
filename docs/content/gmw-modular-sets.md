@@ -88,8 +88,8 @@ are documented in [card-dsl.md](../card-dsl.md).
   game (`PlayerCardRemoval`).
 - `placeThreatOnMainScheme` is a cost (`AbilityThreatCost`).
 - A player's elimination whose departing upgrade defeats the last other identity
-  ends the game once (rr:player-elimination.4). The scan found it with Endurance
-  (05023) on a partner; the game previously raised there
+  ends the game once (rr:player-elimination.4), as when Endurance (05023) leaves
+  with its owner and defeats the partner it is attached to
   (`EliminationCascadeTests`).
 
 ## Evidence

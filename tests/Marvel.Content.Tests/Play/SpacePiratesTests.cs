@@ -36,6 +36,40 @@ public sealed class SpacePiratesTests : CoreCardTestBase
     }
 
     [Fact]
+    [Rule("rr:damage")]
+    public void PirateCommanderRemovesNothingFromAnEmptyHand()
+    {
+        // "Remove 1 card at random in your hand from the game": with no card in hand there is
+        // nothing to remove, and the attack still damages the hero.
+        var world = Board();
+        var commander = GrootBoards.Engaged(world, PirateCommander);
+
+        KangTemporalFixture.Attack(world, commander, 0);
+        Drive(world);
+
+        Assert.Equal(2, world.Seats[0].IdentityCard.Damage);
+        Assert.DoesNotContain(world.AreaOf(DeckType.RemovedArea).Cards, card => card.Owner == 0);
+    }
+
+    [Fact]
+    [Rule("rr:you-your")]
+    public void PirateCommanderRemovesFromTheHandOfThePlayerItDamaged()
+    {
+        // "After this minion attacks and damages you": "you" is the attacked player, seat 1
+        // here, so seat 1's card is removed and the first player's hand is untouched.
+        var world = Board(players: 2);
+        var mine = GrootBoards.Hand(world, "01003", player: 0);
+        var theirs = GrootBoards.Hand(world, "01004", player: 1);
+        var commander = GrootBoards.Engaged(world, PirateCommander, player: 1);
+
+        KangTemporalFixture.Attack(world, commander, 1);
+        Drive(world);
+
+        Assert.Equal(DeckType.RemovedArea, theirs.Area.Type);
+        Assert.Equal(DeckType.HandsArea, mine.Area.Type);
+    }
+
+    [Fact]
     public void PirateCommandersRemovalDrawsItsCardFromTheSeededStream()
     {
         // "Remove 1 card at random in your hand": the card is the seeded stream's choice

@@ -37,6 +37,20 @@ public sealed class EliminationCascadeTests
         Assert.Equal(PlayerLossReason.AllPlayersEliminated, world.LossReason);
     }
 
+    /// <summary>
+    /// A game already over for another reason does not also end by elimination
+    /// (rr:player-elimination.4); the second ending raises rather than being absorbed.
+    /// </summary>
+    [Rule("rr:player-elimination.4")]
+    [Fact]
+    public void EliminatingTheLastPlayerOfAGameAlreadyLostAnotherWayRaises()
+    {
+        var (_, world) = Playing(_ => { }, heroes: ["spider_man"], abilities: AuthoredCards.Runner());
+        world.Finish(Outcome.PlayersLose, PlayerLossReason.EncounterCardsExhausted);
+
+        Assert.Throws<RulesNotImplementedException>(() => Elimination.Eliminate(world, world.Facts, 0, "test", []));
+    }
+
     /// <summary>The same departure leaves a partner with hit points to spare in the game.</summary>
     [Rule("rr:player-elimination.step.4")]
     [Fact]
