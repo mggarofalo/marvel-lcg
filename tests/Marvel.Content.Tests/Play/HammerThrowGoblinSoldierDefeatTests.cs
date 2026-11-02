@@ -63,6 +63,43 @@ public sealed class HammerThrowGoblinSoldierDefeatTests
 
     [Fact]
     [Rule("rr:when-defeated-abilities.2.1")]
+    public void AReturnSomePathsReachWithoutTheDeferredWindowStillRaises()
+    {
+        // Synthetic body: a draw, then damage only while the soldier is in play, then the
+        // return. The damage branch may or may not run, so only some paths defer the
+        // soldier's When Defeated; the live return is proven only when every path hides
+        // opaque work, and this mixed set still raises before the soldier is damaged.
+        var book = JsonNode.Parse(File.ReadAllText(RepositoryPaths.Dataset("abilities", "abilities.json")))!;
+        var sequence = book["cards"]!.AsArray().Single(row => row!["card"]!.GetValue<string>() == "06005")!
+            ["abilities"]![0]!["effect"]!["chooseCard"]!["effect"]!["attack"]!["effect"]!["seq"]!.AsArray();
+        var damage = sequence[0]!.DeepClone();
+        sequence[0] = JsonNode.Parse("""{"draw":{"player":"you","count":1}}""");
+        sequence.Insert(1, new JsonObject
+        {
+            ["if"] = new JsonObject
+            {
+                ["test"] = JsonNode.Parse("""{"exists":{"titled":"Goblin Soldier"}}"""),
+                ["then"] = damage,
+            },
+        });
+        var runner = new AbilityRunner(AbilityCatalog.Parse(book.ToJsonString()));
+        var game = Prepare(runner, "01094", "01095");
+        var soldier = game.World.CreateCard("02023", game.World.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+        var action = Assert.Single(runner.Actions(game.World, 0), a => a.Card == game.Event.ObjectId);
+        runner.ExecuteAction(game.World, new PlayerAction(action, game.Resources, []));
+        var target = Sequence.Work(game.World, game.World.Facts, runner, [])!;
+        var before = Snapshot(game.World);
+
+        var error = Assert.Throws<RulesNotImplementedException>(() => Sequence.Answer(
+            game.World, game.World.Facts, runner, target, Decision.Take(soldier.ObjectId), []));
+
+        Assert.Contains("unprojected defeat window", error.Message);
+        Assert.Equal(before, Snapshot(game.World));
+        Assert.Equal(0, soldier.Damage);
+    }
+
+    [Fact]
+    [Rule("rr:when-defeated-abilities.2.1")]
     public void AReadAfterTheReturnStillRaisesBeforeTheSoldierIsDamaged()
     {
         // Synthetic continuation: a damage instruction after the return reads the board the
