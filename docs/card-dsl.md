@@ -1788,8 +1788,11 @@ One continuation after an unprojected defeat window is not a read: a labelled
 power's final `returnToHand` of your one in-play upgrade by title, such as Hammer
 Throw returning Mjolnir after Goblin Soldier's When Defeated damage, finds its
 card on the live board once the window resolves (`rr:when-defeated-abilities.2.1`,
-ruling `cef917d276a31694`). A step-6 recovery window keeps its own read proof, and
-any instruction after the return still raises.
+ruling `cef917d276a31694`). A defeat-triggered encounter deal is the same: Hammer
+Throw defeating Hydra Soldier deals its engaged player a facedown card that is not
+revealed until the villain phase (`rr:deal-deal-an-encounter-card`, ruling
+`2c98d8b065c9e8b0`), then returns Mjolnir. A step-6 recovery window keeps its own
+read proof, and any instruction after the return still raises.
 
 This prerequisite is synthetic coverage for Thor E3 (MARVEL-745), motivated by
 printed `06006` and its vendored non-attack erratum. It does not admit Lightning

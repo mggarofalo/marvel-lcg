@@ -17,6 +17,12 @@ namespace Marvel.Cards.Run;
 /// damage, then the enemy's 'When Defeated' resolves and deals 1 damage".
 /// The return chooses nothing: it finds its card by title when it resolves, so its
 /// result is the live board's, whatever the opaque work did.
+/// A defeat window that deals an encounter card is such work. rr:deal-deal-an-encounter-card:
+/// "the player takes the top card of the encounter deck and places it facedown in front of
+/// them. This card is not revealed at this time." Ruling 2c98d8b065c9e8b0 resolves Hydra
+/// Soldier's deal, then any reshuffle of an emptied encounter deck with its acceleration
+/// token, then discards the soldier, all before the next instruction. None of that moves
+/// or reads the returned upgrade.
 /// </remarks>
 internal static class AbilityLiveUpgradeReturn
 {
@@ -32,9 +38,9 @@ internal static class AbilityLiveUpgradeReturn
             || EffectiveCards.Kind(cards[0], cast.World.Facts) != CardKind.Upgrade
             || !DeckTypes.IsInPlay(cards[0].Area.Type)) return false;
         // No later abstract state consumes this departure. The live instruction
-        // reselects after stage or defeat-window work, can find no card, and owns
-        // constant endings and their defeat settlement. No stage result, defeat
-        // result or hidden pile is read.
+        // reselects after stage, defeat-window or encounter-deal work, can find no
+        // card, and owns constant endings and their defeat settlement. No stage
+        // result, defeat result, dealt card or hidden pile is read.
         cast.World.Effects.PreflightConstantsEnding(cards[0]);
         return true;
     }
@@ -42,5 +48,5 @@ internal static class AbilityLiveUpgradeReturn
     // A step-6 recovery keeps its minion in play; its own read proof decides that path.
     private static bool HidesLiveWork(AbilityPowerState path) =>
         path.UnprojectedStageEntry is not null
-        || path.DefeatWindowDeferred && !path.RecoveryWindowDeferred;
+        || (path.DefeatWindowDeferred || path.EncounterCardsChanged) && !path.RecoveryWindowDeferred;
 }
