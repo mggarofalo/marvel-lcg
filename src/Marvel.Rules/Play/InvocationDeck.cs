@@ -112,8 +112,14 @@ public sealed class InvocationDeck
         ArgumentNullException.ThrowIfNull(card);
         ArgumentNullException.ThrowIfNull(events);
         if (!duringGame || !cards.Contains(card) || card.Owner != Player
-            || card.Area != Discard && card.Area != Deck)
+            || card.Area != Discard && card.Area != Deck && card.Area.Type != DeckType.RemovedArea)
             throw new ArgumentException("only this player's resolved Invocation can return", nameof(card));
+        // 09005's "Then, place it back on top of the Invocation deck" still resolves
+        // after Doctor Strange is eliminated mid-Special (rr:player-elimination.5), but
+        // elimination removed this card and its deck from the game
+        // (rr:player-elimination.step.5), and a removed card "cannot reenter the game
+        // through any means" (rr:removed-from-the-game.2), so nothing moves.
+        if (card.Area.Type == DeckType.RemovedArea) return;
         // ruling:b07d53e12625ab23: expose/recycle before returning this same copy.
         // A recycled copy can occupy any position, so move it within its deck too.
         if (PublicTop is { } previous)

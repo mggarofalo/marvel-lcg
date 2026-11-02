@@ -21,12 +21,14 @@ public sealed class InvocationEliminationTests
         ]}
         """;
 
-    [Fact]
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
     [Rule("rr:player-elimination.step.5")]
     [Rule("rr:player-elimination.5")]
     [Rule("rr:removed-from-the-game.2")]
     [Rule("ruling:79c57a49f6e38fe0")]
-    public void AnInvocationWhoseResolverIsEliminatedFinishesTheSpecialAndStaysRemoved()
+    public void AnInvocationWhoseResolverIsEliminatedFinishesTheSpecialAndStaysRemoved(bool master)
     {
         // rr:player-elimination.step.5: "Remove the eliminated player's play area and
         // each other game element within it ... from the game." rr:player-elimination.5:
@@ -34,7 +36,9 @@ public sealed class InvocationEliminationTests
         // resolve the entire ability." The eliminated player finishes the board effect
         // (ruling 79c57a49f6e38fe0), and "a card that has been removed from the game
         // cannot reenter the game through any means" (rr:removed-from-the-game.2).
-        var (world, game, deck, _) = BoardWithSpecial(Special, last: false, master: 0);
+        // Through 09005 the final "place it back on top of the Invocation deck" also
+        // resolves and moves nothing.
+        var (world, game, deck, _) = BoardWithSpecial(Special, last: false, master: master ? 1 : 0);
         var hero = world.Seats[1].IdentityCard;
         var scheme = world.TheCardIn(DeckType.MainSchemesArea)!;
         scheme.PlaceTokens("k_threat", 3);
@@ -42,7 +46,7 @@ public sealed class InvocationEliminationTests
         var source = deck.PublicTop!;
         var removed = world.AreaOf(DeckType.RemovedArea);
 
-        var result = game.Resolve(Decision.Take(Mastery(game, hero).Id, [source.ObjectId], []));
+        var result = game.Resolve(master ? MasterPayment(world, game, source) : Decision.Take(Mastery(game, hero).Id, [source.ObjectId], []));
 
         Assert.True(world.Seats[1].Eliminated);
         Assert.Same(removed, hero.Area);
@@ -57,5 +61,14 @@ public sealed class InvocationEliminationTests
         Assert.Empty(world.Areas.Where(area => area.Type is DeckType.AdditionalDeck or DeckType.AdditionalDiscardPile)
             .SelectMany(area => area.Cards));
         Assert.Equal(0, game.Pending!.Player);
+    }
+
+    private static Decision MasterPayment(World world, Game game, Card source)
+    {
+        var offer = Assert.Single(game.Pending!.Affordances, item =>
+            item.AnchorId == world.Cards.Single(card => card.FaceId == "09005").ObjectId);
+        int[] sources = [world.Seats[1].Hand.Cards.First(card => card.FaceId == "01088").ObjectId];
+        var allocations = ResourcePayment.Allocate(Assert.Single(offer.CostOptions), sources)!;
+        return new Decision(offer.Id, [source.ObjectId], sources, Allocations: allocations);
     }
 }
