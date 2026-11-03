@@ -94,8 +94,11 @@ to keep it. Space is the keyboard equivalent. Redraw commits the staged set.
 Kept cards close the gaps while redraw cards are staged. Reordering the kept
 hand preserves the staged cards' local return slots. Hovering a nonempty
 discard previews its visible top card.
-Mulligan instructions remain in the visible decision area and card accessibility
-descriptions; they do not create tooltips over the hand.
+The staged count is a tracker beside the question, one pip per card that can be
+staged; the mulligan and end-phase rules stay on the question's hover and in card
+accessibility descriptions, and create no tooltips over the hand. The current
+draft reads the same way: staged, selected and paid counts are trackers with pips,
+and every other part is a chip whose whole words are on hover.
 Dragging within the hand previews a local insertion order without changing game
 state. Playing a hand card opens the current engine-offered composition;
 authorized attachment targets can be outside the player area.
@@ -140,8 +143,11 @@ target. The cue clears when the attack's final consequences finish presenting,
 or immediately when a synchronized snapshot has no active attack.
 
 Interrupts and responses use a contextual modal with engine-offered effect and
-recipient choices. Optional windows include Pass; choosing a complete effect
-commits it directly. Forced ability notifications require acknowledgement, with
+recipient choices. Its head is the ability and the decision's facts as chips: who
+answers, whether it is optional, the causes and the attack. The engine's
+instruction is on the title's hover. A complete choice's label states its effect
+once and keeps its cost; a printed effect also marks the choice with its icon.
+Optional windows include Pass; choosing a complete effect commits it directly. Forced ability notifications require acknowledgement, with
 required decisions kept in the same surface. Complex costs and selections still
 use the prompt-bound composer; the client never answers a future prompt itself.
 

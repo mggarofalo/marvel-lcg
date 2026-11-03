@@ -71,6 +71,13 @@ internal sealed class AbilityModalFrame : IDisposable
         QueueFit();
     }
 
+    /// <summary>Places the window's head in its heading row, across the window's width.</summary>
+    internal void AddHead(Control head)
+    {
+        head.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        headingRow.AddChild(head);
+    }
+
     internal void AddText(string name, string text, string variation)
     {
         if (string.IsNullOrWhiteSpace(text)) return;

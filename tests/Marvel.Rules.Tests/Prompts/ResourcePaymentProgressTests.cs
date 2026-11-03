@@ -14,6 +14,8 @@ public sealed class ResourcePaymentProgressTests
     {
         var cost = new CostOption(0, required, Sources: [new(7, "GG"), new(8, "Y")]);
         Assert.Equal(remaining, ResourcePaymentProgress.RemainingRequired(cost, [7]));
+        Assert.Equal(int.Parse(required, System.Globalization.CultureInfo.InvariantCulture),
+            ResourcePaymentProgress.Required(cost, [7]));
     }
 
     [Theory]
@@ -37,6 +39,7 @@ public sealed class ResourcePaymentProgressTests
             _ => new CostOption(0, "-1"),
         };
         Assert.Null(ResourcePaymentProgress.RemainingRequired(cost, []));
+        Assert.Null(ResourcePaymentProgress.Required(cost, []));
     }
 
     [Fact]
@@ -44,6 +47,7 @@ public sealed class ResourcePaymentProgressTests
     {
         var cost = new CostOption(0, "3", Sources: [new(7, "G")]);
         Assert.Null(ResourcePaymentProgress.RemainingRequired(cost, [8]));
+        Assert.Null(ResourcePaymentProgress.Required(cost, [8]));
         Assert.Null(ResourcePaymentProgress.RemainingRequired(cost, [7, 7]));
         Assert.Null(ResourcePaymentProgress.RemainingRequired(cost with { Sources = [new(7, "G"), new(7, "Y")] }, [7]));
     }

@@ -45,6 +45,8 @@ public sealed class CoreTargetEffectDescriptionTests
 
         Assert.Equal("Swinging Web Kick: choose an enemy to attack", prompt.DisplayQuestion);
         Assert.Equal(offered.Description, prompt.Description);
+        // The typed fact is the printed amount the description words; the modifier stays in the live preview.
+        Assert.Equal(new PromptEffect(PromptEffectKind.Damage, 8), prompt.Effect);
         Affordance target = Assert.Single(prompt.Affordances);
         Assert.Contains(preview, target.Description);
         Assert.Equal("Attack Rhino", target.CommitLabel);

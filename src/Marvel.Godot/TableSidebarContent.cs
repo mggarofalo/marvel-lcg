@@ -21,14 +21,7 @@ internal static class TableSidebarContent
             child.QueueFree();
         }
         WorldDescriptor world = main.CurrentGame!.World!;
-        TableContextDescriptor? table = world.Table;
-        string own = table?.ViewedPrivateSeat is { } seat
-            ? $"You control {PendingSituationPresentation.SeatName(world, seat)}."
-            : "Shared table view.";
-        string active = table is null ? "" : $" Active player: {PendingSituationPresentation.SeatName(world, table.ActivePlayer)}.";
-        string inspecting = inspectedSeat is { } inspected
-            ? $" Inspecting: {PendingSituationPresentation.SeatName(world, inspected)}." : "";
-        content.AddChild(Copy("SeatContext", own + active + inspecting));
+        content.AddChild(SeatContext(world, inspectedSeat, main.decisions.ReadingScale));
         content.AddChild(Copy("TableOperationalNotice", ""));
         result.RegisterLastResult(TableHistoryDrawer.EnsureLatestResult(main, history));
         RefreshProgress(main);
@@ -44,6 +37,21 @@ internal static class TableSidebarContent
             .AddThemeFontSizeOverride("font_size", 14);
     }
 
+    // Which seat you play, whose turn it is and which seat the table shows, as chips named on hover.
+    private static HFlowContainer SeatContext(WorldDescriptor world, int? inspectedSeat, InterfaceScale scale)
+    {
+        var row = new HFlowContainer { Name = "SeatContext", MouseFilter = Control.MouseFilterEnum.Ignore };
+        row.AddThemeConstantOverride("h_separation", VisualSystem.Spacing(scale).ExtraSmall);
+        row.AddThemeConstantOverride("v_separation", VisualSystem.Spacing(scale).ExtraSmall);
+        Wording[] facts = TableWording.SeatContext(world.Table?.ViewedPrivateSeat is { } seat
+                ? PendingSituationPresentation.SeatName(world, seat) : null,
+            world.Table is { } table ? PendingSituationPresentation.SeatName(world, table.ActivePlayer) : null,
+            inspectedSeat is { } inspected ? PendingSituationPresentation.SeatName(world, inspected) : null);
+        for (int index = 0; index < facts.Length; index++)
+            row.AddChild(Chip.Create($"SeatFact{index}", facts[index], null, scale));
+        return row;
+    }
+
     internal static void RefreshProgress(Main main)
     {
         Label? notice = main.promptPanel.FindChild("TableOperationalNotice", true, false) as Label;
@@ -53,18 +61,23 @@ internal static class TableSidebarContent
             or GameProgressKind.WaitingForOtherPlayer;
         string text = ordinary ? "" : progress!.Kind == GameProgressKind.Resolving
             ? progress.Title : $"{progress.Title}\n{progress.Description}";
-        if (InteractionControl.IsUsable(tableNotice))
-        {
-            tableNotice!.Visible = !ordinary;
-            tableNotice.Text = text;
-            tableNotice.AccessibilityDescription = text;
-        }
+        if (InteractionControl.IsUsable(tableNotice)) ShowOnTable(tableNotice!, text);
         if (InteractionControl.IsUsable(notice))
         {
             notice!.Visible = !ordinary && !InteractionControl.IsUsable(tableNotice);
             notice.Text = text;
             notice.AccessibilityDescription = text;
         }
+    }
+
+    // On the table the notice is its title, the first line; the explanation is on hover and read aloud.
+    private static void ShowOnTable(Label notice, string text)
+    {
+        notice.Visible = text.Length > 0;
+        notice.Text = text.Split('\n')[0];
+        notice.TooltipText = text;
+        notice.MouseFilter = Control.MouseFilterEnum.Stop;
+        notice.AccessibilityDescription = text;
     }
 
     private static VBoxContainer EnsureContent(Control history)

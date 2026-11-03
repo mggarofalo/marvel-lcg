@@ -13,7 +13,7 @@ internal static class CardPaymentWorkspaceHeader
     {
         var selected = draft.Selected!;
         AffordancePresentation offer = prompt.Affordances.Single(value => value.Id == selected.Id);
-        content.AddChild(DecisionPanel.Text(prompt.Context(), GodotThemeVariations.Caption, wrap: true));
+        content.AddChild(DecisionFactsRow(prompt, panel.ReadingScale, selected.DeferredTargetSelection));
         var identity = new HBoxContainer { Name = "PaymentIdentity" };
         content.AddChild(identity);
         BoardCardPresentation? card = CardPaymentPreview.Card(main.boardPresentation, selected.AnchorId);
@@ -49,15 +49,22 @@ internal static class CardPaymentWorkspaceHeader
             copy.AddChild(DecisionPanel.Text(fact, GodotThemeVariations.Body, wrap: true));
         if (selected.CostOptions.Count == 1)
             copy.AddChild(DecisionCostLabel.Create(selected.CostOptions[0], panel.world!, showTarget: false));
-        if (ShowsResolution(draft.Prompt.PublicKind, draft.Prompt.CauseCardIds.Count > 0)
-            && !string.IsNullOrWhiteSpace(prompt.Resolution()))
-            content.AddChild(DecisionPanel.Text(prompt.Resolution(), GodotThemeVariations.Body, wrap: true));
-        if (selected.DeferredTargetSelection)
-            content.AddChild(DecisionPanel.Text(
-                "Payment commits now. Choose a target as the effect resolves; cancelling a later draft does not refund payment.",
-                GodotThemeVariations.Body, wrap: true));
     }
 
-    internal static bool ShowsResolution(PublicDecisionKind kind, bool hasCause) =>
-        kind != PublicDecisionKind.PlayerAction || hasCause;
+    /// <summary>
+    /// Who answers, whether the choice is required, its causes and known facts as chips, with the engine's whole
+    /// instruction on hover; a deferred target adds its commitment chip.
+    /// </summary>
+    internal static HFlowContainer DecisionFactsRow(PromptPresentation prompt, InterfaceScale scale, bool deferredTarget = false)
+    {
+        var row = new HFlowContainer { Name = "DecisionFacts", MouseFilter = Control.MouseFilterEnum.Pass,
+            TooltipText = DecisionWording.DecisionDetail(prompt.Frame, prompt.DeclineLabel) };
+        row.AddThemeConstantOverride("h_separation", VisualSystem.Spacing(scale).ExtraSmall);
+        row.AddThemeConstantOverride("v_separation", VisualSystem.Spacing(scale).ExtraSmall);
+        Wording[] wordings = [.. DecisionSheetHead.Facts(prompt.Frame, prompt.DeclineLabel),
+            .. deferredTarget ? [DecisionWording.TargetLater] : Array.Empty<Wording>()];
+        for (int index = 0; index < wordings.Length; index++)
+            row.AddChild(Chip.Create($"DecisionFact{index}", wordings[index], null, scale));
+        return row;
+    }
 }

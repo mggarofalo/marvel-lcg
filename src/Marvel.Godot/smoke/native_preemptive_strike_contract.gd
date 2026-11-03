@@ -3,7 +3,7 @@ extends RefCounted
 # Prepared cross-pack component scene; actual authored 05014, no public Ms Marvel admission.
 static func run(smoke) -> bool:
     if not await smoke.ui.expect(func(): return smoke.witness.Revision() == 0 and \
-        _readable_context(smoke._visible_text(smoke.main)),
+        _readable_context(smoke._visible_text(smoke.main)) and _title_explains(smoke),
         "individual boost interrupt identifies the attacking villain and answering hero"): return false
     await _capture(smoke, "preemptive-strike-interrupt")
     if not await smoke.ui.click(smoke.ui.button("Preemptive Strike")): return false
@@ -31,7 +31,8 @@ static func _pay(smoke) -> bool:
     if payment == null or not await smoke.ui.click(smoke.ui.Locator.control(payment)): return false
     if not await smoke.ui.expect(func(): return smoke.witness.Revision() == 0,
         "staging the actual hand resource preserves the interrupt revision"): return false
-    if "1 resource selected" not in smoke._visible_text(smoke._payment_modal()):
+    var paid := smoke._payment_modal().find_child("PaymentProgress", true, false) as Control
+    if paid == null or "1 resource selected" not in paid.tooltip_text:
         smoke._fail("one physical hand payment must explain its selected contribution")
         return false
     await _capture(smoke, "preemptive-strike-payment")
@@ -45,7 +46,12 @@ static func _capture(smoke, filename: String) -> void:
     DirAccess.make_dir_recursive_absolute(directory)
     smoke.render_viewport.get_texture().get_image().save_png(directory.path_join(filename + ".png"))
 
+# The window's chips name the attack and the revealed boost card's icons; the engine's instruction, with the
+# reveal and the uncertainty, is the title's hover.
+static func _title_explains(smoke) -> bool:
+    var title = smoke.main.find_child("AbilityWindowHeading", true, false)
+    return title != null and "Boost card revealed" in title.tooltip_text \
+        and "Boost abilities and later effects can change the result" in title.tooltip_text
+
 static func _readable_context(copy: String) -> bool:
-    return "Rhino" in copy and "Spider-Man" in copy and "Boost card revealed" in copy and \
-        "WhenBoostCardTurnedFaceup" not in copy and "2 uncancelled boost icons" in copy and \
-        "Boost abilities and later effects can change the result" in copy
+    return "Rhino" in copy and "Spider-Man" in copy and "Boost +2" in copy and "WhenBoostCardTurnedFaceup" not in copy

@@ -67,7 +67,8 @@ func _sync_preserves_initiated_attack() -> bool:
 func _observe_attack_initiation() -> int:
 	if not _attack_cue_is_present("Spider-Sense initiation before defense"): return -1
 	var meaning := _visible_text(main).to_lower()
-	if not saw_attack_intro and ("enemy attack · initiation" not in meaning or "spider-man draws 1 card" not in meaning):
+	# The window's attack chip names who attacks whom; Spider-Sense's choice names its draw.
+	if not saw_attack_intro and ("rhino → spider-man" not in meaning or "spider-man draws 1 card" not in meaning):
 		_fail("attack initiation probe did not reach Spider-Sense")
 		return -1
 	if not saw_attack_intro and not await _sync_preserves_initiated_attack(): return -1

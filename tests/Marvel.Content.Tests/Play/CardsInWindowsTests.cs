@@ -81,7 +81,10 @@ public sealed class CardsInWindowsTests
         Assert.Equal("01099", Assert.Single(receipt.SubjectFaces!).Value);
         Assert.Contains("attacking enemy gains overkill", receipt.Description);
         Assert.Contains("Discard this card at the end", receipt.Description);
-        Assert.Equal("Spider-Man draws 1 card", Assert.Single(asked.Affordances[0].WindowChoices).Label);
+        WindowChoice sense = Assert.Single(asked.Affordances[0].WindowChoices);
+        Assert.Equal("Spider-Man draws 1 card", sense.Label);
+        Assert.Null(sense.Description);
+        Assert.Equal(new PromptEffect(PromptEffectKind.Draw, 1), sense.Effect);
         var repeated = new List<GameEvent>();
         Assert.NotNull(Sequence.Work(world, Cards, abilities, repeated));
         Assert.Empty(repeated.OfType<AbilityWindowResult>());

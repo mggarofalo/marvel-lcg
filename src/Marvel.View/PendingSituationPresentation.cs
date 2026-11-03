@@ -35,6 +35,14 @@ public static class PendingSituationPresentation
             + "You can inspect the public table. Refresh to receive other players' latest actions.";
     }
 
+    /// <summary>Readable titles of the public cards whose occurrence caused the pending decision.</summary>
+    public static IReadOnlyList<string> Causes(WorldDescriptor world) =>
+        ReadableTitles(world, world.Table?.PendingSituation?.CauseCardIds ?? []);
+
+    /// <summary>Readable titles of the public cards the pending decision resolves.</summary>
+    public static IReadOnlyList<string> Sources(WorldDescriptor world) =>
+        ReadableTitles(world, world.Table?.PendingSituation?.SourceCardIds ?? []);
+
     private static string[] ReadableTitles(WorldDescriptor world, IReadOnlyList<int> ids) =>
         [.. ids.Select(id => world.Areas.SelectMany(area => area.Cards.Concat(area.Removed))
             .FirstOrDefault(card => card.Id == id && card.Face is not null)?.Face?.Title)

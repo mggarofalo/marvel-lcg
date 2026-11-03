@@ -18,9 +18,10 @@ public sealed partial class AbilityWindowLayoutSample : Node
         frame?.Dispose();
         SetMeta("choice_committed", false);
         frame = new AbilityModalFrame(owner, "AbilityWindow", owner.decisions.Theme, currentChoices);
-        frame.AddText("AbilityWindowHeading", title, GodotThemeVariations.Heading);
-        frame.AddText("AbilityWindowAnswerer", "Player 1", GodotThemeVariations.Caption);
-        frame.AddText("AbilityWindowCause", cause, GodotThemeVariations.Body);
+        frame.AddHead(AbilityWindowHead.Compose(title, cause,
+            [new Wording(TableWording.For(TableFact.AnsweringSeat).Icon, "Player 1", "Decision for Player 1"),
+                TableWording.For(TableFact.DecisionOptional), TableWording.For(TableFact.DecisionCause) with { Label = "Stampede" }],
+            "", owner.decisions.ReadingScale));
         frame.AddButton("WindowChoiceSample", choice, () => SetMeta("choice_committed", true));
         if (currentChoices == 2)
             frame.AddButton("WindowChoiceSecond", "Spider-Man takes no damage", () => SetMeta("choice_committed", true));

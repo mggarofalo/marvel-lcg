@@ -112,8 +112,10 @@ func _giant_response() -> bool:
         witness.CanResolve() and not bool(main.get_meta("response_staged", false)), "optional entry response is visible"): return false
     var window := main.find_child("LocalDecisionWorkspace", true, false) as Control
     var copy := _visible_text(window)
-    if not await ui.expect(func(): return "Ant-Man" in copy and "Player 1" in copy and "Pass this opportunity" in copy and \
-        "Choose an enemy" in copy and "damage: 1" in copy, "optional response explains the answering seat and one damage"): return false
+    # Who answers and that it is optional are chips; the offered response states its printed damage.
+    if not await ui.expect(func(): return "Ant-Man" in copy and "Optional" in copy and "Pass this opportunity" in copy and \
+        "Choose an enemy" in copy and "damage: 1" in copy,
+        "optional response explains the answering seat and one damage"): return false
     if not await _capture_checkpoint("ant-man-giant-response"): return false
     var responses: Array = window.find_children("Affordance*", "Button", true, false).filter(func(n):
         return n.is_visible_in_tree() and "Ant-Man (Giant)" in n.text)

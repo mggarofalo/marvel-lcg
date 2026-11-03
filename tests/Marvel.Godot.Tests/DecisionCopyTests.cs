@@ -44,6 +44,19 @@ public sealed class DecisionCopyTests
         }, "Use source"));
     }
 
+    [Fact]
+    public void ACompleteWindowChoiceStatesItsEffectOnceAndKeepsItsCost()
+    {
+        var offer = new AffordancePresentation(1, "Interrupt", "The triggering player draws 1 card", "Interrupt",
+            "Spider-Man", 7, 0, null, "", []) { CostDescription = "Exhaust Spider-Man" };
+        var choice = new Marvel.Rules.Prompts.WindowChoice(null, "Spider-Man draws 1 card", null);
+        string label = DecisionCopy.WindowChoiceLabel(offer, choice);
+        Assert.Equal("Spider-Man draws 1 card\nExhaust Spider-Man", label);
+        Assert.Contains("The triggering player draws 1 card", DecisionCopy.AbilityDetail(offer, label, choice.Description));
+        Assert.Contains("14/14 → 13/14 HP", DecisionCopy.WindowChoiceLabel(offer,
+            new Marvel.Rules.Prompts.WindowChoice(3, "Deal 1 damage to Rhino", "Rhino · 14/14 → 13/14 HP")));
+    }
+
     [Theory]
     [InlineData(true, "Scientist", "Discard Peter Parker")]
     [InlineData(false, "Scientist", "Scientist · Peter Parker")]

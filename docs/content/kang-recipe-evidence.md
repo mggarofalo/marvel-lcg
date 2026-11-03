@@ -333,8 +333,9 @@ host then advances to the reunion against Kang (III).
 `kang-3` (Master of Time, seed 15) checks the three-area split. `kang-4`
 (Temporal, seed 4, at 150% reading scale) checks the four-area split and a
 retained area. Each split asserts the rendered columns, labels, markers,
-dimming, central stage, shared piles and progress text, and opens and closes
-the rules toggle; the later `kang-2` steps assert their own markers and
+dimming, central stage, shared piles and progress text, checks that the
+first-time legend stands in the tracker line clear of every game area until it
+is closed, and opens and closes the rules toggle; the later `kang-2` steps assert their own markers and
 facts. Every capture (`native_kang_layout.gd`) asserts that the tracker and
 every header show whole and on one line, that no column carries an
 explanation paragraph, that no placed card, encounter stack, attachment strip

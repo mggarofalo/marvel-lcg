@@ -16,7 +16,8 @@ internal static class GameAreaTableChrome
         tracker.Size = new Vector2(band.Size.X / 2, height);
         tracker.ZIndex = 12;
         surface.AddChild(tracker);
-        if (table.Rules.Count > 0) AddRules(surface, band, table, scale, height);
+        float trackerEnd = band.Position.X + tracker.GetCombinedMinimumSize().X + VisualSystem.Spacing(scale).Large;
+        if (table.Rules.Count > 0) AddRules(surface, band, table, scale, height, trackerEnd);
         return height;
     }
 
@@ -35,8 +36,10 @@ internal static class GameAreaTableChrome
     }
 
     // The legend and the rules live behind one toggle: an icon and a short label, never ambient text on the
-    // table. The legend opens by itself once, the first time the game's table separates.
-    private static void AddRules(Control surface, Rect2 band, GameAreaTable table, InterfaceScale scale, float height)
+    // table. The first time the game's table separates, the legend also stands in the tracker line, beside the
+    // tracker and before the toggle, until the player closes it, so it never covers a game area.
+    private static void AddRules(Control surface, Rect2 band, GameAreaTable table, InterfaceScale scale, float height,
+        float trackerEnd)
     {
         Wording rules = TableWording.For(TableFact.SeparatedRules);
         float width = Math.Min(band.Size.X * 0.45f, 460 * (int)scale / 100f);
@@ -64,18 +67,52 @@ internal static class GameAreaTableChrome
             Name = "SeparatedTableRules", Text = rules.Label, ToggleMode = true, ZIndex = 20, TooltipText = rules.Tooltip,
             Icon = CardGlyphRendering.Rasterize($"Marvel.Godot.Assets.TableIcons.{rules.Icon}.svg", TableBlockStyle.Icon(scale)),
         };
-        toggle.ButtonPressed = table.Separated && TableLegend.OpensNow();
-        panel.Visible = toggle.ButtonPressed;
-        toggle.Toggled += pressed =>
-        {
-            panel.Visible = pressed;
-            TableLegend.Toggled(pressed);
-        };
+        toggle.Toggled += pressed => panel.Visible = pressed;
         surface.AddChild(toggle);
         surface.AddChild(panel);
         TableCompactButtonStyle.Apply(toggle);
         toggle.Size = new Vector2(toggle.GetCombinedMinimumSize().X, height);
         toggle.Position = new Vector2(band.End.X - toggle.Size.X, band.Position.Y);
+        if (table.Separated && TableLegend.OpensNow())
+            AddLegendStrip(surface, band, scale, height, Math.Max(trackerEnd, band.Position.X + band.Size.X / 4), toggle.Position.X);
+    }
+
+    // The strip fills the tracker line from the tracker's end to the toggle, with its close control last.
+    private static void AddLegendStrip(Control surface, Rect2 band, InterfaceScale scale, float height, float start, float end)
+    {
+        var size = new Vector2(Math.Max(0, end - start - 8), height);
+        // The line keeps the tracker line's exact bounds; anything taller or wider is clipped, never spilled
+        // over a game area.
+        var line = new Control
+        {
+            Name = "SeparatedTableLegendLine", ZIndex = 12, MouseFilter = Control.MouseFilterEnum.Ignore,
+            Position = new Vector2(start, band.Position.Y), Size = size, ClipContents = true,
+        };
+        var row = new HBoxContainer
+        {
+            Name = "SeparatedTableLegendRow", MouseFilter = Control.MouseFilterEnum.Ignore, Size = size,
+            Alignment = BoxContainer.AlignmentMode.End,
+        };
+        row.AddThemeConstantOverride("separation", VisualSystem.Spacing(scale).Small);
+        BoxContainer strip = TableLegend.Create(scale, strip: true);
+        strip.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
+        row.AddChild(strip);
+        var close = new Button
+        {
+            Name = "SeparatedTableLegendClose", Text = "×", Flat = true, TooltipText = TableWording.CloseLegend,
+            AccessibilityName = TableWording.CloseLegend, SizeFlagsVertical = Control.SizeFlags.ShrinkCenter,
+        };
+        close.AddThemeFontSizeOverride("font_size", VisualSystem.Type(scale).Body);
+        close.Pressed += () =>
+        {
+            TableLegend.Closed();
+            line.QueueFree();
+        };
+        row.AddChild(close);
+        line.AddChild(row);
+        surface.AddChild(line);
+        TableLegend.FitStrip(strip, size.X - close.GetCombinedMinimumSize().X - VisualSystem.Spacing(scale).Small);
+        row.Size = size;
     }
 
     /// <summary>

@@ -32,7 +32,7 @@ func _verify_sample(sample: Node, current_choices: int) -> bool:
 	return true
 
 func _all_current_controls_fit(window: Control, current_choices: int) -> bool:
-	var controls := ["AbilityWindowHeading", "AbilityWindowAnswerer", "AbilityWindowCause", "WindowChoiceSample", "WindowPass"]
+	var controls := ["AbilityWindowHeading", "AbilityWindowAnswerer", "WindowChoiceSample", "WindowPass"]
 	if current_choices == 2: controls.append("WindowChoiceSecond")
 	for name in controls:
 		var control := window.find_child(name, true, false) as Control

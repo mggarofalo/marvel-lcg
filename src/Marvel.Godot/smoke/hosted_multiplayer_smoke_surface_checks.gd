@@ -46,7 +46,8 @@ static func terminal_is_safe(driver: Node, main: Control) -> bool:
 
 static func _terminal_cause_visible(main: Control) -> bool:
 	var heading := main.find_child("ContextualHeading", true, false) as Label
-	var cause := main.find_child("CausalContext", true, false) as Label
+	var cause := main.find_child("CausalContext", true, false) as Control
+	var reason := cause.find_child("CausalFact0", true, false) as Control if cause != null else null
 	return heading != null and heading.is_visible_in_tree() and heading.text == "Defeat" \
-		and cause != null and cause.is_visible_in_tree() and cause.text in [
+		and reason != null and reason.is_visible_in_tree() and reason.tooltip_text in [
 			"All players were eliminated.", "The final main scheme was completed."]

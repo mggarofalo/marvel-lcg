@@ -94,6 +94,9 @@ public sealed class PresentationBoundaryTests
             "Marvel.Rules.Prompts.ConditionalResourceBonus",
             "Marvel.Rules.Prompts.CostOption",
             "Marvel.Rules.Prompts.Prompt",
+            // A printed effect Godot words as a chip; it decides nothing.
+            "Marvel.Rules.Prompts.PromptEffect",
+            "Marvel.Rules.Prompts.PromptEffectKind",
             // Public prompt purpose selects a presentation surface, not game legality.
             "Marvel.Rules.Prompts.PublicDecisionKind",
             "Marvel.Rules.Prompts.ResourceCost",

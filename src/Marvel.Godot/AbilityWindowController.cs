@@ -58,12 +58,7 @@ internal sealed class AbilityWindowController(DecisionPanel panel) : IDisposable
         int choices = prompt.Affordances.Where(offer => offer.Illegal is null)
             .Sum(offer => Math.Max(1, offer.WindowChoices.Count));
         frame = new AbilityModalFrame(ClientSceneHost.MainFor(panel), "AbilityWindow", panel.Theme, choices);
-        frame.AddText("AbilityWindowHeading", RequiredNotification?.Title
-            ?? (titles.Length == 1 ? titles[0] : prompt.Heading), GodotThemeVariations.Heading);
-        frame.AddText("AbilityWindowCause", RequiredNotification?.Summary ?? prompt.Resolution(), GodotThemeVariations.Body);
-        string answerer = panel.world?.Players.FirstOrDefault(player => player.Seat == draft.Prompt.Player)?.Name
-            ?? $"Player {draft.Prompt.Player + 1}";
-        frame.AddText("AbilityWindowAnswerer", answerer, GodotThemeVariations.Caption);
+        frame.AddHead(AbilityWindowHead.Create(prompt, RequiredNotification, titles, panel.ReadingScale));
     }
 
     private void AddOffer(DecisionComposer draft, AffordancePresentation offer, int generation, bool showSource)
@@ -79,10 +74,11 @@ internal sealed class AbilityWindowController(DecisionPanel panel) : IDisposable
         }
         foreach (var choice in offer.WindowChoices)
         {
-            Button button = frame!.AddButton($"WindowChoice{offer.Id}_{choice.TargetId?.ToString() ?? "Immediate"}", DecisionCopy.AbilityLabel(offer, choice.Label, choice.Description),
+            Button button = frame!.AddButton($"WindowChoice{offer.Id}_{choice.TargetId?.ToString() ?? "Immediate"}", DecisionCopy.WindowChoiceLabel(offer, choice),
                 () => Commit(draft, generation, offer.Id, choice.TargetId), panel.submitting);
             button.SetMeta("table_mutation", true);
             AttachPreview(button, offer, choice.Description);
+            if (choice.Effect is { } effect) AbilityWindowHead.MarkEffect(button, effect, panel.ReadingScale);
         }
     }
 

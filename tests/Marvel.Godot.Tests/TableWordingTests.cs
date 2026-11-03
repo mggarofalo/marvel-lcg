@@ -19,7 +19,9 @@ public sealed class TableWordingTests
             Assert.Equal(fact is not (TableFact.HeroForm or TableFact.AlterEgoForm or TableFact.Engaged
                 or TableFact.DecisionRequired or TableFact.DecisionOptional or TableFact.DecisionCause
                 or TableFact.StepThreat or TableFact.StepActivation or TableFact.StepEncounter
-                or TableFact.AttackValue or TableFact.AttackDamage or TableFact.AttackPrevented),
+                or TableFact.AttackValue or TableFact.AttackDamage or TableFact.AttackPrevented
+                or TableFact.OutcomeVillainDefeated or TableFact.OutcomeSchemeCompleted or TableFact.OutcomeEliminated
+                or TableFact.OutcomeEncounterExhausted or TableFact.OutcomeEnded or TableFact.PendingSource),
                 wording.Icon.Length > 0);
         }
     }
@@ -129,7 +131,7 @@ public sealed class TableWordingTests
     [InlineData(DecisionSubject.Resolving, "Rhino", "Resolving Rhino")]
     [InlineData(DecisionSubject.MinionActivation, "Hydra Soldier", "Choosing the next minion activation")]
     public void ADecisionsSubjectIsOneShortLine(DecisionSubject subject, string? title, string expected) =>
-        Assert.Equal(expected, TableWording.DecisionSubjectLine(new DecisionFrame("Thor", subject, title, false, [], "")));
+        Assert.Equal(expected, DecisionWording.DecisionSubjectLine(new DecisionFrame("Thor", subject, title, false, [], "")));
 
     [Fact]
     public void AnAreaIsTitledByItsPlayers()
@@ -145,15 +147,15 @@ public sealed class TableWordingTests
     [InlineData(DecisionSubject.Inspecting, "False Alarm", "Decision for Thor · Inspecting False Alarm")]
     [InlineData(DecisionSubject.MinionActivation, "Hydra Soldier", "Decision for Thor · Choosing the next minion activation")]
     public void ADecisionNamesItsAnsweringSeatAndSubject(DecisionSubject subject, string? title, string expected) =>
-        Assert.Equal(expected, TableWording.DecisionContext(new DecisionFrame("Thor", subject, title, false, [], "")));
+        Assert.Equal(expected, DecisionWording.DecisionContext(new DecisionFrame("Thor", subject, title, false, [], "")));
 
     [Fact]
     public void ADecisionSaysWhetherItMayBeDeclinedAndWhatCausedIt()
     {
         var frame = new DecisionFrame("Thor", DecisionSubject.None, null, Optional: true, ["Heimdall", "Rhino"], "Look.");
-        Assert.Equal("You may pass this opportunity.", TableWording.DecisionRequirement(frame, "Pass this opportunity"));
-        Assert.Equal("Choose to continue.", TableWording.DecisionRequirement(frame with { Optional = false }, "Pass"));
-        Assert.Equal("Cause: Heimdall, Rhino. Look.", TableWording.DecisionResolution(frame));
-        Assert.Equal("Look.", TableWording.DecisionResolution(frame with { Causes = [] }));
+        Assert.Equal("You may pass this opportunity.", DecisionWording.DecisionRequirement(frame, "Pass this opportunity"));
+        Assert.Equal("Choose to continue.", DecisionWording.DecisionRequirement(frame with { Optional = false }, "Pass"));
+        Assert.Equal("Cause: Heimdall, Rhino. Look.", DecisionWording.DecisionResolution(frame));
+        Assert.Equal("Look.", DecisionWording.DecisionResolution(frame with { Causes = [] }));
     }
 }

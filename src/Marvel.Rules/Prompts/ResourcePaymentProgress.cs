@@ -10,7 +10,17 @@ public static class ResourcePaymentProgress
     /// means resource types, alternatives, variables or allocation need a richer
     /// explanation; zero is not authority to submit an answer.
     /// </summary>
-    public static int? RemainingRequired(CostOption option, IReadOnlyList<int> paying)
+    public static int? RemainingRequired(CostOption option, IReadOnlyList<int> paying) =>
+        Count(option, paying) is var (required, generated) ? Math.Max(0, required - generated) : null;
+
+    /// <summary>
+    /// The icons a single unrestricted numeric cost requires, under the same
+    /// conditions as <see cref="RemainingRequired"/>; null otherwise. It does not
+    /// change when the selected sources pay more than the cost.
+    /// </summary>
+    public static int? Required(CostOption option, IReadOnlyList<int> paying) => Count(option, paying)?.Required;
+
+    private static (int Required, int Generated)? Count(CostOption option, IReadOnlyList<int> paying)
     {
         ArgumentNullException.ThrowIfNull(option);
         ArgumentNullException.ThrowIfNull(paying);
@@ -27,8 +37,9 @@ public static class ResourcePaymentProgress
             if (matches.Length != 1 || matches[0].ConditionalBonus is not null) return null;
             generated += matches[0].Generates.Length;
         }
-        return Math.Max(0, required - generated);
+        return (required, generated);
     }
+
     /// <summary>
     /// Shortages under one maximum-coverage suggestion, with typed slots preferred
     /// over generic slots. Null means the cost or selected sources are unresolved.

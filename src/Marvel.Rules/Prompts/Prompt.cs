@@ -82,6 +82,10 @@ public sealed record Prompt(
     /// <remarks>The same facts <see cref="Description"/> words; the view removes them when either card is unreadable.</remarks>
     public PromptAttack? Attack { get; init; }
 
+    /// <summary>What choosing any offered card does, when every option shares one printed effect; null otherwise.</summary>
+    /// <remarks>The same fact <see cref="Description"/> words as its printed amount.</remarks>
+    public PromptEffect? Effect { get; init; }
+
     /// <summary>Engine-authored, display-ready name of the question being asked.</summary>
     /// <remarks>
     /// This structured field is distinct from <see cref="Label"/>, whose

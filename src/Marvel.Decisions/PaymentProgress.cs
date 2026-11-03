@@ -18,6 +18,12 @@ public sealed record PaymentProgress(
     /// <summary>Additional generic resources needed, or null when a simple count is insufficient.</summary>
     public int? RemainingRequired { get; init; }
 
+    /// <summary>
+    /// The resources a single unrestricted numeric cost requires, or null when a simple count is insufficient. It
+    /// stays the cost when the selection pays more.
+    /// </summary>
+    public int? Required { get; init; }
+
     /// <summary>Whether selected generators could cover the cost with a legal allocation.</summary>
     public bool CanCoverCost { get; init; }
 

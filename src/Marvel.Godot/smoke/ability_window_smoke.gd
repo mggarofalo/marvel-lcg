@@ -91,11 +91,14 @@ func _window_keyboard_focus_is_contained(choice: Button, pass_button: Button) ->
 func _named_response_layout_is_clear(window: Control, choice: Button) -> bool:
 	var heading := window.find_child("AbilityWindowHeading", true, false) as Label
 	var pass_button := window.find_child("WindowPass", true, false) as Button
-	var cause := window.find_child("AbilityWindowCause", true, false) as Label
+	var answerer := window.find_child("AbilityWindowAnswerer", true, false) as Control
 	if heading == null or heading.text != "Mockingbird Response" or choice == null \
-			or choice.text != "Stun Rhino" or pass_button == null or cause == null \
-			or cause.text != "Mockingbird entered play.":
-		_fail("the response omitted its named ability, recipient, or Pass: " + _visible_text(window))
+			or not choice.text.begins_with("Stun Rhino") or pass_button == null or answerer == null:
+		_fail("the response omitted its named ability, recipient, answering seat or Pass: " + _visible_text(window))
+		return false
+	# The engine's instruction is the title's hover, never a sentence in the window.
+	if "Mockingbird entered play." not in heading.tooltip_text or "Mockingbird entered play." in _visible_text(window):
+		_fail("the response states its instruction as a sentence instead of on the title's hover")
 		return false
 	var seam := main.find_child("CausalSituationCopy", true, false) as Control
 	if seam == null or seam.is_visible_in_tree():
@@ -108,7 +111,7 @@ func _named_response_layout_is_clear(window: Control, choice: Button) -> bool:
 	if "Esc" not in pass_button.text:
 		_fail("the optional decline does not disclose its Escape shortcut")
 		return false
-	for control in [heading, cause, choice, pass_button]:
+	for control in [heading, answerer, choice, pass_button]:
 		if not _control_is_fully_visible(control):
 			_fail("named response control is clipped: " + str(control.name))
 			return false
