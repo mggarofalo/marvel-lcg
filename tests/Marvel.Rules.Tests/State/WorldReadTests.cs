@@ -91,11 +91,13 @@ public sealed class WorldReadTests
 
         using (world.BeginRead())
         {
+            var unmade = world.AreaOf(DeckType.VictoryDisplay);
             using (world.BeginRead())
             {
             }
 
-            Assert.Equal(-1, world.AreaOf(DeckType.VictoryDisplay).Id);
+            Assert.Same(unmade, world.AreaOf(DeckType.VictoryDisplay));
+            Assert.Equal(-1, unmade.Id);
         }
 
         Assert.Equal(made, world.Areas.Count);
