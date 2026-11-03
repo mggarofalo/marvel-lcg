@@ -157,7 +157,11 @@ answers, whether it is optional, the causes and the attack. The engine's
 instruction is on the title's hover. A complete choice's label states its effect
 once and keeps its cost; a printed effect also marks the choice with its icon.
 Optional windows include Pass; choosing a complete effect commits it directly. Forced ability notifications require acknowledgement, with
-required decisions kept in the same surface. Complex costs and selections still
+required decisions kept in the same surface. A notification is the ability's title
+and its facts as chips: what happened, In progress while it still resolves, and
+the next decision, each whole on hover. A scrolling collection's cue counts the
+cards it does not wholly show ("+2 ▸"). A finished game states its result once on
+the table: the heading and its reason chip, with no second notice. Complex costs and selections still
 use the prompt-bound composer; the client never answers a future prompt itself.
 
 The MARVEL-492 SVG direction is approved. Acceptance of this implementation

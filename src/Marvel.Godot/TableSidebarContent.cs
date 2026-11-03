@@ -59,9 +59,8 @@ internal static class TableSidebarContent
         GameProgressPresentation? progress = main.currentProgress;
         bool ordinary = progress?.Kind is null or GameProgressKind.AwaitingDecision
             or GameProgressKind.WaitingForOtherPlayer;
-        string text = ordinary ? "" : progress!.Kind == GameProgressKind.Resolving
-            ? progress.Title : $"{progress.Title}\n{progress.Description}";
-        if (InteractionControl.IsUsable(tableNotice)) ShowOnTable(tableNotice!, text);
+        string text = Notice(progress);
+        if (InteractionControl.IsUsable(tableNotice)) ShowOnTable(tableNotice!, TableNotice(progress));
         if (InteractionControl.IsUsable(notice))
         {
             notice!.Visible = !ordinary && !InteractionControl.IsUsable(tableNotice);
@@ -69,6 +68,16 @@ internal static class TableSidebarContent
             notice.AccessibilityDescription = text;
         }
     }
+
+    /// <summary>The operational notice: empty for an ordinary decision, the title while resolving, else the title and why.</summary>
+    internal static string Notice(GameProgressPresentation? progress) =>
+        progress?.Kind is null or GameProgressKind.AwaitingDecision or GameProgressKind.WaitingForOtherPlayer ? ""
+            : progress.Kind == GameProgressKind.Resolving ? progress.Title : $"{progress.Title}\n{progress.Description}";
+
+    /// <summary>The notice the table shows: none for a finished game, whose heading and reason chip state it.</summary>
+    internal static string TableNotice(GameProgressPresentation? progress) =>
+        progress?.Kind is GameProgressKind.PlayersWin or GameProgressKind.VillainWins or GameProgressKind.PlayersLose
+            ? "" : Notice(progress);
 
     // On the table the notice is its title, the first line; the explanation is on hover and read aloud.
     private static void ShowOnTable(Label notice, string text)
