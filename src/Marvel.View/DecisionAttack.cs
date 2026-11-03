@@ -12,4 +12,7 @@ public sealed record DecisionAttack(
 {
     /// <summary>The uncancelled icons on a boost card just turned faceup, or null when none is resolving.</summary>
     public long? BoostIcons { get; init; }
+
+    /// <summary>The boost cards still facedown on the attacker while a boost card is faceup, or null when none is resolving.</summary>
+    public long? BoostFacedown { get; init; }
 }

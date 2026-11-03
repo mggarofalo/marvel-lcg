@@ -52,7 +52,11 @@ internal static class AttackPromptContext
             : new PromptAttack(attack.Enemy, attack.Target,
                 StateFields.Modified(world, enemy, "attack", facts, world.Players), Calculated: false,
                 AttackBoostDescription.IsUnresolved(world, facts, enemy, step.What), attack.PreventAllDamage);
-        return value with { BoostIcons = AttackBoostDescription.FaceupIcons(world, step) };
+        return value with
+        {
+            BoostIcons = AttackBoostDescription.FaceupIcons(world, step),
+            BoostFacedown = AttackBoostDescription.FacedownCards(world, step),
+        };
     }
 
     private static EnemyAttack? AttackForPrompt(World world, PhaseStep step) =>

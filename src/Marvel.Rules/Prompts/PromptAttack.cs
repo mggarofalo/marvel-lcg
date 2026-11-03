@@ -14,4 +14,10 @@ public sealed record PromptAttack(int Attacker, int Target, long Value, bool Cal
     /// open (rr:boost-boost-icon); null otherwise. Boost abilities and later effects can still change them.
     /// </summary>
     public long? BoostIcons { get; init; }
+
+    /// <summary>
+    /// The boost cards still facedown on the attacking enemy, present exactly when <see cref="BoostIcons"/> is; they
+    /// resolve after the faceup card and can add to the attack (rr:attack-enemy-activation.step.3.e: "If the enemy has any boost cards remaining, repeat these steps with the next boost card.").
+    /// </summary>
+    public long? BoostFacedown { get; init; }
 }

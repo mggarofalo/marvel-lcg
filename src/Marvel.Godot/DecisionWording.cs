@@ -62,8 +62,8 @@ internal static class DecisionWording
         (frame.Causes.Count == 0 ? "" : $"Cause: {string.Join(", ", frame.Causes)}. ") + frame.Instruction;
 
     /// <summary>
-    /// An attack's facts as chips: who attacks whom, its value or that its damage is prevented, and an unresolved
-    /// boost.
+    /// An attack's facts as chips: who attacks whom, its value or that its damage is prevented, a revealed boost card's
+    /// icons and the boost cards still facedown, or an unresolved boost.
     /// </summary>
     internal static Wording[] AttackFacts(DecisionAttack attack) =>
     [
@@ -72,9 +72,14 @@ internal static class DecisionWording
             Label = $"{attack.Attacker} → {attack.Target}", Tooltip = $"{attack.Attacker} is attacking {attack.Target}.",
         },
         attack.Prevented ? TableWording.For(TableFact.AttackPrevented) : AttackValue(attack),
-        .. attack.BoostIcons is { } icons ? [BoostRevealed(icons)]
-            : attack.BoostUnresolved ? [TableWording.For(TableFact.BoostUnresolved)] : Array.Empty<Wording>(),
+        .. Boost(attack),
     ];
+
+    // A revealed boost card's icons, then the boost cards still facedown; before any is revealed, that boost is
+    // unresolved.
+    private static Wording[] Boost(DecisionAttack attack) => attack.BoostIcons is { } icons
+        ? attack.BoostFacedown is > 0 and var facedown ? [BoostRevealed(icons), BoostFacedown(facedown)] : [BoostRevealed(icons)]
+        : attack.BoostUnresolved ? [TableWording.For(TableFact.BoostUnresolved)] : [];
 
     // A revealed boost card's icons are counted now; its abilities and later effects can still change them.
     private static Wording BoostRevealed(long icons) => TableWording.For(TableFact.BoostUnresolved) with
@@ -82,6 +87,14 @@ internal static class DecisionWording
         Label = $"Boost +{icons.ToString(CultureInfo.InvariantCulture)}",
         Tooltip = $"The revealed boost card has {icons.ToString(CultureInfo.InvariantCulture)} uncancelled boost "
             + $"icon{(icons == 1 ? "" : "s")}. Boost abilities and later effects can change the result.",
+    };
+
+    // Boost cards still facedown resolve after the revealed one and can add to the attack.
+    private static Wording BoostFacedown(long cards) => TableWording.For(TableFact.BoostUnresolved) with
+    {
+        Label = $"Boost ×{cards.ToString(CultureInfo.InvariantCulture)} facedown",
+        Tooltip = $"{cards.ToString(CultureInfo.InvariantCulture)} more boost card{(cards == 1 ? " is" : "s are")} "
+            + "facedown on the attacker; their icons are not counted yet and can add to the attack.",
     };
 
     // ATK is worded by what can still change it, as the engine's own attack sentence words it.

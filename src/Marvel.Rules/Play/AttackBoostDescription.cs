@@ -29,6 +29,15 @@ internal static class AttackBoostDescription
         && step.Operation is BoostFaceupOperation { Attacking: true } faceup && faceup.Icons.IsCurrent(world)
             ? faceup.Icons.Remaining : null;
 
+    /// <summary>
+    /// The boost cards still facedown on the attacking enemy while a boost card's interrupt window is open; null
+    /// otherwise. They resolve one at a time after the faceup card (rr:attack-enemy-activation.step.3.e: "If the enemy has any boost cards remaining, repeat these steps with the next boost card.").
+    /// </summary>
+    internal static long? FacedownCards(World world, PhaseStep step) =>
+        FaceupIcons(world, step) is null || step.Operation is not BoostFaceupOperation faceup ? null
+            : world.Areas.Where(area => area.Type == DeckType.BoostCardsDeck && area.Host == faceup.Enemy)
+                .Sum(area => (long)area.Cards.Count);
+
     internal static string Faceup(World world, ICardFacts facts, PhaseStep step)
     {
         if (FaceupIcons(world, step) is not { } icons) return string.Empty;

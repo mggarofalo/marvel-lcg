@@ -123,6 +123,33 @@ public sealed class AttackBoostFaceupQualifierTests : CoreCardTestBase
         Assert.DoesNotContain(prompt.Affordances, a => a.AnchorId == source.ObjectId);
     }
 
+    [Fact]
+    [Rule("rr:attack-enemy-activation.step.3.e")]
+    public void ARevealedBoostCardCountsTheBoostCardsStillFacedown()
+    {
+        // "If the enemy has any boost cards remaining, repeat these steps with
+        // the next boost card." The first faceup card leaves the second facedown.
+        var (world, runner, _, observer) = Board();
+        var minion = world.CreateCard("01101", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+        var boosts = world.AreaOf(DeckType.BoostCardsDeck, minion.Area.PlayArea, host: minion.ObjectId);
+        world.CreateCard("01102", boosts);
+        world.CreateCard("01102", boosts);
+        var events = new List<GameEvent>();
+        world.Agenda.Add(new PhaseStep(new EnemyAttackOperation(), 1, 2, Subject: minion.ObjectId, Seat: 0));
+
+        var prompt = Faceup(world, runner, events);
+        Assert.NotNull(prompt.Attack!.BoostIcons);
+        Assert.Equal(1, prompt.Attack.BoostFacedown);
+        Assert.True(prompt.Attack.BoostUnresolved);
+        var first = world.Agenda.Occurrence;
+        Sequence.Answer(world, Cards, runner, prompt, Decision.Decline, events);
+
+        prompt = Faceup(world, runner, events);
+        Assert.NotSame(first, world.Agenda.Occurrence);
+        Assert.Equal(0, prompt.Attack!.BoostFacedown);
+        Assert.Contains(prompt.Affordances, a => a.AnchorId == observer.ObjectId);
+    }
+
     private static (World World, AbilityRunner Runner, Card Source, Card Observer) Board()
     {
         var runner = new AbilityRunner(AbilityCatalog.Parse("""

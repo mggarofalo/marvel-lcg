@@ -157,6 +157,16 @@ public sealed class DesignSystemMigrationTests
         Assert.Single(DecisionWording.AttackFacts(attack), fact => fact.Icon == "boost");
     }
 
+    [Fact]
+    public void ARevealedBoostCardKeepsTheUnresolvedBoostWhileMoreCardsAreFacedown()
+    {
+        var attack = new DecisionAttack("Klaw", "Spider-Man", 2, false, true, false) { BoostIcons = 1, BoostFacedown = 1 };
+        Wording[] boost = [.. DecisionWording.AttackFacts(attack).Where(fact => fact.Icon == "boost")];
+        Assert.Equal(["Boost +1", "Boost ×1 facedown"], boost.Select(fact => fact.Label));
+        Assert.Contains("not counted yet", boost[1].Tooltip);
+        Assert.Single(DecisionWording.AttackFacts(attack with { BoostFacedown = 0 }), fact => fact.Icon == "boost");
+    }
+
     private static DecisionComposer Composer(params Affordance[] offers) => new(new Prompt(
         0, Question.TurnOption, TimingPriority.Untimed, "test", "Choose", false, offers));
 

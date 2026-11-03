@@ -134,6 +134,7 @@ public sealed record PromptPresentation(
             ? new DecisionAttack(attacker, target, attack.Value, attack.Calculated, attack.BoostUnresolved, attack.Prevented)
             {
                 BoostIcons = attack.BoostIcons,
+                BoostFacedown = attack.BoostFacedown,
             }
             : null;
 

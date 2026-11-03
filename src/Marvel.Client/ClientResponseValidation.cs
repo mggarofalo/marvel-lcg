@@ -246,7 +246,8 @@ internal static class ClientResponseValidation
         && prompt.Affordances.All(CompleteAffordance);
 
     private static bool CompleteAttack(PromptAttack? attack) =>
-        attack is null || attack.Attacker >= 0 && attack.Target >= 0 && attack.BoostIcons is null or >= 0;
+        attack is null || attack.Attacker >= 0 && attack.Target >= 0
+        && (attack.BoostIcons, attack.BoostFacedown) is (null, null) or ( >= 0, >= 0);
 
     // The prompt's context, causes, attack and effect: passive facts a client shows, never authority.
     private static bool CompleteFacts(Prompt prompt) =>
