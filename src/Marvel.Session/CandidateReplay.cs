@@ -33,6 +33,8 @@ public sealed class CandidateReplay
         ArgumentNullException.ThrowIfNull(decision);
         Prompt prompt = Game.Pending
             ?? throw new ReplayDivergenceException("candidate has no pending prompt");
+        // A root decision never meets an open unit: an open unit lasts until the
+        // next root prompt, which is the decision that starts the next unit.
         ReplayHistory facts = startsUnit
             ? new ReplayHistory()
             : history.Open ?? throw new ReplayDivergenceException(
