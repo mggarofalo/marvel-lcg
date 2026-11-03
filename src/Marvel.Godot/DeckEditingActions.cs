@@ -85,24 +85,24 @@ internal sealed class DeckEditingActions : IDisposable
             ui.Add.Disabled = proposal is null;
         }
         catch (OperationCanceledException) { }
-        catch (Exception error) { if (!attempt.IsCancellationRequested) ui.Status.Text = error.Message; }
+        catch (Exception error) { if (!attempt.IsCancellationRequested) DeckEditorStatus.Say(ui, error.Message, ""); }
     }
 
     private async void SetQuantity(string face, int quantity)
     {
         if (browser.Required(face)) return;
         string? error = await quantities.SetAsync(face, quantity);
-        if (error is not null && GodotObject.IsInstanceValid(ui.Window)) ui.Status.Text = $"{browser.CardTitle(face)}: {error}";
+        if (error is not null && GodotObject.IsInstanceValid(ui.Window)) DeckEditorStatus.Say(ui, $"{browser.CardTitle(face)}: {error}", "");
     }
 
     private void ApplyAddition(DeckEditProposal proposal, string[] faces)
     {
         CancelEdit();
-        if (!proposal.Apply(workspace)) { ui.Status.Text = "The draft changed. Select cards and add again."; return; }
+        if (!proposal.Apply(workspace)) { DeckEditorStatus.Say(ui, "The draft changed", "Select cards and add again."); return; }
         changed();
         ui.Deck.Reveal(faces);
         string result = string.Join("; ", faces.Select(face => $"{browser.CardTitle(face)}: {workspace.Draft!.Cards.Count(item => item == face)} total"));
-        ui.Status.Text = $"Added {faces.Length} cards (+1 each). {result}. Undo reverses this addition.";
+        DeckEditorStatus.Say(ui, $"Added {faces.Length} cards +1", result + ". Undo reverses this addition.");
     }
 
     private void CancelEdit() => quantities.Cancel();
