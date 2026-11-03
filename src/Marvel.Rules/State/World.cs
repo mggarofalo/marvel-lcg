@@ -24,7 +24,7 @@ public sealed class World
 
     internal ScenarioSetup? ScenarioSetup { get; set; }
     internal readonly List<Card> _cards = [];
-    internal readonly List<Area> _areas = [];
+    internal readonly WorldAreas _places = new();
     internal readonly List<Seat> _seats = [];
     internal readonly List<GameArea> _gameAreas = [];
     private readonly List<InformationSignal> informationSignals = [];
@@ -114,7 +114,7 @@ public sealed class World
     public IReadOnlyList<Card> Cards => _cards;
 
     /// <summary>Every area, in the order they were made.</summary>
-    public IReadOnlyList<Area> Areas => _areas;
+    public IReadOnlyList<Area> Areas => _places.All;
 
     /// <summary>The players, in seat order.</summary>
     public IReadOnlyList<Seat> Seats => _seats;

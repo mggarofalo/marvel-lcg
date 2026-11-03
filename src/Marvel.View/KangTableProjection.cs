@@ -27,8 +27,10 @@ internal static class KangTableProjection
             Acting = facts.Acting is { } acting ? new(acting.Step, acting.Seat, acting.GameArea) : null,
             LocalKangsDealt = facts.LocalKangsDealt,
             StartingPlayers = world.Players,
-            EncounterDeck = world.AreaOf(DeckType.EncounterDeck).Id,
-            EncounterDiscard = world.AreaOf(DeckType.EncounterDiscardPile).Id,
+            // A read reports only the piles the world has made: the discard pile is
+            // made by the first discard.
+            EncounterDeck = world.FindArea(DeckType.EncounterDeck)?.Id,
+            EncounterDiscard = world.FindArea(DeckType.EncounterDiscardPile)?.Id,
             Notes = [.. facts.Notes.Where(note => note.Card is not { } card || addressable.Contains(card))
                 .Select(note => new KangNoteDescriptor(note.Kind, note.Card))],
         };

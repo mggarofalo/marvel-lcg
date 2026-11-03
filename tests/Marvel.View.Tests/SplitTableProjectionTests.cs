@@ -63,8 +63,8 @@ public sealed class SplitTableProjectionTests
         Assert.Equal((2, 2, 0), (kang.Stage, kang.RemainingLocalKangs, kang.StoredDominions));
         Assert.Equal([central.ObjectId], kang.CentralSchemes);
         Assert.Equal(2, kang.StartingPlayers);
-        Assert.Equal(world.AreaOf(DeckType.EncounterDeck).Id, kang.EncounterDeck);
-        Assert.Equal(world.AreaOf(DeckType.EncounterDiscardPile).Id, kang.EncounterDiscard);
+        // This table has made neither shared pile, so neither is named.
+        Assert.Equal((null, null), (kang.EncounterDeck, kang.EncounterDiscard));
         Assert.Equal(
             [KangNoteKind.AreaIsolation, KangNoteKind.StepsInTurnOrder, KangNoteKind.EachPlayerIsArea,
                 KangNoteKind.SharedEncounterDeck, KangNoteKind.CentralTokensWaitFor4A,
@@ -223,6 +223,27 @@ public sealed class SplitTableProjectionTests
             Assert.Equal(area, cards[schemes[seat].ObjectId].GameArea);
         }
         Assert.Null(cards[central.ObjectId].GameArea);
+    }
+
+    [Fact]
+    public void TheSharedPilesAreNamedOnlyOnceTheWorldHasMadeThem()
+    {
+        // Engine choice: a projection reads the published game and allocates nothing, so a
+        // shared encounter discard pile no card has reached yet is not named, and asking
+        // for it does not make it.
+        var (world, _, _, _) = Separated();
+        var deck = world.AreaOf(DeckType.EncounterDeck);
+        int made = world.Areas.Count;
+        var scope = new RestrictedVisibilityPolicy(0).Authorize(null, 2);
+
+        var before = Assert.IsType<KangTableDescriptor>(WorldProjection.For(world, null, [], scope).World.Kang);
+
+        Assert.Equal((deck.Id, (int?)null), (before.EncounterDeck, before.EncounterDiscard));
+        Assert.Equal(made, world.Areas.Count);
+        var discard = world.AreaOf(DeckType.EncounterDiscardPile);
+        var after = Assert.IsType<KangTableDescriptor>(WorldProjection.For(world, null, [], scope).World.Kang);
+        Assert.Equal((deck.Id, discard.Id), (after.EncounterDeck, after.EncounterDiscard));
+        Assert.Equal(made, discard.Id);
     }
 
     private static (World World, Card[] Kangs, Card[] Schemes, Card Central) Separated()

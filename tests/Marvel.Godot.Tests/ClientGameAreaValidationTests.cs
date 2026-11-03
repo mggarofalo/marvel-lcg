@@ -12,6 +12,22 @@ public sealed class ClientGameAreaValidationTests
     {
         Assert.True(ClientGameAreaValidation.Valid(World()));
         Assert.True(ClientGameAreaValidation.Valid(World() with { Kang = null }));
+    }
+
+    [Fact]
+    public void ASharedPileTheWorldHasNotMadeIsNamedByNothing()
+    {
+        // The shared encounter discard pile exists once the first card is discarded.
+        var world = World();
+        var unmade = world with
+        {
+            Areas = [.. world.Areas.Where(area => area.Zone != "EncounterDiscardPile")],
+            Kang = world.Kang! with { EncounterDiscard = null },
+        };
+
+        Assert.True(ClientGameAreaValidation.Valid(unmade));
+        Assert.True(ClientGameAreaValidation.Valid(unmade with { Kang = unmade.Kang! with { EncounterDeck = null } }));
+        Assert.False(ClientGameAreaValidation.Valid(unmade with { Kang = world.Kang }));
         Assert.True(ClientResponseValidation.HasCompleteBoard(World()));
     }
 

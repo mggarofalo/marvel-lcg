@@ -84,6 +84,21 @@ public sealed class GameAreaTransportTests
     }
 
     [Fact]
+    public void ASharedPileTheWorldHasNotMadeCrossesTheWireAsAbsent()
+    {
+        // Protocol 47: Kang names a shared encounter pile only once the world has made it.
+        var world = new WorldDescriptor([], [], [], Outcome.Unfinished)
+        {
+            Kang = new KangTableDescriptor(1, 0, 0, [], null, []) { EncounterDeck = 20 },
+        };
+        byte[] json = EngineJson.Write(new EngineResponse(EngineProtocol.Version, "kang", "game", null, null, [], world));
+
+        var kang = EngineJson.ReadResponse(json).World!.Kang!;
+
+        Assert.Equal((20, (int?)null), (kang.EncounterDeck, kang.EncounterDiscard));
+    }
+
+    [Fact]
     public void AnUnknownKangMemberIsRejected()
     {
         var world = new WorldDescriptor([], [], [], Outcome.Unfinished)
