@@ -35,5 +35,11 @@ public sealed class ReplayCheckpoint
     internal ActiveHistory History { get; }
 
     /// <summary>Whether this checkpoint was made for exactly this save.</summary>
+    /// <remarks>
+    /// Engine choice: identity, not equal content. A save-only publish such as an
+    /// attach keeps the replayed units and only restamps the save, so a looser key
+    /// would also be correct there; the identity check keeps the checkpoint's
+    /// validity local instead of resting on how every publish builds its save.
+    /// </remarks>
     internal bool Continues(SessionSave save) => ReferenceEquals(Save, save);
 }

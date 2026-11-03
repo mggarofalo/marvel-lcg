@@ -15,8 +15,6 @@ namespace Marvel.Server.Tests;
 /// </summary>
 public sealed class ResolutionReplayBudgetTests
 {
-    private const int DecisionLimit = 200;
-
     [Fact]
     public void AGameInProgressConstructsEachDecisionOnItsCheckpoint()
     {
@@ -26,7 +24,7 @@ public sealed class ResolutionReplayBudgetTests
         // costs does not grow with the length of the game.
         var factory = new CountingFactory(DatasetGameFactory.Load(RepositoryPaths.Root));
         var host = new EngineHost(factory, store: new MemorySessionStore());
-        var table = Table.Open(host, "replay-budget");
+        var table = ReplayTable.Open(host, "replay-budget");
         var deals = new List<int>();
         while (table.Current.Prompt is not null)
         {
@@ -50,7 +48,7 @@ public sealed class ResolutionReplayBudgetTests
         var factory = new CountingFactory(DatasetGameFactory.Load(RepositoryPaths.Root));
         var store = new MemorySessionStore();
         var host = new EngineHost(factory, store: store);
-        var table = Table.Open(host, "edit-budget");
+        var table = ReplayTable.Open(host, "edit-budget");
         while (table.Accepted < 8 || !Undoable(store))
         {
             table.Accept();
@@ -79,7 +77,7 @@ public sealed class ResolutionReplayBudgetTests
         var factory = new CountingFactory(DatasetGameFactory.Load(RepositoryPaths.Root));
         var inner = new MemorySessionStore();
         var host = new EngineHost(factory, store: new FailingStore(inner, failAtCommit: 6));
-        var table = Table.Open(host, "failed-commit");
+        var table = ReplayTable.Open(host, "failed-commit");
         for (int accepted = 0; accepted < 4; accepted++)
         {
             table.Accept();
@@ -107,7 +105,7 @@ public sealed class ResolutionReplayBudgetTests
         // the terminal unit each reach the history a resolution publishes.
         var datasets = DatasetGameFactory.Load(RepositoryPaths.Root);
         var store = new MemorySessionStore();
-        var table = Table.Open(new EngineHost(datasets, store: store), "replay-history");
+        var table = ReplayTable.Open(new EngineHost(datasets, store: store), "replay-history");
         while (table.Current.Prompt is not null)
         {
             table.Accept();
@@ -118,7 +116,7 @@ public sealed class ResolutionReplayBudgetTests
     }
 
     private static void AssertFreshReplayAgrees(
-        DatasetGameFactory datasets, ISessionStore store, Table table)
+        DatasetGameFactory datasets, ISessionStore store, ReplayTable table)
     {
         var fresh = new EngineHost(datasets, store: store);
         EngineResponse synced = fresh.Exchange(EngineRequest.SyncGame(
@@ -137,118 +135,6 @@ public sealed class ResolutionReplayBudgetTests
     {
         SessionSave save = Assert.Single(store.Load()).Save;
         return save.Units is [.., { Status: "complete" }] && save.EditFrontier < save.Cursor;
-    }
-
-    /// <summary>One seat's view of a hosted game, advanced by the crude policy.</summary>
-    private sealed class Table(EngineHost host, EngineResponse opened)
-    {
-        public EngineResponse Current { get; private set; } = opened;
-
-        public string Capability { get; } = opened.Capability!;
-
-        public int Accepted { get; private set; }
-
-        public static Table Open(EngineHost host, string gameId)
-        {
-            EngineResponse opened = host.Exchange(EngineRequest.OpenGame(
-                "open", gameId,
-                new GameSpecification("rhino", ["spider_man"], [], Seed: 12345)));
-            Assert.Null(opened.Error);
-            return new Table(host, opened);
-        }
-
-        public void Continue(EngineResponse response) => Current = response;
-
-        public EngineResponse Sync(string requestId) =>
-            host.Exchange(EngineRequest.SyncGame(requestId, Current.GameId, Capability));
-
-        /// <summary>Answers with the first candidate the host accepts.</summary>
-        public void Accept()
-        {
-            Assert.True(Accepted < DecisionLimit, $"still playing after {Accepted} decisions");
-            EngineResponse response = Attempt();
-            Assert.Null(response.Error);
-            Current = response;
-            Accepted++;
-        }
-
-        /// <summary>The first response that accepts a candidate or fails to save it.</summary>
-        public EngineResponse Attempt()
-        {
-            Prompt prompt = Current.Prompt ?? throw new InvalidOperationException("the game is over");
-            EngineResponse? last = null;
-            foreach (Decision decision in Candidates(prompt))
-            {
-                last = host.Exchange(EngineRequest.ResolveGame(
-                    "step-" + Accepted, Current.GameId, Capability, decision, Current.Revision));
-                if (last.Error is null || last.Error.Code == "save_failed")
-                {
-                    return last;
-                }
-            }
-
-            throw new InvalidOperationException(
-                $"no candidate answer was accepted at decision {Accepted}: {last?.Error?.Code}");
-        }
-    }
-
-    /// <summary>A crude, deterministic policy that keeps the game moving.</summary>
-    private static IEnumerable<Decision> Candidates(Prompt prompt)
-    {
-        foreach (Affordance card in prompt.Affordances.Where(offer =>
-                     offer.Verb == CardPlay.Verb && offer.CostOptions.Count > 0))
-        {
-            if (Payment(card) is { } paying
-                && ResourcePayment.Allocate(card.CostOptions[0], paying) is { } allocation)
-            {
-                yield return Decision.Take(card.Id,
-                    card.Targets is { Legal.Count: > 0 } targets ? [targets.Legal[0]] : [],
-                    paying, new Dictionary<string, long>(), allocation);
-            }
-        }
-
-        if (prompt.Asking == Question.Defender)
-            yield return Decision.Take(prompt.Affordances[^1].Id);
-        foreach (string verb in new[] { BasicPowers.ThwartVerb, BasicPowers.AttackVerb, Game.ChangeForm, Game.EndPhaseVerb })
-        {
-            foreach (Affordance offer in prompt.Affordances.Where(offer => offer.Verb == verb))
-                yield return Answer(prompt, offer);
-        }
-
-        if (prompt.Cancellable)
-            yield return Decision.Decline;
-        foreach (Affordance offer in prompt.Affordances.Where(offer => offer.Verb != CardPlay.Verb))
-            yield return Answer(prompt, offer);
-    }
-
-    private static Decision Answer(Prompt prompt, Affordance offer)
-    {
-        if (offer.Targets is not { } targets)
-            return Decision.Take(offer.Id);
-        if (prompt.Asking == Question.Order)
-            return new Decision(offer.Id, [.. targets.Legal]);
-        int count = offer.Verb == Game.EndPhaseVerb
-            ? targets.Min
-            : Math.Max(targets.Min, Math.Min(1, targets.Legal.Count));
-        return new Decision(offer.Id, [.. targets.Legal.Take(count)]);
-    }
-
-    private static int[]? Payment(Affordance offer)
-    {
-        if (!long.TryParse(offer.CostOptions[0].Cost,
-                System.Globalization.CultureInfo.InvariantCulture, out long cost))
-            return null;
-        var spent = new List<int>();
-        long generated = 0;
-        foreach (var source in offer.CostOptions[0].Generators)
-        {
-            if (generated >= cost)
-                break;
-            spent.Add(source.Effect);
-            generated += source.Generates.Length;
-        }
-
-        return generated >= cost ? [.. spent] : null;
     }
 
     private sealed class FailingStore(ISessionStore inner, int failAtCommit) : ISessionStore

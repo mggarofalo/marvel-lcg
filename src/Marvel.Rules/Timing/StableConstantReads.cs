@@ -86,6 +86,8 @@ internal sealed class StableConstantReads
 
         internal bool Describes(ContinuousEffects effects) =>
             SameSequence(effects.world.Cards, areas, (card, area) => ReferenceEquals(card.Area, area))
+            // Registering or ending an effect changes the count or the suppressed
+            // set as well; the element check is what catches a same-size swap.
             && SameSequence(effects.entries, entries, ReferenceEquals)
             // A cascade preflight can replace one hidden batch with another of the
             // same size; only a nested cascade reaches that, so no test drives it.

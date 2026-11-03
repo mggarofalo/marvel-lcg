@@ -36,9 +36,7 @@ public static class SessionReplay
     {
         if (checkpoint is not null && checkpoint.Continues(save))
         {
-            SessionSaveJson.Validate(save);
-            ArgumentNullException.ThrowIfNull(expected);
-            RequireCompatibility(expected, save.Compatibility);
+            // The checkpoint's save was validated and verified when it was made.
             return new CandidateReplay(save, checkpoint.Game, checkpoint.History);
         }
 
