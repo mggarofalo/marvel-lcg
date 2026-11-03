@@ -27,7 +27,9 @@ public sealed class NativeContractJourneyTests
             UseShellExecute = false, CreateNoWindow = true,
             RedirectStandardOutput = true, RedirectStandardError = true,
         };
-        foreach (string argument in new[] { rendered ? "--minimized" : "--headless", "--audio-driver", "Dummy", "--path",
+        // Godot's own log stays in the contract's directory, never in the player's user:// store.
+        foreach (string argument in new[] { rendered ? "--minimized" : "--headless", "--audio-driver", "Dummy",
+            "--log-file", Path.Combine(directory, "godot.log"), "--path",
             Path.Combine(RepositoryPaths.Root, "src", "Marvel.Godot"), "--script", "res://smoke/native_contract_smoke.gd" })
             start.ArgumentList.Add(argument);
         start.Environment["MARVEL_ENGINE_ENDPOINT"] = server.Endpoint;

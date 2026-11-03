@@ -36,7 +36,8 @@ if (-not $NoBuild) {
     $build = Invoke-NativeProcess 'dotnet' @('build', "$repoRoot/src/Marvel.Godot/Marvel.Godot.csproj", '-c', 'Debug', '--nologo') @{} 180 "$ResultsDirectory/build.log" $repoRoot
     if ($build.ExitCode -ne 0 -or $build.TimedOut) { throw "Build failed: $ResultsDirectory/build.log" }
 }
-$arguments = @('--audio-driver', 'Dummy', '--path', "$repoRoot/src/Marvel.Godot", '--script', $Script)
+# Godot's own log stays with the evidence, never in the player's user:// store.
+$arguments = @('--audio-driver', 'Dummy', '--log-file', "$ResultsDirectory/godot.log", '--path', "$repoRoot/src/Marvel.Godot", '--script', $Script)
 if (-not $Rendered) { $arguments = @('--headless') + $arguments }
 else { $arguments = @('--minimized') + $arguments }
 $environment = @{ MARVEL_UI_EVIDENCE_DIRECTORY = "$ResultsDirectory/artifacts";

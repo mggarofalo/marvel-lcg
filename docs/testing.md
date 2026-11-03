@@ -202,9 +202,11 @@ that scripts cannot exercise, or requested exploratory review. Retain the scope
 of that observation without presenting it as repeatable regression coverage.
 
 For campaign and library journeys, explicitly isolate campaign access, deck
-libraries and remote storage as well as embedded saves. The process runner's
-automatic embedded-save isolation alone does not establish isolation of those
-other stores. Preserve genuine predecessor fixtures and complete replay/backup
+libraries and remote storage as well as embedded saves. The process runner
+isolates embedded saves, campaign access and the deck library; the runners pass
+Godot `--log-file` beside their evidence, and the smoke art pack sits beside the
+isolated saves, so a probe leaves the player's `user://` store untouched. That
+does not establish isolation of remote storage. Preserve genuine predecessor fixtures and complete replay/backup
 comparisons when verifying upgrades, regardless of the interaction mechanism.
 
 Record the exact revision, build configuration, fixture, command, profile and
