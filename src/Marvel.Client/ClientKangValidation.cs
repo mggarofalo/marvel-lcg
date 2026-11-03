@@ -68,6 +68,8 @@ internal static class ClientKangValidation
         return anchored ? note.Card is { } card && known.Cards.ContainsKey(card) : note.Card is null;
     }
 
+    // A pile is absent only while the world has not made it, so an absent id with that pile listed is a lie.
     private static bool Zone(WorldDescriptor world, int? id, string zone) =>
-        id is null || world.Areas.Count(area => area.Id == id && area.Owner == -1 && area.Zone == zone) == 1;
+        world.Areas.Count(area => (id is null || area.Id == id) && area.Owner == -1 && area.Zone == zone)
+            == (id is null ? 0 : 1);
 }

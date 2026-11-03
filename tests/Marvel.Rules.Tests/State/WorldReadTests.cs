@@ -29,6 +29,16 @@ public sealed class WorldReadTests
     }
 
     [Fact]
+    public void AReadClosedTwiceRaisesRatherThanLeavingTheNextReadOpenToAllocation()
+    {
+        var (world, _) = Board();
+        var read = world.BeginRead();
+        read.Dispose();
+
+        Assert.Throws<InvalidOperationException>(read.Dispose);
+    }
+
+    [Fact]
     public void AReadAnswersAPlaceNotYetMadeAsTheSameEmptyPlace()
     {
         var (world, _) = Board();

@@ -26,7 +26,6 @@ public sealed class ClientGameAreaValidationTests
         };
 
         Assert.True(ClientGameAreaValidation.Valid(unmade));
-        Assert.True(ClientGameAreaValidation.Valid(unmade with { Kang = unmade.Kang! with { EncounterDeck = null } }));
         Assert.False(ClientGameAreaValidation.Valid(unmade with { Kang = world.Kang }));
         Assert.True(ClientResponseValidation.HasCompleteBoard(World()));
     }
@@ -91,6 +90,8 @@ public sealed class ClientGameAreaValidationTests
     [InlineData("starting players differ")]
     [InlineData("encounter deck names another pile")]
     [InlineData("encounter discard names another pile")]
+    [InlineData("listed encounter deck left absent")]
+    [InlineData("listed encounter discard left absent")]
     [InlineData("out-of-reach card in the seat's own area")]
     [InlineData("seat in no game area with reach limits")]
     [InlineData("villain located in another area")]
@@ -152,6 +153,8 @@ public sealed class ClientGameAreaValidationTests
             "starting players differ" => Kang(kang with { StartingPlayers = 3 }),
             "encounter deck names another pile" => Kang(kang with { EncounterDeck = 21 }),
             "encounter discard names another pile" => Kang(kang with { EncounterDiscard = 20 }),
+            "listed encounter deck left absent" => Kang(kang with { EncounterDeck = null }),
+            "listed encounter discard left absent" => Kang(kang with { EncounterDiscard = null }),
             "out-of-reach card in the seat's own area" => world with { Players = [world.Players[0] with { OutOfReach = [10] }, world.Players[1]] },
             "seat in no game area with reach limits" => world with { Players = [world.Players[0] with { GameArea = null }, world.Players[1]] },
             "villain located in another area" => Area(area with { Villains = [12] }),

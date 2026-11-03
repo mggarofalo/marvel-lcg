@@ -91,6 +91,11 @@ internal sealed class WorldAreas
     /// <summary>Closes a read, and forgets its unmade places once the outermost closes.</summary>
     internal void End()
     {
+        if (reads == 0)
+        {
+            throw new InvalidOperationException("a read of the world was closed more often than it was opened");
+        }
+
         if (--reads > 0)
         {
             return;
