@@ -15,11 +15,13 @@ namespace Marvel.Session;
 /// </remarks>
 public sealed class CandidateReplay
 {
+    private readonly SessionSave live;
     private readonly ActiveHistory history;
     private ReplayHistory? unit;
 
-    internal CandidateReplay(Game game, ActiveHistory history)
+    internal CandidateReplay(SessionSave live, Game game, ActiveHistory history)
     {
+        this.live = live;
         Game = game;
         this.history = history;
     }
@@ -49,6 +51,34 @@ public sealed class CandidateReplay
         facts.ObserveEvents(resolved.Events);
         unit = facts;
         return resolved;
+    }
+
+    /// <summary>
+    /// Advances a game that was verified at the end of the live save through the
+    /// committed decision, verifying it exactly as a replay verifies a recorded
+    /// decision.
+    /// </summary>
+    /// <remarks>
+    /// The published game reproduces the decision this candidate derived, so a
+    /// committed decision is one two independent games agree on.
+    /// </remarks>
+    public void VerifyCommitted(Game published, SessionSave committed)
+    {
+        ArgumentNullException.ThrowIfNull(published);
+        ArgumentNullException.ThrowIfNull(committed);
+        CommittedDecisionVerification.Replay(live, committed, published);
+    }
+
+    /// <summary>
+    /// The candidate game and its history as the checkpoint for the next
+    /// decision on <paramref name="committed"/>.
+    /// </summary>
+    public ReplayCheckpoint Checkpoint(SessionSave committed)
+    {
+        IReadOnlyList<HistoryUnitInspection> complete = History(committed);
+        bool open = committed.Units[committed.Cursor - 1].Status != "complete";
+        return new ReplayCheckpoint(
+            committed, Game, new ActiveHistory(complete, open ? unit : null));
     }
 
     /// <summary>The active history of the save that records the new decision.</summary>

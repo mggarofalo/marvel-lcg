@@ -6,6 +6,17 @@ namespace Marvel.Session;
 /// </summary>
 internal sealed class ActiveHistory
 {
+    public ActiveHistory()
+    {
+    }
+
+    /// <summary>The history a construction collected through its new decision.</summary>
+    public ActiveHistory(IEnumerable<HistoryUnitInspection> complete, ReplayHistory? open)
+    {
+        Complete.AddRange(complete);
+        Open = open;
+    }
+
     public List<HistoryUnitInspection> Complete { get; } = [];
 
     public ReplayHistory? Open { get; private set; }

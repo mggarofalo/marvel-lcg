@@ -57,6 +57,12 @@ public sealed class ContinuousEffects(World state)
     internal bool deriving;
     internal IReadOnlyList<ContinuousEffect> assumedConstants = [];
 
+    // One settled list per read that changes nothing. See `StableConstantReads`.
+    internal readonly StableConstantReads stableReads = new();
+
+    /// <summary>Opens a read that changes nothing, so its constants settle once.</summary>
+    internal StableConstantReads.Scope BeginStableRead() => stableReads.Begin();
+
 
     /// <summary>Everything registered, in force or not.</summary>
     /// <remarks>

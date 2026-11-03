@@ -15,6 +15,9 @@ namespace Marvel.Server;
 internal sealed record SessionTransaction(
     Game Candidate, SessionSave Proposed, IReadOnlyList<HistoryUnitInspection> History)
 {
+    /// <summary>The checkpoint published with the save it was made for, if any.</summary>
+    public ReplayCheckpoint? Checkpoint { get; init; }
+
     public EngineResponse CommitAndPublish(
         HostedSession live,
         IReadOnlyList<StoredAuthority> authorities,
@@ -28,7 +31,7 @@ internal sealed record SessionTransaction(
 
         EngineResponse response = project(Candidate, Proposed);
         _ = commit(new StoredSession(Proposed, authorities));
-        live.Publish(Candidate, Proposed, History);
+        live.Publish(Candidate, Proposed, History, Checkpoint);
         return response;
     }
 }

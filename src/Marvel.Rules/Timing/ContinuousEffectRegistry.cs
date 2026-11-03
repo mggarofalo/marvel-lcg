@@ -100,7 +100,9 @@ internal static class ContinuousEffectRegistry
     /// <para>
     /// Read afresh every time rather than cached onto the board, which is what
     /// <c>rr:modifiers</c> and <c>rr:lasting-effects.3</c> both describe. Cheap
-    /// and called often is the intended shape.
+    /// and called often is the intended shape. A read that changes nothing
+    /// settles the constants once and reuses that list while the board stays
+    /// unchanged; see <see cref="StableConstantReads"/>.
     /// </para>
     /// <para>
     /// <b>Two sources, and only one of them is a list.</b> Lasting and delayed

@@ -8,6 +8,8 @@ internal static class WorldDigest
     /// <summary>Builds one record per physical card in creation order.</summary>
     public static StateDigest Create(World world)
     {
+        // A digest reads the board and changes nothing.
+        using var read = world.Effects.BeginStableRead();
         var positions = new Dictionary<int, (string Zone, int Index)>();
         foreach (var area in world.Areas)
         {

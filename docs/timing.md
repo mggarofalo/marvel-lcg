@@ -117,6 +117,13 @@ necessary) updates the count of any variable quantity that is being modified."*
 the game state updates". So the loop is the rule, and `ContinuousEffects.Active`
 is meant to be cheap and called often rather than cached onto the board.
 
+A read that changes nothing — the state digest, a turn prompt, the abilities
+waiting in a window, a health capture — opens a stable read. The engine chooses
+to settle the constant abilities once inside it and to reuse that list while
+every card's area and the effect bookkeeping are unchanged, so a preflight that
+projects a departure inside the read settles afresh. Nothing is remembered once
+the read ends, and nothing about the reuse is visible in a digest or a prompt.
+
 Where the three kinds differ is only in **how an entry leaves**, and that is
 stated by the effect itself.
 
