@@ -109,6 +109,8 @@ internal static class DecisionPanelPromptRenderer
             .AddChild(control);
     }
 
+    private const float SummaryPartWidth = 260;
+
     private static void AddActionSummary(
         VBoxContainer body,
         AffordancePresentation? selected,
@@ -124,6 +126,8 @@ internal static class DecisionPanelPromptRenderer
         summary.Name = "ActionSummary";
         IReadOnlyList<string> parts = DecisionCopy.ActionParts(selected, compact: local);
         DraftFactsRow.Fill(summary, [.. parts.Select(part => new DraftPart(part))]);
+        // Our choice: long parts share a line, so the summary keeps the editor below it in view.
+        DraftFactsRow.Bound(summary, SummaryPartWidth * (int)scale / 100f);
         summary.AccessibilityDescription = string.Join("\n", parts);
         body.AddChild(summary);
         if (!MulliganPrompt.IsOpening(composer.Prompt))

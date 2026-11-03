@@ -172,6 +172,9 @@ internal sealed class DecisionDraftRenderer
         else AddContent(WithDetail(choose, target, detail));
     }
 
+    // Our choice: a detail chip's bounded line, so a row never widens its surface.
+    private const float DetailWidth = 220;
+
     // A detail that tells this target from the others stands beside its row as a chip, whole on hover.
     private HBoxContainer WithDetail(Button choose, int target, string detail)
     {
@@ -182,6 +185,7 @@ internal sealed class DecisionDraftRenderer
         chip.Name = $"Target{target}Detail";
         chip.SizeFlagsHorizontal = Control.SizeFlags.ShrinkEnd;
         DraftFactsRow.Fill(chip, [new DraftPart(detail)]);
+        DraftFactsRow.Bound(chip, DetailWidth * (int)panel.ReadingScale / 100f);
         row.AddChild(chip);
         return row;
     }
@@ -226,6 +230,7 @@ internal sealed class DecisionDraftRenderer
         var parts = new List<DraftPart> { ChoiceRowWording.Repeated(name, request.Details?.GetValueOrDefault(target), count, limit) };
         if (ChoiceRowWording.Distinguishing(request, target, name) is { } detail) parts.Add(new DraftPart(detail));
         DraftFactsRow.Fill(tracker, parts);
+        DraftFactsRow.Bound(tracker, DetailWidth * (int)panel.ReadingScale / 100f);
         return tracker;
     }
 
