@@ -161,7 +161,7 @@ required decisions kept in the same surface. A notification is the ability's tit
 and its facts as chips: what happened, In progress while it still resolves, and
 the next decision, each whole on hover. A scrolling collection's cue counts the
 cards it does not wholly show and points where they lie: "+2 ▸" for a sideways row,
-"+2 ▾" for the side-scheme stack. A finished game states its result once on
+"+2 ▾" for the side-scheme stack and the seat rail. A finished game states its result once on
 the table: the heading and its reason chip. The only other surface is the Review
 game action, which opens the history. Complex costs and selections still
 use the prompt-bound composer; the client never answers a future prompt itself.
