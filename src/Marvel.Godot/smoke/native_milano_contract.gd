@@ -27,14 +27,20 @@ static func _rail(smoke, two: bool) -> bool:
 
 # Opens the card's payment, checks the seat chip and composes a ready payment that spends the Milano.
 static func _pay(smoke, card: String, milano: int, two: bool) -> bool:
+    if not await _settled(smoke): return false
     if not await smoke._drag_to_prompt_owner_lane(smoke._tabletop_card_named(card)): return false
     if not await smoke.ui.expect(func(): return smoke._payment_modal() != null, card + " opens its payment"): return false
     if not await _source_names_its_seat(smoke, milano, 0 if two else -1): return false
     if not await _capture(smoke, "payment"): return false
     if not await _select(smoke, "Resource%d" % milano): return false
-    if two:
-        var genius: Button = smoke._visible_button_beginning(smoke._payment_modal(), "Discard Genius")
-        if genius == null or not await smoke.ui.click(smoke.ui.Locator.control(genius)): return false
+    if two and not await _discard(smoke, "Genius"): return false
+    return await _ready(smoke)
+
+static func _discard(smoke, title: String) -> bool:
+    var source: Button = smoke._visible_button_beginning(smoke._payment_modal(), "Discard " + title)
+    return source != null and await smoke.ui.click(smoke.ui.Locator.control(source))
+
+static func _ready(smoke) -> bool:
     if not await smoke.ui.expect(func():
         var progress := smoke._payment_modal().find_child("PaymentProgress", true, false) as Control
         return progress != null and "Payment ready" in progress.tooltip_text and smoke.witness.Revision() == 0,
@@ -56,6 +62,17 @@ static func _pass_and_inspect_first_player(smoke) -> bool:
     if not await smoke.ui.expect(func(): return smoke.witness.Revision() == 2 and smoke.witness.DecisionKind() == "PlayerAction",
         "the passed response returns the paying seat to its turn"): return false
     return await smoke.ui.click(smoke.ui.named("SeatSwitch0"))
+
+# The table re-renders while a large viewport settles; a drag waits until the same table stays for a few frames.
+static func _settled(smoke) -> bool:
+    for attempt in 60:
+        var table: Control = smoke.main.find_child("PlayerTable", true, false)
+        var before := table.get_instance_id() if table != null else 0
+        for frame in 6: await smoke.process_frame
+        table = smoke.main.find_child("PlayerTable", true, false)
+        if table != null and table.get_instance_id() == before: return true
+    smoke._fail("the table never settled before the hand-card drag")
+    return false
 
 # A table card's exhausted mark: the full card's badge, or a source tile's state symbol.
 static func _exhausted(card: Control) -> bool:
@@ -82,6 +99,9 @@ static func _rail_marks_first_player(smoke) -> bool:
 
 # Another seat's source carries that seat's chip beside it; the payer's own sources carry none.
 static func _source_names_its_seat(smoke, milano: int, seat: int) -> bool:
+    # A larger scale can scroll the source list; the player scrolls to the row as the driver does here.
+    var source: Control = smoke._payment_modal().find_child("Resource%d" % milano, true, false)
+    if source == null or not await smoke.ui.scroll_into_view(smoke.ui.Locator.control(source)): return false
     return await smoke.ui.expect(func(): return _chip_matches(smoke, milano, seat),
         "the Milano's payment row names the seat that controls it")
 
