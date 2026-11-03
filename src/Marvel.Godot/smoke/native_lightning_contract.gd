@@ -108,8 +108,9 @@ static func _resource(smoke, title: String) -> bool:
 static func _progress(smoke, expected: String) -> bool:
     return await smoke.ui.expect(func():
         var modal: Control = smoke._payment_modal()
-        var progress := modal.find_child("PaymentProgress", true, false) as Label
-        return progress != null and expected in progress.text and smoke.witness.Revision() == 0,
+        # Payment progress is pips or a selected-count chip; its words are the tracker's hover.
+        var progress := modal.find_child("PaymentProgress", true, false) as Control
+        return progress != null and expected in progress.tooltip_text and smoke.witness.Revision() == 0,
         "printed one plus typed energy X payment: " + expected)
 
 static func _capture(smoke, leaf: String) -> bool:
