@@ -11,7 +11,8 @@ internal static class GamePrompts
 {
     internal static Prompt TurnPrompt(this Game game)
     {
-        // Offering turn options reads the board and changes nothing.
+        // Offering turn options reads the board and changes nothing. The scope
+        // changes only how often constants settle, never what a prompt offers.
         using var read = game.world.Effects.BeginStableRead();
         var seat = game.world.Seats[game.Active];
         return new Prompt(

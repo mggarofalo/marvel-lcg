@@ -83,13 +83,80 @@ public sealed class StableConstantReadTests
         var table = Table.Create();
         table.Abilities.WhileWaiting = world =>
         {
+            var ending = world.Effects.PreflightConstantsEnding(table.Source);
             Assert.Equal(1, Attack(world, table.Target));
-            using (world.Effects.PreflightConstantsEnding(table.Source).Begin())
+            using (ending.Begin())
             {
                 Assert.Equal(0, Attack(world, table.Target));
             }
 
             Assert.Equal(1, Attack(world, table.Target));
+        };
+
+        _ = table.World.WindowAbilities.Waiting(table.World, Occurrence(), WindowKind.Response);
+    }
+
+    [Rule("rr:modifiers.2")]
+    [Fact]
+    public void AnEffectRegisteredInsideAReadReachesTheConstantsThatDependOnIt()
+    {
+        // "The calculation of a value treats all modifiers as being applied
+        // simultaneously." The target's own constant
+        // grants it THW while its ATK is at least 1, so a lasting ATK bonus that
+        // arrives inside the read switches that constant on.
+        var table = Table.Create(dependent: true, sourceGrants: false);
+        table.Abilities.WhileWaiting = world =>
+        {
+            Assert.Equal(0, Thwart(world, table.Target));
+            world.Effects.Register(new ContinuousEffect(
+                EffectSource.LastingEffect, "attack", Amount: 1,
+                Card: table.Source.ObjectId, Affects: table.Target.ObjectId,
+                Lasts: Duration.WhileInPlay));
+            Assert.Equal(1, Thwart(world, table.Target));
+        };
+
+        _ = table.World.WindowAbilities.Waiting(table.World, Occurrence(), WindowKind.Response);
+    }
+
+    [Rule("rr:hit-points.3.1")]
+    [Fact]
+    public void AConstantEndingPreflightedInsideAReadFindsTheCharacterItLeavesLethal()
+    {
+        // "If an ability that says an ally or minion 'gets +X hit points' ceases to
+        // be in effect and causes that ally or minion to have damage on it equal to
+        // or greater than its hit points, that ally or minion is defeated." Without the source's ATK bonus the target's own +1 hit point
+        // constant switches off, so the departure the preflight plans includes it.
+        var table = Table.Create(dependent: true, sourceGrants: true);
+        table.Target.TakeDamage(1);
+        table.Abilities.WhileWaiting = world =>
+        {
+            Assert.Equal(2, DamagePlacement.Health(world, world.Facts, table.Target));
+            using (world.Effects.PreflightConstantsEnding(table.Source).Begin())
+            {
+                Assert.True(world.Effects.IsDeparting(table.Target));
+            }
+        };
+
+        _ = table.World.WindowAbilities.Waiting(table.World, Occurrence(), WindowKind.Response);
+    }
+
+    [Rule("rr:hit-points.3.1")]
+    [Fact]
+    public void ALastingEffectEndingInsideAReadFindsTheCharacterItLeavesLethal()
+    {
+        var table = Table.Create(dependent: true, sourceGrants: false);
+        table.Target.TakeDamage(1);
+        var bonus = table.World.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect, "attack", Amount: 1,
+            Card: table.Source.ObjectId, Affects: table.Target.ObjectId,
+            Lasts: Duration.WhileInPlay));
+        table.Abilities.WhileWaiting = world =>
+        {
+            Assert.Equal(2, DamagePlacement.Health(world, world.Facts, table.Target));
+            // This bare board has nothing on the agenda for the defeat to join, so
+            // reaching the defeat raises. What is held is that it is reached.
+            var raised = Assert.Throws<RulesNotImplementedException>(bonus.Dispose);
+            Assert.Contains("'Hit_Points_Reduced'", raised.Message, StringComparison.Ordinal);
         };
 
         _ = table.World.WindowAbilities.Waiting(table.World, Occurrence(), WindowKind.Response);
@@ -137,6 +204,9 @@ public sealed class StableConstantReadTests
     private static long Attack(World world, Card card) =>
         StateFields.Modified(world, card, "attack", world.Facts, world.Players);
 
+    private static long Thwart(World world, Card card) =>
+        StateFields.Modified(world, card, "thwart", world.Facts, world.Players);
+
     private static long Field(StateDigest digest, Card card, string field) =>
         digest.Cards.Single(record => record.Id == card.ObjectId).Fields[field];
 
@@ -144,21 +214,25 @@ public sealed class StableConstantReadTests
 
     private sealed record Table(World World, CountingConstants Abilities, Card Source, Card Target)
     {
-        public static Table Create()
+        public static Table Create(bool dependent = false, bool sourceGrants = true)
         {
             var world = new World(new Facts(), players: 1);
             world.CreateSeat("p0");
             var allies = world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0));
             var source = world.CreateCard("ally", allies);
             var target = world.CreateCard("ally", allies);
-            var abilities = new CountingConstants(source.ObjectId, target.ObjectId);
+            var abilities = new CountingConstants(source.ObjectId, target.ObjectId, sourceGrants, dependent);
             world.Abilities = abilities;
             return new Table(world, abilities, source, target);
         }
     }
 
-    /// <summary>The source grants the target +1 ATK while it is in play.</summary>
-    private sealed class CountingConstants(int source, int target) : NoCardAbilities
+    /// <summary>
+    /// The source grants the target +1 ATK while it is in play. A dependent
+    /// target grants itself +1 THW and +1 hit point while its ATK is at least 1.
+    /// </summary>
+    private sealed class CountingConstants(int source, int target, bool sourceGrants, bool dependent)
+        : NoCardAbilities
     {
         public int Calls { get; private set; }
 
@@ -167,14 +241,13 @@ public sealed class StableConstantReadTests
         public override IReadOnlyList<ContinuousEffect> Constant(World world, Card card)
         {
             Calls++;
-            return card.ObjectId == source
-                ? [new ContinuousEffect(
-                    EffectSource.ConstantAbility,
-                    "attack",
-                    Amount: 1,
-                    Card: source,
-                    Affects: target,
-                    Lasts: Duration.WhileInPlay)]
+            if (card.ObjectId == source && sourceGrants)
+            {
+                return [Grant("attack", source)];
+            }
+
+            return card.ObjectId == target && dependent && Attack(world, card) >= 1
+                ? [Grant("thwart", target), Grant("health", target)]
                 : [];
         }
 
@@ -184,6 +257,10 @@ public sealed class StableConstantReadTests
             WhileWaiting?.Invoke(world);
             return [];
         }
+
+        private ContinuousEffect Grant(string field, int from) => new(
+            EffectSource.ConstantAbility, field, Amount: 1,
+            Card: from, Affects: target, Lasts: Duration.WhileInPlay);
     }
 
     private sealed class Facts : ICardFacts
@@ -193,9 +270,12 @@ public sealed class StableConstantReadTests
         public IReadOnlyList<string> Traits(string faceId) => [];
 
         public IReadOnlyDictionary<string, string> Attributes(string faceId) =>
-            new Dictionary<string, string>(StringComparer.Ordinal) { ["ATK"] = "0" };
+            new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["ATK"] = "0", ["THW"] = "0", ["HP"] = "1",
+            };
 
         public long PrintedValue(string faceId, string attribute, int players, long fallback = 0) =>
-            fallback;
+            attribute == "HP" ? 1 : fallback;
     }
 }

@@ -38,7 +38,7 @@ internal sealed class StableConstantReads
 
     /// <summary>The list settled earlier in this read on the same board, if any.</summary>
     internal IReadOnlyList<ContinuousEffect>? Reuse(ContinuousEffects effects) =>
-        depth > 0 && settled is { } board && board.Describes(effects) ? board.Constants : null;
+        settled is { } board && board.Describes(effects) ? board.Constants : null;
 
     /// <summary>Remembers a fresh settlement for the rest of this read.</summary>
     internal void Remember(ContinuousEffects effects, IReadOnlyList<ContinuousEffect> constants)
