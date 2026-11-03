@@ -17,7 +17,9 @@ distinguishes one fact from another.
 | `dominion.svg` | A diamond: Kang's Dominions stored under stage 4A. |
 | `rules.svg` | An information mark: the rules that apply now. |
 | `answering.svg` | A speech mark: this seat must answer the current decision. |
+| `first_player.svg` | A token marked 1: this seat holds the first-player token. |
 | `active_seat.svg` | A flag: it is this seat's turn. |
+| `source_seat.svg` | A card beside a person: another seat controls this payment source. |
 | `turn_order.svg` | Chevrons before a stop: each villain-phase step resolves for every area in turn order. |
 | `public_focus.svg` | An eye: the table is showing this seat's public workspace. |
 | `each_player.svg` | Two people: "each player" counts the players in the same game area. |

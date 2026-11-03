@@ -170,6 +170,7 @@ internal sealed class MainTabletopController
                 prompt?.Player ?? board.Table?.PromptOwner,
                 board.Table?.ViewedPrivateSeat,
                 board.Table?.ActivePlayer,
-                board.Table?.PublicFocusSeat));
+                board.Table?.PublicFocusSeat,
+                board.Table?.FirstPlayer));
     }
 }

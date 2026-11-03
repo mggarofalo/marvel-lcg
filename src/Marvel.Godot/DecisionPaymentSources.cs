@@ -56,6 +56,8 @@ internal sealed class DecisionPaymentSources
             var row = new HBoxContainer { ThemeTypeVariation = GodotThemeVariations.CompactRow };
             button.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
             row.AddChild(button);
+            if (PaymentSourceSeat.Chip(source, composer.Prompt.Player, panel.world!, panel.ReadingScale) is { } seat)
+                row.AddChild(seat);
             CardPaymentInspection.Bind(panel, button, source.Id);
             panel.AddContent(row);
             AddDetails(source);

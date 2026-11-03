@@ -68,6 +68,12 @@ internal sealed class NativeSceneGameFactory(string contract) : IGameFactory, IS
             return opened;
         }
         if (contract == "dense-table") return DenseTable();
+        if (ShipCommandNativeScene.Handles(contract))
+        {
+            OpenedGame opened = ShipCommandNativeScene.Create(contract, specification);
+            prepared = opened.Game;
+            return opened;
+        }
         if (KangNativeScene.Handles(contract))
         {
             OpenedGame opened = KangNativeScene.Create(contract, specification, Kang);
