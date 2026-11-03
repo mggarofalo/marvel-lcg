@@ -165,11 +165,10 @@ internal static class EngineHostResolution
     /// reproduce it.
     /// </summary>
     /// <remarks>
-    /// Presentation reads the live game, and a read can leave hidden state behind
-    /// -- an area a lookup allocates is one -- that a fresh replay never makes.
-    /// Such a live game may disagree with the checkpoint's derivation, which was
-    /// never read; the save follows the derivation, and the replacement verifies
-    /// it from setup.
+    /// Presentation reads the live game inside reads that allocate nothing, so the
+    /// live game and the checkpoint's derivation, which was never read, agree.
+    /// Ledger choice: should they ever disagree, the save follows the derivation
+    /// and the replacement verifies it from setup.
     /// </remarks>
     private static Game AdvancePublished(
         EngineHost host, Game live, CandidateReplay replay, SessionSave proposed)
