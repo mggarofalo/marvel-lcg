@@ -30,11 +30,23 @@ public sealed class CommittedDecisionVerificationTests
         });
 
     [Fact]
-    public void AUnitWhoseExposuresDisagreeIsRefused() =>
-        Commit.Next().Refuses(unit => unit with
+    public void AUnitWhoseExposuresDisagreeIsRefused()
+    {
+        // The frontier moves with the tampered exposure, so only the exposure
+        // record itself disagrees with the published game.
+        var commit = Commit.Next();
+        JournalUnit last = commit.Committed.Units[^1];
+        SessionSave tampered = commit.Committed with
         {
-            Exposures = [.. unit.Exposures, new InformationExposure("tampered", [0])],
-        });
+            EditFrontier = commit.Committed.Units.Count,
+            Units = [.. commit.Committed.Units.Take(commit.Committed.Units.Count - 1), last with
+            {
+                Exposures = [.. last.Exposures, new InformationExposure("tampered", [0])],
+            }],
+        };
+
+        Assert.Throws<ReplayDivergenceException>(() => commit.Verify(tampered));
+    }
 
     [Fact]
     public void ASaveWhoseFrontierDisagreesIsRefused()
