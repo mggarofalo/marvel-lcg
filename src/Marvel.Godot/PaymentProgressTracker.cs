@@ -9,10 +9,13 @@ namespace Marvel.Godot;
 /// </summary>
 internal static class PaymentProgressTracker
 {
-    /// <summary>The pips: selected resources against what the cost needs, or null when the engine's assessment does not know the need.</summary>
-    internal static (int Filled, int Total)? Pips(PaymentProgress progress) => progress.RemainingRequired is { } remaining
-        ? (progress.GeneratedIcons, progress.GeneratedIcons + remaining)
-        : progress.IsSatisfied ? (progress.GeneratedIcons, progress.GeneratedIcons) : null;
+    /// <summary>
+    /// The pips: the cost's required resources, filled by the selected resources up to that cost, or null when the
+    /// engine's assessment does not know the requirement. Resources beyond the cost are the excess chip, not pips.
+    /// </summary>
+    internal static (int Filled, int Total)? Pips(PaymentProgress progress) => progress.Required is { } required
+        ? (Math.Min(progress.GeneratedIcons, required), required)
+        : null;
 
     internal static Control Create(PaymentProgress progress, string summary, InterfaceScale scale)
     {

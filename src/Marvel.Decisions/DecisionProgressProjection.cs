@@ -64,6 +64,7 @@ internal static class DecisionProgressProjection
         {
             Components = ResourcePaymentProgress.Components(cost, composer.Resources, composer.Values),
             RemainingRequired = ResourcePaymentProgress.RemainingRequired(cost, composer.Resources),
+            Required = ResourcePaymentProgress.Required(cost, composer.Resources),
             CanCoverCost = ResourcePayment.Allocate(cost, composer.Resources, composer.Values) is not null,
         };
     }

@@ -74,6 +74,31 @@ public sealed class DesignSystemMigrationTests
     }
 
     [Fact]
+    public void AnOverpaymentFillsTheCostAndCountsTheRestAsExcess()
+    {
+        var composer = Composer(new Affordance(3, "Play", 19, 0, "Web-Shooter",
+            Costs: [new CostOption(19, "1", Sources: [new ResourceSource(41, "Y"), new ResourceSource(42, "Y")])]));
+        composer.SelectAffordance(3);
+        composer.ToggleResource(41);
+        composer.ToggleResource(42);
+        PaymentProgress payment = composer.Progress().Payment;
+
+        Assert.Equal((1, 1), PaymentProgressTracker.Pips(payment));
+        Assert.Equal(1, payment.ExcessIcons);
+        DraftPart paid = Assert.Single(TableDraftSummary.Parts(composer, Prompt([Visible(3, 19)]))!,
+            part => part.Label == DecisionWording.DraftPaid);
+        Assert.Equal((1, 1), (paid.Filled, paid.Total));
+    }
+
+    [Fact]
+    public void AnUnknownRequirementHasNoPipsEvenWhenSatisfied()
+    {
+        var unknown = new PaymentProgress(CostSelectionState.Selected, 19, 1, 2, 2, 0, 0, 0, IsSatisfied: true);
+        Assert.Null(PaymentProgressTracker.Pips(unknown));
+        Assert.Equal((2, 3), PaymentProgressTracker.Pips(unknown with { Required = 3 }));
+    }
+
+    [Fact]
     public void TheAbilityWindowTitlesItsOneAbilityOrItsQuestion()
     {
         var prompt = new PromptPresentation("Choose a response", DecisionFrame.Empty, "", []);

@@ -47,11 +47,9 @@ internal static class TableDraftSummary
         return [.. state.Where(value => !string.IsNullOrWhiteSpace(value.Text))];
     }
 
-    // Selected resources fill pips against what the cost still needs, when the engine's assessment knows it.
     private static DraftPart PaymentPart(string text, PaymentProgress payment) =>
-        payment.RemainingRequired is { } remaining
-            ? new(text, DecisionWording.DraftPaid, payment.GeneratedIcons, payment.GeneratedIcons + remaining)
-            : payment.IsSatisfied ? new(text, DecisionWording.DraftPaid, payment.GeneratedIcons, payment.GeneratedIcons)
+        PaymentProgressTracker.Pips(payment) is { } pips
+            ? new(text, DecisionWording.DraftPaid, pips.Filled, pips.Total)
             : new(text);
 
     private static AffordancePresentation? Visible(PromptPresentation? prompt, int id, string? shownInstruction)
