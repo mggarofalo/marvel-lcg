@@ -273,6 +273,15 @@ readiness and counters. Mandatory nonresource costs come from the engine's
 typed cost description. These facts let the player assess an offer; View and
 Godot do not forecast defeat, reconstruct costs or infer legal choices from them.
 
+A payment can offer a source on another seat's table: any player may use a
+Resource ability on an encounter card (`rr:ability.8`), so the first player's
+Milano (16142) is offered in every player's payment. `PaymentSourcePresentation`
+carries the source card's published `Controller` (`CardLocationDescriptor`), and
+the payment row shows that seat as a chip, with the first-player token when that
+seat holds it, only when it is not the paying seat. The seat rail marks the
+first player from `TableContextDescriptor.FirstPlayer`. Both facts were already
+in protocol 46; neither adds a wire member nor changes a prompt record.
+
 ## Visibility policies
 
 The server supports 2 explicit policies:

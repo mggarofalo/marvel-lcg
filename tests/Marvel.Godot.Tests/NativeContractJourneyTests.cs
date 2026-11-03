@@ -79,6 +79,7 @@ public sealed class NativeContractJourneyTests
             "widow-preparation" => 3,
             "end-phase" or "card-look" or "bruno-0" or "bruno-1" or "bruno-3" => 2,
             "wakanda-daggers-first" or "wakanda-claws-first" => 4,
+            "milano-2" => 2,
             _ => 1,
         };
         Assert.Equal(expected, mutations.Length);
@@ -109,6 +110,7 @@ public sealed class NativeContractJourneyTests
     private static void VerifyCardChoices(string contract, NativeContractServer server, EngineRequest[] mutations)
     {
         if (contract == "card-look") VerifyLook(server, mutations);
+        if (ShipCommandNativeScene.Handles(contract)) MilanoNativeAssertions.Verify(contract, server, mutations);
         if (contract == "resource-declaration")
         {
             ResourceAllocation payment = Assert.Single(Assert.Single(mutations).Decision!.Allocated);

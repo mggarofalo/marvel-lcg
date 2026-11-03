@@ -107,6 +107,7 @@ internal static class MulliganSeatStripRenderer
     {
         string[] roles =
         [
+            selection.FirstPlayer == seat ? "First player" : string.Empty,
             selection.ActivePlayer == seat ? "Active" : string.Empty,
             selection.PromptOwner == seat ? "Answering" : string.Empty,
             selection.ViewedPrivateSeat == seat ? "Your seat" : string.Empty,

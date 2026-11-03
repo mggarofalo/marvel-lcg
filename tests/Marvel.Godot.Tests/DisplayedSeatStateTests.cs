@@ -122,6 +122,17 @@ public sealed class DisplayedSeatStateTests
         Assert.Equal(0, changed.ExpandedSeat);
     }
 
+    [Fact]
+    public void TheFirstPlayerIsCarriedOnlyWhileItsSeatIsOnTheTable()
+    {
+        var state = new DisplayedSeatState();
+        DisplayedSeatSnapshot Roles(int? first) => new("game-a", [0, 1], new DisplayedSeatRoles(1, null, 1, 1, first));
+
+        Assert.Equal(0, state.Update(Roles(0)).FirstPlayer);
+        Assert.Null(state.Update(Roles(4)).FirstPlayer);
+        Assert.Null(state.Update(Roles(null)).FirstPlayer);
+    }
+
     private static DisplayedSeatSnapshot Snapshot(
         string sessionKey,
         IReadOnlyList<int> seats,

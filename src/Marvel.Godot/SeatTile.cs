@@ -23,9 +23,10 @@ internal static class SeatTile
         };
     }
 
-    /// <summary>The seat's roles in display order; an observed seat has none.</summary>
+    /// <summary>The seat's roles in display order, the first-player token first; an observed seat has none.</summary>
     internal static TableFact[] Roles(int seat, DisplayedSeatSelection selection) =>
     [
+        .. selection.FirstPlayer == seat ? [TableFact.FirstPlayer] : Array.Empty<TableFact>(),
         .. selection.ActivePlayer == seat ? [TableFact.ActiveSeat] : Array.Empty<TableFact>(),
         .. selection.PromptOwner == seat ? [TableFact.AnsweringSeat] : Array.Empty<TableFact>(),
         .. selection.ViewedPrivateSeat == seat ? [TableFact.YourSeat] : Array.Empty<TableFact>(),

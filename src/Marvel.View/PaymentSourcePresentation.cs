@@ -17,6 +17,12 @@ public sealed record PaymentSourcePresentation(int Id, string Name, string Resou
     /// <summary>Authorized non-resource commitments of selecting this source.</summary>
     public string? CostDescription { get; init; }
 
+    /// <summary>
+    /// The seat the engine reports as controlling the source card, or null when the card is not in the
+    /// authorized snapshot or no seat controls it. It locates the source; eligibility stays engine-owned.
+    /// </summary>
+    public int? Controller { get; init; }
+
     /// <summary>Describes the offered source; its availability and output remain engine-owned.</summary>
     public static PaymentSourcePresentation From(ResourceSource source, WorldDescriptor world)
     {
@@ -31,6 +37,7 @@ public sealed record PaymentSourcePresentation(int Id, string Name, string Resou
                 ConditionalBonus = source.ConditionalBonus,
                 AbilityName = source.AbilityName,
                 CostDescription = source.CostDescription,
+                Controller = card.Location?.Controller is >= 0 and var controller ? controller : null,
             };
         }
         return new(source.Effect, "Resource ability", source.Generates, false, string.Empty)

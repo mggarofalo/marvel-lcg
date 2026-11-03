@@ -10,4 +10,5 @@ internal sealed record DisplayedSeatRoles(
     int? PromptOwner,
     int? ViewedPrivateSeat,
     int? ActivePlayer,
-    int? PublicFocusSeat);
+    int? PublicFocusSeat,
+    int? FirstPlayer = null);

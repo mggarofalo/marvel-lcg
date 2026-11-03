@@ -73,7 +73,8 @@ internal sealed class DisplayedSeatState
             known.ActivePlayer,
             known.PromptOwner,
             known.ViewedPrivateSeat,
-            known.PublicFocusSeat);
+            known.PublicFocusSeat,
+            known.FirstPlayer);
     }
 
     private int ExpandedSeat(DisplayedSeatRoles roles, int[] seats, int? focus)
@@ -111,7 +112,8 @@ internal sealed class DisplayedSeatState
         KnownSeat(roles?.PromptOwner, seats),
         KnownSeat(roles?.ViewedPrivateSeat, seats),
         KnownSeat(roles?.ActivePlayer, seats),
-        KnownSeat(roles?.PublicFocusSeat, seats));
+        KnownSeat(roles?.PublicFocusSeat, seats),
+        KnownSeat(roles?.FirstPlayer, seats));
 
     private static int? KnownSeat(int? seat, int[] seats) => Contains(seats, seat)
         ? seat

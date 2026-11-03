@@ -55,6 +55,9 @@ internal enum TableFact
     /// <summary>The rules that apply while the table is separated.</summary>
     SeparatedRules,
 
+    /// <summary>The seat holding the first-player token.</summary>
+    FirstPlayer,
+
     /// <summary>A seat whose turn it is.</summary>
     ActiveSeat,
 
@@ -150,4 +153,7 @@ internal enum TableFact
 
     /// <summary>A card the pending decision of another seat resolves.</summary>
     PendingSource,
+
+    /// <summary>Another seat controls an offered payment source.</summary>
+    SourceSeat,
 }
