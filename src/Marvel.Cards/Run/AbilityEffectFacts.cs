@@ -22,6 +22,12 @@ internal static class AbilityEffectFacts
         AbilityEffect.GiveStatus { Status: "stunned" } => new(PromptEffectKind.Stun, 0),
         AbilityEffect.GiveStatus { Status: "confused" } => new(PromptEffectKind.Confuse, 0),
         AbilityEffect.GiveStatus { Status: "tough" } => new(PromptEffectKind.Tough, 0),
+        AbilityEffect.Heal { Amount: AbilityNumber.Constant amount } => new(PromptEffectKind.Heal, amount.Value),
+        AbilityEffect.CardAction { Instruction: AbilityCardInstruction.Ready } => new(PromptEffectKind.Ready, 0),
+        AbilityEffect.CardAction { Instruction: AbilityCardInstruction.Exhaust } => new(PromptEffectKind.Exhaust, 0),
+        AbilityEffect.PlaceThreat { Amount: AbilityNumber.Constant amount } => new(PromptEffectKind.PlaceThreat, amount.Value),
+        AbilityEffect.MoveThreat { Amount: AbilityNumber.Constant amount, All: false } =>
+            new(PromptEffectKind.MoveThreat, amount.Value),
         AbilityEffect.Power power => Printed(power.Effect),
         AbilityEffect.Sequence { Effects.Length: 1 } sequence => Printed(sequence.Effects[0]),
         _ => null,

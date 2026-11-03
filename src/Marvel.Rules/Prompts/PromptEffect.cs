@@ -5,7 +5,10 @@ namespace Marvel.Rules.Prompts;
 /// effect and its printed amount.
 /// </summary>
 /// <param name="Kind">The effect.</param>
-/// <param name="Amount">The printed amount: damage dealt, threat removed or cards drawn; zero for a status.</param>
+/// <param name="Amount">
+/// The printed amount: damage dealt, threat removed, placed or moved, cards drawn or damage healed; zero for a status,
+/// readying or exhausting.
+/// </param>
 /// <remarks>
 /// The amount is the instruction's printed constant, as the description's "Printed damage" words it; modifiers,
 /// prevention and later effects can change the result. Which effects carry this fact is the engine's choice: only

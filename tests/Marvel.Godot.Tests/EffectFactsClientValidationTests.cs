@@ -10,6 +10,9 @@ public sealed class EffectFactsClientValidationTests
     [Theory]
     [InlineData(PromptEffectKind.Damage, 8, true)]
     [InlineData(PromptEffectKind.Stun, 0, true)]
+    [InlineData(PromptEffectKind.Heal, 2, true)]
+    [InlineData(PromptEffectKind.MoveThreat, 1, true)]
+    [InlineData(PromptEffectKind.Heal, -1, false)]
     [InlineData(PromptEffectKind.Damage, -1, false)]
     [InlineData((PromptEffectKind)99, 1, false)]
     public void APromptEffectIsCompleteWithAKnownKindAndNoNegativeAmount(PromptEffectKind kind, long amount, bool accepted)

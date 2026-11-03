@@ -176,6 +176,41 @@ public sealed class CoreTargetEffectDescriptionTests
         Assert.Equal("Deal damage to Rhino", Assert.Single(prompt.Affordances).CommitLabel);
     }
 
+    [Fact]
+    public void FirstAidCarriesItsPrintedHealAsATypedFact()
+    {
+        var world = Board();
+        world.Seats[0].IdentityCard!.TakeDamage(3);
+        var aid = world.CreateCard("01086", world.Seats[0].Hand);
+        var energy = world.CreateCard("01088", world.Seats[0].Hand);
+        var runner = AuthoredCards.Runner();
+        world.Abilities = runner;
+        var action = Assert.Single(runner.Actions(world, 0), ability => ability.Card == aid.ObjectId);
+
+        var events = runner.ExecuteAction(world, new PlayerAction(action, [energy.ObjectId], [])).Events.ToList();
+        Prompt prompt = Assert.IsType<Prompt>(Sequence.Work(world, Cards, runner, events));
+
+        Assert.Equal(new PromptEffect(PromptEffectKind.Heal, 2), prompt.Effect);
+    }
+
+    [Fact]
+    public void GetReadyCarriesReadyingAsATypedFactWithNoAmount()
+    {
+        var world = Board();
+        var ally = world.CreateCard("01051", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+        var ready = world.CreateCard("01069", world.Seats[0].Hand);
+        var runner = AuthoredCards.Runner();
+        world.Abilities = runner;
+        Reveal.EnterPlay(world, Cards, ally, [], abilities: runner);
+        ally.Exhaust();
+        var action = Assert.Single(runner.Actions(world, 0), ability => ability.Card == ready.ObjectId);
+
+        var events = runner.ExecuteAction(world, new PlayerAction(action, [], [])).Events.ToList();
+        Prompt prompt = Assert.IsType<Prompt>(Sequence.Work(world, Cards, runner, events));
+
+        Assert.Equal(new PromptEffect(PromptEffectKind.Ready, 0), prompt.Effect);
+    }
+
     private static World Board()
     {
         var world = new World(Cards, players: 1);

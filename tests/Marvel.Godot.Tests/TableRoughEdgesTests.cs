@@ -203,6 +203,11 @@ public sealed class TableRoughEdgesTests
     [InlineData(PromptEffectKind.Stun, 0, "Printed stun", "Icon_stun")]
     [InlineData(PromptEffectKind.Confuse, 0, "Printed confuse", "Icon_confuse")]
     [InlineData(PromptEffectKind.Tough, 0, "Printed tough", "Icon_tough")]
+    [InlineData(PromptEffectKind.Heal, 2, "Printed heal 2", "Icon_heal")]
+    [InlineData(PromptEffectKind.Ready, 0, "Printed ready", "Icon_ready")]
+    [InlineData(PromptEffectKind.Exhaust, 0, "Printed exhaust", "Icon_exhaust")]
+    [InlineData(PromptEffectKind.PlaceThreat, 1, "Printed threat placed 1", "Icon_place_threat")]
+    [InlineData(PromptEffectKind.MoveThreat, 2, "Printed threat moved 2", "Icon_move_threat")]
     public void APrintedEffectIsOneChipNamingItsPrintedAmount(PromptEffectKind kind, long amount, string label, string icon)
     {
         Wording wording = DecisionWording.Effect(new PromptEffect(kind, amount));

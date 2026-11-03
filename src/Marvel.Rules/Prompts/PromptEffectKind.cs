@@ -20,4 +20,19 @@ public enum PromptEffectKind
 
     /// <summary>Gives a tough status card (rr:tough).</summary>
     Tough = 5,
+
+    /// <summary>Heals damage (rr:heal).</summary>
+    Heal = 6,
+
+    /// <summary>Readies cards (rr:ready).</summary>
+    Ready = 7,
+
+    /// <summary>Exhausts cards (rr:exhausted).</summary>
+    Exhaust = 8,
+
+    /// <summary>Places threat on a scheme (rr:threat).</summary>
+    PlaceThreat = 9,
+
+    /// <summary>Moves threat from one scheme to another (rr:threat).</summary>
+    MoveThreat = 10,
 }

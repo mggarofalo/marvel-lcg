@@ -48,6 +48,7 @@ internal static class AbilityHealRecipients
             PublicKind = PublicDecisionKind.VisibleCardSelection,
             DisplayQuestion = $"Heal {group.Amount} damage from each of up to {group.Maximum} characters",
             Description = description,
+            Effect = new PromptEffect(PromptEffectKind.Heal, group.Amount),
             ContextCardIds = [context.Expressions.Source.ObjectId],
         };
     }
