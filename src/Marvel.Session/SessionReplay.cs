@@ -14,18 +14,42 @@ public static class SessionReplay
     public static Game Verify(
         SessionSave save,
         SessionCompatibility expected,
+        Func<SessionSetup, ReplayOpenedGame> open) =>
+        VerifyActive(save, expected, open, history: null);
+
+    /// <summary>
+    /// Verifies a save like <see cref="Verify"/> and returns its active game as
+    /// the construction-mode candidate for one more decision. The same replay
+    /// collects the active history, so the candidate's history needs no second
+    /// replay of the proposed save.
+    /// </summary>
+    public static CandidateReplay BeginCandidate(
+        SessionSave save,
+        SessionCompatibility expected,
         Func<SessionSetup, ReplayOpenedGame> open)
+    {
+        var history = new ActiveHistory();
+        return new CandidateReplay(VerifyActive(save, expected, open, history), history);
+    }
+
+    private static Game VerifyActive(
+        SessionSave save,
+        SessionCompatibility expected,
+        Func<SessionSetup, ReplayOpenedGame> open,
+        ActiveHistory? history)
     {
         SessionSaveJson.Validate(save);
         ArgumentNullException.ThrowIfNull(expected);
         ArgumentNullException.ThrowIfNull(open);
         RequireCompatibility(expected, save.Compatibility);
 
-        ReplayResult complete = SessionReplayVerification.Replay(
-            save, save.Units.Count, open, requireExposures: true);
-        Game active = save.Cursor == save.Units.Count
-            ? complete.Game
-            : SessionReplayVerification.Replay(save, save.Cursor, open, requireExposures: true).Game;
+        bool complete = save.Cursor == save.Units.Count;
+        ReplayResult verified = SessionReplayVerification.Replay(
+            save, save.Units.Count, open, requireExposures: true, complete ? history : null);
+        Game active = complete
+            ? verified.Game
+            : SessionReplayVerification.Replay(
+                save, save.Cursor, open, requireExposures: true, history).Game;
         RequireCurrentPrompt(save.CurrentPrompt, active.Pending);
         return active;
     }
@@ -68,14 +92,14 @@ public static class SessionReplay
         ArgumentNullException.ThrowIfNull(expected);
         ArgumentNullException.ThrowIfNull(open);
         RequireCompatibility(expected, save.Compatibility);
-        var history = new List<HistoryUnitInspection>(save.Cursor);
+        var history = new ActiveHistory();
         _ = SessionReplayVerification.Replay(
             save,
             save.Cursor,
             open,
             requireExposures: true,
             history);
-        return history;
+        return history.Complete;
     }
 
     /// <summary>Derives the history role of a root decision from engine truth.</summary>

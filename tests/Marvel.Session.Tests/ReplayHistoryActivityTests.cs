@@ -21,7 +21,7 @@ public sealed class ReplayHistoryActivityTests
         JournalStep step = JournalStep.From(0, prompt, Decision.Decline, [], 0, "synthetic state");
         var unit = new JournalUnit("phase_step", "complete", 0, 0, 0, "Mulligan", [step, step], []);
         var history = new ReplayHistory();
-        history.ObserveRoot(unit, step, game, prompt, Decision.Decline);
+        history.ObserveRoot(0, game, prompt, Decision.Decline);
         GameEvent[] first = Discard(7);
         GameEvent[] second = Discard(8);
         history.ObserveEvents(first);

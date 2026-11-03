@@ -16,11 +16,15 @@ internal sealed class ReplayHistory
         private string? actorName;
         private string? verb;
         private string? action;
+        private string? phaseStepAction;
         private int? subject;
 
+        /// <summary>
+        /// Records the root decision before it resolves. The unit's role is read
+        /// when the unit completes, because a terminal decision renames it.
+        /// </summary>
         public void ObserveRoot(
-            JournalUnit unit,
-            JournalStep step,
+            int decidingSeat,
             Game game,
             Prompt prompt,
             Decision decision)
@@ -29,20 +33,23 @@ internal sealed class ReplayHistory
                 ? null
                 : prompt.Affordances.Single(option => option.Id == decision.Affordance);
             Card? anchorCard = AnchorCard(game, selected);
-            actor = step.Decision.Actor;
-            actorName = game.State.Seats[step.Decision.Actor].Name;
+            actor = decidingSeat;
+            actorName = game.State.Seats[decidingSeat].Name;
             verb = HistoryVerb(game, selected, anchorCard, decision);
-            action = HistoryAction(game, unit, prompt, selected, anchorCard);
+            phaseStepAction = selected?.Label ?? prompt.Label;
+            action = anchorCard is not null
+                ? game.State.Facts.Title(anchorCard.FaceId)
+                : phaseStepAction;
             subject = anchorCard?.ObjectId;
         }
 
-        public void ObserveResources(JournalStep step, Decision decision, Game game)
+        public void ObserveResources(int decidingSeat, Decision decision, Game game)
         {
             foreach (int generator in decision.Spent.Where(resourceIds.Add))
             {
                 resourceIdsInOrder.Add(generator);
                 resources.Add(game.State.ResourceAbilities.ResourceGeneratorName(
-                    game.State, step.Decision.Actor, generator));
+                    game.State, decidingSeat, generator));
             }
         }
 
@@ -62,8 +69,9 @@ internal sealed class ReplayHistory
                 unit.Role,
                 unit.Phase,
                 verb,
-                action ?? throw new ReplayDivergenceException(
-                    $"unit {unitIndex} has no history action"),
+                (unit.Role == "phase_step" ? phaseStepAction : action)
+                    ?? throw new ReplayDivergenceException(
+                        $"unit {unitIndex} has no history action"),
                 subject,
                 resourceIdsInOrder,
                 resources,
@@ -80,23 +88,6 @@ internal sealed class ReplayHistory
             }
 
             return game.State.Cards[anchor];
-        }
-
-        private static string HistoryAction(
-            Game game,
-            JournalUnit unit,
-            Prompt prompt,
-            Affordance? selected,
-            Card? anchorCard)
-        {
-            if (unit.Role == "phase_step")
-            {
-                return selected?.Label ?? prompt.Label;
-            }
-
-            return anchorCard is not null
-                ? game.State.Facts.Title(anchorCard.FaceId)
-                : selected?.Label ?? prompt.Label;
         }
 
         private static string? HistoryVerb(
