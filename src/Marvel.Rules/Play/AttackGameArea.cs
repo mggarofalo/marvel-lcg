@@ -26,11 +26,13 @@ public static class AttackGameArea
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(occurrence);
         ArgumentNullException.ThrowIfNull(card);
-        var attack = occurrence.CompletedEnemyAttack is not null ? world.FinishedAttack : world.Attack;
-        return attack is null || Places.CanAffect(world, world.Cards[attack.Enemy], card);
+        return InReach(world, occurrence.CompletedEnemyAttack is not null ? world.FinishedAttack : world.Attack, card);
     }
 
     /// <summary>Whether <paramref name="card"/> may defend the attack underway.</summary>
-    internal static bool CanDefend(World world, Card card) =>
-        world.Attack is not { } attack || Places.CanAffect(world, world.Cards[attack.Enemy], card);
+    internal static bool CanDefend(World world, Card card) => InReach(world, world.Attack, card);
+
+    // An attack that names no enemy card has nobody to be out of reach of.
+    private static bool InReach(World world, EnemyAttack? attack, Card card) =>
+        attack is not { Enemy: >= 0 } || Places.CanAffect(world, world.Cards[attack.Enemy], card);
 }
