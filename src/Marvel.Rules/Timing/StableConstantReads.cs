@@ -87,6 +87,8 @@ internal sealed class StableConstantReads
         internal bool Describes(ContinuousEffects effects) =>
             SameSequence(effects.world.Cards, areas, (card, area) => ReferenceEquals(card.Area, area))
             && SameSequence(effects.entries, entries, ReferenceEquals)
+            // A cascade preflight can replace one hidden batch with another of the
+            // same size; only a nested cascade reaches that, so no test drives it.
             && SameSequence(effects.suppressedConstants, suppressedConstants, (live, kept) => live == kept)
             && SameSet(effects.suppressed, suppressed)
             && SameSet(effects.departing, departing);

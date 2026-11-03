@@ -118,6 +118,32 @@ public sealed class StableConstantReadTests
         _ = table.World.WindowAbilities.Waiting(table.World, Occurrence(), WindowKind.Response);
     }
 
+    [Rule("rr:modifiers.2")]
+    [Fact]
+    public void AnEffectReplacedInsideAReadReachesTheConstantsThatDependOnIt()
+    {
+        // One lasting effect ends and another begins, so the board holds as many
+        // registered effects as before but no longer the one the target's
+        // constant depends on.
+        var table = Table.Create(dependent: true, sourceGrants: false);
+        var bonus = table.World.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect, "attack", Amount: 1,
+            Card: table.Source.ObjectId, Affects: table.Target.ObjectId,
+            Lasts: Duration.WhileInPlay));
+        table.Abilities.WhileWaiting = world =>
+        {
+            Assert.Equal(1, Thwart(world, table.Target));
+            bonus.Dispose();
+            world.Effects.Register(new ContinuousEffect(
+                EffectSource.LastingEffect, "attack", Amount: 1,
+                Card: table.Target.ObjectId, Affects: table.Source.ObjectId,
+                Lasts: Duration.WhileInPlay));
+            Assert.Equal(0, Thwart(world, table.Target));
+        };
+
+        _ = table.World.WindowAbilities.Waiting(table.World, Occurrence(), WindowKind.Response);
+    }
+
     [Rule("rr:hit-points.3.1")]
     [Fact]
     public void AConstantEndingPreflightedInsideAReadFindsTheCharacterItLeavesLethal()
