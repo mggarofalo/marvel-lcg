@@ -115,7 +115,12 @@ defense uses a separate shield.
 
 Accepted activity uses native effect glyphs, source/target impulses and local
 quantity or status marks on visible affected objects. A zoomable chronology in
-the table seam shares occurrences with History's expandable account. Ordinary
+the table seam shares occurrences with History's expandable account. Its head
+tracks the round at the shown point: "Round N", one pip per phase of the round
+filled through the current one, and the phase as a chip, read from the engine's
+phase-boundary events. It is absent when the chronology holds no boundary at or
+before that point, and the phase chip, then the tracker, give way when the seam
+is too narrow. Ordinary
 actions group costs and consequences beneath their intention; phase-wide ready,
 draw and discard batches retain their semantic boundaries.
 

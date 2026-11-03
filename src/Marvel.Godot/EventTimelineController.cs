@@ -12,6 +12,8 @@ internal sealed class EventTimelineController(Main main) : IDisposable
     private PanelContainer? panel;
     private Control? rail;
     private Label? caption;
+    private HBoxContainer? roundTracker;
+    private (int Round, string Phase)? shownRound;
     private HBoxContainer? references;
     private EventPresentation? referenceEntry;
     private PanelContainer? popup;
@@ -76,9 +78,11 @@ internal sealed class EventTimelineController(Main main) : IDisposable
         if (TableHistoryDrawer.IsExpanded(main) && !CardPaymentWorkspaceLayout.Active(main))
         {
             float width = TableHistoryDrawer.ExpandedWidth(main);
+            YieldRound(width);
             panel.Size = new Vector2(width, panel.Size.Y);
             panel.GlobalPosition = new Vector2(main.GetViewportRect().Size.X - width - 16, 88);
         }
+        else YieldRound(anchor.Size.X);
         panel.SetMeta("timeline_count", archive.Entries.Count);
     }
 
@@ -102,6 +106,9 @@ internal sealed class EventTimelineController(Main main) : IDisposable
         var headline = new HBoxContainer();
         body.AddChild(headline);
         caption.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        roundTracker = new HBoxContainer { Name = "TimelineRound", Visible = false };
+        roundTracker.AddThemeConstantOverride("separation", 6);
+        headline.AddChild(roundTracker);
         headline.AddChild(caption);
         references = new HBoxContainer { Name = "ActivityReference" };
         headline.AddChild(references);
@@ -182,6 +189,7 @@ internal sealed class EventTimelineController(Main main) : IDisposable
         string text = selected < 0 ? "" : Copy(archive.Entries[selected].Event);
         if (viewport.Following && active is not null) text = Copy(active);
         caption.Text = text;
+        RefreshRound(viewport.Following ? archive.Entries.Count - 1 : selected);
         RefreshReferences(selected);
         rail.AccessibilityName = text;
         panel.SetMeta("timeline_selected", selected);
@@ -193,6 +201,26 @@ internal sealed class EventTimelineController(Main main) : IDisposable
             lastSelection = selected;
             SelectionChanged?.Invoke(selected);
         }
+    }
+
+    private void RefreshRound(int index)
+    {
+        (int Round, string Phase)? point = TimelineRoundTracker.At(archive.Entries, index);
+        if (roundTracker is null || point == shownRound && roundTracker.GetChildCount() > 0 == point.HasValue) return;
+        shownRound = point;
+        TimelineRoundTracker.Present(roundTracker, point, main.interfaceScale);
+    }
+
+    // The round tracker never widens the timeline past its place: the phase chip, then the tracker, step aside.
+    private void YieldRound(float width)
+    {
+        if (roundTracker is null || shownRound is null) return;
+        roundTracker.Visible = true;
+        Control? phase = roundTracker.GetNodeOrNull<Control>("PhaseChip");
+        if (phase is not null) phase.Visible = true;
+        if (panel!.GetCombinedMinimumSize().X <= width) return;
+        if (phase is not null) phase.Visible = false;
+        if (panel.GetCombinedMinimumSize().X > width) roundTracker.Visible = false;
     }
 
     private void RefreshReferences(int selected)
