@@ -96,7 +96,8 @@ internal sealed class DeckEditorController : IDisposable
         int hero = workspace.Catalog.Heroes.ToList().FindIndex(item => item.IdentityFaces.Contains(draft.HeroCode, StringComparer.Ordinal));
         ui.Hero.Select(hero + 1);
         rendering = false;
-        ui.Status.Text = hero < 0 ? "This imported identity is outside the installed playable content. All cards have been retained." : "";
+        DeckEditorStatus.Say(ui, hero < 0 ? "Identity not installed" : "",
+            hero < 0 ? "This imported identity is outside the installed playable content. All cards have been retained." : "");
         Changed();
         if (inspectIdentity) browser.InspectIdentity();
     }
@@ -141,7 +142,7 @@ internal sealed class DeckEditorController : IDisposable
         workspace.Save(store);
         ReloadLibrary();
         browser.Render();
-        ui.Status.Text = "Draft saved locally. Invalid drafts can be saved and corrected later.";
+        DeckEditorStatus.Say(ui, "Draft saved locally", "Invalid drafts can be saved and corrected later.");
     });
 
     private void ReloadLibrary() => Try(() =>
@@ -172,7 +173,7 @@ internal sealed class DeckEditorController : IDisposable
             if (workspace.Saved?.Id == item.Id) workspace.ForgetSaved();
             ReloadLibrary();
             browser.Render();
-            ui.Status.Text = "Saved deck deleted. The open copy stays in memory; edit or Save draft to keep it again.";
+            DeckEditorStatus.Say(ui, "Saved deck deleted", "The open copy stays in memory; edit or Save draft to keep it again.");
         });
         ui.Confirm.DialogText = $"Delete saved deck \"{item.Draft.Name}\"? Running games retain their captured decks.";
         ui.Confirm.OkButtonText = "Delete saved deck";
@@ -183,7 +184,8 @@ internal sealed class DeckEditorController : IDisposable
     {
         if (!workspace.CanUse) return;
         assign(workspace.Draft!, seat);
-        ui.Status.Text = $"Deck captured for seat {seat + 1}. Further edits will not change that selection until you choose Use again.";
+        DeckEditorStatus.Say(ui, $"Deck captured for seat {seat + 1}",
+            "Further edits will not change that selection until you choose Use deck again.");
     });
 
     private void PickFile(bool export)
@@ -198,7 +200,7 @@ internal sealed class DeckEditorController : IDisposable
         if (ui.File.FileMode == FileDialog.FileModeEnum.SaveFile)
         {
             System.IO.File.WriteAllBytes(path, MarvelCdbDeckJson.Write(workspace.Draft!));
-            ui.Status.Text = "JSON exported. The local draft is unchanged.";
+            DeckEditorStatus.Say(ui, "JSON exported", "The local draft is unchanged.");
             return;
         }
         if (new FileInfo(path).Length > MarvelCdbDeckJson.MaximumBytes) throw new InvalidDataException("The deck file exceeds 1 MiB.");
@@ -216,12 +218,12 @@ internal sealed class DeckEditorController : IDisposable
         ui.ImportStatus.Text = "Downloading and checking the deck…";
         ui.Fetch.Disabled = true;
         ui.CancelFetch.Disabled = false;
-        ui.Status.Text = "Downloading a deck snapshot… Your current draft remains open.";
+        DeckEditorStatus.Say(ui, "Downloading deck…", "Your current draft remains open until the import finishes.");
         try
         {
             var draft = await importer.ImportAsync(ui.Url.Text, attempt.Token);
             if (attempt.IsCancellationRequested) return;
-            if (revision != workspace.Revision) { ui.ImportStatus.Text = ui.Status.Text = "Your draft changed during import. Import again when ready to replace it."; return; }
+            if (revision != workspace.Revision) { ui.ImportStatus.Text = "Your draft changed during import. Import again when ready to replace it."; DeckEditorStatus.Say(ui, ui.ImportStatus.Text, ""); return; }
             PreserveThen(() => Replace(draft));
             ui.ImportDialog?.Hide();
         }
@@ -235,7 +237,7 @@ internal sealed class DeckEditorController : IDisposable
 
     private void ReportImportFailure(string message)
     {
-        if (!lifetime.IsCancellationRequested) ui.ImportStatus.Text = ui.Status.Text = message;
+        if (!lifetime.IsCancellationRequested) { ui.ImportStatus.Text = message; DeckEditorStatus.Say(ui, message, ""); }
     }
 
     private void PreserveThen(Action action) => Try(() =>
@@ -250,7 +252,7 @@ internal sealed class DeckEditorController : IDisposable
     private void Try(Action action)
     {
         try { action(); }
-        catch (Exception error) { ui.Status.Text = error.Message; }
+        catch (Exception error) { DeckEditorStatus.Say(ui, error.Message, ""); }
     }
 
     public void Dispose()

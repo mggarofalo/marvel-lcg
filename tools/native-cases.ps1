@@ -79,7 +79,9 @@ foreach ($entry in $selected) {
         MARVEL_UI_SCALE = $entry.scale; MARVEL_SMOKE_MOTION = $entry.motion;
         MARVEL_SMOKE_VIEWPORT = $entry.viewport; MARVEL_SMOKE_TWO_PLAYER = ($entry.players -eq 2).ToString().ToLowerInvariant() }
     if ($entry.environment) { foreach ($key in $entry.environment.Keys) { $environment[$key] = $entry.environment[$key] } }
-    $arguments = @('--headless', '--audio-driver', 'Dummy', '--path', "$repoRoot/src/Marvel.Godot", '--script', $entry.script)
+    # Godot's own log goes beside the case log, never into the player's user:// store.
+    $arguments = @('--headless', '--audio-driver', 'Dummy', '--log-file', (Join-Path $ResultsDirectory ($entry.id + '.godot.log')),
+        '--path', "$repoRoot/src/Marvel.Godot", '--script', $entry.script)
     if ($entry.arguments) {
         $arguments += '--'
         $arguments += @(Resolve-NativeArguments $entry $fixturePaths)

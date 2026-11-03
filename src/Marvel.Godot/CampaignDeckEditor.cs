@@ -26,6 +26,7 @@ internal static class CampaignDeckEditor
         var ui = new DeckEditorControls(main);
         ui.Window.Title = hero.Name + " campaign deck";
         ui.Seat.Clear(); ui.Seat.AddItem($"Player {seat + 1}"); ui.Seat.Disabled = true;
+        ui.Close.Text = "Back to campaign";
         var store = new LocalDeckStore(System.Environment.GetEnvironmentVariable("MARVEL_DECK_LIBRARY_DIRECTORY")
             ?? ProjectSettings.GlobalizePath("user://decks"));
         var editor = new DeckEditorController(ui, client, workspace, store, (draft, _) =>

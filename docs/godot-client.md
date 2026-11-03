@@ -35,8 +35,9 @@ A busy or inaccessible save root fails startup visibly; the client never falls
 back to another directory or bypasses the exclusive writer lease.
 
 Setup includes a [deck browser, builder and local library](deck-construction.md)
-with MarvelCDB JSON and published URL import. Open **Deck library · browse, build,
-import**, then capture a valid deck for a seat before starting the game.
+with MarvelCDB JSON and published URL import. Open **Deck library**, then capture
+a valid deck for a seat before starting the game. Each seat's deck stands under the
+entry as a chip: "1 · Starter", or the captured deck's name.
 
 For a short current-decision check, start Iron Man against Rhino on Standard
 with seed `7`. Keep the opening hand, end the turn and finish the player phase.
@@ -160,8 +161,10 @@ Optional windows include Pass; choosing a complete effect commits it directly. F
 required decisions kept in the same surface. A notification is the ability's title
 and its facts as chips: what happened, In progress while it still resolves, and
 the next decision, each whole on hover. A scrolling collection's cue counts the
-cards it does not wholly show ("+2 ▸"). A finished game states its result once on
-the table: the heading and its reason chip, with no second notice. Complex costs and selections still
+cards it does not wholly show and points where they lie: "+2 ▸" for a sideways row,
+"+2 ▾" for the side-scheme stack and the seat rail. A finished game states its result once on
+the table: the heading and its reason chip. The only other surface is the Review
+game action, which opens the history. Complex costs and selections still
 use the prompt-bound composer; the client never answers a future prompt itself.
 
 The MARVEL-492 SVG direction is approved. Acceptance of this implementation
@@ -451,7 +454,10 @@ plaintext, so this option is for development and trusted private networks, not
 for exposure to the Internet.
 
 Join requires the server endpoint, the host's game label and a one-time seat
-invitation. The invitation field is masked and cleared before the attach request
+invitation; a tracker beside Join fills one pip per input and names the missing
+ones on hover. The join form shows no deck choice, because the host's decks
+apply. The host's offer is a "Seat N invitation" chip beside Copy invitation.
+The invitation field is masked and cleared before the attach request
 is sent. A used, expired or unknown invitation is not retried; ask the host for
 a new one. While another seat owns the current decision, the joined client
 renders the table as an in-progress waiting view.
@@ -812,6 +818,12 @@ execution or owner acceptance.
 
 The **Campaigns** manager lists saved campaigns and supports rename, archive/
 restore, export, import as an independent copy, and confirmed permanent deletion.
+It states the campaign log rather than explaining it: a scenario tracker with one
+pip per scenario through the current one, chips for the phase, difficulties,
+attempt and delay, one line per roster seat (hit points, recovery owed, sitting
+out, campaign cards, Edit deck) and label chips before the weapons, consumed and
+imprisoned card links. Each phase's sentence and each preparation correction is
+on hover; the corrections are counted in a "To fix N" chip beside Begin.
 The `campaign-manager-100` native journey creates and plays a real campaign,
 uses the file dialogs to transfer its active game, resumes the copy, and deletes
 only that copy after checking cancellation. Portable format and recovery

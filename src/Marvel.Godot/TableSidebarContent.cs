@@ -37,6 +37,22 @@ internal static class TableSidebarContent
             .AddThemeFontSizeOverride("font_size", 14);
     }
 
+    /// <summary>States the host's open invitation as a chip naming its seat, explained on hover.</summary>
+    internal static void ShowInvitation(Main main, int seat)
+    {
+        Control row = main.invitationOffer.GetNode<Control>("Margin/Row");
+        row.GetNode<Label>("Copy").Visible = false;
+        if (row.GetNodeOrNull<Control>("InvitationSeat") is { } prior)
+        {
+            row.RemoveChild(prior);
+            prior.QueueFree();
+        }
+        PanelContainer chip = Chip.Create("InvitationSeat", SetupWording.Invitation(seat), null, main.decisions.ReadingScale);
+        chip.SizeFlagsHorizontal = Control.SizeFlags.ShrinkBegin;
+        row.AddChild(chip);
+        row.MoveChild(chip, 0);
+    }
+
     // Which seat you play, whose turn it is and which seat the table shows, as chips named on hover.
     private static HFlowContainer SeatContext(WorldDescriptor world, int? inspectedSeat, InterfaceScale scale)
     {

@@ -36,7 +36,7 @@ func _run() -> void:
 	quit(0)
 
 func _check_deck_window() -> bool:
-	if not await _activate(_button(main, "Deck library · browse, build, import")): return false
+	if not await _activate(_button(main, "Deck library")): return false
 	for attempt in range(400):
 		if main.has_node("DeckLibrary"): break
 		await create_timer(0.025).timeout

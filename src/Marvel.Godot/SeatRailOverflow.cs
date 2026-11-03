@@ -8,8 +8,8 @@ internal static class SeatRailOverflow
     /// <summary>Adds the cue at the rail's foot and recounts whenever the rail scrolls or its tiles resize.</summary>
     internal static Label Add(Control surface, ScrollContainer viewport, Control strip, InterfaceScale scale)
     {
-        Label cue = OverflowCue.Create("SeatOverflow", 0, TableWording.SeatOverflow, scale);
-        cue.Text = OverflowCue.Text(1); // sized for one line of the cue; the first count replaces it
+        Label cue = OverflowCue.Create("SeatOverflow", 0, TableWording.SeatOverflow, scale, OverflowAxis.Down);
+        cue.Text = OverflowCue.Text(1, OverflowAxis.Down); // sized for one line of the cue; the first count replaces it
         cue.Size = new Vector2(viewport.Size.X - 16, cue.GetCombinedMinimumSize().Y);
         cue.Position = viewport.Position + new Vector2(0, viewport.Size.Y - cue.Size.Y);
         cue.ZIndex = 25;

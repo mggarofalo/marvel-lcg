@@ -25,9 +25,11 @@ internal sealed class CampaignControls
     private readonly VBoxContainer preview = new() { CustomMinimumSize = new(410, 0) };
     internal Label Status { get; } = new() { Name = "CampaignStatus", AutowrapMode = TextServer.AutowrapMode.WordSmart };
     internal Button Retry { get; } = new() { Text = "Recover pending choice", Visible = false };
+    internal InterfaceScale Scale { get; }
 
     internal CampaignControls(Main main)
     {
+        Scale = main.interfaceScale;
         ModalWindowFocus.Bind(Window);
         Window.Theme = main.Theme;
         main.AddChild(Window);
@@ -56,7 +58,7 @@ internal sealed class CampaignControls
         var previewScroll = new ScrollContainer { CustomMinimumSize = new(430, 0),
             HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
         workspace.AddChild(previewScroll); previewScroll.AddChild(preview);
-        preview.AddChild(Text("Point to a card name, or focus it with the keyboard, to read its full card."));
+        preview.AddChild(PreviewCaption());
         Content.AddChild(Status); Content.AddChild(Retry);
         Window.CloseRequested += Window.Hide;
     }
@@ -83,7 +85,16 @@ internal sealed class CampaignControls
     internal void Inspect(DeckCard card)
     {
         foreach (Node child in preview.GetChildren()) { preview.RemoveChild(child); child.QueueFree(); }
-        preview.AddChild(card.Preview is { } face ? DeckCardPreview.Create(face) : Text(card.Title + "\n" + card.Text));
+        preview.AddChild(PreviewCaption());
+        preview.AddChild(card.Preview is { } face ? DeckCardPreview.Create(face) : Text(card.Title + "\n" + card.Text, Scale));
+    }
+
+    // The preview column's name; hovering or focusing a card name fills it, as its tooltip says.
+    private Label PreviewCaption()
+    {
+        Label caption = TableBlockStyle.Whole("PreviewCaption", "Card preview", Scale, VisualSystem.Palette.MutedText);
+        caption.TooltipText = "Point to a card name, or focus it with the keyboard, to read its full card.";
+        return caption;
     }
 
     internal void Clear()
@@ -91,19 +102,11 @@ internal sealed class CampaignControls
         foreach (Node child in Body.GetChildren()) { Body.RemoveChild(child); child.QueueFree(); }
     }
 
-    internal static Label Text(string value)
+    internal static Label Text(string value, InterfaceScale scale)
     {
         var label = new Label { Text = value, AutowrapMode = TextServer.AutowrapMode.WordSmart,
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
-        label.AddThemeFontSizeOverride("font_size", 20);
+        label.AddThemeFontSizeOverride("font_size", VisualSystem.Type(scale).Body);
         return label;
-    }
-    internal static Button Action(VBoxContainer parent, string text, Action action)
-    {
-        var button = new Button { Text = text, Alignment = HorizontalAlignment.Left };
-        button.AddThemeFontSizeOverride("font_size", 18);
-        button.Pressed += action;
-        parent.AddChild(button);
-        return button;
     }
 }

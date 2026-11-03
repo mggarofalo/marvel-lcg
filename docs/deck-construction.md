@@ -1,6 +1,6 @@
 # Deck browser, builder and import
 
-Open **Deck library · browse, build, import** from desktop setup. The labelled
+Open **Deck library** from desktop setup. The labelled
 identity selector comes first. Changing identity replaces the supplied signature
 recipe and retains all other draft cards. A new deck starts with that
 identity's signature cards. Select **Preview identity** to inspect either form using the Hero / Alter ego tabs.
@@ -8,7 +8,7 @@ Card lists show names and quantities; their full procedural previews retain
 printed rules, symbols, traits and stats.
 
 Card search supports MarvelCDB field keys, quoted phrases, pipe alternatives,
-AND clauses and numeric comparisons. **Filters** contains aspect/type/sort controls and a field/operator/value query builder. Search defaults to playable Core Set and Rise of Red Skull cards. The scope selector also exposes all
+AND clauses and numeric comparisons; the syntax is the search fields' hover. The card count and save state are chips beside validity, and status messages are a few words with their detail on hover. **Filters** contains aspect/type/sort controls and a field/operator/value query builder. Search defaults to playable Core Set and Rise of Red Skull cards. The scope selector also exposes all
 research cards, player cards or encounter cards from the complete offline snapshot.
 Research presence never admits a card to gameplay. Search-only metadata is generated offline
 in `datasets/cards/search.json`; gameplay card bytes and compatibility hashes

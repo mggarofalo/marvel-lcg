@@ -48,7 +48,7 @@ foreach ($journey in @('create', 'resume')) {
     try {
         $environment.MARVEL_CAMPAIGN_JOURNEY = $journey
         $environment.MARVEL_CAMPAIGN_JOURNEY_CAPTURE = "$fixture/$journey.png"
-        $result = Invoke-NativeProcess -Executable $GodotBin -Arguments @('--path', "$repo/src/Marvel.Godot",
+        $result = Invoke-NativeProcess -Executable $GodotBin -Arguments @('--log-file', "$fixture/$journey.godot.log", '--path', "$repo/src/Marvel.Godot",
             '--rendering-method', 'gl_compatibility', '--script', 'res://smoke/campaign_entry_smoke.gd') `
             -Environment $environment -TimeoutSeconds 120 -LogPath "$fixture/$journey.log" -WorkingDirectory $repo
         if ($result.ExitCode -ne 0 -or $result.TimedOut -or $result.Output -notmatch 'RORS_CAMPAIGN_ENTRY_OK') {

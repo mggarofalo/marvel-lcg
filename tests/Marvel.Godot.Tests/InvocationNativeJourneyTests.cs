@@ -31,7 +31,8 @@ public sealed class InvocationNativeJourneyTests
             RedirectStandardOutput = true, RedirectStandardError = true,
         };
         foreach (string argument in new[] { rendered ? "--minimized" : "--headless",
-            "--audio-driver", "Dummy", "--path", Path.Combine(RepositoryPaths.Root, "src", "Marvel.Godot"),
+            "--audio-driver", "Dummy", "--log-file", Path.Combine(directory, "godot.log"),
+            "--path", Path.Combine(RepositoryPaths.Root, "src", "Marvel.Godot"),
             "--script", "res://smoke/automation/invocation_acceptance.gd" }) start.ArgumentList.Add(argument);
         start.Environment["MARVEL_ENGINE_ENDPOINT"] = server.Endpoint;
         start.Environment["MARVEL_SMOKE_TWO_PLAYER"] = "true";

@@ -22,8 +22,8 @@ public sealed class CampaignRefusalClientTests
         Assert.Equal(0, CampaignConnection.FirstResumable([ordinary, refused]));
         Assert.Equal(-1, CampaignConnection.FirstResumable([refused]));
         Assert.Equal(-1, CampaignConnection.FirstResumable([]));
-        Assert.Contains("delete only", CampaignLibrary.Summary(refused, null), StringComparison.Ordinal);
-        Assert.DoesNotContain("delete only", CampaignLibrary.Summary(ordinary, null), StringComparison.Ordinal);
+        Assert.Equal([CampaignWording.DeleteOnly], CampaignLibrary.Summary(refused));
+        Assert.DoesNotContain(CampaignWording.DeleteOnly, CampaignLibrary.Summary(ordinary));
     }
 
     [Fact]

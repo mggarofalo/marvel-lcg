@@ -70,9 +70,10 @@ internal static class SchemeStackCollection
             MeasureOverflow();
         }
         // The cue counts the schemes the stack does not wholly show; scrolling reveals them.
-        Label overflow = OverflowCue.Create("ContinuousOverflow", 0, "Scroll down for the rest.", faces.ReadingScale);
+        Label overflow = OverflowCue.Create("ContinuousOverflow", 0, "Scroll down for the rest.", faces.ReadingScale,
+            OverflowAxis.Down);
         overflow.MouseFilter = Control.MouseFilterEnum.Ignore;
-        overflow.Text = OverflowCue.Text(bottom > bounds.Size.Y - 26 ? 1 : 0);
+        overflow.Text = OverflowCue.Text(bottom > bounds.Size.Y - 26 ? 1 : 0, OverflowAxis.Down);
         overflow.Visible = bottom > bounds.Size.Y - 26;
         panel.AddChild(overflow);
         void MeasureOverflow() => Callable.From(() =>

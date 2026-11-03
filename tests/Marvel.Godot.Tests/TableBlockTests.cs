@@ -108,6 +108,14 @@ public sealed class TableBlockTests
     [InlineData(3, "+3 ▸")]
     public void AnOverflowCueCountsWhatIsHidden(int hidden, string text) => Assert.Equal(text, OverflowCue.Text(hidden));
 
+    [Fact]
+    public void AVerticalOverflowCuePointsDownAndASidewaysOnePointsAcross()
+    {
+        Assert.Equal("+2 ▾", OverflowCue.Text(2, OverflowAxis.Down));
+        Assert.Equal("+2 ▸", OverflowCue.Text(2, OverflowAxis.Across));
+        Assert.Equal("", OverflowCue.Text(0, OverflowAxis.Down));
+    }
+
     [Theory]
     [InlineData(0, 300, 0)]
     [InlineData(0, 179, 3)]

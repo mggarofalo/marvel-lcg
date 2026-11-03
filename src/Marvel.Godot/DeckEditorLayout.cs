@@ -33,8 +33,8 @@ internal static class DeckEditorLayout
         ui.Name.TooltipText = "Deck name · edits are preserved when you leave";
         ui.Hero.SizeFlagsHorizontal = Control.SizeFlags.Fill;
         ui.Hero.CustomMinimumSize = new(220, 0);
-        ui.Count.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-        Row(outer, new Label { Text = "Identity" }, ui.Hero, ui.InspectIdentity, ui.Count, ui.Validity, ui.SaveState);
+        Row(outer, new Label { Text = "Identity" }, ui.Hero, ui.InspectIdentity, Spacer(),
+            DeckEditorStatus.Chip("DeckCount", ui.Count, ui.Scale), ui.Validity, DeckEditorStatus.Chip("DeckSaveState", ui.SaveState, ui.Scale));
         var library = Popup(ui, decks, "Saved decks", new(440, 240));
         library.AddChild(ui.Library);
         Row(library, ui.Load, ui.Delete);
@@ -91,7 +91,8 @@ internal static class DeckEditorLayout
         filter.AddChild(new Label { Text = "Build a search expression" });
         Row(filter, ui.SearchField, ui.SearchOperator);
         Row(filter, ui.SearchValue, ui.AddFilter);
-        filter.AddChild(new Label { Text = "Spaces: AND · |: OR · !: exclude · < >: compare", AutowrapMode = TextServer.AutowrapMode.WordSmart });
+        // The expression syntax is the search fields' hover, not a line of instructions.
+        ui.Search.TooltipText = ui.SearchValue.TooltipText = DeckEditorStatus.SearchSyntax;
     }
 
     private static void Deck(DeckEditorControls ui, VBoxContainer deck)
@@ -136,7 +137,7 @@ internal static class DeckEditorLayout
         Row(content, ui.Import, ui.Published);
         ui.Import.Pressed += () => content.GetWindow().Hide();
         ui.Published.Pressed += () => content.GetWindow().Hide();
-        content.AddChild(new Label { Text = "Or paste a public MarvelCDB deck URL" });
+        content.AddChild(new Label { Text = "MarvelCDB URL", TooltipText = "Paste the address of a public MarvelCDB deck." });
         content.AddChild(ui.Url);
         Row(content, ui.Fetch, ui.CancelFetch);
         content.AddChild(ui.ImportStatus);
@@ -206,6 +207,8 @@ internal static class DeckEditorLayout
             button.Pressed += () => button.GetWindow().Hide();
         }
     }
+
+    private static Control Spacer() => new() { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
 
     private static Label Heading(string text) => new() { Text = text, SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
     private static VBoxContainer Column(HBoxContainer parent)

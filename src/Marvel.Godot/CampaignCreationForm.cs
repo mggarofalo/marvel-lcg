@@ -11,28 +11,32 @@ internal static class CampaignCreationForm
     internal static void Render(CampaignControls ui, DeckCatalog catalog, string product, Action<string, CampaignQuery> create)
     {
         ui.Clear();
-        ui.Body.AddChild(CampaignControls.Text("Rise of Red Skull"));
-        ui.Body.AddChild(CampaignControls.Text("Choose your heroes for the whole campaign. You can edit their decks between scenarios."));
-        var name = new LineEdit { Text = "Rise of Red Skull", PlaceholderText = "Campaign name" };
+        InterfaceScale scale = ui.Scale;
+        ui.Body.AddChild(CampaignBlocks.Title("NewCampaign", "New campaign", scale,
+            "Choose your heroes for the whole campaign. You can edit their decks between scenarios."));
+        var name = new LineEdit { Text = CampaignWording.Product, PlaceholderText = "Campaign name", TooltipText = "Campaign name" };
+        name.AddThemeFontSizeOverride("font_size", VisualSystem.Type(scale).Body);
         ui.Body.AddChild(name);
-        var expert = new CheckButton { Text = "Expert campaign", TooltipText = "Persistent HP, recovery obligations, and a final defeat against Red Skull ends the campaign." };
+        var expert = new CheckButton { Text = "Expert campaign", TooltipText = CampaignWording.Difficulty(true).Tooltip };
+        expert.AddThemeFontSizeOverride("font_size", VisualSystem.Type(scale).Body);
         ui.Body.AddChild(expert);
         var players = new List<OptionButton>();
         for (int seat = 0; seat < 4; seat++)
         {
-            var row = new HBoxContainer();
-            row.AddChild(CampaignControls.Text($"Player {seat + 1}"));
-            var hero = new OptionButton { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+            HFlowContainer row = CampaignBlocks.Row("RosterSeat" + seat, scale);
+            row.AddChild(Chip.Create("Seat", CampaignWording.Seat(seat), null, scale));
+            var hero = new OptionButton { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(320, 0) };
+            hero.AddThemeFontSizeOverride("font_size", VisualSystem.Type(scale).Body);
             if (seat > 0) hero.AddItem("Not playing");
             foreach (var choice in catalog.Heroes) hero.AddItem(choice.Name);
             row.AddChild(hero); ui.Body.AddChild(row); players.Add(hero);
         }
-        CampaignControls.Action(ui.Body, "Create campaign", () =>
+        CampaignBlocks.Action(ui.Body, "Create campaign", () =>
         {
             var roster = players.Select((control, seat) => seat == 0 ? control.Selected : control.Selected - 1)
                 .Where(index => index >= 0).Select(index => catalog.Heroes[index]).ToArray();
             create(name.Text, new("create") { Product = product, Expert = expert.ButtonPressed, Seed = GameSeed.Create(),
                 Heroes = [.. roster.Select(hero => hero.Key)], Decks = [.. roster.Select(hero => new PlayerDeckRecipe(hero.Starter))] });
-        });
+        }, scale);
     }
 }

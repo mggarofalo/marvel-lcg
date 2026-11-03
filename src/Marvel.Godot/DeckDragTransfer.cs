@@ -48,7 +48,7 @@ internal sealed class DeckDragTransfer : IDisposable
         preview.AddChild(label);
         source.SetDragPreview(preview);
         ui.DropHint.Text = "Drop here · checking construction before adding";
-        ui.Status.Text = "Proposed copies shown as current → result. Drop in the deck; Escape cancels.";
+        DeckEditorStatus.Say(ui, "Drop in the deck to add", "Proposed copies show as current → result. Escape cancels.");
         ShowResult(attempt, label, changes);
         return attempt.Token;
     }
@@ -80,26 +80,27 @@ internal sealed class DeckDragTransfer : IDisposable
         if (!Accepts(data)) return;
         var attempt = current!;
         attempt.Dropped = true;
-        ui.Status.Text = "Checking the dropped cards before adding…";
+        DeckEditorStatus.Say(ui, "Checking dropped cards…", "");
         try
         {
             var checkedProposal = await attempt.Check;
             if (lifetime.IsCancellationRequested) return;
             if (checkedProposal is null || attempt.Revision != workspace.Revision)
             {
-                ui.Status.Text = "No cards added. This selection is not accepted for the current draft; use the available row quantities or change the selection.";
+                DeckEditorStatus.Say(ui, "No cards added",
+                    "This selection is not accepted for the current draft; use the available row quantities or change the selection.");
                 return;
             }
             apply(checkedProposal, attempt.Faces);
         }
         catch (OperationCanceledException) { }
-        catch (Exception error) { if (!lifetime.IsCancellationRequested) ui.Status.Text = "No cards added. " + error.Message; }
+        catch (Exception error) { if (!lifetime.IsCancellationRequested) DeckEditorStatus.Say(ui, "No cards added", error.Message); }
     }
 
     private void End()
     {
         if (current is null) return;
-        if (!current.Dropped) ui.Status.Text = "No cards added. The drag was cancelled or released outside the deck.";
+        if (!current.Dropped) DeckEditorStatus.Say(ui, "No cards added", "The drag was cancelled or released outside the deck.");
         current = null;
         ui.DropHint.Visible = false;
         ui.DropHint.Text = "Drop cards here to add +1 each";
