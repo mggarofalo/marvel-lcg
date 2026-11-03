@@ -48,6 +48,7 @@ func _run() -> void:
         "card-look": passed = await preload("res://smoke/native_look_contract.gd").run(self)
         "resource-declaration": passed = await preload("res://smoke/native_declaration_contract.gd").run(self)
         "kang-2", "kang-3", "kang-4": passed = await preload("res://smoke/native_kang_contract.gd").run(self)
+        "milano-1", "milano-2": passed = await preload("res://smoke/native_milano_contract.gd").run(self)
         _: _fail("unknown native contract: " + contract)
     if not passed:
         _fail("native contract did not satisfy its interaction assertions: " + contract)
@@ -66,6 +67,9 @@ func _select_contract_heroes() -> void:
         _select_named_option(_node("Setup/Selections/Fields/Grid/Hero"), "Iron Man")
     elif contract in ["heimdall-order", "lightning-payment"]:
         _select_named_option(_node("Setup/Selections/Fields/Grid/Hero"), "Thor")
+    elif contract == "milano-2":
+        # The test host deals Ship Command for these seats.
+        _select_named_option(_node("Setup/Selections/Fields/Grid/SecondHero"), "Captain Marvel")
     elif contract.begins_with("kang-"):
         # The test host deals Kang for these seats.
         var seats := ["Captain Marvel", "She-Hulk", "Iron Man"]
