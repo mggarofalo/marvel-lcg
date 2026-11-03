@@ -218,7 +218,12 @@ discarded before the group joins (`KangJoinProcedure`).
 `pack:mc11:game-areas`: players "cannot attack or defend enemies in other game
 areas, and they cannot target any game elements in the other game areas."
 Defender candidates, `BasicPowers.Attackable` and `BasicPowers.Thwartable` are
-narrowed by `Places.CanAffect`, and `MainScheme.Crisis(world, facts, scheme)`
+narrowed by `Places.CanAffect`. A defense-labeled ability (`rr:defend-defense.4`
+makes its player the defender) is closed to a performer the attacking enemy
+cannot reach (`AttackGameArea.CanDefend`). Whether any other card may trigger off
+an enemy attack in another game area is said nowhere, so an interrupt or response
+that would otherwise wait on such an attack raises (`AttackGameArea.Reaches`,
+asked by window admission). And `MainScheme.Crisis(world, facts, scheme)`
 counts only crisis icons that can affect that scheme. `MainScheme.Amplify` counts
 only amplify icons that can affect the activating enemy, whose area holds the
 boost card (MARVEL-894 Q14). The villain phase's separated steps are in

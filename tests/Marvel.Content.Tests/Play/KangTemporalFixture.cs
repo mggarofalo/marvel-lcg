@@ -77,4 +77,14 @@ internal static class KangTemporalFixture
             prompt = Sequence.Work(world, world.Facts, runner, events);
         }
     }
+
+    /// <summary>The authored book with <paramref name="card"/>'s row replaced by <paramref name="row"/>.</summary>
+    internal static AbilityRunner Replacing(string card, string row)
+    {
+        using var book = System.Text.Json.JsonDocument.Parse(AuthoredCards.Text);
+        var rows = book.RootElement.GetProperty("cards").EnumerateArray()
+            .Where(written => written.GetProperty("card").GetString() != card)
+            .Select(written => written.GetRawText()).Append(row);
+        return new AbilityRunner(Marvel.Cards.Dsl.AbilityCatalog.Parse($$"""{"cards":[{{string.Join(",", rows)}}]}"""));
+    }
 }

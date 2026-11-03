@@ -162,7 +162,7 @@ public sealed class KangGameAreaReferenceTests : CoreCardTestBase
         // Synthetic: Shocker's printed reveal is replaced by "take 1 damage for each
         // obligation in this game area" to observe the count from an engaged minion,
         // which is in the revealer's game area. Player 0 holds one obligation, player 1 two.
-        var (world, f, _) = Split(Synthetic("""
+        var (world, f, _) = Split(KangTemporalFixture.Replacing("01103", """
             {"card":"01103","abilities":[{"trigger":{"event":"WhenCardRevealed","timing":"WhenRevealed","subject":"this"},
               "effect":{"dealDamage":{"cards":"you","amount":{"count":{"query":"obligationsInThisGameArea"}}}}}]}
             """));
@@ -175,15 +175,6 @@ public sealed class KangGameAreaReferenceTests : CoreCardTestBase
         Assert.Equal(player + 1, world.Seats[player].IdentityCard.Damage);
         Assert.Equal(0, world.Seats[1 - player].IdentityCard.Damage);
         Assert.False(world.Agenda.IsBusy);
-    }
-
-    private static AbilityRunner Synthetic(string row)
-    {
-        using var book = System.Text.Json.JsonDocument.Parse(AuthoredCards.Text);
-        var rows = book.RootElement.GetProperty("cards").EnumerateArray()
-            .Where(card => card.GetProperty("card").GetString() != "01103")
-            .Select(card => card.GetRawText()).Append(row);
-        return new AbilityRunner(Marvel.Cards.Dsl.AbilityCatalog.Parse($$"""{"cards":[{{string.Join(",", rows)}}]}"""));
     }
 
     private static (World World, RedSkullFixture Fixture, Card[] Villains) Split(AbilityRunner? abilities = null)
