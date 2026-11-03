@@ -44,6 +44,8 @@ internal static class TableWording
             + "joins another game area at the end of the phase. It is better to let Kang (II) complete his main scheme "
             + "than to let Kang (II) defeat your hero."),
         [TableFact.SeparatedRules] = new("rules", "Rules", "Show the rules that apply while the table is separated."),
+        [TableFact.FirstPlayer] = new("first_player", "First player", "This player holds the first-player token."),
+        [TableFact.SourceSeat] = new("source_seat", "Another seat", "Another player controls this card."),
         [TableFact.ActiveSeat] = new("active_seat", "Active", "It is this player's turn."),
         [TableFact.AnsweringSeat] = new("answering", "Answering", "This player must answer the current decision."),
         [TableFact.YourSeat] = new("your_seat", "Your seat", "The seat you play."),
@@ -211,6 +213,17 @@ internal static class TableWording
         .. inspecting is null ? Array.Empty<Wording>()
             : [For(TableFact.PublicFocus) with { Label = inspecting, Tooltip = $"The table shows {inspecting}'s public workspace." }],
     ];
+
+    /// <summary>
+    /// A payment source another seat controls, named by that seat; the first player is said to be one, since
+    /// a card such as the Milano (16142) is controlled by whoever holds the token.
+    /// </summary>
+    internal static Wording SourceSeat(string seat, bool firstPlayer) => For(TableFact.SourceSeat) with
+    {
+        Icon = firstPlayer ? For(TableFact.FirstPlayer).Icon : For(TableFact.SourceSeat).Icon,
+        Label = seat,
+        Tooltip = $"On {seat}'s table" + (firstPlayer ? ", the first player" : "") + $". {seat} controls this card.",
+    };
 
     /// <summary>The legend strip's close control.</summary>
     internal const string CloseLegend = "Close the legend; the Rules toggle keeps it.";

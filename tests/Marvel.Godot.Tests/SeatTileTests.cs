@@ -22,6 +22,17 @@ public sealed class SeatTileTests
         Assert.Empty(SeatTile.Roles(0, selection));
     }
 
+    [Fact]
+    public void TheFirstPlayerTokenLeadsItsSeatsBadges()
+    {
+        // The Milano follows the first player (ruling 027e5dbfef0d5861), so the token is stated on the rail.
+        var selection = new DisplayedSeatSelection(1, ActivePlayer: 1, PromptOwner: 1, ViewedPrivateSeat: null,
+            PublicFocusSeat: null, FirstPlayer: 0);
+        Assert.Equal([TableFact.FirstPlayer], SeatTile.Roles(0, selection));
+        Assert.Equal([TableFact.ActiveSeat, TableFact.AnsweringSeat], SeatTile.Roles(1, selection));
+        Assert.Equal("First player", MulliganSeatStripRenderer.RoleMarkers(0, selection));
+    }
+
     [Theory]
     [InlineData("Hero", "HeroForm")]
     [InlineData("AlterEgo", "AlterEgoForm")]

@@ -53,5 +53,34 @@ public sealed class PaymentSourcePresentationTests
         Assert.Equal("G", source.Resources);
         Assert.Null(source.AbilityName);
         Assert.Null(source.CostDescription);
+        Assert.Null(source.Controller);
+    }
+
+    [Theory]
+    [InlineData(0, 0)]
+    [InlineData(1, 1)]
+    [InlineData(-1, null)]
+    public void TheSourceIsLocatedAtTheSeatTheEngineReportsAsItsController(int controller, int? expected)
+    {
+        // The Milano (16142) sits in the first player's supports and any player may spend it
+        // (rr:ability.8); the payment row names that seat from the published controller.
+        var face = new CardFaceDescriptor("16142", "Milano", "", CardKind.Support, new Dictionary<string, long>());
+        var card = new CardDescriptor(7, CardBack.Encounter, true, true, -1, face)
+        {
+            Location = new CardLocationDescriptor(1, "SupportsArea", controller, -1),
+        };
+        var world = new WorldDescriptor([], [new(1, "SupportsArea", 0, -1, [card], [])], [], Outcome.Unfinished);
+
+        Assert.Equal(expected, PaymentSourcePresentation.From(new(7, "G"), world).Controller);
+    }
+
+    [Fact]
+    public void ASourceWithoutAPublishedLocationHasNoController()
+    {
+        var face = new CardFaceDescriptor("16142", "Milano", "", CardKind.Support, new Dictionary<string, long>());
+        var world = new WorldDescriptor([], [new(1, "SupportsArea", 0, -1,
+            [new CardDescriptor(7, CardBack.Encounter, true, true, -1, face)], [])], [], Outcome.Unfinished);
+
+        Assert.Null(PaymentSourcePresentation.From(new(7, "G"), world).Controller);
     }
 }

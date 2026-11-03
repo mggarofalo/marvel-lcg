@@ -175,7 +175,7 @@ internal sealed class DecisionPaymentRenderer
                 if (operations.TryToggleGenerator(source.Effect)) panel.Rebuild();
             };
             panel.BindAnchors(choose, source.Effect);
-            panel.AddContent(choose);
+            panel.AddContent(WithSourceSeat(choose, PaymentSourcePresentation.From(source, world)));
             if (source.ConditionalBonus is { } bonus)
             {
                 string costs = string.Join(" or ", Enumerable.Range(0, cost.ResourceCosts.Count)
@@ -186,6 +186,17 @@ internal sealed class DecisionPaymentRenderer
             }
         }
     }
+    // Another seat's source carries that seat beside it; the payer's own source stays a plain button.
+    private Control WithSourceSeat(Button choose, PaymentSourcePresentation source)
+    {
+        if (PaymentSourceSeat.Chip(source, composer.Prompt.Player, world, panel.ReadingScale) is not { } seat) return choose;
+        var row = new HBoxContainer { ThemeTypeVariation = GodotThemeVariations.CompactRow };
+        choose.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        row.AddChild(choose);
+        row.AddChild(seat);
+        return row;
+    }
+
     private void AddPaymentProgress()
     {
         PaymentProgress progress = composer.Progress().Payment;

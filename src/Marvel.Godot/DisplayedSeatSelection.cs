@@ -6,4 +6,5 @@ internal sealed record DisplayedSeatSelection(
     int? ActivePlayer,
     int? PromptOwner,
     int? ViewedPrivateSeat,
-    int? PublicFocusSeat);
+    int? PublicFocusSeat,
+    int? FirstPlayer = null);
