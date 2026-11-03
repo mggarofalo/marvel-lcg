@@ -67,6 +67,13 @@ internal static class TableWording
         [TableFact.EffectStun] = new("stun", "Printed stun", "Printed: gives a stunned status card; Steady, Stalwart and later effects can change the result."),
         [TableFact.EffectConfuse] = new("confuse", "Printed confuse", "Printed: gives a confused status card; Steady, Stalwart and later effects can change the result."),
         [TableFact.EffectTough] = new("tough", "Printed tough", "Printed: gives a tough status card; later effects can change the result."),
+        [TableFact.EffectHeal] = new("heal", "Printed heal", "Printed damage healed; later effects can change the result."),
+        [TableFact.EffectReady] = new("ready", "Printed ready", "Printed: readies the card; later effects can change the result."),
+        [TableFact.EffectExhaust] = new("exhaust", "Printed exhaust", "Printed: exhausts the card; later effects can change the result."),
+        [TableFact.EffectPlaceThreat] = new("place_threat", "Printed threat placed",
+            "Printed threat placed; modifiers and later effects can change the result."),
+        [TableFact.EffectMoveThreat] = new("move_threat", "Printed threat moved",
+            "Printed threat moved; later effects can change the result."),
         [TableFact.OutcomeVillainDefeated] = new("", "Villain defeated", "The final villain stage was defeated."),
         [TableFact.OutcomeSchemeCompleted] = new("", "Scheme completed", "The final main scheme was completed."),
         [TableFact.OutcomeEliminated] = new("", "All eliminated", "All players were eliminated."),
@@ -75,6 +82,10 @@ internal static class TableWording
         [TableFact.OutcomeEnded] = new("", "Game over", "The game ended."),
         [TableFact.PendingSource] = new("", "Resolving", "The card the other player's decision resolves."),
     };
+
+    /// <summary>The opening-hand area where cards wait for redraw.</summary>
+    internal static readonly Wording StagedForRedraw = new("", "Redraw",
+        "Staged for redraw: these cards are replaced when you confirm. Drag one back to keep it.");
 
     /// <summary>The wording of one fact.</summary>
     internal static Wording For(TableFact fact) => Facts[fact];

@@ -67,15 +67,31 @@ internal static class SchemeStackCollection
             stack.CustomMinimumSize = new Vector2(bounds.Size.X - 18, extent);
             stack.Size = stack.CustomMinimumSize;
             scroll.QueueSort();
+            MeasureOverflow();
         }
+        // The cue counts the schemes the stack does not wholly show; scrolling reveals them.
+        Label overflow = OverflowCue.Create("ContinuousOverflow", 0, "Scroll down for the rest.", faces.ReadingScale);
+        overflow.MouseFilter = Control.MouseFilterEnum.Ignore;
+        overflow.Text = OverflowCue.Text(bottom > bounds.Size.Y - 26 ? 1 : 0);
+        overflow.Visible = bottom > bounds.Size.Y - 26;
+        panel.AddChild(overflow);
+        void MeasureOverflow() => Callable.From(() =>
+        {
+            if (!InteractionControl.IsUsable(scroll)) return;
+            // Each scheme's row runs from its header to the next header; the last runs to the stack's end.
+            float[] tops = [.. controls.Where(InteractionControl.IsUsable).Select(card => card.Position.Y)];
+            float top = scroll.ScrollVertical;
+            OverflowCue.Show(overflow, OverflowCue.Hidden(tops.Select((start, index) =>
+                (start, index + 1 < tops.Length ? tops[index + 1] : stack.Size.Y)), top, top + scroll.Size.Y));
+        }).CallDeferred();
+        scroll.GetVScrollBar().ValueChanged += _ => MeasureOverflow();
+        scroll.Resized += MeasureOverflow;
         foreach (CardControl card in controls)
         {
             ((Control)card.FindChild("SchemeStackHeader", true, false)).Resized += Arrange;
             card.Resized += Arrange;
         }
         Callable.From(Arrange).CallDeferred();
-        if (bottom > bounds.Size.Y - 26) panel.AddChild(new Label { Name = "ContinuousOverflow", Text = "Scroll to see all ↓",
-            ThemeTypeVariation = GodotThemeVariations.Caption, AutowrapMode = TextServer.AutowrapMode.WordSmart, MouseFilter = Control.MouseFilterEnum.Ignore });
         return controls;
     }
 }

@@ -120,7 +120,7 @@ if not await ui.expect_visible(ui.button("End turn")): return
 ```
 
 Available operations are `click(locator, mouse_button)`, `hover(locator)`,
-`press_key(key, shift, ctrl)`, `drag(source, destination, frames)`,
+`press_key(key, shift)`, `select_all()`, `drag(source, destination, frames)`,
 `expect_visible(locator)`, `expect_fully_visible_enabled(locator)` and
 `expect(predicate, description, deadline_ms)`. The full visibility assertion
 requires the enabled control's entire transformed rectangle inside the viewport

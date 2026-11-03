@@ -45,7 +45,8 @@ static func _unstage_safe_house(smoke, chosen: int) -> bool:
         "unstaging the selected discard changes no authoritative state"): return false
     return await smoke.ui.expect(func():
         var summaries: Array = smoke.ui.named("CompleteChoiceSummary").all()
-        return summaries.size() == 1 and "0 selected" in summaries[0].text and "Widow's Bite" not in summaries[0].text,
+        var words: String = summaries[0].get_meta("summary_text", "") if summaries.size() == 1 else ""
+        return summaries.size() == 1 and "0 selected" in words and "Widow's Bite" not in words,
         "the pinned explanation removes an unstaged card")
 
 static func _reopen_safe_house(smoke, chosen: int) -> bool:
@@ -67,7 +68,8 @@ static func _safe_house_meaning(smoke) -> bool:
         var bounds: Rect2 = node.get_global_rect()
         return smoke.render_viewport.get_visible_rect().encloses(bounds) and smoke.main.find_child("CompleteChoicesFrame", true, false).get_global_rect().encloses(bounds),
         "the modal's selected-action explanation fits entirely on screen"): return false
-    var copy: String = summary.all()[0].text
+    # The summary is chips and trackers; its words are the row's summary text and each part's hover.
+    var copy: String = summary.all()[0].get_meta("summary_text", "")
     if "Safe House #29" not in copy or "Exhaust" not in copy or "PREPARATION" not in copy or "discard pile" not in copy.to_lower():
         return _fail(smoke, "the modal must retain source, exhaustion and discard choice together: " + copy)
     if "1 selected" not in copy or "Widow's Bite" not in copy:

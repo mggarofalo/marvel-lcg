@@ -35,8 +35,13 @@ function Invoke-NativeProcess {
             $start.Environment.Remove($key) | Out-Null
         }
     }
-    # Native probes never inherit a player's embedded save directory. An explicit case override may retain its own fixture.
-    $start.Environment['MARVEL_SAVE_DIRECTORY'] = Join-Path ([IO.Path]::GetTempPath()) ('marvel-native-saves-' + [guid]::NewGuid().ToString('N'))
+    # Native probes never inherit a player's embedded saves, campaign access or deck library: each defaults to
+    # user:// otherwise, which outlives the probe. .NET reads its environment once at startup, so a smoke cannot
+    # redirect these later. An explicit case override may retain its own fixture.
+    $isolated = Join-Path ([IO.Path]::GetTempPath()) ('marvel-native-saves-' + [guid]::NewGuid().ToString('N'))
+    $start.Environment['MARVEL_SAVE_DIRECTORY'] = $isolated
+    $start.Environment['MARVEL_CAMPAIGN_ACCESS_DIRECTORY'] = Join-Path $isolated 'access'
+    $start.Environment['MARVEL_DECK_LIBRARY_DIRECTORY'] = Join-Path $isolated 'decks'
     foreach ($key in $Environment.Keys) { $start.Environment[$key] = [string]$Environment[$key] }
     $process = [Diagnostics.Process]::new()
     $process.StartInfo = $start

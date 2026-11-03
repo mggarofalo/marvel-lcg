@@ -118,6 +118,21 @@ internal enum TableFact
     /// <summary>The choice gives tough.</summary>
     EffectTough,
 
+    /// <summary>The choice heals its printed damage.</summary>
+    EffectHeal,
+
+    /// <summary>The choice readies.</summary>
+    EffectReady,
+
+    /// <summary>The choice exhausts.</summary>
+    EffectExhaust,
+
+    /// <summary>The choice places its printed threat.</summary>
+    EffectPlaceThreat,
+
+    /// <summary>The choice moves its printed threat.</summary>
+    EffectMoveThreat,
+
     /// <summary>The game ended because the final villain stage was defeated.</summary>
     OutcomeVillainDefeated,
 

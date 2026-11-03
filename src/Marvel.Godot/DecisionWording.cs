@@ -139,17 +139,24 @@ internal static class DecisionWording
         PromptEffectKind.Stun => TableFact.EffectStun,
         PromptEffectKind.Confuse => TableFact.EffectConfuse,
         PromptEffectKind.Tough => TableFact.EffectTough,
+        PromptEffectKind.Heal => TableFact.EffectHeal,
+        PromptEffectKind.Ready => TableFact.EffectReady,
+        PromptEffectKind.Exhaust => TableFact.EffectExhaust,
+        PromptEffectKind.PlaceThreat => TableFact.EffectPlaceThreat,
+        PromptEffectKind.MoveThreat => TableFact.EffectMoveThreat,
         _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "no wording for this effect"),
     };
 
     /// <summary>
-    /// A printed effect as a chip: "Printed damage 8", "Printed draw 1", or "Printed stun" for a status, which has no
-    /// amount. It names the printed amount, never the result: modifiers, prevention and later effects can change it.
+    /// A printed effect as a chip: "Printed damage 8", "Printed draw 1", or "Printed stun" for a status or "Printed
+    /// ready" for readying or exhausting, which have no amount. It names the printed amount, never the result:
+    /// modifiers, prevention and later effects can change it.
     /// </summary>
     internal static Wording Effect(PromptEffect effect)
     {
         Wording wording = TableWording.For(EffectFact(effect.Kind));
-        return effect.Kind is PromptEffectKind.Stun or PromptEffectKind.Confuse or PromptEffectKind.Tough ? wording
+        return effect.Kind is PromptEffectKind.Stun or PromptEffectKind.Confuse or PromptEffectKind.Tough
+            or PromptEffectKind.Ready or PromptEffectKind.Exhaust ? wording
             : wording with { Label = $"{wording.Label} {effect.Amount.ToString(CultureInfo.InvariantCulture)}" };
     }
 

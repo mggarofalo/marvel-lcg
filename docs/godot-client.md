@@ -104,14 +104,23 @@ state. Playing a hand card opens the current engine-offered composition;
 authorized attachment targets can be outside the player area.
 
 History is a vertical account with expandable details. Complete Choices is next
-to the current decision. Temporary causal references have a reserved location
+to the current decision. Its summary is the same row of trackers and chips. Each
+choice row is its mark, action and name. A target's detail stands beside the row
+as a chip only when it tells that target from the others; a detail every target
+shares, an unavailable reason and an action's description are on the row's hover.
+A repeatable target's count is pips against its limit. Temporary causal references have a reserved location
 and do not create another physical action target. Status cards use shape and
 letter badges: octagonal T for tough, jagged S for stunned, ring C for confused;
 defense uses a separate shield.
 
 Accepted activity uses native effect glyphs, source/target impulses and local
 quantity or status marks on visible affected objects. A zoomable chronology in
-the table seam shares occurrences with History's expandable account. Ordinary
+the table seam shares occurrences with History's expandable account. Its head
+tracks the round at the shown point: "Round N", one pip per phase of the round
+filled through the current one, and the phase as a chip, read from the engine's
+phase-boundary events. It is absent when the chronology holds no boundary at or
+before that point, and the phase chip, then the tracker, give way when the seam
+is too narrow. Ordinary
 actions group costs and consequences beneath their intention; phase-wide ready,
 draw and discard batches retain their semantic boundaries.
 
@@ -148,7 +157,11 @@ answers, whether it is optional, the causes and the attack. The engine's
 instruction is on the title's hover. A complete choice's label states its effect
 once and keeps its cost; a printed effect also marks the choice with its icon.
 Optional windows include Pass; choosing a complete effect commits it directly. Forced ability notifications require acknowledgement, with
-required decisions kept in the same surface. Complex costs and selections still
+required decisions kept in the same surface. A notification is the ability's title
+and its facts as chips: what happened, In progress while it still resolves, and
+the next decision, each whole on hover. A scrolling collection's cue counts the
+cards it does not wholly show ("+2 ▸"). A finished game states its result once on
+the table: the heading and its reason chip, with no second notice. Complex costs and selections still
 use the prompt-bound composer; the client never answers a future prompt itself.
 
 The MARVEL-492 SVG direction is approved. Acceptance of this implementation

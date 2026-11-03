@@ -54,6 +54,8 @@ public sealed class AttackFactsTransportTests : TransportTestBase
             : await new InProcessTransport(endpoint).ExchangeAsync(request, TestContext.Current.CancellationToken);
         Assert.Equal(new PromptEffect(PromptEffectKind.Damage, 8), actual.Prompt!.Effect);
         Assert.Equal(new PromptEffect(PromptEffectKind.Stun, 0), actual.Prompt.Affordances[0].WindowChoices[0].Effect);
+        Assert.Equal(new PromptEffect(PromptEffectKind.MoveThreat, 2), actual.Prompt.Affordances[0].WindowChoices[1].Effect);
+        Assert.Equal(new PromptEffect(PromptEffectKind.Heal, 1), actual.Prompt.Affordances[0].WindowChoices[2].Effect);
     }
 
     [Fact]
@@ -63,6 +65,8 @@ public sealed class AttackFactsTransportTests : TransportTestBase
         string text = Encoding.UTF8.GetString(EngineJson.Write(response));
         Assert.Contains("\"effect\":{\"kind\":0,\"amount\":8}", text, StringComparison.Ordinal);
         Assert.Contains("\"effect\":{\"kind\":3,\"amount\":0}", text, StringComparison.Ordinal);
+        Assert.Contains("\"effect\":{\"kind\":10,\"amount\":2}", text, StringComparison.Ordinal);
+        Assert.Contains("\"effect\":{\"kind\":6,\"amount\":1}", text, StringComparison.Ordinal);
         Assert.Equal(EngineJson.Write(response), EngineJson.Write(EngineJson.ReadResponse(Encoding.UTF8.GetBytes(text))));
         string forged = text.Replace("\"amount\":8}", "\"amount\":8,\"sentence\":\"Deal 8\"}", StringComparison.Ordinal);
         Assert.NotEqual(text, forged);
@@ -73,7 +77,12 @@ public sealed class AttackFactsTransportTests : TransportTestBase
         new(0, Question.Element, TimingPriority.Untimed, "card_revealed", "Choose", false,
             [new Affordance(4, "Response", 3, 0, "Mockingbird")
             {
-                WindowChoices = [new WindowChoice(7, "Stun Rhino", null) { RecipientIds = [7], Effect = new PromptEffect(PromptEffectKind.Stun, 0) }],
+                WindowChoices =
+                [
+                    new WindowChoice(7, "Stun Rhino", null) { RecipientIds = [7], Effect = new PromptEffect(PromptEffectKind.Stun, 0) },
+                    new WindowChoice(8, "Move threat", null) { RecipientIds = [8], Effect = new PromptEffect(PromptEffectKind.MoveThreat, 2) },
+                    new WindowChoice(9, "Heal Spider-Man", null) { RecipientIds = [9], Effect = new PromptEffect(PromptEffectKind.Heal, 1) },
+                ],
             }])
         {
             Effect = new PromptEffect(PromptEffectKind.Damage, 8),

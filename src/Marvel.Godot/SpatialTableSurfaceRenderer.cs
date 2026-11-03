@@ -147,8 +147,7 @@ internal static class SpatialTableSurfaceRenderer
         {
             var stage = new Control { Name = "MulliganStage", Position = new Vector2(22, geometry.Hand.Position.Y),
                 Size = new Vector2(geometry.Hand.Position.X - 36, geometry.Hand.Size.Y), MouseFilter = Control.MouseFilterEnum.Ignore };
-            stage.AddChild(new Label { Text = "Staged for redraw", ThemeTypeVariation = GodotThemeVariations.Caption,
-                MouseFilter = Control.MouseFilterEnum.Ignore });
+            stage.AddChild(Chip.Create("MulliganStageLabel", TableWording.StagedForRedraw, null, main.interfaceScale));
             surface.AddChild(stage);
             TableCanvasReflow.AnchorBottom(surface, stage);
             result.RegisterMulliganStage(stage);
@@ -228,8 +227,7 @@ internal static class SpatialTableSurfaceRenderer
         var caption = new Label
         {
             Name = "SpatialHandHeading",
-            Text = $"{heading} · {visible} cards"
-                + (concealed > 0 ? $" · {concealed} concealed" : string.Empty),
+            Text = $"{heading} · {visible}" + (concealed > 0 ? $" · {concealed} concealed" : string.Empty),
             Position = new Vector2(left, top),
             ThemeTypeVariation = GodotThemeVariations.Caption,
             ZIndex = 60,

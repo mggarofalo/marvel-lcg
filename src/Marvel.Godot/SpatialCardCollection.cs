@@ -51,17 +51,20 @@ internal static class SpatialCardCollection
             row.SortChildren += () => Callable.From(() =>
             { if (InteractionControl.IsUsable(control)) result.UpdateRestingPose(control); }).CallDeferred();
         }
-        var overflow = new Label { Name = "ContinuousOverflow", Text = "Scroll to see all →",
-            ThemeTypeVariation = GodotThemeVariations.Caption, MouseFilter = Control.MouseFilterEnum.Ignore };
+        // The cue counts the cards the row does not wholly show; scrolling reveals them.
+        Label overflow = OverflowCue.Create("ContinuousOverflow", 0, "Scroll sideways for the rest.", faces.ReadingScale);
+        overflow.MouseFilter = Control.MouseFilterEnum.Ignore;
         panel.AddChild(overflow);
         void MeasureOverflow() => Callable.From(() =>
         {
-            if (InteractionControl.IsUsable(scroll))
-                overflow.Visible = row.GetCombinedMinimumSize().X > scroll.Size.X + 0.5f;
+            if (!InteractionControl.IsUsable(scroll)) return;
+            float left = scroll.ScrollHorizontal;
+            OverflowCue.Show(overflow, OverflowCue.Hidden(row.GetChildren().OfType<Control>()
+                .Select(slot => (slot.Position.X, slot.Position.X + slot.Size.X)), left, left + scroll.Size.X));
         }).CallDeferred();
         row.MinimumSizeChanged += MeasureOverflow;
         scroll.Resized += MeasureOverflow;
-        overflow.Hide();
+        scroll.GetHScrollBar().ValueChanged += _ => MeasureOverflow();
         MeasureOverflow();
         return controls;
     }

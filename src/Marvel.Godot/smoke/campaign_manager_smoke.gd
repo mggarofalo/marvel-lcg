@@ -11,11 +11,9 @@ func _run() -> void:
     quit(0)
 
 func _prepare_manager() -> bool:
-    var isolated := OS.get_environment("MARVEL_SAVE_DIRECTORY")
-    if isolated.is_empty():
-        _fail("campaign manager journey requires an isolated save directory")
+    if OS.get_environment("MARVEL_SAVE_DIRECTORY").is_empty() or OS.get_environment("MARVEL_CAMPAIGN_ACCESS_DIRECTORY").is_empty():
+        _fail("campaign manager journey requires isolated save and campaign access directories")
         return false
-    OS.set_environment("MARVEL_CAMPAIGN_ACCESS_DIRECTORY", isolated.path_join("access"))
     if not await _open_campaign_tracker(): return false
     if not await _wait_for(func(): return _button_named("Create campaign") != null):
         _fail("creation missing")

@@ -10,10 +10,17 @@ try {
         throw 'One argument did not reach the owned executable intact.'
     }
     $env:MARVEL_ENGINE_ENDPOINT = 'ambient-endpoint-must-not-reach-child'
+    $ambientStores = @($env:MARVEL_CAMPAIGN_ACCESS_DIRECTORY, $env:MARVEL_DECK_LIBRARY_DIRECTORY)
+    $env:MARVEL_CAMPAIGN_ACCESS_DIRECTORY = 'player-store-campaigns'
+    $env:MARVEL_DECK_LIBRARY_DIRECTORY = 'player-store-decks'
     $normalScript = Join-Path $directory 'normal.ps1'
     [IO.File]::WriteAllText($normalScript, @'
 if ($env:MARVEL_ENGINE_ENDPOINT) { throw 'Inherited an ambient engine endpoint.' }
 if ($env:MARVEL_NATIVE_CONTRACT -ne 'explicit-case') { throw 'Explicit case input was lost.' }
+foreach ($store in @('MARVEL_CAMPAIGN_ACCESS_DIRECTORY', 'MARVEL_DECK_LIBRARY_DIRECTORY')) {
+    $path = [Environment]::GetEnvironmentVariable($store)
+    if (-not $path -or -not $path.StartsWith($env:MARVEL_SAVE_DIRECTORY) -or $path -like '*player-store*') { throw "$store is not isolated." }
+}
 Write-Output 'NORMAL_PROCESS_OK'
 '@)
     $normal = Invoke-NativeProcess $shell @('-NoProfile', '-File', $normalScript) @{
@@ -47,10 +54,11 @@ exit 0
     $childId = [int]$Matches[1]
     $child = Get-Process -Id $childId -ErrorAction SilentlyContinue
     if ($child -and -not $child.WaitForExit(5000)) { throw "Owned pipe-holding child survived cleanup: $childId" }
-    Write-Host 'NATIVE_PROCESS_TESTS_OK normal-exit=true environment-isolated=true pipe-deadline=true child-terminated=true'
+    Write-Host 'NATIVE_PROCESS_TESTS_OK normal-exit=true environment-isolated=true stores-isolated=true pipe-deadline=true child-terminated=true'
 }
 finally {
     $env:MARVEL_ENGINE_ENDPOINT = $ambient
+    if ($ambientStores) { $env:MARVEL_CAMPAIGN_ACCESS_DIRECTORY, $env:MARVEL_DECK_LIBRARY_DIRECTORY = $ambientStores }
     $resolved = [IO.Path]::GetFullPath($directory)
     $tempRoot = [IO.Path]::GetFullPath([IO.Path]::GetTempPath()).TrimEnd([IO.Path]::DirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar
     if (-not $resolved.StartsWith($tempRoot, [StringComparison]::OrdinalIgnoreCase) -or

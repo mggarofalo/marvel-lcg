@@ -92,6 +92,17 @@ func _run() -> void:
     _check(await ui.expect_visible(ui.text("Visible explanation")), "visible text locator")
     _check(await ui.expect_visible(ui.named("Explanation")), "named control locator")
     _check(await ui.hover(ui.button("Drop target")), "hover on exposed target")
+    var amount := LineEdit.new()
+    amount.text = "12"
+    amount.position = Vector2(500, 30)
+    amount.size = Vector2(120, 32)
+    scene.add_child(amount)
+    await process_frame
+    _check(await ui.click(Locator.control(amount)), "click into an editable field")
+    amount.deselect()
+    _check(await ui.select_all() and amount.get_selected_text() == "12",
+        "select_all must select the focused field's text with this platform's shortcut")
+    amount.queue_free()
     var secret := LineEdit.new()
     secret.text = "private-canary-value"
     scene.add_child(secret)

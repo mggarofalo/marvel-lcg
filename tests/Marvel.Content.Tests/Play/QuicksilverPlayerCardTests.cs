@@ -287,10 +287,17 @@ public sealed class QuicksilverPlayerCardTests : CoreCardTestBase
         var stand = QuicksilverBoards.Hand(world, "14031");
 
         QuicksilverBoards.Play(world, stand, []);
-        QuicksilverBoards.Drive(world, prompt => prompt.Affordances.FirstOrDefault(a => a.Targets is not null) is { } choose
-            ? Decision.Take(choose.Id) with { Targets = [.. choose.Targets!.Legal.Take(choose.Targets.Max)] } : null);
+        PromptEffect? effect = null;
+        QuicksilverBoards.Drive(world, prompt =>
+        {
+            if (prompt.Affordances.FirstOrDefault(a => a.Targets is not null) is not { } choose) return null;
+            effect = prompt.Effect;
+            return Decision.Take(choose.Id) with { Targets = [.. choose.Targets!.Legal.Take(choose.Targets.Max)] };
+        });
 
         Assert.Equal(4 - healed, quicksilver.Damage + warlock.Damage);
+        // The recipients prompt carries the printed heal per character as a typed fact.
+        Assert.Equal(new PromptEffect(PromptEffectKind.Heal, 1), effect);
         Assert.Equal(DeckType.DiscardPile, stand.Area.Type);
     }
 

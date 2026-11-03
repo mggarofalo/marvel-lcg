@@ -38,19 +38,27 @@ internal sealed class ForcedAbilityController(Main main) : IDisposable
         if (receipt.SourceCard is { } source
             && frame.Frame.FindChild("ForcedAbilityHeading", true, false) is Control title)
             AbilitySourceInspection.Bind(main, title, source);
-        frame.AddText("ForcedAbilitySummary", receipt.Summary, GodotThemeVariations.Body);
-        if (!receipt.Completed)
-            frame.AddText("ForcedAbilityState", "Resolution is still in progress", GodotThemeVariations.Caption);
-        if (prompt is not null && prompt.PublicKind != PublicDecisionKind.PlayerAction
-            && main.CurrentGame?.World is { } world)
-            frame.AddText("PendingDecision", "Next: " + PromptPresentation.From(prompt, world).Heading,
-                GodotThemeVariations.Caption);
+        frame.Content.AddChild(Facts(receipt));
         Button acknowledge = frame.AddButton("AcknowledgeForcedAbility", "Acknowledge", () => Acknowledge(receipt));
         acknowledge.SetMeta("table_mutation", true);
         Callable.From(() =>
         {
             if (InteractionControl.IsUsable(acknowledge)) acknowledge.GrabFocus();
         }).CallDeferred();
+    }
+
+    // What happened, whether it is still resolving and the decision that follows, as chips whole on hover.
+    private HFlowContainer Facts(ForcedAbilityNotification receipt)
+    {
+        HFlowContainer row = DraftFactsRow.Create(main.interfaceScale);
+        row.Name = "ForcedAbilityFacts";
+        var parts = new List<DraftPart> { new(receipt.Summary) };
+        if (!receipt.Completed) parts.Add(new(ForcedAbilityWording.InProgress.Tooltip, ForcedAbilityWording.InProgress.Label));
+        if (prompt is not null && prompt.PublicKind != PublicDecisionKind.PlayerAction && main.CurrentGame?.World is { } world)
+            parts.Add(new(ForcedAbilityWording.Next(PromptPresentation.From(prompt, world).Heading)));
+        DraftFactsRow.Fill(row, parts);
+        if (row.GetChildCount() > 0) row.GetChild(0).Name = "ForcedAbilitySummary";
+        return row;
     }
 
     private void Acknowledge(ForcedAbilityNotification expected)

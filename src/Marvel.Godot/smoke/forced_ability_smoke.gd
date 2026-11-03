@@ -57,9 +57,11 @@ func _verify_forced_acknowledgment() -> bool:
 
 
 func _inspect_forced_source() -> bool:
-	var summary := _window().find_child("ForcedAbilitySummary", true, false) as Label
-	if summary.text != "Spider-Man discarded Spider-Tracer and Haymaker.":
-		_fail("Black Cat receipt does not identify its actual discarded cards: " + summary.text)
+	# The summary is a chip; its whole words are its hover and accessible name.
+	var summary := _window().find_child("ForcedAbilitySummary", true, false) as Control
+	if summary == null or summary.tooltip_text != "Spider-Man discarded Spider-Tracer and Haymaker." \
+			or summary.accessibility_name != summary.tooltip_text:
+		_fail("Black Cat receipt does not identify its actual discarded cards: " + (summary.tooltip_text if summary else ""))
 		return false
 	var heading := _window().find_child("ForcedAbilityHeading", true, false) as Control
 	if not await preload("res://smoke/transient_inspection_checks.gd").verify(self, heading): return false

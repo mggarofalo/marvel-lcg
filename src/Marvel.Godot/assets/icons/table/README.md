@@ -31,6 +31,11 @@ distinguishes one fact from another.
 | `stun.svg` | A jagged star, the stunned badge's shape: the choice stuns. |
 | `confuse.svg` | Two rings, the confused badge's ring: the choice confuses. |
 | `tough.svg` | An octagon, the tough badge's shape: the choice gives tough. |
+| `heal.svg` | A cross: the choice heals damage. |
+| `ready.svg` | An upright card with a lift: the choice readies. |
+| `exhaust.svg` | A card turned sideways: the choice exhausts. |
+| `place_threat.svg` | A ring with a plus, beside threat removal's bar: the choice places threat. |
+| `move_threat.svg` | A ring with an arrow: the choice moves threat. |
 
 Two pairs of facts share an icon because they state one concept. The lock marks both
 an out-of-reach area and the rule that areas cannot affect one another, since that rule

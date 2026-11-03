@@ -17,7 +17,7 @@ internal sealed class CompleteDecisionSheet : IDisposable
     private DecisionComposer? draft;
     private int focusGeneration;
     private Label notice = null!;
-    private Label selectedSummary = null!;
+    private HFlowContainer selectedSummary = null!;
     private Main main = null!;
     private Node inspectorParent = null!;
     private Control? tableDraft;
@@ -97,7 +97,7 @@ internal sealed class CompleteDecisionSheet : IDisposable
         notice.Name = "DecisionRecoveryNotice";
         notice.Visible = false;
         content.AddChild(notice);
-        selectedSummary = DecisionPanel.Text(string.Empty, GodotThemeVariations.Body, wrap: true);
+        selectedSummary = DraftFactsRow.Create(panel.ReadingScale);
         selectedSummary.Name = "CompleteChoiceSummary";
         content.AddChild(selectedSummary);
         panel.ProgressChanged += RefreshSummary;
@@ -109,14 +109,26 @@ internal sealed class CompleteDecisionSheet : IDisposable
         panel.SetCompleteChoicesVisibility(true);
     }
 
-    // The head already states the engine's instruction, so the draft summary leaves it out.
+    // The head already states the engine's instruction, so the draft summary leaves it out. The draft shows as the
+    // table's facts row: trackers for what is staged, selected or paid, chips for the rest, whole on hover.
     private void RefreshSummary(DecisionProgressPresentation? _)
     {
         var prompt = panel.composer is { } composer && panel.world is { } world
             ? Marvel.View.PromptPresentation.From(composer.Prompt, world) : null;
-        selectedSummary.Text = TableDraftSummary.From(panel.composer, prompt, panel.world,
-            shownInstruction: prompt?.Frame.Instruction) ?? string.Empty;
-        selectedSummary.Visible = selectedSummary.Text.Length > 0;
+        IReadOnlyList<DraftPart> parts = TableDraftSummary.Parts(panel.composer, prompt, panel.world,
+            shownInstruction: prompt?.Frame.Instruction) ?? [];
+        DraftFactsRow.Fill(selectedSummary, parts);
+        BoundSummary();
+        string summary = string.Join("  ·  ", parts.Select(part => part.Text));
+        selectedSummary.AccessibilityDescription = summary;
+        selectedSummary.SetMeta("summary_text", summary);
+    }
+
+    // Long summary chips share a line, so the summary stays short and never widens the sheet past its frame.
+    private void BoundSummary()
+    {
+        if (InteractionControl.IsUsable(frame) && frame.Size.X > 0)
+            DraftFactsRow.Bound(selectedSummary, frame.Size.X * 0.3f);
     }
 
     private Control openerFallback = null!;
@@ -176,12 +188,14 @@ internal sealed class CompleteDecisionSheet : IDisposable
             Rect2 bounds = CardChoiceLayout.Frame(viewport);
             frame.Size = bounds.Size;
             frame.Position = bounds.Position;
+            BoundSummary();
             panel.CardChoices.RefreshLayout();
             return;
         }
         Rect2 dialog = DecisionDialogLayout.Frame(viewport, panel.ReadingScale, panel.composer?.Prompt.Affordances.Count ?? 0);
         frame.Size = dialog.Size;
         frame.Position = dialog.Position;
+        BoundSummary();
     }
 
     internal void Input(InputEvent input)

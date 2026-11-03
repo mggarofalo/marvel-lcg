@@ -33,7 +33,7 @@ static func _enter_amount(smoke, amount: int) -> bool:
     var edit := variable.get_line_edit()
     if not await preload("res://smoke/native_keyboard_traversal.gd").reach(smoke, edit): return false
     # Real editing events exercise the SpinBox's authored value-change route.
-    await preload("res://smoke/native_keyboard_traversal.gd").key(smoke, KEY_A, false, true)
+    await preload("res://smoke/native_keyboard_traversal.gd").select_all(smoke)
     for pressed in [true, false]:
         var event := InputEventKey.new()
         event.keycode = KEY_0 + amount

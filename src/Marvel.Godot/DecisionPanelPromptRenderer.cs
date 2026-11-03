@@ -48,7 +48,7 @@ internal static class DecisionPanelPromptRenderer
         };
         bool search = !panel.LocalDecision.IsOpen && panel.CompleteChoicesOpen && DecisionCardChoices.IsChoice(composer.Prompt);
         if (!panel.PaymentModalOpen && !search && !DecisionDialogLayout.Automatic(composer.Prompt))
-            AddActionSummary(body, selected, composer, panel.LocalDecision.IsOpen);
+            AddActionSummary(body, selected, composer, panel.LocalDecision.IsOpen, panel.ReadingScale);
         InstallBody(panel, composer.Prompt, body, search);
         panel.InstallLayout(body, CreateCommitBar(panel));
     }
@@ -109,27 +109,26 @@ internal static class DecisionPanelPromptRenderer
             .AddChild(control);
     }
 
+    private const float SummaryPartWidth = 260;
+
     private static void AddActionSummary(
         VBoxContainer body,
         AffordancePresentation? selected,
-        DecisionComposer composer, bool local)
+        DecisionComposer composer, bool local, InterfaceScale scale)
     {
         if (selected is null || MulliganPrompt.IsOpening(composer.Prompt))
         {
             return;
         }
 
-        var summary = new VBoxContainer
-        {
-            Name = "ActionSummary",
-            ThemeTypeVariation = GodotThemeVariations.TightStack,
-        };
-        summary.AddChild(DecisionPanel.Text(
-            local ? DecisionCopy.CompactActionSummary(selected) : DecisionCopy.ActionSummary(selected),
-            selected.Consequence is null
-                ? GodotThemeVariations.StatusText
-                : GodotThemeVariations.DangerText,
-            wrap: true));
+        // The selected action as chips, each whole on hover.
+        HFlowContainer summary = DraftFactsRow.Create(scale);
+        summary.Name = "ActionSummary";
+        IReadOnlyList<string> parts = DecisionCopy.ActionParts(selected, compact: local);
+        DraftFactsRow.Fill(summary, [.. parts.Select(part => new DraftPart(part))]);
+        // Our choice: long parts share a line, so the summary keeps the editor below it in view.
+        DraftFactsRow.Bound(summary, SummaryPartWidth * (int)scale / 100f);
+        summary.AccessibilityDescription = string.Join("\n", parts);
         body.AddChild(summary);
         if (!MulliganPrompt.IsOpening(composer.Prompt))
         {
@@ -218,7 +217,7 @@ internal static class DecisionPanelPromptRenderer
         string label = ChoiceLabel(panel.composer.Prompt, view);
         var choose = new Button { Name = $"Affordance{option.Id}", Text = Text(label, unavailable, selected, resolving),
             AutowrapMode = TextServer.AutowrapMode.WordSmart, Alignment = HorizontalAlignment.Left,
-            Disabled = unavailable, ToggleMode = true, ButtonPressed = selected, TooltipText = option.Illegal ?? DecisionCopy.ActionSummary(view) };
+            Disabled = unavailable, ToggleMode = true, ButtonPressed = selected, TooltipText = ChoiceTooltip(panel.composer.Prompt, view, option) };
         choose.AccessibilityDescription = choose.TooltipText;
         LocalDecisionController.DescribeChoice(panel, choose, view);
         panel.StyleButton(choose, resolving ? InteractiveVisualState.Selected : unavailable ? InteractiveVisualState.Unavailable : selected ? InteractiveVisualState.Selected : InteractiveVisualState.Resting);
@@ -227,19 +226,17 @@ internal static class DecisionPanelPromptRenderer
         choose.Pressed += () => panel.SelectAffordance(option.Id, generation);
         panel.BindAnchors(choose, option.AnchorId);
         Add(destination, panel, choose);
-        AddExplanation(panel, view, option, destination);
     }
+
+    // A row's hover: why it is unavailable, then the action; an automatic choice adds its description.
+    private static string ChoiceTooltip(Prompt prompt, AffordancePresentation view, Affordance option) =>
+        string.Join("\n", new[] { option.Illegal, DecisionCopy.ActionSummary(view),
+            DecisionDialogLayout.Automatic(prompt) ? view.Description : null }
+            .Where(line => !string.IsNullOrWhiteSpace(line)).Distinct());
 
     private static string ChoiceLabel(Prompt prompt, AffordancePresentation view) =>
         DecisionDialogLayout.Automatic(prompt) ? view.DisplayLabel ?? view.Label : DecisionCopy.Choice(view);
 
-    private static void AddExplanation(DecisionPanel panel, AffordancePresentation view, Affordance option, Container? destination)
-    {
-        if (DecisionDialogLayout.Automatic(panel.composer!.Prompt) && view.Description is { Length: > 0 } description)
-            Add(destination, panel, DecisionPanel.Text(description, GodotThemeVariations.Body, wrap: true));
-        if (option.Illegal is not null)
-            Add(destination, panel, DecisionPanel.Text(option.Illegal, GodotThemeVariations.Caption, wrap: true));
-    }
 
     private static void Add(Container? destination, DecisionPanel panel, Control control)
     {

@@ -21,8 +21,24 @@ func _run() -> void:
 		_fail("timeline navigation submitted a game decision")
 		return
 	if not await _capture_checkpoint("timeline-navigation"): return
-	print("TIMELINE_NAVIGATION_SMOKE_OK zoom=true preview=true keyboard=true hidden_history=true")
+	print("TIMELINE_NAVIGATION_SMOKE_OK zoom=true preview=true keyboard=true hidden_history=true round_tracker=true")
 	quit(0)
+
+
+# The latest point names its round and phase from the engine's phase boundary, as pips and a chip.
+func _round_tracker(timeline: Control) -> bool:
+	var host := timeline.find_child("TimelineRound", true, false) as Control
+	var tracker := timeline.find_child("RoundTracker", true, false) as Control
+	if host == null or tracker == null or not tracker.is_visible_in_tree() or int(host.get_meta("round", 0)) < 1 \
+			or str(host.get_meta("phase", "")) not in ["Player", "Villain"] \
+			or tracker.find_child("Pips", true, false).get_child_count() != 2:
+		_fail("timeline does not track the latest round and phase")
+		return false
+	# A tracker rebuilt as navigation crosses rounds still yields to the timeline's width.
+	if timeline.get_combined_minimum_size().x > timeline.size.x + 0.5:
+		_fail("the rebuilt round tracker widened the timeline past its place")
+		return false
+	return true
 
 
 func _expand_timeline(timeline: Control, rail: Control) -> bool:
@@ -86,7 +102,7 @@ func _keyboard_navigation(timeline: Control, rail: Control) -> bool:
 	if not bool(timeline.get_meta("timeline_following")):
 		_fail("Latest did not resume following accepted events")
 		return false
-	return true
+	return _round_tracker(timeline)
 
 
 func _history_edge() -> bool:
