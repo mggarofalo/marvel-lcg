@@ -85,7 +85,7 @@ static func _amount(smoke, amount: int) -> bool:
     if variable == null: return false
     var keyboard = preload("res://smoke/native_keyboard_traversal.gd")
     if not await keyboard.reach(smoke, variable.get_line_edit()): return false
-    if not await smoke.ui.press_key(KEY_A, false, true): return false
+    if not await smoke.ui.select_all(): return false
     for pressed in [true, false]:
         var event := InputEventKey.new()
         event.keycode = KEY_0 + amount

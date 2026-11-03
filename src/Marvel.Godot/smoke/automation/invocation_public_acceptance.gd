@@ -66,7 +66,7 @@ func _setup() -> bool:
 func _enter_seed() -> bool:
     var seed := _node("Setup/Selections/Fields/Grid/Seed") as LineEdit
     if not await ui.click(Locator.control(seed)): return false
-    if not await ui.press_key(KEY_A, false, true): return false
+    if not await ui.select_all(): return false
     for pressed in [true, false]:
         var event := InputEventKey.new()
         event.keycode = KEY_2

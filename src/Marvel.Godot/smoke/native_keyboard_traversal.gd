@@ -22,13 +22,24 @@ static func _focused_visible(smoke, target: Control) -> bool:
         smoke._visible_control_rect(target), target.get_global_rect()])
     return false
 
-static func key(smoke, code: Key, shift := false, control := false) -> void:
+static func key(smoke, code: Key, shift := false) -> void:
     for pressed in [true, false]:
         var event := InputEventKey.new()
         event.keycode = code
         event.physical_keycode = code
         event.shift_pressed = shift
-        event.ctrl_pressed = control
+        event.pressed = pressed
+        smoke.render_viewport.push_input(event, true)
+        await smoke.process_frame
+
+## Selects the focused field's text with the platform's own shortcut
+## (Command on macOS, Control elsewhere), as ui_text_select_all binds it.
+static func select_all(smoke) -> void:
+    for pressed in [true, false]:
+        var event := InputEventKey.new()
+        event.keycode = KEY_A
+        event.physical_keycode = KEY_A
+        event.command_or_control_autoremap = true
         event.pressed = pressed
         smoke.render_viewport.push_input(event, true)
         await smoke.process_frame

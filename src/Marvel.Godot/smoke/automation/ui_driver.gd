@@ -113,15 +113,30 @@ func hover(locator: RefCounted) -> bool:
     steps.append("hover: " + locator.description)
     return await _ready_point(locator) != Vector2.INF
 
-func press_key(code: Key, shift: bool = false, ctrl: bool = false) -> bool:
+func press_key(code: Key, shift: bool = false) -> bool:
     if not failure.is_empty(): return false
-    steps.append("key: %s shift=%s ctrl=%s" % [code, shift, ctrl])
+    steps.append("key: %s shift=%s" % [code, shift])
     for pressed in [true, false]:
         var event := InputEventKey.new()
         event.keycode = code
         event.pressed = pressed
         event.shift_pressed = shift
-        event.ctrl_pressed = ctrl
+        viewport.push_input(event, true)
+    await viewport.get_tree().process_frame
+    return true
+
+## Selects the focused field's text with the platform's own shortcut: Godot
+## remaps the modifier to Command on macOS and Control elsewhere, as the
+## built-in ui_text_select_all binding does.
+func select_all() -> bool:
+    if not failure.is_empty(): return false
+    steps.append("key: select all")
+    for pressed in [true, false]:
+        var event := InputEventKey.new()
+        event.keycode = KEY_A
+        event.physical_keycode = KEY_A
+        event.command_or_control_autoremap = true
+        event.pressed = pressed
         viewport.push_input(event, true)
     await viewport.get_tree().process_frame
     return true
