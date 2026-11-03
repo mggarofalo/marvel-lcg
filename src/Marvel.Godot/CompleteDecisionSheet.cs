@@ -17,7 +17,7 @@ internal sealed class CompleteDecisionSheet : IDisposable
     private DecisionComposer? draft;
     private int focusGeneration;
     private Label notice = null!;
-    private Label selectedSummary = null!;
+    private HFlowContainer selectedSummary = null!;
     private Main main = null!;
     private Node inspectorParent = null!;
     private Control? tableDraft;
@@ -97,7 +97,7 @@ internal sealed class CompleteDecisionSheet : IDisposable
         notice.Name = "DecisionRecoveryNotice";
         notice.Visible = false;
         content.AddChild(notice);
-        selectedSummary = DecisionPanel.Text(string.Empty, GodotThemeVariations.Body, wrap: true);
+        selectedSummary = DraftFactsRow.Create(panel.ReadingScale);
         selectedSummary.Name = "CompleteChoiceSummary";
         content.AddChild(selectedSummary);
         panel.ProgressChanged += RefreshSummary;
@@ -109,14 +109,18 @@ internal sealed class CompleteDecisionSheet : IDisposable
         panel.SetCompleteChoicesVisibility(true);
     }
 
-    // The head already states the engine's instruction, so the draft summary leaves it out.
+    // The head already states the engine's instruction, so the draft summary leaves it out. The draft shows as the
+    // table's facts row: trackers for what is staged, selected or paid, chips for the rest, whole on hover.
     private void RefreshSummary(DecisionProgressPresentation? _)
     {
         var prompt = panel.composer is { } composer && panel.world is { } world
             ? Marvel.View.PromptPresentation.From(composer.Prompt, world) : null;
-        selectedSummary.Text = TableDraftSummary.From(panel.composer, prompt, panel.world,
-            shownInstruction: prompt?.Frame.Instruction) ?? string.Empty;
-        selectedSummary.Visible = selectedSummary.Text.Length > 0;
+        IReadOnlyList<DraftPart> parts = TableDraftSummary.Parts(panel.composer, prompt, panel.world,
+            shownInstruction: prompt?.Frame.Instruction) ?? [];
+        DraftFactsRow.Fill(selectedSummary, parts);
+        string summary = string.Join("  ·  ", parts.Select(part => part.Text));
+        selectedSummary.AccessibilityDescription = summary;
+        selectedSummary.SetMeta("summary_text", summary);
     }
 
     private Control openerFallback = null!;

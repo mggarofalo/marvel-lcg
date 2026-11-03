@@ -104,7 +104,11 @@ state. Playing a hand card opens the current engine-offered composition;
 authorized attachment targets can be outside the player area.
 
 History is a vertical account with expandable details. Complete Choices is next
-to the current decision. Temporary causal references have a reserved location
+to the current decision. Its summary is the same row of trackers and chips. Each
+choice row is its mark, action and name. A target's detail stands beside the row
+as a chip only when it tells that target from the others; a detail every target
+shares, an unavailable reason and an action's description are on the row's hover.
+A repeatable target's count is pips against its limit. Temporary causal references have a reserved location
 and do not create another physical action target. Status cards use shape and
 letter badges: octagonal T for tough, jagged S for stunned, ring C for confused;
 defense uses a separate shield.

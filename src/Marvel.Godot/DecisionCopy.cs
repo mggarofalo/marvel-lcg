@@ -33,13 +33,21 @@ internal static class DecisionCopy
         };
     }
 
-    public static string ActionSummary(AffordancePresentation view)
+    public static string ActionSummary(AffordancePresentation view) => string.Join("\n", ActionParts(view, compact: false));
+
+    /// <summary>
+    /// An action's parts in reading order: its choice, context, source state, costs, effect and consequence. The
+    /// compact form leaves out the choice and the source state, which its visible card already shows.
+    /// </summary>
+    internal static IReadOnlyList<string> ActionParts(AffordancePresentation view, bool compact)
     {
         ArgumentNullException.ThrowIfNull(view);
-        string?[] parts = [Choice(view), view.ContextDescription, view.SourceState,
-            view.CostDescription is { Length: > 0 } cost ? $"Costs: {cost}." : null,
-            view.Description, view.Consequence];
-        return string.Join("\n", parts.Where(part => !string.IsNullOrWhiteSpace(part)).Distinct());
+        string?[] parts = compact
+            ? [view.ContextDescription, view.CostDescription, view.Description, view.Consequence]
+            : [Choice(view), view.ContextDescription, view.SourceState,
+                view.CostDescription is { Length: > 0 } cost ? $"Costs: {cost}." : null,
+                view.Description, view.Consequence];
+        return [.. parts.Where(part => !string.IsNullOrWhiteSpace(part)).Select(part => part!).Distinct()];
     }
 
     public static string GenericCommit(string verb, string label, string anchor)
@@ -56,12 +64,8 @@ internal static class DecisionCopy
             : readableVerb;
     }
 
-    internal static string CompactActionSummary(AffordancePresentation view)
-    {
-        // Source state stays on its visible card; the dock retains commitments and effects.
-        string?[] parts = [view.ContextDescription, view.CostDescription, view.Description, view.Consequence];
-        return string.Join(" · ", parts.Where(part => !string.IsNullOrWhiteSpace(part)).Distinct());
-    }
+    // Source state stays on its visible card; the dock retains commitments and effects.
+    internal static string CompactActionSummary(AffordancePresentation view) => string.Join(" · ", ActionParts(view, compact: true));
 
     internal static string AbilityLabel(AffordancePresentation view, string label, string? choice = null)
     {

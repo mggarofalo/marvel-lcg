@@ -51,8 +51,7 @@ internal sealed class DecisionDraftRenderer
             return;
         }
 
-        AddContent(DecisionPanel.Text(DecisionPanelCopy.TargetProgress(composer, progress),
-            GodotThemeVariations.Caption, wrap: true));
+        AddProgress(progress);
         AddTargetInstructions(request);
 
         if (request.IsGrouped)
@@ -72,13 +71,23 @@ internal sealed class DecisionDraftRenderer
         else panel.AddContent(control);
     }
 
+    // The sheet's summary row already tracks the selection, so the sheet leaves this tracker out.
+    private void AddProgress(TargetSelectionProgress progress)
+    {
+        if (panel.CompleteChoicesOpen || ChoiceRowWording.Progress(composer, progress) is not { } part) return;
+        HFlowContainer row = DraftFactsRow.Create(panel.ReadingScale);
+        row.Name = "TargetProgress";
+        DraftFactsRow.Fill(row, [part]);
+        AddContent(row);
+    }
+
     private void AddTargetInstructions(TargetRequest request)
     {
         if (request.MustIncludeTraits is { Count: > 0 })
         {
-            AddContent(DecisionPanel.Text(
-                $"MUST INCLUDE  ·  {string.Join(", ", request.MustIncludeTraits)}",
-                GodotThemeVariations.Caption, wrap: true));
+            string traits = string.Join(", ", request.MustIncludeTraits);
+            AddContent(Chip.Create("MustInclude", new Wording("", $"Must include {traits}",
+                $"The selection must include a {traits} card."), null, panel.ReadingScale));
         }
     }
 
@@ -90,11 +99,8 @@ internal sealed class DecisionDraftRenderer
             var choose = new Button
             {
                 Name = $"Group{index}",
-                Text = (composer.Targets.SequenceEqual(group)
-                        ? "✓ SELECTED  ·  "
-                        : "◇ LEGAL  ·  ")
-                    + $"Group {index + 1}  ·  "
-                    + string.Join(" → ", group.Select(id => PromptPresentation.Describe(id, world))),
+                Text = ChoiceRowWording.Group(index, group.Select(id => PromptPresentation.Describe(id, world)),
+                    composer.Targets.SequenceEqual(group)),
                 Alignment = HorizontalAlignment.Left,
                 ToggleMode = true,
                 ButtonPressed = composer.Targets.SequenceEqual(group),
@@ -131,34 +137,30 @@ internal sealed class DecisionDraftRenderer
     {
         if (composer.Targets.Count > 1)
         {
-            AddContent(DecisionPanel.Text(
-                "Order: " + string.Join(" → ", composer.Targets.Select(id =>
-                    PromptPresentation.Describe(id, world))),
-                GodotThemeVariations.Caption, wrap: true));
+            string order = string.Join(" → ", composer.Targets.Select(id => PromptPresentation.Describe(id, world)));
+            AddContent(Chip.Create("TargetOrder", new Wording("", order, $"Order of resolution: {order}."),
+                null, panel.ReadingScale));
         }
     }
-
-    internal static string TargetLabel(string name, string? detail, string? visibleDescription = null) =>
-        string.IsNullOrWhiteSpace(detail) || detail == visibleDescription || detail == $"{name}: {visibleDescription}" ? name
-            : detail.StartsWith(name + ":", StringComparison.Ordinal) ? detail : $"{name} · {detail}";
 
     internal void AddOrdinaryTarget(int target)
     {
         string targetName = PromptPresentation.Describe(target, world!);
-        string detail = TargetLabel(targetName,
-            composer!.Selected?.Targets?.Details?.GetValueOrDefault(target),
+        TargetRequest request = composer!.Selected!.Targets!;
+        string? detail = ChoiceRowWording.Distinguishing(request, target, targetName,
             panel.PaymentModalOpen ? composer.Selected?.Description : null);
+        bool selected = composer.Targets.Contains(target);
         var choose = new Button
         {
             Name = $"Target{target}",
-            Text = composer!.Targets.Contains(target)
-                ? $"✓ {DecisionPanelCopy.TargetAction(composer, selected: true)}  ·  {detail}"
-                : $"◇ {DecisionPanelCopy.TargetAction(composer, selected: false)}  ·  {detail}",
+            Text = ChoiceRowWording.Target(DecisionPanelCopy.TargetAction(composer, selected), targetName, selected),
+            TooltipText = ChoiceRowWording.Tooltip(targetName, request.Details?.GetValueOrDefault(target)),
             Alignment = HorizontalAlignment.Left,
             ToggleMode = true,
-            ButtonPressed = composer!.Targets.Contains(target),
+            ButtonPressed = selected,
             Disabled = submitting,
         };
+        choose.AccessibilityDescription = choose.TooltipText;
         panel.StyleButton(
             choose,
             choose.ButtonPressed
@@ -166,7 +168,22 @@ internal sealed class DecisionDraftRenderer
                 : InteractiveVisualState.Legal);
         choose.Pressed += () => ToggleOrdinaryTarget(target);
         panel.BindAnchors(choose, target);
-        AddContent(choose);
+        if (detail is null) AddContent(choose);
+        else AddContent(WithDetail(choose, target, detail));
+    }
+
+    // A detail that tells this target from the others stands beside its row as a chip, whole on hover.
+    private HBoxContainer WithDetail(Button choose, int target, string detail)
+    {
+        var row = new HBoxContainer { Name = $"Target{target}Row", ThemeTypeVariation = GodotThemeVariations.CompactRow };
+        choose.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        row.AddChild(choose);
+        HFlowContainer chip = DraftFactsRow.Create(panel.ReadingScale);
+        chip.Name = $"Target{target}Detail";
+        chip.SizeFlagsHorizontal = Control.SizeFlags.ShrinkEnd;
+        DraftFactsRow.Fill(chip, [new DraftPart(detail)]);
+        row.AddChild(chip);
+        return row;
     }
 
     private void ToggleOrdinaryTarget(int target)
@@ -184,55 +201,40 @@ internal sealed class DecisionDraftRenderer
     {
         int count = composer!.Targets.Count(chosen => chosen == target);
         int limit = request.MaximumOccurrences?.GetValueOrDefault(target) ?? request.Max;
-        var row = new HBoxContainer
-        {
-            ThemeTypeVariation = GodotThemeVariations.CompactRow,
-        };
-        var remove = new Button
-        {
-            Name = $"Target{target}Remove",
-            Text = "−",
-            Disabled = submitting || count == 0,
-        };
-        panel.StyleButton(
-            remove,
-            remove.Disabled
-                ? InteractiveVisualState.Unavailable
-                : InteractiveVisualState.Resting,
-            compact: true);
-        remove.Pressed += () =>
+        var row = new HBoxContainer { ThemeTypeVariation = GodotThemeVariations.CompactRow };
+        row.AddChild(Step(target, "Remove", "−", count > 0, InteractiveVisualState.Resting, () =>
         {
             if (operations.TryRemoveTarget(target)) panel.Rebuild();
-        };
-        panel.BindAnchors(remove, target);
-        row.AddChild(remove);
-        var label = DecisionPanel.Text(
-            $"{count}  ·  {TargetLabel(PromptPresentation.Describe(target, world!), request.Details?.GetValueOrDefault(target))}  ·  max {limit}",
-            GodotThemeVariations.Body, wrap: true);
-        label.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-        row.AddChild(label);
-        var add = new Button
+        }));
+        row.AddChild(RepeatedCount(request, target, count, limit));
+        row.AddChild(Step(target, "Add", "+", operations.CanAddTarget(target), InteractiveVisualState.Legal, () =>
         {
-            Name = $"Target{target}Add",
-            Text = "+",
-            Disabled = submitting || !operations.CanAddTarget(target),
-        };
-        panel.StyleButton(
-            add,
-            add.Disabled
-                ? InteractiveVisualState.Unavailable
-                : InteractiveVisualState.Legal,
-            compact: true);
-        add.Pressed += () =>
-        {
-            if (operations.TryAddTarget(target))
-            {
-                panel.NotifyAnchorFocused([target]);
-                panel.Rebuild();
-            }
-        };
-        panel.BindAnchors(add, target);
-        row.AddChild(add);
+            if (!operations.TryAddTarget(target)) return;
+            panel.NotifyAnchorFocused([target]);
+            panel.Rebuild();
+        }));
         AddContent(row);
+    }
+
+    // The count as pips against the limit, then a detail that tells this target from the others.
+    private HFlowContainer RepeatedCount(TargetRequest request, int target, int count, int limit)
+    {
+        string name = PromptPresentation.Describe(target, world!);
+        HFlowContainer tracker = DraftFactsRow.Create(panel.ReadingScale);
+        tracker.Name = $"Target{target}Count";
+        tracker.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        var parts = new List<DraftPart> { ChoiceRowWording.Repeated(name, request.Details?.GetValueOrDefault(target), count, limit) };
+        if (ChoiceRowWording.Distinguishing(request, target, name) is { } detail) parts.Add(new DraftPart(detail));
+        DraftFactsRow.Fill(tracker, parts);
+        return tracker;
+    }
+
+    private Button Step(int target, string operation, string text, bool available, InteractiveVisualState state, Action pressed)
+    {
+        var step = new Button { Name = $"Target{target}{operation}", Text = text, Disabled = submitting || !available };
+        panel.StyleButton(step, step.Disabled ? InteractiveVisualState.Unavailable : state, compact: true);
+        step.Pressed += pressed;
+        panel.BindAnchors(step, target);
+        return step;
     }
 }

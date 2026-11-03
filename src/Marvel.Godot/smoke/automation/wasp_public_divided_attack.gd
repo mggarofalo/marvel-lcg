@@ -156,9 +156,13 @@ func _pass_window() -> bool:
 func _divide() -> bool:
     if not await _open_allocation(ultron): return false
     var copy := _visible_text(main)
+    # Each recipient's shared consequence is its count tracker's hover.
+    var hovers := main.find_children("Target*Count", "", true, false).map(
+        func(row): return row.get_child(0).tooltip_text if row.get_child_count() > 0 else "")
     if not await ui.expect(func(): return "Divide 2 damage among enemies" in copy and \
         "Each enemy dealt damage is attacked, so its Retaliate applies" in copy and \
-        "Attacked if given any damage" in copy, "allocation explains the total, attack and retaliate consequences"): return false
+        not hovers.is_empty() and hovers.all(func(hover): return "Attacked if given any damage" in hover),
+        "allocation explains the total, attack and retaliate consequences"): return false
     var revision := witness.Revision()
     if not await _allocate_and_commit(ultron, drone, "wasp-divided-allocation"): return false
     if not await ui.expect(func(): return witness.Revision() == revision + 1 and _health_of(ultron) == ultron_health - 1 and \
