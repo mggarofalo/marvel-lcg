@@ -65,8 +65,8 @@ internal sealed class AuthorizedSessionProjector(
         IReadOnlyList<HistoryUnitInspection> inspection)
     {
         ArgumentNullException.ThrowIfNull(game);
-        WorldDescriptor world = WorldProjection.For(
-            game.State, null, [], scope, game.Active).World;
+        ProjectedWorld projected = WorldProjection.ForEvents(game.State, scope, game.Active);
+        WorldDescriptor world = projected.WithEvents([]);
         var entries = new List<HistoryEntryDescriptor>(save.Cursor);
         foreach (HistoryUnitInspection unit in inspection)
         {
@@ -96,7 +96,7 @@ internal sealed class AuthorizedSessionProjector(
                 unit.ResourceGenerators,
                 outcome);
             ActionHistoryPresentation presented = ActionHistoryPresenter.PresentEntry(
-                facts, unit.Events, WorldProjection.For(game.State, null, unit.Events, scope, game.Active).World);
+                facts, unit.Events, projected.WithEvents(unit.Events));
             entries.Add(new HistoryEntryDescriptor(
                 unit.Cursor, presented.Summary, presented.Details));
         }

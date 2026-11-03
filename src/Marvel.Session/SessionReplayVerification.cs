@@ -17,7 +17,7 @@ internal static class SessionReplayVerification
         int unitCount,
         Func<SessionSetup, ReplayOpenedGame> open,
         bool requireExposures,
-        List<HistoryUnitInspection>? history = null)
+        ActiveHistory? history = null)
     {
         ReplayOpenedGame opened = open(save.Setup);
         Game game = opened.Game;
@@ -54,10 +54,10 @@ internal static class SessionReplayVerification
         int unitIndex,
         Game game,
         bool requireExposures,
-        List<HistoryUnitInspection>? history)
+        ActiveHistory? history)
     {
         RequireUnitPosition(unit, unitIndex, game);
-        ReplayHistory? inspection = CreateReplayHistory(history, unit);
+        ReplayHistory? inspection = history is null ? null : new ReplayHistory();
         IReadOnlyList<InformationExposure> exposures = [];
         string? derivedRole = null;
         for (int decisionIndex = 0; decisionIndex < unit.Decisions.Count; decisionIndex++)
@@ -73,15 +73,10 @@ internal static class SessionReplayVerification
         }
 
         RequireUnitBoundary(unit, unitIndex, game, derivedRole);
-        AppendReplayHistory(inspection, history, unit, unitIndex);
+        history?.Record(inspection!, unit, unitIndex);
         RequireReplayExposures(requireExposures, unit, unitIndex, exposures);
         return exposures;
     }
-
-    internal static ReplayHistory? CreateReplayHistory(
-        List<HistoryUnitInspection>? history,
-        JournalUnit unit) =>
-        history is not null && unit.Status == "complete" ? new ReplayHistory() : null;
 
     internal static Prompt ReplayUnitDecision(
         JournalUnit unit,
@@ -121,7 +116,7 @@ internal static class SessionReplayVerification
     {
         if (decisionIndex == 0)
         {
-            inspection?.ObserveRoot(unit, step, game, prompt, decision);
+            inspection?.ObserveRoot(step.Decision.Actor, game, prompt, decision);
         }
     }
 
@@ -142,24 +137,12 @@ internal static class SessionReplayVerification
         JournalStep step,
         Decision decision,
         Game game) =>
-        inspection?.ObserveResources(step, decision, game);
+        inspection?.ObserveResources(step.Decision.Actor, decision, game);
 
     internal static void ObserveReplayEvents(
         ReplayHistory? inspection,
         IReadOnlyList<GameEvent> events) =>
         inspection?.ObserveEvents(events);
-
-    internal static void AppendReplayHistory(
-        ReplayHistory? inspection,
-        List<HistoryUnitInspection>? history,
-        JournalUnit unit,
-        int unitIndex)
-    {
-        if (inspection is not null)
-        {
-            inspection.Append(history!, unit, unitIndex);
-        }
-    }
 
     internal static void RequireReplayExposures(
         bool requireExposures,

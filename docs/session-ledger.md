@@ -415,10 +415,23 @@ actor, target, payment, value and allocation must still resolve exactly and be
 legal. Reordering can change derived damage and healing, so comparing those
 records with their old order would reject the feature by definition. The newly
 derived records replace the old suffix only after the complete candidate is
+verified.
+
 The initial implementation favors this full replay over serializing internal
 continuations or maintaining inverse mutations. Verified checkpoints may later
 improve performance, but they are caches. Losing a checkpoint cannot lose or
 change the canonical game.
+
+An accepted new decision deals and replays exactly once. The construction-mode
+replay of the live save also collects the active history, and the candidate
+observes its new decision the same way, so the published history equals a
+fresh `InspectActiveHistory` of the committed save without a second replay.
+`ResolutionReplayBudgetTests` holds the single replay and that equality through
+a complete game. History descriptions project the world once and describe each
+unit's events against it; `ProjectedWorldTests` holds that description equal to
+a fresh projection. Replay time still grows with the length of the active prefix;
+the durable commit does not, because it writes three small flushed files whose
+cost is dominated by the platform flush.
 
 The file operation must leave either the previous valid save or the proposed
 valid save after interruption. Platform-specific replacement and directory

@@ -20,6 +20,30 @@ public static class WorldProjection
         ArgumentNullException.ThrowIfNull(events);
         ArgumentNullException.ThrowIfNull(scope);
 
+        ProjectedWorld projected = Project(world, prompt, scope, activePlayer, publicPrompt);
+        List<GameEvent> safeEvents = projected.SafeEvents(events);
+        return new VisibleResult(projected.WithSafeEvents(safeEvents), projected.Prompt, safeEvents);
+    }
+
+    /// <summary>
+    /// Projects one world without a prompt, so many event lists can be described
+    /// against it. Each <see cref="ProjectedWorld.WithEvents"/> result equals the
+    /// world of <see cref="For"/> with no prompt and that event list.
+    /// </summary>
+    public static ProjectedWorld ForEvents(World world, ViewScope scope, int? activePlayer = null)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(scope);
+        return Project(world, null, scope, activePlayer, null);
+    }
+
+    private static ProjectedWorld Project(
+        World world,
+        Prompt? prompt,
+        ViewScope scope,
+        int? activePlayer,
+        Prompt? publicPrompt)
+    {
         var promptVisible = prompt is not null && scope.Includes(prompt.Player);
         var searchVisible = promptVisible ? SearchResults(prompt!) : [];
         WorldDescriptor complete = Describe(world, prompt, searchVisible);
@@ -44,17 +68,15 @@ public static class WorldProjection
         visible = TableDescriptorProjection.WithContext(
             visible, authorizedPrompt, scope, active, world.FirstPlayer,
             publicPrompt ?? prompt, PublicReadableIds(complete, readableIds));
-        List<GameEvent> safeEvents = VisibilityEventFilter.Filter(events, addressableIds, readableIds);
         visible = visible with
         {
-            EventFaces = EventFaceProjection.From(safeEvents, world.Facts),
             ActiveAttack = ActiveAttackProjection.From(world, visible),
             EncounterGroups = EncounterGroupProjection.From(world, visible),
             InvocationDecks = world.Seats.Where(seat => seat.InvocationDeck is not null)
                 .Select(seat => new InvocationDeckDescriptor(seat.Index,
                     seat.InvocationDeck!.Deck.Id, seat.InvocationDeck.Discard.Id)).ToArray(),
         };
-        return new VisibleResult(visible, authorizedPrompt, safeEvents);
+        return new ProjectedWorld(world.Facts, visible, authorizedPrompt, addressableIds, readableIds);
     }
 
     private static HashSet<int> PublicReadableIds(WorldDescriptor complete, HashSet<int> readableIds) =>

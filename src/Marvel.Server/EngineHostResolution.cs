@@ -110,8 +110,9 @@ internal static class EngineHostResolution
         EngineHost host, EngineRequest request, RequestExecution execution,
         SessionAccess access, Prompt pending, Decision decision, int actor)
     {
-            Game candidate = execution.ObserveReplay(() => SessionReplay.Verify(
+            CandidateReplay replay = execution.ObserveReplay(() => SessionReplay.BeginCandidate(
                 access.Session.Save, host.compatibility, host.ReplayOpen));
+            Game candidate = replay.Game;
             Prompt candidatePrompt = candidate.Pending
                 ?? throw new ReplayDivergenceException("candidate has no pending prompt");
             JournalReplay.RequirePrompt(
@@ -126,7 +127,7 @@ internal static class EngineHostResolution
             string phase = candidate.Phase.ToString();
             string role = SessionReplay.UnitRole(candidate, candidatePrompt, replayDecision);
             long rngBefore = candidate.State.Random.Generator.WordsConsumed;
-            var resolved = candidate.Resolve(replayDecision);
+            var resolved = replay.Resolve(actor, replayDecision, root);
             IReadOnlyList<InformationExposure> exposures = InformationFrontier.Classify(
                 candidate.State.Players,
                 rngBefore,
@@ -154,7 +155,7 @@ internal static class EngineHostResolution
                 phase,
                 candidate.Pending,
                 exposures));
-            var history = host.projector.Inspect(proposed);
+            var history = replay.History(proposed);
             var transaction = new SessionTransaction(candidate, proposed, history);
             return transaction.CommitAndPublish(
                 access.Session,
