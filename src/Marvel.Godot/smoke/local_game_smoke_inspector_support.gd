@@ -45,10 +45,11 @@ func _capture_named_card(title: String, checkpoint: String) -> bool:
 
 
 func _prepare_art_pack() -> void:
-	# The fixture never lands in the player's user:// store: it sits beside the probe's isolated saves.
+	# The fixture never lands in the player's user:// store. It sits beside the probe's isolated saves,
+	# not inside them, so a journey that browses its save directory sees only what it wrote there.
 	var root_path := OS.get_environment("MARVEL_SMOKE_ART_PACK_DIR")
 	var saves := OS.get_environment("MARVEL_SAVE_DIRECTORY")
-	if root_path.is_empty() and not saves.is_empty(): root_path = saves.path_join("smoke-art-pack")
+	if root_path.is_empty() and not saves.is_empty(): root_path = saves.trim_suffix("/") + "-art-pack"
 	if root_path.is_empty(): root_path = OS.get_cache_dir().path_join("marvel-smoke-art-pack-" + str(OS.get_process_id()))
 	DirAccess.make_dir_recursive_absolute(root_path)
 	var illustration := Image.create(4, 4, false, Image.FORMAT_RGBA8)
