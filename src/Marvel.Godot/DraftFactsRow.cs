@@ -40,6 +40,14 @@ internal static class DraftFactsRow
         row.Visible = parts.Count > 0;
     }
 
+    /// <summary>Caps each long part's bounded line at <paramref name="width"/>, for a row inside a narrower surface.</summary>
+    internal static void Bound(HFlowContainer row, float width)
+    {
+        foreach (Label label in row.FindChildren("Text", "Label", true, false).OfType<Label>())
+            if (label.ClipText && label.CustomMinimumSize.X > width)
+                label.CustomMinimumSize = new Vector2(Math.Max(0, width), 0);
+    }
+
     /// <summary>Whether a part shows as a tracker rather than a chip.</summary>
     internal static bool Tracks(DraftPart part) => part.Label is not null && part.Total > 0;
 

@@ -118,9 +118,17 @@ internal sealed class CompleteDecisionSheet : IDisposable
         IReadOnlyList<DraftPart> parts = TableDraftSummary.Parts(panel.composer, prompt, panel.world,
             shownInstruction: prompt?.Frame.Instruction) ?? [];
         DraftFactsRow.Fill(selectedSummary, parts);
+        BoundSummary();
         string summary = string.Join("  ·  ", parts.Select(part => part.Text));
         selectedSummary.AccessibilityDescription = summary;
         selectedSummary.SetMeta("summary_text", summary);
+    }
+
+    // Long summary chips share a line, so the summary stays short and never widens the sheet past its frame.
+    private void BoundSummary()
+    {
+        if (InteractionControl.IsUsable(frame) && frame.Size.X > 0)
+            DraftFactsRow.Bound(selectedSummary, frame.Size.X * 0.3f);
     }
 
     private Control openerFallback = null!;
@@ -180,12 +188,14 @@ internal sealed class CompleteDecisionSheet : IDisposable
             Rect2 bounds = CardChoiceLayout.Frame(viewport);
             frame.Size = bounds.Size;
             frame.Position = bounds.Position;
+            BoundSummary();
             panel.CardChoices.RefreshLayout();
             return;
         }
         Rect2 dialog = DecisionDialogLayout.Frame(viewport, panel.ReadingScale, panel.composer?.Prompt.Affordances.Count ?? 0);
         frame.Size = dialog.Size;
         frame.Position = dialog.Position;
+        BoundSummary();
     }
 
     internal void Input(InputEvent input)
