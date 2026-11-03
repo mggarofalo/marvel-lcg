@@ -429,9 +429,10 @@ fresh `InspectActiveHistory` of the committed save without a second replay.
 `ResolutionReplayBudgetTests` holds the single replay and that equality through
 a complete game. History descriptions project the world once and describe each
 unit's events against it; `ProjectedWorldTests` holds that description equal to
-a fresh projection. Replay time still grows with the length of the active prefix;
-the durable commit does not, because it writes three small flushed files whose
-cost is dominated by the platform flush.
+a fresh projection. Replay time still grows with the length of the active prefix.
+The durable commit rewrites the whole save, so its serialization grows with the
+journal too, though at current game sizes its cost is dominated by the platform
+flush.
 
 The file operation must leave either the previous valid save or the proposed
 valid save after interruption. Platform-specific replacement and directory
