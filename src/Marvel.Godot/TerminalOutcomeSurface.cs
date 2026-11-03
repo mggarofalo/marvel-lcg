@@ -3,7 +3,11 @@ using Marvel.Rules.Play;
 
 namespace Marvel.Godot;
 
-/// <summary>A nonmodal result card that preserves access to the final table.</summary>
+/// <summary>A nonmodal action that leads from the final table to its history.</summary>
+/// <remarks>
+/// The table's own context states the result once, as its heading and reason chip; this surface
+/// carries only the next step, so the result is never stated twice.
+/// </remarks>
 internal static class TerminalOutcomeSurface
 {
     internal static void Show(Main main)
@@ -15,32 +19,16 @@ internal static class TerminalOutcomeSurface
             main.RemoveChild(prior);
             prior.QueueFree();
         }
-        OutcomePresentation outcome = OutcomePresentation.From(main.CurrentGame!.World!.Outcome,
-            main.CurrentGame.World.LossReason);
         var frame = new PanelContainer
         {
             Name = "TerminalOutcome", ZIndex = 20,
-            CustomMinimumSize = new Vector2(520, 0),
             ThemeTypeVariation = GodotThemeVariations.SurfacePanel,
             MouseFilter = Control.MouseFilterEnum.Stop,
         };
         main.AddChild(frame);
         frame.SetMeta("outcome", (int)terminal);
-        var stack = new VBoxContainer
-        {
-            ThemeTypeVariation = GodotThemeVariations.Stack,
-            SizeFlagsVertical = Control.SizeFlags.ShrinkBegin,
-        };
-        frame.AddChild(stack);
-        // The heading names the result; one chip names why, explained on hover.
-        stack.AddChild(Copy("OutcomeHeading", outcome.Heading, 28));
-        Marvel.View.WorldDescriptor world = main.CurrentGame.World;
-        PanelContainer reason = Chip.Create("OutcomeResult",
-            TableWording.For(DecisionWording.OutcomeFact(world.Outcome, world.LossReason)), null, main.decisions.ReadingScale);
-        reason.SizeFlagsHorizontal = Control.SizeFlags.ShrinkBegin;
-        stack.AddChild(reason);
         var actions = new HBoxContainer { ThemeTypeVariation = GodotThemeVariations.WideRow };
-        stack.AddChild(actions);
+        frame.AddChild(actions);
         var review = new Button
         {
             Name = "ReviewGame", Text = "Review game", CustomMinimumSize = new Vector2(0, 44),
@@ -71,20 +59,8 @@ internal static class TerminalOutcomeSurface
 
     private static void Fit(Main main, Control frame)
     {
-        float width = Math.Min(520, main.GetViewportRect().Size.X - 48);
-        frame.Size = new Vector2(width, frame.GetCombinedMinimumSize().Y);
-        frame.Position = new Vector2((main.GetViewportRect().Size.X - width) / 2, 86);
-    }
-
-    private static Label Copy(string name, string text, int size)
-    {
-        var label = new Label
-        {
-            Name = name, Text = text, AutowrapMode = TextServer.AutowrapMode.WordSmart,
-            CustomMinimumSize = new Vector2(480, 0),
-            ThemeTypeVariation = GodotThemeVariations.Body,
-        };
-        label.AddThemeFontSizeOverride("font_size", size);
-        return label;
+        Vector2 size = frame.GetCombinedMinimumSize();
+        frame.Size = size;
+        frame.Position = new Vector2((main.GetViewportRect().Size.X - size.X) / 2, 86);
     }
 }

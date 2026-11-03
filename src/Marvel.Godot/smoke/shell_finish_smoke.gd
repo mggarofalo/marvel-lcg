@@ -72,10 +72,16 @@ func _choice(row_name: String, text: String) -> Button:
 func _terminal_table_is_safe(state: Dictionary) -> bool:
 	if not await super._terminal_table_is_safe(state): return false
 	var frame := main.get_node_or_null("TerminalOutcome") as Control
-	var heading := main.find_child("OutcomeHeading", true, false) as Label
 	var review := main.find_child("ReviewGame", true, false) as Button
-	if frame == null or frame.size.y > 300 or heading.get_theme_font_size("font_size") < 24:
-		_fail("terminal result is unbounded or its outcome heading is unreadable")
+	if frame == null or frame.size.y > 300 or review == null or not frame.is_ancestor_of(review):
+		_fail("terminal next step is unbounded or missing")
+		return false
+	# The table states the result once: its heading and reason chip. The surface repeats neither.
+	var stated := main.find_children("ContextualHeading", "Label", true, false).filter(
+		func(label: Label) -> bool: return label.is_visible_in_tree() and label.text in ["Victory", "Defeat"])
+	if stated.size() != 1 or frame.is_ancestor_of(stated[0]) \
+			or frame.find_children("*", "Label", true, false).any(func(label: Label) -> bool: return label.text in ["Victory", "Defeat"]):
+		_fail("the finished game did not state its result exactly once on the table")
 		return false
 	if not _control_is_fully_visible(review) or not await _pointer_activate(review): return false
 	await process_frame
