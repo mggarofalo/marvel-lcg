@@ -82,6 +82,23 @@ public sealed class DrangThreeTests : CoreCardTestBase
     }
 
     [Fact]
+    [Rule("rr:forced.5")]
+    public void AnAnswerNamingAKeywordThatDoesNotApplyIsRefused()
+    {
+        // Each minion has a pending Teamwork beside its Quickstrike; neither prints Teamwork,
+        // so only the two Quickstrike handles are offered.
+        var world = BadoonBoards.Board(villain: BadoonBoards.DrangThree);
+        BadoonBoards.OnTop(world, Vulture);
+        BadoonBoards.OnTop(world, KreePrivate);
+
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => Reveal(world, prompt =>
+            prompt.Trigger == MinionEntryBatchOperation.ResolveBatchedEntryKeywords
+                ? Decision.Take(prompt.Affordances.Max(offer => offer.Id) + 1) : null));
+
+        Assert.Contains("was not offered", thrown.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     [Rule("rr:first-player.1")]
     public void EachMinionEngagesThePlayerWithTheFewestAndTheFirstPlayerBreaksTies()
     {
