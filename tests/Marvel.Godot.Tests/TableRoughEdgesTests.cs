@@ -197,13 +197,13 @@ public sealed class TableRoughEdgesTests
     }
 
     [Theory]
-    [InlineData(PromptEffectKind.Damage, 8, "Damage 8", "Icon_damage")]
-    [InlineData(PromptEffectKind.RemoveThreat, 3, "Threat − 3", "Icon_remove_threat")]
-    [InlineData(PromptEffectKind.Draw, 1, "Draw 1", "Icon_draw")]
-    [InlineData(PromptEffectKind.Stun, 0, "Stun", "Icon_stun")]
-    [InlineData(PromptEffectKind.Confuse, 0, "Confuse", "Icon_confuse")]
-    [InlineData(PromptEffectKind.Tough, 0, "Tough", "Icon_tough")]
-    public void APrintedEffectIsOneChipWithItsAmount(PromptEffectKind kind, long amount, string label, string icon)
+    [InlineData(PromptEffectKind.Damage, 8, "Printed damage 8", "Icon_damage")]
+    [InlineData(PromptEffectKind.RemoveThreat, 3, "Printed threat removal 3", "Icon_remove_threat")]
+    [InlineData(PromptEffectKind.Draw, 1, "Printed draw 1", "Icon_draw")]
+    [InlineData(PromptEffectKind.Stun, 0, "Printed stun", "Icon_stun")]
+    [InlineData(PromptEffectKind.Confuse, 0, "Printed confuse", "Icon_confuse")]
+    [InlineData(PromptEffectKind.Tough, 0, "Printed tough", "Icon_tough")]
+    public void APrintedEffectIsOneChipNamingItsPrintedAmount(PromptEffectKind kind, long amount, string label, string icon)
     {
         Wording wording = DecisionWording.Effect(new PromptEffect(kind, amount));
         Assert.Equal(label, wording.Label);

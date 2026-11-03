@@ -129,7 +129,10 @@ internal static class DecisionWording
         _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "no wording for this effect"),
     };
 
-    /// <summary>A printed effect as a chip: "Damage 8", "Draw 1", or "Stun" for a status, which has no amount.</summary>
+    /// <summary>
+    /// A printed effect as a chip: "Printed damage 8", "Printed draw 1", or "Printed stun" for a status, which has no
+    /// amount. It names the printed amount, never the result: modifiers, prevention and later effects can change it.
+    /// </summary>
     internal static Wording Effect(PromptEffect effect)
     {
         Wording wording = TableWording.For(EffectFact(effect.Kind));
