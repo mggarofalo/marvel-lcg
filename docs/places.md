@@ -48,6 +48,19 @@ encounter deck and encounter discard in the villain's — which is why the
 villain's play area is a **value and not a null**. A card in no *game* area is a
 real and different thing.
 
+### Areas are made by the game, never by a read
+
+An `Area` is made the first time a step of the game puts something there: an
+encounter discard pile by the first discard, a status area by the first status.
+Its id is its creation order and `AreaRef.Id` carries it on the event wire, so
+the moment an area is made is part of the event stream. The engine therefore
+chooses that a read makes nothing. Inside `World.BeginRead()` — opened by the
+state digest and by every View projection — `AreaOf` answers a place the world
+has not made with an empty place that is never added, and making an area, a
+card or a game area raises. A caller that reports an area's id uses
+`FindArea`, which never makes one. `PresentationReadPurityTests` plays games,
+Kang splits included, beside an unread twin and holds every read to that.
+
 ### Three seat-shaped integers, and none of them is the others
 
 The reason `PlayArea` is a type:

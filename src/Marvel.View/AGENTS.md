@@ -10,6 +10,12 @@ rules, occurrence metadata and provider lists at the export boundary. An
 mutation and consumer mutation separately; distinguish a live-state alias from
 sharing between already detached presentation objects.
 
+A projection reads the published game and must leave it exactly as it found
+it: an area id or affordance handle a read allocates renumbers a later event.
+Read the world inside `World.BeginRead()`, which `WorldProjection` opens, and
+report an area's id through `FindArea`, never `AreaOf`. See
+[places.md](../../docs/places.md#areas-are-made-by-the-game-never-by-a-read).
+
 ## Explain the decision, not just the available controls
 
 Project the current cause, source, affected objects, answering seat, question,

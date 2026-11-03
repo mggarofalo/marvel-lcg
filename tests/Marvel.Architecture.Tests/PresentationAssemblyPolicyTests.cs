@@ -124,6 +124,10 @@ public sealed class PresentationAssemblyPolicyTests
             "Marvel.Rules.State.StateFields",
             "Marvel.Rules.State.Traits",
             "Marvel.Rules.State.World",
+            // A read open on the world, which allocates nothing.
+            "Marvel.Rules.State.WorldRead",
+            // Only its non-allocating FindArea lookup and BeginRead; see the member policy.
+            "Marvel.Rules.State.WorldReads",
             // Only its read-only GameAreaOf(PlayArea) lookup; see the member policy.
             "Marvel.Rules.State.WorldTopology",
             "Marvel.Rules.Timing.AbilityType",

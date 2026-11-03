@@ -233,7 +233,7 @@ separated table ([P9](#p9-godot-split-table)) awaits that review in MARVEL-905.
 11. Progress toward winning: Kang (I), then a Kang (II) in each area, then
     Kang (III) after the reunion.
 
-### Facts the View carries for the split table (protocol 46)
+### Facts the View carries for the split table (protocol 47)
 
 Each fact is derived in the engine and copied by View without sentences; the client
 validates that every id it names is one the same response lists
@@ -249,7 +249,7 @@ validates that every id it names is one the same response lists
 | Which area is acting in the villain phase | `VillainPhaseFocus` | `KangTableDescriptor.Acting` | `VillainPhaseFocusTests`, `KangTableFactsTests` |
 | Why another area's cards are not offered | `Places.CanAffect` | `PlayerDescriptor.OutOfReach`, `OutOfReachReason` | `SplitTableProjectionTests`, `KangSplitTableViewTests` |
 | Player-named prompt and event labels | `GameAreaFacts` labels, `KangDepartureNames` | prompt `DisplayLabel`/`CommitLabel`/`Description`; `GameAreaEventPresentation` | `KangTableFactsTests`, `SplitTableProjectionTests` |
-| "Each player" scope, shared encounter deck and discard, 3B completion is not a loss, turn-order steps, 2B tokens wait for 4A | `KangTable` notes (`KangNoteKind`, anchored to 2B and each uncompleted 3B), `World.Players`, `World.AreaOf` | `Notes` (kind, card), `StartingPlayers`, `EncounterDeck`, `EncounterDiscard` | `KangTableFactsTests`, `SplitTableProjectionTests` |
+| "Each player" scope, shared encounter deck and discard, 3B completion is not a loss, turn-order steps, 2B tokens wait for 4A | `KangTable` notes (`KangNoteKind`, anchored to 2B and each uncompleted 3B), `World.Players`, `World.FindArea` | `Notes` (kind, card), `StartingPlayers`, `EncounterDeck`, `EncounterDiscard` (each absent until the world has made that pile) | `KangTableFactsTests`, `SplitTableProjectionTests` |
 | Topology events named as they happened | `PlayAreaJoined`/`PlayAreaDetached` `Members` (journal omits) | `GameAreaEventPresentation` | `KangTableFactsTests`, `SplitTableProjectionTests`, `TopologyEventJournalTests` |
 
 `KangSplitTableViewTests` drives Standard, Temporal, two players, seed 1 through

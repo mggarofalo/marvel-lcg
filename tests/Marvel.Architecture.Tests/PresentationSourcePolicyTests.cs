@@ -433,11 +433,14 @@ public sealed class PresentationSourcePolicyTests
             "Marvel.Rules.State.Seat.Name",
             "Marvel.Rules.State.StateFields.For(Marvel.Rules.State.Card, Marvel.Rules.State.ICardFacts, int, bool, bool, bool, Marvel.Rules.State.World?)",
             "Marvel.Rules.State.Traits.Of(Marvel.Rules.State.World, Marvel.Rules.State.Card, Marvel.Rules.State.ICardFacts)",
-            "Marvel.Rules.State.World.AreaOf(Marvel.Rules.State.DeckType, Marvel.Rules.State.PlayArea?, int, int)",
             "Marvel.Rules.State.World.Areas",
+            // A projection reads inside a read that allocates nothing.
+            "Marvel.Rules.State.World.BeginRead()",
             "Marvel.Rules.State.World.Cards",
             "Marvel.Rules.State.World.EncounterTopology",
             "Marvel.Rules.State.World.Facts",
+            // A shared pile's id only once the world has made it.
+            "Marvel.Rules.State.World.FindArea(Marvel.Rules.State.DeckType, Marvel.Rules.State.PlayArea?, int)",
             "Marvel.Rules.State.World.FirstPlayer",
             // The engine's game-area answer for a seat's play area.
             "Marvel.Rules.State.World.GameAreaOf(Marvel.Rules.State.PlayArea)",

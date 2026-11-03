@@ -24,11 +24,17 @@ public sealed record KangTableDescriptor(
     /// <summary>The number of players who started the scenario, which every per-player value counts.</summary>
     public int StartingPlayers { get; init; }
 
-    /// <summary>The one encounter deck every game area shares, by area id.</summary>
-    public int EncounterDeck { get; init; }
+    /// <summary>
+    /// The one encounter deck every game area shares, by area id, or <c>null</c> when the
+    /// world has not made it.
+    /// </summary>
+    public int? EncounterDeck { get; init; }
 
-    /// <summary>The one encounter discard pile every game area shares, by area id.</summary>
-    public int EncounterDiscard { get; init; }
+    /// <summary>
+    /// The one encounter discard pile every game area shares, by area id, or <c>null</c>
+    /// before the first card is discarded makes it.
+    /// </summary>
+    public int? EncounterDiscard { get; init; }
 
     /// <summary>The separated-table rules the engine says apply now, each keyed by kind.</summary>
     public IReadOnlyList<KangNoteDescriptor> Notes { get; init; } = [];

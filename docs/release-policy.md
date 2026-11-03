@@ -1,5 +1,7 @@
 # Release identity, signing and compatibility
 
+Protocol 47 lets Kang's `encounter_deck` and `encounter_discard` be absent: a projection names a shared encounter pile only once the world has made it, and the shared discard pile is made by the first discard. A projection no longer makes that pile itself. Protocol 46 peers, which expect both members, are rejected before gameplay. It changes no replay identity, save schema, digest or RNG: prompts and the session journal are unchanged.
+
 Protocol 46 carries the split table as typed facts: it drops each game area's label, Kang's progress sentence and the departure, acting and note sentences, and adds each seat's out-of-reach reason, the number of Kang (II) the split dealt, a prompt's and a window choice's printed `effect` (damage, threat removal, draw, stun, confuse, tough, heal, ready, exhaust, threat placement or threat movement), and an attack prompt's `boost_icons` and `boost_facedown` while a boost card is faceup; a draw choice drops its description. Protocol 45 peers are rejected before gameplay. It changes no replay identity, save schema, digest or RNG: prompts and the session journal are unchanged.
 
 Protocol 45 adds game-area summaries, each seat's out-of-reach cards and Kang's progress and departure facts. Protocol 44 peers are rejected before gameplay. It changes no replay identity, save schema, digest or RNG: the Kang prompts name players only in display copy, which the session journal does not record.
@@ -82,7 +84,7 @@ independent identities do:
 
 | Identity | Current value | Changes when |
 |---|---:|---|
-| Engine protocol | `46` | A request, response, affordance, event or descriptor change is not understood by the prior endpoint. |
+| Engine protocol | `47` | A request, response, affordance, event or descriptor change is not understood by the prior endpoint. |
 | Session schema | `7` | The strict persisted JSON shape changes. |
 | Engine replay contract | `engine-replay-v37` | The same setup and decision trace may resolve differently. |
 | RNG contract | `mt19937-iso-cxx` | The seeded random stream changes. |

@@ -53,6 +53,7 @@ public static class WorldTopology
     /// </remarks>
     public static GameArea CreateGameArea(this World world)
     {
+        world._places.Refuse("a game area");
         var area = new GameArea(world._gameAreas.Count);
         world._gameAreas.Add(area);
         return area;
@@ -198,12 +199,12 @@ public static class WorldTopology
     /// status — so the engine needs to name a place before it necessarily exists.
     /// </para>
     /// <para>
-    /// Safe to find-or-create because an area's identity is not on the wire:
-    /// the digest records a card's <i>zone name</i>, index and host, none of
+    /// The digest records a card's <i>zone name</i>, index and host, none of
     /// which move when an area is made earlier or later. <c>AreaRef.Id</c> does
-    /// carry it, and an event stream built across a session where an area was
-    /// created at a different moment would number them differently — which is
-    /// the same session-scoped-handle rule that governs affordance ids.
+    /// carry the id, so the moment an area is made is part of the event stream,
+    /// and only a step of the game makes one: inside a
+    /// <see cref="WorldReads.BeginRead">read</see> a place not yet made is answered empty
+    /// and is not added.
     /// </para>
     /// </remarks>
     /// <param name="world">The world.</param>
@@ -215,15 +216,10 @@ public static class WorldTopology
         DeckType type, PlayArea? playArea = null, int host = -1, int cardOwner = World.Scenario)
     {
         var where = playArea ?? PlayArea.Villains;
-        foreach (var area in world._areas)
-        {
-            if (area.Type == type && area.PlayArea == where && area.Host == host)
-            {
-                return area;
-            }
-        }
-
-        return world.CreateArea(type, cardOwner, where, host);
+        return world._places.Find(type, where, host)
+            ?? (world._places.Reading
+                ? world._places.Unmade(type, cardOwner, where, host, HostCard(world, host))
+                : world.CreateArea(type, cardOwner, where, host));
     }
 
     /// <summary>The one card in an area of this type, or null.</summary>
@@ -231,7 +227,7 @@ public static class WorldTopology
     /// <param name="type">What kind of place to look in.</param>
     public static Card? TheCardIn(this World world, DeckType type)
     {
-        foreach (var area in world._areas)
+        foreach (var area in world._places.All)
         {
             if (area.Type == type && area.Cards.Count > 0)
             {
@@ -249,23 +245,19 @@ public static class WorldTopology
     /// <param name="playArea">Which play area it sits in. Defaults to the villain's.</param>
     /// <param name="host">The card it is bound to, or -1.</param>
     public static Area CreateArea(this World world,
-        DeckType type, int cardOwner = -1, PlayArea? playArea = null, int host = -1)
+        DeckType type, int cardOwner = -1, PlayArea? playArea = null, int host = -1) =>
+        world._places.Make(type, cardOwner, playArea ?? PlayArea.Villains, host, HostCard(world, host));
+
+    private static Card? HostCard(World world, int host)
     {
-        Card? hostCard = null;
-        if (host >= 0)
+        if (host < 0)
         {
-            if (host >= world._cards.Count)
-            {
-                throw new ArgumentOutOfRangeException(
-                    nameof(host), $"there is no host card {host}");
-            }
-            hostCard = world._cards[host];
+            return null;
         }
 
-        var area = new Area(
-            world._areas.Count, type, cardOwner, playArea ?? PlayArea.Villains, host, hostCard);
-        world._areas.Add(area);
-        return area;
+        return host < world._cards.Count
+            ? world._cards[host]
+            : throw new ArgumentOutOfRangeException(nameof(host), $"there is no host card {host}");
     }
 
     /// <summary>Makes a card and puts it in an area.</summary>
@@ -281,6 +273,7 @@ public static class WorldTopology
         ArgumentNullException.ThrowIfNull(spec);
         ArgumentNullException.ThrowIfNull(into);
         into.ValidateCanAcceptCards();
+        world._places.Refuse($"card {spec}");
 
         // The engine's rule: a card belongs to whoever owns the place it was
         // made in, falling back to the scenario. Not to the seat that asked for

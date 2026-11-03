@@ -15,6 +15,8 @@ internal static class ClientKangValidation
         // a negative count fails the second test, since the remaining count is not negative.
         if (kang.LocalKangsDealt > world.Players.Count || kang.RemainingLocalKangs > kang.LocalKangsDealt) return false;
         if (kang.StartingPlayers != world.Players.Count || !ValidReferences(world, kang, known)) return false;
+        // A shared pile is named only once the world has made it; the discard pile is
+        // absent until the first card is discarded.
         return Zone(world, kang.EncounterDeck, "EncounterDeck") && Zone(world, kang.EncounterDiscard, "EncounterDiscardPile");
     }
 
@@ -66,6 +68,8 @@ internal static class ClientKangValidation
         return anchored ? note.Card is { } card && known.Cards.ContainsKey(card) : note.Card is null;
     }
 
-    private static bool Zone(WorldDescriptor world, int id, string zone) =>
-        world.Areas.Count(area => area.Id == id && area.Owner == -1 && area.Zone == zone) == 1;
+    // A pile is absent only while the world has not made it, so an absent id with that pile listed is a lie.
+    private static bool Zone(WorldDescriptor world, int? id, string zone) =>
+        world.Areas.Count(area => (id is null || area.Id == id) && area.Owner == -1 && area.Zone == zone)
+            == (id is null ? 0 : 1);
 }

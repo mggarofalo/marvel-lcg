@@ -44,6 +44,8 @@ public static class WorldProjection
         int? activePlayer,
         Prompt? publicPrompt)
     {
+        // A projection reads the published game and must leave it as it found it.
+        using var read = world.BeginRead();
         var promptVisible = prompt is not null && scope.Includes(prompt.Player);
         var searchVisible = promptVisible ? SearchResults(prompt!) : [];
         WorldDescriptor complete = Describe(world, prompt, searchVisible);
