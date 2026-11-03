@@ -35,11 +35,7 @@ internal sealed class HostedSession(string gameId, Game game, SessionSave save)
         checkpoint = next;
     }
 
-    public void Publish(SessionSave proposed)
-    {
-        Save = proposed;
-        checkpoint = null;
-    }
+    public void Publish(SessionSave proposed) => Save = proposed;
 
     /// <summary>Removes the checkpoint so that only one decision constructs on it.</summary>
     public ReplayCheckpoint? TakeCheckpoint()

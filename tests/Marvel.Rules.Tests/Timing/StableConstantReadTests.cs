@@ -34,6 +34,32 @@ public sealed class StableConstantReadTests
 
     [Rule("rr:modifiers")]
     [Fact]
+    public void ASettlementOutsideAReadIsNotReused()
+    {
+        // Between reads the board may change in any way, so a settlement made
+        // outside a stable read is not kept for the next one.
+        var table = Table.Create();
+
+        Assert.Equal(1, Attack(table.World, table.Target));
+        int outside = table.Abilities.Calls;
+        _ = table.World.Digest();
+        Assert.Equal(outside + 4, table.Abilities.Calls);
+    }
+
+    [Rule("rr:modifiers")]
+    [Fact]
+    public void CapturingCharacterHealthSettlesOnce()
+    {
+        var table = Table.Create();
+
+        var health = table.World.Effects.CaptureCharacterHealth();
+
+        Assert.Equal(2, health.Count);
+        Assert.Equal(4, table.Abilities.Calls);
+    }
+
+    [Rule("rr:modifiers")]
+    [Fact]
     public void AWindowsWaitingAbilitiesSettleOnce()
     {
         var table = Table.Create();
