@@ -16,25 +16,38 @@ internal static class CampaignLibrary
         {
             if ((item.Snapshot?.Archived ?? false) != ui.ShowArchived.ButtonPressed) continue;
             visible++;
-            var button = new Button { Text = Summary(item, catalog), Alignment = HorizontalAlignment.Left,
-                AutowrapMode = TextServer.AutowrapMode.WordSmart, CustomMinimumSize = new(280, 100),
-                ToggleMode = true, ButtonPressed = item.LocalId == selected?.LocalId };
+            // The campaign's name opens it; its state stands beneath as chips.
+            var button = new Button { Text = item.Label, Alignment = HorizontalAlignment.Left,
+                TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis, CustomMinimumSize = new(280, 0),
+                ToggleMode = true, ButtonPressed = item.LocalId == selected?.LocalId, TooltipText = Heroes(item, catalog) };
+            button.AddThemeFontSizeOverride("font_size", VisualSystem.Type(ui.Scale).Body);
             button.Pressed += () => open(index);
             ui.Saved.AddChild(button);
+            HFlowContainer facts = CampaignBlocks.Row("CampaignSummary" + index, ui.Scale);
+            CampaignBlocks.Chips(facts, "SummaryFact", Summary(item), ui.Scale);
+            ui.Saved.AddChild(facts);
         }
-        if (visible == 0) ui.Saved.AddChild(CampaignControls.Text(ui.ShowArchived.ButtonPressed
-            ? "No archived campaigns." : "No saved campaigns yet.\nCreate one or import a backup."));
+        if (visible == 0)
+        {
+            Label empty = TableBlockStyle.Whole("NoCampaigns", CampaignWording.Empty(ui.ShowArchived.ButtonPressed),
+                ui.Scale, VisualSystem.Palette.MutedText);
+            empty.TooltipText = ui.ShowArchived.ButtonPressed ? "" : "Create a campaign or import a backup.";
+            ui.Saved.AddChild(empty);
+        }
     }
 
-    internal static string Summary(CampaignConnection item, DeckCatalog? catalog)
+    /// <summary>A saved campaign's state as facts: its scenario and phase, or why it cannot be read yet.</summary>
+    internal static IEnumerable<Wording> Summary(CampaignConnection item)
     {
-        if (item.Pending is not null) return item.Label + "\nChoice awaiting recovery";
-        if (item.Refused) return item.Label + "\nSaved by another version · delete only";
-        if (item.Snapshot is not { } summary) return item.Label + "\nOpen to load progress";
-        string heroes = string.Join(", ", summary.State.Players.Select(player =>
-            catalog?.Heroes.FirstOrDefault(hero => hero.Key == player.Hero)?.Name ?? player.Hero.Replace('_', ' ')));
-        return item.Label + "\n" + heroes + "\n" + (summary.State.Expert ? "Expert" : "Standard")
-            + " campaign · " + CampaignPresentation.Name(summary.State.Stage)
-            + "\n" + summary.State.Phase;
+        if (item.Pending is not null) { yield return CampaignWording.AwaitingRecovery; yield break; }
+        if (item.Refused) { yield return CampaignWording.DeleteOnly; yield break; }
+        if (item.Snapshot is not { } summary) { yield return CampaignWording.NotLoaded; yield break; }
+        yield return new("", CampaignWording.Stage(summary.State.Stage), CampaignWording.StageTracker(summary.State.Stage).Tooltip);
+        yield return CampaignWording.Phase(summary.State.Phase);
+        if (summary.State.Expert) yield return CampaignWording.Difficulty(true);
     }
+
+    private static string Heroes(CampaignConnection item, DeckCatalog? catalog) => item.Snapshot is not { } summary ? item.Label
+        : item.Label + ": " + string.Join(", ", summary.State.Players.Select(player =>
+            catalog?.Heroes.FirstOrDefault(hero => hero.Key == player.Hero)?.Name ?? player.Hero.Replace('_', ' ')));
 }
