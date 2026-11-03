@@ -90,10 +90,9 @@ internal sealed class MainLayoutController
             ? "CORE SET  /  JOIN TABLE"
             : "CORE SET  /  MISSION BRIEFING";
         main.title.ThemeTypeVariation = GodotThemeVariations.DisplayTitle;
-        main.description.Visible = true;
-        main.description.Text = joinMode
-            ? "Connect to an already-running engine and use a one-time seat invitation."
-            : "Choose your heroes and encounter. Your starting decks are included.";
+        // The entry modes and their fields say what each mode needs; no sentence repeats them.
+        main.description.Visible = false;
+        main.description.Text = string.Empty;
         main.RefreshEntryAvailability();
         SetupEntryPresentation.Configure(main);
     }

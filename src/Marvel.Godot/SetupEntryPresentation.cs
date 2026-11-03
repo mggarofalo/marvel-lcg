@@ -30,18 +30,19 @@ internal static class SetupEntryPresentation
         main.joinFlow.ThemeTypeVariation = string.Empty;
         main.joinFlow.Text = main.joining ? "✓ Join a game" : "Join a game";
         main.setupHeading.Text = "Choose your game";
-        main.description.Text = main.joining
-            ? "Use the connection details and seat invitation shared by the host."
-            : "Choose your heroes and encounter. Your starting decks are included.";
-        main.description.Visible = true;
+        main.description.Visible = false;
         VBoxContainer fields = main.GetNode<VBoxContainer>(FieldsPath);
+        ConfigureJoin(main, fields);
+        main.setupController.ShowDecksFor(main.joining);
         Button advanced = EnsureAdvanced(main, fields);
         bool expanded = main.joining || advanced.ButtonPressed;
         fields.GetNode<Control>("ConnectionGrid").Visible = expanded;
         main.seed.Visible = expanded && !main.joining;
         main.setupGrid.GetNode<Control>("SeedLabel").Visible = main.seed.Visible;
-        main.seedHelp.Visible = main.seed.Visible;
-        main.seedHelp.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+        // The seed's explanation is its hover; the field itself says only "Seed".
+        main.seedHelp.Visible = false;
+        main.seed.TooltipText = SetupWording.SeedTooltip;
+        main.setupGrid.GetNode<Control>("SeedLabel").TooltipText = SetupWording.SeedTooltip;
         main.reloadSetup.Visible = expanded && !main.joining;
         main.reloadSetup.Text = "Refresh available games";
         advanced.Visible = !main.joining;
@@ -55,12 +56,31 @@ internal static class SetupEntryPresentation
         RefreshAdditionalSeats(main);
         foreach (Control control in fields.FindChildren("*", "Control", true, false).OfType<Control>())
         {
+            if (InsideBlock(fields, control)) continue;
             if (control is Label or BaseButton or LineEdit)
                 control.AddThemeFontSizeOverride("font_size", Math.Max(16, Mathf.RoundToInt(12 + 8 * (int)main.interfaceScale / 100f)));
             if (control is BaseButton)
                 control.CustomMinimumSize = new Vector2(control.CustomMinimumSize.X,
                     Math.Max(44, VisualSystem.Controls(main.interfaceScale).MinimumHeight));
         }
+    }
+
+    // Joining asks for three inputs; their labels and a readiness tracker say which are missing.
+    private static void ConfigureJoin(Main main, VBoxContainer fields)
+    {
+        Control join = fields.GetNode<Control>("JoinFields");
+        join.GetNode<Control>("Heading").Visible = false;
+        join.GetNode<Control>("Help").Visible = false;
+        main.invitation.TooltipText = SetupWording.InvitationTooltip;
+        SetupJoinReadiness.Refresh(main, join);
+    }
+
+    // Design-system chips and trackers keep their own sizes rather than the setup form's field text size.
+    private static bool InsideBlock(Control fields, Control control)
+    {
+        for (Node? node = control; node is not null && node != fields; node = node.GetParent())
+            if (node.Name == "JoinReadiness" || node.Name == "DeckSeats") return true;
+        return false;
     }
 
     private static void ConfigureFooter(Main main, float side)

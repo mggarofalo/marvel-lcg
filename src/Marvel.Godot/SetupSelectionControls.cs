@@ -174,6 +174,8 @@ internal sealed class SetupSelectionControls
         };
     }
 
+    internal void ShowDecksFor(bool joining) => decks?.ShowFor(joining);
+
     internal void RefreshBriefing()
     {
         if (main.setupChoices is null || main.visibleModes.Count == 0)
@@ -223,23 +225,10 @@ internal sealed class SetupSelectionControls
             || main.gameId.Text.Length == 0
             || main.invitation.Text.Length == 0;
         if (!main.joining) return;
-        main.statusPanel.Visible = main.join.Disabled;
-        if (main.endpoint.Text.Length == 0)
-        {
-            main.status.Text = "Enter the endpoint of the running engine.";
-        }
-        else if (main.gameId.Text.Length == 0)
-        {
-            main.status.Text = "Enter the game label shared by the host.";
-        }
-        else if (main.invitation.Text.Length == 0)
-        {
-            main.status.Text = "Paste the seat invitation shared by the host.";
-        }
-        else
-        {
-            main.status.Text = string.Empty;
-        }
+        // The readiness tracker names what is missing on hover; the status line is for failures.
+        main.status.Text = string.Empty;
+        main.statusPanel.Visible = false;
+        SetupJoinReadiness.Refresh(main, main.joinFields);
     }
 
 }

@@ -14,8 +14,8 @@ func _run() -> void:
 	main = load("res://Main.tscn").instantiate()
 	root.add_child(main)
 	root.size = Vector2i(1920, 1080)
-	if not await _wait(func(): return _button(root, "Deck library · browse, build, import") != null): return
-	await _activate(_button(root, "Deck library · browse, build, import"))
+	if not await _wait(func(): return _button(root, "Deck library") != null): return
+	await _activate(_button(root, "Deck library"))
 	if not await _wait(func(): return _button(root, "Use deck") != null and not _button(root, "Use deck").disabled): return
 	var library := main.get_node("DeckLibrary") as Window
 	await process_frame

@@ -30,6 +30,7 @@ internal sealed class MainSetupController
     internal IReadOnlyList<string> SelectedHeroes() => selection.SelectedHeroes();
     internal void AssignHero(string key, int seat) => selection.AssignHero(key, seat);
     internal void RefreshHeroes() => selection.RefreshHeroes();
+    internal void ShowDecksFor(bool joining) => selection.ShowDecksFor(joining);
 
     internal bool IsCurrentSetupLoad(long generation, string requestedEndpoint) =>
         InteractionControl.IsUsable(main) && main.lifecycle.IsCurrentEntry(generation)
@@ -175,6 +176,7 @@ internal sealed class MainSetupController
             ? null
             : startup.Invitations[0].Invitation;
         main.invitationOffer.Visible = main.transientInvitation is not null;
+        if (startup.Invitations.Count > 0) TableSidebarContent.ShowInvitation(main, startup.Invitations[0].Seat);
         main.boardController.RenderGame(startup.Response!, resetEvents: true, operation: EngineProtocol.Open);
         main.setupPanel.Visible = false;
         main.board.Visible = true;
@@ -249,11 +251,11 @@ internal sealed class MainSetupController
         if (!InvitationClipboard.TryCopy(ref main.transientInvitation,
                 DisplayServer.ClipboardSet, DisplayServer.ClipboardGet))
         {
-            main.status.Text = "CLIPBOARD UNAVAILABLE  ·  YOUR INVITATION IS STILL AVAILABLE TO COPY";
+            main.status.Text = "CLIPBOARD UNAVAILABLE";
             return;
         }
         main.invitationOffer.Visible = false;
-        main.status.Text = "INVITATION COPIED  ·  THE ONE-TIME SECRET WAS REMOVED FROM THIS SCREEN";
+        main.status.Text = "INVITATION COPIED";
     }
 
     internal void CopyInteractionReport()
