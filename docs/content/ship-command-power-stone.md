@@ -22,6 +22,14 @@ Delivery (16148) — and the one-card Power Stone modular set (16149). Ruling
   presentation for paying with a card controlled by another seat, or for that
   seat's part in the decision. That is new UI, so the set waits for it.
   `ship_command` is removed from discovery with the rest of the closed box.
+- **The cross-seat presentation is built and awaits owner review (MARVEL-924).**
+  Any player may use a Resource ability on an encounter card (rr:ability.8), so
+  the first player is not asked and the controlling seat has no part in the
+  decision. The payment row names the seat controlling another seat's source,
+  with the first-player token, and the seat rail marks the first player
+  ([presentation-layer.md](../presentation-layer.md#visible-world)). The native
+  contracts `milano-1` and `milano-2` deal the set through a test-only host
+  scene (`ShipCommandNativeScene`). Admission waits for the owner's acceptance.
 
 ## Interpretations
 
