@@ -418,21 +418,35 @@ derived records replace the old suffix only after the complete candidate is
 verified.
 
 The initial implementation favors this full replay over serializing internal
-continuations or maintaining inverse mutations. Verified checkpoints may later
-improve performance, but they are caches. Losing a checkpoint cannot lose or
-change the canonical game.
+continuations or maintaining inverse mutations. Verified checkpoints improve
+performance, but they are caches held in memory and never saved. Losing a
+checkpoint cannot lose or change the canonical game.
 
-An accepted new decision deals and replays exactly once. The construction-mode
-replay of the live save also collects the active history, and the candidate
-observes its new decision the same way, so the published history equals a
-fresh `InspectActiveHistory` of the committed save without a second replay.
-`ResolutionReplayBudgetTests` holds the single replay and that equality through
-a complete game. History descriptions project the world once and describe each
-unit's events against it; `ProjectedWorldTests` holds that description equal to
-a fresh projection. Replay time still grows with the length of the active prefix.
-The durable commit rewrites the whole save, so its serialization grows with the
-journal too, though at current game sizes its cost is dominated by the platform
-flush.
+An accepted new decision constructs on a verified checkpoint when the live
+session holds one for its current save, and otherwise deals and replays the
+live save exactly once. The construction-mode replay also collects the active
+history, and the candidate observes its new decision the same way, so the
+published history equals a fresh `InspectActiveHistory` of the committed save
+without a second replay. History descriptions project the world once and
+describe each unit's events against it; `ProjectedWorldTests` holds that
+description equal to a fresh projection.
+
+The checkpoint is the construction-mode game that derived the save's newest
+decision, kept private together with the history facts its replay collected.
+Nothing else reads it, and it answers only the exact save object it was made
+for, so open, attach, close, undo, redo, reorder, load and a failed candidate
+each leave the next decision to replay from setup. Before a decision is
+projected or committed, the published game must reproduce it in verification
+mode: prompt, events, RNG count, digest, result, unit position, completion,
+role, exposures, frontier and the next prompt. A committed decision is
+therefore one that two independent games agree on. When that verification,
+the projection or the commit fails, the host restores the published game by
+verifying the live save and reports the failure; the save is unchanged.
+`ResolutionReplayBudgetTests` holds that a game in progress deals no replay
+after its first decision and that the published history equals a fresh
+replay's through an ending. The durable commit rewrites the whole save, so its
+serialization grows with the journal, though at current game sizes its cost is
+dominated by the platform flush.
 
 The file operation must leave either the previous valid save or the proposed
 valid save after interruption. Platform-specific replacement and directory

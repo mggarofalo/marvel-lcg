@@ -20,12 +20,35 @@ internal sealed class HostedSession(string gameId, Game game, SessionSave save)
 
     public long Revision => Save.Revision;
 
-    public void Publish(Game candidate, SessionSave proposed, IReadOnlyList<HistoryUnitInspection> history)
+    // A cache of the verified construction game for `Save`; see `ReplayCheckpoint`.
+    private ReplayCheckpoint? checkpoint;
+
+    public void Publish(
+        Game candidate,
+        SessionSave proposed,
+        IReadOnlyList<HistoryUnitInspection> history,
+        ReplayCheckpoint? next = null)
     {
         History = history;
         Game = candidate;
         Save = proposed;
+        checkpoint = next;
     }
 
-    public void Publish(SessionSave proposed) => Save = proposed;
+    public void Publish(SessionSave proposed)
+    {
+        Save = proposed;
+        checkpoint = null;
+    }
+
+    /// <summary>Removes the checkpoint so that only one decision constructs on it.</summary>
+    public ReplayCheckpoint? TakeCheckpoint()
+    {
+        ReplayCheckpoint? taken = checkpoint;
+        checkpoint = null;
+        return taken;
+    }
+
+    /// <summary>Replaces a live game that a failed decision left unverified.</summary>
+    public void Recover(Game verified) => Game = verified;
 }

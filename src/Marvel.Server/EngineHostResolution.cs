@@ -110,8 +110,9 @@ internal static class EngineHostResolution
         EngineHost host, EngineRequest request, RequestExecution execution,
         SessionAccess access, Prompt pending, Decision decision, int actor)
     {
+            ReplayCheckpoint? checkpoint = access.Session.TakeCheckpoint();
             CandidateReplay replay = execution.ObserveReplay(() => SessionReplay.BeginCandidate(
-                access.Session.Save, host.compatibility, host.ReplayOpen));
+                access.Session.Save, host.compatibility, host.ReplayOpen, checkpoint));
             Game candidate = replay.Game;
             Prompt candidatePrompt = candidate.Pending
                 ?? throw new ReplayDivergenceException("candidate has no pending prompt");
@@ -155,8 +156,33 @@ internal static class EngineHostResolution
                 phase,
                 candidate.Pending,
                 exposures));
+            return PublishVerified(host, request, execution, access, replay, proposed, resolved);
+    }
+
+    /// <summary>
+    /// Publishes the live game advanced through the new decision and keeps the
+    /// candidate private as the next decision's checkpoint.
+    /// </summary>
+    /// <remarks>
+    /// Ledger choice: the published game must reproduce the candidate's decision
+    /// before the response is projected or the save committed. Advancing it
+    /// changes the live game, so any failure from here on restores the live game
+    /// by verifying the live save before the failure is reported.
+    /// </remarks>
+    private static EngineResponse PublishVerified(
+        EngineHost host, EngineRequest request, RequestExecution execution,
+        SessionAccess access, CandidateReplay replay, SessionSave proposed, Resolution resolved)
+    {
+        Game published = access.Session.Game;
+        SessionSave live = access.Session.Save;
+        try
+        {
+            replay.VerifyCommitted(published, proposed);
             var history = replay.History(proposed);
-            var transaction = new SessionTransaction(candidate, proposed, history);
+            var transaction = new SessionTransaction(published, proposed, history)
+            {
+                Checkpoint = replay.Checkpoint(proposed),
+            };
             return transaction.CommitAndPublish(
                 access.Session,
                 host.authority.Snapshot(access.Session),
@@ -169,6 +195,12 @@ internal static class EngineHostResolution
                     access.Scope,
                     revision: committed.Revision,
                     history: AuthorizedSessionProjector.History(committed, access.Scope, verified, history)));
+        }
+        catch
+        {
+            access.Session.Recover(SessionReplay.Verify(live, host.compatibility, host.ReplayOpen));
+            throw;
+        }
     }
 
     private static bool PersistenceFailure(Exception failure) => failure is IOException

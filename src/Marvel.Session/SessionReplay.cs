@@ -21,15 +21,29 @@ public static class SessionReplay
     /// Verifies a save like <see cref="Verify"/> and returns its active game as
     /// the construction-mode candidate for one more decision. The same replay
     /// collects the active history, so the candidate's history needs no second
-    /// replay of the proposed save.
+    /// replay of the proposed save. A checkpoint made for exactly this save
+    /// replaces the replay from setup.
     /// </summary>
+    /// <remarks>
+    /// The caller gives the checkpoint up: a candidate built on it changes its
+    /// game, and a checkpoint for another save is never used.
+    /// </remarks>
     public static CandidateReplay BeginCandidate(
         SessionSave save,
         SessionCompatibility expected,
-        Func<SessionSetup, ReplayOpenedGame> open)
+        Func<SessionSetup, ReplayOpenedGame> open,
+        ReplayCheckpoint? checkpoint)
     {
+        if (checkpoint is not null && checkpoint.Continues(save))
+        {
+            SessionSaveJson.Validate(save);
+            ArgumentNullException.ThrowIfNull(expected);
+            RequireCompatibility(expected, save.Compatibility);
+            return new CandidateReplay(save, checkpoint.Game, checkpoint.History);
+        }
+
         var history = new ActiveHistory();
-        return new CandidateReplay(VerifyActive(save, expected, open, history), history);
+        return new CandidateReplay(save, VerifyActive(save, expected, open, history), history);
     }
 
     private static Game VerifyActive(
@@ -138,7 +152,7 @@ public static class SessionReplay
             ? new EngineResultRecord(game.State.Result.ToString(), game.Round)
             : null;
 
-    private static void RequireCurrentPrompt(PromptRecord? expected, Prompt? actual)
+    internal static void RequireCurrentPrompt(PromptRecord? expected, Prompt? actual)
     {
         if (expected is null)
         {
