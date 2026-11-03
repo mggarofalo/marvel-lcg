@@ -104,6 +104,7 @@ internal static class AbilityOperationNames
         AbilityEffect.DiscardAtRandom => "discardAtRandom",
         AbilityEffect.PlaceAtRandom => "placeAtRandom",
         AbilityEffect.DiscardTop { RemovesFromGame: true } => "removeTopFromGame",
+        AbilityEffect.DiscardTop { EngagesMinions: true } => "discardTopEngagingMinions",
         AbilityEffect.DiscardTop => "discardTop",
         AbilityEffect.DiscardUntil => "discardUntil",
         AbilityEffect.ShuffleInto => "shuffleInto",

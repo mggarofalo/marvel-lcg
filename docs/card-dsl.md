@@ -590,7 +590,7 @@ canMakeTheCall cancelOccurrence cancelWhenRevealed cardsIn changeForm characters
 charactersYouControl choose chooseCard chooseDiscardToShuffle chooseTopForHand
 countersOn damageOn damagedHero dealAttackDamage dealDamage dealEncounterCards
 deck defeatedByYou delayUntil discardAtRandom discardAnyFromHand discardClassFromHand discardEach discardFromHand
-discardHandOfKind discardHandWithResource discardResourceFromHand discardTop discardUntil discardable discardedWithResource
+discardHandOfKind discardHandWithResource discardResourceFromHand discardTop discardTopEngagingMinions discardUntil discardable discardedWithResource
 doubleResourceFor drawToPrintedHandSize dynamic
 eachPlayer else encounterDeck encounterDiscardPile enemies incomingDamage
 enemiesEngagedWithChosenPlayer enemiesWithTrait enemyAttacks enemySchemes exists
@@ -1167,6 +1167,16 @@ root. Its source gains the current effective traits of every environment in
 play. Other grants and losses on those environments participate in the same
 constant-effect fixed point. Leaving play ends that environment's contribution;
 independent trait grants remain. This operation does not copy abilities.
+`discardTopEngagingMinions: { count, engage: "fewestMinions" }` discards encounter
+cards one at a time and puts each discarded minion into play engaged with the
+player engaged with the fewest minions, the first player choosing among tied
+players (rr:first-player.1). The count is fixed before any card moves, and the
+discard stops when the encounter deck empties (rr:encounter-deck.2). The minions'
+Quickstrike, Teamwork and response windows wait until every minion has engaged
+(ruling 82bcc63411002a00, [timing.md](timing.md#batched-minion-entry)). The
+spelling is an engine choice motivated by Drang (III) (16060); `engage` accepts
+no other value.
+
 Encounter discard searches distinguish `then: reveal`, `putIntoPlayFirstPlayer`,
 `putIntoPlay` (the printed encounter destination without When Revealed),
 `putIntoPlayEngaged` (engaged with the required `player`, without When Revealed),

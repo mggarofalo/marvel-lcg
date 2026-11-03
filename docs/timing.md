@@ -499,6 +499,34 @@ Both placement and settlement retain their original execution identities.
 Game termination may abandon unfinished executions. Abandonment is not reported
 as successful completion and does not authorize a retained continuation to resume.
 
+## Batched minion entry
+
+Drang (III) puts several discarded minions into play with one instruction.
+Ruling 82bcc63411002a00 orders what follows: the minions were not revealed, so
+no When Revealed ability resolves (`rr:when-revealed-abilities.2`); each
+minion's Interrupt abilities resolve as it engages; "after they've all engaged,
+resolve all Quickstrike and Teamwork abilities on those minions, then any
+Response abilities."
+
+`MinionEntryBatchProcedure` discards one card per step. A discarded minion is
+scheduled as an ordinary encounter entry, with its own interrupt window, before
+the next card is discarded. The entry records its engagement in the batch and
+neither schedules its keywords nor opens its response window. After the last
+discard, the batch offers every Quickstrike and Teamwork that currently applies;
+where two or more apply the first player chooses the next (`rr:forced.5`), and
+each resolves before the next is chosen (`rr:forced.6`). Applicability is read
+when the choice is made, so a Teamwork minion that engaged alone activates if
+another minion sharing its trait has since joined it. Each entry's response
+window then opens, in the order the minions engaged; that order is an engine
+choice.
+
+The keyword activations and response windows are the minions' own triggered
+abilities, so no ability invocation owns them and the completion of the
+instruction that put the minions into play does not depend on them. An activation initiated during
+another still resolves after it (`rr:activation.8`). Entries outside a batch,
+including a single minion put into play, keep their immediate keyword
+activations and response window.
+
 ## A step may ask, as well as a window
 
 Not every question in a phase comes from a window. Declaring a defender is a

@@ -163,6 +163,7 @@ internal static class AbilityEffectLowering
             "discardAtRandom" or "placeAtRandom" or "removeFromGameAtRandom" => RandomCardsEffect(argument, child, node.Kind),
             "discardTop" or "removeTopFromGame" => DeckTopEffect(argument, child, node.Kind),
             "discardUntil" => DiscardUntilEffect(argument, child),
+            "discardTopEngagingMinions" => AbilityEngagingDiscardLowering.EngagingDiscardEffect(argument, child),
             "placeOnBottomOfDeck" => CardInstruction(argument, child, AbilityCardInstruction.PlaceOnBottomOfDeck),
             "placeOnTopOfDeck" => CardInstruction(argument, child, AbilityCardInstruction.PlaceOnTopOfDeck),
             "shuffleInto" => ShuffleIntoEffect(argument, child),

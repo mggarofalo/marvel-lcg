@@ -31,7 +31,8 @@ public sealed class BandOfBadoonAdmissionTests
         Assert.Contains("band_of_badoon", result.Setup.EncounterSetNames);
         Assert.All(Scenario, face => Assert.Contains(face, AuthoredCards.Book.Authored));
         Assert.All(Scenario, face => Assert.DoesNotContain(face, result.Playable));
-        Assert.DoesNotContain("16060", AuthoredCards.Book.Authored);
+        Assert.Contains("16060", AuthoredCards.Book.Authored);
+        Assert.DoesNotContain("16060", result.Playable);
         Assert.DoesNotContain("brotherhood_of_badoon", result.Setup.CampaignNames);
         Assert.DoesNotContain("brotherhood_of_badoon_expert", result.Setup.CampaignNames);
     }

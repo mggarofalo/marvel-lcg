@@ -20,21 +20,29 @@ internal static class AbilityResolutionCardMovement
         foreach (var (key, value) in result.Values)
             cast.Results[key] = value;
         if (result.Entry is { } entry)
-        {
-            var completion = new EffectCompletion(1, 1);
-            cast.PendingCompletion = completion;
-            var capture = AbilityContinuationScheduling.ForEffectProcedure(
-                execution.Capture(cast, execution.AbilityOrdinal(instruction, cast)));
-            var continuation = AbilityContinuations.Step(capture,
-                AbilityContinuationStage.Resume, cast.World.Agenda.Current?.Round ?? 0, plan: true);
-            EncounterEntry.Schedule(cast.World, entry, completion, continuation);
-            cast.Suspend();
-        }
+            execution.ScheduleProcedure(instruction, cast, (completion, continuation) =>
+                EncounterEntry.Schedule(cast.World, entry, completion, continuation));
+        if (result.MinionBatch is { } count)
+            execution.ScheduleProcedure(instruction, cast, (completion, continuation) =>
+                MinionEntryBatchProcedure.Schedule(cast.World, count, completion, continuation));
         if (result.Reveal is { } reveal)
             execution.ScheduleReveal(instruction, reveal, cast);
         if (result.ResolveEffect)
             cast.ResolveEffect();
         return true;
+    }
+
+    // The procedure completes one receipt before the suspended ability resumes.
+    private static void ScheduleProcedure(this AbilityResolutionExecution execution, AbilityEffect instruction,
+        AbilityResolutionState cast, Action<EffectCompletion, PhaseStep> schedule)
+    {
+        var completion = new EffectCompletion(1, 1);
+        cast.PendingCompletion = completion;
+        var capture = AbilityContinuationScheduling.ForEffectProcedure(
+            execution.Capture(cast, execution.AbilityOrdinal(instruction, cast)));
+        schedule(completion, AbilityContinuations.Step(capture,
+            AbilityContinuationStage.Resume, cast.World.Agenda.Current?.Round ?? 0, plan: true));
+        cast.Suspend();
     }
 
     private static void ScheduleReveal(this AbilityResolutionExecution execution,

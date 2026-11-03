@@ -24,15 +24,14 @@ modular encounter sets. The plan is [gmw-wave-plan.md](gmw-wave-plan.md)
   encounter deck includes the Ship Command set, which is withheld until the table
   can present one seat paying with another seat's Milano
   ([ship-command-power-stone.md](ship-command-power-stone.md)).
-- **Drang (III) (16060) is unauthored.** Its When Revealed discards the top 4 per
-  player cards of the encounter deck and puts each discarded minion into play
-  engaged with the player engaged with the fewest minions. Ruling
-  82bcc63411002a00 orders what follows: no When Revealed abilities; each minion's
-  Interrupts right after it engages; Quickstrike and Teamwork only after all of
-  them have engaged; then Responses. The engine opens each entry's quickstrike
-  and response window before the next card enters, so two or more discarded
-  minions would resolve in the wrong order. Revealing Drang (III) raises the
-  unauthored-card error rather than guess. It appears only in Expert mode.
+- **Drang (III) (16060) is authored and stays withheld** with the rest of the
+  scenario; it appears only in Expert mode. Its When Revealed discards the top
+  4 per player cards of the encounter deck and puts each discarded minion into
+  play engaged with the player engaged with the fewest minions. Ruling
+  82bcc63411002a00 orders what follows: no When Revealed abilities; each
+  minion's Interrupts as it engages; Quickstrike and Teamwork only after all of
+  them have engaged; then Responses. The batched entry is described in
+  [timing.md](../timing.md#batched-minion-entry).
 
 ## Interpretations
 
@@ -51,6 +50,11 @@ for these cards; the rulings are Hall of Heroes entries in `datasets/rulings/`.
   count, so the count that reaches the test is exactly 4. The 2 indirect damage
   goes to each player, assigned among the characters they control
   (rr:indirect-damage), and all counters are removed.
+- **Drang (III)** discards one card at a time and stops when the encounter
+  deck empties (rr:encounter-deck.2). The first player chooses among players
+  tied for the fewest engaged minions (rr:first-player.1) and orders the batch's
+  Quickstrike and Teamwork activations (rr:forced.5). "After Drang activates"
+  is the completed-activation occurrence, as for Badoon Engineer.
 - **Drang (II)** gives himself a facedown boost card when Drang's Spear is in play
   (it waits for his next activation, rr:boost-boost-icon.6); otherwise he searches
   the encounter deck and discard pile for the Spear, reveals it and shuffles, as

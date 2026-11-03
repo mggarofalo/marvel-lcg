@@ -26037,6 +26037,15 @@
       ]
     },
     {
+      "card": "16060",
+      "name": "Drang",
+      "note": "Drang (III). When Revealed: discard the top 4 per player cards of the encounter deck; each time a minion is discarded this way, put it into play engaged with the player engaged with the fewest minions. The discard stops when the encounter deck empties (rr:encounter-deck.2), and the first player chooses among tied players (rr:first-player.1). Ruling 82bcc63411002a00 orders what follows: the minions were not revealed, so their When Revealed abilities do not resolve (rr:when-revealed-abilities.2); each minion's Interrupts resolve as it engages; after every minion has engaged, all Quickstrike and Teamwork abilities resolve, then the Response abilities. Forced Response: after Drang activates, resolve the Badoon Ship's Charge Up ability. An activation is an attack or a scheme (rr:activation), and the completed-activation occurrence covers both, as for Badoon Engineer (16065). Charge Up is the Badoon Ship's Special ability (rr:special); resolveSpecials does nothing when no Badoon Ship is in play. The discardTopEngagingMinions spelling is an engine choice.",
+      "abilities": [
+        {"trigger": {"event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this"}, "effect": {"discardTopEngagingMinions": {"count": {"perPlayer": 4}, "engage": "fewestMinions"}}},
+        {"trigger": {"event": "WhenActivationCompleted", "timing": "ForcedResponse", "actor": "this"}, "effect": {"resolveSpecials": {"cards": {"titled": "Badoon Ship"}}}}
+      ]
+    },
+    {
       "card": "16061a",
       "name": "Terrestrial Invasion",
       "note": "Setup: put the Badoon Ship environment and the Milano support into play. The scenario recipe sets the Badoon Ship aside and this setup puts it into its printed destination. The Milano's own Setup keyword already puts it into play under the first player's control (rr:setup-keyword.1), so this ability does not move it a second time. The contents list is scenario setup data, and rr:appendix-ii-setup.step.12.b performs the printed advance to 1B.",

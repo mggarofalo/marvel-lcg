@@ -42,12 +42,11 @@ public sealed class BadoonShipTests : CoreCardTestBase
 
     [Fact]
     [Rule("rr:villain-defeat")]
-    public void DrangThreeIsUnauthoredSoReachingHimRaises()
+    public void DefeatingDrangTwoRevealsDrangThreeWhoPutsTheDiscardedMinionsIntoPlay()
     {
-        // Drang (III)'s When Revealed defers his minions' quickstrike, teamwork and responses
-        // until all have engaged (ruling 82bcc63411002a00), which the engine cannot express.
-        // Defeating Drang (II) reveals him; the engine raises rather than guess. Retaliate 1
-        // deals Drang (II)'s last hit point.
+        // Retaliate 1 deals Drang (II)'s last hit point; Drang (III)'s When Revealed discards the
+        // top four encounter cards and puts the discarded Vulture into play engaged. Drang's
+        // attack took the top card as its boost card.
         var world = BadoonBoards.Board(villain: BadoonBoards.DrangTwo);
         var hero = world.Seats[0].IdentityCard;
         var drang = GrootBoards.Villain(world);
@@ -55,11 +54,36 @@ public sealed class BadoonShipTests : CoreCardTestBase
         world.CreateCard(BadoonBoards.DrangThree, world.AreaOf(DeckType.VillainDeck));
         world.Effects.Register(new ContinuousEffect(EffectSource.LastingEffect, Kind: "retaliate", Amount: 1,
             Card: hero.ObjectId, Affects: hero.ObjectId));
+        var vulture = BadoonBoards.OnTop(world, "01167");
+        BadoonBoards.OnTop(world, "01104");
 
         KangTemporalFixture.Activate(world, drang, scheme: false, 0);
-        var thrown = Assert.Throws<RulesNotImplementedException>(() => BadoonBoards.Drive(world));
+        var events = BadoonBoards.Drive(world);
 
-        Assert.Contains(BadoonBoards.DrangThree, thrown.Message, StringComparison.Ordinal);
+        Assert.Equal(BadoonBoards.DrangThree, GrootBoards.Villain(world).FaceId);
+        Assert.Equal(4, events.OfType<Marvel.Rules.Events.CardsMoved>()
+            .Count(move => move.Trigger == MinionEntryBatchOperation.DiscardEngagingMinions && move.Verb == "Discard"));
+        Assert.Equal(DeckType.EngagedEnemiesArea, vulture.Area.Type);
+        // rr:activation.8: the Vulture's Quickstrike, initiated during Drang's attack, resolves
+        // after that attack.
+        Assert.Equal([drang.ObjectId, vulture.ObjectId],
+            events.OfType<Marvel.Rules.Events.AttackCompleted>().Select(attack => attack.Enemy));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    [Rule("rr:activation")]
+    public void DrangThreeChargesTheShipAfterEitherActivation(bool scheme)
+    {
+        // 16060: "Forced Response: After Drang activates, resolve the Badoon Ship's 'Charge Up'."
+        var world = BadoonBoards.Board(face: scheme ? "01001b" : "01001a", villain: BadoonBoards.DrangThree);
+        var ship = BadoonBoards.Ship(world);
+
+        KangTemporalFixture.Activate(world, GrootBoards.Villain(world), scheme, 0);
+        BadoonBoards.Drive(world);
+
+        Assert.Equal(1, BadoonBoards.Barrage(ship));
     }
 
     [Fact]

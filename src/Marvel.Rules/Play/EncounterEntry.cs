@@ -68,12 +68,21 @@ public static class EncounterEntry
         Reveal.Resolve(world, world.Facts, card, request.Player, events,
             occurrence, request.Placement);
         operation.Completion.Complete(0, DeckTypes.IsInPlay(card.Area.Type) ? 1 : 0);
-        if (occurrence.Is(MinionEngagement.Engaged))
-        {
-            EncounterRevealProcedure.FinishEncounterRevealTail(
-                world, card, request.Player, step, occurrence, events);
-            world.Agenda.BeforeResponses(step, occurrence);
-        }
+        if (occurrence.Is(MinionEngagement.Engaged)) AfterEngagement(world, step, request, card, occurrence, events);
         return null;
+    }
+
+    private static void AfterEngagement(World world, PhaseStep step, EncounterEntryRequest request, Card card,
+        Occurrence occurrence, List<GameEvent> events)
+    {
+        // A batched entry leaves its keyword activations and responses to the batch.
+        if (request.Batch is { } batch)
+        {
+            batch.Record(card, request.Player, occurrence);
+            return;
+        }
+        EncounterRevealProcedure.FinishEncounterRevealTail(
+            world, card, request.Player, step, occurrence, events);
+        world.Agenda.BeforeResponses(step, occurrence);
     }
 }

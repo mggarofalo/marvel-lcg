@@ -138,7 +138,7 @@ internal static class AbilityCardStateExecution
         {
             case AbilityEffect.PlaceAtRandom placement: PlaceAtRandom(placement, context); return true;
             case AbilityEffect.DiscardAtRandom discard: AbilityCardDiscardExecution.DiscardAtRandom(discard, context); return true;
-            case AbilityEffect.DiscardTop discard: AbilityCardDiscardExecution.DiscardTop(discard, context); return true;
+            case AbilityEffect.DiscardTop { EngagesMinions: false } discard: AbilityCardDiscardExecution.DiscardTop(discard, context); return true;
             case AbilityEffect.DiscardHandWithResource discard: AbilityCardDiscardExecution.DiscardHandWithResource(discard, context); return true;
             case AbilityEffect.DiscardHandOfKind discard: AbilityCardDiscardExecution.DiscardHandOfKind(discard, context); return true;
             default: return false;

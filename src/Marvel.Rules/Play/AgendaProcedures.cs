@@ -74,7 +74,8 @@ public static class AgendaProcedures
             AgendaProcedureKind.CardEntry => EventCardEntry.Apply(world, step, events),
             AgendaProcedureKind.ResourcePayment => ResourcePaymentProcedure.Apply(world, step, events),
             AgendaProcedureKind.Campaign => CampaignRecoveryProcedure.Apply(world, step, events),
-            AgendaProcedureKind.EncounterEntry => EncounterEntry.Apply(world, step, events),
+            AgendaProcedureKind.EncounterEntry => step.Operation is MinionEntryBatchOperation
+                ? MinionEntryBatchProcedure.Apply(world, step, events) : EncounterEntry.Apply(world, step, events),
             AgendaProcedureKind.Readying => CardReadying.Apply(world, step, events),
             AgendaProcedureKind.BoostCount => BoostIconCounting.Apply(step),
             AgendaProcedureKind.Lifecycle when step.Operation is PlayerAllyEntryOperation => PlayerAllyEntry.Apply(world, step, events),
@@ -143,6 +144,9 @@ public static class AgendaProcedures
                 break;
             case AgendaProcedureKind.Activation:
                 ActivationProcedure.Answer(world, step, input);
+                break;
+            case AgendaProcedureKind.EncounterEntry:
+                MinionEntryBatchProcedure.Answer(world, step, input);
                 break;
             default:
                 throw new RulesNotImplementedException(

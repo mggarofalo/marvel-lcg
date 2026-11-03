@@ -119,6 +119,9 @@ internal static class SequenceWindow
 
     private static bool SuppressWindow(PhaseStep step, WindowKind kind) =>
         SharedThreatWindowHandles(step, kind)
+        // Ruling 82bcc63411002a00: the responses to a batched minion's entry wait until
+        // every minion in the batch has engaged; MinionEntryBatchProcedure opens them.
+        || (kind == WindowKind.Response && step.Operation is EncounterEntryOperation { Entry.Batch: not null })
         // rr:response: response abilities resolve after their triggering condition occurs.
         // An ineffective form change creates no after-change condition.
         || (kind == WindowKind.Response && step.Operation is IdentityFormChangeOperation form

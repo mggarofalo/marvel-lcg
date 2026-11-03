@@ -86,6 +86,8 @@ internal sealed class AbilityAreaMutationQuery(
             Includes(DeckType.PlayerDeck, DeckType.HandsArea),
         // Engaging a player card can empty its deck and reset its discard pile;
         // that reset can also deal a card from the encounter deck.
+        "discardTopEngagingMinions" => Includes(
+            DeckType.EncounterDeck, DeckType.EncounterDiscardPile, DeckType.EngagedEnemiesArea),
         "engageTopAsMinion" => Includes(
             DeckType.PlayerDeck, DeckType.DiscardPile, DeckType.EngagedEnemiesArea,
             DeckType.EncounterDeck, DeckType.EncounterDiscardPile,

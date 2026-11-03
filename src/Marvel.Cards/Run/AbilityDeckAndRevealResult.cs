@@ -11,6 +11,8 @@ internal sealed record AbilityDeckAndRevealResult(
     ImmutableDictionary<string, long> Values)
 {
     internal EncounterEntryRequest? Entry { get; init; }
+    /// <summary>The number of encounter cards a batched minion entry discards.</summary>
+    internal long? MinionBatch { get; init; }
     internal static AbilityDeckAndRevealResult Handled =>
         new(true, false, null, ImmutableDictionary<string, long>.Empty);
     internal static AbilityDeckAndRevealResult NotHandled =>

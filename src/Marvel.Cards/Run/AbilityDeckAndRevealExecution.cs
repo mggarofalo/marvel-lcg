@@ -25,6 +25,11 @@ internal static class AbilityDeckAndRevealExecution
             AbilityEffect.DealEncounterCards deal => DealEncounterCards(deal, context),
             AbilityEffect.EngageTopAsMinion drones => EngageTopAsMinion(drones, context),
             AbilityEffect.DiscardUntil discard => AbilityDiscardUntilExecution.Run(discard, context),
+            AbilityEffect.DiscardTop { EngagesMinions: true } discard => AbilityDeckAndRevealResult.Handled with
+            {
+                // One instruction fixes its quantity before any card moves.
+                MinionBatch = AbilityCardStateExecution.Amount(discard.Count, CardStateContext(context)),
+            },
             AbilityEffect.RecoverDiscardedByResource recovery =>
                 RecoverDiscardedByResource(recovery, context),
             AbilityEffect.AttachCards attach => AbilityAttachmentExecution.Run(attach, context),

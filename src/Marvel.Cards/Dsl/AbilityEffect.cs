@@ -208,12 +208,12 @@ public abstract record AbilityEffect
     public sealed record DealEncounterCard(AbilityCardSelection Card, AbilityPlayer Player) : AbilityEffect;
     /// <summary>Discard random cards from the selected players' hands.</summary>
     /// <remarks><paramref name="RemovesFromGame"/> removes the random cards from the game instead.</remarks>
-    public sealed record DiscardAtRandom(AbilityPlayerSelection Players, AbilityNumber Count, bool RemovesFromGame = false) : AbilityEffect;
+    public sealed record DiscardAtRandom(AbilityPlayerSelection Players, AbilityNumber Count, bool RemovesFromGame = false, bool EngagesMinions = false) : AbilityEffect;
     /// <summary>Place random cards from selected hands facedown on a host.</summary>
     public sealed record PlaceAtRandom(AbilityPlayerSelection Players, AbilityNumber Count, AbilityCardSelection Host) : AbilityEffect;
     /// <summary>Discard cards from a supported deck or the named players' decks.</summary>
-    /// <remarks><paramref name="RemovesFromGame"/> removes the players' top cards from the game instead.</remarks>
-    public sealed record DiscardTop(AbilitySearchArea From, AbilityPlayerSelection? Players, AbilityNumber Count, bool RemovesFromGame = false) : AbilityEffect;
+    /// <remarks><paramref name="RemovesFromGame"/> removes the players' top cards from the game instead; <paramref name="EngagesMinions"/> puts each discarded encounter minion into play as one batch (<c>discardTopEngagingMinions</c>).</remarks>
+    public sealed record DiscardTop(AbilitySearchArea From, AbilityPlayerSelection? Players, AbilityNumber Count, bool RemovesFromGame = false, bool EngagesMinions = false) : AbilityEffect;
     /// <summary>Discard from a bounded deck until a printed match is found.</summary>
     public sealed record DiscardUntil(CardKind? Kind, string? Trait, AbilityDiscardUntilResult Result) : AbilityEffect
     {
