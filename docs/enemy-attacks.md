@@ -65,6 +65,11 @@ leave the attack undefended when nobody else can use basic defense, or keep an
 already established ability defense. Skipped empty seats do not receive a
 confirmation prompt.
 
+While players are in separate game areas, only characters the attacking enemy
+can reach are defender candidates, and only performers it can reach may use a
+defense-labeled ability (`pack:mc11:game-areas`: players "cannot attack or
+defend enemies in other game areas"). See [places.md](places.md).
+
 Engine replay v4 versions this changed decision sequence. Protocol 19 and save
 schema 4 already represent prompt ownership and accepted declines; their shapes
 are unchanged. Digest v3 still serializes cards, not attack continuation state.

@@ -95,8 +95,19 @@ internal static class AbilityWindowAdmission
             && ControllerCanInitiate(controller, ability, context)
             && CostsPayable(program, world, candidate, resourceAbilities, projection)
             && AbilityAvailability.Available(world, card, ability,
-                AbilityAvailability.IndexOf(program, card, ability), occurrence);
+                AbilityAvailability.IndexOf(program, card, ability), occurrence)
+            && InReachOfAttack(world, card, occurrence);
     }
+
+    // pack:mc11:game-areas: "Cards and components in one game area cannot affect
+    // another game area [...] Players cannot attack or defend enemies in other
+    // game areas". Neither the pack, its clarifications nor a ruling says whether
+    // a card may trigger off an enemy attack in another game area, so an ability
+    // that would otherwise wait there raises rather than guessing. A defense
+    // ability never reaches this: its label already closes it across areas.
+    private static bool InReachOfAttack(World world, Card card, Occurrence occurrence) =>
+        AttackGameArea.Reaches(world, occurrence, card) ? true : throw new RulesNotImplementedException(
+            $"'{card.FaceId}' would trigger off an enemy attack in another game area");
 
     private static bool TriggerEligible(
         World world, Card card, CompiledCardAbility ability, int controller, Occurrence occurrence) =>

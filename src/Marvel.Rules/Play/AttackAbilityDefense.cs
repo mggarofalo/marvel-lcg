@@ -14,6 +14,9 @@ internal static class AttackAbilityDefense
     /// <c>rr:defend-defense.4.8</c> — so the ability remains legal. During an
     /// attack, <c>.4.6</c> locks defense abilities to the player already
     /// defending, whether the defender is that player's identity or ally.
+    /// <c>pack:mc11:game-areas</c>: "Players cannot attack or defend enemies
+    /// in other game areas", so a defense ability is closed to a performer the
+    /// attacking enemy cannot reach.
     /// </remarks>
     internal static bool CanUseDefenseAbility(World world, int player)
         => CanUseDefenseAbility(world, player, world.Seats[player].IdentityCard);
@@ -21,6 +24,7 @@ internal static class AttackAbilityDefense
     internal static bool CanUseDefenseAbility(World world, int player, Card performer)
     {
         ArgumentNullException.ThrowIfNull(world);
+        if (!AttackGameArea.CanDefend(world, performer)) return false;
         if (world.Attack is { IsDefended: false }
             && EffectiveCards.Kind(performer, world.Facts) is CardKind.Hero or CardKind.AlterEgo or CardKind.Ally
             && !AttackAllyDefenseRequirement.Allows(world, performer)) return false;
