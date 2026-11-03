@@ -46,6 +46,55 @@ public sealed class TimelineRoundTrackerTests
         Assert.Null(TimelineRoundTracker.At([], -1));
     }
 
+    [Fact]
+    public void ARestoredSummaryAfterABoundaryMakesTheRoundUnknown()
+    {
+        // Seat B synchronizes during round 2: the summary stands for occurrences, boundaries among them, it lacks.
+        TimelineOccurrence[] entries =
+        [
+            Boundary(1, "Villain"),
+            new(4, new EventPresentation("Spider-Man attacks.", "Earlier action summary", [], EventMotionKind.State))
+            {
+                Restored = true,
+            },
+            Other("Spider-Man thwarts."),
+        ];
+
+        Assert.Equal((1, "Villain"), TimelineRoundTracker.At(entries, 0));
+        Assert.Null(TimelineRoundTracker.At(entries, 1));
+        Assert.Null(TimelineRoundTracker.At(entries, 2));
+        Assert.Equal((2, "Player"), TimelineRoundTracker.At([.. entries, Boundary(2, "Player")], 3));
+    }
+
+    [Fact]
+    public void WhileFollowingTheTrackerReadsTheBeatPlayingNowNotTheNewestEntry()
+    {
+        TimelineOccurrence reveal = Other("Rhino reveals Hard to Keep Down.", 1, "Villain");
+        TimelineOccurrence[] entries = [Boundary(1, "Villain"), reveal, Boundary(2, "Player")];
+
+        int? playing = TimelineRoundTracker.ShownIndex(entries, following: true, selected: 2, active: reveal.Event);
+
+        Assert.Equal(1, playing);
+        Assert.Equal((1, "Villain"), TimelineRoundTracker.At(entries, playing!.Value));
+        Assert.Equal(2, TimelineRoundTracker.ShownIndex(entries, following: true, selected: 0, active: null));
+        Assert.Equal(0, TimelineRoundTracker.ShownIndex(entries, following: false, selected: 0, active: reveal.Event));
+        // A beat the archive does not hold keeps the shown round until playback settles.
+        Assert.Null(TimelineRoundTracker.ShownIndex(entries, following: true, selected: 2,
+            active: new EventPresentation("Not archived.", "", [], EventMotionKind.State)));
+    }
+
+    [Theory]
+    [InlineData(400, true, true)]
+    [InlineData(300, false, true)]
+    [InlineData(200, false, false)]
+    public void TheTrackerYieldsThePhaseChipThenItselfToFitTheSeam(float width, bool phase, bool tracker)
+    {
+        // Minimum widths: both 350, the tracker alone 250, neither 150.
+        float Minimum(bool withPhase, bool withTracker) => 150 + (withTracker ? 100 : 0) + (withPhase ? 100 : 0);
+
+        Assert.Equal((phase, tracker), TimelineRoundTracker.Yield(Minimum, width));
+    }
+
     [Theory]
     [InlineData("Player", 1)]
     [InlineData("Villain", 2)]

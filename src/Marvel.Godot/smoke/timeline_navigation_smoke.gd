@@ -34,6 +34,10 @@ func _round_tracker(timeline: Control) -> bool:
 			or tracker.find_child("Pips", true, false).get_child_count() != 2:
 		_fail("timeline does not track the latest round and phase")
 		return false
+	# A tracker rebuilt as navigation crosses rounds still yields to the timeline's width.
+	if timeline.get_combined_minimum_size().x > timeline.size.x + 0.5:
+		_fail("the rebuilt round tracker widened the timeline past its place")
+		return false
 	return true
 
 

@@ -83,11 +83,11 @@ internal static class TableWording
         [TableFact.PendingSource] = new("", "Resolving", "The card the other player's decision resolves."),
     };
 
-    /// <summary>The wording of one fact.</summary>
     /// <summary>The opening-hand area where cards wait for redraw.</summary>
     internal static readonly Wording StagedForRedraw = new("", "Redraw",
         "Staged for redraw: these cards are replaced when you confirm. Drag one back to keep it.");
 
+    /// <summary>The wording of one fact.</summary>
     internal static Wording For(TableFact fact) => Facts[fact];
 
     /// <summary>The fact behind a separated-table rule the engine says applies.</summary>

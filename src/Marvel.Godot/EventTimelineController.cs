@@ -14,6 +14,7 @@ internal sealed class EventTimelineController(Main main) : IDisposable
     private Label? caption;
     private HBoxContainer? roundTracker;
     private (int Round, string Phase)? shownRound;
+    private float? fitWidth;
     private HBoxContainer? references;
     private EventPresentation? referenceEntry;
     private PanelContainer? popup;
@@ -189,7 +190,7 @@ internal sealed class EventTimelineController(Main main) : IDisposable
         string text = selected < 0 ? "" : Copy(archive.Entries[selected].Event);
         if (viewport.Following && active is not null) text = Copy(active);
         caption.Text = text;
-        RefreshRound(viewport.Following ? archive.Entries.Count - 1 : selected);
+        RefreshRound(TimelineRoundTracker.ShownIndex(archive.Entries, viewport.Following, selected, active));
         RefreshReferences(selected);
         rail.AccessibilityName = text;
         panel.SetMeta("timeline_selected", selected);
@@ -203,24 +204,32 @@ internal sealed class EventTimelineController(Main main) : IDisposable
         }
     }
 
-    private void RefreshRound(int index)
+    // An unknown index keeps the shown round while a beat outside the archive plays.
+    private void RefreshRound(int? index)
     {
-        (int Round, string Phase)? point = TimelineRoundTracker.At(archive.Entries, index);
+        if (index is not { } shown) return;
+        (int Round, string Phase)? point = TimelineRoundTracker.At(archive.Entries, shown);
         if (roundTracker is null || point == shownRound && roundTracker.GetChildCount() > 0 == point.HasValue) return;
         shownRound = point;
         TimelineRoundTracker.Present(roundTracker, point, main.interfaceScale);
+        if (fitWidth is { } width) YieldRound(width);
     }
 
     // The round tracker never widens the timeline past its place: the phase chip, then the tracker, step aside.
+    // The width is kept, so a tracker rebuilt for a new round yields the same way.
     private void YieldRound(float width)
     {
+        fitWidth = width;
         if (roundTracker is null || shownRound is null) return;
-        roundTracker.Visible = true;
         Control? phase = roundTracker.GetNodeOrNull<Control>("PhaseChip");
-        if (phase is not null) phase.Visible = true;
-        if (panel!.GetCombinedMinimumSize().X <= width) return;
-        if (phase is not null) phase.Visible = false;
-        if (panel.GetCombinedMinimumSize().X > width) roundTracker.Visible = false;
+        (bool showPhase, bool showTracker) = TimelineRoundTracker.Yield((withPhase, withTracker) =>
+        {
+            if (phase is not null) phase.Visible = withPhase;
+            roundTracker.Visible = withTracker;
+            return panel!.GetCombinedMinimumSize().X;
+        }, width);
+        if (phase is not null) phase.Visible = showPhase;
+        roundTracker.Visible = showTracker;
     }
 
     private void RefreshReferences(int selected)

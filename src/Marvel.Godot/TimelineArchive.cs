@@ -70,7 +70,8 @@ internal sealed class TimelineArchive
             if (end <= recorded) continue;
             entries.Add(new TimelineOccurrence(end,
                 new EventPresentation(entry.Summary, "Earlier action summary", [], EventMotionKind.State)
-                { Details = entry.Details.Select(detail => new EventPresentation(detail, "", [], EventMotionKind.State)).ToArray() }));
+                { Details = entry.Details.Select(detail => new EventPresentation(detail, "", [], EventMotionKind.State)).ToArray() })
+            { Restored = true });
         }
     }
 }
