@@ -8,13 +8,18 @@ namespace Marvel.Rules.Timing;
 internal static class ContinuousEffectHealth
 {
     /// <summary>Maximum hit points before a state change can alter constants.</summary>
-    internal static IReadOnlyDictionary<int, long> CaptureCharacterHealthCore(this ContinuousEffects effects) => effects.world.Cards
-        .Where(card => DeckTypes.IsInPlay(card.Area.Type)
-            && CardKinds.IsCharacter(EffectiveCards.Kind(card, effects.world.Facts)))
-        .OrderBy(card => card.ObjectId)
-        .ToDictionary(
-            card => card.ObjectId,
-            card => Play.DamagePlacement.Health(effects.world, effects.world.Facts, card));
+    internal static IReadOnlyDictionary<int, long> CaptureCharacterHealthCore(this ContinuousEffects effects)
+    {
+        // Capturing health reads the board and changes nothing.
+        using var read = effects.BeginStableRead();
+        return effects.world.Cards
+            .Where(card => DeckTypes.IsInPlay(card.Area.Type)
+                && CardKinds.IsCharacter(EffectiveCards.Kind(card, effects.world.Facts)))
+            .OrderBy(card => card.ObjectId)
+            .ToDictionary(
+                card => card.ObjectId,
+                card => Play.DamagePlacement.Health(effects.world, effects.world.Facts, card));
+    }
 
     /// <summary>Defeat characters made lethal by a health modifier ending.</summary>
     /// <remarks>

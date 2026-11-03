@@ -11,6 +11,8 @@ internal static class GamePrompts
 {
     internal static Prompt TurnPrompt(this Game game)
     {
+        // Offering turn options reads the board and changes nothing.
+        using var read = game.world.Effects.BeginStableRead();
         var seat = game.world.Seats[game.Active];
         return new Prompt(
             Player: seat.Index,

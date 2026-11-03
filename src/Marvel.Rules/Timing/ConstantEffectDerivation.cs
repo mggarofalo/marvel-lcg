@@ -15,8 +15,24 @@ internal static class ConstantEffectDerivation
     /// pass until two answers agree. An answer that cycles or keeps changing is
     /// refused rather than taken from an arbitrary intermediate pass.
     /// </para>
+    /// <para>
+    /// Inside a stable read the settled list is reused while the board it was
+    /// derived from is unchanged; see <see cref="StableConstantReads"/>.
+    /// </para>
     /// </remarks>
-    internal static List<ContinuousEffect> Settle(ContinuousEffects effects)
+    internal static IReadOnlyList<ContinuousEffect> Settle(ContinuousEffects effects)
+    {
+        if (effects.stableReads.Reuse(effects) is { } settled)
+        {
+            return settled;
+        }
+
+        var constants = SettleAfresh(effects);
+        effects.stableReads.Remember(effects, constants);
+        return constants;
+    }
+
+    private static List<ContinuousEffect> SettleAfresh(ContinuousEffects effects)
     {
         var seen = new List<IReadOnlyList<ContinuousEffect>>();
         effects.assumedConstants = [];

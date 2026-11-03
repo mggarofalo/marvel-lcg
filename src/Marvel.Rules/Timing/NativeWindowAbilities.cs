@@ -17,6 +17,8 @@ internal sealed class NativeWindowAbilities(IWindowAbilities authored) : IWindow
     public bool ObservesVillainPhaseBeginning(World world) => authored.ObservesVillainPhaseBeginning(world);
     public IReadOnlyList<PendingAbility> Waiting(World world, Occurrence occurrence, WindowKind window)
     {
+        // Finding the waiting abilities reads the board and changes nothing.
+        using var read = world.Effects.BeginStableRead();
         var printed = authored.Waiting(world, occurrence, window);
         var native = Retaliation(world, occurrence, window).ToList();
         if (GreenGoblinActivationReplacement.Waiting(world, occurrence, window) is { } replacement)
