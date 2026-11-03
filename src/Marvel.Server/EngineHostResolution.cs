@@ -160,24 +160,49 @@ internal static class EngineHostResolution
     }
 
     /// <summary>
+    /// The live game advanced through the committed decision, or a fresh game
+    /// that verifies the whole committed save when the live game cannot
+    /// reproduce it.
+    /// </summary>
+    /// <remarks>
+    /// Presentation reads the live game, and a read can leave hidden state behind
+    /// -- an area a lookup allocates is one -- that a fresh replay never makes.
+    /// Such a live game may disagree with the checkpoint's derivation, which was
+    /// never read; the save follows the derivation, and the replacement verifies
+    /// it from setup.
+    /// </remarks>
+    private static Game AdvancePublished(
+        EngineHost host, Game live, CandidateReplay replay, SessionSave proposed)
+    {
+        try
+        {
+            replay.VerifyCommitted(live, proposed);
+            return live;
+        }
+        catch (ReplayDivergenceException)
+        {
+            return SessionReplay.Verify(proposed, host.compatibility, host.ReplayOpen);
+        }
+    }
+
+    /// <summary>
     /// Publishes the live game advanced through the new decision and keeps the
     /// candidate private as the next decision's checkpoint.
     /// </summary>
     /// <remarks>
-    /// Ledger choice: the published game must reproduce the candidate's decision
-    /// before the response is projected or the save committed. Advancing it
-    /// changes the live game, so any failure from here on restores the live game
-    /// by verifying the live save before the failure is reported.
+    /// Ledger choice: an independent game must reproduce the candidate's decision
+    /// before the response is projected or the save committed. Advancing the live
+    /// game changes it, so any failure from here on restores the live game by
+    /// verifying the live save before the failure is reported.
     /// </remarks>
     private static EngineResponse PublishVerified(
         EngineHost host, EngineRequest request, RequestExecution execution,
         SessionAccess access, CandidateReplay replay, SessionSave proposed, Resolution resolved)
     {
-        Game published = access.Session.Game;
         SessionSave live = access.Session.Save;
         try
         {
-            replay.VerifyCommitted(published, proposed);
+            Game published = AdvancePublished(host, access.Session.Game, replay, proposed);
             var history = replay.History(proposed);
             var transaction = new SessionTransaction(published, proposed, history)
             {

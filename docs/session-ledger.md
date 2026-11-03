@@ -438,10 +438,14 @@ for, so open, attach, close, undo, redo, reorder, load and a failed candidate
 each leave the next decision to replay from setup. Before a decision is
 projected or committed, the published game must reproduce it in verification
 mode: prompt, events, RNG count, digest, result, unit position, completion,
-role, exposures, frontier and the next prompt. A committed decision is
-therefore one that two independent games agree on. When that verification,
-the projection or the commit fails, the host restores the published game by
-verifying the live save and reports the failure; the save is unchanged.
+role, exposures, frontier and the next prompt. Presentation reads the published
+game, and a read can leave hidden state behind that a fresh replay never makes
+-- an area a lookup allocates is one. When the published game cannot reproduce
+the decision, the host publishes instead a fresh game that verifies the whole
+committed save from setup. A committed decision is therefore one that an
+independent game reproduces. When that replacement, the projection or the
+commit fails, the host restores the published game by verifying the live save
+and reports the failure; the save is unchanged.
 `ResolutionReplayBudgetTests` holds that a game in progress deals no replay
 after its first decision and that the published history equals a fresh
 replay's through an ending. The durable commit rewrites the whole save, so its
